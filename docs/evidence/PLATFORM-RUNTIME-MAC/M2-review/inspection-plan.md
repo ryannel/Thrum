@@ -1,0 +1,8 @@
+Pre-inspection list (written before observing output)
+
+- M2.1: fresh release 1920x1080 noon paused-world realtime pan; denied launcher/driver preflights before/after; console witness only; initial/final one-second holds and two-second 0–36 degree sweep. Inspect whole frame, native crops and >=10 fps strip for coherent rock/ridge placement, authored sphere sweep/exit, yaw-consistent endpoints, cuts/snaps/reversals; measure repeats/local holds against monotonic host time and require complete submissions.
+- M2.3: active real window with channel/row pattern and valley, before/after pending-readback surface replacement; single producer and present binding, stale generation rejection, healthy new presentation, unchanged OFF direct path without tap resources. Run ./dev check under gpu lock.
+- M2.4: independently run retained known answers, bad-status/zero/missing/ordinal controls; verify PID filtering, conversion and interval coverage refusal from code.
+- M2.5: retained recording mode, both Whole markers, ordinal coverage, clock error, display identity, table counts and six-recording budget; check owner-answer scope.
+- M2.2: matched build/content/recipe/extent and ordinary slider actions, ON content and observer cost, OFF every missed interval with call gap and load; distinguish all timing domains and unmeasured physical output.
+- Target edges: this scoped milestone prescribes noon/slow pan/full refresh plus surface loss and disabled capture. Low sun/storm/distance/fast camera are broader platform edges; run if reachable without changing the prescribed qualification or consuming ungranted traces, otherwise explicitly report untested.

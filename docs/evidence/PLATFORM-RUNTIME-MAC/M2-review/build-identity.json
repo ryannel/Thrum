@@ -1,0 +1,488 @@
+{
+  "review_commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
+  "current_binary_sha256": "3a23303c64f776260f01e92818feee9c81fbf1933cb4aecd28e6bff054ee13cd",
+  "retained_binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "changed_recorded_sources": [
+    {
+      "path": "Cargo.lock",
+      "recorded": "cbbc28f9a30ee8a53a9c4450b0ea39c4b996aa6897b41cc6f7fb5738590f91d6",
+      "current": "2e9542409c7ebb974fcde1e6c7de89de8eada294995d05cab5e25e7060704adc"
+    },
+    {
+      "path": "crates/thrum-app/Cargo.toml",
+      "recorded": "02dfd8b7e0ba35d23c908ca557f57e5af3cd32055708896c22b08ff1af35d502",
+      "current": "c0060a4508cd64d29e6c14d840963672ab12d8ae0dca07acf36e22efe989b79c"
+    },
+    {
+      "path": "crates/thrum-app/src/app.rs",
+      "recorded": "3d28983989e483217647eef89a28ada5573211a48db84d963e7e78b8e5830831",
+      "current": "2376f2e19c41b9d07117674b20bb828c8e182b9c1f9449ad7d13d79c27cd4ce8"
+    },
+    {
+      "path": "crates/thrum-app/src/app/render_actor.rs",
+      "recorded": "4f9970a894f9b869d70b9f4a22c6cf1f78490c133aae601fbb35b6be62327b1b",
+      "current": "5c831d8bd79701e2f11457535cafa1cee6caa2b983b36f126f25872e6167b8c0"
+    },
+    {
+      "path": "crates/thrum-app/src/game.rs",
+      "recorded": "30a2e3f5ff87aba91551609b3d227fb1d135430e28a0270abee5fee6f558657b",
+      "current": "edc42d16203e627aa3c6fcfd8d8f9e6c6507abda784ceb1e7eb20774e63fec87"
+    },
+    {
+      "path": "crates/thrum-app/src/lib.rs",
+      "recorded": "f7c183a6b9492a2b6d3f9721faa0446fd83229790c70019b610dde09d0a5e402",
+      "current": "ff04763246105c8da8654e6c57644210856951e241471002d3fd127b2d7fac1f"
+    },
+    {
+      "path": "crates/thrum-app/src/offscreen.rs",
+      "recorded": "b1cc384f3f8ff3c9db412a767b7365c4cce017824c849415e7f874fbcbaf64f8",
+      "current": "791ac20fd1fd9d77c2491e5287c276a1a7c75ff3b0eeb1a0029cf4b8bb4a0ce8"
+    },
+    {
+      "path": "crates/thrum-app/src/sky.rs",
+      "recorded": "a46eec495ba1ff27ab23045cb2b488c2ec1b4b31afc3be81b15070023e370fe4",
+      "current": "b72c4d3fbf8ab3d4f7dedf83f3590ac1e33b53971a5a3118c73bf3e00bbdd4cd"
+    },
+    {
+      "path": "crates/thrum-app/src/web/capture.rs",
+      "recorded": "a25d018dac481a511da8dd0608c40f1d7e2d91fc9cce43722fcdc1be88815230",
+      "current": "7bb9937f0ce5b0ac968916d986e3ca3e0b193f515c23e83f23ed63591cefaf0b"
+    },
+    {
+      "path": "crates/thrum-asset-gpu/Cargo.toml",
+      "recorded": "1ba5527d444e9459d2616b9e1d17d15b34786a05abc53ac2534deb4ac1bea0af",
+      "current": "d18ff316498879bb2cb4fe01f541bfb5799714d589591da02084f1421901b47e"
+    },
+    {
+      "path": "crates/thrum-asset-gpu/src/cooked.wgsl",
+      "recorded": "914343fde6d19b1c2d8e397afffec66b40fa2f56ae8fbe7a66aeb30cc9857d8b",
+      "current": "9ad4780d16b2f0663d11e1635f980514dd1698f170423e26b8200064dea8b31b"
+    },
+    {
+      "path": "crates/thrum-asset-gpu/src/draw.rs",
+      "recorded": "624c57c77b42d84a00b56e40536d66d077bfb0b6c9750976e4ee7c7e1e43ad30",
+      "current": "28f01f8cb92fce0ccb5b940ef0f6fe2a4c6b2bf5a78ae883c4018be4161e0b8d"
+    },
+    {
+      "path": "crates/thrum-render/Cargo.toml",
+      "recorded": "63e23f13b4e5bbf45d943c97ddd8c9cc1dd41eb4871430d42394878096d7ef7b",
+      "current": "31f47f5d7f70361d3162ec54b02415c8c0bd10d51eb031b2698781fc1ae7786d"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere.rs",
+      "recorded": "89bdb44b773a62232e96a4aadc16addc0c54a339c2db34f3a4e755988aacd7af",
+      "current": "a32650de0274fcbad9d4fa52fc827247b88ea4b640cde7c539eba984463842e0"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/gpu.rs",
+      "recorded": "7b199f90dabb1cf4b2722bdd75412f90d4b7a4a3968025e7b119e50714595947",
+      "current": "86afcd65a2bae51266e896f3567d2b959446f94859381c7effae7dca79c28261"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/gpu/tests.rs",
+      "recorded": "571701bd1b265ef255908c9c9e7f9e9fbe5e16a28063a1b90cbce46a6bebd075",
+      "current": "7e6edbf893a7c447bd1001914fac37fd41cc8693421c03032374ed674764bfa3"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/gpu/tests/diffuse.rs",
+      "recorded": "8c62fd9016de6371e3804db22b042b00e94b33191d7e4b5056d5cfdb65a9d113",
+      "current": "226f8f7724d1c19b4a619b493c865889cb5c5c6fec8c4098c67ae0ea8af30421"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/graph.rs",
+      "recorded": "764b2749e9d747e6a69f77a44fd215f23e4f4703511d937c0f40058e0041aa7d",
+      "current": "0368c6781f2860ce2832787f51c3285b3bfb4a8ff47bd092295b62da72f4c4f5"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/model/tests.rs",
+      "recorded": "c29aa8096d5f4a06af0e753217be37c4b96a438504eceb332cb42c13125230e0",
+      "current": "f1e6b2b59637cfff9a95b88f7d69b19b99a5f536bc4ad73e1f93fc763515263f"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/night.rs",
+      "recorded": "565e7a3868ae93a24261044fce9b0b24709904ce80ed1bce245032aac708cb2e",
+      "current": "00f673054bb6f43d1489874894c694c6b14b29f9e18b91016709ab26c47f05df"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/reflection.rs",
+      "recorded": "55adc5e605f468cc1585f07527ff54d8c216c90439e6bec6fc85457155a6405e",
+      "current": "dd3b52a1f9bec8afc9d6c50da527bd4a611ffca2fdceffcb49f8805f8b3e9e30"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/reflection/tests.rs",
+      "recorded": "6a9c03b78bafa9a0016ca7eca187717554f3e0d9eeb30c3c5a027328d864420e",
+      "current": "a1dae425419b7f8194354292593a2fbc430b48b6fa1bbacc1b82aa029ddb96b6"
+    },
+    {
+      "path": "crates/thrum-render/src/atmosphere/sky.wgsl",
+      "recorded": "8ae5972baa7478e38a0f6ca9c055deb4510ea77db86cb52edcbc4221a43ceef0",
+      "current": "336427b9d0be3c625fa7d71fd5047bcd301f5b158dfd7a62c3f431c62a95b082"
+    },
+    {
+      "path": "crates/thrum-render/src/capabilities.rs",
+      "recorded": "96c11c8a16972bd444a3eebbda8869f93576c39e36405d769754c316b9309b23",
+      "current": "d56f552bf7c7a81cad58f6f253065af1b9152ae479f766482ca735d177881f38"
+    },
+    {
+      "path": "crates/thrum-render/src/contribution.rs",
+      "recorded": "f64151ec257e989ea1e9e4a024c3644aa53d439b6389b4f515d6fc2e9d4ee4ff",
+      "current": "b5c6d16232c64c7e4cd0e280f155e4a23a451de8315cd044009d9e3396b9c300"
+    },
+    {
+      "path": "crates/thrum-render/src/graph.rs",
+      "recorded": "1e1817e1d913053fc8051e558320012db3487292ae75decce572107df9f94723",
+      "current": "d0a6601c5cd15715df6cf065d580535a4101b46f44d1595c1c9ff64c55846c24"
+    },
+    {
+      "path": "crates/thrum-render/src/graph_record.rs",
+      "recorded": "2225464a0fdca1739233c0e0f7f687a1fdf0967b7179734e347d0a0094d9f333",
+      "current": "c01cc33f9697705b82a153d6399b08d281b0f2b19cb76a37d813d6bfd6a54dc3"
+    },
+    {
+      "path": "crates/thrum-render/src/present.rs",
+      "recorded": "4cf9ccd56a4fddf230a7604862832743f7bc24f2d908ff1d05f108fef16f2de5",
+      "current": "9853a4cea6bd1b0cb688490a4a5856cdb6b173f290b4f267f64574d07d802779"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime.rs",
+      "recorded": "b222b25ef6bc1074d5d06fdb79c8153e2b81f909a361ae407b47ec15160b5370",
+      "current": "49132ec9a50b03b96768ea127f66206b1d5d85be12716b0a7aec52cee30b39d5"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime/preparation.rs",
+      "recorded": "85ce00aaba0d5274601bf02f6d329fae1b6c9129931c3bdf71e574d915c097f4",
+      "current": "14b10f885ede5928b5ebff4659b4673b9ff4c749bacf1f3308f6f4b0c6e5b802"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime/submitted_capture.rs",
+      "recorded": "5301ef9c009accddad64b9ef4aaec3e3d024da8076ad80400870f11792ff81f9",
+      "current": "75ea273cacf33f0df102b03aec8821c57602f77b62755a2b810d8b155c238700"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime/tests.rs",
+      "recorded": "64a57e621a40ec18bc157704074fda92874316a9233090e3c511302819cd25f1",
+      "current": "2bffb15608b1c907c94addd1fd859a08971ab10b4a4e20e622241ebb99bf5172"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime/tests/device.rs",
+      "recorded": "16b6bb55053a065014442d1b67f3ac14526fd38d1e66a1b7f66e3118d187d7c8",
+      "current": "15cce5ab8fb25c429de9d91976ec1239b868e8f200d253b913ad01ea6257a2ef"
+    },
+    {
+      "path": "crates/thrum-render/src/runtime/tests/submitted_capture.rs",
+      "recorded": "80d29d9e831b96c93bb22e1db031ce57ec79f6750443f518e7cb42d881fa3fe5",
+      "current": "a52602e064e1657aa668213597daf5180c8b5daa02f43807179aa8f8c30c859c"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic.rs",
+      "recorded": "f6c0278e794b00982e6fa6bf4d47ea735192614cab914208f0a729128d6dcbdf",
+      "current": "604743cc4028d74a67328a0d5b213ac6acf22a8d13575411156e929fa6ea2c57"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic.wgsl",
+      "recorded": "e962ed3a1d03468fd6e6c997905578bf82559db4245ab220dd989b3b5751e2ec",
+      "current": "c460971be7831a74290466a8bfe2166b1784e7eef2e949d8d15149953dbe8adc"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/air_shadow.rs",
+      "recorded": "b283ed9c94535c2864917dece43fda52303e50f9193b73aeb3e34a1191c95ee9",
+      "current": "b36eec8973f1df5c5d180305e9041067eadcf3367cb734a6478d077089ea904f"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/camera_culling.rs",
+      "recorded": "9f200345f626e57fdf6fb377dc00929db6760ac2de619c0d6af5b54e43916393",
+      "current": "510df25e6c3b3cddf8362614c08bcb33562f2e437bd71c8950bfc1f5bfb6ce17"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/camera_culling/stats.rs",
+      "recorded": "bf357ea798851a294a7fba2b105b41b0ea9285f779638cc53b8d27d165237720",
+      "current": "0b9ea155019d824fc8928fef475dc5b1cdb56b9f5a71407470753ef1ab34252b"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/contributed.rs",
+      "recorded": "b30ea1db78db8574e367a8574e458dae46cc6966a5639e85a17b491e03e2923d",
+      "current": "f1fd031c9da77df95a501eecd5692a57e3b31e7e230b9ecc7473d7c40d60e416"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/display.rs",
+      "recorded": "7ed05983aa683b3181c9661ac0fa84a75134eed1fe8ed488f3f516e1d475a3bf",
+      "current": "ba7d48683f4b5afb9d3b2232b7150e3dbbacad9ca2c49518b7528b39812e791e"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/display/tests.rs",
+      "recorded": "5d22707fd6d4e67e184a12556835fefe4ef9e4ba2f4c0971cbc9186108e9ca61",
+      "current": "fe293835122ac4ae352c99bc30a1c7d29d4fb5946de8ae21f72f49e692c90c90"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/display/tests/gpu.rs",
+      "recorded": "e2289f96ddeaea15a707b7ec37a8bdb70a443530b2c918dec09d01158118e327",
+      "current": "5241a32f037cd3f3590db099679f0e33ded0e49d27220fdb138a015328ae79fe"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/exposure.rs",
+      "recorded": "651cea5b22a10964c4fbb31c032d43ccd0aa1b2f4e0a07797df51cdeffab417b",
+      "current": "37d17f62bd22634a889be200b08ceeb1313e787eea857210069051f2452814fc"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/exposure/tests.rs",
+      "recorded": "9e363ce1d5b7eba66ece5b4bc2d4f764e8a76d5a036df6316131324e9c681e0f",
+      "current": "aaa42e7b488a80c106513f0ca2757b46f1a4484f692d313bbf0eb6f3404a1561"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/forward.rs",
+      "recorded": "41546632e5ede0638f0d75b60cc7566745913195d724fbce7d209fca208220b9",
+      "current": "0519672edbbab68948fd1a056f7feef04819044c695393da0ca7b844ac81fc4d"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/frame_stats.rs",
+      "recorded": "104511de094b466c9ba86fe32aa5068e1cba8ed1872be15cc2091905053ba4f4",
+      "current": "fae4b1fe14301c253bf00086589ff91caaceffd78dc0ade174b6f172bcb30097"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/frame_stats/tests.rs",
+      "recorded": "13ceda2af6bf5696477ea6f2c968e35998ec230d3eb62973f3f7e0dada02b739",
+      "current": "9b85693f07a89203e37f8b02ab7b8de544d15744326903a08a33bbde645afd8a"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/history_gpu/tests.rs",
+      "recorded": "10e749a06a2498dcaa0ff02493e10ab89c09fd9add9ac9042f793fab7c5292bd",
+      "current": "f754fd1fbb154cf4dfe440a3f2d0dddd926fcd23ac10e56945713b5d35e820a0"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/mesh_route.rs",
+      "recorded": "6a507e554d35e7270c4377c2cc86fc22144b9f04b4ae856b41849846b1cfc84d",
+      "current": "6aba7c16633519d4d5e2974747382edbd921cdb5e17ed1a5007785a293ed588c"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/mesh_route/tests/admission.rs",
+      "recorded": "07579ffc12852aa4c782044e36693089fa9dc3e68e06e88f4e7f6a7e2244da07",
+      "current": "0f575d43ce0161959380909c31f66ef5da04deef24689a0428356b31083af6f9"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/readback.rs",
+      "recorded": "60c656112737fd07901fe795145d03558caaf279137b0e20cb6bb8f980af9e9c",
+      "current": "63830239a473d29db8c349d3990b24af7e9a6e1b05cff80e86ad7811f7283627"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/readback/tests.rs",
+      "recorded": "50d949170ca0de6ec0b5816f90f297d3515b9f9b826fe47f9315ece1a7af5ba7",
+      "current": "b4c86d9c2b12d76790f7e3e665c9eb04b58e000973f7ac3acd0359eba86d327e"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/scene_graph.rs",
+      "recorded": "6ca9c16c8cc21d96bec3b14fe04decd0ddc279ae5e393d547544b0e33bc8fe2e",
+      "current": "ba95cae7a6bc9029ad57da57de7f903aca32cf8f59a66fdf1228443e0a704f2d"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/scene_source.rs",
+      "recorded": "d93123ffe2623407a8feff1b588a998c2632c3b716d46cc5b233b8f0494b73fe",
+      "current": "74669f48a4ef37748f5b3cd6ac1fbed2e0751870ea89a0938f898a6338340a42"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/stars.rs",
+      "recorded": "33683bfe12239df4becf7eb7d73486a5c717c0c4de4b909f86bc1e68ee55a1c9",
+      "current": "5f6b01ecba8d953d6da5d5b70e3f2d4ee094948e1283d8e1846beeb6d885f218"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/stars.wgsl",
+      "recorded": "b6ece4bb35855b2e0224fef714139c1ce2df4abb331406dc5af77d1de60f51ff",
+      "current": "ea49c1f6dc99f17f5f990f6ca88adf21c3b8140c903f6cb0a8dc98af8ef97ea4"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/stars/tests.rs",
+      "recorded": "06ae771b1f26793c63bd8214309ff9d3eb2d67ef10f97d4ffbf7c134d206d5ef",
+      "current": "8cdef2d8c013683838b1a16fda8dacd253460d4a67bae80ff1ad5e1ffd1627c9"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/stars/tests/optics.rs",
+      "recorded": "64a4139adfe4a1854cbfc676b003189991dcd3b5e88d7be2c77fd4403c943b17",
+      "current": "8a9fa9575e5c1cb10471d891aa427fbc271ea8867c1e5b583bd8fed0e2b7380b"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic/view.rs",
+      "recorded": "cfd3d916fca1a1eb1735a87ea00651bc798763f131439d2f6426a0108870ed66",
+      "current": "eff5aabdf923bbf197d933ab47353974f3067a5a5a1b98fafa7e84bf78a04e6f"
+    },
+    {
+      "path": "crates/thrum-render/src/synthetic_display.wgsl",
+      "recorded": "4c4c662847e768460187e462788625959aa1df722db94ec3692af2ce044f4be3",
+      "current": "9a945650f7a98a7b94b71ceffd4b983eb522305763f35b7231f3f3705c2b0ef2"
+    },
+    {
+      "path": "crates/thrum-render/src/timing.rs",
+      "recorded": "28c626ed128e2142e732d67149058b75aafae95546998e210cdc7b58ba4122f6",
+      "current": "af4c738e792ba88b5d9179fc15dd1d5cf3db89c16f3059570363d5b483664e67"
+    },
+    {
+      "path": "crates/thrum-render/src/timing/tests.rs",
+      "recorded": "5c578c78bdd700c9ff587d0082029c4774c896c78d2d9810a7f45ce2934847b5",
+      "current": "36dc5b72e6ca7525ea0868d5b2ea666eb47fe6216e0158d0fb6248f2b03ab3f4"
+    },
+    {
+      "path": "crates/thrum-render/src/visibility.rs",
+      "recorded": "37bc8852d47783ba1a5bea84ac3a9996dceb95ff3814c14b86e9cba03ad6a99c",
+      "current": "bcf35de32c0aee511c8d67736b42339bdd20933387509a6e4e8dbeb07e3a1907"
+    },
+    {
+      "path": "crates/thrum-render/src/visibility.wgsl",
+      "recorded": "858388c5831c0bdbe6483ab12ba27bcd6c4fd7320ba2d3a66c748f9ea6f421b9",
+      "current": "8d04fe3a73ddbad32c2e4663eb7ea45b8d8941872bf14575687e5aa99cd4b5e5"
+    },
+    {
+      "path": "crates/thrum-render/src/visibility/casters.rs",
+      "recorded": "91abdc7fcb1e9a808501d90767d46e930e127d2d9197d799ffa9e07df873f73d",
+      "current": "4e23e4d8ab9e3ac753557eab49f8215d2db09ad2adfbc191fb244ad3a4940e80"
+    },
+    {
+      "path": "crates/thrum-render/src/visibility/tests.rs",
+      "recorded": "c29feb348d1657e996828f2004ff21f644019f0ceff2eae761aece6b288eefb3",
+      "current": "f85f40269a1a12251a0bd19c66872a06053cfb45e0533bb440c0e6fb71bbc414"
+    },
+    {
+      "path": "crates/thrum-render/tests/contracts.rs",
+      "recorded": "a42b5110ec61b07cad09ac1c78b7304488e4ec37a7fad1e347ad5171b8620cac",
+      "current": "1d986dad0da84fd6649f7ed2dc09dbcd6a52f88e3a6d98d8dbd06ab2e7b26d58"
+    },
+    {
+      "path": "crates/thrum-render/tests/gpu.rs",
+      "recorded": "6864ae772c04cd2499d05d89ceef482828f7de0ee1158beb74f968e436a46248",
+      "current": "36eb91ddeff5b48e73a25f6302d4421e36e10f7037baad8dd34a4d516b9b592c"
+    },
+    {
+      "path": "crates/thrum-render/tests/visibility.rs",
+      "recorded": "c1d0ce18a9c76b3fd72365a19985045cffa94e523b17806b4c740602886480fc",
+      "current": "738b6da5d56d91820a3dab43c67161af13cf5dfe5a1576d16d12fe4c4c3b0557"
+    },
+    {
+      "path": "examples/starter/Cargo.toml",
+      "recorded": "09e79be083bf2a24fd161a7da8eee926c75b8a87fcd31020db6bd03020904e27",
+      "current": "347fe7d77cb56534cb8186f26ab13a87d194223f677929917182f0cb2be6a503"
+    },
+    {
+      "path": "examples/starter/src/main.rs",
+      "recorded": "d325d67d44966a189b5a33c9700a3cf6159ae515abca3656a357edeeb3d0506c",
+      "current": "49e3d90e37dbdd3453e30add1e82b22d76a55b3b3595d5ff4533c531f64c539a"
+    },
+    {
+      "path": "examples/v1-game-ios/src/ios/render.rs",
+      "recorded": "337405bb5f3e013253cd3e6ff4531499ca50240ab650980a444be82e87717404",
+      "current": "d470f84019b27f61c8a9fbc717f43aed8eabf4c1911cb0129f5da01044ccce39"
+    },
+    {
+      "path": "examples/v1-game/benches/field_culling.rs",
+      "recorded": "2c3380ba18b8d74bf03d1a86ca43f9a981d2dce6eb4e25e67f44cfa39102af71",
+      "current": "5ac0a7d5d7be15617342dc7b1b3de518ee2faa370661f5f83b5680dc42885eac"
+    },
+    {
+      "path": "examples/v1-game/benches/frame.rs",
+      "recorded": "c5de03769786fc2bf855e43de7b8273e45b65fa0c3d8ecf436d6b50f778d17d0",
+      "current": "0a9585f0d80c48dbed3225b183b3caa7e66a198de5b7b7c0332a5f3eb0b5afe7"
+    },
+    {
+      "path": "examples/v1-game/src/bin/cooked_draw_probe.rs",
+      "recorded": "b6757071d78ccd12f22b61ebee69eafab1283876354f427f22db0d8ea7385d94",
+      "current": "c0af6afec3933e7514246772ce43d48164e4cc7d6492ad91280029d5680e594a"
+    },
+    {
+      "path": "examples/v1-game/src/bin/window/capture.rs",
+      "recorded": "b9c0ec6249530d5e2279b8495338c7f44913abde4ef2e4774484411200f71c7a",
+      "current": "1df40fe74539ea331c4fd8bb26f1953246643be2b7d5fa15d169f9a4dc69ee23"
+    },
+    {
+      "path": "examples/v1-game/src/bin/window/motion.rs",
+      "recorded": "63f06256b28a3a18f490fc61b99ff294ca734c1fbb327e202ad61f52233b11f8",
+      "current": "336dbce1d20843c821add70d693544bcf7d62f5f9f27eaafb46c90aa326e50c1"
+    },
+    {
+      "path": "examples/v1-game/src/bin/window/route.rs",
+      "recorded": "5140c16d458086b2f20db5f0b1a2e64007a76266f09d1da00bbbcbe9e09e13a2",
+      "current": "47c62947653c64d51e63c62ae7c0d14c277f99ac2201003c06395445728defa2"
+    },
+    {
+      "path": "examples/v1-game/src/browser.rs",
+      "recorded": "94e1196c959c5006a4907738261860dac4400c161e0d47703293e275e0c8f4d0",
+      "current": "deb93eaf8ef78eb54496887ab42968065ec9ca35214852c98a66b5c80b14b284"
+    },
+    {
+      "path": "examples/v1-game/src/browser/submitted_capture.rs",
+      "recorded": "623bdb6453abe61d17ec0b44c56b696bd1241a7a4b4d49f6a11d9d5cf43e0d23",
+      "current": "b03bff50f4f6923754b7ec21051e1f4cfa409d944d1e56c399620a1dc40bf6ca"
+    },
+    {
+      "path": "examples/v1-game/src/camera/route.rs",
+      "recorded": "f7e9cf0814137dc2dca1b6de582ba5cbfe7ab4c7c648a14819f4e5c170e3b8ff",
+      "current": "fdf301d38b3d5a683ab1f6d04d60669830838b90c212a3e1b5258605ccc99919"
+    },
+    {
+      "path": "examples/v1-game/src/camera/tests.rs",
+      "recorded": "01f357aef8f7cbcba72b1b00e015a7a852e869cb21e79d715e80714776e003c8",
+      "current": "13baf03077efccb0ff34daea124d53110a633df628e6f9f2e872923c7190e587"
+    },
+    {
+      "path": "examples/v1-game/src/content.rs",
+      "recorded": "16b93f67ee2d9b55876144c842888828f792e193e58167afd0a0484f49b2536d",
+      "current": "45f3d1b807fe3bde35b02f3d532aa47b447544d56f1b0089a4e1c357e84663df"
+    },
+    {
+      "path": "examples/v1-game/src/controls.rs",
+      "recorded": "897b85ef29604825c0f5ef8dacf140add1eb15e38bf026e77afb4b4d95051f97",
+      "current": "f8a012471d7f8a703086a8482a32ed5b7dcc57a3eef73e2b3c1279868ca17ef5"
+    },
+    {
+      "path": "examples/v1-game/src/environment.rs",
+      "recorded": "bef8d63e5ff1311b1e584a10c9ef5b2dd3d613371edbeadd4ba9d24393e30b12",
+      "current": "19232f90d5b569937e9bf0524b7a6afa6dfaab762cba09e60c0acfe40e0f11d0"
+    },
+    {
+      "path": "examples/v1-game/src/host.rs",
+      "recorded": "3d486903de31387a8def213e0ecacc98b2e647381a59c4c8ff577a8e45b360c1",
+      "current": "108708261f237679d3f61b54ad5b831511b4cc46c193bb634a7f9f73f91a0dde"
+    },
+    {
+      "path": "examples/v1-game/src/host/scene_source.rs",
+      "recorded": "d7e87aa23e2d5536369a3b2fcbd706c7c4ac2beba06f7e02bd858c2912356f62",
+      "current": "9bd760d09dac253350d132d4212b31aab7029a1e2be2ab667e15f6a83d1122e2"
+    },
+    {
+      "path": "examples/v1-game/src/host/tests/lifecycle_gpu.rs",
+      "recorded": "bd349fdcd61ed1469663770751883957ab2d61f10e73c62249276082375083ce",
+      "current": "5cf457e0333b15041d569db671f83b90e83c602f64534582e08b5737d7374a73"
+    },
+    {
+      "path": "examples/v1-game/src/host/tests/recovery_gpu.rs",
+      "recorded": "c2558e7e69dacee41244f2d133315b32237a4be90415ccc328e584d8e03f0edd",
+      "current": "c77ccadea9ea521a61203fb3a08df07c6e5286be98aa0ad91d7d6855c2335972"
+    },
+    {
+      "path": "examples/v1-game/src/scene.rs",
+      "recorded": "3db3a3507ae249693f5d8901eec25260758a7a64f33aa84bf80fe223b2077f90",
+      "current": "31aa15ffc2ae371377ec41693659b6071e3ca6e48142ba0eef64ddf18e9b546f"
+    },
+    {
+      "path": "examples/v1-game/src/window.rs",
+      "recorded": "6fbcb5924bc8a9114cc13c3df136e47c7631c2b395e4501eb3e13f68ff473762",
+      "current": "2bd2ea23cb6a24278ef6aeb3a4eae890387ca01cac9775a9678ceb6dbe710020"
+    },
+    {
+      "path": "examples/v1-game/src/window/capture.rs",
+      "recorded": "da4d1c92abbd234c98795c4e5758e0add8a61fcbf9fa62504135f3974cedb978",
+      "current": "eb9e91259f8c456d8838719f37c7b3d630c83a30a4e4cb520544a0f9573a1fda"
+    },
+    {
+      "path": "examples/v1-game/tests/cooked_assets_gpu.rs",
+      "recorded": "552216607814dcafca0e5ade1bb4909eaee2769669e349d84be8d1c980608b76",
+      "current": "b357a55e175c132d9f12d8af13d4011e580000316cfd779ad895109ddf2e0a0d"
+    },
+    {
+      "path": "examples/v1-game/tests/field_gpu.rs",
+      "recorded": "609c2719eae8018d33ad16e5527dcc2daa86de32e03739e8acadff04cb632e44",
+      "current": "94d633564650baae12105c240f559fdbb6f85793733747e0e383d9d81f0f6837"
+    },
+    {
+      "path": "examples/v1-game/tests/surface_gpu.rs",
+      "recorded": "01bb15c55156bbed891c96df49cd94c2897ac6b84f2d48a5067cc50110682050",
+      "current": "601fd0f25d8f59523ad2a71487a5002933a0e9f3bb4cce4a83d54f37673dd3ca"
+    }
+  ],
+  "recorded_source_count": 406
+}

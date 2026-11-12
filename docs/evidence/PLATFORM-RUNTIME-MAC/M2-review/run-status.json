@@ -1,0 +1,13 @@
+{
+  "observed_unix_ns": 1794481145397783000,
+  "review_commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
+  "build_exit": 0,
+  "cook_exit": 0,
+  "fresh_trace_recordings": 0,
+  "panel_probe": "panel-witness.jsonl",
+  "runtime_started": false,
+  "mandated_check_started": false,
+  "process_snapshot": "  PID  PPID ELAPSED      TIME STAT\n  927   921   12:59   0:54.80 S   \n 3081  1059   09:50   0:00.12 Ss  \n 3181  1059   09:09   0:00.11 Ss  \n",
+  "gpu_lock_handles": "COMMAND   PID    USER   FD   TYPE DEVICE SIZE/OFF      NODE NAME\nPython   3081 ryannel    3w   REG   1,16        0 277590857 /Users/ryannel/Workspace/thrum/.git/orchestrate-gpu.lock\nPython   3181 ryannel    3w   REG   1,16        0 277590857 /Users/ryannel/Workspace/thrum/.git/orchestrate-gpu.lock\nPython  65700 ryannel   24w   REG   1,16        0 277590857 /Users/ryannel/Workspace/thrum/.git/orchestrate-gpu.lock\nPython  93262 ryannel    3w   REG   1,16        0 277590857 /Users/ryannel/Workspace/thrum/.git/orchestrate-gpu.lock\n",
+  "result": "GPU unavailable behind another module test; cancelled only reviewer-owned queued commands before launch. Current product runtime and full check could not be exercised."
+}
