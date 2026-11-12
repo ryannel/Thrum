@@ -104,6 +104,12 @@ pub(crate) fn pass_durations(
     let mut caster_cull = None;
     let mut scene_passes = Vec::with_capacity(passes.len());
     for pass in passes {
+        if matches!(
+            pass.name.as_ref(),
+            "temporal exposure texture" | "temporal input witness"
+        ) {
+            continue;
+        }
         if pass.name.as_ref() == super::AIR_SHADOW_PASS {
             if air_shadow.is_some() || layout.shadows == Shadows::Off {
                 return None;

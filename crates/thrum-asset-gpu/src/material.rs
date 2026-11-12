@@ -239,7 +239,7 @@ pub(crate) struct Target {
     pub(crate) scene_source: Arc<str>,
     pub(crate) layout: wgpu::PipelineLayout,
     pub(crate) fragment_entry: &'static str,
-    pub(crate) color_formats: [wgpu::TextureFormat; 2],
+    pub(crate) color_formats: [wgpu::TextureFormat; 3],
     pub(crate) depth_format: wgpu::TextureFormat,
 }
 

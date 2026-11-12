@@ -75,6 +75,7 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
     }
     let stored = textureLoad(scene,vec2<i32>(position.xy),0).rgb;
     let selectors = exposure.metadata.w;
+    if (selectors >> 8u) == 3u { return vec4(stored, 1.0); }
     // The overlay reads the exposed scene before any tone scale and is written undithered.
     if (selectors >> 8u) == 1u {
         return vec4(exposure_zone(stored, exposure.values.x * exposure.values.y), 1.0);

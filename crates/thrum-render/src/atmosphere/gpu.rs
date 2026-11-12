@@ -273,7 +273,12 @@ impl AtmospherePrepared {
                 .to_cols_array()
                 .into_iter()
                 .chain(current.to_cols_array())
-                .chain([extent[0] as f32, extent[1] as f32, 0.0, 0.0])
+                .chain([
+                    extent[0] as f32,
+                    extent[1] as f32,
+                    f32::from(view.history_reset()),
+                    0.0,
+                ])
                 .chain((prior * rotation - current).to_cols_array()),
         ) {
             destination.copy_from_slice(&value.to_le_bytes());
@@ -859,6 +864,11 @@ fn prepare_sky(
                 }),
                 Some(wgpu::ColorTargetState {
                     format: wgpu::TextureFormat::Rg16Float,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                }),
+                Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::R8Unorm,
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
                 }),

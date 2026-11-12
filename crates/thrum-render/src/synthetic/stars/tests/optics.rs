@@ -229,6 +229,15 @@ impl Probe {
                             store: gpu::StoreOp::Store,
                         },
                     }),
+                    Some(gpu::RenderPassColorAttachment {
+                        view: &target.reactive_view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: gpu::Operations {
+                            load: gpu::LoadOp::Clear(gpu::Color::BLACK),
+                            store: gpu::StoreOp::Store,
+                        },
+                    }),
                 ],
                 ..Default::default()
             });
@@ -246,6 +255,7 @@ struct Target {
     colour: gpu::Texture,
     colour_view: gpu::TextureView,
     motion_view: gpu::TextureView,
+    reactive_view: gpu::TextureView,
     depth: gpu::TextureView,
     readback: gpu::Buffer,
 }
@@ -269,6 +279,13 @@ impl Target {
         .create_view(&gpu::TextureViewDescriptor::default());
         Self {
             extent,
+            reactive_view: texture(
+                device,
+                extent,
+                gpu::TextureFormat::R8Unorm,
+                gpu::TextureUsages::RENDER_ATTACHMENT,
+            )
+            .create_view(&gpu::TextureViewDescriptor::default()),
             motion_view,
             tan_fov: [tx, ty],
             colour_view: colour.create_view(&gpu::TextureViewDescriptor::default()),

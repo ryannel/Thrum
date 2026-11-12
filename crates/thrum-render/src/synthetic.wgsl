@@ -563,6 +563,7 @@ fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> 
 struct FragmentOutput {
     @location(0) colour: vec4<f32>,
     @location(1) motion: vec2<f32>,
+    @location(2) reactive: f32,
 }
 fn motion_vector(input: VertexOutput) -> vec2<f32> {
     let current = input.current_clip;
@@ -577,10 +578,10 @@ fn motion_vector(input: VertexOutput) -> vec2<f32> {
         vec2(-65504.0), vec2(65504.0));
 }
 @fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
-    return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input));
+    return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
 }
 @fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
     let receiver = ShadowReceiver(input.world_position,dpdx(input.world_position),
         dpdy(input.world_position),normalize(input.normal));
-    return FragmentOutput(shade(input,sun_visibility(input,receiver),front_facing), motion_vector(input));
+    return FragmentOutput(shade(input,sun_visibility(input,receiver),front_facing), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
 }

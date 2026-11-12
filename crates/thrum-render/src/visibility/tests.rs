@@ -854,10 +854,16 @@ fn history_words_never_outlive_a_shrink_or_capture() {
     occlusion.prepass();
     occlusion.last();
     occlusion.frame(display, short, 0.5);
-    assert_eq!(past(&occlusion, 200), [], "capture words outlived a shrink");
+    assert!(
+        past(&occlusion, 200).is_empty(),
+        "capture words outlived a shrink"
+    );
     // A regular short frame publishes the other side, last written full.
     occlusion.frame(display, short, 0.5);
-    assert_eq!(past(&occlusion, 200), [], "display words outlived a shrink");
+    assert!(
+        past(&occlusion, 200).is_empty(),
+        "display words outlived a shrink"
+    );
     // Regrowth reads only what the short frames published: the returning
     // rows never reach the prepass from stale words.
     occlusion.fixture.upload(display, &instances, 0.5);

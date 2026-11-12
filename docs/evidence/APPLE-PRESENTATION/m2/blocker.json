@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-11-11T22:04:55.350888+00:00",
+  "source_checkpoint": "8f60318c7acaaf72cefbde3ce6daa3c2cd021dc7",
+  "free_bytes": 10998820864,
+  "required_free_bytes": 17179869184,
+  "verifier_result": "LOW_DISK_SPACE",
+  "owned_cleanup": [
+    "completed iOS simulator caches",
+    "incremental compiler cache"
+  ],
+  "remaining": [
+    "current exact-baseline proof",
+    "required ./dev check for D2.1-D2.4 and D2.6",
+    "claim and integration"
+  ],
+  "named_target_passes": {
+    "metal_renderer_tests": 249,
+    "chrome_cases": 32
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "revision": "1eb98ee5",
+  "target": "mac-metal build checks",
+  "checks": {
+    "compile": {
+      "command": "RUSTC_WRAPPER= rustup run 1.99.1 cargo check --locked --offline --workspace --all-targets",
+      "exit": 0,
+      "tail": [
+        "    Checking thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-render)",
+        "    Checking thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset-gpu)",
+        "    Checking asset-loop v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/asset-loop)",
+        "    Checking thrum-cook v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-cook)",
+        "    Checking thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-app)",
+        "    Checking v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)",
+        "    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/starter)",
+        "    Checking thrum-stones v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/stones)",
+        "    Checking thrum-lighthouse v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/lighthouse)",
+        "    Checking v1-game-ios v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game-ios)",
+        "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.09s"
+      ]
+    },
+    "clippy": {
+      "command": "RUSTC_WRAPPER= rustup run 1.99.1 cargo clippy --locked --offline --workspace --all-targets -- -D warnings",
+      "exit": 0,
+      "tail": [
+        "   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-app)",
+        "    Checking thrum-content-runtime v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-content-runtime)",
+        "    Checking thrum-network v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-network)",
+        "    Checking thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-core)",
+        "    Checking xtask v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tools/xtask)",
+        "    Checking thrum-cook v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-cook)",
+        "    Checking thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/crates/thrum-asset-gpu)",
+        "    Checking asset-loop v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/asset-loop)",
+        "    Checking v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game)",
+        "    Checking thrum-lighthouse v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/lighthouse)",
+        "    Checking thrum-stones v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/stones)",
+        "    Checking thrum-starter v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/starter)",
+        "    Checking v1-game-ios v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/examples/v1-game-ios)",
+        "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.75s"
+      ]
+    },
+    "docs": {
+      "command": "./dev check-docs",
+      "exit": 0,
+      "tail": [
+        "note: crates/thrum-app/src/app.rs: 1321 code lines; check it still holds one responsibility",
+        "note: crates/thrum-core/src/sim/publication.rs: 1378 code lines; check it still holds one responsibility",
+        "note: crates/thrum-core/src/sim/registered_world.rs: 1814 code lines; check it still holds one responsibility",
+        "note: crates/thrum-core/src/sim/runtime.rs: 1730 code lines; check it still holds one responsibility",
+        "note: crates/thrum-render/src/graph.rs: 1314 code lines; check it still holds one responsibility",
+        "note: crates/thrum-render/src/runtime/tests/device.rs: 1307 code lines; check it still holds one responsibility",
+        "note: crates/thrum-render/src/runtime.rs: 1412 code lines; check it still holds one responsibility",
+        "note: crates/thrum-render/src/synthetic.rs: 2481 code lines; check it still holds one responsibility",
+        "Repository checks passed: 720 Markdown files, 4242 local links, 30 module records, crate policy and current design hashes."
+      ]
+    }
+  }
+}

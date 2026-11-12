@@ -33,15 +33,15 @@ review (D1.5). The first G4 witnesses that need G3t M3 are TAAU (M3) and the ext
 
 ## M2 Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames
 
-- [ ] Sampleable depth and the motion reader in the graph (→D2.1).
-- [ ] Reactive target across synthetic, contribution, cooked, sky and star-pass pipelines, with the star pass's
+- [x] Sampleable depth and the motion reader in the graph (→D2.1).
+- [x] Reactive target across synthetic, contribution, cooked, sky and star-pass pipelines, with the star pass's
       attachments and graph accesses, under seam 3 (→D2.2).
-- [ ] Exposure resolve and p retention (→D2.3).
-- [ ] `history.rs` and `runtime.rs` acceptance changes and the pipelined tests, under seam 1 (→D2.4).
-- [ ] The witness fixture definition, read by both targets, and the Mac GPU tests for W1–W5 (→D2.6).
-- [ ] The frame host's per-frame history identity in the game page's report; a reactive view or attachment
+- [x] Exposure resolve and p retention (→D2.3).
+- [x] `history.rs` and `runtime.rs` acceptance changes and the pipelined tests, under seam 1 (→D2.4).
+- [x] The witness fixture definition, read by both targets, and the Mac GPU tests for W1–W5 (→D2.6).
+- [x] The frame host's per-frame history identity in the game page's report; a reactive view or attachment
       readback that reaches Chrome's submitted frames; the `temporal` case with its unsubmitted view (→D2.5).
-- [ ] The existing browser cases rerun (→D2.7).
+- [x] The existing browser cases rerun (→D2.7).
 
 ## M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome
 

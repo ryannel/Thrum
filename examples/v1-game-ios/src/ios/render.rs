@@ -735,6 +735,7 @@ impl Owner {
                 &mut reply,
                 &*self.stalling,
                 &self.signals.lose_now,
+                &self.signals.background,
                 self.diagnostics,
             )?
         } else if !usable || reply.status == SurfaceStatus::Reconfigure {
@@ -836,6 +837,7 @@ impl Gpu {
         reply: &mut FrameReply,
         stalling: &dyn Fn(),
         lose_now: &AtomicBool,
+        background: &AtomicBool,
         diagnostics: bool,
     ) -> Result<Option<DriveReport>, FrameError> {
         let advanced = self.host.advance(now)?;
@@ -864,6 +866,10 @@ impl Gpu {
             let encoded = pending
                 .take()
                 .expect("encoded frame enters the section once");
+            if background.load(Ordering::Acquire) {
+                reply.status = SurfaceStatus::NoLease;
+                return Ok(Some(encoded.cancel_background()));
+            }
             let acquiring = Instant::now();
             let texture = leased.surface.get_current_texture();
             reply.acquire = acquiring.elapsed();
@@ -884,15 +890,15 @@ impl Gpu {
                 }
                 CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
                     reply.status = SurfaceStatus::Missing;
-                    return Ok(Some(skip(encoded, reply)));
+                    return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
                 CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
                     leased.configured = None;
                     reply.status = SurfaceStatus::Reconfigure;
-                    return Ok(Some(skip(encoded, reply)));
+                    return Ok(Some(cancel_revoked(encoded, reply, background)));
                 }
                 CurrentSurfaceTexture::Validation => {
-                    skip(encoded, reply);
+                    cancel_revoked(encoded, reply, background);
                     return Err(FrameError::InvalidState("iOS surface validation fault"));
                 }
             };
@@ -924,7 +930,7 @@ impl Gpu {
             if !lease.is_current(request.epoch) {
                 reply.status = SurfaceStatus::StaleDropped;
                 drop(frame);
-                return Ok(Some(skip(encoded, reply)));
+                return Ok(Some(cancel_revoked(encoded, reply, background)));
             }
             let view = frame.texture.create_view(&TextureViewDescriptor::default());
             let report = encoded.submit(Some(&SurfaceOutput {
@@ -964,7 +970,7 @@ impl Gpu {
             return Ok(abandon(encoded, reply));
         }
         reply.status = SurfaceStatus::NoLease;
-        Ok(Some(skip(encoded, reply)))
+        Ok(Some(cancel_revoked(encoded, reply, background)))
     }
 }
 
@@ -975,6 +981,20 @@ fn abandon(encoded: EncodedFrame<'_>, reply: &mut FrameReply) -> Option<DriveRep
     reply.abandoned = true;
     encoded.abandon_lost_device();
     None
+}
+
+/// Background revocation forbids queue work and resets correspondence. A
+/// foreground resize/replacement keeps the existing healthy staging-flush contract.
+fn cancel_revoked(
+    encoded: EncodedFrame<'_>,
+    reply: &mut FrameReply,
+    background: &AtomicBool,
+) -> DriveReport {
+    if background.load(Ordering::Acquire) {
+        encoded.cancel_background()
+    } else {
+        skip(encoded, reply)
+    }
 }
 
 /// Skip a recorded frame on a healthy device. The engine flushes its staged

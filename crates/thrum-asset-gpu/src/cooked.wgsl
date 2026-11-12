@@ -136,5 +136,5 @@ fn cooked_box_exit(origin: vec3<f32>, direction: vec3<f32>) -> vec2<f32> {
         colour = aerial_colour(radiance / alpha, entry, input.position) * alpha;
     }
     let exposed = clamp(colour * scene_storage_scale(), vec3(0.0), vec3(65504.0));
-    return FragmentOutput(vec4(exposed, alpha), vec2(65504.0));
+    return FragmentOutput(vec4(exposed, alpha), vec2(65504.0), alpha);
 }

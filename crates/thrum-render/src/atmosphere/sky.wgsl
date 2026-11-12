@@ -26,7 +26,7 @@ struct VertexOutput { @builtin(position) position: vec4<f32>, @location(0) ndc: 
     let positions=array<vec2<f32>,3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));
     return VertexOutput(vec4(positions[index],0.0,1.0),positions[index]);
 }
-struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32> }
+struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32>, @location(2) reactive: f32 }
 @fragment fn fragment(input: VertexOutput) -> SkyOutput {
     let far=atmosphere.inverse_view_projection*vec4(input.ndc,0.0,1.0);
     let direction=normalize(far.xyz/far.w-atmosphere.camera_altitude.xyz);
@@ -47,5 +47,5 @@ struct SkyOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32
     let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     let radiance=(encoded.rgb/SKY_LUT_GAIN+beam)*solar+vec3(encoded.a/NIGHT_LUT_GAIN);
     let stored=radiance*sky_exposure.x;
-    return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(65504.0)),1.0),infinity_motion(direction,disk));
+    return SkyOutput(vec4(clamp(stored,vec3(0.0),vec3(65504.0)),1.0),infinity_motion(direction,disk), sky_motion.extent.z);
 }

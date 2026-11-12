@@ -86,12 +86,12 @@ fn normal_cdf(t: vec2<f32>) -> vec2<f32> {
     return select(tail, 1.0 - tail, t >= vec2(0.0));
 }
 
-struct StarOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32> }
+struct StarOutput { @location(0) colour: vec4<f32>, @location(1) motion: vec2<f32>, @location(2) reactive: f32 }
 @fragment
 fn fragment(input: VertexOut) -> StarOutput {
     if textureLoad(depth, vec2<i32>(input.position.xy), 0) > 0.0 { discard; }
     let offset = input.position.xy - input.centre;
     let weight = max(normal_cdf((offset + PIXEL_HALF_WIDTH) / input.sigma) - normal_cdf((offset - PIXEL_HALF_WIDTH) / input.sigma), vec2(0.0));
     if weight.x * weight.y <= 0.0 { discard; }
-    return StarOutput(vec4(input.scale * weight.x * weight.y, 0.0), input.motion);
+    return StarOutput(vec4(input.scale * weight.x * weight.y, 0.0), input.motion, view.jitter.z);
 }

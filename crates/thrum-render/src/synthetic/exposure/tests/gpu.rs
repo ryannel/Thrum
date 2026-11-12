@@ -337,7 +337,7 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.view = scene.view.with_incident_exposure(0.0, 0.0, 18.0).unwrap();
-        let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127_000.0, [1.0; 3], 2.0, 1).unwrap();
+        let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 127.0, [1.0; 3], 2.0, 1).unwrap();
         let mut prepared = PreparedSynthetic::prepare_with_lighting(
             &DeviceCapabilities::capture_device(&device, 41),
             &queue,
@@ -408,6 +408,21 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         assert_eq!(second.serial, initial.serial + 1);
         assert_eq!(second.tone_map, SdrToneMap::NeutralHighlights as u32);
         assert_eq!(retained.tone_map, initial.tone_map);
+        assert!(
+            second.values[0] > initial.values[0],
+            "fixture must change storage p"
+        );
+        #[cfg(target_os = "macos")]
+        temporal::tests::assert_history_rescale(
+            &device,
+            &queue,
+            &prepared,
+            &target,
+            second.values[1],
+            retained_side,
+            initial.values[0],
+            second.values[0],
+        );
         assert!((second.values[3] / initial.values[3] - 1.0).abs() < 1e-5);
         assert!((initial.values[1] / second.values[1] - 2.0).abs() < 1e-4);
         // Capture submits an image but intentionally doesn't commit view history.
@@ -429,7 +444,7 @@ fn gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture() {
         assert_eq!(captured.tone_map, second.tone_map);
         prepared.commit_frame();
         assert_eq!(prepared.history.write_side(), retained_side);
-        let stronger = AtmosphereFrame::new([0.0, 1.0, 0.0], 254_000.0, [1.0; 3], 2.0, 1).unwrap();
+        let stronger = AtmosphereFrame::new([0.0, 1.0, 0.0], 254.0, [1.0; 3], 2.0, 1).unwrap();
         prepared
             .update_frame(
                 &queue,

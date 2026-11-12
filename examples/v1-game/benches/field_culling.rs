@@ -100,6 +100,7 @@ fn main() {
                         surface: None,
                     },
                     GameSetup {
+                        display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,
                         content: GameContent::Field,
                         camera_culling,

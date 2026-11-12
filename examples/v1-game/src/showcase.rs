@@ -1,7 +1,7 @@
 //! Authored scene data consumed once by the native game, through G5's existing residency path.
 
 use serde::Deserialize;
-use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement};
+use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement, VolumePlacement};
 
 use crate::SceneCamera;
 
@@ -52,6 +52,51 @@ struct Material {
 pub(crate) fn prepare_showcase(
     source: CookedSource,
 ) -> Result<(SceneCamera, CookedAssets), String> {
+    prepare_showcase_with_volume(source, None)
+}
+
+/// Opt-in M2 fixture; the ordinary authored valley keeps no volume.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn prepare_temporal_showcase(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), String> {
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Volume {
+        name: String,
+        transform: [[f32; 4]; 4],
+        extinction: f32,
+        steps: u32,
+        light_steps: u32,
+        #[serde(rename = "extent")]
+        _extent: [u32; 3],
+        #[serde(rename = "density")]
+        _density: u8,
+        #[serde(rename = "expected_central_byte")]
+        _expected: u8,
+    }
+    let definition: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../crates/thrum-render/src/synthetic/temporal/witness.json"
+    ))
+    .map_err(|e| e.to_string())?;
+    let v: Volume =
+        serde_json::from_value(definition["volume"].clone()).map_err(|e| e.to_string())?;
+    prepare_showcase_with_volume(
+        source,
+        Some(VolumePlacement {
+            name: v.name,
+            transform: v.transform,
+            extinction: v.extinction,
+            steps: v.steps,
+            light_steps: v.light_steps,
+        }),
+    )
+}
+
+fn prepare_showcase_with_volume(
+    source: CookedSource,
+    volume: Option<VolumePlacement>,
+) -> Result<(SceneCamera, CookedAssets), String> {
     let recipe: Recipe = serde_json::from_str(include_str!("../assets/showcase/scene.json"))
         .map_err(|error| format!("showcase recipe: {error}"))?;
     let camera = SceneCamera::perspective(
@@ -62,7 +107,7 @@ pub(crate) fn prepare_showcase(
         recipe.camera.far_m,
     )?;
     let mut config = crate::cooked::cooked_config(source);
-    config.volume = None;
+    config.volume = volume;
     config.meshes = recipe
         .placements
         .into_iter()

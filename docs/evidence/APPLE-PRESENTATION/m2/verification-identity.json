@@ -1,0 +1,17 @@
+{
+  "check_start_revision": "c506b2a686e92442962377e5f4bfcf14317ec90f",
+  "check_end_revision": "d35553c2fa74e55a1eed26c1734ea5338d036644",
+  "covered_paths_changed_during_check": [],
+  "exact_content_key": "ed86252e47704218c70c5f0951a2aceb6d6c917cb4fd51db6d73dd7074375faa",
+  "targets": [
+    "Apple M3 Max / Metal",
+    "hardware Chrome WebGPU"
+  ],
+  "checks": {
+    "pass": 8,
+    "fail": 0,
+    "error": 0,
+    "timeout": 0
+  },
+  "inspection": "Builder inspected the six ask items against the source, target assertions and submitted Chrome diagnostic. Independent review is owed."
+}

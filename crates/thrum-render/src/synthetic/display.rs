@@ -35,6 +35,8 @@ pub enum DisplayOverlay {
     /// Motion in render pixels: red is right, green is down, blue is magnitude.
     /// Magenta marks invalid correspondence; olive is stationary.
     Motion = 2,
+    /// Actual reactive/depth/motion inputs. Requires temporal inputs at preparation.
+    TemporalInputs = 3,
 }
 
 /// Word 7 of the exposure policy and sample: the tone map in bits 0–7 and the

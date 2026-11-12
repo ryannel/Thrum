@@ -124,6 +124,18 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         self.ready.is_some()
     }
 
+    /// Candidate/predecessor identity packed for this exact encoded token.
+    pub fn history_identity(&self) -> Option<[u64; 2]> {
+        Some(
+            self.ready
+                .as_ref()?
+                .recorded
+                .prepared
+                .sample
+                .history_identity,
+        )
+    }
+
     /// Inspect the resources and matrix used by this exact encoded token.
     pub fn frame_extent(&self) -> Option<super::FrameExtent> {
         let ready = self.ready.as_ref()?;
@@ -140,6 +152,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
                 .target
                 .attachment_extents(),
             view_projection: host.scene.view.view_proj_columns(),
+            previous_view_projection: host.prepared.submitted_view_projection(),
             source,
             destination: presenter.extent(),
             viewport,
@@ -156,6 +169,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         self.report
     }
 
+    /// Cancel a frame whose foreground lease was revoked. No queue work is
+    /// permitted in the background; resume must reset temporal correspondence.
+    pub fn cancel_background(mut self) -> DriveReport {
+        self.report.dropped_view = true;
+        if let Some(host) = self.discard_recording() {
+            host.invalidate_history();
+        }
+        self.report.wall = self.wall_start.elapsed();
+        self.report
+    }
+
     /// Discard this frame after the platform observes loss of its device.
     ///
     /// Committed world progress is retained. The recorded encoder and timing
@@ -163,7 +187,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
     /// queue. Use [Self::skip] for a healthy device so later frames can reuse
     /// the uploaded data.
     pub fn abandon_lost_device(mut self) {
-        let _ = self.discard_recording();
+        if let Some(host) = self.discard_recording() {
+            host.invalidate_history();
+        }
     }
 
     /// Submit the recorded scene and optional surface pass once, or return

@@ -64,7 +64,22 @@ impl OffscreenTarget {
                         let mode = crate::capabilities::apple::storage_mode(texture);
                         #[cfg(not(any(target_os = "macos", target_os = "ios")))]
                         let mode: Option<&str> = None;
-                        lines.push(format!("{name} capture={capture} resource={:?} reason={} usage={:?} metal={mode:?}", item.resource, item.reason, texture.usage()));
+                        let role = if item.resource == self.ids.depth {
+                            "depth"
+                        } else if item.resource == self.ids.motion {
+                            "motion"
+                        } else if item.resource == self.ids.reactive {
+                            "reactive"
+                        } else if item.resource == self.ids.temporal.exposure {
+                            "resolved exposure"
+                        } else if item.resource == self.ids.scene {
+                            "scene"
+                        } else if item.resource == self.ids.output {
+                            "output"
+                        } else {
+                            "auxiliary"
+                        };
+                        lines.push(format!("{name} capture={capture} role={role} resource={:?} reason={} usage={:?} metal={mode:?}", item.resource, item.reason, texture.usage()));
                     }
                 }
             }

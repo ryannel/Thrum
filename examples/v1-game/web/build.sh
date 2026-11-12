@@ -33,6 +33,8 @@ else
 fi
 "$bindgen_bin" --target web --out-dir "$build_root/$web" "$cargo_target/wasm32-unknown-unknown/release/v1_game.wasm"
 cp examples/v1-game/web/index.html "$build_root/$web/index.html"
+cp examples/v1-game/web/temporal.html "$build_root/$web/temporal.html"
+cp crates/thrum-render/src/synthetic/temporal/witness.json "$build_root/$web/temporal-witness.json"
 cp examples/v1-game/web/route.html "$build_root/$web/route.html"
 cp examples/v1-game/web/capture.html "$build_root/$web/capture.html"
 cp examples/v1-game/web/capture.mjs "$build_root/$web/capture.mjs"

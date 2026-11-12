@@ -145,7 +145,7 @@ impl PreparedSynthetic {
             light_layout: &self.surface.light_layout,
             material_layout: &self.surface.material_layout,
             fragment_entry: self.surface.fragment_entry,
-            color_formats: [SCENE_FORMAT, MOTION_FORMAT],
+            color_formats: [SCENE_FORMAT, MOTION_FORMAT, super::REACTIVE_FORMAT],
             depth_format: DEPTH_FORMAT,
             shadow: self
                 .shadow

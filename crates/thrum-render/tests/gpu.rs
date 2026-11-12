@@ -181,18 +181,20 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             Err(thrum_render::synthetic::RenderError::StaleTarget)
         ));
         let graph = prepared.graph(&target, true).unwrap();
-        assert_eq!(graph.transient_slots, 4);
-        // The capture terminal reads both final colour and resolved exposure.
+        // Reactive and the 1x1 temporal exposure texture add two distinct slots.
+        assert_eq!(graph.transient_slots, 6);
+        // Exposure resolve feeds forward, the temporal texture, tone encode and
+        // capture; capture also reads tone encode's final colour.
         assert_eq!(
             graph.dependencies,
-            [(0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (3, 4)]
+            [(0, 1), (0, 3), (0, 4), (0, 5), (1, 2), (1, 4), (4, 5)]
         );
         assert_eq!(
             prepared.graph(&target, false).unwrap().dependencies,
-            [(0, 1), (0, 3), (1, 2), (1, 3)]
+            [(0, 1), (0, 3), (0, 4), (1, 2), (1, 4)]
         );
         let mut pixels = target.readback(&device);
-        let mut timings = GpuTimings::new(&capabilities, &queue, 4).unwrap();
+        let mut timings = GpuTimings::new(&capabilities, &queue, 5).unwrap();
         let enabled = timings.is_enabled();
         if enabled {
             let mut one_pass = GpuTimings::new(&capabilities, &queue, 1).unwrap();
@@ -297,11 +299,12 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
             let measured = timings.try_collect(41).unwrap();
             if enabled {
                 let measured = measured.unwrap();
-                assert_eq!(measured.len(), 4);
+                assert_eq!(measured.len(), 5);
                 assert_eq!(measured[0].name.as_ref(), "synthetic exposure resolve");
                 assert_eq!(measured[1].name.as_ref(), "synthetic forward opaque");
                 assert_eq!(measured[2].name.as_ref(), "synthetic transform history");
-                assert_eq!(measured[3].name.as_ref(), "synthetic tone encode");
+                assert_eq!(measured[3].name.as_ref(), "temporal exposure texture");
+                assert_eq!(measured[4].name.as_ref(), "synthetic tone encode");
                 assert!(measured[0].nanoseconds.is_finite() && measured[0].nanoseconds >= 0.0);
                 eprintln!("GPU pass diagnostic: {} ns", measured[0].nanoseconds);
             } else {
@@ -523,7 +526,7 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 let resized = OffscreenTarget::new(&device, &prepared, width, height).unwrap();
                 assert_eq!(
                     prepared.graph(&resized, true).unwrap().dependencies,
-                    [(0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (3, 4)]
+                    [(0, 1), (0, 3), (0, 4), (0, 5), (1, 2), (1, 4), (4, 5)]
                 );
                 let rgba = render_pixels(&device, &queue, &prepared, &resized);
                 assert_eq!(rgba.len(), width as usize * height as usize * 4);
@@ -574,8 +577,9 @@ fn prepared_scene_pixels_timestamps_and_disabled_path() {
                 if frame >= 5 {
                     gpu_ns.push(values[1].nanoseconds);
                     assert_eq!(values[0].name.as_ref(), "synthetic exposure resolve");
-                    assert_eq!(values[3].name.as_ref(), "synthetic tone encode");
-                    display_gpu_ns.push(values[0].nanoseconds + values[3].nanoseconds);
+                    assert_eq!(values[3].name.as_ref(), "temporal exposure texture");
+                    assert_eq!(values[4].name.as_ref(), "synthetic tone encode");
+                    display_gpu_ns.push(values[0].nanoseconds + values[4].nanoseconds);
                 }
             }
             let mut encoder =
@@ -1185,7 +1189,16 @@ fn two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters() {
                 .graph(&off_target, false)
                 .expect("off-state graph")
                 .dependencies,
-            [(0, 4), (1, 4), (2, 4), (3, 4), (3, 6), (4, 5), (4, 6)],
+            [
+                (0, 4),
+                (1, 4),
+                (2, 4),
+                (3, 4),
+                (3, 6),
+                (3, 7),
+                (4, 5),
+                (4, 7)
+            ],
             "configured shadow and horizon maps remain ready for a live Sun activation"
         );
     });

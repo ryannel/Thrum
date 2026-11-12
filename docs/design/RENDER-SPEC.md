@@ -401,13 +401,15 @@ record. The first spatial profile consumes no retained colour history; it
 still records the sample actually submitted so later providers cannot infer
 one from global frame parity. A changed origin, camera cut, device generation,
 size or incompatible source/product revision invalidates prior correspondence.
-For a later temporal profile, submitted metadata and accepted-history
-metadata are distinct: a GPU-rejected sample cannot advance the previous
-pose, exposure, source epoch or history image used by its successor. The first
-temporal proof resets history whenever acceptance is unknown to the CPU;
-retaining history across delayed GPU acceptance requires an explicit GPU-owned
-metadata path or bounded delayed lease protocol. Submission completion alone
-does not certify an accepted sample.
+APPLE-PRESENTATION M2 admits submission-order history on one queue. A successful
+submission accepts its sample: the next frame's history reads execute after that
+sample's writes, even while two frames remain in flight. Previous matrices and
+exposure belong to the last submitted sample. Cancelled acquisition leaves that
+sample unchanged; submission refusal and iOS background cancellation reset history.
+A delayed execution fault takes the device-loss path and resets the generation;
+contamination is bounded to the two in-flight frames. Completion alone never
+manufactures a submitted sample. `HistoryKey.extent` is the output grid, so a
+render-scale change alone does not reset correspondence.
 APPLE-PRESENTATION M1 extends group 0 binding 0 to a 240-byte `ViewRecord`:
 current raster view-projection at 0, previous submitted unjittered view-projection
 at 64, camera XYZ/time at 128, storage scale/inverse fixed gain/jitter XY at 144,

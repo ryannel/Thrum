@@ -1,0 +1,85 @@
+{
+  "extent": [
+    640,
+    360
+  ],
+  "star_edit_tick": 15,
+  "sun_hours": 17.4,
+  "sun_yaw": -1.5707963267948966,
+  "sun_probe": [
+    367,
+    133
+  ],
+  "pan_tick": 30,
+  "pan_yaw": 0.05,
+  "rows": {
+    "W1": {
+      "step": "invalid object correspondence",
+      "reactive": 1.0
+    },
+    "W2": {
+      "step": "next steady submitted sample",
+      "reactive": 0.0
+    },
+    "W3": {
+      "step": "steady cooked volume",
+      "reactive": "volume alpha",
+      "outside": 0.0
+    },
+    "W4": {
+      "step": "phase edit with Sun or stars",
+      "reactive": 1.0
+    },
+    "W5": {
+      "step": "steady Sun, stars and uncovered region",
+      "reactive": 0.0
+    },
+    "W6": {
+      "step": "A, encoded acquisition refusal at P, submitted C at P",
+      "predecessor": "A"
+    },
+    "W7": {
+      "step": "same as W6",
+      "motion": "A to P, nonzero on static geometry"
+    }
+  },
+  "volume": {
+    "name": "temporal-witness",
+    "extent": [
+      2,
+      2,
+      2
+    ],
+    "density": 255,
+    "transform": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        -0.5,
+        244.2,
+        8,
+        1
+      ]
+    ],
+    "extinction": 1.0,
+    "steps": 16,
+    "light_steps": 4,
+    "expected_central_byte": 161
+  }
+}

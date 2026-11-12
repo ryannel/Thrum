@@ -202,7 +202,7 @@ impl InstanceUpload {
             });
         }
         let (rows, remainder) = self.staged.as_chunks::<{ abi::INSTANCE_BYTES }>();
-        debug_assert_eq!(remainder, []);
+        debug_assert_eq!(remainder, [0_u8; 0]);
         for (&slot, row) in self.valid_slots.iter().zip(rows) {
             let logical = slot as usize;
             let new_active = instances[logical].ids[3] != 0;

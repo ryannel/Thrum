@@ -103,7 +103,7 @@ target_cost = "Native game scene data only; derive-generated schema validation, 
 [external_dependencies.serde_json]
 requirement = "=1.0.154"
 license = "MIT OR Apache-2.0"
-purpose = "Decode the embedded authored scene recipe into checked camera and material placements"
+purpose = "Decode the embedded authored scene recipe into checked camera and material placements; read the shared temporal witness definition in tests and the opt-in diagnostic"
 target_cost = "One cold parse at scene activation; already in the authoring dependency graph, no per-frame parsing"
 
 [external_dependencies.rayon]

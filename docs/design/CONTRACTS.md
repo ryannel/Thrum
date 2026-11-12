@@ -277,7 +277,11 @@ current-pixel, top-left origin with X right/Y down, in current render-target pix
 a provider explicitly converts both sample grids. Teleport, changed topology/LOD or missing prior pose cannot use a
 fabricated rigid vector.
 
-Each history key includes view, provider, resolution and relevant content/device/profile epochs. Reset or reproject
+Each history key includes view, provider, output resolution and relevant content/device/profile epochs.
+APPLE-PRESENTATION uses single-queue submission-order acceptance: successful submission commits the sample,
+failed acquisition retains the preceding submitted sample, and submission failure, device loss or iOS background
+cancellation resets correspondence. Delayed execution errors reset the generation, with contamination bounded to
+the two in-flight frames. Reset or reproject
 only under documented validity conditions. A camera cut cannot retain old temporal samples as if it were smooth motion.
 G2 restore advances a replay timeline generation carried by each published page. V2 includes it in temporal-source
 identity, so skipping the replay baseline cannot make a divergent numeric tick look adjacent to abandoned poses.

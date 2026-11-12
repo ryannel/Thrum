@@ -35,8 +35,11 @@ pub struct SyntheticView {
     history_reset: bool,
     history_epoch: u64,
     celestial: Option<Mat3>,
+    celestial_epoch: u64,
     jitter_sample: Option<(u32, [u32; 2])>,
     raster_jitter: bool,
+    temporal_inputs: bool,
+    output_extent: Option<[u32; 2]>,
 }
 
 impl Default for SyntheticView {
@@ -60,8 +63,11 @@ impl Default for SyntheticView {
             history_reset: false,
             history_epoch: 0,
             celestial: None,
+            celestial_epoch: 0,
             jitter_sample: None,
             raster_jitter: false,
+            temporal_inputs: false,
+            output_extent: None,
         }
     }
 }
@@ -146,8 +152,11 @@ impl SyntheticView {
             history_reset: false,
             history_epoch: 0,
             celestial: None,
+            celestial_epoch: 0,
             jitter_sample: None,
             raster_jitter: false,
+            temporal_inputs: false,
+            output_extent: None,
         })
     }
 
@@ -265,6 +274,33 @@ impl SyntheticView {
         self
     }
 
+    /// Prepare stored, sampleable reconstruction inputs and their GPU diagnostic.
+    /// This selection is fixed when the scene generation is prepared.
+    #[must_use]
+    pub fn with_temporal_inputs(mut self, enabled: bool) -> Self {
+        self.temporal_inputs = enabled;
+        self
+    }
+
+    pub(super) fn temporal_diagnostic(&self) -> bool {
+        self.display_overlay == DisplayOverlay::TemporalInputs
+    }
+
+    pub(super) fn temporal_inputs(&self) -> bool {
+        self.temporal_inputs
+    }
+
+    /// Set the reconstruction output grid independently of render scale.
+    #[must_use]
+    pub fn with_output_extent(mut self, extent: [u32; 2]) -> Self {
+        self.output_extent = Some(extent.map(|n| n.max(1)));
+        self
+    }
+
+    pub(super) fn output_extent(&self, render: [u32; 2]) -> [u32; 2] {
+        self.output_extent.unwrap_or(render)
+    }
+
     pub(crate) fn history_epoch(&self) -> u64 {
         self.history_epoch
     }
@@ -283,6 +319,17 @@ impl SyntheticView {
         }
         self.celestial = Some(basis);
         Ok(self)
+    }
+
+    /// Identify a discontinuous celestial phase edit independently of camera motion.
+    #[must_use]
+    pub fn with_celestial_epoch(mut self, epoch: u64) -> Self {
+        self.celestial_epoch = epoch;
+        self
+    }
+
+    pub(super) fn celestial_epoch(&self) -> u64 {
+        self.celestial_epoch
     }
 
     pub(super) fn celestial_basis(&self) -> Option<Mat3> {
