@@ -66,3 +66,7 @@
   oracle inspection, actual device replacement, unchanged cadence pipeline count, realtime trail inspection,
   named costs and load. These verify function and captured content; no display-cadence or speedup claim is made.
   The lead starts the independent review after scripted integration; no reviewer was started by this builder.
+- 2026-11-12 Scripted integration encountered newly landed APPLE-PRESENTATION M2. Rebased while preserving
+  its stored temporal inputs, history and browser case, and combined both modules' named-timing exclusions.
+  M2 is temporarily reopened while target checks, realtime costs and exact baselines are refreshed on the combined
+  source. Earlier evidence remains historical proof of the pre-rebase source, not a claim about the combined build.
