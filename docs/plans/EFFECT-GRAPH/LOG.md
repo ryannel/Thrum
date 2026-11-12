@@ -74,3 +74,6 @@
   APPLE-PRESENTATION added reactive coverage. Added its reactive output and the declared invalid-motion sentinel;
   this diagnostic does not claim M3 motion correctness. Stopped the obsolete verifier before changing source.
   The failed Chrome report is retained in scratch; all final proofs will run again on the corrected source.
+- 2026-11-12 The combined-source repository gate found `synthetic.rs` four lines over the size backstop.
+  Moved effect-pass recording unchanged into the existing contribution module. Repository policy and native
+  all-target Clippy pass after the split. Fresh target, capture and exact proofs will pin this final source.
