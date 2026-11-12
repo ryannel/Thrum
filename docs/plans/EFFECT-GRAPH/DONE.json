@@ -145,8 +145,8 @@
           "statement": "In real time on the Mac the diagnostic trail persists and fades after its source stops, stays fixed to the ground as the camera pans across the wrapping boundary, and shows no jump when the cadence changes.",
           "inspect": "Capture with T2 engine capture in `realtime` mode: the source moving and then stopping, a pan that carries the anchor across at least one wrap, and a cadence change mid-run. Judge the trail in whole frames and native-size crops as consecutive frames at 1x.",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -155,8 +155,8 @@
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
           "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
         },

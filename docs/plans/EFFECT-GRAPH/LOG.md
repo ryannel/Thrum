@@ -54,3 +54,8 @@
   diagnostic with native/Chrome qualification entry points. Pinned native all-target Clippy and Wasm Clippy pass.
   CPU state-table and cadence-refusal checks passed before the Metal scene-snapshot witness was added. Target
   scripts, realtime trail inspection, exact baselines and integration remain unqualified; no M2 item is claimed.
+- 2026-11-12 M2.6 and M2.7 have [final-source realtime evidence](../../evidence/EFFECT-GRAPH/M2-proof.md).
+  The builder inspected the complete sequence and native-size consecutive crops: the trail persists and fades,
+  stays on the ground through the wrap, and does not jump at the cadence change. Named executor times, descriptor
+  bytes and load are recorded alongside the no-effect arm. Six automated item checks remain in progress under
+  their GPU locks; the milestone is not yet claimed for review or integrated.
