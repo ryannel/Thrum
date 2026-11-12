@@ -25,7 +25,6 @@ pub struct DevicePrepareInputs {
     exposure: f32,
     render_extent: [u32; 2],
     contribution_passes: ContributionPasses,
-    pub(super) effect_graph: crate::contribution::EffectGraph,
 }
 
 /// Complete replacement resources, bound to one host and its base generation.
@@ -123,7 +122,9 @@ impl DevicePrepareInputs {
             self.render_extent,
             surface.is_some(),
             self.contribution_passes,
-            self.effect_graph,
+            // The effect selects its new generation's declarations in rebuild at
+            // publication. An old preferred format must not prevent base recovery.
+            crate::contribution::EffectGraph::default(),
         )
         .await?;
         let presenter = match surface {
@@ -177,7 +178,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             exposure: self.prepared.fallback_exposure(),
             render_extent: self.render_extent,
             contribution_passes: self.prepared.contribution_passes(),
-            effect_graph: self.prepared.effect_graph().clone(),
         })
     }
 

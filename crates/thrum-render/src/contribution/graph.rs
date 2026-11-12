@@ -18,7 +18,7 @@ pub enum EffectCadence {
 }
 
 /// A local resource access. History bindings refer to a logical pair, not a global frame side.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct EffectAccess {
     /// Index into this declaration's resources.
     pub resource: usize,
@@ -33,7 +33,7 @@ pub struct EffectAccess {
 }
 
 /// One named simulate pass; upload, shadow and opaque use the existing callbacks.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct EffectPass {
     /// Diagnostic name, unique within this contribution.
     pub name: String,
@@ -44,7 +44,7 @@ pub struct EffectPass {
 }
 
 /// Resources and simulate passes declared once during preparation.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct EffectGraph {
     /// Physical descriptors and their retained ownership scopes.
     pub resources: Vec<(ResourceDescriptor, ResourceScope)>,

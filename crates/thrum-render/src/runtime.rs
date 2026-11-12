@@ -428,12 +428,32 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.contribution_error.as_deref()
     }
 
-    /// Optional content can refuse a new generation. Keep the already prepared
-    /// graph and targets: contribution passes record no work when detached.
+    /// Rebuild members before accepting their new generation's declarations. Optional
+    /// content can refuse reconstruction; the base scene remains usable when detached.
     fn rebuild_contribution(&mut self) {
-        if let Some(contribution) = self.contribution.as_mut()
-            && let Err(error) = contribution.rebuild(&self.prepared.scene_surface(&self.queue))
-        {
+        let rebuilt = self.contribution.as_mut().map(|contribution| {
+            contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
+            let graph = contribution.effect_graph();
+            graph.validate()?;
+            Ok::<_, String>((graph, contribution.passes()))
+        });
+        let Some(rebuilt) = rebuilt else {
+            return;
+        };
+        let result = rebuilt.and_then(|(graph, passes)| {
+            if graph == *self.prepared.effect_graph()
+                && passes == self.prepared.contribution_passes()
+            {
+                return Ok(());
+            }
+            let previous = self.prepared.effect_graph().clone();
+            self.prepared.set_effect_graph(graph);
+            self.declare_contribution_passes(passes).map_err(|error| {
+                self.prepared.set_effect_graph(previous);
+                format!("rebuilt contribution graph: {error}")
+            })
+        });
+        if let Err(error) = result {
             self.contribution = None;
             self.contribution_error = Some(error);
         }
