@@ -182,3 +182,21 @@ impl PreparedSynthetic {
         }
     }
 }
+
+impl super::SceneContext<'_> {
+    pub(super) fn effect(
+        &mut self,
+        index: usize,
+        compiled: &super::CompiledPass,
+    ) -> Result<(), RenderError> {
+        if let Some(contribution) = self.contribution.as_deref_mut()
+            && contribution.effect_runs(index, &self.contribution_frame)
+        {
+            let mut pass = compiled
+                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            contribution.encode_effect(index, &mut pass, &self.contribution_frame);
+        }
+        Ok(())
+    }
+}
