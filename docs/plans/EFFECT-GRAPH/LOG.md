@@ -59,3 +59,10 @@
   stays on the ground through the wrap, and does not jump at the cadence change. Named executor times, descriptor
   bytes and load are recorded alongside the no-effect arm. Six automated item checks remain in progress under
   their GPU locks; the milestone is not yet claimed for review or integrated.
+- 2026-11-12 M2 is ready for review. All six immutable item commands pass on engine source `41357d2f`
+  (checked commit `e1d8fe4b`), including both native recipes, the Chrome state script and all registered exact
+  baselines: 38 plus four native comparisons and 481 records in each of four Chrome sets. The separately
+  GPU-locked `./dev check` passes. [Target proof](../../evidence/EFFECT-GRAPH/M2-proof.md) includes the literal
+  oracle inspection, actual device replacement, unchanged cadence pipeline count, realtime trail inspection,
+  named costs and load. These verify function and captured content; no display-cadence or speedup claim is made.
+  The lead starts the independent review after scripted integration; no reviewer was started by this builder.

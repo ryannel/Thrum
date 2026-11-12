@@ -29,12 +29,12 @@ Criteria: M1.1–M1.5 in the done-when file.
 
 Criteria: M2.1–M2.8 in the done-when file.
 
-- [ ] Let a scene hold an ordered list of contributions, and let a contribution declare resources and passes at the `upload`, `simulate`, `shadow` and `opaque` stages through the public seam.
-- [ ] Give each frame its tick, timeline and tick duration, and apply the design's state table: keep on an equal tick, advance on a later one, reset on an earlier one or a new timeline. Commit the state tick and the wrapping anchor only in `submitted`.
-- [ ] Give each history pair its own committed side with the `previous`, `next` and `result` bindings, flipped at submission only when its producer ran.
-- [ ] Add the three cadence classes, the compiler's refusals and full frames on a new epoch and on reset.
-- [ ] Build the diagnostic effect in `examples/v1-game` with an integer rule: two histories at different cadences, the consumer the tests read back, and the time-sliced volume. Write the scripted run's expectations from the state table; add the Mac run and the Chrome case.
-- [ ] Capture the trail for the reviewer; record costs with and without the effect from the executor's named pass timings.
+- [x] Let a scene hold an ordered list of contributions, and let a contribution declare resources and passes at the `upload`, `simulate`, `shadow` and `opaque` stages through the public seam.
+- [x] Give each frame its tick, timeline and tick duration, and apply the design's state table: keep on an equal tick, advance on a later one, reset on an earlier one or a new timeline. Commit the state tick and the wrapping anchor only in `submitted`.
+- [x] Give each history pair its own committed side with the `previous`, `next` and `result` bindings, flipped at submission only when its producer ran.
+- [x] Add the three cadence classes, the compiler's refusals and full frames on a new epoch and on reset.
+- [x] Build the diagnostic effect in `examples/v1-game` with an integer rule: two histories at different cadences, the consumer the tests read back, and the time-sliced volume. Write the scripted run's expectations from the state table; add the Mac run and the Chrome case.
+- [x] Capture the trail for the reviewer; record costs with and without the effect from the executor's named pass timings.
 
 ## M3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome
 

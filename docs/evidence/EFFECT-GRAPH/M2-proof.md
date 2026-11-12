@@ -3,7 +3,7 @@
 12 November 2026. Engine source `41357d2f9831227252e98190907db2b395ae0293`.
 All six automated item commands pass on checked commit `e1d8fe4b` (the same engine source).
 [Check report](M2/milestone-check.json) · [qualification identity](M2/qualification-identity.json).
-The final repository gate and integration are pending. Independent lead review remains required.
+The separately GPU-locked [repository gate](M2/dev-check.log) passes. M2 is ready for review; integration uses the required merge script. Independent lead review remains required.
 
 | Item | Target evidence and builder inspection |
 | --- | --- |
