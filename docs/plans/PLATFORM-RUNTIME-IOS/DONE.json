@@ -7,7 +7,6 @@
       "state": "done",
       "fails": 0,
       "replans": 0,
-      "needs": [],
       "bar": "Native-resolution scene framing fills the settled iOS surface with undistorted geometry and correct camera aspect through rotation, like a shipped Unity iOS player using its native-resolution camera viewport. Function only; preserve G3b lifecycle ownership and race bounds.",
       "items": [
         {
@@ -75,7 +74,8 @@
           "verdict": "pass",
           "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
         }
-      ]
+      ],
+      "depends_on": []
     }
   ]
 }

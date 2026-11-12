@@ -67,7 +67,7 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "verdict": "cant_tell",
+          "verdict": "could_not_judge",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md"
         },
         {
@@ -78,9 +78,12 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
-          "verdict": "cant_tell",
+          "verdict": "could_not_judge",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
-          "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
+          }
         },
         {
           "id": "M2.3",
@@ -89,7 +92,7 @@
           "status": "open",
           "evidence": "",
           "ask": "Trace T2 renderer-owned tap integration through normal AppKit callbacks and the real CAMetalLayer surface. With a known channel/row pattern, prove capture bytes equal the engine output consumed by the normal present pass, including any declared format/channel conversion. Establish the single producer binding to the actual surface submission; this is not a claim to observe compositor pixels. Prove capture neither reacquires nor extends the drawable lease. Lose/replace the surface with readback pending and show stale-generation refusal plus healthy fresh presentation. With capture OFF prove no tap texture/copy/readback/worker/per-frame allocation or changed present path; retain the current direct-output behavior and Mac M1 loss rules. Run real-Metal regressions with ./dev check under gpu, plus the documented live-window scenario; unavailable/occluded window cannot pass.",
-          "verdict": "cant_tell",
+          "verdict": "could_not_judge",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "inspect": "On the unlocked active panel inspect the known-pattern window and same-build cooked scene before/after surface replacement, joining engine tap IDs to real surface submissions. Screen Recording permission is not required; label engine versus compositor limits.",
           "check": "./dev check",
@@ -114,11 +117,11 @@
           "ask": "In the fresh trace, do the TOC recording mode and the first and last retained rows show coverage of both MacM2Whole markers? Does every game submission in that interval join by ordinal to one presented row, or appear as unmatched? Is the presented-time conversion validated against the same-process markers with a stated error? Does the display identity list the built-in panel as the only display, or is the window's display identified separately? Are the display tables' row counts recorded, and the recordings used counted against the six granted on 11 November?",
           "verdict": "pass",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
-          "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
+          }
         }
-      ],
-      "needs": [
-        "T2-CAPTURE:M0"
       ],
       "findings": [
         {
@@ -137,17 +140,17 @@
           "repeat": false
         }
       ],
-      "rounds": 1
+      "rounds": 1,
+      "depends_on": [
+        "T2-CAPTURE:M0"
+      ]
     },
     {
       "id": "M3",
       "name": "After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 4,
-      "needs": [
-        "APPLE-TILE:M3"
-      ],
       "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
       "items": [
         {
@@ -172,6 +175,9 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M3"
       ]
     }
   ]

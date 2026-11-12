@@ -149,7 +149,7 @@
       }
     },
     "M2": {
-      "definitions": "e5e5cb8952ab6bca776296b2be9405c05c3ec0629d308a8a0b815208fb61c42a",
+      "definitions": "4d6f335f923bf2bab90ee8452e0d0110cd26d77a338905a5ef56ed4c59d0fae9",
       "reviews": [
         {
           "verdict": "fail",
@@ -220,23 +220,6 @@
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
         "at": "2026-11-09T14:02:56Z"
       },
-      "owner_answers": [
-        {
-          "text": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
-          "at": "2026-11-11T08:37:37Z",
-          "item": "D2.5"
-        },
-        {
-          "text": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
-          "at": "2026-11-11T08:37:44Z",
-          "item": "D2.3"
-        },
-        {
-          "text": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
-          "at": "2026-11-11T10:16:52Z",
-          "item": "D2.5"
-        }
-      ],
       "claim": {
         "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
         "checked": "22850993580103eafe7d63166484e3f51151fae2",
@@ -271,10 +254,36 @@
         "review": "docs/evidence/APPLE-TILE/M2-review.md",
         "checked": "22850993580103eafe7d63166484e3f51151fae2",
         "at": "2026-11-11T15:24:43Z"
-      }
+      },
+      "human_feedback": [
+        {
+          "asked": null,
+          "said": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
+          "items": [
+            "D2.5"
+          ],
+          "at": "2026-11-11T08:37:37Z"
+        },
+        {
+          "asked": null,
+          "said": "I'm at the Mac now. [Asked to switch on Screen Recording for Claude and ChatGPT and allow IINA in Codex Computer Use:] Done",
+          "items": [
+            "D2.3"
+          ],
+          "at": "2026-11-11T08:37:44Z"
+        },
+        {
+          "asked": null,
+          "said": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
+          "items": [
+            "D2.5"
+          ],
+          "at": "2026-11-11T10:16:52Z"
+        }
+      ]
     },
     "M3": {
-      "definitions": "86357d5a6768e94ec85bc01fb527be8a0a29ca1d74bf0ca4c9dd32d5854edae7",
+      "definitions": "57b00a5c0e2cb254ac3a3653a5ad5e3f0e8d79ac07f28fd01062a97ad2b5f66d",
       "reviews": [
         {
           "verdict": "fail",
@@ -285,7 +294,7 @@
             "D3.2": "pass",
             "D3.3": "pass",
             "D3.4": "pass",
-            "D3.5": "cant_tell"
+            "D3.5": "could_not_judge"
           },
           "findings": [
             {
@@ -357,7 +366,7 @@
       }
     },
     "M12": {
-      "definitions": "bef8bd9f40e6a7cc6fb30fa3b04773225765174f9879843e60697b8399c80b6b",
+      "definitions": "e23284573a4cef8a4f637c41b833830a8e1faeef085b80c4a2551114f03c42f4",
       "reviews": [],
       "authorised": {
         "by": "plan",

@@ -65,7 +65,7 @@
           "review": "docs/evidence/APPLE-TILE/M0-review.md"
         }
       ],
-      "needs": [
+      "depends_on": [
         "T2-CAPTURE:M0"
       ]
     },
@@ -131,7 +131,7 @@
           "review": "docs/evidence/APPLE-TILE/M1-review.md"
         }
       ],
-      "needs": [
+      "depends_on": [
         "T2-CAPTURE:M1"
       ]
     },
@@ -193,18 +193,21 @@
           "ask": "Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and APPLE-TILE M3 (T2 M0/M1 then G3t M0-M3, including these attended window proofs); it reruns full motion/capture-OFF cadence plus windowed-tap/tooling preflight. T2 M0/M1 are done; neither T2 simulator M2 nor COOKED-DRAW is on this chain. No reverse Mac dependency or panel claim is added here.",
           "verdict": "pass",
           "review": "docs/evidence/APPLE-TILE/M2-review.md",
-          "attended": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          "needs": {
+            "type": "access",
+            "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          }
         }
       ],
-      "needs": [
+      "rounds": 1,
+      "depends_on": [
         "PLATFORM-RUNTIME-MAC:M1"
-      ],
-      "rounds": 1
+      ]
     },
     {
       "id": "M3",
       "name": "G4 can replace the pre-tone linear input without changing SDR output",
-      "state": "claimed",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 3,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -261,9 +264,12 @@
           "evidence": "docs/evidence/render/apple-tile-m3/window-rerun/README.md",
           "inspect": "ATTENDED SETUP: record OS window capture tool/version and permission preflight, PID/window ID, content bounds, backing scale, clock and build/recipe. Under both recipes compare settled OS-captured game-window frames against T2 still/fixed references at the same paused-world controls, camera/content and scene extent. Inspect intact Sun, sky/stars, geometry, local lights, mirrors and post-resize letterbox geometry in content-pixel coordinates. Record settled-state identity; references are matched states, not the same submission. Use host-time OS window video for ordinary control response and surface/device replacement recovery with lifecycle logs. Engine images/logs alone cannot prove window presentation; the final compositor observation is judged for function, not exact renderer-byte equality or panel swaps. Mac M2.3 owns separate windowed-tap integration/submission correspondence; this observer neither depends on nor qualifies it. Missing session/grant keeps this item open.",
           "ask": "Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and APPLE-TILE M3 (T2 M0/M1 then G3t M0-M3, including these attended window proofs); it reruns full motion/capture-OFF cadence plus windowed-tap/tooling preflight. T2 M0/M1 are done; neither T2 simulator M2 nor COOKED-DRAW is on this chain. No reverse Mac dependency or panel claim is added here.",
-          "verdict": "cant_tell",
+          "verdict": "could_not_judge",
           "review": "docs/evidence/APPLE-TILE/M3-review.md",
-          "attended": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          "needs": {
+            "type": "access",
+            "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          }
         }
       ],
       "findings": [
@@ -278,7 +284,7 @@
     {
       "id": "M10",
       "name": "A stateful native segment composes inside one submission",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 1,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
@@ -328,7 +334,7 @@
     {
       "id": "M11",
       "name": "Native providers survive replacement and expose truthful timing",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 1,
       "bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
@@ -368,7 +374,7 @@
     {
       "id": "M12",
       "name": "An integrated record states qualified wins and remaining targets",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 3,
       "bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
@@ -402,7 +408,10 @@
           "inspect": "Use T2 still/fixed exact ordinary scene-linear/submitted SDR checkpoints and realtime 1x sequences on both recipes: cut, night, lights, mirror, skipped views and fallback/recovery. Label the exact native copy/select diagnostic separately. Review all source changes against contracts and brief. D2.5/D3.5 must have passed and repeat their OS-window-capture versus T2 still/fixed matched-state reference and functional control/resize/recovery protocol on the final assembly under both recipes with the same attended grants. Window function cannot remain owed; cadence and physical-device rows can. Mac M3 owns full post-G3t-M3 motion/capture-OFF panel requalification; earlier Mac M2 evidence cannot qualify this build.",
           "verdict": "",
           "review": "",
-          "attended": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          "needs": {
+            "type": "access",
+            "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          }
         },
         {
           "id": "D12.4",
@@ -441,7 +450,7 @@
           "lock": "gpu"
         }
       ],
-      "needs": [
+      "depends_on": [
         "COOKED-DRAW:M1"
       ]
     }

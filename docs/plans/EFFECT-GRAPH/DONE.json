@@ -7,9 +7,6 @@
       "state": "done",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M2"
-      ],
       "bar": "A frame graph that validates as Unreal's RDG and Unity's render graph do: a wrong declaration is refused when the graph is prepared, with a named error, and never becomes a wrong frame.",
       "items": [
         {
@@ -72,17 +69,17 @@
           "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "depends_on": [
+        "APPLE-TILE:M2"
+      ]
     },
     {
       "id": "M2",
       "name": "A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "BASELINE-GUARD:M1"
-      ],
       "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
       "items": [
         {
@@ -175,18 +172,17 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "depends_on": [
+        "BASELINE-GUARD:M1"
+      ]
     },
     {
       "id": "M3",
       "name": "A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M3",
-        "APPLE-PRESENTATION:M2"
-      ],
       "bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here.",
       "items": [
         {
@@ -280,7 +276,11 @@
           "review": ""
         }
       ],
-      "rounds": 0
+      "rounds": 0,
+      "depends_on": [
+        "APPLE-TILE:M3",
+        "APPLE-PRESENTATION:M2"
+      ]
     }
   ]
 }

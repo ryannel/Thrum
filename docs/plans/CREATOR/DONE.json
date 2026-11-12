@@ -69,12 +69,9 @@
     {
       "id": "M2",
       "name": "The demo UI shows where a frame's time goes on Mac and in Chrome",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
-      "needs": [
-        "APPLE-TILE:M3"
-      ],
       "bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off.",
       "items": [
         {
@@ -151,12 +148,15 @@
           "verdict": "",
           "review": ""
         }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M3"
       ]
     },
     {
       "id": "M3",
       "name": "A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes",
-      "state": "open",
+      "state": "not_started",
       "fails": 0,
       "replans": 0,
       "bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
@@ -197,12 +197,15 @@
           "id": "M3.4",
           "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
           "inspect": "If the session is unlocked, launch the starter, drag the slider and save the parameter file and one asset yourself, capturing the real window and panel by window id around each. If it is locked, judge the attended run's window captures and report lines, and say so. Did each change the visible scene, in order, with no key press? An offscreen frame does not count.",
-          "attended": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "needs": {
+            "type": "access",
+            "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
+          }
         },
         {
           "id": "M3.5",

@@ -10,8 +10,8 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Plans:** docs/plans
 - **Evidence:** docs/evidence  *(loop)*
 - **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
-- **Check:** ./dev check  *(loop: CI is manual-only, so this is the gate; documentation-only work may run ./dev check-docs while building)*
-- **Integrate:** push  *(loop: owner allows verified checkpoints straight to main)*
+- **Test command:** ./dev check  *(loop: CI is manual-only, so this is the gate; documentation-only work may run ./dev check-docs while building)*
+- **Merge:** push  *(loop: owner allows verified checkpoints straight to main)*
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*
 - **Builders:** two Codex builders  *(owner, 11 Nov 2026: "Yes, run two builders now")*
