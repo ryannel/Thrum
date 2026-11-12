@@ -77,7 +77,7 @@
     {
       "id": "M2",
       "name": "A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome",
-      "state": "not_started",
+      "state": "blocked",
       "fails": 0,
       "replans": 0,
       "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
@@ -175,7 +175,17 @@
       "rounds": 0,
       "depends_on": [
         "BASELINE-GUARD:M1"
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "stopped for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff",
+        "work": {
+          "commit": "4b7c757dd28f79c9e08be970fc42e8f38d0e1aa6",
+          "branch": "build/effect-graph",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/EFFECT-GRAPH/M2-handoff.md"
+      }
     },
     {
       "id": "M3",
