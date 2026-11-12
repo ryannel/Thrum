@@ -23,7 +23,7 @@ Criteria: M1.1–M1.5 in the done-when file.
 - [x] Give the texture descriptor a dimension, with allocation, range flattening and transient reuse for each kind. Stay inside the graph's descriptor, validation and allocation code.
 - [x] Add the preparation-time refusals the design lists, including the checks against the capability record, and record the limits Chrome reports on this Mac.
 - [x] Prove each kind on Metal by exact readback, through resize and device replacement, and pin the compiled passes of the existing scene variants.
-- [ ] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
+- [x] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
 
 ## M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome
 
