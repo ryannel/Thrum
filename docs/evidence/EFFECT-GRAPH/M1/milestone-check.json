@@ -1,0 +1,59 @@
+{
+  "module": "EFFECT-GRAPH",
+  "milestone": "M1",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/docs/plans/EFFECT-GRAPH/DONE.json",
+  "pass": 6,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M1.1",
+      "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 15 tests\ntest refuses_volume_multisampling ... ok\ntest refuses_cube_with_other_than_six_faces ... ok\ntest refuses_volume_layers ... ok\ntest refuses_nonsquare_cube ... ok\ntest refuses_incompatible_view ... ok\ntest refuses_layer_range_outside_descriptor ... ok\ntest refuses_cube_storage_view ... ok\ntest refuses_storage_binding_spanning_mips ... ok\ntest refuses_volume_attachment ... ok\ntest refuses_mip_range_outside_descriptor ... ok\ntest transient_reuse_requires_identical_dimension ... ok\ntest capability_record_refuses_storage_access_counts_and_extents ... ok\ntest successive_mip_views_share_one_storage_binding_slot ... ok\ntest existing_scene_variants_keep_compiled_order_storage_and_slots ... ok\ntest metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok\n\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s\n     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)"
+    },
+    {
+      "id": "M1.2",
+      "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 15 tests\ntest refuses_cube_with_other_than_six_faces ... ok\ntest refuses_layer_range_outside_descriptor ... ok\ntest refuses_incompatible_view ... ok\ntest refuses_mip_range_outside_descriptor ... ok\ntest refuses_cube_storage_view ... ok\ntest refuses_nonsquare_cube ... ok\ntest refuses_storage_binding_spanning_mips ... ok\ntest refuses_volume_attachment ... ok\ntest refuses_volume_layers ... ok\ntest refuses_volume_multisampling ... ok\ntest transient_reuse_requires_identical_dimension ... ok\ntest capability_record_refuses_storage_access_counts_and_extents ... ok\ntest successive_mip_views_share_one_storage_binding_slot ... ok\ntest existing_scene_variants_keep_compiled_order_storage_and_slots ... ok\ntest metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok\n\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s\n     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)"
+    },
+    {
+      "id": "M1.3",
+      "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 15 tests\ntest refuses_nonsquare_cube ... ok\ntest refuses_cube_with_other_than_six_faces ... ok\ntest refuses_mip_range_outside_descriptor ... ok\ntest refuses_cube_storage_view ... ok\ntest refuses_storage_binding_spanning_mips ... ok\ntest refuses_incompatible_view ... ok\ntest refuses_volume_attachment ... ok\ntest refuses_layer_range_outside_descriptor ... ok\ntest refuses_volume_multisampling ... ok\ntest refuses_volume_layers ... ok\ntest transient_reuse_requires_identical_dimension ... ok\ntest successive_mip_views_share_one_storage_binding_slot ... ok\ntest capability_record_refuses_storage_access_counts_and_extents ... ok\ntest existing_scene_variants_keep_compiled_order_storage_and_slots ... ok\ntest metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok\n\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s\n     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)"
+    },
+    {
+      "id": "M1.4",
+      "check": "cargo test --locked --offline -p thrum-render --test graph_kinds",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 15 tests\ntest refuses_cube_with_other_than_six_faces ... ok\ntest refuses_nonsquare_cube ... ok\ntest refuses_incompatible_view ... ok\ntest refuses_layer_range_outside_descriptor ... ok\ntest refuses_cube_storage_view ... ok\ntest refuses_mip_range_outside_descriptor ... ok\ntest refuses_volume_layers ... ok\ntest refuses_volume_attachment ... ok\ntest refuses_storage_binding_spanning_mips ... ok\ntest refuses_volume_multisampling ... ok\ntest transient_reuse_requires_identical_dimension ... ok\ntest capability_record_refuses_storage_access_counts_and_extents ... ok\ntest successive_mip_views_share_one_storage_binding_slot ... ok\ntest existing_scene_variants_keep_compiled_order_storage_and_slots ... ok\ntest metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok\n\ntest result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s\n     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)"
+    },
+    {
+      "id": "M1.5",
+      "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "scan 2.200375ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 37.631833ms, publish 423.875\u00b5s -> generation 1\n{\"passed\": true, \"failures\": []}\n{\"passed\": true, \"failures\": []}\n\n    Finished `release` profile [optimized] target(s) in 0.55s\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `thrum-cook` (bin \"thrum-cook\") generated 1 warning\n    Finished `release` profile [optimized] target(s) in 0.18s"
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "tests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.07s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

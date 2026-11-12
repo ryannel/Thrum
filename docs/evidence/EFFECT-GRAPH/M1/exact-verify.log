@@ -1,3 +1,4 @@
+Rebasing (1/6)Rebasing (2/6)Rebasing (3/6)Rebasing (4/6)Rebasing (5/6)Rebasing (6/6)Successfully rebased and updated refs/heads/build/effect-graph.
 RUN native-build
 RUN cooker-build
 RUN web-build
@@ -12,4 +13,4 @@ RUN chrome-night-sdr
 RUN chrome-night-sdr-compare
 RUN chrome-night-scene-linear
 RUN chrome-night-scene-linear-compare
-PASS exact baselines; proof tmp/baseline-guard/proofs/878336a3f5a4ebbea6458d322bacfc52017946f85f458957594fbb4f06809cda.json; 953.34s
+PASS exact baselines; proof tmp/baseline-guard/proofs/6f5cf7001adff625109e2f6d36d9647ef5097ba2734b61ca97a94858d9ef610c.json; 909.15s

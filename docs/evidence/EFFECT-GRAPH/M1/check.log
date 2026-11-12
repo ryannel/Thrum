@@ -1,2 +1,135 @@
-FAIL exact baselines: no exact-baseline proof for this content; run under the GPU lock: python3 scripts/exact_baselines.py verify
-Error: "python3 scripts/exact_baselines.py gate failed (exit status: 1)"
+M1.1: pass
+running 15 tests
+test refuses_volume_multisampling ... ok
+test refuses_cube_with_other_than_six_faces ... ok
+test refuses_volume_layers ... ok
+test refuses_nonsquare_cube ... ok
+test refuses_incompatible_view ... ok
+test refuses_layer_range_outside_descriptor ... ok
+test refuses_cube_storage_view ... ok
+test refuses_storage_binding_spanning_mips ... ok
+test refuses_volume_attachment ... ok
+test refuses_mip_range_outside_descriptor ... ok
+test transient_reuse_requires_identical_dimension ... ok
+test capability_record_refuses_storage_access_counts_and_extents ... ok
+test successive_mip_views_share_one_storage_binding_slot ... ok
+test existing_scene_variants_keep_compiled_order_storage_and_slots ... ok
+test metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)
+
+M1.2: pass
+running 15 tests
+test refuses_cube_with_other_than_six_faces ... ok
+test refuses_layer_range_outside_descriptor ... ok
+test refuses_incompatible_view ... ok
+test refuses_mip_range_outside_descriptor ... ok
+test refuses_cube_storage_view ... ok
+test refuses_nonsquare_cube ... ok
+test refuses_storage_binding_spanning_mips ... ok
+test refuses_volume_attachment ... ok
+test refuses_volume_layers ... ok
+test refuses_volume_multisampling ... ok
+test transient_reuse_requires_identical_dimension ... ok
+test capability_record_refuses_storage_access_counts_and_extents ... ok
+test successive_mip_views_share_one_storage_binding_slot ... ok
+test existing_scene_variants_keep_compiled_order_storage_and_slots ... ok
+test metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)
+
+M1.3: pass
+running 15 tests
+test refuses_nonsquare_cube ... ok
+test refuses_cube_with_other_than_six_faces ... ok
+test refuses_mip_range_outside_descriptor ... ok
+test refuses_cube_storage_view ... ok
+test refuses_storage_binding_spanning_mips ... ok
+test refuses_incompatible_view ... ok
+test refuses_volume_attachment ... ok
+test refuses_layer_range_outside_descriptor ... ok
+test refuses_volume_multisampling ... ok
+test refuses_volume_layers ... ok
+test transient_reuse_requires_identical_dimension ... ok
+test successive_mip_views_share_one_storage_binding_slot ... ok
+test capability_record_refuses_storage_access_counts_and_extents ... ok
+test existing_scene_variants_keep_compiled_order_storage_and_slots ... ok
+test metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)
+
+M1.4: pass
+running 15 tests
+test refuses_cube_with_other_than_six_faces ... ok
+test refuses_nonsquare_cube ... ok
+test refuses_incompatible_view ... ok
+test refuses_layer_range_outside_descriptor ... ok
+test refuses_cube_storage_view ... ok
+test refuses_mip_range_outside_descriptor ... ok
+test refuses_volume_layers ... ok
+test refuses_volume_attachment ... ok
+test refuses_storage_binding_spanning_mips ... ok
+test refuses_volume_multisampling ... ok
+test transient_reuse_requires_identical_dimension ... ok
+test capability_record_refuses_storage_access_counts_and_extents ... ok
+test successive_mip_views_share_one_storage_binding_slot ... ok
+test existing_scene_variants_keep_compiled_order_storage_and_slots ... ok
+test metal_every_texel_every_mip_all_scopes_resize_and_replacement ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running tests/graph_kinds.rs (target/debug/deps/graph_kinds-a0e8d63354b244d3)
+
+M1.5: pass
+scan 2.200375ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 37.631833ms, publish 423.875µs -> generation 1
+{"passed": true, "failures": []}
+{"passed": true, "failures": []}
+
+    Finished `release` profile [optimized] target(s) in 0.55s
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.18s
+
+Check: pass
+tests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)
+     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)
+   Doc-tests asset_loop
+   Doc-tests thrum_app
+   Doc-tests thrum_asset
+   Doc-tests thrum_asset_gpu
+   Doc-tests thrum_content_runtime
+   Doc-tests thrum_controls
+   Doc-tests thrum_cook
+   Doc-tests thrum_core
+   Doc-tests thrum_network
+   Doc-tests thrum_render
+   Doc-tests v1_game
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `v1-game` (test "cooked_assets_gpu") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.07s
+     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)
