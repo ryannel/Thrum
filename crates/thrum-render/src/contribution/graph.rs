@@ -194,6 +194,11 @@ impl EffectGraph {
                     AccessKind::SampledRead,
                 ),
                 ResourceDescriptor::Buffer { bytes, usage }
+                    if usage.contains(wgpu::BufferUsages::UNIFORM) =>
+                {
+                    (0..*bytes, AccessKind::UniformRead)
+                }
+                ResourceDescriptor::Buffer { bytes, usage }
                     if usage.contains(wgpu::BufferUsages::STORAGE) =>
                 {
                     (0..*bytes, AccessKind::StorageRead)
