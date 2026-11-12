@@ -269,6 +269,7 @@ async fn replace_device(
     instance: &wgpu::Instance,
     device: &wgpu::Device,
     generation: u64,
+    recipe: thrum_render::capabilities::Recipe,
     handle: &EffectHandle,
 ) -> Result<(), String> {
     let inputs = host.device_prepare_inputs().map_err(error)?;
@@ -280,7 +281,12 @@ async fn replace_device(
         .request_device(&wgpu::DeviceDescriptor::default())
         .await
         .map_err(error)?;
-    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation + 1);
+    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation + 1)
+        .with_recipe_override(match recipe {
+            thrum_render::capabilities::Recipe::Portable => "portable",
+            thrum_render::capabilities::Recipe::AppleTile => "apple-tile",
+        })
+        .map_err(error)?;
     let mut prepared = inputs
         .prepare(
             &next_caps,
@@ -375,9 +381,10 @@ pub async fn run(
         (100, 4, "resize"),
     ];
     let mut records = vec![format!(
-        "adapter={:?}; generation={}",
+        "adapter={:?}; generation={}; recipe={:?}",
         caps.adapter(),
-        caps.generation()
+        caps.generation(),
+        caps.recipe()
     )];
     let pipeline_count = host.pipeline_creation_count();
     for (index, (tick, timeline, kind)) in script.into_iter().enumerate() {
@@ -496,6 +503,7 @@ pub async fn run(
         instance,
         device,
         caps.generation(),
+        caps.recipe().map_err(error)?,
         &handle,
     ))
     .await?;
