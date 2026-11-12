@@ -49,3 +49,8 @@
   the validator to preserve that contract and keep explicit storage views single-mip; added the aggregate
   range witness and tightened the explicit-view refusal. All 242 renderer library tests and all-target Clippy
   pass. Fresh exact proofs and the complete milestone check pass before integration.
+- 2026-11-12 M2 implementation checkpoint: ordered public contributions, named simulate declarations and cadence
+  refusals, source-clock frames, independently committed histories and wrapping anchors, and an opt-in integer
+  diagnostic with native/Chrome qualification entry points. Pinned native all-target Clippy and Wasm Clippy pass.
+  CPU state-table and cadence-refusal checks passed before the Metal scene-snapshot witness was added. Target
+  scripts, realtime trail inspection, exact baselines and integration remain unqualified; no M2 item is claimed.

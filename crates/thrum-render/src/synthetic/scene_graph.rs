@@ -844,6 +844,17 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
+                Some(key)
+                    if key.role >= 2000
+                        && key.role
+                            < 2000 + u32::try_from(self.effect_graph.passes.len()).unwrap_or(0) =>
+                {
+                    let index = (key.role - 2000) as usize;
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, move |frame, pass| {
+                        frame.effect(index, pass)
+                    })
+                }
+
                 Some(key) if key == crate::present::pipeline_key(self.key.device_generation) => {
                     let surface = graph
                         .surface_resource()

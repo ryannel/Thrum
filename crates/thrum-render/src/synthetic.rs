@@ -615,6 +615,8 @@ pub struct PreparedSynthetic {
     atmosphere: Option<AtmospherePrepared>,
     surface: SurfaceParts,
     contribution_passes: ContributionPasses,
+    effect_graph: crate::contribution::EffectGraph,
+    effect_time: crate::contribution::EffectTime,
     /// Camera culling pipelines; `None` is the Direct oracle with no extra resources.
     visibility: Option<VisibilityPrepared>,
     stars: Option<StarPrepared>,
@@ -786,6 +788,18 @@ impl SceneContext<'_> {
         }
         if let Some(contribution) = self.contribution.as_deref_mut() {
             contribution.encode_after_compute(self.encoder);
+        }
+        Ok(())
+    }
+
+    fn effect(&mut self, index: usize, compiled: &CompiledPass) -> Result<(), RenderError> {
+        if let Some(contribution) = self.contribution.as_deref_mut()
+            && contribution.effect_runs(index, &self.contribution_frame)
+        {
+            let mut pass = compiled
+                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            contribution.encode_effect(index, &mut pass, &self.contribution_frame);
         }
         Ok(())
     }
@@ -1781,6 +1795,15 @@ impl PreparedSynthetic {
                 fragment_entry,
             },
             contribution_passes: ContributionPasses::default(),
+            effect_graph: crate::contribution::EffectGraph::default(),
+            effect_time: crate::contribution::EffectTime {
+                epoch: 0,
+                timeline: 0,
+                tick: 0,
+                tick_duration: std::time::Duration::from_secs_f64(1.0 / 60.0),
+                alpha: 1.0,
+                capture: false,
+            },
         })
     }
     /// Immutable facts shared by every preparation on this adapter generation.
@@ -1815,6 +1838,7 @@ impl PreparedSynthetic {
             + u32::from(self.air_shadow.is_some())
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
+            + u32::try_from(self.effect_graph.passes.len()).unwrap_or(u32::MAX)
             + self
                 .atmosphere
                 .as_ref()

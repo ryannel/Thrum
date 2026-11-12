@@ -292,3 +292,19 @@ fn the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket() {
     };
     assert!(pass_durations(&named(&passes), false, unexpected).is_none());
 }
+
+#[test]
+fn effect_queries_keep_names_without_changing_the_fixed_scene_buckets() {
+    let mut raw = timings(&[]);
+    raw.insert(
+        0,
+        PassTiming {
+            name: "effect 0: trail".into(),
+            nanoseconds: 123.0,
+        },
+    );
+    let (values, _, _) = pass_durations(&raw, false, TRANSFORMS).expect("prepared effect timings");
+    assert_eq!(values.get("effect 0: trail"), Some(123.0));
+    assert_eq!(values.forward(), 1.0);
+    assert_eq!(values.get("effect 1: skipped"), None);
+}
