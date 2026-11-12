@@ -1,6 +1,8 @@
 //! Bucket-ordered Direct is the oracle at every submitted frame, including
 //! stale history, class churn, physical compaction and resource replacement.
 // Reuse the game's authored layout/meshes without adding a reverse crate dependency.
+#[path = "../../../examples/v1-game/src/environment.rs"]
+mod environment;
 #[path = "../../../examples/v1-game/src/field.rs"]
 mod field;
 #[path = "../../../examples/v1-game/src/field_meshes.rs"]

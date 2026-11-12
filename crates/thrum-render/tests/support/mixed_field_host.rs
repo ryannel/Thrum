@@ -1,18 +1,19 @@
 //! Host lifecycle witness using the game's authored field and mesh selection.
 use std::{sync::Arc, time::Duration};
 
-use super::{Gpu, equal, field, field_meshes};
+use super::{Gpu, environment::DayCycle, equal, field, field_meshes};
 use thrum_core::{
     WorldEpoch,
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 use thrum_render::{
+    atmosphere::AtmosphereFrame,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
         FrameConfig, FrameHost, FrameSample, FrameWorld, SceneFrame, SceneSource, SurfaceOutput,
     },
-    synthetic::{CullMode, FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
+    synthetic::{CullMode, FrameLighting, SyntheticScene, SyntheticView},
 };
 
 struct Page {
@@ -124,10 +125,29 @@ impl SceneSource<Page> for FieldSource {
         )
         .map_err(|error| format!("field view: {error:?}"))?
         .with_history_epoch(camera.history_epoch);
-        Ok(SceneFrame {
-            view,
-            lighting: lighting.unwrap_or(FrameLighting::Diagnostic(SyntheticLight::default())),
-        })
+        let sun = DayCycle::sample(source.tick, alpha, 0.0);
+        let atmosphere = AtmosphereFrame::new(
+            sun.toward_sun,
+            sun.top_illuminance_lux,
+            sun.colour,
+            camera.eye[1],
+            sun.profile_epoch,
+        )
+        .map_err(|error| format!("field atmosphere: {error:?}"))?
+        .with_nightglow()
+        .with_simulation_time(sun.simulation_time_seconds)
+        .map_err(|error| format!("field clock: {error:?}"))?;
+        let lighting = lighting.unwrap_or(FrameLighting::Atmosphere(atmosphere));
+        let view = match lighting {
+            FrameLighting::Atmosphere(_) => view
+                .with_incident_exposure(0.0, -12.0, 18.0)
+                .and_then(SyntheticView::with_low_light_adaptation),
+            FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
+                view.with_exposure(1.0 / 16_000.0)
+            }
+        }
+        .map_err(|error| format!("field exposure: {error:?}"))?;
+        Ok(SceneFrame { view, lighting })
     }
 }
 type Host = FrameHost<World, FieldSource>;
@@ -322,6 +342,16 @@ fn phase(
                 .iter()
                 .any(|pixel| pixel[..3] != direct[..3]),
             "field surface is not a blank image"
+        );
+        let lower_half = direct
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .skip(extent[0] as usize * (extent[1] / 2) as usize);
+        let lit_geometry = lower_half.filter(|pixel| pixel[..3] != [0, 0, 0]).count();
+        assert!(
+            lit_geometry > extent[0] as usize * extent[1] as usize / 10,
+            "daylit field geometry must be visible, not a black oracle",
         );
         let mut counts = Vec::new();
         for ((host, drawable), mode) in hosts
