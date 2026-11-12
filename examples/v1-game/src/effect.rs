@@ -198,6 +198,13 @@ impl SceneContribution for DiagnosticEffect {
                     initialized: true,
                 },
             ),
+            (
+                D::Buffer {
+                    bytes: 128,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                },
+                S::Imported { initialized: true },
+            ),
         ];
         let mut passes = vec![
             pass(
@@ -275,6 +282,15 @@ impl SceneContribution for DiagnosticEffect {
                 }],
             ));
         }
+        for pass in &mut passes {
+            pass.accesses.push(EffectAccess {
+                resource: 6,
+                range: 0..128,
+                kind: A::UniformRead,
+                view: None,
+                history: None,
+            });
+        }
         EffectGraph { resources, passes }
     }
     fn passes(&self) -> ContributionPasses {
@@ -289,8 +305,7 @@ impl SceneContribution for DiagnosticEffect {
             return Ok(());
         }
         let graph = self.effect_graph();
-        let textures = graph
-            .resources
+        let textures = graph.resources[..6]
             .iter()
             .map(|(descriptor, scope)| {
                 let D::Texture {
