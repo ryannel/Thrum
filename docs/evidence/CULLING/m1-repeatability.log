@@ -1,0 +1,70 @@
+
+running 1 test
+test diagnose_independent_direct_and_recaptures_through_900 has been running for over 60 seconds
+DIAGNOSTIC tick 850: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21914, prepass: 0 }, source 850, alpha 0.00001706
+REPEATABILITY tick 850: eight Direct recaptures stable
+DIAGNOSTIC tick 851: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21906, prepass: 0 }, source 851, alpha 0.00001708
+REPEATABILITY tick 851: eight Direct recaptures stable
+DIAGNOSTIC tick 852: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21911, prepass: 0 }, source 852, alpha 0.0000171
+REPEATABILITY tick 852: eight Direct recaptures stable
+DIAGNOSTIC tick 853: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21915, prepass: 0 }, source 853, alpha 0.00001712
+REPEATABILITY tick 853: eight Direct recaptures stable
+DIAGNOSTIC tick 854: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21918, prepass: 0 }, source 854, alpha 0.00001714
+REPEATABILITY tick 854: eight Direct recaptures stable
+DIAGNOSTIC tick 855: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21913, prepass: 0 }, source 855, alpha 0.00001716
+REPEATABILITY tick 855: eight Direct recaptures stable
+DIAGNOSTIC tick 856: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21919, prepass: 0 }, source 856, alpha 0.00001718
+REPEATABILITY tick 856: eight Direct recaptures stable
+DIAGNOSTIC tick 857: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21920, prepass: 0 }, source 857, alpha 0.0000172
+REPEATABILITY tick 857: eight Direct recaptures stable
+DIAGNOSTIC tick 858: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21923, prepass: 0 }, source 858, alpha 0.00001722
+REPEATABILITY tick 858: eight Direct recaptures stable
+DIAGNOSTIC tick 859: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21921, prepass: 0 }, source 859, alpha 0.00001724
+REPEATABILITY tick 859: eight Direct recaptures stable
+DIAGNOSTIC tick 860: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21926, prepass: 0 }, source 860, alpha 0.00001726
+REPEATABILITY tick 860: eight Direct recaptures stable
+DIAGNOSTIC tick 861: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21917, prepass: 0 }, source 861, alpha 0.00001728
+REPEATABILITY tick 861: eight Direct recaptures stable
+DIAGNOSTIC tick 862: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21934, prepass: 0 }, source 862, alpha 0.0000173
+REPEATABILITY tick 862: eight Direct recaptures stable
+DIAGNOSTIC tick 863: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21931, prepass: 0 }, source 863, alpha 0.00001732
+REPEATABILITY tick 863: eight Direct recaptures stable
+DIAGNOSTIC tick 864: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21943, prepass: 0 }, source 864, alpha 0.00001734
+REPEATABILITY tick 864: eight Direct recaptures stable
+DIAGNOSTIC tick 865: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21973, prepass: 0 }, source 865, alpha 0.00001736
+REPEATABILITY tick 865: eight Direct recaptures stable
+DIAGNOSTIC tick 866: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21963, prepass: 0 }, source 866, alpha 0.00001738
+REPEATABILITY tick 866: eight Direct recaptures stable
+DIAGNOSTIC tick 867: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21937, prepass: 0 }, source 867, alpha 0.0000174
+REPEATABILITY tick 867: eight Direct recaptures stable
+DIAGNOSTIC tick 868: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21938, prepass: 0 }, source 868, alpha 0.00001742
+REPEATABILITY tick 868: eight Direct recaptures stable
+DIAGNOSTIC tick 869: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21948, prepass: 0 }, source 869, alpha 0.00001744
+REPEATABILITY tick 869: eight Direct recaptures stable
+DIAGNOSTIC tick 870: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21940, prepass: 0 }, source 870, alpha 0.00001746
+REPEATABILITY tick 870: eight Direct recaptures stable
+DIAGNOSTIC tick 871: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21952, prepass: 0 }, source 871, alpha 0.00001748
+REPEATABILITY tick 871: eight Direct recaptures stable
+DIAGNOSTIC tick 872: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21953, prepass: 0 }, source 872, alpha 0.0000175
+REPEATABILITY tick 872: eight Direct recaptures stable
+DIAGNOSTIC tick 873: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21954, prepass: 0 }, source 873, alpha 0.00001752
+REPEATABILITY tick 873: eight Direct recaptures stable
+DIAGNOSTIC tick 874: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21961, prepass: 0 }, source 874, alpha 0.00001754
+REPEATABILITY tick 874: eight Direct recaptures stable
+DIAGNOSTIC tick 875: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21960, prepass: 0 }, source 875, alpha 0.00001756
+REPEATABILITY tick 875: eight Direct recaptures stable
+DIAGNOSTIC tick 876: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21967, prepass: 0 }, source 876, alpha 0.00001758
+REPEATABILITY tick 876: eight Direct recaptures stable
+DIAGNOSTIC tick 877: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21961, prepass: 0 }, source 877, alpha 0.0000176
+REPEATABILITY tick 877: eight Direct recaptures stable
+DIAGNOSTIC tick 878: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21971, prepass: 0 }, source 878, alpha 0.00001762
+REPEATABILITY tick 878: eight Direct recaptures stable
+DIAGNOSTIC tick 879: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21970, prepass: 0 }, source 879, alpha 0.00001764
+REPEATABILITY tick 879: eight Direct recaptures stable
+DIAGNOSTIC tick 880: Frustum CullingCounts { mode: Frustum, active: 100513, drawn: 21980, prepass: 0 }, source 880, alpha 0.00001766
+REPEATABILITY tick 880: eight Direct recaptures stable
+900 frames compared; Frustum drew 21771 of 100513 at its fewest; 0 culled frames retired before their count; Occlusion drew at most half of Frustum on 893 of 900 paired ticks
+test diagnose_independent_direct_and_recaptures_through_900 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 768.64s
+

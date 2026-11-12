@@ -43,3 +43,9 @@
   native matrices 38+4 comparisons, all four Chrome sets 481 records each; retained references untouched.
   [Compact proof](../../evidence/CULLING/M1.md#exact-baselines-12-november-continuation). Mandatory milestone/profile
   check and a new independent-Direct/recapture diagnostic remain queued/running; M1 stays open.
+
+- 2026-11-12 Second tick-866 investigation: independent Direct plus both culled modes match on every prefix
+  tick through900; all248 extra Direct recaptures around866 are stable. CPU support diagnostic finds no
+  rounding-allowance overlap at866 and its visible count agrees with the aligned GPU row. No runtime fix
+  was made. Original pixels were not captured, so the old event cannot be attributed retrospectively;
+  [the evidence](../../evidence/CULLING/M1.md#second-investigation-of-tick-866) records the tested hypotheses and limits.
