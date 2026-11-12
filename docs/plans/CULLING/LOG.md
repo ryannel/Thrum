@@ -38,3 +38,8 @@
   nonrepeatable two-pixel failure remains explicitly retained, not explained or erased. The real baseline
   verifier refused before capture: requires 16 GiB free, about 12 GiB available. Milestone check remains running;
   native exact proof, profile Check and integration are unqualified.
+
+- 2026-11-12 Disk headroom recovered. Full exact verifier passed clean `53646df3` under the GPU lease:
+  native matrices 38+4 comparisons, all four Chrome sets 481 records each; retained references untouched.
+  [Compact proof](../../evidence/CULLING/M1.md#exact-baselines-12-november-continuation). Mandatory milestone/profile
+  check and a new independent-Direct/recapture diagnostic remain queued/running; M1 stays open.
