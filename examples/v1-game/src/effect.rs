@@ -429,7 +429,7 @@ impl SceneContribution for DiagnosticEffect {
                         surface
                             .device
                             .create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some("effect prepared sides"),
+                                label: Some(&graph.passes[index].name),
                                 layout: &layout,
                                 entries: &entries,
                             }),
@@ -587,11 +587,11 @@ fn shader(index: usize) -> String {
         }
         1 => {
             r"@group(0) @binding(1) var trail:texture_2d<u32>; @group(0) @binding(2) var next:texture_storage_2d<r32uint,write>;
-        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(any(id.xy>=vec2<u32>(32))){return;} let q=vec2<i32>(id.xy); textureStore(next,q,vec4<u32>(textureLoad(trail,q,0).x*3u));}"
+        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(any(id.xy>=vec2<u32>(32))){return;} let q=vec2<i32>(id.xy); textureStore(next,q,vec4<u32>(select(textureLoad(trail,q,0).x*3u,0u,p.reset!=0u)));}"
         }
         2 => {
             r"@group(0) @binding(1) var trail:texture_2d<u32>; @group(0) @binding(2) var derived:texture_2d<u32>; @group(0) @binding(3) var result:texture_storage_2d<r32uint,write>;
-        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(any(id.xy>=vec2<u32>(32))){return;} let q=vec2<i32>(id.xy); textureStore(result,q,vec4<u32>(textureLoad(trail,q,0).x+1024u*textureLoad(derived,q,0).x));}"
+        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(any(id.xy>=vec2<u32>(32))){return;} let q=vec2<i32>(id.xy); textureStore(result,q,vec4<u32>(select(textureLoad(trail,q,0).x+1024u*textureLoad(derived,q,0).x,0u,p.reset!=0u)));}"
         }
         3 => {
             r"@group(0) @binding(1) var result:texture_storage_3d<r32uint,write>;
