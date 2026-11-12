@@ -207,3 +207,26 @@ fn device(
 fn absent_effect_preserves_day_night_capture_graphs_exactly() {
     scenes::prove_scenes();
 }
+
+#[test]
+fn a_second_declaration_cannot_hide_a_second_producer_of_the_same_pair() {
+    let mut graph = declaration(
+        S::History {
+            owner: 1,
+            epoch: 1,
+            initialized: true,
+        },
+        C::Skippable,
+    );
+    graph.resources.push(graph.resources[0].clone());
+    let mut second = graph.passes[0].clone();
+    second.name = "second producer".into();
+    second.accesses[0].resource = 1;
+    graph.passes.push(second);
+    assert_eq!(
+        graph
+            .validate()
+            .expect_err("logical pair identities must be unique"),
+        "DuplicateEffectOwner"
+    );
+}

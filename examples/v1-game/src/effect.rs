@@ -463,14 +463,15 @@ impl SceneContribution for DiagnosticEffect {
         self.step = witness.state.begin(frame.time, BOUND, controls.anchor);
         let full = self.step == EffectStep::Reset;
         let advance = matches!(self.step, EffectStep::Advance { .. });
+        let cache = full || (advance && frame.time.tick.is_multiple_of(controls.cadence.max(1)));
         self.runs = [
             full || advance,
-            full || (advance && frame.time.tick.is_multiple_of(controls.cadence.max(1))),
+            cache,
             true,
             !frame.time.capture,
-            full || advance,
-            full || advance,
-            full || advance,
+            cache,
+            cache,
+            cache,
         ];
         let ticks = match self.step {
             EffectStep::Advance { ticks, .. } => ticks,
