@@ -851,3 +851,25 @@ fn percentile(samples: &[FrameSample], value: impl Fn(&FrameSample) -> f64) -> (
 fn js_error(value: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&value.to_string())
 }
+
+/// Run the external diagnostic's exact state script on Chrome's WebGPU device.
+/// # Errors
+/// Returns a target preparation, state mismatch or recovery failure.
+#[wasm_bindgen]
+pub async fn qualify_effect_state() -> Result<String, JsValue> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .map_err(js_error)?;
+    let (device, queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .map_err(js_error)?;
+    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    Box::pin(crate::effect::qualification::run(
+        &device, &queue, &caps, &adapter,
+    ))
+    .await
+    .map_err(js_error)
+}

@@ -21,6 +21,16 @@ pub(super) const CONTRIBUTION_UPLOAD: &str = "contribution upload";
 const CONTRIBUTION_TOKEN_BYTES: u64 = 4;
 
 impl PreparedSynthetic {
+    pub(crate) fn set_effect_graph(&mut self, graph: crate::contribution::EffectGraph) {
+        self.effect_graph = graph;
+    }
+    pub(crate) fn effect_graph(&self) -> &crate::contribution::EffectGraph {
+        &self.effect_graph
+    }
+    pub(crate) fn set_effect_time(&mut self, time: crate::contribution::EffectTime) {
+        self.effect_time = time;
+    }
+
     pub(super) fn contribution_key(&self) -> PipelineKey {
         PipelineKey {
             role: 1000,
@@ -123,6 +133,7 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
+        accesses.extend(self.effect_graph.append(graph, self.key, prepared_keys)?);
         Ok(())
     }
 
@@ -158,6 +169,7 @@ impl PreparedSynthetic {
     pub(crate) fn contribution_frame(&self) -> ContributionFrame {
         let view = self.pending_view.as_ref().unwrap_or(&self.view_sample);
         ContributionFrame {
+            time: self.effect_time,
             exposure_side: self.history.write_side(),
             environment: self
                 .atmosphere
