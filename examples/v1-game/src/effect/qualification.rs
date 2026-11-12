@@ -251,17 +251,21 @@ async fn reset_kinds(
 
 async fn replace_device(
     host: &mut FrameHost<World, Scene>,
-    adapter: &wgpu::Adapter,
     device: &wgpu::Device,
     generation: u64,
     handle: &EffectHandle,
 ) -> Result<(), String> {
     let inputs = host.device_prepare_inputs().map_err(error)?;
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .map_err(error)?;
     let (replacement, replacement_queue) = adapter
         .request_device(&wgpu::DeviceDescriptor::default())
         .await
         .map_err(error)?;
-    let next_caps = DeviceCapabilities::capture(adapter, &replacement, generation + 1);
+    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation + 1);
     let mut prepared = inputs
         .prepare(
             &next_caps,
@@ -307,7 +311,6 @@ pub async fn run(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     caps: &DeviceCapabilities,
-    adapter: &wgpu::Adapter,
 ) -> Result<String, String> {
     let source = SourceTick {
         epoch: 7,
@@ -484,7 +487,6 @@ pub async fn run(
     reset_kinds(device, queue, &handle).await?;
     Box::pin(replace_device(
         &mut host,
-        adapter,
         device,
         caps.generation(),
         &handle,
