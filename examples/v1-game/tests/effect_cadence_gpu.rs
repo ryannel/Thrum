@@ -13,11 +13,9 @@ fn both_history_consumers_follow_runtime_cadence_and_discard() {
             .await
             .expect("target device");
         let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
-        let record = Box::pin(v1_game::effect::qualification::run(
-            &device, &queue, &caps, &adapter,
-        ))
-        .await
-        .expect("consumer readback and cadence script");
+        let record = Box::pin(v1_game::effect::qualification::run(&device, &queue, &caps))
+            .await
+            .expect("consumer readback and cadence script");
         assert!(
             record.contains("cadence-run:14:exact"),
             "runtime cadence boundary was exercised"
