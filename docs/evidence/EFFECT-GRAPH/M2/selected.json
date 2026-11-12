@@ -1,0 +1,364 @@
+{
+  "capture": "tmp/effect-graph-m2/trail-proof",
+  "source_revision": "41357d2f9831227252e98190907db2b395ae0293",
+  "binary_sha256": "71f2ca00beb7ebc1aa5b1582679b03961b3b97cec8e56a9cc710c40ec57111c1",
+  "records": [
+    {
+      "event": "moving",
+      "file": "moving-000518.png",
+      "image": {
+        "alpha": 0.8610700964927673,
+        "current_endpoint_tick": 250,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192779183,
+          1097846869,
+          1201583853,
+          0,
+          519,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2211634166,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7110042,
+        "previous_endpoint_tick": 249,
+        "readback_copy_gpu_bracket_ns": 382416.0,
+        "submission_id": 518,
+        "submit_ns": 2193884583,
+        "surface_generation": 1,
+        "tick": 250,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 7.972214019298554,
+      "record": {
+        "submission_id": 518,
+        "offset": 2181427200,
+        "rgba_sha256": "3ff81d0181fca062edc58bdbc5ee3948adf419ae55e4089b213e551167f5056e",
+        "submit_ns": 2193884583
+      },
+      "png_sha256": "84332b9645f765c3b571f2edf10061d24715da45fa5ec1ecd41bb155bd99ba6e"
+    },
+    {
+      "event": "stopped",
+      "file": "stopped-000558.png",
+      "image": {
+        "alpha": 0.8610700368881226,
+        "current_endpoint_tick": 270,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777098,
+          1097846553,
+          1201581680,
+          0,
+          559,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2545540083,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5217542,
+        "previous_endpoint_tick": 269,
+        "readback_copy_gpu_bracket_ns": 499083.0,
+        "submission_id": 558,
+        "submit_ns": 2529168000,
+        "surface_generation": 1,
+        "tick": 270,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 11.972214007377625,
+      "record": {
+        "submission_id": 558,
+        "offset": 2513203200,
+        "rgba_sha256": "78469aff0fb201eea8a3bfd876ebca360516419d5856c887d8fedae3790e1cd4",
+        "submit_ns": 2529168000
+      },
+      "png_sha256": "a652a49cd8438ed2617ebdaed2093e4f53e8ee0444f2ae88ade0bcc366a356ea",
+      "crop_pixels": [
+        600,
+        100,
+        1200,
+        340
+      ],
+      "consecutive_ids": [
+        555,
+        556,
+        557,
+        558,
+        559,
+        560,
+        561,
+        562,
+        563,
+        564,
+        565,
+        566
+      ],
+      "camera_x_sequence": [
+        11.6,
+        11.772214007377624,
+        11.799999999999999,
+        11.972214007377625,
+        12.0,
+        12.229620011647542,
+        12.266666666666667,
+        12.496285327275594,
+        12.533333333333333,
+        12.533333333333333,
+        12.8,
+        13.02961869239807
+      ]
+    },
+    {
+      "event": "cadence",
+      "file": "cadence-000618.png",
+      "image": {
+        "alpha": 0.8610699772834778,
+        "current_endpoint_tick": 300,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772967,
+          1097845927,
+          1201577378,
+          0,
+          619,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3046448125,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5530208,
+        "previous_endpoint_tick": 299,
+        "readback_copy_gpu_bracket_ns": 1078375.0,
+        "submission_id": 618,
+        "submit_ns": 3028889333,
+        "surface_generation": 1,
+        "tick": 300,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 19.962951993942262,
+      "record": {
+        "submission_id": 618,
+        "offset": 3010867200,
+        "rgba_sha256": "fe72d4153f45ca2c52644b0dbe2fd3f561d8e74589224963876f00abbbe1c322",
+        "submit_ns": 3028889333
+      },
+      "png_sha256": "9886f6a330aa2140ce67342df8eaf1dd30ab7def77d9b1b11cb04df9df778a9d",
+      "crop_pixels": [
+        0,
+        80,
+        600,
+        320
+      ],
+      "consecutive_ids": [
+        615,
+        616,
+        617,
+        618,
+        619,
+        620,
+        621,
+        622,
+        623,
+        624,
+        625,
+        626
+      ],
+      "camera_x_sequence": [
+        19.46666666666667,
+        19.696286662419638,
+        19.733333333333334,
+        19.962951993942262,
+        20.0,
+        20.22961869239807,
+        20.266666666666666,
+        20.496285327275594,
+        20.53333333333333,
+        20.76295199394226,
+        20.799999999999997,
+        21.02961869239807
+      ]
+    },
+    {
+      "event": "wrap",
+      "file": "wrap-000709.png",
+      "image": {
+        "alpha": 0.36107000708580017,
+        "current_endpoint_tick": 346,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764442,
+          1097844634,
+          1201568499,
+          0,
+          710,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3802695500,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5856833,
+        "previous_endpoint_tick": 345,
+        "readback_copy_gpu_bracket_ns": 1014167.0,
+        "submission_id": 709,
+        "submit_ns": 3786815250,
+        "surface_generation": 1,
+        "tick": 346,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 32.09628533522288,
+      "record": {
+        "submission_id": 709,
+        "offset": 3765657600,
+        "rgba_sha256": "cad24fdc039333361ebf721f0825202dc69ce511cb4ea7222284589636c4ee72",
+        "submit_ns": 3786815250
+      },
+      "png_sha256": "195dae03d3cbb00ad30d9bf2c215130d5a329b416ffe1a5a8cb6e3ac67b102cd",
+      "crop_pixels": [
+        1320,
+        80,
+        1920,
+        320
+      ],
+      "consecutive_ids": [
+        706,
+        707,
+        708,
+        709,
+        710,
+        711,
+        712,
+        713,
+        714,
+        715,
+        716,
+        717
+      ],
+      "camera_x_sequence": [
+        31.696286010742188,
+        31.733333333333334,
+        31.962952009836833,
+        32.09628533522288,
+        32.2296186765035,
+        32.266666666666666,
+        32.496285343170165,
+        32.53333333333333,
+        32.76295199394226,
+        32.8,
+        33.0296186765035,
+        33.06666666666666
+      ]
+    },
+    {
+      "event": "faded",
+      "file": "faded-001018.png",
+      "image": {
+        "alpha": 0.8610700368881226,
+        "current_endpoint_tick": 500,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192714751,
+          1097837076,
+          1201516740,
+          0,
+          1019,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 6377757125,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7892458,
+        "previous_endpoint_tick": 499,
+        "readback_copy_gpu_bracket_ns": 606125.0,
+        "submission_id": 1018,
+        "submit_ns": 6359676708,
+        "surface_generation": 1,
+        "tick": 500,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 40.0,
+      "record": {
+        "submission_id": 1018,
+        "offset": 6328627200,
+        "rgba_sha256": "8f7a07e0c37dde64529ec734116dbcea3a803a214af006ae96bbe9ea6f9a5c21",
+        "submit_ns": 6359676708
+      },
+      "png_sha256": "20232a6cabbb2c788314d25c59d65c5d4d5f21d0fd85d8aaf6c4efb5d0126862"
+    },
+    {
+      "event": "end",
+      "file": "end-001198.png",
+      "image": {
+        "alpha": 0.8610700368881226,
+        "current_endpoint_tick": 590,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192670745,
+          1097830351,
+          1201470900,
+          0,
+          1199,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 7878580666,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6032708,
+        "previous_endpoint_tick": 589,
+        "readback_copy_gpu_bracket_ns": 651833.0,
+        "submission_id": 1198,
+        "submit_ns": 7861489291,
+        "surface_generation": 1,
+        "tick": 590,
+        "timeline": 0,
+        "visual_revision": null
+      },
+      "camera_x": 40,
+      "record": {
+        "submission_id": 1198,
+        "offset": 7821619200,
+        "rgba_sha256": "13b92e055fd03c51413cf59080e9de97258a76cbb2f81436c75cfc7ae6eac1aa",
+        "submit_ns": 7861489291
+      },
+      "png_sha256": "ab0ace2e3e256f20633738a916dc46662e9bb66cb20f9aa8ed991ce0161356cf"
+    }
+  ],
+  "crop_scale": 1,
+  "movie": {
+    "sha256": "7cdf3f184a5fe43105e6bb8613ce6806b3f7748e9bb1c3956a1c53fce7229454",
+    "pts_max_error_seconds": 5.000000005139782e-07,
+    "terminal_duplicate": true
+  },
+  "source_archive": {
+    "file": "frames.zst",
+    "sha256": "0db3d795b32d9c9b496c6712818702f33ef6417393f1ad268d64d7a4d97d757c",
+    "bytes": 861375728,
+    "encoding": "ZstdDelta",
+    "decoded_frames_verified": 963,
+    "timebase": "ordinal; use submission records",
+    "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+  }
+}
