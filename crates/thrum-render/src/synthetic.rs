@@ -792,18 +792,6 @@ impl SceneContext<'_> {
         Ok(())
     }
 
-    fn effect(&mut self, index: usize, compiled: &CompiledPass) -> Result<(), RenderError> {
-        if let Some(contribution) = self.contribution.as_deref_mut()
-            && contribution.effect_runs(index, &self.contribution_frame)
-        {
-            let mut pass = compiled
-                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
-                .ok_or(RenderError::GraphPassMismatch)?;
-            contribution.encode_effect(index, &mut pass, &self.contribution_frame);
-        }
-        Ok(())
-    }
-
     fn publish_history(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
         self.prepared.history.encode(
             self.encoder,
