@@ -40,13 +40,13 @@ The orchestrate script writes this page from the plan files and record files aft
 - EFFECT-GRAPH assumes: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones. ([plan](EFFECT-GRAPH/PLAN.md))
+- EFFECT-GRAPH M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: Blocked: Needs Context: stopped for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff
 
 ### Now and next
 
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
-- Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M1-review.md)
-- A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome (EFFECT-GRAPH M2): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 
 ### Recently done
 
@@ -72,11 +72,11 @@ The orchestrate script writes this page from the plan files and record files aft
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · In Progress |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M2 of 3 · Not Started |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M2 of 3 · Blocked: Needs Context |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
