@@ -1,0 +1,146 @@
+{
+  "verifier-1": {
+    "passed": true,
+    "seconds": 900.2671119580045,
+    "load": [
+      4.1787109375,
+      3.51513671875,
+      4.12353515625
+    ],
+    "revision": "97249ddf232176c9881d267b03e86d9400746e2e",
+    "comparisons": {
+      "apple_tile_m1": {
+        "passed": true,
+        "comparisons": 38
+      },
+      "apple_tile_m2": {
+        "passed": true,
+        "comparisons": 4
+      },
+      "chrome-day-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-day-scene-linear": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-scene-linear": {
+        "passed": true,
+        "records": 481
+      }
+    }
+  },
+  "final-1": {
+    "passed": true,
+    "seconds": 896.9920577500015,
+    "load": [
+      2.8857421875,
+      2.8193359375,
+      2.60693359375
+    ],
+    "revision": "ea1886d5d60870bf417248f7dde420177eb30f97",
+    "comparisons": {
+      "apple_tile_m1": {
+        "passed": true,
+        "comparisons": 38
+      },
+      "apple_tile_m2": {
+        "passed": true,
+        "comparisons": 4
+      },
+      "chrome-day-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-day-scene-linear": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-scene-linear": {
+        "passed": true,
+        "records": 481
+      }
+    }
+  },
+  "final-2": {
+    "passed": true,
+    "seconds": 884.5795797919855,
+    "load": [
+      2.2119140625,
+      3.36279296875,
+      2.984375
+    ],
+    "revision": "3f55900e2214f7c1b6b46934c147e5a98f84d0b1",
+    "comparisons": {
+      "apple_tile_m1": {
+        "passed": true,
+        "comparisons": 38
+      },
+      "apple_tile_m2": {
+        "passed": true,
+        "comparisons": 4
+      },
+      "chrome-day-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-day-scene-linear": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-scene-linear": {
+        "passed": true,
+        "records": 481
+      }
+    }
+  },
+  "disk-repair/verified": {
+    "passed": true,
+    "seconds": 1021.787526207976,
+    "load": [
+      5.03955078125,
+      5.41357421875,
+      5.17431640625
+    ],
+    "revision": "e9e4d40ff6702108d6a2a9b32d465b90d2700cde",
+    "comparisons": {
+      "apple_tile_m1": {
+        "passed": true,
+        "comparisons": 38
+      },
+      "apple_tile_m2": {
+        "passed": true,
+        "comparisons": 4
+      },
+      "chrome-day-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-day-scene-linear": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-sdr": {
+        "passed": true,
+        "records": 481
+      },
+      "chrome-night-scene-linear": {
+        "passed": true,
+        "records": 481
+      }
+    }
+  }
+}

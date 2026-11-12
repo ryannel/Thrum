@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main",
-      "state": "claimed",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "bar": "A merge gate in the manner of Rust's bors and a merge queue: the commit that reaches main is the commit that was tested, the comparison is exact and named, and it fails on the smallest real change.",
@@ -18,8 +18,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -28,8 +28,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -39,8 +39,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -49,8 +49,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -59,8 +59,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md"
         }
       ],
       "rounds": 0

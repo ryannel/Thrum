@@ -1,0 +1,15 @@
+test_digest_and_byte_modes_and_failures (__main__.ChromeTests.test_digest_and_byte_modes_and_failures) ... ok
+test_covered_change_refuses_until_exact_proof (__main__.GateTests.test_covered_change_refuses_until_exact_proof) ... ok
+test_covered_rebase_invalidates_proof (__main__.GateTests.test_covered_rebase_invalidates_proof) ... ok
+test_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_base_and_dirty_inputs_fail_closed) ... fatal: Not a valid object name refs/remotes/origin/main
+ok
+test_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok
+test_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok
+test_failed_capture_and_owner_exit_are_preserved (__main__.NativePublicationTests.test_failed_capture_and_owner_exit_are_preserved) ... ok
+test_next_capture_observes_completed_capture_release (__main__.NativePublicationTests.test_next_capture_observes_completed_capture_release) ... ok
+test_only_published_successful_captures_are_released (__main__.RetentionTests.test_only_published_successful_captures_are_released) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 2.177s
+
+OK
