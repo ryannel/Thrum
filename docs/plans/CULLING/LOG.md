@@ -73,3 +73,8 @@
   guarantee, while the forward position already requests it. Both caster entry points now request
   invariant position arithmetic. This closes that guarantee gap; the uncaptured historical failures
   are not attributed to it. Accept only with unchanged exact baselines and fresh named-target proof.
+
+- 2026-11-12 The broad invariance candidate moved two retained mirror-light pixels, so it is
+  rejected by M1.5. Traced that valley overlay to Grid/flat casters and scoped the guarantee to the
+  mesh `member_vertex` required by M1. The scoped candidate must pass a fresh exact matrix; no
+  retained image or oracle changes. Broad-candidate evidence is preserved.
