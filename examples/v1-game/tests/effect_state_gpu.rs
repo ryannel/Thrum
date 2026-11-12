@@ -13,11 +13,9 @@ fn effect_state_script_matches_literal_table() {
             .await
             .expect("real target device");
         let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
-        let record = Box::pin(v1_game::effect::qualification::run(
-            &device, &queue, &caps, &adapter,
-        ))
-        .await
-        .expect("exact target state script");
+        let record = Box::pin(v1_game::effect::qualification::run(&device, &queue, &caps))
+            .await
+            .expect("exact target state script");
         let output =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/effect-graph-m2");
         std::fs::create_dir_all(&output).expect("evidence directory");
