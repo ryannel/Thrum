@@ -98,3 +98,6 @@
   publication, with all 12 next frames equal to independent Direct and renewed hiding. Reachable logs,
   image hashes and native-size PNGs are retained in [M1 evidence](../../evidence/CULLING/M1.md#review-round-1-repair--mf1-host-lifecycle).
   Aggregate qualification and integration continue with M1 in progress.
+
+- 2026-11-12 Set M1 ready_for_review once all five items pass, with committed evidence for each item.
+  Mandatory aggregate verification remains live and integration will run the checked merge.
