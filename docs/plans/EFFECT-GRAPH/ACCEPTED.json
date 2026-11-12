@@ -61,7 +61,14 @@
         "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
         "at": "2026-11-11T15:55:43Z"
       },
-      "claim": {
+      "accepted": {
+        "by": "review",
+        "commit": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
+        "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+        "checked": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
+        "at": "2026-11-12T12:10:17Z"
+      },
+      "ready_for_review": {
         "commit": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
         "checked": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
         "at": "2026-11-12T11:16:55Z",
@@ -86,13 +93,6 @@
           "output": 269644,
           "turns": 5
         }
-      },
-      "accepted": {
-        "by": "review",
-        "commit": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
-        "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
-        "checked": "120c73087da6b84d80ec3eb4ee2a9e887b19687b",
-        "at": "2026-11-12T12:10:17Z"
       }
     },
     "M2": {
