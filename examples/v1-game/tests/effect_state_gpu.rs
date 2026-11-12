@@ -18,7 +18,9 @@ fn effect_state_script_matches_literal_table() {
         ))
         .await
         .expect("exact target state script");
-        std::fs::create_dir_all("tmp/effect-graph-m2").expect("evidence directory");
-        std::fs::write("tmp/effect-graph-m2/state-record.txt", record).expect("target record");
+        let output =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/effect-graph-m2");
+        std::fs::create_dir_all(&output).expect("evidence directory");
+        std::fs::write(output.join("state-record.txt"), record).expect("target record");
     });
 }
