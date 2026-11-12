@@ -89,7 +89,7 @@
           "lock": "gpu",
           "ask": "Does the public seam let a crate outside thrum-render declare resources and passes with no access to renderer internals, and does the cooked contribution compile and draw unchanged?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -101,7 +101,7 @@
           "lock": "gpu",
           "ask": "Read the scripted run. Are the kept-state and reset expectations written from the design's state table, not taken from stepping code the GPU path shares? Is the field nonempty before the repeated ticks and the pause? Are the ticks a stall dropped beyond the declared bound counted?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -113,7 +113,7 @@
           "lock": "gpu",
           "ask": "Does the test read back the consumer's own output on each run-to-skip and skip-to-run boundary of both histories and after the discarded update, and every texel after the first frame of an epoch and after a reset? Does the compiler refuse each declaration the design's cadence section lists?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -124,7 +124,7 @@
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -135,7 +135,7 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -145,7 +145,7 @@
           "statement": "In real time on the Mac the diagnostic trail persists and fades after its source stops, stays fixed to the ground as the camera pans across the wrapping boundary, and shows no jump when the cadence changes.",
           "inspect": "Capture with T2 engine capture in `realtime` mode: the source moving and then stopping, a pan that carries the anchor across at least one wrap, and a cadence change mid-run. Judge the trail in whole frames and native-size crops as consecutive frames at 1x.",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -155,7 +155,7 @@
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
           "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
@@ -166,7 +166,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
+          "status": "open",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "",
           "review": ""
