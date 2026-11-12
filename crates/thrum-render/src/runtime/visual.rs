@@ -20,6 +20,7 @@ pub struct VisualPrepareInputs {
     pub(super) scene: SyntheticScene,
     pub(super) surface: bool,
     pub(super) contribution_passes: ContributionPasses,
+    pub(super) effect_graph: crate::contribution::EffectGraph,
     pub(super) render_extent: [u32; 2],
     pub(super) owner: Arc<()>,
     pub(super) creations: Detached,
@@ -56,6 +57,7 @@ impl VisualPrepareInputs {
             self.render_extent,
             self.surface,
             self.contribution_passes,
+            self.effect_graph,
         )
         .await?;
         drop(region);

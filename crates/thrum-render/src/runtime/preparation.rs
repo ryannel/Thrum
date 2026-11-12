@@ -56,6 +56,7 @@ pub(super) async fn prepare_scene(
     extent: [u32; 2],
     surface: bool,
     contribution_passes: ContributionPasses,
+    effect_graph: crate::contribution::EffectGraph,
 ) -> Result<PreparedScene, FrameError> {
     let mut prepared = PreparedSynthetic::prepare_with_capabilities(
         capabilities,
@@ -67,6 +68,7 @@ pub(super) async fn prepare_scene(
     .await
     .map_err(|error| FrameError::Gpu(format!("scene prepare: {error:?}")))?;
     prepared.set_contribution_passes(contribution_passes);
+    prepared.set_effect_graph(effect_graph);
     let slots = prepare_slots(&prepared, queue, extent, surface)?;
     Ok(PreparedScene { prepared, slots })
 }

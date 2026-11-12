@@ -94,6 +94,10 @@ pub trait FrameWorld {
     type Page;
     /// Latest committed authority identity, possibly newer than its publication.
     fn source(&self) -> SourceTick;
+    /// Authoritative fixed timestep; override for a non-default world recipe.
+    fn tick_duration(&self) -> Duration {
+        Duration::from_secs_f64(1.0 / 60.0)
+    }
     /// Whether the current committed endpoint has an available publication.
     fn has_current_page(&self) -> bool;
     /// Whether authoritative work runs independently of the render caller.
@@ -406,8 +410,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .region(CreationPhase::Transition, "contribution");
         contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
         let passes = contribution.passes();
-        self.declare_contribution_passes(passes)
-            .map_err(|error| format!("contribution passes: {error}"))?;
+        let graph = contribution.effect_graph();
+        graph.validate()?;
+        let previous_graph = self.prepared.effect_graph().clone();
+        self.prepared.set_effect_graph(graph);
+        if let Err(error) = self.declare_contribution_passes(passes) {
+            self.prepared.set_effect_graph(previous_graph);
+            return Err(format!("contribution passes: {error}"));
+        }
         self.contribution = Some(contribution);
         self.contribution_error = None;
         Ok(())
@@ -435,9 +445,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         passes: ContributionPasses,
     ) -> Result<(), FrameError> {
         let previous = self.prepared.contribution_passes();
-        if previous == passes {
-            return Ok(());
-        }
         self.prepared.set_contribution_passes(passes);
         let slots = preparation::prepare_slots(
             &self.prepared,
@@ -556,6 +563,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             config.render_extent,
             config.surface.is_some(),
             ContributionPasses::default(),
+            crate::contribution::EffectGraph::default(),
         )
         .await?;
         let presenter = match config.surface {
@@ -620,6 +628,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             scene: self.scene.clone(),
             surface: self.presenter.is_some(),
             contribution_passes: self.prepared.contribution_passes(),
+            effect_graph: self.prepared.effect_graph().clone(),
             render_extent: self.render_extent,
             owner: Arc::clone(&self.visual_owner),
             creations: self.creations.detach(),
@@ -785,6 +794,40 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map(|(index, slot)| format!("slot={index}\n{}", slot.target.storage_report()))
             .collect::<Vec<_>>()
             .join("\n")
+    }
+
+    /// Pipeline creation events in this generation, when creation instrumentation is enabled.
+    /// A runtime cadence change must leave this count unchanged.
+    #[cfg_attr(
+        feature = "creation-counters",
+        expect(
+            clippy::unnecessary_wraps,
+            reason = "the same instrumentation API returns None when counters are disabled"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "creation-counters"),
+        expect(
+            clippy::unused_self,
+            reason = "the counters-disabled build preserves the generation instrumentation API without gathering data"
+        )
+    )]
+    pub fn pipeline_creation_count(&self) -> Option<u64> {
+        #[cfg(feature = "creation-counters")]
+        {
+            Some(
+                self.creations
+                    .report()
+                    .pipelines
+                    .iter()
+                    .map(|row| row.render + row.compute)
+                    .sum(),
+            )
+        }
+        #[cfg(not(feature = "creation-counters"))]
+        {
+            None
+        }
     }
 
     /// GPU object creations on the current device generation by thread and
@@ -1132,6 +1175,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.upload_reset_pending = false;
         let upload_cpu = upload_start.elapsed();
         let visual_revision = self.visual_revision;
+        self.prepared
+            .set_effect_time(crate::contribution::EffectTime {
+                epoch: frame.source.epoch,
+                timeline: frame.source.timeline,
+                tick: frame.source.tick,
+                tick_duration: self.world.tick_duration(),
+                alpha: frame.presentation_alpha,
+                capture: false,
+            });
         Ok(Some(PreparedSample {
             sample: FrameSample {
                 tick: frame.source.tick,
@@ -1499,6 +1551,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.retry_upload();
             return Err(FrameError::Gpu(format!("capture view update: {error:?}")));
         }
+        let source = self.world.source();
+        self.prepared
+            .set_effect_time(crate::contribution::EffectTime {
+                epoch: source.epoch,
+                timeline: source.timeline,
+                tick: source.tick,
+                tick_duration: self.world.tick_duration(),
+                alpha: capture_alpha,
+                capture: true,
+            });
         let mut pixels = target.readback(&self.device);
         let mut encoder = self
             .device

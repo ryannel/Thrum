@@ -28,6 +28,13 @@
 //!
 //! Opaque casters can contribute bounds and draws to the scene’s existing Sun cascades.
 
+mod graph;
+mod list;
+mod state;
+pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
+pub use list::SceneContributions;
+pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
+
 /// The scene forward shader's material hook point: the fragment's one read of its material
 /// record, inside the scene's `shade(input: VertexOutput, ..)` body before any texture sample.
 /// A wrapper `fn(MaterialRecord, VertexOutput) -> MaterialRecord` may replace it. The renderer
@@ -180,6 +187,8 @@ impl ShadowBounds {
 /// Per-frame camera facts a contribution may need on the CPU (for example to cull).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ContributionFrame {
+    /// Source clock of this recording; captures are explicitly read-only.
+    pub time: EffectTime,
     /// Resolved exposure side used by this frame's forward pass, also used to
     /// select [`crate::atmosphere::EnvironmentProducts::group`].
     pub exposure_side: usize,
@@ -210,6 +219,25 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Real resources and named simulate passes, prepared before the first frame.
+    fn effect_graph(&self) -> EffectGraph {
+        EffectGraph::default()
+    }
+
+    /// Whether a named simulate pass records work, asked after upload.
+    fn effect_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {
+        true
+    }
+
+    /// Record a named simulate pass. Pipelines and both history bindings already exist.
+    fn encode_effect(
+        &mut self,
+        _index: usize,
+        _pass: &mut wgpu::ComputePass<'_>,
+        _frame: &ContributionFrame,
+    ) {
+    }
+
     /// The graph passes this contribution records into; constant for its lifetime.
     fn passes(&self) -> ContributionPasses;
 

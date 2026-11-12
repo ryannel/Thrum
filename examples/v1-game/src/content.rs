@@ -122,7 +122,22 @@ fn attach_selected(
     };
     let assets = configure(assets)?;
     let stats = assets.stats();
-    host.set_scene_contribution(Box::new(assets))?;
+    if std::env::var("THRUM_EFFECT_GRAPH").as_deref() == Ok("1") {
+        let (effect, witness) = crate::effect::DiagnosticEffect::new();
+        witness
+            .lock()
+            .map_err(|error| error.to_string())?
+            .controls
+            .ground_height = 240.0;
+        host.set_scene_contribution(Box::new(
+            thrum_render::contribution::SceneContributions::new(vec![
+                Box::new(assets),
+                Box::new(effect.scripted()),
+            ]),
+        ))?;
+    } else {
+        host.set_scene_contribution(Box::new(assets))?;
+    }
     if let Some(camera) = camera {
         host.set_scene_camera(camera)?;
     }

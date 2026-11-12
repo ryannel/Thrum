@@ -1,0 +1,95 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [
+    1,
+    2
+  ],
+  "origin_tick": 180,
+  "start": {
+    "solar_hours": 12.0
+  },
+  "render_extent": [
+    1920,
+    1080
+  ],
+  "keys": [
+    {
+      "tick": 0,
+      "eye": [
+        0,
+        245.0,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -25.0
+    },
+    {
+      "tick": 90,
+      "eye": [
+        12,
+        245.0,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -25.0
+    },
+    {
+      "tick": 180,
+      "eye": [
+        36,
+        245.0,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -25.0
+    },
+    {
+      "tick": 240,
+      "eye": [
+        40,
+        245.0,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -25.0
+    },
+    {
+      "tick": 360,
+      "eye": [
+        40,
+        245.0,
+        16.0
+      ],
+      "yaw_degrees": 0.0,
+      "pitch_degrees": -25.0
+    }
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {
+      "tick": 45,
+      "name": "moving-source"
+    },
+    {
+      "tick": 100,
+      "name": "source-stopped"
+    },
+    {
+      "tick": 125,
+      "name": "cadence-changed"
+    },
+    {
+      "tick": 180,
+      "name": "anchor-wrapped"
+    },
+    {
+      "tick": 300,
+      "name": "faded-trail"
+    }
+  ],
+  "overlay": "off"
+}

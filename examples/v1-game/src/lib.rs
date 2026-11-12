@@ -9,6 +9,7 @@ mod camera;
 mod content;
 pub mod controls;
 pub mod cooked;
+pub mod effect;
 mod environment;
 mod field;
 mod field_meshes;
@@ -23,7 +24,7 @@ mod window;
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
-    fetch_cooked_valley,
+    fetch_cooked_valley, qualify_effect_state,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(feature = "draw-probe")]
