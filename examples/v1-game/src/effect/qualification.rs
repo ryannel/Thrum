@@ -344,6 +344,7 @@ pub async fn run(
         (11, 3, "equal"),
         (11, 3, "pause"),
         (12, 3, "discard"),
+        (11, 3, "after-discard-skip"),
         (12, 3, "retry"),
         (13, 3, "cadence-skip"),
         (14, 3, "cadence-run"),
@@ -356,11 +357,21 @@ pub async fn run(
         (100, 4, "timeline"),
         (100, 4, "resize"),
     ];
-    let mut records = Vec::new();
+    let mut records = vec![format!(
+        "adapter={:?}; generation={}",
+        caps.adapter(),
+        caps.generation()
+    )];
     let pipeline_count = host.pipeline_creation_count();
     for (index, (tick, timeline, kind)) in script.into_iter().enumerate() {
         host.world_mut().0.tick = tick;
         host.world_mut().0.timeline = timeline;
+        if kind == "after-discard-skip" {
+            handle.lock().map_err(error)?.controls.anchor = [0, 0];
+        }
+        if kind == "later" && tick == 100 {
+            handle.lock().map_err(error)?.controls.source = true;
+        }
         if kind == "discard" {
             handle.lock().map_err(error)?.controls.anchor = [64, 0];
         }
@@ -414,7 +425,10 @@ pub async fn run(
             a.fill(0);
             b.fill(0);
             committed = tick;
-        } else if !matches!(kind, "equal" | "pause" | "discard" | "capture" | "resize") {
+        } else if !matches!(
+            kind,
+            "equal" | "pause" | "discard" | "after-discard-skip" | "capture" | "resize"
+        ) {
             let source_on = handle.lock().map_err(error)?.controls.source;
             a = advance(&a, committed, tick, source_on);
             committed = tick;
@@ -426,7 +440,9 @@ pub async fn run(
         if matches!(kind, "seed" | "backward" | "timeline") {
             reset_kinds(device, queue, &handle).await?;
         }
-        if kind == "discard" && handle.lock().map_err(error)?.state.anchor() != [0, 0] {
+        if matches!(kind, "discard" | "after-discard-skip")
+            && handle.lock().map_err(error)?.state.anchor() != [0, 0]
+        {
             return Err("discard committed its anchor".into());
         }
         if matches!(kind, "retry" | "capture")
@@ -455,7 +471,7 @@ pub async fn run(
                 ));
             }
         }
-        if kind == "later" && tick == 11 && !a.iter().any(|v| *v > 0) {
+        if kind == "later" && matches!(tick, 11 | 100) && !a.iter().any(|v| *v > 0) {
             return Err("repeated-tick witness was empty".into());
         }
         drop(host.poll_completed().map_err(error)?);
@@ -476,7 +492,7 @@ pub async fn run(
     .await?;
     records.push("destroyed-device:recovered:exact".into());
     records.push(format!(
-        "cadence pipeline count={pipeline_count:?}; resource bytes=23712"
+        "cadence pipeline count={pipeline_count:?}; texture bytes=23712; uniforms=128"
     ));
     Ok(format!(
         "{}; all cube faces, volume texels and array mips exact; width={SIZE}",
