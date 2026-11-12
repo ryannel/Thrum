@@ -131,7 +131,7 @@ pub(super) fn validate_access(
         _ => false,
     };
     if !compatible
-        || (storage(access.kind) && (!one_mip || *samples != 1))
+        || (storage(access.kind) && (*samples != 1 || (access.view.is_some() && !one_mip)))
         || (attachment
             && (!one_mip
                 || !matches!(

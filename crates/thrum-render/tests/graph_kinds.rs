@@ -118,11 +118,33 @@ fn refuses_layer_range_outside_descriptor() {
 fn refuses_storage_binding_spanning_mips() {
     refused(
         K::D2,
-        0..8,
+        0..6,
         A::StorageWrite,
-        None,
+        Some(wgpu::TextureViewDimension::D2Array),
         &E::InvalidTextureView { pass: 0 },
     );
+}
+
+#[test]
+fn successive_mip_views_share_one_storage_binding_slot() {
+    let (_, _, caps) = device(3);
+    let mut graph = FrameGraph::default();
+    let resource = graph
+        .resource(descriptor(K::D2, 4), S::Transient)
+        .expect("mipped array");
+    graph.pass(pass(
+        "write successive mip views",
+        vec![access(&resource, 0..9, A::StorageWrite)],
+    ));
+    graph.pass(pass(
+        "read complete array",
+        vec![access(&resource, 0..9, A::SampledRead)],
+    ));
+    let compiled = graph
+        .compile_with_capabilities(&caps, &BTreeSet::new())
+        .expect("one storage binding reused across successive mip dispatches");
+    assert_eq!(compiled.pass_order, [0, 1]);
+    assert_eq!(compiled.transient_slots, 1);
 }
 #[test]
 fn refuses_incompatible_view() {

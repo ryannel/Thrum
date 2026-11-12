@@ -44,3 +44,8 @@
   (38 plus four comparisons), and all four Chrome baseline sets pass (481 records each), under the GPU lock.
   [Target proof](../../evidence/EFFECT-GRAPH/M1-proof.md) records the source and artifact identities. All five
   items pass; M1 is claimed for review. The required milestone check remains live before integration.
+- 2026-11-12 The required repository gate exposed eight existing Hi-Z consumers rejected by the new
+  view validation. Their logical pass aggregates successive single-mip views in one binding slot. Corrected
+  the validator to preserve that contract and keep explicit storage views single-mip; added the aggregate
+  range witness and tightened the explicit-view refusal. All 242 renderer library tests and all-target Clippy
+  pass. Fresh exact proofs and the complete milestone check are being rerun before integration.
