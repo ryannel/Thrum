@@ -1,0 +1,9 @@
+{
+  "engine_source": "41357d2f9831227252e98190907db2b395ae0293",
+  "checked_commit": "e1d8fe4b9e4c081515c13be8edc14231edd11cfa",
+  "covered_content_key": "1dc7f16689cc4d10fb46a812e57ecd751f3a9e2a9aadc14d9bebfdbad7fdd1ee",
+  "target_checks": "milestone-check.json",
+  "target_check_invocation": "sh tmp/effect-graph-m2/pinned.sh python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.0.0/skills/orchestration/build/scripts/agent_loop.py check --module EFFECT-GRAPH --milestone M2 --worktree . --items-only --timeout 3600 --json",
+  "repository_gate": "separate ./dev check under the gpu lock, after all item checks; see dev-check.log",
+  "reason_for_separate_gate": "Item checks acquire their declared GPU locks individually; the repository gate is wrapped once to serialize its GPU tests."
+}

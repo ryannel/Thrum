@@ -1,0 +1,5 @@
+{
+  "case": "effect-state",
+  "target": "chrome-webgpu",
+  "exact": "adapter=AdapterInfo { name: \"\", vendor: 0, device: 0, device_type: Other, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: BrowserWebGpu, subgroup_min_size: 32, subgroup_max_size: 32, transient_saves_memory: None, limit_bucket: None }; generation=1; recipe=Ok(Portable); seed:10:exact; later:11:exact; equal:11:exact; pause:11:exact; discard:12:exact; after-discard-skip:11:exact; retry:12:exact; cadence-skip:13:exact; cadence-run:14:exact; cadence-skip:15:exact; cadence-run:16:exact; capture:100:exact; stall:100:exact; backward:99:exact; later:100:exact; timeline:100:exact; resize:100:exact; destroyed-device:recovered:exact; cadence pipeline count=None; texture bytes=23712; uniforms=128; all cube faces, volume texels and array mips exact; width=32"
+}
