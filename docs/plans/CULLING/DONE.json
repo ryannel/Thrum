@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 0,
       "needs": [

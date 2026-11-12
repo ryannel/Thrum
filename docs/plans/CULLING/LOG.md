@@ -49,3 +49,8 @@
   rounding-allowance overlap at866 and its visible count agrees with the aligned GPU row. No runtime fix
   was made. Original pixels were not captured, so the old event cannot be attributed retrospectively;
   [the evidence](../../evidence/CULLING/M1.md#second-investigation-of-tick-866) records the tested hypotheses and limits.
+
+- 2026-11-12 M1 set to claimed as requested once every item was pass with linked Metal evidence.
+  The full 1,930-tick named target, bucket witnesses/mutations and exact native matrices support the claim;
+  the original unattributable observation remains explicit in the evidence. The queued aggregate check
+  continues; integration will run the profile Check under the integrate lock. Lead owns the review.
