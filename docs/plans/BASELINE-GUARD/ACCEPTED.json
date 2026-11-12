@@ -26,7 +26,36 @@
   "milestones": {
     "M1": {
       "definitions": "5ac7b729378cfb947ff18339a6aabec9aa312c3dfae5fad4fb761633931167fe",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
+          "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 125424,
+            "cached": 14308608,
+            "output": 18978,
+            "turns": 1
+          },
+          "at": "2026-11-12T07:32:49Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
@@ -59,6 +88,13 @@
           "output": 423745,
           "turns": 2
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
+        "review": "docs/evidence/BASELINE-GUARD/M1-review.md",
+        "checked": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
+        "at": "2026-11-12T07:32:49Z"
       }
     }
   },
