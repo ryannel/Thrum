@@ -55,7 +55,7 @@
     {
       "id": "M2",
       "name": "The cooked valley presents smoothly on built-in ProMotion",
-      "state": "open",
+      "state": "claimed",
       "fails": 0,
       "replans": 4,
       "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
@@ -76,8 +76,8 @@
           "inspect": "After M2.3, M2.4 and M2.5, run three matched arms on M2.1's build, content, recipe, extent and AppKit slider sweep, or rerun M2.1: capture ON untraced, capture ON traced, capture OFF traced. Review the original host-time 1x ON sequences and local holds against M2.1's worded list. For the OFF arm review the witness result: retained rows spanning both MacM2Whole markers, every submission joined or reported unmatched, intervals in refresh periods, and each interval over one period with its drawable, time, yaw, the game's present-call record and host load. The OFF arm creates no capture targets, copies, readbacks or workers.",
           "ask": "Does the evidence keep callback target, opportunity, acquisition/submit, GPU completion, engine image time, movie PTS and OS-reported presented time as separate measurements, with ON-arm intervals labelled under capture? Is cadence claimed only from this build's capture-OFF arm, never from handler callback times, engine records or an earlier trace? Are kernel display swaps, scan-out, input-to-photon and physical iPhone timing stated as unmeasured?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "docs/evidence/render/mac-m2-presented-20261111/README.md",
+          "status": "pass",
+          "evidence": "docs/evidence/render/mac-m2-presented-20261111/README.md#matched-content-and-observer-comparison-m22",
           "verdict": "",
           "review": "",
           "attended": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."

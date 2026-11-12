@@ -39,10 +39,10 @@ built-in panel, and nothing else. Verdicts on `0d53d3aa` qualify only that build
 - [x] M2.5, attended setup: a fresh recording of the release game whose retained rows span both `MacM2Whole`
       markers, with every submission joined, the time conversion validated against the markers and the display
       tables' row counts recorded.
-- [ ] M2.2, attended setup: after M2.3, M2.4 and M2.5, three matched arms on M2.1's build, with the normal
+- [x] M2.2, attended setup: after M2.3, M2.4 and M2.5, three matched arms on M2.1's build, with the normal
       AppKit slider action: capture ON untraced, capture ON traced, capture OFF traced. The OFF arm gives the
       cadence result, with each interval over one refresh period listed and investigated.
-- [ ] Callback target, opportunity, acquisition and submit, GPU timestamps, engine image time, movie PTS and
+- [x] Callback target, opportunity, acquisition and submit, GPU timestamps, engine image time, movie PTS and
       OS-reported presented time recorded as separate measurements, with unmatched samples.
 
 Stop rules:

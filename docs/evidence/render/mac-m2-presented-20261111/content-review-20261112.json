@@ -1,0 +1,40 @@
+{
+  "target": "mac-metal",
+  "reviewed_unix_ns": 1794473632296997000,
+  "binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "scope": "Builder self-inspection of original engine frames/native crops plus native Chrome host-time 1x playback under gpu; sampled UI observations, not continuous photon observation. Independent lead review remains owed.",
+  "on-untraced": {
+    "full_playback_duration_s": 7.092629,
+    "rate": 1,
+    "ended": true,
+    "full_playback_decoder_drops": 7,
+    "middle_replay_decoder_drops": 0,
+    "observed_times_s": [
+      0.236,
+      3.795,
+      5.294,
+      7.093
+    ]
+  },
+  "on-traced": {
+    "full_playback_duration_s": 7.09877,
+    "rate": 1,
+    "ended": true,
+    "full_playback_decoder_drops": 17,
+    "cumulative_drops_after_middle_replay": 18,
+    "observed_times_s": [
+      0.775,
+      5.03,
+      7.099
+    ]
+  },
+  "inspection": {
+    "rock_and_ridges": "Coherent relative placement during the sweep; native crops retain ridge shape and attached shadows.",
+    "sphere": "Moves left with the authored monotonic sweep and exits before the settled final endpoint.",
+    "endpoints": "Agree with yaw 0 and 36; paused output holds without a camera cut.",
+    "cuts_snaps_reversals": "None observed in full-source frames, crops and sampled normal-speed playback; submitted yaw has no reversal.",
+    "local_holds": "No repeated image bytes or >16 ms source gap during nonendpoint yaw. Maximum 17.018/24.196 ms gaps are in settled/warmup output, retained in timing-review.json.",
+    "gross_pause": "None observed in engine motion; player decoder drops are observer loss, not source omissions or panel cadence."
+  },
+  "observer_limits": "Full movies reached ended=true at rate 1; middle replays seek to 3 or 4.5 s and then run at rate 1. Decoder drops are explicitly retained. OFF witness alone qualifies OS-reported cadence. Movie PTS, engine samples and browser playback are separate measurements."
+}

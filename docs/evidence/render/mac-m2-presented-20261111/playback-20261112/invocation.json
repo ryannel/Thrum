@@ -1,0 +1,1 @@
+["python3", "/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/1.7.1/skills/orchestration/build/scripts/agent_loop.py", "lock", "gpu", "--worktree", ".", "--", "python3", "tmp/mac-m2/resume-review-hold.py"]

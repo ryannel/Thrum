@@ -1,0 +1,58 @@
+{
+  "module": "PLATFORM-RUNTIME-MAC",
+  "milestone": "M2",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/docs/plans/PLATFORM-RUNTIME-MAC/DONE.json",
+  "pass": 2,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M2.1",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "M2.2",
+      "result": "no check",
+      "proof": [
+        "inspect",
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "M2.3",
+      "check": "./dev check",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "927b7bdeb7c)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.73s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    },
+    {
+      "id": "M2.4",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M2.5",
+      "result": "no check",
+      "proof": [
+        "ask",
+        "attended"
+      ]
+    },
+    {
+      "id": "Check",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": " tests/simulation.rs (target/debug/deps/simulation-05c70f2048f19d54)\n     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-73d4c4eaf0884e1a)\n     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-72372927b7bdeb7c)\n     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests v1_game\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.14s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

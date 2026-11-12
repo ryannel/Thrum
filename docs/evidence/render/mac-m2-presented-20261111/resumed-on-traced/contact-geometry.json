@@ -1,0 +1,38 @@
+{
+  "source_extent": [
+    1920,
+    1080
+  ],
+  "row_order": "selected-content.json",
+  "left_view": {
+    "source_rect": [
+      0,
+      0,
+      1920,
+      1080
+    ],
+    "output_extent": [
+      480,
+      270
+    ],
+    "filter": "area"
+  },
+  "right_view": {
+    "source_rect": [
+      1440,
+      360,
+      480,
+      270
+    ],
+    "output_extent": [
+      480,
+      270
+    ],
+    "native_pixel_scale": 1
+  },
+  "row_extent": [
+    960,
+    300
+  ],
+  "blank_top_pixels": 30
+}

@@ -1,6 +1,15 @@
 # PLATFORM-RUNTIME-MAC log
 
 
+12 November M2 claim. The matched ON trace completes within bounds, joining all 488 marked
+submissions and 843 OS rows; all 845 originals verify without omissions. Both ON 1× reviews pass the worded
+motion list, with player decoder drops separate from source continuity. OFF's 491 marked joins and both missed
+refresh investigations remain the cadence proof. The exact M2.1 executable was reconstructed and pinned outside
+`target/`. All five items pass builder inspection and M2 is claimed. The mandated item and repository checks both pass;
+lead review is owed.
+[Complete matched evidence](../../evidence/render/mac-m2-presented-20261111/README.md).
+
+
 11 November resumed sitting disk stop. M2.5 passes the fresh Deferred OFF witness; all 491 marked submissions
 join and both markers are covered. The ON/untraced run verifies all 850 originals, with 1× playback/native-source
 inspection and measured marker durations retained. The final ON/traced collector acquired GPU but refused its

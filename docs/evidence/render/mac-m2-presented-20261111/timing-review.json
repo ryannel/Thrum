@@ -1,0 +1,177 @@
+{
+  "off-traced": {
+    "source_observations": {},
+    "marker_durations_s": [
+      1.0000142906792462,
+      2.0004386249929667,
+      1.0999073339626193
+    ],
+    "marker_brackets": [
+      {
+        "stage": "0",
+        "media_before": "2944927.835822501",
+        "media_after": "2944927.835826417"
+      },
+      {
+        "stage": "1",
+        "media_before": "2944928.835836792",
+        "media_after": "2944928.835837417"
+      },
+      {
+        "stage": "2",
+        "media_before": "2944930.836275417",
+        "media_after": "2944930.836276168"
+      },
+      {
+        "stage": "3",
+        "media_before": "2944931.936182751",
+        "media_after": "2944931.936183417"
+      }
+    ],
+    "submitted_initial_yaw0_hold_s": 3.991366875357926,
+    "submitted_final_yaw36_hold_s": 1.0999968750402331,
+    "last_yaw0_to_first_yaw36_submission_span_s": 2.002693624701351,
+    "whole_begin_to_first_changing_submission_s": 1.0024533737450838,
+    "first_final_submission_to_whole_end_s": 1.1043786252848804,
+    "submitted_yaw_range": [
+      0.0,
+      35.999988556
+    ],
+    "requested_nonendpoint_count": 240,
+    "inferred_nominal_18_degree_per_second_origin_range_s": [
+      2944928.828844084,
+      2944928.82922571
+    ],
+    "max_surface_call_gap_ms": 29.092332813888788,
+    "marked_surface_submissions": 491,
+    "interpretation": "The diagnostic computes yaw=clamp((elapsed-4)/2)*36, sampled by AppKit actions. Markers are emitted on the first step crossing elapsed thresholds; their durations include polling quantization and are reported, not rounded to exact seconds. Initial warmup at yaw0 supplies >1 second of settled output; final submitted yaw36 hold is measured separately. The nominal two-second schedule and submitted endpoint coverage are distinct from exact marker duration."
+  },
+  "on-untraced": {
+    "source_observations": {
+      "original_count": 850,
+      "ticks": [
+        2
+      ],
+      "generation_tuples": [
+        [
+          1,
+          1,
+          2
+        ]
+      ],
+      "yaw_reversals": 0,
+      "missing_submissions": [],
+      "repeated_nonendpoint_pairs": [],
+      "nonendpoint_source_gaps_over_16ms": [],
+      "max_source_gap_ms": 17.017875
+    },
+    "marker_durations_s": [
+      0.9999583750031888,
+      1.9920848337933421,
+      1.0999405412003398
+    ],
+    "marker_brackets": [
+      {
+        "stage": "0",
+        "media_before": "2945302.871291250",
+        "media_after": "2945302.871303292"
+      },
+      {
+        "stage": "1",
+        "media_before": "2945303.871249625",
+        "media_after": "2945303.871250417"
+      },
+      {
+        "stage": "2",
+        "media_before": "2945305.863334459",
+        "media_after": "2945305.863335417"
+      },
+      {
+        "stage": "3",
+        "media_before": "2945306.963275000",
+        "media_after": "2945306.963275709"
+      }
+    ],
+    "submitted_initial_yaw0_hold_s": 3.9925568751059473,
+    "submitted_final_yaw36_hold_s": 1.0913260420784354,
+    "last_yaw0_to_first_yaw36_submission_span_s": 2.0003334996290505,
+    "whole_begin_to_first_changing_submission_s": 1.0019447091035545,
+    "first_final_submission_to_whole_end_s": 1.0984201673418283,
+    "submitted_yaw_range": [
+      0.0,
+      35.999988556
+    ],
+    "requested_nonendpoint_count": 239,
+    "inferred_nominal_18_degree_per_second_origin_range_s": [
+      2945303.8633896247,
+      2945303.8637673752
+    ],
+    "max_surface_call_gap_ms": 16.994290985167027,
+    "marked_surface_submissions": 491,
+    "interpretation": "The diagnostic computes yaw=clamp((elapsed-4)/2)*36, sampled by AppKit actions. Markers are emitted on the first step crossing elapsed thresholds; their durations include polling quantization and are reported, not rounded to exact seconds. Initial warmup at yaw0 supplies >1 second of settled output; final submitted yaw36 hold is measured separately. The nominal two-second schedule and submitted endpoint coverage are distinct from exact marker duration."
+  },
+  "on-traced": {
+    "source_observations": {
+      "original_count": 845,
+      "ticks": [
+        2
+      ],
+      "generation_tuples": [
+        [
+          1,
+          1,
+          2
+        ]
+      ],
+      "yaw_reversals": 0,
+      "missing_submissions": [],
+      "repeated_nonendpoint_pairs": [],
+      "nonendpoint_source_gaps_over_16ms": [],
+      "max_source_gap_ms": 24.196084
+    },
+    "marker_durations_s": [
+      0.9999946248717606,
+      2.000397250056267,
+      1.0998090002685785
+    ],
+    "marker_brackets": [
+      {
+        "stage": "0",
+        "media_before": "2986674.937858834",
+        "media_after": "2986674.937866000"
+      },
+      {
+        "stage": "1",
+        "media_before": "2986675.937853459",
+        "media_after": "2986675.937854168"
+      },
+      {
+        "stage": "2",
+        "media_before": "2986677.938250709",
+        "media_after": "2986677.938251500"
+      },
+      {
+        "stage": "3",
+        "media_before": "2986679.038059709",
+        "media_after": "2986679.038060459"
+      }
+    ],
+    "submitted_initial_yaw0_hold_s": 3.9898638343438506,
+    "submitted_final_yaw36_hold_s": 1.0908254575915635,
+    "last_yaw0_to_first_yaw36_submission_span_s": 2.0096438750624657,
+    "whole_begin_to_first_changing_submission_s": 1.001943875104189,
+    "first_final_submission_to_whole_end_s": 1.097723082639277,
+    "submitted_yaw_range": [
+      0.0,
+      35.999988556
+    ],
+    "requested_nonendpoint_count": 240,
+    "inferred_nominal_18_degree_per_second_origin_range_s": [
+      2986675.932181126,
+      2986675.932390292
+    ],
+    "max_surface_call_gap_ms": 24.16299981996417,
+    "marked_surface_submissions": 488,
+    "interpretation": "The diagnostic computes yaw=clamp((elapsed-4)/2)*36, sampled by AppKit actions. Markers are emitted on the first step crossing elapsed thresholds; their durations include polling quantization and are reported, not rounded to exact seconds. Initial warmup at yaw0 supplies >1 second of settled output; final submitted yaw36 hold is measured separately. The nominal two-second schedule and submitted endpoint coverage are distinct from exact marker duration."
+  }
+}

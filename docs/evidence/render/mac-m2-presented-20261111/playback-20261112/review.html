@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>Mac M2 matched ON review</title>
+<style>body{background:#15191f;color:white;font:18px sans-serif}video{width:960px;display:block}button{font-size:20px;margin:8px}</style>
+<h1>Mac M2 engine sources at host-time 1×</h1>
+<button onclick="play('on-untraced')">Play ON untraced at 1×</button>
+<button onclick="play('on-traced')">Play ON traced at 1×</button>
+<button onclick="v.currentTime=4.5;v.playbackRate=1;v.play()">Replay middle at 1×</button><video id="v" controls></video><p id="s">Choose an arm</p>
+<script>
+let arm='';const v=document.getElementById('v'),s=document.getElementById('s');
+function play(name){arm=name;v.src='../resumed-'+name+'/preview-1x.mp4';v.playbackRate=1;v.play();}
+function status(){s.textContent=arm+' | time '+v.currentTime.toFixed(3)+' / '+v.duration.toFixed(3)+' | rate '+v.playbackRate+' | ended '+v.ended+' | dropped '+v.getVideoPlaybackQuality().droppedVideoFrames;}
+v.ontimeupdate=status;v.onended=status;
+</script>

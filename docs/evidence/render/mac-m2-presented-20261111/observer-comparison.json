@@ -1,0 +1,545 @@
+{
+  "run_order": [
+    "off-traced (11 November)",
+    "on-untraced (11 November)",
+    "on-traced (12 November)"
+  ],
+  "binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "scope": "Matched release binary, content, recipe, extent and semantic AppKit sweep; shared CPU load and day/run order are confounds. Raw observed deltas are not causal overhead estimates. Render/encode host durations include waits.",
+  "arms": {
+    "off-traced": {
+      "marked_surface_submissions": 491,
+      "marked_host_media_interval_seconds": [
+        2944927.835822501,
+        2944931.936183417
+      ],
+      "sample_scope": "samples selected by joined game present-call time within Whole markers",
+      "statistics": {
+        "render_cpu_elapsed_ms": {
+          "count": 491,
+          "min": 0.944833,
+          "median": 3.221333,
+          "p95": 3.64575,
+          "max": 12.046084
+        },
+        "encode_cpu_elapsed_ms": {
+          "count": 491,
+          "min": 0.541375,
+          "median": 0.737958,
+          "p95": 0.917624,
+          "max": 1.012584
+        },
+        "gpu_scene_query_ms": {
+          "count": 491,
+          "min": 2.453125,
+          "median": 2.697749,
+          "p95": 2.91825,
+          "max": 3.081458
+        },
+        "gpu_present_ns_query_ms": {
+          "count": 491,
+          "min": 0.71825,
+          "median": 1.12175,
+          "p95": 1.368709,
+          "max": 1.426709
+        },
+        "gpu_contribution_ns_query_ms": {
+          "count": 491,
+          "min": 0.009958,
+          "median": 0.011209,
+          "p95": 0.014125,
+          "max": 0.017
+        }
+      },
+      "missing_sample_ordinals": [],
+      "missing_gpu_scene_query_ordinals": [],
+      "load": {
+        "before_load_1_5_15": [
+          4.716796875,
+          5.013671875,
+          4.8642578125
+        ],
+        "after_load_1_5_15": [
+          5.75927734375,
+          5.37939453125,
+          5.0205078125
+        ],
+        "sample_duration_ns": 81648392584,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  402  41.3 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+          "14256  16.3 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "81871  14.1 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          " 7464  12.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "81246  11.6 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+          "22340   7.7 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "  333   4.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "  395   4.5 /usr/sbin/notifyd",
+          "92519   4.4 /usr/sbin/cfprefsd",
+          "  370   4.3 /usr/libexec/opendirectoryd",
+          "22461   3.7 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+          "  502   3.3 /usr/libexec/syspolicyd",
+          "  329   3.1 /usr/libexec/logd",
+          "  404   2.7 /usr/sbin/cfprefsd",
+          "92314   2.4 /System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "collection": {
+        "elapsed_ns": 81590115375,
+        "collected": true,
+        "qualified": false
+      },
+      "witness_full_interval_coverage": true,
+      "witness_qualified": true,
+      "unmatched_affecting_marked_interval": 0,
+      "marked_missed_refreshes": [
+        {
+          "from": 547,
+          "to": 548,
+          "interval_ns": 16665249.792,
+          "refresh_periods": 1.99982997504,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 8.315917,
+          "presented_trace_ns": 5838619263.096,
+          "yaw": "10.649999619",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 8.228708058595657,
+          "callback_target_gap_ms": 8.333334233611822,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 1.197625,
+            "encode_cpu_elapsed_ms": 0.6689579999999999,
+            "gpu_scene_query_ms": 2.730417,
+            "gpu_present_ns_query_ms": 1.113,
+            "gpu_contribution_ns_query_ms": 0.010875
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 1.28225,
+            "encode_cpu_elapsed_ms": 0.669708,
+            "gpu_scene_query_ms": 2.617751,
+            "gpu_present_ns_query_ms": 0.88075,
+            "gpu_contribution_ns_query_ms": 0.011584
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause"
+        },
+        {
+          "from": 548,
+          "to": 549,
+          "interval_ns": 16666666.752,
+          "refresh_periods": 2.00000001024,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 12.193708,
+          "presented_trace_ns": 5855285929.848,
+          "yaw": "10.799990654",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 8.858208078891039,
+          "callback_target_gap_ms": 8.33333283662796,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 1.28225,
+            "encode_cpu_elapsed_ms": 0.669708,
+            "gpu_scene_query_ms": 2.617751,
+            "gpu_present_ns_query_ms": 0.88075,
+            "gpu_contribution_ns_query_ms": 0.011584
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 4.612,
+            "encode_cpu_elapsed_ms": 0.786333,
+            "gpu_scene_query_ms": 2.702835,
+            "gpu_present_ns_query_ms": 1.125,
+            "gpu_contribution_ns_query_ms": 0.011042
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause"
+        }
+      ],
+      "presented_interval_scope": "capture OFF cadence",
+      "strict_over_period_marked_count": 236,
+      "whole_missed_refresh_count": 2
+    },
+    "on-untraced": {
+      "marked_surface_submissions": 491,
+      "marked_host_media_interval_seconds": [
+        2945302.87129125,
+        2945306.963275709
+      ],
+      "sample_scope": "samples selected by joined game present-call time within Whole markers",
+      "statistics": {
+        "render_cpu_elapsed_ms": {
+          "count": 491,
+          "min": 0.720833,
+          "median": 1.079208,
+          "p95": 1.511792,
+          "max": 1.719958
+        },
+        "encode_cpu_elapsed_ms": {
+          "count": 491,
+          "min": 0.416667,
+          "median": 0.5369170000000001,
+          "p95": 0.6630820000000001,
+          "max": 0.790333
+        },
+        "gpu_scene_query_ms": {
+          "count": 491,
+          "min": 1.902169,
+          "median": 2.708959,
+          "p95": 3.120999,
+          "max": 3.396206
+        },
+        "gpu_present_ns_query_ms": {
+          "count": 491,
+          "min": 0.0515,
+          "median": 1.140083,
+          "p95": 1.439333,
+          "max": 1.590875
+        },
+        "gpu_contribution_ns_query_ms": {
+          "count": 491,
+          "min": 0.010125,
+          "median": 0.011541,
+          "p95": 0.01275,
+          "max": 0.124875
+        }
+      },
+      "missing_sample_ordinals": [],
+      "missing_gpu_scene_query_ordinals": [],
+      "load": {
+        "before_load_1_5_15": [
+          7.2900390625,
+          5.7841796875,
+          5.26513671875
+        ],
+        "after_load_1_5_15": [
+          7.3125,
+          5.83984375,
+          5.29052734375
+        ],
+        "sample_duration_ns": 7505095041,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "81871 183.3 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.39/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "  333 114.2 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "  402  75.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+          "50346  16.4 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "92308  15.0 /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/BiomeAgent",
+          "81193  15.0 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+          "  669  14.2 /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter",
+          "22340  10.8 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+          "82177  10.3 /Users/ryannel/.codex/computer-use/Codex Computer Use.app/Contents/MacOS/SkyComputerUseService",
+          " 7464   9.4 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  777   9.2 /System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight",
+          "35544   7.9 /System/Library/PrivateFrameworks/DoNotDisturbServer.framework/Support/donotdisturbd",
+          "  615   7.9 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager",
+          "  372   7.7 /System/Library/CoreServices/launchservicesd",
+          "  405   6.9 /System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "collection": {
+        "elapsed_ns": 7431775833,
+        "collected": true,
+        "qualified": false
+      },
+      "largest_source_gap": {
+        "from": {
+          "submission_id": 1,
+          "submit_ns": 11120000,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 2,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "to": {
+          "submission_id": 2,
+          "submit_ns": 28137875,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 4,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "duration_ms": 17.017875,
+        "phase": "settled endpoint / warmup"
+      }
+    },
+    "on-traced": {
+      "marked_surface_submissions": 488,
+      "marked_host_media_interval_seconds": [
+        2986674.937858834,
+        2986679.038060459
+      ],
+      "sample_scope": "samples selected by joined game present-call time within Whole markers",
+      "statistics": {
+        "render_cpu_elapsed_ms": {
+          "count": 488,
+          "min": 1.003875,
+          "median": 1.296875,
+          "p95": 1.593125,
+          "max": 9.460833
+        },
+        "encode_cpu_elapsed_ms": {
+          "count": 488,
+          "min": 0.623958,
+          "median": 0.7467295,
+          "p95": 0.9227920000000001,
+          "max": 1.10125
+        },
+        "gpu_scene_query_ms": {
+          "count": 488,
+          "min": 1.777876,
+          "median": 2.6882725,
+          "p95": 2.919541,
+          "max": 3.427625
+        },
+        "gpu_present_ns_query_ms": {
+          "count": 488,
+          "min": 0.070292,
+          "median": 1.1208960000000001,
+          "p95": 1.185459,
+          "max": 1.493458
+        },
+        "gpu_contribution_ns_query_ms": {
+          "count": 488,
+          "min": 0.009875,
+          "median": 0.011083,
+          "p95": 0.013459,
+          "max": 0.12025
+        }
+      },
+      "missing_sample_ordinals": [],
+      "missing_gpu_scene_query_ordinals": [],
+      "load": {
+        "before_load_1_5_15": [
+          3.71240234375,
+          3.041015625,
+          3.2314453125
+        ],
+        "after_load_1_5_15": [
+          2.87841796875,
+          2.96142578125,
+          3.1845703125
+        ],
+        "sample_duration_ns": 76285143542,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "  333  57.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+          "  674   9.2 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+          "  530   3.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+          "38326   3.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+          "  402   3.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+          "82417   2.3 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+          "  358   2.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+          "60790   1.7 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude",
+          "82433   1.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+          "  502   1.0 /usr/libexec/syspolicyd",
+          "82000   1.0 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+          "72605   0.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude",
+          "83305   0.6 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+          "20965   0.6 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+          "22835   0.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "collection": {
+        "elapsed_ns": 76231505208,
+        "collected": true,
+        "qualified": false
+      },
+      "witness_full_interval_coverage": true,
+      "witness_qualified": true,
+      "unmatched_affecting_marked_interval": 0,
+      "marked_missed_refreshes": [
+        {
+          "from": 451,
+          "to": 452,
+          "interval_ns": 16666750.08,
+          "refresh_periods": 2.0000100096,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 8.275917,
+          "presented_trace_ns": 7042553887.424,
+          "yaw": "0.000000000",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 8.307999931275845,
+          "callback_target_gap_ms": 8.33333283662796,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 1.119458,
+            "encode_cpu_elapsed_ms": 0.7496670000000001,
+            "gpu_scene_query_ms": 2.811541,
+            "gpu_present_ns_query_ms": 1.141708,
+            "gpu_contribution_ns_query_ms": 0.011375
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 1.099083,
+            "encode_cpu_elapsed_ms": 0.714459,
+            "gpu_scene_query_ms": 2.696123,
+            "gpu_present_ns_query_ms": 0.416875,
+            "gpu_contribution_ns_query_ms": 0.01075
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause",
+          "investigation": "Regular 8.276 ms game-call gap, normal adjacent 1.10\u20131.12 ms host render and 2.70\u20132.81 ms GPU scene queries. These neighbors do not isolate the cause of the OS-reported two-refresh interval under capture."
+        },
+        {
+          "from": 455,
+          "to": 456,
+          "interval_ns": 16666665.984,
+          "refresh_periods": 1.99999991808,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 8.397875,
+          "presented_trace_ns": 7084220554.304,
+          "yaw": "0.000000000",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 15.50816697999835,
+          "callback_target_gap_ms": 16.666667070239782,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 8.176458,
+            "encode_cpu_elapsed_ms": 0.8357920000000001,
+            "gpu_scene_query_ms": 2.601539,
+            "gpu_present_ns_query_ms": 1.132875,
+            "gpu_contribution_ns_query_ms": 0.011125
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 1.081666,
+            "encode_cpu_elapsed_ms": 0.689834,
+            "gpu_scene_query_ms": 2.681126,
+            "gpu_present_ns_query_ms": 1.140666,
+            "gpu_contribution_ns_query_ms": 0.010875
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause",
+          "investigation": "The preceding sample has 8.176 ms host render elapsed, while post-present calls remain 8.398 ms apart. This is a correlated host outlier under trace/capture, not isolated causal attribution."
+        },
+        {
+          "from": 494,
+          "to": 495,
+          "interval_ns": 16666667.136,
+          "refresh_periods": 2.00000005632,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 8.28,
+          "presented_trace_ns": 7417554054.464,
+          "yaw": "3.099990606",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 8.210291154682636,
+          "callback_target_gap_ms": 8.33333283662796,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 1.314667,
+            "encode_cpu_elapsed_ms": 0.755417,
+            "gpu_scene_query_ms": 2.751959,
+            "gpu_present_ns_query_ms": 1.127208,
+            "gpu_contribution_ns_query_ms": 0.010375
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 1.365083,
+            "encode_cpu_elapsed_ms": 0.7762920000000001,
+            "gpu_scene_query_ms": 2.685959,
+            "gpu_present_ns_query_ms": 1.132541,
+            "gpu_contribution_ns_query_ms": 0.010625
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause",
+          "investigation": "At yaw 3.10 degrees the game calls stay 8.280 ms apart; neighboring host render is 1.31\u20131.37 ms and GPU scene queries 2.69\u20132.75 ms. No repeated source image or >16 ms changing-source gap occurs here. The OS-reported miss is retained under capture."
+        },
+        {
+          "from": 634,
+          "to": 635,
+          "interval_ns": 16666624.896,
+          "refresh_periods": 1.99999498752,
+          "over_one_period": true,
+          "missed_refresh": true,
+          "present_call_gap_ms": 8.299584,
+          "presented_trace_ns": 8592554804.288,
+          "yaw": "24.250000000",
+          "overlaps_whole": true,
+          "opportunity_gap_ms": 8.187165949493647,
+          "callback_target_gap_ms": 8.33333283662796,
+          "from_sample": {
+            "render_cpu_elapsed_ms": 1.317667,
+            "encode_cpu_elapsed_ms": 0.770376,
+            "gpu_scene_query_ms": 2.746083,
+            "gpu_present_ns_query_ms": 1.13025,
+            "gpu_contribution_ns_query_ms": 0.014958
+          },
+          "to_sample": {
+            "render_cpu_elapsed_ms": 1.410958,
+            "encode_cpu_elapsed_ms": 0.803166,
+            "gpu_scene_query_ms": 3.092916,
+            "gpu_present_ns_query_ms": 1.334792,
+            "gpu_contribution_ns_query_ms": 0.0105
+          },
+          "host_load_scope": "see run-wide load/iostat; no exact instantaneous CPU attribution or isolated cause",
+          "investigation": "At yaw 24.25 degrees the game-call gap is 8.300 ms. GPU scene query rises 2.746 to 3.093 ms, within this run\u2019s 3.428 ms maximum; host render remains 1.32\u20131.41 ms. No isolated cause of the OS-reported miss is established."
+        }
+      ],
+      "largest_source_gap": {
+        "from": {
+          "submission_id": 1,
+          "submit_ns": 7564333,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 2,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "to": {
+          "submission_id": 2,
+          "submit_ns": 31760417,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 6,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "duration_ms": 24.196084,
+        "phase": "settled endpoint / warmup"
+      },
+      "presented_interval_scope": "under capture; observer evidence",
+      "strict_over_period_marked_count": 246,
+      "whole_missed_refresh_count": 4
+    },
+    "limits": "Shared CPU load and run order confound observer comparisons. Host method durations include waits; GPU query durations, callback targets, image time, movie PTS and OS presented time are separate measurements. No causal overhead percentage or physical panel timing claim."
+  },
+  "comparisons": {
+    "trace_observer": {
+      "difference": "on-traced minus on-untraced",
+      "median_delta_ms": {
+        "render_cpu_elapsed_ms": 0.21766700000000005,
+        "encode_cpu_elapsed_ms": 0.20981249999999996,
+        "gpu_scene_query_ms": -0.020686500000000052,
+        "gpu_present_ns_query_ms": -0.019186999999999843,
+        "gpu_contribution_ns_query_ms": -0.00045799999999999834
+      },
+      "interpretation": "Observed differences under these run loads; no isolated causal overhead or speedup claim."
+    },
+    "capture_observer": {
+      "difference": "on-traced minus off-traced",
+      "median_delta_ms": {
+        "render_cpu_elapsed_ms": -1.924458,
+        "encode_cpu_elapsed_ms": 0.008771500000000043,
+        "gpu_scene_query_ms": -0.009476499999999888,
+        "gpu_present_ns_query_ms": -0.0008539999999999104,
+        "gpu_contribution_ns_query_ms": -0.00012599999999999938
+      },
+      "interpretation": "Observed differences under these run loads; no isolated causal overhead or speedup claim."
+    }
+  },
+  "cadence_claim_arm": "off-traced",
+  "on_presented_intervals_scope": "capture enabled; content/observer evidence only"
+}

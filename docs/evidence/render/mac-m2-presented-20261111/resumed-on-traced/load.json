@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    3.71240234375,
+    3.041015625,
+    3.2314453125
+  ],
+  "after_load_1_5_15": [
+    2.87841796875,
+    2.96142578125,
+    3.1845703125
+  ],
+  "sample_duration_ns": 76285143542,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "  333  57.0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+    "  674   9.2 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+    "  530   3.9 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds_stores",
+    "38326   3.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "  402   3.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "82417   2.3 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+    "  358   2.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds",
+    "60790   1.7 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude",
+    "82433   1.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+    "  502   1.0 /usr/libexec/syspolicyd",
+    "82000   1.0 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+    "72605   0.9 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude",
+    "83305   0.6 /Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/../CodexCLI.app/Contents/MacOS/codex",
+    "20965   0.6 /Users/ryannel/.nvm/versions/node/v24.16.0/bin/node",
+    "22835   0.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

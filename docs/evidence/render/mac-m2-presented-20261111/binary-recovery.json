@@ -1,0 +1,24 @@
+{
+  "source_commit": "102878022239bedc5c4e0894cfd860909921b5a9",
+  "recorded_source_files": 406,
+  "all_recorded_source_files_match": true,
+  "expected_binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "v1-game",
+    "--bin",
+    "v1-game"
+  ],
+  "started_unix_ns": 1794470784258329000,
+  "build_exit": 0,
+  "actual_binary_sha256": "aa1591522962933b55ec1f347cc538880f5eb14b7ea227bf4adcb7f00b585507",
+  "binary_pin": "tmp/mac-m2/recover-pinned-20261112/v1-game",
+  "exact_binary_recovered": true,
+  "current_sources_restored": true,
+  "finished_unix_ns": 1794470807387512000
+}

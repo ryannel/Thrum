@@ -18,6 +18,12 @@
       "unix_ns": 1794429939592426000,
       "hypothesis": "The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.",
       "status": "exported; attribution and full-pan join unjudged"
+    },
+    {
+      "arm": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/presented-deferred-20261111/on-traced",
+      "unix_ns": 1794471684973943000,
+      "hypothesis": "The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.",
+      "status": "exported; attribution and full-pan join unjudged"
     }
   ]
 }
