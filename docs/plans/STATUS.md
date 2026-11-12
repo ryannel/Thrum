@@ -9,6 +9,7 @@ The orchestrate script writes this page from the plan files and record files aft
 ### Waiting on you
 
 - PLATFORM-RUNTIME-MAC assumes: the OS-reported presented time of each game drawable is an acceptable witness for built-in ProMotion ([plan](PLATFORM-RUNTIME-MAC/PLAN.md))
+- PLATFORM-RUNTIME-MAC M2 The cooked valley presents smoothly on built-in ProMotion: Blocked: Needs Context: paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff
 - CREATOR assumes: the starter gets a Chrome form now. The G6 decision left it as an owner question and recommended deferring it to G7's page; website demos, and the sea and cloud demo scenes, need a creator's scene in Chrome. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: "profiler" in the V1 exit is met by readouts in the demo UI on both targets, fed by the frame host's completed samples and the shells' callback records, not by a separate tool. ([plan](CREATOR/PLAN.md))
 - CREATOR assumes: the profiler is built after `APPLE-TILE:M3` and not beside it, so it waits on that module's attended items. The other order has the readouts built now on the positional GPU slots, with the switch added later. ([plan](CREATOR/PLAN.md))
@@ -42,7 +43,6 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Now and next
 
-- The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): In Progress · [plan](PLATFORM-RUNTIME-MAC/PLAN.md) · [latest review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M1-review.md)
@@ -67,7 +67,7 @@ The orchestrate script writes this page from the plan files and record files aft
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · In Progress |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Blocked: Needs Context |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
