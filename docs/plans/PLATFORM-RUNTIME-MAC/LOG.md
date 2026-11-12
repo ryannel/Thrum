@@ -1,6 +1,14 @@
 # PLATFORM-RUNTIME-MAC log
 
 
+12 November integration stop. Landing rebased the local M2 claim to `b4d96b98`, then the full Check failed in
+`cooked_material_gpu`. A GPU-locked focused rerun, with the optional compiler wrapper disabled as in `./dev`,
+passes all eight tests; the original full-suite failure's cause remains unestablished. The console locked
+before a landing retry, so work stopped as requested. All attended proof is complete and the local claim is
+committed; integration still requires a fresh successful mandated land. No new recording is owed.
+[Stop record and diagnostic](../../evidence/render/mac-m2-presented-20261111/integration-stop-20261112.json).
+
+
 12 November M2 claim. The matched ON trace completes within bounds, joining all 488 marked
 submissions and 843 OS rows; all 845 originals verify without omissions. Both ON 1× reviews pass the worded
 motion list, with player decoder drops separate from source continuity. OFF's 491 marked joins and both missed

@@ -1,7 +1,11 @@
 # Mac M2 current-path qualification, 11–12 November
 
-M2 is claimed for lead review. All five items pass with mac-metal evidence. The mandated item check under GPU
-and the repository Check both pass. All three matched arms are complete; independent lead review is still owed.
+M2 is claimed locally and all five items pass with mac-metal evidence, but it is **not integrated**. The
+pre-rebase mandated checks both passed. Landing then rebased the claim and failed in `cooked_material_gpu`;
+the focused eight-test reproduction passes. The console subsequently locked, and work stopped as requested.
+[Integration stop and remaining work](integration-stop-20261112.json),
+[passing focused diagnostic](integration-diagnostic-20261112.log.gz). A fresh full landing Check is still required.
+All attended capture/playback proof is complete; independent lead review remains owed.
 
 ## Build and attended setup
 

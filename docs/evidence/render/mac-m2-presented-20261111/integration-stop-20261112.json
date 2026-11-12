@@ -1,0 +1,30 @@
+{
+  "status": "not_integrated",
+  "claim_commit": "b4d96b98f801e2cec280e6a568053c292656fff6",
+  "land_result": {
+    "result": "FAILED",
+    "detail": "Check `./dev check` exited 1:  Running unittests src/bin/apple_tile_residency.rs (target/debug/deps/apple_tile_residency-3579e22b0295f714)\n     Running unittests src/main.rs (target/debug/deps/v1_game-72d74b43fbfcf2a3)\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-9a6e4e62ce3c1370)\n     Running tests/cooked_material_gpu.rs (target/debug/deps/cooked_material_gpu-97c20e93c4feb515)\nerror: test failed, to rerun pass `-p v1-game --test cooked_material_gpu`\nError: \"/Users/ryannel/.rustup/toolchains/1.99.1-aarch64-apple-darwin/bin/cargo test --locked --offline --workspace failed (exit status: 101)\"\n",
+    "commit": "b4d96b98f801e2cec280e6a568053c292656fff6"
+  },
+  "focused_diagnostic": {
+    "exit": 0,
+    "passed": 8,
+    "failed": 0,
+    "command": "agent_loop.py lock gpu --worktree . -- env RUSTC_WRAPPER= rustup run 1.99.1 cargo test --locked --offline -p v1-game --test cooked_material_gpu -- --nocapture",
+    "scope": "Focused test passes; this does not replace the failed full integration Check or establish its cause."
+  },
+  "stop": {
+    "unix_ns": 1794478075682165000,
+    "console_locked": true,
+    "scope": "attended proofs completed; headless integration only"
+  },
+  "attended_proof_complete": true,
+  "remaining": [
+    "Resume after unlocking or explicit authorization for headless continuation",
+    "Run the mandated agent_loop.py land --worktree . under gpu; require its full Check and LANDED result",
+    "Verify integrated commit ancestry on origin/main"
+  ],
+  "recordings_used": 4,
+  "recording_allowance": 6,
+  "new_recordings_needed": false
+}
