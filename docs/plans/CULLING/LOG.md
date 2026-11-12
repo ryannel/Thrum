@@ -54,3 +54,7 @@
   The full 1,930-tick named target, bucket witnesses/mutations and exact native matrices support the claim;
   the original unattributable observation remains explicit in the evidence. The queued aggregate check
   continues; integration will run the profile Check under the integrate lock. Lead owns the review.
+
+- 2026-11-12 Final aggregate qualification passes all five pinned M1 commands and the profile Check;
+  the raw native matrices pass 38+4 exact comparisons. Compact reports and source identity are
+  retained in [M1 evidence](../../evidence/CULLING/M1.md#final-mandatory-qualification). M1 is claimed for lead review.
