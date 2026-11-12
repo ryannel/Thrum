@@ -35,6 +35,7 @@ fn state_table_and_independent_history_submission() {
             dropped: 0
         }
     );
+    assert_eq!(state.anchor_shift(), [4, 0]);
     state.produced(0);
     assert_eq!(state.side(0, H::Result), 0);
     assert_eq!(state.side(1, H::Result), 1);

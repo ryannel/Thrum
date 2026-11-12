@@ -164,6 +164,14 @@ impl EffectState {
     pub fn committed(&self) -> Option<EffectTime> {
         self.committed
     }
+    /// Integer shift of this recording from the last submitted anchor.
+    /// Captures have no pending anchor and report zero. An abandoned recording's
+    /// shift is recomputed by the next `begin`.
+    pub fn anchor_shift(&self) -> [i64; 2] {
+        self.pending.map_or([0; 2], |(_, anchor)| {
+            std::array::from_fn(|axis| anchor[axis].saturating_sub(self.anchor[axis]))
+        })
+    }
     /// Last submitted integer world anchor.
     pub fn anchor(&self) -> [i64; 2] {
         self.anchor
