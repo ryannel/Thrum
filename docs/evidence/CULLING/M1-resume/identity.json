@@ -1,0 +1,20 @@
+{
+  "revision": "0b4907e3984609d8e53f6232e20c500032f972e5",
+  "covered_content_key": "02b3ffd66884ec9d49f6d7fd5ac0455388402616a5bf3295a1fa7378feb75dfc",
+  "source_files": {
+    "crates/thrum-render/tests/visibility_buckets.rs": "fe2e47c434793094a15fb5c129d3c46f1846dd11e869db67aa27c52c3bc56854",
+    "crates/thrum-render/tests/support/mixed_field_host.rs": "71f65ae7f1c8795d6e8df794742648871b2518bcb1eb7daf628c693bbe9cb247",
+    "examples/v1-game/src/field.rs": "391fa75122141cf3854c854ae609a76d032f77dd61d5be06f832490c7190dec4"
+  },
+  "initial_sandbox_check": "tmp/culling-m1-resume-check.log; failed Metal enumeration; not a target qualification",
+  "stopped_handoff_pids_confirmed_absent": [
+    68583,
+    75001,
+    78947,
+    79120,
+    68634,
+    78801,
+    77656,
+    76727
+  ]
+}
