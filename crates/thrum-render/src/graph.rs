@@ -214,8 +214,10 @@ impl AccessKind {
 /// partial buffer updates must declare only their actually written byte range.
 #[derive(Clone, Debug)]
 pub struct Access {
-    /// Texture view used by this binding. `None` selects the descriptor's natural
-    /// view (cube for cubes). Cube storage must explicitly select `D2Array`.
+    /// Explicit texture binding view. `None` uses the descriptor's natural view
+    /// dimension (cube for cubes); a storage range may then cover successive
+    /// single-mip views reused in one binding slot, as in a depth-pyramid pass.
+    /// `Some` describes one view. Cube storage must select `D2Array` explicitly.
     /// Ignored for copies; buffers must leave this unset.
     pub view: Option<wgpu::TextureViewDimension>,
     /// Resource from the same graph.
