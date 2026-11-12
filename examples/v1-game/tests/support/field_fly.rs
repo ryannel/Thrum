@@ -1,5 +1,8 @@
 use std::time::Duration;
 
+#[path = "field_oracle_failure.rs"]
+mod failure;
+
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
 use v1_game::{FrameConfig, FrameHost, GameContent, GameSetup};
 
@@ -27,11 +30,22 @@ fn write_ppm(path: &std::path::Path, rgba: &[u8], extent: [u32; 2]) {
     std::fs::write(path, ppm).expect("write field frame");
 }
 
+pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
+    let tick = std::cell::Cell::new(0);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fly_inner(field_meshes, with_occlusion, &tick);
+    }));
+    if let Err(payload) = result {
+        failure::panic_record(field_meshes, with_occlusion, tick.get(), &*payload);
+        std::panic::resume_unwind(payload);
+    }
+}
+
 #[expect(
     clippy::print_stderr,
     reason = "the flythrough reports its culling counts"
 )]
-pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
+fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cell<u64>) {
     let full = std::env::var_os("THRUM_FIELD_FULL_PATH").is_some();
     let sequence = std::env::var_os("THRUM_FIELD_SEQUENCE").map(std::path::PathBuf::from);
     let culled: &[(CullMode, &str)] = if field_meshes {
@@ -107,10 +121,12 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
         let (mut paired, mut halved) = (0_u32, 0_u32);
         let extent = [640, 360];
         let mut compared = 0;
+        let mut observed = vec![failure::FrameObservation::default(); hosts.len()];
         for tick in 1..=LAST_TICK {
+            progress.set(tick);
             let now = Duration::from_nanos(tick * TICK_NS + 1);
             let (mut frustum_drawn, mut occlusion_drawn) = (None, None);
-            for host in &mut hosts {
+            for (index, host) in hosts.iter_mut().enumerate() {
                 let report = host.drive(now, None).expect("field tick");
                 assert_eq!(report.tick, tick, "one tick per callback");
                 assert!(report.submitted, "every tick submits, so history matches");
@@ -126,6 +142,7 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
                         })
                         .expect("GPU wait");
                 };
+                observed[index] = failure::FrameObservation::from(&sample);
                 match (host.camera_culling(), sample.camera_culling) {
                     (CullMode::Direct, None) => {}
                     (CullMode::Frustum, Some(counts)) => {
@@ -161,8 +178,9 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
             let direct = hosts[0].capture_pixels().expect("Direct capture");
             assert_eq!(direct.len(), (extent[0] * extent[1] * 4) as usize);
             let near_event = EVENTS.iter().any(|event| tick.abs_diff(*event) <= 40);
-            for (host, (_, mode)) in hosts[1..].iter_mut().zip(&culled) {
-                let culled = host.capture_pixels().expect("culled capture");
+            for index in 1..hosts.len() {
+                let mode = culled[index - 1].1;
+                let culled = hosts[index].capture_pixels().expect("culled capture");
                 if direct != culled {
                     let differing = direct
                         .as_chunks::<4>()
@@ -171,20 +189,28 @@ pub(super) fn fly(field_meshes: bool, with_occlusion: bool) {
                         .zip(culled.as_chunks::<4>().0)
                         .filter(|(a, b)| a != b)
                         .count();
-                    if let Some(directory) = std::env::var_os("THRUM_FIELD_FAILURE_DIR") {
-                        let directory = std::path::PathBuf::from(directory);
-                        std::fs::create_dir_all(&directory).expect("failure directory");
-                        write_ppm(
-                            &directory.join(format!("{mode}-{tick}-direct.ppm")),
-                            &direct,
-                            extent,
-                        );
-                        write_ppm(
-                            &directory.join(format!("{mode}-{tick}-culled.ppm")),
-                            &culled,
-                            extent,
-                        );
-                    }
+                    failure::pixels(mode, tick, &direct, &culled, extent)
+                        .expect("retain exact oracle failure pixels");
+                    let direct_repeat = hosts[0].capture_pixels().expect("repeat Direct capture");
+                    let culled_repeat = hosts[index]
+                        .capture_pixels()
+                        .expect("repeat culled capture");
+                    failure::pixels(
+                        &format!("{mode}-repeat"),
+                        tick,
+                        &direct_repeat,
+                        &culled_repeat,
+                        extent,
+                    )
+                    .expect("retain repeat oracle pixels");
+                    failure::context(
+                        mode,
+                        tick,
+                        &observed,
+                        direct == direct_repeat,
+                        culled == culled_repeat,
+                    )
+                    .expect("retain oracle frame context");
                     panic!("{mode} differs from Direct at tick {tick}: {differing} pixels");
                 }
                 if let Some(directory) = sequence.as_ref().filter(|_| near_event) {
