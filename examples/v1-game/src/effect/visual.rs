@@ -3,13 +3,14 @@ use thrum_render::contribution::SceneSurface;
 
 pub(super) struct Visual {
     pipeline: wgpu::RenderPipeline,
-    groups: [wgpu::BindGroup; 2],
+    groups: [wgpu::BindGroup; 4],
 }
 impl Visual {
     pub(super) fn new(
         surface: &SceneSurface<'_>,
         params: &wgpu::Buffer,
         trail: &[wgpu::Texture],
+        derived: &[wgpu::Texture],
     ) -> Self {
         let module = surface
             .device
@@ -68,7 +69,15 @@ impl Visual {
                         wgpu::BindGroupEntry {
                             binding: 1,
                             resource: wgpu::BindingResource::TextureView(
-                                &trail[side].create_view(&wgpu::TextureViewDescriptor::default()),
+                                &trail[side / 2]
+                                    .create_view(&wgpu::TextureViewDescriptor::default()),
+                            ),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: wgpu::BindingResource::TextureView(
+                                &derived[side % 2]
+                                    .create_view(&wgpu::TextureViewDescriptor::default()),
                             ),
                         },
                     ],
