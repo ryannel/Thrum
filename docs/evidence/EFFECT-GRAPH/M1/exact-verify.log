@@ -1,1 +1,15 @@
-FAIL exact baselines: LOW_DISK_SPACE: verifier requires 16 GiB free
+RUN native-build
+RUN cooker-build
+RUN web-build
+RUN cook
+RUN apple_tile_m1
+RUN apple_tile_m2
+RUN chrome-day-sdr
+RUN chrome-day-sdr-compare
+RUN chrome-day-scene-linear
+RUN chrome-day-scene-linear-compare
+RUN chrome-night-sdr
+RUN chrome-night-sdr-compare
+RUN chrome-night-scene-linear
+RUN chrome-night-scene-linear-compare
+PASS exact baselines; proof tmp/baseline-guard/proofs/878336a3f5a4ebbea6458d322bacfc52017946f85f458957594fbb4f06809cda.json; 953.34s
