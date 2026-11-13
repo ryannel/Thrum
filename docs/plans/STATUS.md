@@ -66,9 +66,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SIM-2D assumes: "thousands" is proved at 2,000, 5,000 and 10,000 bodies, and 10,000 is the largest crowd claimed. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: the devices are the Mac, Chrome and the iPhone simulator. The simulator shares the Mac's processor, so it proves only that the rules build and run there. A physical iPhone, an x86 PC, Android and other browsers are designed for and not run. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: bodies are circles. Boxes and capsules are shapes a game can ask about, and no rigid-body physics (stacking, joints, spinning) is built. ([plan](SIM-2D/PLAN.md))
-- SIM-2D assumes: a world is finite. Positions keep millimetre resolution within 16 km of the origin at one unit per metre, and an endless map is not built. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: a world is finite. Positions keep millimetre resolution within 16 km of the origin at one unit per metre, queries are refused beyond 16,777,216 units, and an endless map is not built. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: devices agree for one build of one rule set. A recording made on one engine version is not promised to replay on a later one. ([plan](SIM-2D/PLAN.md))
-- SIM-2D assumes: no budget is set for the crowd's tick. Costs are recorded, and the one hard line is a tick at 10,000 bodies that takes longer than its own 16.7 ms period. ([plan](SIM-2D/PLAN.md))
 
 ### Now and next
 
