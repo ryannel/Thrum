@@ -221,6 +221,8 @@ pub struct FrameSample {
     pub timing_fault: bool,
     /// The camera culling mode the prepared renderer ran this frame with.
     pub culling_mode: CullMode,
+    /// Preparation-time request and capability reason for this frame's generation.
+    pub culling_selection: crate::synthetic::CullingSelection,
     /// Instances camera culling drew, read back on completion without
     /// timestamps. `None` for Direct, which lists nothing, and when the
     /// readback failed.
@@ -1231,6 +1233,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 surface_presented: false,
                 timing_fault: false,
                 culling_mode: self.prepared.camera_culling(),
+                culling_selection: self.prepared.culling_selection(),
                 camera_culling: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),
                 uploaded_bytes: uploaded.bytes,

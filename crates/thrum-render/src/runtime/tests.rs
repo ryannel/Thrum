@@ -43,6 +43,11 @@ fn sample(tick: u64) -> FrameSample {
         surface_presented: false,
         timing_fault: false,
         culling_mode: crate::synthetic::CullMode::Direct,
+        culling_selection: crate::synthetic::CullingSelection {
+            requested: crate::synthetic::CullMode::Direct,
+            resolved: crate::synthetic::CullMode::Direct,
+            reason: crate::synthetic::CullingReason::RequestedDirect,
+        },
         camera_culling: None,
         uploaded_rows: 0,
         uploaded_bytes: 0,
