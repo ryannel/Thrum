@@ -41,6 +41,11 @@ async fn render(
     )
     .await
     .expect("prepare");
+    assert_eq!(
+        prepared.camera_culling(),
+        scene.camera_culling,
+        "resolved oracle mode"
+    );
     let target = OffscreenTarget::new(device, &prepared, EXTENT[0], EXTENT[1]).expect("target");
     let mut pixels = target.readback(device);
     let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
@@ -328,6 +333,11 @@ impl Sequence {
         )
         .await
         .expect("prepare");
+        assert_eq!(
+            prepared.camera_culling(),
+            scene.camera_culling,
+            "resolved sequence mode"
+        );
         let target = OffscreenTarget::new(device, &prepared, EXTENT[0], EXTENT[1]).expect("target");
         Self { prepared, target }
     }

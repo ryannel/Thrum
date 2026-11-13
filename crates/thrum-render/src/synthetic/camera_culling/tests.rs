@@ -84,6 +84,7 @@ fn the_grazing_view_hides_slots_and_replays_its_visible_set() {
             )
             .await
             .expect("prepare");
+            assert_eq!(prepared.camera_culling(), scene.camera_culling);
             let mut target = OffscreenTarget::new(&device, &prepared, 320, 180).expect("target");
             let mut frames = Vec::new();
             for frame in 0..5 {
@@ -377,6 +378,7 @@ fn the_depth_prepass_writes_the_forward_depth_of_the_same_list() {
             .await
             .expect("prepare");
             assert_eq!(prepared.instance_upload.two_sided_count() != 0, two_sided);
+            assert_eq!(prepared.camera_culling(), scene.camera_culling);
             let mut target =
                 OffscreenTarget::new(&device, &prepared, PARITY[0], PARITY[1]).expect("target");
             // Two frames: the second prepass list replays the first's set.
@@ -520,6 +522,7 @@ fn an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone() {
             )
             .await
             .expect("prepare");
+            assert_eq!(prepared.camera_culling(), base.camera_culling);
             let mut target = OffscreenTarget::new(&device, &prepared, 320, 180).expect("target");
             let mut counts = Vec::new();
             for frame in 0..3 {
@@ -681,6 +684,7 @@ async fn veiled_frames(
         PreparedSynthetic::prepare_with_capabilities(capabilities, queue, scene, lighting, 1.0)
             .await
             .expect("prepare");
+    assert_eq!(prepared.camera_culling(), scene.camera_culling);
     let mut veil = Veil::default();
     veil.rebuild(&prepared.scene_surface(queue)).expect("veil");
     let mut target = OffscreenTarget::new(device, &prepared, 320, 180).expect("target");
