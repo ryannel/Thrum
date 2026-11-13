@@ -47,9 +47,13 @@ def main():
     report = {'commit': showcase.git('rev-parse', 'HEAD'), 'contended': True,
               'capture': 'off', 'extent': route['render_extent'], 'order': 'rotating each tick',
               'warmup_ticks': 179, 'runs': {}}
+    report['builds'] = showcase.identities(web=False, built=False)
     with open(run / 'cook.log', 'w') as log:
         if showcase.bounded([str(showcase.COOK), 'cook', str(showcase.SOURCE), str(run / 'store')], log, 120):
             raise showcase.Failure('cook failed')
+    report['cooked_root'] = showcase.store_root(run / 'store')
+    if report['cooked_root'] != route['cooked_root']:
+        raise showcase.Failure('moving route cooked root mismatch')
     for number in (1, 2):
         for recipe in ('portable', 'apple-tile'):
             name = f'{recipe}-{number}'
