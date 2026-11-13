@@ -81,7 +81,7 @@ proof, not to add steps or require a positive browser-expiry count.
 
 **Comparison with the human's request.**
 
-I read the whole `briefs` array in [ACCEPTED.json](../../plans/TRANSPORT/ACCEPTED.json), oldest first, and
+I read the whole `briefs` array in [ACCEPTED.json](../../plans/TRANSPORT/RECORD.json), oldest first, and
 [BRIEF.md](../../plans/BRIEF.md) before the design. The initial task commissions TRANSPORT after SHOWCASE;
 the second requests repair of the previous review and includes a log-length correction. Neither changes the
 human's request, recorded in [the next-goal page](../../design/NEXT-GOAL-SWARM-GAME.md): several players play

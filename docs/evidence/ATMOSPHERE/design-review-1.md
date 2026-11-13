@@ -9,7 +9,7 @@ new implementation claims. No other agents were launched.
 
 ## Request and scope
 
-I read the complete sole entry in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json),
+I read the complete sole entry in [the accepted planner briefs](../../plans/ATMOSPHERE/RECORD.json),
 then the build-plan purpose and exit, architecture brief and module list before comparing the proposed work.
 The commission requires a buildable road to the existing V1 exit and foundations for finishing sea and clouds
 in Thrum. For ATMOSPHERE this means:

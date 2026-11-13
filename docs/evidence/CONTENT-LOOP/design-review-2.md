@@ -113,7 +113,7 @@ owns it. M1.5 and M3.5 already require the useful runtime behavior, so this word
 
 ## Request, prerequisites and review limits
 
-Both complete tasks under `briefs` in [ACCEPTED.json](../../plans/CONTENT-LOOP/ACCEPTED.json) and the
+Both complete tasks under `briefs` in [ACCEPTED.json](../../plans/CONTENT-LOOP/RECORD.json) and the
 [project brief](../../plans/BRIEF.md) were read before assessing the revision. The planning tasks are lead/script
 instructions, not new human quotations. The controlling brief still asks for content-addressed cooking and
 loading, visible edits without GPU stalls, authoring-free shipping, and Mac/Chrome delivery. The lease, live mesh

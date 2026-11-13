@@ -48,7 +48,7 @@ Build the simulator with `examples/v1-game-ios/ios/build-simulator.sh`, then run
 Bulk lossless sources and qualified binaries remain in owned `tmp/g3t-m2` through lead review; no remote backup is
 claimed. [Selected-file hashes](retained-files.json) permit verification before scratch closeout.
 
-Owner setup/direction is recorded verbatim in [ACCEPTED.json](../../../plans/APPLE-TILE/ACCEPTED.json),
+Owner setup/direction is recorded verbatim in [ACCEPTED.json](../../../plans/APPLE-TILE/RECORD.json),
 `milestones.M2.owner_answers`; the latest D2.5 entry is authoritative. [Selected record](window/summary.json)
 preserves those exact entries. Computer Use succeeded in this visible Codex session.
 OS observations use `/usr/sbin/screencapture` on macOS 26.6.2/25G83, with PID/window/bounds, scale 2, host clock and

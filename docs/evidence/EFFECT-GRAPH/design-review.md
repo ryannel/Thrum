@@ -4,7 +4,7 @@ Reviewed 11 November 2026 at integrated commit `ae64c2bd9801c3d8699f4c53d00151b5
 Result: **design approved — no Must Fix findings; one wording suggestion**.
 
 This is the second design-review round, against the review at `c9dd6cd0d58617e5b269054e9b9b5a564095ced9`.
-I read both tasks in [ACCEPTED.json](../../plans/EFFECT-GRAPH/ACCEPTED.json) under `briefs`, whole and in order,
+I read both tasks in [ACCEPTED.json](../../plans/EFFECT-GRAPH/RECORD.json) under `briefs`, whole and in order,
 the project brief, the module-list scope and interfaces, the previous review, the complete current design and
 plan, and all 21 done-when items. I compared the design, plan and criteria with the previous reviewed revision.
 The commission remains a small resource milestone after APPLE-TILE M2, followed by the graph foundation for

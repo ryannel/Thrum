@@ -16,7 +16,7 @@ and retains the requested mode for resolution on a replacement device. [PLAN.md]
 line 16, explicitly lists this scope decision for the owner.
 
 This resolves the finding by removing an unrequested feature, not by claiming the publication interface was
-fixed. I read both complete planner tasks in [ACCEPTED.json](../../plans/CULLING/ACCEPTED.json), oldest first:
+fixed. I read both complete planner tasks in [ACCEPTED.json](../../plans/CULLING/RECORD.json), oldest first:
 the original commission asks for G3c, a small first milestone after APPLE-TILE M2, and pre-landing baseline
 protection; the second asks for the design findings to be addressed or a reason recorded. Neither requests a
 live culling-mode control. The project brief's V1 exit and G3c also do not require it. C04 distinguishes load-time

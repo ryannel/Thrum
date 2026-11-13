@@ -85,7 +85,7 @@ pixel from a malformed compressed file. M1.1's code inspection already helps rej
 rendering path; this would make the negative proof easier to audit.
 
 The review started with the complete `briefs` array in
-[ACCEPTED.json](../../plans/BASELINE-GUARD/ACCEPTED.json), which contains one planning task, and the project
+[ACCEPTED.json](../../plans/BASELINE-GUARD/RECORD.json), which contains one planning task, and the project
 brief. For this module the required outcome is cross-module exact-baseline protection before landing,
 including the failure exposed by APPLE-PRESENTATION's jitter and stale post-rebase evidence. CULLING and
 EFFECT-GRAPH's engine features remain outside this review. A separate one-milestone tooling module, shared

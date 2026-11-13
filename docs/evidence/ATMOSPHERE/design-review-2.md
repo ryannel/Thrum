@@ -9,7 +9,7 @@ M5–M6 design and acceptance definitions, not implementation or completion of a
 
 ## Request and inspection scope
 
-Read both entries in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json), whole
+Read both entries in [the accepted planner briefs](../../plans/ATMOSPHERE/RECORD.json), whole
 and in order: the project commission to plan the remaining V1 road and finish/consolidate water and clouds,
 then the request to revise ATMOSPHERE against the previous review. The governing module obligations remain:
 

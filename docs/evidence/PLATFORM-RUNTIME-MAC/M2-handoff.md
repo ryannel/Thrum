@@ -32,6 +32,6 @@ Final evidence-only integration can preserve the captured build map. Any changed
 affected proof again, as the build-milestone skill specifies.
 
 The owner's exact recorded feedback remains in
-[ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json), `milestones.M2.human_feedback`, at
+[ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/RECORD.json), `milestones.M2.human_feedback`, at
 `2026-11-12T06:57:44Z` for M2.2 and `2026-11-12T06:57:53Z` for M2.5. Current panel access was observed
 separately in the retained witnesses. The sitting used `caffeinate -d -i` to retain display wakefulness.

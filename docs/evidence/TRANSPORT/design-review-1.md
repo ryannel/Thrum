@@ -100,7 +100,7 @@ this attribution error does not itself leave the obligation unowned.
 
 **Comparison with the human's request.**
 
-I read [ACCEPTED.json](../../plans/TRANSPORT/ACCEPTED.json) and the project brief before the design. There is one
+I read [ACCEPTED.json](../../plans/TRANSPORT/RECORD.json) and the project brief before the design. There is one
 recorded planner task: “Plan module TRANSPORT. It needs: SHOWCASE”. The human's request carried by
 [the project brief](../../plans/BRIEF.md) and [the next-goal page](../../design/NEXT-GOAL-SWARM-GAME.md) is several
 players together over the network, with multiplayer additive to the reusable engine. The Mac, Chrome,

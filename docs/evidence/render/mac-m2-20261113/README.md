@@ -10,7 +10,7 @@ cooked store, noon preset, portable recipe and 1920×1080 extent. All 466 captur
 The owner's M2.2/M2.5 feedback at `2026-11-12T06:57:44Z`/`2026-11-12T06:57:53Z` says exactly
 "The screen is unlocked if you need it". This sitting independently witnesses an unlocked, active, awake
 built-in panel, kept awake with `caffeinate -d -i`. The separate window observer already had permission.
-[Human feedback record](../../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json),
+[Human feedback record](../../../plans/PLATFORM-RUNTIME-MAC/RECORD.json),
 [panel observations](presented/off-traced/panel-witness.jsonl.gz).
 
 **M2.1.** All 480 originals verify, with zero ring/writer omissions. All four attributed launcher/driver

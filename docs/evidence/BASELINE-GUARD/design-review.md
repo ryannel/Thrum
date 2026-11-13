@@ -6,7 +6,7 @@ Design approved with one Suggestion and no Must Fix findings. Reviewed integrate
 baseline equality.
 
 The request is cross-module exact-baseline protection before landing, including the jitter regression and
-stale evidence after a rebase. I read both tasks in [ACCEPTED.json](../../plans/BASELINE-GUARD/ACCEPTED.json),
+stale evidence after a rebase. I read both tasks in [ACCEPTED.json](../../plans/BASELINE-GUARD/RECORD.json),
 oldest first and in full, and the project brief before judging the revision. The second task asks the planner
 to address every prior finding or explain why not; it does not relax the first task's protection requirement.
 

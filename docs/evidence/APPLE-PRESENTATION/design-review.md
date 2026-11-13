@@ -24,7 +24,7 @@ On the next planning edit, make the table name the appropriate extent and milest
 
 ## Request and migration inspection
 
-I read both tasks in [ACCEPTED.json](../../plans/APPLE-PRESENTATION/ACCEPTED.json) in full before comparing the design. The original request commissions the remaining road to V1 plus water and clouds, with continuous buildable milestones, module ownership and contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The retry task commissions the earlier review's corrections; it does not replace the original purpose.
+I read both tasks in [ACCEPTED.json](../../plans/APPLE-PRESENTATION/RECORD.json) in full before comparing the design. The original request commissions the remaining road to V1 plus water and clouds, with continuous buildable milestones, module ownership and contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The retry task commissions the earlier review's corrections; it does not replace the original purpose.
 
 For this module, the [project brief](../../plans/BRIEF.md) and [module list](../../plans/ARCHITECTURE.md) require shared temporal reconstruction, followed by extent transitions, MetalFX, EDR, the quality governor and pipeline preparation. Sea and cloud contributors use the shared temporal contract and later governor. The early milestones supply that foundation without introducing simulation authority or a private effect reconstructor. Later obligations remain assigned and explicitly deferred, as the previous review allowed.
 

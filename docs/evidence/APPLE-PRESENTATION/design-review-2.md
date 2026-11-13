@@ -47,7 +47,7 @@ Update that table's milestone label during the next planning edit so readers do 
 
 ## Request and inspection scope
 
-I read both `briefs` entries in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/ACCEPTED.json), oldest first and in full. The original task commissions the remaining road to the V1 exit plus water and clouds, continuous buildable work, module ownership/contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The second task commissions the revisions requested by the previous review; it does not narrow the original obligations.
+I read both `briefs` entries in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/RECORD.json), oldest first and in full. The original task commissions the remaining road to the V1 exit plus water and clouds, continuous buildable work, module ownership/contracts, protection of concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions, and explicit owner decisions. The second task commissions the revisions requested by the previous review; it does not narrow the original obligations.
 
 For this module the request requires shared temporal inputs and reconstruction, followed by the named display, governor and preparation work. Sea/cloud consumers must use those shared contracts. M1–M3 supply the early foundation; the remaining work stays explicitly assigned and deferred for further planning. No revised criterion changes simulation authority, silently drops a later V1 requirement, or edits a concurrent producer's definition.
 

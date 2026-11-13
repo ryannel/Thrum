@@ -52,7 +52,7 @@ Chrome. This remains a proof-strengthening suggestion, not a new condition for d
 
 ## Request and inspection scope
 
-Read all four [accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json), whole and oldest first,
+Read all four [accepted planner briefs](../../plans/ATMOSPHERE/RECORD.json), whole and oldest first,
 and the [project brief](../../plans/BRIEF.md) before assessing the revision. The original commission calls for
 a continuous road to V1 and readiness for the sea/cloud modules. ATMOSPHERE must provide one shared sky, true
 Sun, transmittance, aerial and reflection handoff; apply cloud optical depth once to each direct-Sun receiver;

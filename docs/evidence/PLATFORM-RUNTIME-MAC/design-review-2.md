@@ -15,7 +15,7 @@ design and its reshape, not a new technique-selection or implementation review.
 
 ## Request and required outcome
 
-I read the complete `briefs` array in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json)
+I read the complete `briefs` array in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/RECORD.json)
 and [the project brief](../../plans/BRIEF.md) before assessing the design. The array contains one task:
 reshape the migrated plans into orchestrate 1.7.0 form, retaining milestone scope and done-when items,
 moving detailed designs and review briefs to their appropriate files, shortening done milestones to

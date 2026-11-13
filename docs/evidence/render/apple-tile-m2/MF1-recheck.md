@@ -29,7 +29,7 @@ through lead review.
 
 D2.1, D2.2, D2.4 and D2.5 retain their passed [earlier evidence](README.md) and the independent review's
 observations. The attended 1x playback record is retained as requested. Owner setup and direction remain verbatim
-in [ACCEPTED.json](../../../plans/APPLE-TILE/ACCEPTED.json), `milestones.M2.owner_answers`, with the latest answer
+in [ACCEPTED.json](../../../plans/APPLE-TILE/RECORD.json), `milestones.M2.owner_answers`, with the latest answer
 for each item authoritative.
 
 The required `agent_loop.py check --module APPLE-TILE --milestone M2 --worktree .` passes, including

@@ -12,7 +12,7 @@ The previous review at `3e5be4a760190434acd2655d43d7cf92c549ee8e` ended `DESIGN 
 Must Fix findings or Suggestions. There are no outstanding findings to resolve. Its approval concerned
 the earlier swap-table protocol and does not establish the replacement witness's implementation.
 
-I read both complete tasks in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json), oldest
+I read both complete tasks in [ACCEPTED.json](../../plans/PLATFORM-RUNTIME-MAC/RECORD.json), oldest
 first, and [the project brief](../../plans/BRIEF.md). The first task authorized a format-only reshape.
 The second explicitly authorizes a scoped re-plan after readable attended traces contained no display
 events: diagnose the evidence, provide a working display-event source or another authoritative cadence

@@ -107,7 +107,7 @@ scope and its relationship to C05's affected presentation closure; add a coupled
 
 ## Request and scope assessment
 
-I read the complete `briefs` entry in [ACCEPTED.json](../../plans/CONTENT-LOOP/ACCEPTED.json) and the
+I read the complete `briefs` entry in [ACCEPTED.json](../../plans/CONTENT-LOOP/RECORD.json) and the
 [project brief](../../plans/BRIEF.md) before the design. The accepted task is the lead's wording, not a direct
 owner quotation. The owner-approved brief supplies the controlling G5 and V1 requirements: content-addressed
 cooking and runtime loading, visible live edits without GPU stalls, shipping isolation from authoring, and

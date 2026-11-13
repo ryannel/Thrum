@@ -40,7 +40,7 @@ M4–M11 and seams 5–9 are expressly awaiting planning and reconciliation. Pre
 
 ## Request, scope and previous reviews
 
-I read the sole `briefs` entry in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/ACCEPTED.json) in full before comparing the design. It commissions the remaining project road to V1 plus water and clouds, with module ownership, build order, contracts and briefs, and buildable plans for the next work. It protects the concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions and leaves owner decisions explicit.
+I read the sole `briefs` entry in [APPLE-PRESENTATION-ACCEPTED.json](../../plans/APPLE-PRESENTATION/RECORD.json) in full before comparing the design. It commissions the remaining project road to V1 plus water and clouds, with module ownership, build order, contracts and briefs, and buildable plans for the next work. It protects the concurrent PLATFORM-RUNTIME-MAC M2 and APPLE-TILE definitions and leaves owner decisions explicit.
 
 For this module, the resulting obligations are temporal inputs and reconstruction for the shared frame, followed by extent/transitions, MetalFX, EDR, governor and pipeline preparation. Sea/cloud consumers need the same temporal inputs and later quality knobs; this module must not introduce another simulation authority or a private effect reconstructor. The module map assigns those responsibilities and the design preserves them. The later work is named and explicitly deferred, rather than silently removed from V1. This review does not judge the separate sea/cloud finishing decisions or authorize their port timing.
 

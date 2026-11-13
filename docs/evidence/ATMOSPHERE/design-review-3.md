@@ -9,7 +9,7 @@ criteria, not implementation, visual quality or completion of M5/M6. No other ag
 
 ## Request and inspection scope
 
-Read all three entries in [the accepted planner briefs](../../plans/ATMOSPHERE/ACCEPTED.json),
+Read all three entries in [the accepted planner briefs](../../plans/ATMOSPHERE/RECORD.json),
 whole and oldest first: the project commission to plan the remaining V1 road and consolidate water and
 clouds, followed by both requests to revise ATMOSPHERE against its design review. For this module that means
 one shared sky, true Sun, light-transmittance and reflection handoff for independent consumers; cloud optical

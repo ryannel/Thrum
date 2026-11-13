@@ -99,7 +99,7 @@ or hold up the GPU lease milestone. Do not resolve the portable variant through 
 ## Request and review limits
 
 I read all three complete tasks under `briefs` in
-[ACCEPTED.json](../../plans/CONTENT-LOOP/ACCEPTED.json), the human-approved
+[ACCEPTED.json](../../plans/CONTENT-LOOP/RECORD.json), the human-approved
 [project brief](../../plans/BRIEF.md), and the module-list entry before assessing the revision. The planning
 tasks are lead/script instructions; they do not override the human's purpose or exit. Leases, live cooked rows
 and the G5 integration support that request. Later sprite-sheet/font products and sea/cloud-specific choices

@@ -58,7 +58,7 @@ blocking finding or a demand for an exhaustive numerical study.
 
 ## Request and mechanism assessment
 
-I read the complete `briefs` array in [ACCEPTED.json](../../plans/CULLING/ACCEPTED.json) first. It contains one
+I read the complete `briefs` array in [ACCEPTED.json](../../plans/CULLING/RECORD.json) first. It contains one
 task, dated 11 November, with no retry or re-plan briefs. Together with the project brief, it requires a small
 first milestone available after APPLE-TILE M2, completion of G3c, and an explicit way to catch changes to another
 module's exact baselines before landing.

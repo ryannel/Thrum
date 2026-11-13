@@ -14,7 +14,7 @@ All arms use M2.1's release executable SHA-256
 same recipe, 1920×1080 engine output and normal AppKit slider sweep on this M3 Max. M3 owns post-APPLE-TILE
 requalification. [Identity](identity.json), [M2.1 motion and M2.3 real-window proof](../mac-m2-20261110/README.md).
 
-The attended setup answers are in [ACCEPTED.json](../../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json),
+The attended setup answers are in [ACCEPTED.json](../../../plans/PLATFORM-RUNTIME-MAC/RECORD.json),
 `milestones.M2.owner_answers`: M2.2 at `2026-11-12T06:57:44Z` and M2.5 at `2026-11-12T06:57:53Z` each say
 "The screen is unlocked if you need it". Those are the owner's recorded words. Per-arm panel witnesses separately
 show the console unlocked and built-in display active/awake. No security setting or permission was changed.
