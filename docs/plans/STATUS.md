@@ -85,6 +85,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - RENDER-2D assumes: sprites blend in linear light, as the rest of the engine does. Half-transparent art looks lighter over dark than in Aseprite or Photoshop (white at half alpha over black is 188, not 128); hard-edged pixel art is unaffected. The other choice blends in display space, matches paint tools, and gives up the shared output path. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: bright effects clip at white on an SDR display. The frame keeps values above white for an EDR display, and how they look on the XDR panel is not judged in this module. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: a scene shows at most eight sprite sheets at once. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: where sprites overlap in a crowd, an order that holds still matters more than one sorted exactly by height. A sprite can therefore be drawn behind a neighbour that is very slightly higher on the screen (by a few times the jitter the engine is hiding), so that packed sprites do not flicker. The other choice sorts exactly and lets neighbours that push each other swap every few ticks. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: test art is made by the builder (generated test cards and a few simple original sprites), and the owner's judgement of a look is not an item here. The game's art is `SWARM`'s. ([plan](RENDER-2D/PLAN.md))
 
 ### Now and next
