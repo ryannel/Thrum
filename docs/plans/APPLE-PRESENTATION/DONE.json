@@ -74,7 +74,7 @@
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "in_progress",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 0,
       "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
