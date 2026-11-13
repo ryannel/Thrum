@@ -517,11 +517,11 @@ fn ambient_irradiance(n: vec3<f32>) -> vec3<f32> {
     return max(evaluate_sky_diffuse(light.sky_diffuse,n),vec3(0.0));
 }
 
-fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> {
+fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool, gradients: mat2x2<f32>) -> vec4<f32> {
     let material=materials[input.material];
-    let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
-    let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
-    let emissive=textureSample(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w));
+    let base=textureSampleGrad(base_textures,material_sampler,input.uv,i32(material.texture_layers.x),gradients[0],gradients[1]);
+    let orm=textureSampleGrad(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z),gradients[0],gradients[1]);
+    let emissive=textureSampleGrad(emissive_textures,material_sampler,input.uv,i32(material.texture_layers.w),gradients[0],gradients[1]);
     // AO affects the ambient source only; direct Sun and local lights retain
     // their independent visibility and incident irradiance.
     let surface_base = material.base.rgb*base.rgb;
@@ -578,10 +578,14 @@ fn motion_vector(input: VertexOutput) -> vec2<f32> {
         vec2(-65504.0), vec2(65504.0));
 }
 @fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
-    return FragmentOutput(shade(input,1.0,front_facing), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
+    let gradients = mat2x2<f32>(dpdx(input.uv), dpdy(input.uv));
+    return FragmentOutput(shade(input,1.0,front_facing,gradients), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
 }
 @fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
+    // Evaluate the texture footprint alongside the receiver derivatives,
+    // before the divergent Sun blocker searches execute.
+    let gradients = mat2x2<f32>(dpdx(input.uv), dpdy(input.uv));
     let receiver = ShadowReceiver(input.world_position,dpdx(input.world_position),
         dpdy(input.world_position),normalize(input.normal));
-    return FragmentOutput(shade(input,sun_visibility(input,receiver),front_facing), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
+    return FragmentOutput(shade(input,sun_visibility(input,receiver),front_facing,gradients), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
 }

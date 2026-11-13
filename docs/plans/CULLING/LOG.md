@@ -1,5 +1,18 @@
 # CULLING log
 
+- 2026-11-13 Clean `64c81cd2` passes Chrome cubes/meshes, the full temporal
+  cycle and every exact baseline (native 38 + 4, four Chrome sets of 481).
+  The native item checks reproduce sparse terrain differences: cube Occlusion
+  at tick 379 and independent mesh Direct at tick 180. All three same-time
+  recaptures of each host converge to the common Direct bytes, with no tick
+  advance or changed alpha/exposure value. [Reachable evidence](../../evidence/CULLING/M3.md)
+  retains the original failures and the earlier fully passing native mesh run.
+  Shader-instrumented stage comparisons pass but change compilation and do not
+  repair the original. A new scoped candidate evaluates explicit UV gradients
+  before Sun control flow and shares them across material samples; sampler and
+  anisotropy stay unchanged. Four extra scalars live across the Sun search;
+  strict target/baseline checks and measured GPU cost are pending.
+
 - 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome
   fixed and realtime inspection frames, the mixed-field readbacks and the
   independent-Direct SDR/scene-linear failure bytes. [M3 evidence](../../evidence/CULLING/M3.md)
