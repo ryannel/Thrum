@@ -1,0 +1,721 @@
+{
+  "module": "GAME-UI",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing",
+      "depends_on": [
+        "RENDER-2D:M5"
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "An overlay as exact as a pixel-art game's status display at a whole-number scale, such as Celeste's: every texel a clean block of its authored colour, and steady over a moving scene. As free when unused as Bevy's interface is when its plugin is left out: a game without one runs no pass and holds no resource for it.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "On the Mac, on both native recipes, rows of an embedded sheet handed over as a paint list are drawn at the interface stage over a 2D scene, in list order. An opaque, untinted texel leaves the frame as its authored 8-bit code. A tinted or part-transparent texel is within one code of the linear-light blend over the scene's own submitted pixel. This holds at whole-number scales on the pixel grid and at even and odd extents; Y runs down from the top-left corner and nothing is mirrored.",
+          "check": "cargo test --locked --offline -p thrum-ui --test stage_exact",
+          "ask": "Read the test. Is the reference built on the CPU from the sheet's source texels, the rows and the same frame captured with no interface, without any of the renderer's shaders? Does it compare every pixel of the submitted output on the portable and the Apple tile recipe, with the one-code allowance used only for tinted and blended texels, and with an asymmetric mark that would show a flip?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.2",
+          "statement": "A frame drawn with an interface equals the same frame drawn without one, byte for byte, at every pixel no row covers, over a 2D scene and over the 3D valley.",
+          "check": "cargo test --locked --offline -p thrum-ui --test stage_exact",
+          "ask": "Does the test take both frames from one scene state through engine capture's tap, for the 2D scene and for the valley on both recipes, and compare every uncovered pixel?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.3",
+          "statement": "A host prepared with no interface compiles the same pass order, attachment storage and transient slots as before this milestone, for the 2D scene and for every 3D variant the V1 game prepares, on both recipes, and creates no pipeline, buffer, texture or view for an interface.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test interface_absent",
+          "ask": "Is the 'before' side taken from main at the commit this milestone started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.4",
+          "statement": "Over the 3D valley with jitter and temporal reconstruction running and the camera moving, the interface is drawn after reconstruction and the display transform: its opaque texels are the same bytes in every frame, and it is drawn at the output extent when the render extent is smaller.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_valley",
+          "ask": "Does the test run a recipe that resolves a reconstructor at a render scale below 1, with the camera moving for many frames? Would an interface drawn before reconstruction or before the tone stage fail it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.5",
+          "statement": "In every display mode the output half offers at the claimed commit, an opaque white interface texel leaves the frame at that mode's SDR white whatever the display's headroom, and the interface over a black scene matches the SDR mode's to within one code of that mode's own encoding.",
+          "check": "cargo test --locked --offline -p thrum-ui --test stage_display_modes",
+          "ask": "Which display modes does the output half offer at this commit, for a 2D scene and for a 3D one? Does the test run each of them, at a headroom of 1 and above 1 where a mode has headroom?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.6",
+          "statement": "After a resize to another extent, a discarded frame, a refused surface, a capture frame and a replaced device, the interface draws exactly what a fresh one draws at that extent. A list laid out for another extent than the frame's is drawn unscaled from the top-left corner and counted in the frame's record.",
+          "check": "cargo test --locked --offline -p thrum-ui --test stage_lifecycle",
+          "ask": "Is each of the five events driven through the host's own calls, and is the fresh interface's image compared pixel for pixel after each?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.7",
+          "statement": "A row beyond the declared capacity, and a row with a value that is not finite, is dropped and counted in the frame's record. A paint list that has not changed since the last frame uploads no bytes. A ninth interface sheet is refused at preparation by name.",
+          "check": "cargo test --locked --offline -p thrum-ui --test stage_rows",
+          "ask": "Are uploaded bytes counted where they are written, across at least a hundred unchanged frames, with a changed list as a control that the count does see?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.8",
+          "statement": "In Chrome, at device pixel ratios of 1 and 2, the V1 game's interface scene draws its panel card exactly as the CPU reference, leaves uncovered pixels as the scene without an interface draws them, compiles no interface pass when none is asked for, follows a canvas resize, and draws again on a replaced device.",
+          "check": "node scripts/check_v1_browser.mjs --case interface-stage",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.9",
+          "statement": "On the Mac the interface scene's panel card reads as drawn over the sprite field and over the valley: upright and unmirrored with its corner marks in their corners, flat authored colours, hard edges, an even half-transparent scrim, nothing missing. Over the moving valley its edges do not swim, shimmer or trail.",
+          "inspect": "Capture the interface scene with T2 engine capture. `fixed` stills over the sprite field at 1280×720 and 3456×2234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture of at least ten seconds over the valley at 1920×1080 with the camera moving; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.10",
+          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920×1080 and at 3456×2234, with no interface, an empty one and one of 2,000 rows: the stage's pass alone, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target mac-metal",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Are the before and after runs paired and alternated, and is any tripwire of the design's cost account that tripped written in the log with what was found?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.11",
+          "statement": "In Chrome the same three cases are on record at 1920×1080 and at the page's full backing size, from two separate runs with build and load, with whether Chrome accepted the sRGB view of the display image. No time is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Text as crisp as the system draws the same face at the same size: each glyph on screen is exactly the bitmap rasterised for that size and scale, as in Dear ImGui or a browser at 100% zoom, and never a resampled one. A pixel font as clean as the status text of Vampire Survivors or Celeste: square texels at a whole-number scale. Spacing as even and steady as a browser's: no pair collides or gapes, accents sit on their letters, and a number that counts never shivers.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "A font source with an outline font cooks to one font table and one pixel-kind sheet for each scale of 1, 2 and 3. Each glyph's frame is white at the glyph's coverage, rasterised at size × scale on a whole-pixel origin, with its pivot at the pen's origin on the baseline. The table's advances and kerning are the font file's own, rounded to whole output pixels. With no character list the set is Basic Latin, the Latin-1 Supplement, Latin Extended-A and the design's punctuation, with a missing-glyph box for each size. A size with an outline has a second frame for each glyph.",
+          "check": "cargo test --locked --offline -p thrum-cook --test font_cook",
+          "ask": "Read the test. Does it read advances, kerning and line metrics from the font file by a path the cooker does not use, and compare them with the table for each size and scale? Does it show each frame holds its whole glyph (the outline's bounds at that size lie inside it), that an asymmetric glyph is neither flipped nor mirrored, and that a kerned pair and an accented letter of Latin Extended-A are present?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.2",
+          "statement": "A font source with a grid image cooks a pixel font to one sheet and a table: texels as authored, each character in the cell the description gives it, advances as described, and an outline one texel wide when asked for.",
+          "check": "cargo test --locked --offline -p thrum-cook --test font_cook",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.3",
+          "statement": "A malformed font product is refused before any of it is used, each with a named error: a truncated table, a character naming a frame its sheet lacks, a metric that is not finite, a size and scale listed twice, a sheet missing for a listed scale. A source that cannot be cooked is refused by name: a font file that does not parse, a size that is not above zero, a listed character the font lacks.",
+          "check": "cargo test --locked --offline -p thrum-cook --test font_hostile",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.4",
+          "statement": "A run's glyphs sit at whole-pixel offsets from its origin, each the sum of the table's advances and kerning before it, and the origin snaps to a whole output pixel. A size or scale the font was not cooked at is refused by name when the text is made. A missing character draws the box at a fixed advance and is counted; a base letter and a combining mark draw as the composed character; tabular digits all take the widest digit's advance. Text breaks at newlines, wraps at spaces inside a width, aligns left, centre and right, elides at the end or in the middle, and places no glyph outside its box.",
+          "check": "cargo test --locked --offline -p thrum-ui --test text_runs",
+          "ask": "Read the test. Are the expected offsets worked out from the table's numbers by hand or by separate code, and not by the layout under test? Is each of the listed behaviours its own case, including a kerned pair, a wrap that falls on the last space that fits, and a box too small for one line?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.5",
+          "statement": "On the Mac, on both native recipes, at interface scales of 1, 2 and 3, a run drawn at the interface stage is the cooked glyph texels at the run's offsets: every pixel is within one code of a CPU blend of those texels over the scene. With the run's origin swept through 64 sub-pixel positions the image is one bitmap moved by whole pixels. A pixel font at 1, 2 and 3 times its height is its authored texels as square blocks.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
+          "ask": "Is the reference composed on the CPU from the cooked sheet's texels and the table, without the renderer's shaders and without the layout's own output positions? Is a run scaled from another scale's sheet a control that the test fails?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.6",
+          "statement": "When the interface scale changes among 1, 2 and 3, the new scale is drawn only once its font sheets are resident and from one submitted frame on; until then the interface is drawn whole at the old scale, and no frame mixes two scales. Afterwards only the scale in use is resident.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
+          "ask": "Does the test hold the new sheet's last copy unsubmitted and show the old scale still drawn? Does it read resident bytes from residency's own account?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.7",
+          "statement": "A run placed among a 2D scene's frame rows at a whole-number view scale on the pixel grid draws its glyphs as square blocks at the run's offsets, ordered among the sprites by layer and sort value.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.8",
+          "statement": "Saving a changed font source reaches the running interface without a restart. Every frame of the edit window shows each glyph whole, from the old font or the new, never a blank, a missing-glyph box or a glyph of another size, and the interface settles on exactly what a fresh start with the new source draws. A source that cannot be cooked, or that drops a size a live text uses, leaves the last good font drawn and names the reason.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
+          "ask": "Does the edit change both a glyph's shape and its advance, so that a table and a sheet from different saves would be seen? Is the settled frame compared with a fresh start pixel for pixel?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.9",
+          "statement": "In Chrome, at device pixel ratios of 1, 2 and 3, the interface scene draws runs from a cooked font in the fetched store exactly as the CPU reference at the matching scale, and an edited font appears without a reload of the page.",
+          "check": "node scripts/check_v1_browser.mjs --case interface-text",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.10",
+          "statement": "On record for the test fonts: the time to cook each, the bytes of the table and of each scale's sheet, the bytes resident at each scale, and the CPU time to lay out runs of 10, 100 and 1,000 glyphs on the Mac, from two separate runs with build and load. No figure is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target mac-metal --fonts",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.11",
+          "statement": "On the Mac, text at each cooked size and at scales of 1, 2 and 3 reads cleanly: letters are the right shapes, upright, on one baseline and evenly spaced; kerned pairs such as AV, To and r. neither collide nor gape; accents sit on their letters; outlines are even all round; nothing is clipped, fringed or haloed. The smallest size is clear at a scale of 1.",
+          "inspect": "Capture `fixed` stills of the interface scene's type card with T2 engine capture at each scale: every cooked size of the outline font and the pixel font at 1 and 2 times its height, light on dark, dark on light and outlined over the sprite field, with a pangram, digits, punctuation and accented words in French, German, Polish and Czech. Judge each whole and in native-size crops. Set the same strings drawn by the system in the same face at the same pixel size beside them, as a reference for weight and spacing; the two need not match.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.12",
+          "statement": "In Chrome, at device pixel ratios of 1 and 2, text reads as cleanly as on the Mac.",
+          "inspect": "Capture `fixed` stills of the same type card in Chrome with T2 engine capture at each ratio. Judge each whole and in native-size crops of the smallest size, a kerned pair, an accented word and an outlined line.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.13",
+          "statement": "In real time on the Mac, a right-aligned counter that grows digits, a timer with tabular digits and a label drifting by less than a pixel a frame keep their shapes: no gap between two glyphs ever changes, no digit shivers, and the label moves by whole pixels without its letters changing.",
+          "inspect": "Capture the interface scene's counting card at 1920×1080 with T2 engine capture in `realtime` mode for at least ten seconds at a scale of 1 and ten at a scale of 2. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.14",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: nothing overlaps, touches an edge, leaves the safe area or jumps when the window is resized.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "Layout gives each node the box the design's rules give it: stacks in rows and columns with padding, a gap and an alignment; overlays with children anchored to edges, corners, the centre and a given point; widths and heights that are fixed, fit their content, take a fraction of the parent or share what is left by weight, with a least and a most; text whose height follows its wrapped width. A tree with a fraction of a parent that fits its content is refused when it is built.",
+          "check": "cargo test --locked --offline -p thrum-ui --test layout",
+          "ask": "Read the test. Are the expected boxes worked out by hand for each case, including nesting three deep, two shares of unequal weight with a fixed sibling, a share held at its least, and a text whose wrap changes a parent's height?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.2",
+          "statement": "For any tree the nodes allow and any extent from 320×320 to 3456×2234 points with insets up to 64 points a side, every node's box lies inside its parent's unless the layout reports an overflow that names it, a stack's children never overlap, the same input gives the same boxes, and every node not marked full-bleed lies inside the safe box.",
+          "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
+          "ask": "Does the generator build stacks, overlays, text and every kind of size, nested, and sweep extents and insets to both ends of the range? Would a layout that ignores insets, or lets a share go below nothing, fail it?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.3",
+          "statement": "An unchanged tree does no layout, builds no paint list and uploads nothing. A change that cannot move a box, such as a colour, a bar's fraction or a tabular number of the same length, does no layout. After any sequence of changes the boxes and the paint list equal those of a tree built fresh with the final values.",
+          "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
+          "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.4",
+          "statement": "On the Mac, at interface scales of 1, 2 and 3, the status display's panels, bars, images and fills are drawn as the design says, to within one code of a CPU reference: a panel's corners keep their size at any box from the corners alone upward, its edges and centre stretch, and no seam shows between its nine parts; a bar's fill is its fraction of the track snapped to a whole pixel, nothing at 0, the whole track at 1 and never outside it; every box edge is on a whole output pixel.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_status_gpu",
+          "ask": "Is the reference composed on the CPU from the sheet's texels and the laid-out boxes? Does it sweep panel boxes and bar fractions, over a background colour no panel contains, so a seam or a spill would show?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.5",
+          "statement": "Across every extent from 320×320 to 3456×2234 points in steps of no more than 16, in both orientations of a phone-sized extent and with insets up to 64 points, at each scale, the interface scene's status display reports no overflow and no elided text, no two of its nodes overlap, and all of it lies inside the safe box.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_status_sweep",
+          "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.6",
+          "statement": "On the Mac, in windows of 640×360, 1280×720 and 1707×933 points on the built-in display, the shell reports the window's extent, the display's density and its insets, the interface takes a scale of 2, and the status display is exact against the CPU reference. After a resize the next submitted frame is laid out for the new extent and equals a fresh interface there.",
+          "check": "python3 scripts/game_ui.py window --target mac-metal",
+          "ask": "Does the run take extent, density and insets from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.7",
+          "statement": "In Chrome, at device pixel ratios of 1, 2 and 3 and after a canvas resize, the page reports extent, density and insets, the interface takes the matching scale, and the status display is exact against the CPU reference.",
+          "check": "node scripts/check_v1_browser.mjs --case interface-status",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.8",
+          "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, nothing touches an edge or another node, and the bar's level is plain.",
+          "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640×360 and 1280×720 points at a scale of 2, at 3456×2234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.9",
+          "statement": "In real time on the Mac, with the bar draining and refilling, the timer counting and the counters ticking over a moving crowd, only the values change: nothing shivers, shifts or overlaps, and through a run of window sizes every frame is laid out whole, with nothing cut off or left behind.",
+          "inspect": "Capture the interface scene at 1920×1080 with T2 engine capture in `realtime` mode for at least twenty seconds, and a second capture that steps the extent through at least six sizes. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.10",
+          "statement": "In Chrome, at device pixel ratios of 1 and 2, the status display reads at a glance over the field and only its values change in motion.",
+          "inspect": "Capture the interface scene in Chrome with T2 engine capture at each ratio: `fixed` stills at two canvas sizes, and `realtime` for at least ten seconds. Judge stills whole and in native-size crops, and consecutive frames at 1x.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.11",
+          "statement": "On the Mac, the CPU time to lay out and to build the paint list is on record for trees of 100, 500 and 2,000 nodes, and for the status display with every value changing each frame the layouts, rows rebuilt, bytes uploaded and the frame's CPU and GPU time, from two separate runs with build and load. No time is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target mac-metal --layout",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.12",
+          "statement": "In Chrome the same layout and status-display costs are on record, from two separate runs with build and load. No time is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.13",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "A level-up choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A choice as easy to work as Vampire Survivors' level-up or Hades' boon choice: the focused card is obvious at a glance, keys, pointer and touch all work and never disagree, and a held direction carries on when the choice closes. A join screen as plain as Factorio's or Stardew Valley's: a player sees what they are joining and why a join failed.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "Every contact has one owner from press to release. For any interleaving of presses, moves and releases of keys, pointer buttons and touches with scopes opening and closing: the game is never given a release for a contact it does not hold, and nothing while an exclusive scope is open; opening an exclusive scope tells the game once that its input was interrupted; closing the last one tells it exactly the contacts still down that worked no control, with each touch's position; a lost focus interrupts the game and cancels every press in the interface.",
+          "check": "cargo test --locked --offline -p thrum-ui --test routing",
+          "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a level-up, and a touch held on a stick while a second finger chooses, written out as cases?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.2",
+          "statement": "A button is activated once, when the contact that pressed it is released inside it, and not when it slides off or the button is removed or disabled. A pointer over a control focuses it; a touch shows no focus style. A control's hit box is at least 44 points a side, and a point inside two grown boxes goes to the control whose drawn box is nearest.",
+          "check": "cargo test --locked --offline -p thrum-ui --test controls",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.3",
+          "statement": "Focus stays inside the top open scope, starts on the control the scope names and returns to where it was when the scope closes. Direction keys follow the design's rule: in rows, columns and grids of one to six by one to four controls every control is reachable and every move is undone by its opposite, and a named neighbour wins. Next and previous reach every control in tree order. An activate key works the focused control once, when it goes down, and a hidden or disabled control gives focus up. A key held when a scope opened never moves focus, and a disarmed scope acts on nothing until its time has passed.",
+          "check": "cargo test --locked --offline -p thrum-ui --test focus",
+          "ask": "Are reachability and reversal checked over the whole stated family of grids, with several cell shapes and gaps, and is the ragged layout of three cards above two present as a case that names its neighbours?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.4",
+          "statement": "A text drop reaches the node in the top scope that accepts drops, or the game when none does, whole and with its source. A drop longer than the node allows, or holding a control character, is refused and counted. A ticket of 100 characters shows its two ends around an ellipsis and is handed to the game unshortened. A copy request reaches the shell with the whole string.",
+          "check": "cargo test --locked --offline -p thrum-ui --test drops",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.5",
+          "statement": "On the Mac, in the game's window shell with events entering where the window's own do, the player row moves only from input the game was passed. Through a level-up opened while a direction is held, the player stops at once, each of the four cards can be chosen by keys alone and by pointer alone with exactly one activation each, the held direction moves the player again when the choice closes, and no event the interface consumed appears in the game's input record.",
+          "check": "python3 scripts/game_ui.py route --target mac-metal",
+          "ask": "Do the scripted events enter at the same function the window's own key and pointer events enter, with positions in the window's own units? Is the player's position read from the game, and the activation count from what the game was handed?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.6",
+          "statement": "On the Mac a device replaced while the choice is open leaves the choice open with focus on the same card. A ticket given as a launch argument reaches the join screen whole, and so does one pasted with Command-V when the system lets the shell read the clipboard; Copy puts the host's ticket on the clipboard. The run records whether the system allowed each clipboard call.",
+          "check": "python3 scripts/game_ui.py drops --target mac-metal",
+          "ask": "Does the run pass on the launch argument and the device replacement alone when the system withholds the clipboard, and say so in its record, without waiting on a prompt?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.7",
+          "statement": "In Chrome, with key, mouse and touch events sent through the browser, the same level-up passes by keys, by mouse and by touch, a second touch chooses while a first is held and the first is handed back on close, nothing consumed reaches the game, and a replaced device leaves focus on the same card. A ticket arrives from the page address's fragment and from a paste event.",
+          "check": "node scripts/check_v1_browser.mjs --case interface-modal",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.8",
+          "statement": "On the Mac the level-up choice reads at a glance in every state: four cards of equal size with their text inside them, the focused one unmistakable, pressed and disabled cards distinct from it, the scrim even, and the crowd still legible behind.",
+          "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640×360 and 1280×720 points at a scale of 2, at 3456×2234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.9",
+          "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
+          "inspect": "Capture the scripted level-up at 1920×1080 with T2 engine capture in `realtime` mode, three times through, with the event times from the run's record beside the frames. Judge the consecutive frames around each event at 1x, whole and in native-size crops of the cards and of the player.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.10",
+          "statement": "On the Mac the join screen reads plainly in each state: hosting with its ticket and Copy; joining with no ticket, with a pasted ticket, connecting, joined with a roster of four, refused with its reason, closed with its reason. The ticket's two ends are legible, a reason is never cut off, and nothing overlaps at the smallest window.",
+          "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640×360 and 1280×720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.11",
+          "statement": "In Chrome, at device pixel ratios of 1 and 2, the choice and the join screen read as on the Mac.",
+          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at each ratio: the choice idle, focused and pressed, and the join screen joining with a ticket, joined and refused. Judge each whole and in native-size crops.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.12",
+          "statement": "On record on the Mac and in Chrome: the CPU time to route an event, and for a key press, a pointer press and a touch the number of frames from the event to the first submitted frame that shows its effect, beside the same count for one of the game's own presentation edits, from two separate runs with build and load. No figure is a pass mark.",
+          "check": "python3 scripts/game_ui.py costs --target mac-metal --events",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the Chrome record present beside the Mac's, taken with events sent through the browser?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.13",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "The status display, the level-up choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "An interface that sits on a phone as a native game's does: clear of the Dynamic Island, the rounded corners and the home indicator in both orientations, with cards big enough for a thumb. A guide a game maker can follow without reading engine source, as Bevy's interface examples are.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "On the iPhone simulator the interface scene runs through the iOS shell. It takes a scale of 3 and its text is exact against the CPU reference in the engine's capture. The shell reports the view's safe-area insets in portrait and in landscape and every status node lies inside them. After a rotation the interface is laid out for the new extent and insets, and after background and foreground the tree, focus and an open choice are as they were.",
+          "check": "python3 scripts/game_ui_sim.py layout",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.2",
+          "statement": "On the simulator real touches choose each of the four cards with exactly one activation each. A touch held on the stick is interrupted when the choice opens and handed back when it closes, and no touch the interface consumed moves the player. A ticket in an address the app is opened with reaches the join screen whole.",
+          "check": "python3 scripts/game_ui_sim.py touch",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.3",
+          "statement": "On the simulator's screen the status display is clear of the Dynamic Island, the rounded corners and the home indicator in both orientations, the cards are large enough to tap, and text is crisp.",
+          "inspect": "Take `simctl` screenshots in portrait and in landscape of the status display, the open choice and the join screen, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the corners, the top and bottom edges and one line of text. Function only.",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.4",
+          "statement": "A game with no interface links none of this module, and a game with one does: the starter's dependency tree holds no `thrum-ui` and the V1 game's does.",
+          "check": "sh -c 'cargo tree --locked --offline -p v1-game -e normal | grep -q thrum-ui && ! cargo tree --locked --offline -p thrum-starter -e normal | grep -q thrum-ui'",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.5",
+          "statement": "The engine crates name no game's type or screen, the interface scene is built through this module's public interface alone, and `thrum-ui` depends on no cooker, residency, network or platform interface crate. `thrum-controls` and its panels are unchanged and still drive the demo controls.",
+          "ask": "Does `thrum-ui`, `thrum-render`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` or `thrum-app` name a type, constant, string or screen of the V1 game or of SWARM? Does the interface scene reach the tree, the stage and routing only through public items? What does `thrum-ui`'s manifest depend on? Did any file of `thrum-controls` change in this module?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.6",
+          "statement": "A guide linked from the creator guide tells a game maker how to write a font source, prepare a host with an interface, build a tree, lay out a status display, open and close a scope, route events and take activations, take a text drop, and choose the interface scale. It says that blending is in linear light and what that does to scrims and to the weight of text, and lists what is not built.",
+          "ask": "Do the commands and code the guide gives build and run as written at the claimed commit? Does it cover each interface the design provides, and name complex scripts, right-to-left text, typed text, localisation, accessibility bridges, a gamepad, scrolling and animation as not built?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.7",
+          "statement": "The maturity ledger says what this module proved and what it did not.",
+          "ask": "Do the ledger's rows for the interface keep implementation, correctness, visuals and device results apart? Do they name as not run: key and pointer events delivered by the system to the Mac window, a physical iPhone, how the interface feels under the hand, the interface's look on an EDR panel, displays of fractional density, and every script and bridge the design lists as unqualified?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    }
+  ]
+}
