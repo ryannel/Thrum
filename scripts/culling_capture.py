@@ -25,9 +25,9 @@ def main():
                '--mode', 'realtime', '--output', str(output / 'native-realtime')]
     subprocess.run(command, cwd=ROOT, check=True)
     for mode in ('fixed', 'realtime'):
+        route_args = [] if mode == 'fixed' else ['--route-file', 'examples/v1-game/routes/culling-fast-yaw.json']
         subprocess.run(['node', 'scripts/capture_v1_browser.mjs', '--cook', 'target/release/thrum-cook',
-                        '--mode', mode, '--route-file', 'examples/v1-game/routes/culling-fast-yaw.json',
-                        '--output', str(output / f'chrome-{mode}')], cwd=ROOT, check=True)
+                        '--mode', mode, *route_args, '--output', str(output / f'chrome-{mode}')], cwd=ROOT, check=True)
         subprocess.run(['python3', 'scripts/package_v1_browser.py', '--output', str(output / f'chrome-{mode}')], cwd=ROOT, check=True)
     env = dict(os.environ, THRUM_FIELD_FULL_PATH='1', THRUM_FIELD_SEQUENCE=str(output / 'field-fixed'))
     subprocess.run(['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
