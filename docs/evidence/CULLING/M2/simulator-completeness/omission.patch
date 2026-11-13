@@ -1,0 +1,21 @@
+diff --git a/crates/thrum-render/src/synthetic/camera_culling.rs b/crates/thrum-render/src/synthetic/camera_culling.rs
+index 1e29e0dd..9f2c6188 100644
+--- a/crates/thrum-render/src/synthetic/camera_culling.rs
++++ b/crates/thrum-render/src/synthetic/camera_culling.rs
+@@ -396,7 +396,15 @@ impl PreparedSynthetic {
+             Some(culled) if self.visibility.is_some() => {
+                 pass.draw_indexed_indirect(culled.args(), 0);
+             }
+-            _ => pass.draw_indexed(0..36, 0, 0..self.instance_upload.active_count()),
++            _ => {
++                let active = self.instance_upload.active_count();
++                let drawn = if self.culling_selection.requested == CullMode::Occlusion {
++                    active / 2
++                } else {
++                    active
++                };
++                pass.draw_indexed(0..36, 0, 0..drawn);
++            }
+         }
+         Ok(())
+     }
