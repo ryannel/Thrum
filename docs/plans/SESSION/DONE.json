@@ -1,0 +1,667 @@
+{
+  "module": "SESSION",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step",
+      "depends_on": [
+        "SIM-2D:M3"
+      ],
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "On the Mac, a world image written from the reference crowd mid-run, at 10,000 bodies after slots have been reused, restores into a fresh runtime in another process. The restored world has the image's digest and steps the rest of the Crowd and Mixed traces to SIM-2D's retained checkpoint digests.",
+          "check": "python3 scripts/session_match.py image --target mac-metal",
+          "ask": "Read the harness. Is the image restored in a different process from the one that wrote it, into a runtime with a different world epoch? Does the restored world step through thrum_core::sim's registered runtime? Are the digests compared with SIM-2D's retained files, unchanged in git since SIM-2D was accepted? Is an image taken at tick 0 and at more than one later tick, with reused slots and despawned bodies counted above zero at the later ones?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.2",
+          "statement": "As Wasm in Chrome, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
+          "check": "python3 scripts/session_match.py image --target chrome-webgpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.3",
+          "statement": "In the iPhone simulator, the reference crowd stepped to the same ticks writes images byte for byte equal to the Mac's, and a world restored there from the Mac's image steps the rest of both traces to the retained digests.",
+          "check": "python3 scripts/session_match.py image --target ios-sim",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.4",
+          "statement": "Writing a world and restoring it gives a world with the same digest and the same image, for worlds that hold every kind of value the design's image list names. A restored world steps, spawns into its free slots in the original order, and keeps no undo history. A component or resource type that supplies the encoding without the decoding does not compile into a rule set.",
+          "check": "cargo test --locked --offline -p thrum-core --test world_image",
+          "ask": "Read the test. Does it cover, one at a time, each kind in the design's list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Does any encoded value pass through the machine's width or std::hash? Does thrum-core name anything of the reference crowd?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.5",
+          "statement": "An image cut at any byte, with a length of zero, over the caller's bound or the largest its field can say, written under another rule-set identity, or made of random bytes is refused whole: the world it was offered to keeps its digest, and nothing is allocated above the bound the caller gave.",
+          "check": "cargo test --locked --offline -p thrum-core --test world_image_untrusted",
+          "ask": "Read the test. Does it drive the restore the session will use, with each kind of input in the statement generated? Is the whole image validated before any part of the world is replaced? Is there a stdin target for the image decoder, in the style of thrum-network's?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.6",
+          "statement": "The rule-set identity of the reference crowd is the same from two separate builds of one commit, and differs when one constant of a rule, or one line of the engine's profile or digest, changes with no other edit. An image names the identity it was written under.",
+          "check": "python3 scripts/session_match.py identity",
+          "ask": "Is the identity derived when the game is built from the sources the design lists, with no number a person raises? Does it also cover the game's action wire and the toolchain? Does the command make each change in a scratch copy outside the tree and fail if any leaves the identity unchanged? Do the Chrome and simulator image runs show an image written under the Mac's identity accepted there?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.7",
+          "statement": "For the reference crowd at 2,000, 5,000 and 10,000 bodies, the image's size, the time to write it and the time to restore it on the Mac are on record from two separate runs, each row with build and load. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py image-costs --target mac-metal",
+          "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.8",
+          "statement": "For the reference crowd at 2,000, 5,000 and 10,000 bodies, the time to restore an image in Chrome is on record from two separate runs, each row with build, browser version and load. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py image-costs --target chrome-webgpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.9",
+          "statement": "SIM-2D's two retained traces reproduce their retained digests on the Mac at the claimed commit, by the local and the wire route, with the retained files unchanged.",
+          "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
+          "ask": "Are the retained files byte for byte the ones SIM-2D was accepted with, by git history? Did this milestone change any item, test or comparison of SIM-2D's?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M1.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As exact as Factorio's map transfer to a joining player, after which the newcomer's world matches the server's checksum for checksum, and as careful with untrusted bytes as thrum-network's existing decoders. An image carries everything the digest covers and nothing the machine it was made on, proved by stepping a restored world on to SIM-2D's own retained digests on all three targets."
+    },
+    {
+      "id": "M2",
+      "name": "Four players on a simulated bad connection steer one crowd of 10,000, and every player's copy stays identical",
+      "depends_on": [
+        "TRANSPORT:M1"
+      ],
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "On the in-memory link under A0's profile with datagram duplication on, a host and four scripted players share the reference crowd at 2,000 bodies for 600 ticks. Every client starts from the host's baseline, and each client's digest equals the host's at every digest tick. The same seed gives the same record twice.",
+          "check": "cargo test --locked --offline -p match-proof --test steady",
+          "ask": "Read the test. Does each of the five peers hold its own world and runtime? Does a client's world change only by restoring a baseline and stepping sets that arrived over its link, never by a call from the test or the host? Is each peer's digest taken by that peer? Do the scripted players' axes change through the run, most of them off the wire's 16-bit grid? Does the test run inside ./dev check and open no socket?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.2",
+          "statement": "At 10,000 bodies for 36,000 ticks, under A0's profile with duplication and again under the harsh profile, each with a two-second stall part-way, each client's digest equals the host's at every digest tick. The run reports sets lost, reordered and duplicated on the way, sets that travelled on the reliable lane, and old datagrams refused by tick, each above zero.",
+          "check": "python3 scripts/session_match.py memory steady",
+          "ask": "Is it a release build of the same session, crowd and scripted players the test uses? Does the harsh profile have a 250 ms round trip, 50 ms of jitter each way and 5% loss?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.3",
+          "statement": "A client's input lead follows its link. It settles lower on the local profile than at A0, and lower at A0 than on the harsh profile; when the link changes from A0 to harsh and back mid-match the lead rises and then falls. In each steady stretch, after its first 600 ticks, at least 95% of ticks admit each player's own frame. With the lead pinned at five ticks the harsh run fails that floor.",
+          "check": "python3 scripts/session_match.py memory lead",
+          "ask": "Does the client size its lead only from the margins the host reports and the handshake's round trip, with no profile passed to it? Is the pinned run made by the same code with only the lead fixed? Does a client author at most one frame for a tick, with target ticks that only rise? Does the record count the lead's changes in each stretch?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.4",
+          "statement": "Commands issued by each player into loss, into a stall and while a baseline is in transit are each admitted exactly once, in that player's order, at the same tick on every peer. A timed action on a frame that arrives late is applied on no peer and never invented. Commands that would overfill a frame wait a tick, in order.",
+          "check": "cargo test --locked --offline -p thrum-network --test commands",
+          "ask": "Read the test. Does its game hold state that each command changes, so that a lost, repeated or reordered command would change a digest? Is the late timed action made late by the link, and not by the test leaving it out?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.5",
+          "statement": "Each client learns the fate of every timed frame and command it sent: the tick it was admitted at, or that it was refused, with none left unresolved once the sets past it are acknowledged. The host keeps a set for a client only until that client acknowledges it.",
+          "check": "cargo test --locked --offline -p thrum-network --test results",
+          "ask": "Does a client tell a frame the host held over from one it admitted using only what the set stream carries?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.6",
+          "statement": "A client with another protocol, another rule-set identity, or a hello sent to a full match is refused with a reason it can show, before any of its input is admitted, and receives that reason through A0's profile before the link closes. A message other than a hello on a link not yet welcomed, and a negotiation that outlasts its timeout, close that link. A welcomed client holds the match's seed and settings.",
+          "check": "cargo test --locked --offline -p thrum-network --test negotiation",
+          "ask": "Read the test. Is the rule-set mismatch made with a second real rule set, and not a hand-set number? Does the host wait for the refused client to close, up to a timeout, and not close straight after sending?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.7",
+          "statement": "A host with a player of its own and three remote players holds the same digests as its clients. The host's own frames are staged, admitted and sent in the set like any other's, and the host draws from its own world with no second copy.",
+          "check": "cargo test --locked --offline -p match-proof --test listen_host",
+          "ask": "Does the local player's frame pass through the same staging and admission as a remote one's, with no second path into the world?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.8",
+          "statement": "For the full match at A0 and on the harsh profile these are on record from two separate runs, with build and load: bytes each way for each peer, split into envelope and payload; sets in a datagram at the median, 99th percentile and most; ticks held with one, two, four and eight frames in an input datagram; the lead and its changes; the confirmed delay and the stalls of each client's playout; session time for a host tick and a client tick beside the tick itself; and the allocations of a warmed host tick and client tick. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py memory costs",
+          "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.9",
+          "statement": "No call on a session waits, sleeps or reads a clock: time comes from the caller. `thrum-network` names no socket, no type of the reference crowd or of any game, and reaches a link only through `thrum-transport`'s link interface.",
+          "ask": "Can any public call of the host or client session block or await? Does thrum-network read the wall clock anywhere but the headless host's pacing loop? Does it name a game's component, action or rule? Does thrum-network's own dependency on thrum-transport leave the socket adapters out, and is the new dependency registered in .config/architecture.toml? Is a set written once and sent to every client?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M2.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As steady as Factorio's lockstep multiplayer, where every client runs the same actions in the same tick and the server waits for nobody, and as sparing of latency as GGPO's input exchange, where a lost packet is repaired by the next. Five separate worlds agree at every digest tick through loss, reordering and duplication, a player's input arrives in time on a link that changes under it, and a choice made once happens once everywhere."
+    },
+    {
+      "id": "M3",
+      "name": "A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "Inside `./dev check`, a short match on the in-memory link takes a late joiner, loses and regains a player, repairs a forced difference and outlasts a stalled peer, with every client's digest equal to the host's at every digest tick it was playing.",
+          "check": "cargo test --locked --offline -p match-proof --test faults",
+          "ask": "Read the test. Is each fault caused through the link or by reaching into one client's world, with no door for it in thrum-network?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.2",
+          "statement": "With three players in a 10,000-body match, a fourth joins after tick 3,600. The host commits every tick on its schedule while the baseline is written and sent; the three players' digests stay equal to the host's; the joiner's digest equals the host's from its first digest tick; and the join event is in the same tick's set on every peer. A second join started while the first is in transit also completes.",
+          "check": "python3 scripts/session_match.py memory join",
+          "ask": "Does the record hold the baseline's tick and size, the ticks the joiner stepped to catch up, and the tick of the join event? Is the joiner's input refused before that tick? Does the host's tick count match the run's virtual time?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.3",
+          "statement": "A player whose link is cut for longer than the idle timeout is shown away at one tick on every peer, with neutral axes from that tick. Returning with its token inside the grace period it gets the same slot on a new link, with a new epoch and a new baseline, and is shown back at one tick on every peer. Input and sets from the old epoch that arrive afterwards are refused and counted. Returning after the grace period, or without the token, it never gets the old slot.",
+          "check": "python3 scripts/session_match.py memory reconnect",
+          "ask": "Does the record hold both link identifiers and both epochs? Are the old-epoch datagrams delivered late by the link's own stall, and counted above zero? Is a command left unanswered by the drop reported as uncertain and not sent again?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.4",
+          "statement": "When one value in one client's world is changed from outside, that client finds the difference at its next digest tick, stops stepping, and is repaired on the same link, slot and epoch. Its digests equal the host's from the repair on, and the other peers' never differ. The host's record names the peer, the tick, both digests and the component. This holds for a component's value, the free-list order and a game resource. A client changed again after every repair is closed with that reason at the match's repair limit.",
+          "check": "python3 scripts/session_match.py memory repair",
+          "ask": "Is the value changed by the harness reaching into the client's world? Does the repaired client keep sending input through the repair, and does its player keep moving on the host? Is the host ever repaired, or its world written from a client's?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.5",
+          "statement": "Beside each of these the host commits every tick on its schedule and the other players' digests stay equal to its own: a client whose link stalls for longer than its ring holds, which is repaired when the link heals; a client that stops taking messages; a client that steps at half the pace of play, which is closed as unable to keep up; and a client that sends nothing while its link stays open, whose slot gets neutral axes at the held-control expiry and which is closed at the absence limit. Through each, what the host holds for that client stays within the match's caps.",
+          "check": "python3 scripts/session_match.py memory slow",
+          "ask": "For each case, does the record show the host's tick count against the run's virtual time, the most bytes and sets the host held for the slow client, and the reason it was repaired or closed?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.6",
+          "statement": "Every decoder that reads a peer's bytes survives any input: the hello, the welcome, the refusal, the set stream on both lanes, commands, the divergence report and the baseline's framing, each cut at every byte, with bad lengths and with random bytes. Each input decodes to what was encoded or is refused, changing no session or world state. A welcomed peer that sends a message out of state, input for another slot or more input than its rate allows has nothing admitted from that message.",
+          "check": "cargo test --locked --offline -p thrum-network --test untrusted",
+          "ask": "Read the test. Does it drive the decoders the session uses, with each kind of input generated? Is there a stdin target for each decoder this module added?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.7",
+          "statement": "Every store the host keeps for a peer has a cap from the match settings, and each cap has the one outcome the design's table gives.",
+          "ask": "List each queue, ring and buffer the host session keeps for a peer. Does each have a cap that a match setting names? At each cap, is the outcome the one in mechanism 10's table, with no path that grows without bound, waits on the peer or drops a command and carries on?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.8",
+          "statement": "For joins and repairs at 2,000, 5,000 and 10,000 bodies these are on record from two separate runs, with build and load: the image's size; the host's time for the tick it writes an image in, beside its other ticks; the ticks and the time a client takes to catch up; and the most the host held for one client. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py memory join-costs",
+          "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.9",
+          "statement": "In the tests' second rule set a hero appears at a slot's join event, stands idle from its away event, moves again from its back event and is removed at its left event, each at the same tick on every peer and with equal digests after it.",
+          "check": "cargo test --locked --offline -p thrum-network --test roster",
+          "ask": "Does the game learn of each roster event only through the admitted set for a tick, on the host as on a client? Does the world hold a slot and nothing of the peer, its link or its epoch?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M3.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As forgiving as Factorio's multiplayer, where a newcomer downloads the map and catches up while the others keep playing, a desynchronised client is detected and brought back, and a peer that cannot keep up is dropped without the others noticing. Every fault costs only the peer that has it, and the host commits every tick on schedule through all of them."
+    },
+    {
+      "id": "M4",
+      "name": "A player's own character answers at once, while the crowd stays exact",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "With a predicted controller declared for the reference crowd's player, on every tick whose frame the host admitted the predicted state equals the confirmed state bit for bit. On a tick the host held, the client corrects once, by restoring the confirmed state and replaying its later frames, and is equal again from the next tick.",
+          "check": "cargo test --locked --offline -p match-proof --test prediction",
+          "ask": "Read the test. Is the held tick caused by the link losing every copy of the frame, and not by the test? Is equality compared on the stored bits, with no tolerance? Does the predictor store axes through the engine's input conversion?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.2",
+          "statement": "Over 36,000 ticks at A0 and on the harsh profile, with a link change, a stall longer than the predictor's ring and a repair in the run: equality holds on every admitted tick; every correction follows a held tick, a lead change, or the return from a stall or a repair; and when the unconfirmed span outgrows the ring the prediction is dropped, the confirmed state is given in its place, and prediction resumes once the client is back in step.",
+          "check": "python3 scripts/session_match.py memory prediction",
+          "ask": "Does the record give the cause of each correction, with none unexplained? After a reconnect, is the old epoch's history discarded before the new baseline is used?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.3",
+          "statement": "Every peer's digests are the same with prediction on as with it off, and a client's confirmed world and its pages are never written by the predictor.",
+          "check": "cargo test --locked --offline -p match-proof --test prediction_isolated",
+          "ask": "Can the predictor reach the runtime other than to read the controller for a slot?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.4",
+          "statement": "The player's movement in the reference crowd is one function in the rule package that both the crowd's own rule and the predictor call. It is given the controller's state, a frame and the rule set's constants, and nothing else. SIM-2D's two retained traces still reproduce their retained digests.",
+          "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
+          "ask": "Does the crowd's rule call the same function the predictor does, with no second copy of the arithmetic? Does its signature let it read anything of the crowd? Are SIM-2D's retained files unchanged in git, and does the rule package still pass SIM-2D's guard with nothing suppressed?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.5",
+          "statement": "A game reads the predicted state for its newest authored tick and the one before, with the playout interpolation, and is told of each correction with the state before and after.",
+          "ask": "Is everything a game needs to draw its own character ahead of the crowd, and to smooth a correction, on the session's public interface? Is a second small rule set with a predicted controller of its own in the tests, so that the interface is not the reference crowd's alone?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.6",
+          "statement": "On record from two separate runs at A0 and on the harsh profile, with build and load: corrections a minute by cause; replay steps at the median and most; the distance of each correction; the hero's lead over the confirmed crowd in ticks and milliseconds; and the predictor's time for a tick. Beside them is SIM-2D's recorded eight-tick replay at each crowd size on the Mac and in Chrome, set against a frame at 120 Hz and at 60 Hz. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py memory prediction-costs",
+          "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M4.7",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As immediate as Factorio's latency hiding, which shows the local player's own actions at once over a world that stays in lockstep, and as honest as Overwatch's reconciliation: a prediction is checked against the authority every tick and corrected when it is wrong. Here the check is exact to the bit, the confirmed world is never touched, and every correction has a named cause."
+    },
+    {
+      "id": "M5",
+      "name": "Players on a Mac, in Chrome and on an iPhone simulator play one match over real connections, through delay, jitter and loss",
+      "depends_on": [
+        "TRANSPORT:M2"
+      ],
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "Over real sockets, through the relay under A0's profile, a headless host on the Mac and four players (two on the Mac, one as Wasm in Chrome, one in the iPhone simulator) share the reference crowd at 10,000 bodies for ten minutes. Each client starts from the host's baseline, and each client's digest equals the host's at every digest tick.",
+          "check": "python3 scripts/session_match.py sockets steady",
+          "ask": "Read the harness. Is each peer a separate process that reaches the others only through thrum-transport's sockets and the relay, with the relay's forwarded and dropped counts in the record? Is each client the session and the reference crowd built for its target, with its platform, target triple and browser or runtime version in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests, and does the harness compare them without supplying any?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.2",
+          "statement": "With a Mac client as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is killed and started again and comes back with its saved token; and one value in its world is changed and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
+          "check": "python3 scripts/session_match.py sockets faults --target mac-metal",
+          "ask": "Does the record hold, for each event, its time, the link identifiers and epochs before and after, the baseline's tick and size, and the reason each surviving end reported? Is the harness's own note of the kill and the cut kept apart from what the sessions reported?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.3",
+          "statement": "With a Chrome page as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is reloaded and comes back with its saved token; and one value in its world is changed and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
+          "check": "python3 scripts/session_match.py sockets faults --target chrome-webgpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.4",
+          "statement": "With a client in the iPhone simulator as the subject, over sockets through the relay under A0's profile: it joins a 10,000-body match after tick 3,600; its link is cut for longer than the idle timeout and it returns to its slot with its token; it is killed and started again and comes back with its saved token; and one value in its world is changed and it is repaired. After each, its digest equals the host's at every digest tick, the other players' never differ, and the host commits every tick of the run.",
+          "check": "python3 scripts/session_match.py sockets faults --target ios-sim",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.5",
+          "statement": "Over sockets, beside a Mac client that stops taking messages, the host commits every tick of the run and the other players' digests stay equal to its own. What the host holds for that client stays within the match's caps, and it is repaired or closed as the design's table says.",
+          "check": "python3 scripts/session_match.py sockets slow --target mac-metal",
+          "ask": "Does the host in this run make its sends from its tick, so that a send that waited on the stalled client would show as a late tick? Is the longest gap between two host commits on record, with and without the stalled client?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.6",
+          "statement": "Over sockets, a Chrome page is frozen twice. Frozen for longer than the held-control expiry, its slot gets neutral axes at one tick on every peer, and thawed it catches up or is repaired on the same link. Frozen for longer than the absence limit, it is closed, and thawed it returns to its slot on a new link with its token. Throughout, the host commits every tick and the other players' digests stay equal to its own. What the host saw during each freeze is on record.",
+          "check": "python3 scripts/session_match.py sockets slow --target chrome-webgpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.7",
+          "statement": "A Mac process that hosts and plays, with a Chrome page and an iPhone-simulator client joined to it over sockets through the relay, holds the same digests as its clients for 3,600 ticks.",
+          "check": "python3 scripts/session_match.py sockets listen",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.8",
+          "statement": "With a Mac client, these are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the Quinn ends, with build and load: bytes each way, at the application and on the wire; ticks held; the lead; the confirmed delay and playout stalls; the time from hello to playing at 2,000 and 10,000 bodies, split into transfer and catch-up, with the baseline's size; corrections a minute and the hero's lead over the crowd; and the longest gap between two host commits. The record flags each tripwire the design names that a row trips. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py sockets costs --target mac-metal",
+          "ask": "Were the retained runs release builds of the claimed commit, timed through the session and the engine and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.9",
+          "statement": "With a Chrome client, the same rows as the Mac's are on record from two separate runs through the relay under A0's profile, each with BBR and with Cubic on the host, with the browser's version. What Chrome cannot report is marked absent, never zero. The figures are baselines: none decides the result.",
+          "check": "python3 scripts/session_match.py sockets costs --target chrome-webgpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M5.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As dependable as Factorio's cross-platform multiplayer and Vampire Survivors' online co-op: a browser player and a phone player join a desktop host, see the same crowd, and survive a dropped connection. One host and four clients in separate processes on real QUIC and WebTransport agree at every digest tick for ten minutes through A0's conditions, and each kind of client joins late, drops, returns and is repaired."
+    },
+    {
+      "id": "M6",
+      "name": "A game maker can put a game in a match from the guide, and a game without multiplayer contains none of it",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "A guide linked from the networking design tells a game maker how to put a game in a match: declaring the rule set, the action wire, which actions are commands and a predicted controller; handling roster events; starting a host and joining with a ticket; reading connection state; rehearsing on the in-memory link; and running the match command on the three targets.",
+          "ask": "Do the commands the guide gives run as written at the claimed commit? Does it say that a late timed action is lost and a command is not, that a hero the crowd pushes is corrected every tick, that the crowd is drawn behind the hero, that a peer too slow for the match is dropped, that the match ends with its host, and that anyone with the ticket can join?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.2",
+          "statement": "The networking design says what is built and what is not, C13 carries the addition in the design's words, and the A0 and A5 decision records say which of their parts a deterministic match uses, leaves unused or replaced.",
+          "ask": "Is C13's addition word for word the design's, and is C13 otherwise unchanged? Does the networking design or any A5 record still describe as open or selected something this module settled differently (the fixed five-tick lead, the nine-step replay cap, who retains results, the handshake) without saying so?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.3",
+          "statement": "The maturity ledger says what this module proved and what it did not.",
+          "ask": "Do the ledger's N1 rows keep implementation, correctness and device results apart? Do they name as not run a second machine, any path that is not loopback, a physical iPhone, Safari, Firefox, a public host, host migration and whole-world rollback, and claim no speed for the simulator?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.4",
+          "statement": "At the closing commit the V1 game, the starter and the creator scenes have neither `thrum-network` nor `thrum-transport` in their dependency closures, and a package that uses the session with the in-memory link has no crate in its closure that `TRANSPORT` added for sockets.",
+          "check": "python3 scripts/session_match.py closure",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.5",
+          "statement": "At the closing commit the full match on the in-memory link again holds every client's digest equal to the host's at every digest tick, at A0 and on the harsh profile.",
+          "check": "python3 scripts/session_match.py memory steady",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.6",
+          "statement": "At the closing commit a headless host and two Mac clients, a Chrome page and an iPhone-simulator client again share the 10,000-body crowd over sockets through the relay for ten minutes with equal digests.",
+          "check": "python3 scripts/session_match.py sockets steady",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.7",
+          "statement": "The engine crates hold no game types, and the tests' second rule set uses every part of the session the reference crowd does not: actions, commands and roster events.",
+          "ask": "Does thrum-network or thrum-core name a type, constant or rule of the reference crowd or of the tests' second rule set? Could SWARM put its own rules in a match through the public interface and the match command, without editing either?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As easy to start from as Godot's high-level multiplayer guide, and as plain about its limits as Factorio's notes on desyncs. The guide is enough to put a second game in a match without reading engine source, the contracts and the ledger say exactly what was proved, and, as with Godot's or Unreal's networking, a single-player build carries none of it."
+    }
+  ]
+}
