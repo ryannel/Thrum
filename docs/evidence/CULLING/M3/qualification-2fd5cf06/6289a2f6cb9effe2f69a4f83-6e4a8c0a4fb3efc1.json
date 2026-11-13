@@ -1,0 +1,8 @@
+{
+  "command": "cargo test --locked --offline -p thrum-render --test culling_temporal",
+  "exit": 0,
+  "at": "2026-11-13T20:25:26Z",
+  "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-6e4a8c0a4fb3efc1.stdout",
+  "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-6e4a8c0a4fb3efc1.stderr",
+  "role": "build"
+}

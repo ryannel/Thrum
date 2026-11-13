@@ -1,0 +1,18 @@
+
+running 1 test
+2026-11-13 21:22:32.556 valley_culling_gpu-3358ff9ee4447fb0[58921:191515309] Metal API Validation Enabled
+2026-11-13 21:22:32.557 valley_culling_gpu-3358ff9ee4447fb0[58921:191515309] Metal GPU Validation Enabled
+test every_submitted_valley_frame_equals_direct has been running for over 60 seconds
+
+thread 'every_submitted_valley_frame_equals_direct' (191515309) panicked at examples/v1-game/tests/support/valley_route.rs:269:21:
+Frustum differs at submitted tick 251
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test every_submitted_valley_frame_equals_direct ... FAILED
+
+failures:
+
+failures:
+    every_submitted_valley_frame_equals_direct
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 91.05s
+

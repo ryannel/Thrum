@@ -1,0 +1,2 @@
+FAIL exact baselines: no exact-baseline proof for this content; run under the GPU lock: python3 scripts/exact_baselines.py verify
+Error: "python3 scripts/exact_baselines.py gate failed (exit status: 1)"

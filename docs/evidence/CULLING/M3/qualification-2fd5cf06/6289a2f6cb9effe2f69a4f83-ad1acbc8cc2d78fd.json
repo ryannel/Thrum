@@ -1,0 +1,8 @@
+{
+  "command": "python3 scripts/run_v1_showcase.py culling --target mac-metal",
+  "exit": 0,
+  "at": "2026-11-13T20:20:53Z",
+  "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-ad1acbc8cc2d78fd.stdout",
+  "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-ad1acbc8cc2d78fd.stderr",
+  "role": "build"
+}

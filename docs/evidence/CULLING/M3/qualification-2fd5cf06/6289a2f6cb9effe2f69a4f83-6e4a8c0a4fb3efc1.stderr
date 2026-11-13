@@ -1,0 +1,3 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.51s
+     Running tests/culling_temporal.rs (target/debug/deps/culling_temporal-d340e9bb63e76983)

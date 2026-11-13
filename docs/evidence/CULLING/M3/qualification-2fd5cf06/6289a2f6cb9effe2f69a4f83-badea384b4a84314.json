@@ -1,0 +1,8 @@
+{
+  "command": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
+  "exit": 0,
+  "at": "2026-11-13T20:22:09Z",
+  "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-badea384b4a84314.stdout",
+  "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/6289a2f6cb9effe2f69a4f83-badea384b4a84314.stderr",
+  "role": "build"
+}

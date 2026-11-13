@@ -1,0 +1,96 @@
+{
+  "source": "2fd5cf063800447260bfe14143922879b5948074",
+  "commands": [
+    {
+      "name": "clippy",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-render",
+        "-p",
+        "v1-game",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "native-cubes",
+      "command": [
+        "python3",
+        "scripts/run_v1_showcase.py",
+        "culling",
+        "--target",
+        "mac-metal"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "native-meshes",
+      "command": [
+        "python3",
+        "scripts/run_v1_showcase.py",
+        "culling",
+        "--meshes",
+        "--target",
+        "mac-metal",
+        "--no-build"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "linear-1-portable",
+      "command": [
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/valley_culling_gpu-3358ff9ee4447fb0",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "linear-1-apple-tile",
+      "command": [
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/valley_culling_gpu-3358ff9ee4447fb0",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "linear-2-portable",
+      "command": [
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/valley_culling_gpu-3358ff9ee4447fb0",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "linear-2-apple-tile",
+      "command": [
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/valley_culling_gpu-3358ff9ee4447fb0",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "linear-3-portable",
+      "command": [
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/target/release/deps/valley_culling_gpu-3358ff9ee4447fb0",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit": 101
+    }
+  ],
+  "oracle_sha256": "0f320c74fff5d409e214c4e11f4cdff855735d96de6d37f37e3f09b23e57c91d"
+}

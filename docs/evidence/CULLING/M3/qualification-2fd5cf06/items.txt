@@ -1,0 +1,25 @@
+CULLING M3 in /Users/ryannel/Workspace/thrum/.claude/worktrees/culling: 4 pass, 3 fail
+  M3.1  pass  python3 scripts/run_v1_showcase.py culling --target mac-metal
+  M3.2  pass  python3 scripts/run_v1_showcase.py culling --target chrome-webgpu
+  M3.3  no check (ask)
+  M3.4  fail (exit 1)  python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal
+      the check ran and failed, as it should before the work exists; the output says whether that's the reason
+      | FAIL: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-mac-metal-meshes-20261113-212209/run.json
+      | 
+      | FAIL: portable oracle failed: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-mac-metal-meshes-20261113-212209/portable.log
+  M3.5  pass  python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu
+  M3.6  pass  cargo test --locked --offline -p thrum-render --test culling_temporal
+  M3.7  no check (inspect)
+  M3.8  no check (inspect)
+  M3.9  no check (ask)
+  M3.10  fail (exit 1)  python3 scripts/exact_baselines.py verify
+      the check ran and failed, as it should before the work exists; the output says whether that's the reason
+      | 
+      | FAIL baseline apple-tile-native owner APPLE-TILE: comparison/stage apple_tile_m1 failed (exit 1): {"passed": false, "failures": ["exact retained comparison failed: portable-sdr-approach"]}
+      | 
+      | Record: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/baseline-guard/verify-20261113T202526.707700Z/record.json
+  Test command  fail (exit 1)  ./dev check
+      the check ran and failed, as it should before the work exists; the output says whether that's the reason
+      | FAIL exact baselines: no exact-baseline proof for this content; run under the GPU lock: python3 scripts/exact_baselines.py verify
+      | Error: "python3 scripts/exact_baselines.py gate failed (exit status: 1)"
+Everything, with each check's full output tail, as JSON: add --json.

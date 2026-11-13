@@ -1,0 +1,218 @@
+{
+  "source": "2fd5cf063800447260bfe14143922879b5948074",
+  "comparison": {
+    "left_sha256": "fcb1f234d8f273deb098908e86b847f74c4d4db574fad058691e20595f2744c2",
+    "right_sha256": "fba6f70758f82fe223de6440d2f15a3aa1311ab074867e17f0f1a45c1f65770d",
+    "bytes": 3686400,
+    "different_pixels": 6,
+    "different_bytes": 7,
+    "first_pixels": [
+      {
+        "xy": [
+          512,
+          250
+        ],
+        "left": "958878ff",
+        "right": "968878ff"
+      },
+      {
+        "xy": [
+          516,
+          250
+        ],
+        "left": "968979ff",
+        "right": "978979ff"
+      },
+      {
+        "xy": [
+          517,
+          250
+        ],
+        "left": "978978ff",
+        "right": "978979ff"
+      },
+      {
+        "xy": [
+          521,
+          250
+        ],
+        "left": "968978ff",
+        "right": "968878ff"
+      },
+      {
+        "xy": [
+          540,
+          259
+        ],
+        "left": "9a8b78ff",
+        "right": "9a8a78ff"
+      },
+      {
+        "xy": [
+          541,
+          259
+        ],
+        "left": "9a8a77ff",
+        "right": "998977ff"
+      }
+    ]
+  },
+  "scope": "Failure evidence from rejected explicit-gradient candidate, not the restored shader.",
+  "metal_validation_comparison": {
+    "left_sha256": "a28a091a4ab210e7912a72e5b90c7217448f1c1afeeecfe46ba212fabd25aa1d",
+    "right_sha256": "07e17c25aada9d012ea06a2c99f30322941dee92b979dcbc1b09203e799da456",
+    "bytes": 7372800,
+    "different_pixels": 18,
+    "different_bytes": 28,
+    "first_pixels": [
+      {
+        "xy": [
+          680,
+          166
+        ],
+        "left": "46375b396a3a003c",
+        "right": "46375b39693a003c"
+      },
+      {
+        "xy": [
+          681,
+          166
+        ],
+        "left": "55376539733a003c",
+        "right": "55376439733a003c"
+      },
+      {
+        "xy": [
+          683,
+          169
+        ],
+        "left": "34374b39593a003c",
+        "right": "35374b395a3a003c"
+      },
+      {
+        "xy": [
+          686,
+          174
+        ],
+        "left": "1f373839423a003c",
+        "right": "1e373839413a003c"
+      },
+      {
+        "xy": [
+          675,
+          175
+        ],
+        "left": "3f374b394e3a003c",
+        "right": "3e374b394e3a003c"
+      },
+      {
+        "xy": [
+          676,
+          177
+        ],
+        "left": "2d374039433a003c",
+        "right": "2c374039423a003c"
+      },
+      {
+        "xy": [
+          677,
+          178
+        ],
+        "left": "06372339263a003c",
+        "right": "05372239263a003c"
+      },
+      {
+        "xy": [
+          687,
+          178
+        ],
+        "left": "203738393d3a003c",
+        "right": "203739393e3a003c"
+      },
+      {
+        "xy": [
+          686,
+          180
+        ],
+        "left": "13372e39333a003c",
+        "right": "13372f39333a003c"
+      },
+      {
+        "xy": [
+          678,
+          181
+        ],
+        "left": "02372239243a003c",
+        "right": "02372239233a003c"
+      },
+      {
+        "xy": [
+          685,
+          183
+        ],
+        "left": "21373739373a003c",
+        "right": "21373839373a003c"
+      },
+      {
+        "xy": [
+          680,
+          184
+        ],
+        "left": "18372f392f3a003c",
+        "right": "193730392f3a003c"
+      },
+      {
+        "xy": [
+          680,
+          185
+        ],
+        "left": "193730392f3a003c",
+        "right": "183730392f3a003c"
+      },
+      {
+        "xy": [
+          680,
+          186
+        ],
+        "left": "09372539243a003c",
+        "right": "08372439243a003c"
+      },
+      {
+        "xy": [
+          681,
+          186
+        ],
+        "left": "04372439233a003c",
+        "right": "04372339223a003c"
+      },
+      {
+        "xy": [
+          681,
+          187
+        ],
+        "left": "e2360a39073a003c",
+        "right": "e1360939063a003c"
+      },
+      {
+        "xy": [
+          682,
+          188
+        ],
+        "left": "0b372939283a003c",
+        "right": "0c372939283a003c"
+      },
+      {
+        "xy": [
+          682,
+          189
+        ],
+        "left": "fb361d391a3a003c",
+        "right": "fc361d391a3a003c"
+      }
+    ]
+  },
+  "retained_raw": {
+    "failure-255-0-Direct.raw.gz": "bcea97a559baa9450bc98e34f88ad2960e0bfffa1830ae1784411a3b5c8d27bd",
+    "failure-255-1-Frustum.raw.gz": "9df10dd4291e0fc57c235dad7cc7e099376f2577d8cc8bcc064b17ba1e54797c"
+  }
+}
