@@ -13,6 +13,8 @@ pub(crate) mod browser;
 /// Diagnostic outputs, in lease request order. Each mip is tightly packed RGBA8 words.
 #[derive(Default)]
 pub struct LentWitness {
+    /// Groups created on this device generation; an edit only rebuilds changed products.
+    pub bind_groups_created: u64,
     /// Publication the most recent recording sampled.
     pub offered: Option<Arc<LentSet>>,
     /// Per-product outputs, usable only after that recording is submitted.
@@ -106,7 +108,7 @@ impl LentDiagnostic {
             });
             let pipeline =
                 &self.pipelines[usize::from(texture.dimension() == wgpu::TextureDimension::D3)];
-            let groups = levels
+            let groups: Vec<_> = levels
                 .into_iter()
                 .map(|(params, dispatch)| {
                     let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -138,6 +140,7 @@ impl LentDiagnostic {
                     (group, dispatch)
                 })
                 .collect();
+            witness.bind_groups_created += groups.len() as u64;
             let binding = Binding { key, groups };
             if index == self.bindings.len() {
                 self.bindings.push(binding);
