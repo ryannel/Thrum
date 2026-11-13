@@ -111,4 +111,24 @@ each host only after its unchanged first comparison has failed. Each recapture
 records requested time, tick progress, alpha and exposure and keeps its raw
 bytes. That distinguishes a stable difference between prepared hosts from
 variation on the same host without weakening the first oracle. Final original-
-shader execution with those recaptures is next.
+shader execution now reproduces both the cube and mesh failures on clean
+`64c81cd2`, with [raw evidence and receipts](M3/qualification-64c81cd2/recapture-summary.json).
+
+The cube oracle differs at 12 pixels in Occlusion at tick 379; the other three
+hosts agree. The mesh oracle differs at 18 pixels between independent Direct
+hosts at tick 180; Frustum, Occlusion and the first Direct agree. In each case,
+all twelve same-time recaptures (three per host) equal the first Direct image
+byte for byte, including the formerly failing host. They advance zero world
+ticks and preserve alpha and exposure values; the exposure submission counter
+advances normally. Differences are on shaded terrain, not visibly missing props.
+One separate complete original mesh run on the same source passed both recipes.
+
+The literal item checker passes Chrome cubes, Chrome meshes, the temporal
+cycle and all registered exact baselines, but fails M3.1 and M3.4. This is
+intermittent original-output instability; none of these observations is a repair.
+The next scoped candidate evaluates explicit texture gradients at fragment entry,
+before the divergent Sun searches, and uses them for material sampling. It keeps
+anisotropic filtering, content, capture sources and every oracle comparison.
+The proposed mechanism is a hypothesis to test, not an attribution of the old
+failures. Four extra gradient scalars remain live across the Sun search; actual
+GPU cost and unchanged baseline output must be measured before accepting it.
