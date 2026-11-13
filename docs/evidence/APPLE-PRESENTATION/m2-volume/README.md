@@ -40,3 +40,19 @@ production-pass alpha composition; it makes no display-cadence or performance cl
 
 The integration gate retains its [exact-image record](exact-baselines.json) and
 [verifier output](exact-baselines.log.gz). The module log records the full milestone check and merge.
+
+At `cf0c424a047461ac1c4c67b8084b20e8f2f68729`, the [milestone checker](qualified-check.json.gz)
+passes all seven items and the repository gate. [Repository output](qualified-repository.stdout.gz)
+and [compiler output](qualified-repository.stderr.gz) include the production W3 test.
+Chrome passes [W1–W7](qualified-temporal.json.gz) and [all 33 regression cases](qualified-browser-run.json.gz)
+on [hardware Metal WebGPU](qualified-browser-gpu.json.gz). The loaded Wasm hash is
+`71b6333e501748b386853c9676220486462d22f0bc6b9b5770e8a00a89e1934e`.
+The browser checker hashes the actual successful WebAssembly instantiation input inside the page,
+then compares both its digest and byte length, avoiding oversized DevTools response bodies.
+[Temporal output](qualified-temporal.stdout.gz) and [regression output](qualified-browser.stdout.gz).
+
+The [exact verifier](qualified-exact.json.gz) passes 42 native comparisons and four Chrome sets
+of 481 records, with unchanged references, in 917.57 seconds. [Verifier output](qualified-exact.log.gz).
+An earlier attempt stopped on an incomplete route-motion capture with 67 ring omissions during a
+concurrent GPU test; the unchanged retry passed. This is correctness evidence, not device timing.
+Subsequent rebases, final qualification and integration are recorded in the module log.
