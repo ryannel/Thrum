@@ -26,7 +26,48 @@
   "milestones": {
     "M1": {
       "definitions": "e7d79e7cd07aab685584fadffc2889c14a29c9f0903c3efa429c1120d6965205",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "cf47dfbf4068ed727f658263208e97655019fca5",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "unchanged-product-reuploaded-behind-ready-publication",
+              "item": "M1.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 133720,
+            "cached": 3000576,
+            "output": 9474,
+            "turns": 1
+          },
+          "at": "2026-11-13T17:59:42Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",

@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome",
-      "state": "ready_for_review",
+      "state": "in_progress",
       "fails": 0,
       "replans": 0,
       "depends_on": [
@@ -22,8 +22,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -34,8 +34,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -44,10 +44,10 @@
           "lock": "gpu",
           "ask": "Does the test discard the first frame that uses the new view, and in another run make that frame a capture, and then assert the diagnostic consumer still applies its invalidation in the next submitted frame that advances history, and in no frame after it?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "status": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -58,8 +58,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/benchmark.md.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -70,8 +70,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/fault.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -81,8 +81,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -92,8 +92,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/chrome.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -102,8 +102,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/COOKED-LEASES.md; docs/evidence/CONTENT-LOOP/M1.md; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -113,8 +113,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/exact-proof.json.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -125,11 +125,18 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M1-review.md"
         }
       ],
-      "rounds": 0
+      "rounds": 1,
+      "findings": [
+        {
+          "name": "unchanged-product-reuploaded-behind-ready-publication",
+          "item": "M1.3",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M2",

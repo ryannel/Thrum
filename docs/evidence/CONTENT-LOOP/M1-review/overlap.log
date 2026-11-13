@@ -1,0 +1,16 @@
+    Finished `bench` profile [optimized] target(s) in 0.26s
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: 1 warning emitted
+
+cloud0 unchanged hash=true, texture=false, view=false, serial=true
+generation2 upload=5592320 generation3 upload=11184640
+
+thread 'main' (190099773) panicked at /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/docs/evidence/CONTENT-LOOP/M1-review/overlap.rs:211:3:
+assertion `left == right` failed: M1.3: unchanged product must retain its view
+  left: TextureView { inner: Core(CoreTextureView { context: ContextWgpuCore { type: "Native" }, id: TextureViewId(18,75) }), texture: Texture { inner: Core(CoreTexture { context: ContextWgpuCore { type: "Native" }, id: TextureId(19,75), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }), descriptor: TextureDescriptor { label: None, size: (128, 128, 128), mip_level_count: 8, sample_count: 1, dimension: D3, format: R8Unorm, usage: TextureUsages(COPY_DST | TEXTURE_BINDING), view_formats: [] } } }
+ right: TextureView { inner: Core(CoreTextureView { context: ContextWgpuCore { type: "Native" }, id: TextureViewId(27,8) }), texture: Texture { inner: Core(CoreTexture { context: ContextWgpuCore { type: "Native" }, id: TextureId(18,8), error_sink: Mutex { data: ErrorSink, poisoned: false, .. } }), descriptor: TextureDescriptor { label: None, size: (128, 128, 128), mip_level_count: 8, sample_count: 1, dimension: D3, format: R8Unorm, usage: TextureUsages(COPY_DST | TEXTURE_BINDING), view_formats: [] } } }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
