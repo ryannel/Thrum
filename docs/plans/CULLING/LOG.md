@@ -1,5 +1,11 @@
 # CULLING log
 
+- 2026-11-13 M2 implements capability-record-only camera selection and reports the requested mode,
+  resolved mode and reason. [Target evidence](../../evidence/CULLING/M2.md) proves Metal fallback,
+  simulator Direct function and the 16-view Chrome mixed-mesh oracle. Two 1,800-tick paired 1080p
+  runs favour Occlusion behind cover and in the open, so the mixed-mesh default is Occlusion;
+  the cube field keeps Frustum. Exact-baseline/profile qualification and integration are pending.
+
 - 2026-11-11 Planned from the owner's task, quoted in the design. Before the loop, a Claude session built Frustum,
   Occlusion on cubes, the bucket route in Direct and Frustum, and Sun-caster culling (7–8 November); its four
   evidence pages are in `docs/evidence/render/G3C-*.md`. Its design and plan were never committed. This design
