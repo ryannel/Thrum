@@ -1,0 +1,43 @@
+{
+  "module": "CONTENT-LOOP",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "cbaacdc6eec4a2d4cdbf9e78ccb208754deb352c9afcc08822690378420743ea",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
+        "at": "2026-11-13T06:24:04Z"
+      }
+    },
+    "M2": {
+      "definitions": "a6a5223d5c70a16a9a62afc61f9a849c0deb23bcf13aef828b1b6a314e3f73c6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
+        "at": "2026-11-13T06:24:04Z"
+      }
+    },
+    "M3": {
+      "definitions": "884677ca98ccd51562fa8b6bfdbe64ce892a261503c111020ff0b1763ce4f5a9",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
+        "at": "2026-11-13T06:24:04Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the running game without a stall; needs APPLE-PRESENTATION M2). Write its design, milestones and done-when file so M1 is buildable as soon as APPLE-PRESENTATION M2 passes review. SEA, CLOUDS and RENDER-2D depend on it; account for what they will need from it.",
+      "at": "2026-11-13T06:24:04Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T06:24:04Z"
+  }
+}

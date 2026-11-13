@@ -115,7 +115,8 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M2",
@@ -217,7 +218,8 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M3",
@@ -335,7 +337,8 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "rounds": 0
     }
   ]
 }
