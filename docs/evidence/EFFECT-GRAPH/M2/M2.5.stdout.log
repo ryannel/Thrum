@@ -1,0 +1,2 @@
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+PASS 1 case(s); artifacts: /Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/v1-browser-1794533213483

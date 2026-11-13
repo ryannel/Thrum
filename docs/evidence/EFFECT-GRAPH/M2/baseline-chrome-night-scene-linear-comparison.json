@@ -1,9 +1,9 @@
 {
   "passed": true,
   "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz",
-  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261112T165734.027961Z/chrome-night-scene-linear",
+  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear",
   "reference_manifest_sha256": "b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a",
-  "candidate_manifest_sha256": "e29f8b0122dbc42a9bb01fa92008ff044a24de96252dbeb31f040f68479025dc",
+  "candidate_manifest_sha256": "cf28072a78a01dba49893a39b902db416a5d1beb5b481710d137c300165a6d4d",
   "frames": 481,
   "identity_keys": [
     "session",

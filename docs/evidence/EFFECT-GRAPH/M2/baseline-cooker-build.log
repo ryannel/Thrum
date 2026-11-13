@@ -1,30 +1,7 @@
-   Compiling num-traits v0.2.19
-   Compiling syn v3.0.9
-   Compiling serde v1.0.229
-   Compiling astcenc-sys v0.2.0
-   Compiling blake3 v1.8.7
-   Compiling meshopt v0.7.0
-   Compiling objc2-core-foundation v0.3.2
-   Compiling half v2.7.1
-   Compiling objc2-core-services v0.3.2
-   Compiling notify v8.2.1
-   Compiling bytemuck_derive v1.12.1
-   Compiling moxcms v0.8.1
-   Compiling thiserror-impl v2.0.21
-   Compiling serde_derive v1.0.229
-   Compiling float-cmp v0.10.0
-   Compiling bytemuck v1.25.2
-   Compiling thiserror v2.0.21
-   Compiling gltf-json v1.4.1
-   Compiling thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset)
-   Compiling image v0.25.10
-   Compiling gltf v1.4.1
-   Compiling astcenc-rs v0.2.0
-   Compiling thrum-cook v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-cook)
 warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-8fea322e79ace1ac.rlib[5](kernel_ispc.o)', assuming: macOS
          ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/deps/libintel_tex_2-8fea322e79ace1ac.rlib[6](kernel_astc_ispc.o)', assuming: macOS
   |
   = note: `#[warn(linker_messages)]` on by default
 
 warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
-    Finished `release` profile [optimized] target(s) in 17.46s
+    Finished `release` profile [optimized] target(s) in 0.15s

@@ -1,9 +1,9 @@
 {
   "passed": true,
   "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
-  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261112T165734.027961Z/chrome-night-sdr",
+  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr",
   "reference_manifest_sha256": "b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da",
-  "candidate_manifest_sha256": "bbed323d09824e24d0fff41a48dd43554b0f1182ce8e889c5b5ed0ab845e7ba5",
+  "candidate_manifest_sha256": "7a15fa12859d04d02ee018e72d3c60a2eda2ee5becd7869599f94d1746a32438",
   "frames": 481,
   "identity_keys": [
     "session",

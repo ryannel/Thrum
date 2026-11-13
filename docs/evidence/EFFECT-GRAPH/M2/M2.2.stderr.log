@@ -1,0 +1,6 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.38s
+     Running tests/effect_state_gpu.rs (target/debug/deps/effect_state_gpu-4614f79870b57b7c)

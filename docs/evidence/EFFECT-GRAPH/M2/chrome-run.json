@@ -9,8 +9,8 @@
   ],
   "artifacts": {
     "/index.html": "883b363c7a05d0e2d1d7786ae2d713f338e40b7d6136b4b5851eb74530f6a017",
-    "/v1_game.js": "4d8a640dc29df5e21e30bf90c23351d25ddce9cf14ccbdb7b0dd3892b72ff2b9",
-    "/v1_game_bg.wasm": "9c74649f6823035ca752695124974a2285c992f8229c052aba5498eb8abfae6e",
+    "/v1_game.js": "bec1e5e6d939004bfb97e4237080fa1871f800c86037f25b66f5753cff56bf14",
+    "/v1_game_bg.wasm": "de84f83681f06b89790dd1f7e31cee7e2f2b6872d0688b3bd3a9b25ca6023ba8",
     "/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
     "/case.params.json": "df28be15b243af7c8432bd66fed3b812e1127f0a978c89ab85df18f48e765c15",
     "/field-oracle.params.json": "cfb0db911fb7a822f546ba39fa2168a53f348ce7b3608ab7432c9b26d5ef3b47",

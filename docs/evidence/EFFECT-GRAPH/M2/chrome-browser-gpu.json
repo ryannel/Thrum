@@ -33,7 +33,7 @@
         "glWsVendor": "",
         "glWsVersion": "",
         "inProcessGpu": false,
-        "initializationTime": 0.068134,
+        "initializationTime": 0.042115,
         "isAsan": false,
         "isClangCoverage": false,
         "jpegDecodeAcceleratorSupported": false,
@@ -74,6 +74,6 @@
     },
     "modelName": "Mac",
     "modelVersion": "15.11",
-    "commandLine": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/v1-browser-1794502447193/chrome-profile-BgaMHR --remote-debugging-port=0 --headless=new --no-first-run --no-default-browser-check --disable-background-networking --disable-component-update --window-size=1280,1100 --noerrdialogs --flag-switches-begin --flag-switches-end about:blank"
+    "commandLine": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/v1-browser-1794533213483/chrome-profile-bMq9Sg --remote-debugging-port=0 --headless=new --no-first-run --no-default-browser-check --disable-background-networking --disable-component-update --window-size=1280,1100 --noerrdialogs --flag-switches-begin --flag-switches-end about:blank"
   }
 }

@@ -1,0 +1,10 @@
+
+running 5 tests
+test a_second_declaration_cannot_hide_a_second_producer_of_the_same_pair ... ok
+test cadence_refuses_transients_imports_and_loaded_attachments ... ok
+test state_table_and_independent_history_submission ... ok
+test history_refuses_partial_updates_duplicate_producers_and_early_result ... ok
+test absent_effect_preserves_day_night_capture_graphs_exactly ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+

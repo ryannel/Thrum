@@ -77,3 +77,7 @@
 - 2026-11-12 The combined-source repository gate found `synthetic.rs` four lines over the size backstop.
   Moved effect-pass recording unchanged into the existing contribution module. Repository policy and native
   all-target Clippy pass after the split. Fresh target, capture and exact proofs will pin this final source.
+- 2026-11-13 Requalified M2 on final branch source `ec9dd79c`: all six automated item commands and the
+  separately GPU-locked `./dev check` pass. The [refreshed target proof](../../evidence/EFFECT-GRAPH/M2-proof.md)
+  retains the native/Chrome oracle results, all exact comparisons, 964 reviewed realtime images and named costs.
+  All eight items pass; M2 stays `in_progress` for scripted integration and the lead's review. No M3 work was built.

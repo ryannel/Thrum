@@ -1,9 +1,9 @@
 {
   "passed": true,
   "reference": "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
-  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261112T165734.027961Z/chrome-day-sdr",
+  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr",
   "reference_manifest_sha256": "1aaad66d4beb26aef9f2c605c92390a4330e5236290ee3673b7a0e9de1a7f296",
-  "candidate_manifest_sha256": "06169147abff3e5c30477238137b49f167e96f8ffbcfb4e66c68ff93190e8f99",
+  "candidate_manifest_sha256": "7c26042ff5982b578590abe8fdf7b4a553205fc8809b439b6980e7630b49a614",
   "frames": 481,
   "identity_keys": [
     "session",
