@@ -421,6 +421,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                     .prepare(&new_capabilities, &new_queue, presenting().surface)
                     .await
                     .expect("replacement");
+                device.destroy();
                 host.publish_device(&mut candidate).expect("publish device");
                 assert!(lease.offered().is_none());
                 assert!(witness.lock().expect("witness").offered.is_none());
@@ -577,6 +578,9 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
                     "frame {index}: mixed readers or partial publication"
                 );
             }
+            let stats = stats.lock().expect("shared upload stats");
+            assert!(stats.max_frame_copy_bytes <= COPY_UNIT);
+            assert!(stats.staging_peak_bytes <= COPY_UNIT * STAGING_CHUNKS);
         });
         std::fs::remove_dir_all(root).expect("cleanup");
     }
