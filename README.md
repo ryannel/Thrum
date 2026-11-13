@@ -40,6 +40,7 @@ if Python is not installed as `python3`. Fetch the locked Rust dependencies once
 - [Project brief](docs/plans/BRIEF.md), [module list](docs/plans/ARCHITECTURE.md) and [status](docs/plans/STATUS.md): the purpose and V1 exit, the modules in build order, and where each stands.
 - [Engine design](docs/design/README.md): requirements, architecture, modules and research.
 - [Contributing](CONTRIBUTING.md): commands, conventions and review evidence.
+- [Cooked product leases](docs/COOKED-LEASES.md): sampling textures and volumes from another engine pass.
 - [Repository layout](docs/REPOSITORY.md): where work belongs and how it is retained.
 - [Maturity ledger](docs/design/MATURITY.md): design is separate from running proof.
 
