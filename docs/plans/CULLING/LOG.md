@@ -1,5 +1,17 @@
 # CULLING log
 
+- 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome
+  fixed and realtime inspection frames, the mixed-field readbacks and the
+  independent-Direct SDR/scene-linear failure bytes. [M3 evidence](../../evidence/CULLING/M3.md)
+  distinguishes historical passes from pending committed-source qualification;
+  [the investigation](../../evidence/CULLING/M3-investigation.md) records the
+  exact failures. A temporary depth readback finds all 361 near-shadow maps
+  identical across Direct, Frustum, Occlusion and independent Direct; the other
+  layers remain queued. Shadowed-air-only ablation still fails at tick 180.
+  Temporary renderer edits are reverted. Repaired 27 stale evidence-link
+  destinations after the plan-record migration; `./dev check-docs` passes
+  777 Markdown files and 4,975 local links. No M3 item is newly marked pass.
+
 - 2026-11-11 Planned from the owner's task, quoted in the design. Before the loop, a Claude session built Frustum,
   Occlusion on cubes, the bucket route in Direct and Frustum, and Sun-caster culling (7–8 November); its four
   evidence pages are in `docs/evidence/render/G3C-*.md`. Its design and plan were never committed. This design
