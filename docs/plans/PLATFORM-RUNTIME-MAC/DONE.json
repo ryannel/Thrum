@@ -64,7 +64,7 @@
           "inspect": "Using T2-CAPTURE M0, rerun the documented 1920x1080 pan with a paused world, 120 Hz requested opportunities and normal semantic controls with denied read-only Screen Recording preflights before and after under the identified launcher/driver permission identities, without requesting a grant. Missing, failed or granted preflights cannot pass the no-desktop-capture proof. Review full-resolution source images, native-size crops and the host-time-preserving 1x movie using the worded inspection list: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. The Ground E PNG identifies scene and framing only; judge quality against this list and the milestone bar, never by matching a target image or awaiting owner image approval. Record before/after console observations as witness metadata only, accepting locked, unlocked or changed state and recording unavailable observations with a reason. Do not wait for manual locking or gate admission or success on lock values. Verify actual monotonic timing, complete one-second initial/final holds and full two-second sweep, and join requested, accepted and submitted yaw to image/submission IDs. Capture omissions make the interval inconclusive. Do not substitute a fixed-step route, endpoint redraw or static parity. Preserve the historical 0d53d3aa motion pass and its 38.3/51.7 ms content holds as historical evidence only.",
           "target": "mac-metal",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
-          "verdict": "could_not_judge",
+          "verdict": "pass",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "builder_result": "pass"
         },
@@ -75,7 +75,7 @@
           "ask": "Does the evidence keep callback target, opportunity, acquisition/submit, GPU completion, engine image time, movie PTS and OS-reported presented time as separate measurements, with ON-arm intervals labelled under capture? Is cadence claimed only from this build's capture-OFF arm, never from handler callback times, engine records or an earlier trace? Are kernel display swaps, scan-out, input-to-photon and physical iPhone timing stated as unmeasured?",
           "target": "mac-metal",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
-          "verdict": "could_not_judge",
+          "verdict": "pass",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "needs": {
             "type": "access",
@@ -89,7 +89,7 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "ask": "Trace T2 renderer-owned tap integration through normal AppKit callbacks and the real CAMetalLayer surface. With a known channel/row pattern, prove capture bytes equal the engine output consumed by the normal present pass, including any declared format/channel conversion. Establish the single producer binding to the actual surface submission; this is not a claim to observe compositor pixels. Prove capture neither reacquires nor extends the drawable lease. Lose/replace the surface with readback pending and show stale-generation refusal plus healthy fresh presentation. With capture OFF prove no tap texture/copy/readback/worker/per-frame allocation or changed present path; retain the current direct-output behavior and Mac M1 loss rules. Run real-Metal regressions with ./dev check under gpu, plus the documented live-window scenario; unavailable/occluded window cannot pass.",
-          "verdict": "could_not_judge",
+          "verdict": "pass",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "inspect": "On the unlocked active panel inspect the known-pattern window and same-build cooked scene before/after surface replacement, joining engine tap IDs to real surface submissions. Screen Recording permission is not required; label engine versus compositor limits.",
           "check": "./dev check",
@@ -121,30 +121,13 @@
           "builder_result": "pass"
         }
       ],
-      "findings": [
-        {
-          "name": "current-release-motion-unverified",
-          "item": "M2.1",
-          "repeat": false
-        },
-        {
-          "name": "current-build-matched-arms-unverified",
-          "item": "M2.2",
-          "repeat": false
-        },
-        {
-          "name": "current-live-window-proof-unavailable",
-          "item": "M2.3",
-          "repeat": false
-        }
-      ],
       "depends_on": [
         "T2-CAPTURE:M0"
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate."
     },
     {

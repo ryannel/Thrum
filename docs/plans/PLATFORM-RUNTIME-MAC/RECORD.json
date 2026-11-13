@@ -51,7 +51,7 @@
         {
           "verdict": "fail",
           "commit": "53137ce1506a37ec27c04082701d0e9ac1061bd9",
-          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review-1.md",
           "items": {
             "M2.1": "could_not_judge",
             "M2.2": "could_not_judge",
@@ -92,6 +92,34 @@
             "turns": 1
           },
           "at": "2026-11-12T10:59:48Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e119993ac1c087014571ad0862668d33b912841a",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "visible",
+          "usage": {
+            "input": 214928,
+            "cached": 9468672,
+            "output": 23349,
+            "turns": 1
+          },
+          "at": "2026-11-13T19:32:21Z"
         }
       ],
       "authorised": {
@@ -146,6 +174,13 @@
           "output": 91172,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e119993ac1c087014571ad0862668d33b912841a",
+        "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+        "checked": "a024524b6bc287e6e55d7df8186c8250d5a1314c",
+        "at": "2026-11-13T19:32:21Z"
       }
     },
     "M3": {
