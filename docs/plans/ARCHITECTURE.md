@@ -525,9 +525,9 @@ it to the asking module's builder. None is added now, so no V1 plan changes.
 | Owner | Ask | For |
 |---|---|---|
 | `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots), cooked, mapped and hot-reloaded like meshes and textures. Built in `RENDER-2D:M4` under [ruling 2](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `CONTENT-LOOP` | A font product: a table of metrics and one sheet for each scale, in the sheet form `RENDER-2D` defines. Built in `GAME-UI:M2` under [ruling 3](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `CONTENT-LOOP` | A font product: a table of metrics and one sheet for each scale, in the sheet form `RENDER-2D` defines; a publication that waits for the interface's new layout, so text and sheets change in one frame. Built in `GAME-UI:M2` under [ruling 3](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `APPLE-TILE` | A game selects the 2D scene half in place of the 3D one, and the output half gains a display-referred transfer. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `APPLE-TILE`, with `APPLE-PRESENTATION` | The output half gains an interface stage at output extent, after reconstruction and the display transform. Built in `GAME-UI:M1` under [ruling 1](#seam-rulings-for-game-ui) | `GAME-UI` |
+| `APPLE-TILE`, with `APPLE-PRESENTATION` | The output half gains an interface stage at output extent, after reconstruction and the display transform, in the 8-bit display image and in the EDR present pass's float target. Built in `GAME-UI:M1` under [ruling 1](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `RENDER-2D` | The sprite pass runs a second time in a frame, at the interface stage, with its own sheets and rows. Built in `GAME-UI:M1` under [ruling 2](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `CREATOR`, `SHOWCASE` and `PLATFORM-RUNTIME-IOS` | The shells give a game pointer and touch events as well as keys, the display's density, the safe-area insets, text drops and the clipboard; the V1 game gains an interface scene. Built in `GAME-UI` M1 to M5 under [ruling 4](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
@@ -605,15 +605,21 @@ it. Once built, each belongs to its owner: later work there keeps its tests pass
 1. **The interface stage, in `GAME-UI:M1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame
    host, scene graph and display files). A host may be prepared with an interface, for either scene kind. It then
    has [one more stage](GAME-UI/DESIGN.md#1-the-interface-stage) after reconstruction and the display transform
-   and before capture and present, which draws a paint list into the image the surface is presented from, in
-   linear light, with interface white at SDR white in every display mode. It changes no pixel that no row covers.
+   and before the frame is captured or shown, which draws a paint list into the target the transform wrote, in
+   linear light, with interface white at SDR white. With the 8-bit display image that is a pass between the
+   transform and present. With `APPLE-PRESENTATION`'s EDR surface it is in the present pass, after the
+   transform's draw into the `Rgba16Float` target, where 1.0 is SDR white. It changes no pixel that no row
+   covers, and its pipelines for both are made when the host is prepared.
 2. **The sprite pass's second use, in `GAME-UI:M1`** (`RENDER-2D`; `thrum-render`'s sprite files).
    [The pass](RENDER-2D/DESIGN.md#interfaces) runs once more in a frame with the display image as its target,
    a view in output pixels, its own set of up to eight sheets and the paint list as its rows. The scene's use of
    the pass is unchanged.
 3. **The font product, in `GAME-UI:M2`** (`CONTENT-LOOP`; `thrum-cook`, `thrum-asset` and `thrum-asset-gpu`).
    [A font](GAME-UI/DESIGN.md#4-fonts) is a new product kind: a table and one pixel-kind sheet product for each
-   scale, leased and switched as sheets are. `CONTENT-LOOP`'s design says each ask becomes a milestone there;
+   scale, leased and switched as sheets are. The interface is one more reader of a publication that changes a
+   sheet it uses: it [lays out again beside what is drawn](GAME-UI/DESIGN.md#11-a-list-and-its-sheets-change-together),
+   the publication is not ready until the render owner holds that layout's paint list, and a table the
+   interface cannot take refuses the publication whole. `CONTENT-LOOP`'s design says each ask becomes a milestone there;
    this ruling replaces that for the font product, as `RENDER-2D`'s ruling 2 did for sheets. The cooker gains
    `skrifa`, `harfrust` and `zeno`; no shipping crate does.
 4. **The shells and the V1 game, in `GAME-UI` M1 to M5** (`CREATOR`'s `thrum-app` window and page; `SHOWCASE`'s
@@ -642,7 +648,7 @@ review passes. Changes to a numbered contract are settled with its producers and
 | **The sprite pass at another stage**: the pass takes its target, view and rows as inputs, so a second instance draws a paint list at the interface stage | `RENDER-2D` → `GAME-UI`, wired by [ruling 2](#seam-rulings-for-game-ui) | [RENDER-2D](RENDER-2D/DESIGN.md#interfaces) |
 | **2D scene half**: a host created for the 2D scene kind compiles only that scene's pass and the output half's, writing the pre-tone scene-linear input at the surface's pixel extent | `APPLE-TILE` → `RENDER-2D`, by [ruling 1](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#1-the-scene-kind); [APPLE-TILE](APPLE-TILE/DESIGN.md), C06, C07's no-reconstruction form |
 | Sprite-sheet and font products. A **font product** is a table of metrics and one pixel-kind sheet for each scale, rasterised when it is cooked at the sizes a game names | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games. The sheet product by [ruling 2](#seam-rulings-for-render-2d), the font product by [ruling 3](#seam-rulings-for-game-ui) | [RENDER-2D](RENDER-2D/DESIGN.md#8-sheets); [GAME-UI](GAME-UI/DESIGN.md#4-fonts); C05 |
-| **Interface stage**: a paint list drawn at output extent after reconstruction and the display transform, before capture and present, blended in linear light with interface white at SDR white. A host without one is unchanged | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI`, by [ruling 1](#seam-rulings-for-game-ui) | [GAME-UI](GAME-UI/DESIGN.md#1-the-interface-stage); C06, C07 |
+| **Interface stage**: a paint list drawn at output extent into the target the display transform wrote (the 8-bit display image, or the EDR present pass's float target), before the frame is captured or shown, blended in linear light with interface white at SDR white. A host without one is unchanged | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI`, by [ruling 1](#seam-rulings-for-game-ui) | [GAME-UI](GAME-UI/DESIGN.md#1-the-interface-stage); C06, C07 |
 | **Event routing**: every key, pointer and touch event goes to the interface first, which consumes it or passes it on; each press has one owner until its release; the game is told when its input is interrupted and what is still held afterwards; text drops and the clipboard | shells, by [ruling 4](#seam-rulings-for-game-ui) → `GAME-UI` → the game | [GAME-UI](GAME-UI/DESIGN.md#8-who-gets-an-event); C11 |
 | **Interface tree**: nodes a game builds in code (stacks, overlays, text, images, fills, panels, bars, buttons, scopes), laid out in points for the output's extent, scale and safe area; text runs from a font product; focus; activations handed to the game | `GAME-UI` → `SWARM`, any game | [GAME-UI](GAME-UI/DESIGN.md#interfaces) |
 | **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A reliable message arrives or the link closes, and a close can cut off the last ones sent. A datagram's wait is bounded in the link's own queue only, so one may arrive late and `SESSION` rejects old ones by content. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM`, which shows it in `GAME-UI`'s nodes | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |

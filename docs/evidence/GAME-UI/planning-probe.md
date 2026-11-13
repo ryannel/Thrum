@@ -4,7 +4,7 @@ Throwaway calculations the planner ran for [the design](../../plans/GAME-UI/DESI
 alone could not settle. None is engine code and none ran on a GPU, so nothing here is a baseline: the milestones
 repeat each result through the engine. The source stayed in the planner's scratch folder and is not kept.
 
-Machine: Apple M3 Max, macOS 26.6.2. Python 3 for probes 2 to 4. Probe 1 is a Swift script on CoreText, used only
+Machine: Apple M3 Max, macOS 26.6.2. Python 3 for probes 2 to 5. Probe 1 is a Swift script on CoreText, used only
 to measure glyph boxes; no font or CoreText output is kept.
 
 ## 1. How large is a cooked font?
@@ -68,3 +68,25 @@ direction keys alone. Reversible means that a move followed by the opposite move
 
 **Reading.** The design claims reachability and reversibility for rows, columns and grids only. Elsewhere a game
 names a control's neighbours, and next and previous, which walk the tree's order, always reach every control.
+
+## 5. Do authored colours and a one-code allowance survive a half-float target?
+
+Added on 13 November 2026 for the float mode of [the interface stage](../../plans/GAME-UI/DESIGN.md#1-the-interface-stage),
+after [the design review](design-review.md) found the EDR output path had no stage.
+
+**Method.** Each 8-bit code was decoded with the sRGB curve, rounded to the nearest half-float, encoded again
+with the curve and multiplied by 255. Then every half-float from 0 to 16 was encoded with the same curve,
+continued above 1 by the same formula, and the difference between each neighbouring pair was taken, in codes.
+The arithmetic is IEEE half-float rounding in Python's `struct`; no GPU ran.
+
+| Question | Result |
+|---|---|
+| Worst error of an opaque code after the half-float | 0.037 of a code; all 256 round back to themselves |
+| Largest step between neighbouring half-floats, values up to 1 | 0.08 of a code |
+| Up to 2, 4, 8 and 16 | 0.11, 0.15, 0.20 and 0.26 of a code |
+
+**Reading.** An opaque texel can be required to return its authored code in the float mode, with 0.46 of a
+code to spare, which agrees with [RENDER-2D's probe](../RENDER-2D/planning-probe.md) of the same target format.
+A comparison "within one code" of the sRGB curve is meaningful up to a headroom of 16: storage accounts for at
+most 0.27 of it, and the rest is left for the GPU's own rounding of a blend, as in the 8-bit mode. A GPU's
+blend was not measured; M1.1 and M1.5 do that.
