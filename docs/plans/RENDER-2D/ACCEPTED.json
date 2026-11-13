@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "b6ecab26149f2b213660d04a8c75d0e9f68a226ab606ac23bdd55545b57ee0fd",
+      "definitions": "b768cce8a87a5d6e3a5037a90279b7067f2d30d5e2e95c10b4ceb54834918e70",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
-        "at": "2026-11-13T17:43:28Z"
+        "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
+        "at": "2026-11-13T18:07:46Z"
       }
     },
     "M2": {
-      "definitions": "846429f46091f7c0f06e47426fb22ac1613853a10347f2f6a888eda8856de80b",
+      "definitions": "f64a032f7c59bed5aed83a8843a0c944a8ae57c83fd5cee2378032417ed4ae14",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
-        "at": "2026-11-13T17:43:28Z"
+        "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
+        "at": "2026-11-13T18:07:46Z"
       }
     },
     "M3": {
-      "definitions": "30118b2f1bfef56c63cab30f82f491e7bd509f6206e6ad0ec70bd3b6c9075bc0",
+      "definitions": "d77a35ebbc452eb24eedd1a81a531e3745bc5fa7a327da64db417f4d08e254d1",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
-        "at": "2026-11-13T17:43:28Z"
+        "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
+        "at": "2026-11-13T18:07:46Z"
       }
     },
     "M4": {
@@ -61,12 +61,12 @@
       }
     },
     "M5": {
-      "definitions": "e80e9e0faf20ea7694035bc39bb4f7cd7117bd49b37a07b89c63a9f6a76886d6",
+      "definitions": "7fc1656df667b50872ca2647fa24d1c8596038b1bda61b71e746a0176c32ef56",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
-        "at": "2026-11-13T17:43:28Z"
+        "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix fin",
+        "at": "2026-11-13T18:07:46Z"
       }
     }
   },
@@ -74,10 +74,14 @@
     {
       "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
       "at": "2026-11-13T17:43:28Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at docs/evidence/RENDER-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T18:07:46Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T17:43:28Z"
+    "at": "2026-11-13T18:07:46Z"
   }
 }
