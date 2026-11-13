@@ -770,10 +770,12 @@ impl Owner {
             });
         reply.pending_frames = gpu.host.pending_frames();
         let culling = gpu.host.culling_selection();
-        reply.cooked.push_str(&format!(
+        use std::fmt::Write as _;
+        let _ = write!(
+            reply.cooked,
             "\nculling_requested={:?}\nculling_resolved={:?}\nculling_reason={:?}\n",
             culling.requested, culling.resolved, culling.reason
-        ));
+        );
         if let Some(view) = &gpu.cooked_view {
             reply.cooked.push_str(&view.witness());
         }
