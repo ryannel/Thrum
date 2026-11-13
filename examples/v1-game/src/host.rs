@@ -70,6 +70,18 @@ impl Default for GameSetup {
     }
 }
 
+impl GameSetup {
+    /// Two paired 1080p runs favour Occlusion on mixed meshes in cover and open
+    /// views (docs/evidence/CULLING/M2.md). The cube field retains Frustum.
+    pub(crate) fn field_default_culling(meshes: bool) -> CullMode {
+        if meshes {
+            CullMode::Occlusion
+        } else {
+            CullMode::Frustum
+        }
+    }
+}
+
 /// Prepared V1 game, whose world clock and frame executor belong to the engine.
 pub struct FrameHost {
     inner: Runtime,

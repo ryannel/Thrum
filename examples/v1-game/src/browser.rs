@@ -131,7 +131,7 @@ pub async fn create_browser_game(
     .await
 }
 
-/// Prepare the dense flythrough field with `"direct"`, `"frustum"`, or `"occlusion"` culling.
+/// Prepare the dense flythrough field with explicit culling or the measured `"default"`.
 ///
 /// # Errors
 /// Returns an unknown culling mode, or the same failures as [`create_browser_game`].
@@ -142,12 +142,13 @@ pub async fn create_field_game(
     field_meshes: bool,
 ) -> Result<BrowserGame, JsValue> {
     let camera_culling = match culling.as_str() {
+        "default" => crate::GameSetup::field_default_culling(field_meshes),
         "direct" => thrum_render::synthetic::CullMode::Direct,
         "frustum" => thrum_render::synthetic::CullMode::Frustum,
         "occlusion" => thrum_render::synthetic::CullMode::Occlusion,
         _ => {
             return Err(JsValue::from_str(
-                "culling must be direct, frustum or occlusion",
+                "culling must be default, direct, frustum or occlusion",
             ));
         }
     };

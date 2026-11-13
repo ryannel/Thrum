@@ -10,8 +10,8 @@ use thrum_asset_gpu::CookedStats;
 /// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
 /// moving-route proof overlay or one of its controls.
 /// The field draws mixed meshes with `THRUM_FIELD_MESHES=on`.
-/// Without `THRUM_CULLING`, the field uses Frustum (a measured win along its
-/// flythrough) and the fully visible grid keeps Direct.
+/// Without `THRUM_CULLING`, the mixed-mesh field uses measured Occlusion,
+/// the cube field uses Frustum, and the fully visible grid keeps Direct.
 /// # Errors
 /// Refuses an unknown culling mode or route overlay.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
@@ -21,9 +21,11 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     } else {
         crate::GameContent::Grid
     };
+    let field_meshes = content == crate::GameContent::Field
+        && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on");
     let camera_culling = match std::env::var("THRUM_CULLING").as_deref() {
         Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
-            thrum_render::synthetic::CullMode::Frustum
+            crate::GameSetup::field_default_culling(field_meshes)
         }
         Err(std::env::VarError::NotPresent) | Ok("direct") => {
             thrum_render::synthetic::CullMode::Direct
@@ -55,8 +57,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
                 );
             }
         },
-        field_meshes: content == crate::GameContent::Field
-            && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on"),
+        field_meshes,
     })
 }
 
