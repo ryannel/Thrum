@@ -129,21 +129,7 @@ impl Stream {
 
     /// Write `chunk`'s copies into the mapped `buffer`, unmap it and queue it for recording.
     fn fill(&self, chunk: usize, buffer: wgpu::Buffer) -> Result<(), String> {
-        #[cfg(feature = "fault-probe")]
-        if self
-            .ring
-            .0
-            .fault
-            .as_ref()
-            .is_some_and(crate::FaultProbe::take)
-        {
-            return self.abandon(&buffer, "staging map: injected fill failure".to_owned());
-        }
-        let written = buffer.get_mapped_range_mut(..).map(|mut mapped| {
-            for copy in &self.copies[self.copies_of(chunk)] {
-                self.write(copy, &mut mapped);
-            }
-        });
+        let written = self.write_chunk(chunk, &buffer);
         if let Err(error) = written {
             return self.abandon(&buffer, format!("staging map: {error}"));
         }
@@ -155,6 +141,28 @@ impl Stream {
             }
             Err(_) => self.abandon(&buffer, "staging queue poisoned".to_owned()),
         }
+    }
+
+    /// The mapped-write operation. The probe refuses this operation, then `fill` handles
+    /// its error through the same production branch as a failed mapped-range acquisition.
+    fn write_chunk(&self, chunk: usize, buffer: &wgpu::Buffer) -> Result<(), String> {
+        #[cfg(feature = "fault-probe")]
+        if self
+            .ring
+            .0
+            .fault
+            .as_ref()
+            .is_some_and(crate::FaultProbe::take)
+        {
+            return Err("injected fill failure".to_owned());
+        }
+        let mut mapped = buffer
+            .get_mapped_range_mut(..)
+            .map_err(|error| error.to_string())?;
+        for copy in &self.copies[self.copies_of(chunk)] {
+            self.write(copy, &mut mapped);
+        }
+        Ok(())
     }
 
     /// Fail the upload and take `buffer` out of the ring's account, so the slot can be recreated.
