@@ -111,3 +111,8 @@
 - 2026-11-13 The repository gate exposed 27 historical evidence links left pointing to `ACCEPTED.json`
   after the plan migration. Retargeted only those links to `RECORD.json`, which owns the cited briefs and
   human feedback. `./dev check-docs` passed (774 Markdown files, 4,955 links); review prose and verdicts are unchanged.
+- 2026-11-13 The overlap repair and migration links merged as `ea58db51`, after the repository gate passed.
+  Reviewing M1.5's full refusal statement then found that cached textures skipped use-dimension validation.
+  `011521f8` centralizes that validation for both cached and newly mapped textures. The stronger Metal fault
+  test passed: a manifest assertion proves the invalid volume request reuses the placement's resident 2D
+  product, and the whole publication is refused. Clippy passed. [Proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).

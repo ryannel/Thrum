@@ -64,7 +64,7 @@
           "lock": "gpu",
           "ask": "Is the fault injected where a chunk is mapped or written, so that the production failure branch is the code that runs? Does an ordinary build compile without the probe?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/fault.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
+          "evidence": "docs/evidence/CONTENT-LOOP/M1.md; docs/evidence/CONTENT-LOOP/M1/fault.log.gz; docs/evidence/CONTENT-LOOP/M1/repair-fault.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "pass",
           "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
