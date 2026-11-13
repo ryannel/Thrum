@@ -15,6 +15,7 @@ fn capability_record_selects_the_prepared_path() {
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
             .expect("Metal adapter");
+        #[cfg(target_os = "macos")]
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
