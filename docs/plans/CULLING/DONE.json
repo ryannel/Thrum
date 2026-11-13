@@ -131,8 +131,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "",
           "review": ""
         }
