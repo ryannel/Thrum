@@ -1,0 +1,62 @@
+[
+  {
+    "submission_id": 356,
+    "submit_ns": 2992508417,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+    "sequence": 361,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 0.0,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1,
+    "full": "full-3.png"
+  },
+  {
+    "submission_id": 535,
+    "submit_ns": 4501317125,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+    "sequence": 542,
+    "lease_generation": 3,
+    "accepted_yaw_degrees": 9.09999752,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 2,
+    "full": "full-4.5.png"
+  },
+  {
+    "submission_id": 595,
+    "submit_ns": 5001321917,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+    "sequence": 602,
+    "lease_generation": 3,
+    "accepted_yaw_degrees": 18.09998703,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 2,
+    "full": "full-5.png"
+  },
+  {
+    "submission_id": 655,
+    "submit_ns": 5501547792,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+    "sequence": 662,
+    "lease_generation": 3,
+    "accepted_yaw_degrees": 27.099990845,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 2,
+    "full": "full-5.5.png"
+  },
+  {
+    "submission_id": 775,
+    "submit_ns": 6501261042,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+    "sequence": 782,
+    "lease_generation": 3,
+    "accepted_yaw_degrees": 35.999988556,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 2,
+    "full": "full-6.5.png"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "arm": "motion",
+  "rate": 1,
+  "duration_s": 4.011289,
+  "wall_ms": 4148.700000286102,
+  "callbacks": 437,
+  "quality": {
+    "totalVideoFrames": 481,
+    "droppedVideoFrames": 0
+  },
+  "width": 1920,
+  "height": 1080
+}

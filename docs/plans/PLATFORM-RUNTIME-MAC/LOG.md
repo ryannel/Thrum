@@ -1,5 +1,15 @@
 # PLATFORM-RUNTIME-MAC log
 
+13 November current-build M2 qualification. Merged collector provenance fix `7a791b20`, rebuilt the release,
+and recollected the denied-permission elapsed-time pan, live-window pattern/valley replacement, OFF probe
+and all three matched arms. The fresh OFF/ON traces use recordings five/six and qualify all 488 marked
+submissions each. Complete sources and sampled native-size 1× inspection pass the worded motion criteria.
+The evidence retains four marked OFF long intervals, the ON source hold, browser decoder drops and observer
+costs. Exact native/Chrome baselines, fourteen tooling tests and GPU-locked `./dev check` pass. All five item
+statuses now pass builder inspection, with M2 still `in_progress`. Independent lead review remains owed.
+This supersedes the older claims that the reconstructed historical executable needed no re-recording.
+[Current proof and limits](../../evidence/render/mac-m2-20261113/README.md).
+
 
 12 November integration stop. Landing rebased the local M2 claim to `b4d96b98`, then the full Check failed in
 `cooked_material_gpu`. A GPU-locked focused rerun, with the optional compiler wrapper disabled as in `./dev`,

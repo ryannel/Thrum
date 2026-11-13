@@ -1,0 +1,13 @@
+{
+  "arm": "on-untraced",
+  "rate": 1,
+  "duration_s": 7.098762,
+  "wall_ms": 7135.900000095367,
+  "callbacks": 783,
+  "quality": {
+    "totalVideoFrames": 852,
+    "droppedVideoFrames": 0
+  },
+  "width": 1920,
+  "height": 1080
+}

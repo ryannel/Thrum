@@ -1,0 +1,13 @@
+{
+  "arm": "grid-replacement",
+  "rate": 1,
+  "duration_s": 7.101065,
+  "wall_ms": 7129.400000095367,
+  "callbacks": 833,
+  "quality": {
+    "totalVideoFrames": 845,
+    "droppedVideoFrames": 0
+  },
+  "width": 1920,
+  "height": 1080
+}

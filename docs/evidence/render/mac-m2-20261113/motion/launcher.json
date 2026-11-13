@@ -1,0 +1,10 @@
+{
+  "bundle_identifier" : "org.thrum.mac-m2.capture.32ea7045ddb84b5a914893e90e8e7841",
+  "capture_driver_pid" : 10617,
+  "capture_exit_code" : 0,
+  "launcher_executable" : "\/Users\/ryannel\/Workspace\/thrum\/.claude\/worktrees\/mac-m2\/tmp\/mac-m2\/current-20261113\/motion\/ThrumMacM2.app\/Contents\/MacOS\/Launcher",
+  "launcher_pid" : 10616,
+  "preflight_api" : "CGPreflightScreenCaptureAccess",
+  "screen_recording_after" : false,
+  "screen_recording_before" : false
+}

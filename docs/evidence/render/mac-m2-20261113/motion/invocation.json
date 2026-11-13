@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/usr/bin/open",
+    "-n",
+    "-W",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/motion/ThrumMacM2.app",
+    "--args",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/motion",
+    "/opt/homebrew/opt/python@3.15/bin/python3.15",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/scripts/capture_v1_runtime.py",
+    "--binary",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/v1-game",
+    "--store",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/valley",
+    "--output",
+    "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/motion/session",
+    "--case",
+    "pan",
+    "--mode",
+    "realtime",
+    "--defer"
+  ],
+  "launcher_sha256": "294d92522def80add8120f7841a6fb5054c7416a42137b10bce400c3e9b290bf",
+  "launcher_source_sha256": "19e42347a9a4df1bbdc3e22333e587a9d7bd25635c8162be0ed56bcc2c934b99"
+}

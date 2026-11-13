@@ -1,0 +1,7 @@
+{
+  "path": "tmp/mac-m2/current-20261113/presented/on-untraced/frames.zst",
+  "bytes": 579826902,
+  "sha256": "19344e10b566283979ff4513a6050afe08833df8556f83d44e2c5a057324ef70",
+  "encoding": "ZstdDelta",
+  "verification": "package_mac_m2_window.py independently decoded and checked every original against hashes.txt"
+}

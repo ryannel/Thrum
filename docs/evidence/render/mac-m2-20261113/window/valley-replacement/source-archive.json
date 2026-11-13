@@ -1,0 +1,7 @@
+{
+  "path": "tmp/mac-m2/current-20261113/window/valley-replacement/frames.zst",
+  "bytes": 555213719,
+  "sha256": "f3a0864c115c9d9e07f37d446cc844000e34dabe43b5c80f3ae753961744cdaa",
+  "encoding": "ZstdDelta",
+  "verification": "package_mac_m2_window.py independently decoded and checked every original against hashes.txt"
+}

@@ -1,0 +1,127 @@
+[
+  {
+    "submission_id": 222,
+    "offset": 0,
+    "rgba_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+    "submit_ns": 0,
+    "full": "full-0.png",
+    "crop": "crop-0.png",
+    "crop_xywh": [
+      800,
+      650,
+      480,
+      340
+    ],
+    "crop_command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      "tmp/mac-m2/current-20261113/selected-motion/full-0.png",
+      "-vf",
+      "crop=480:340:800:650",
+      "tmp/mac-m2/current-20261113/selected-motion/crop-0.png"
+    ]
+  },
+  {
+    "submission_id": 401,
+    "offset": 1484697600,
+    "rgba_sha256": "49b0e79057a73072fa915c0624bbf401ff0c07515cb27dd7aefee878ba534730",
+    "submit_ns": 1502105458,
+    "full": "full-1.5.png",
+    "crop": "crop-1.5.png",
+    "crop_xywh": [
+      800,
+      650,
+      480,
+      340
+    ],
+    "crop_command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      "tmp/mac-m2/current-20261113/selected-motion/full-1.5.png",
+      "-vf",
+      "crop=480:340:800:650",
+      "tmp/mac-m2/current-20261113/selected-motion/crop-1.5.png"
+    ]
+  },
+  {
+    "submission_id": 461,
+    "offset": 1982361600,
+    "rgba_sha256": "689665b1968011d7c05d796935adb92f2d4cab022e09687dc0eff19b361a4b7b",
+    "submit_ns": 2003593458,
+    "full": "full-2.png",
+    "crop": "crop-2.png",
+    "crop_xywh": [
+      400,
+      650,
+      480,
+      340
+    ],
+    "crop_command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      "tmp/mac-m2/current-20261113/selected-motion/full-2.png",
+      "-vf",
+      "crop=480:340:400:650",
+      "tmp/mac-m2/current-20261113/selected-motion/crop-2.png"
+    ]
+  },
+  {
+    "submission_id": 521,
+    "offset": 2480025600,
+    "rgba_sha256": "8f4abd98f38343aaddab7dbd233f0670746568384a9f93340e6c058d4eca99aa",
+    "submit_ns": 2503129792,
+    "full": "full-2.5.png",
+    "crop": "crop-2.5.png",
+    "crop_xywh": [
+      100,
+      650,
+      480,
+      340
+    ],
+    "crop_command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      "tmp/mac-m2/current-20261113/selected-motion/full-2.5.png",
+      "-vf",
+      "crop=480:340:100:650",
+      "tmp/mac-m2/current-20261113/selected-motion/crop-2.5.png"
+    ]
+  },
+  {
+    "submission_id": 641,
+    "offset": 3475353600,
+    "rgba_sha256": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+    "submit_ns": 3503502417,
+    "full": "full-3.5.png",
+    "crop": "crop-3.5.png",
+    "crop_xywh": [
+      100,
+      650,
+      480,
+      340
+    ],
+    "crop_command": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      "tmp/mac-m2/current-20261113/selected-motion/full-3.5.png",
+      "-vf",
+      "crop=480:340:100:650",
+      "tmp/mac-m2/current-20261113/selected-motion/crop-3.5.png"
+    ]
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "recording_mode": "Deferred",
+  "tables": {
+    "ca-client-presented-handler": 841,
+    "device-display-info": 1,
+    "display-surface-queue": 0,
+    "display-surface-swap": 0,
+    "display-vsyncs-interval": 0,
+    "displayed-surfaces-interval": 0
+  }
+}

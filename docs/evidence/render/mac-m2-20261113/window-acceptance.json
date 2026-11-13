@@ -1,0 +1,7 @@
+{
+  "M2.3": "pass",
+  "binary_sha256": "688f378f96d33c61f5f21b70582610ff9673c63e7f3c5af6b5eb859e6b4f8422",
+  "source_revision": "7a791b20dcd2c70b2537661b123c0d13978bd9f9",
+  "evidence": "docs/evidence/render/mac-m2-20261113/analysis.json",
+  "inspection": "Both current-window screenshot pairs inspected. Every pattern source equals the independent oracle. Pending staging 3, stale recycle 1 to 1, lease 2 to 3, presenter 1 to 2, identical boundary pixels and fresh presentations established in both replacement arms. OFF has zero images and disabled tap throughout. GPU-locked full ./dev check passed in the source merge."
+}

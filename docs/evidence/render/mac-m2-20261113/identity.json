@@ -1,0 +1,33 @@
+{
+  "binary_sha256": "688f378f96d33c61f5f21b70582610ff9673c63e7f3c5af6b5eb859e6b4f8422",
+  "preset_sha256": "9c1f03df9fc1461d92e60fafa06ee58889aa41130ea7547475b5ba4a99506455",
+  "source_revision": "7a791b20dcd2c70b2537661b123c0d13978bd9f9",
+  "dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "cooked_hashes": {
+    "EPOCH": "7666bfc0e4b8a8a43c2fb05ba5123e6c042c30c24b7795bc74f2b0710c728b9f",
+    "HEAD": "94d0863929b75570402925f40b01271cbb2a19f90fe31f69b41074b6cbe63ade",
+    "LOCK": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3": "ad20b15f6cc6784b17a863772f69e0a3d2db849ac9c005c03c10d8d756b10250",
+    "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d": "17b7a3d03d5d6bca7923d8fb18a16885566e3d5358e584c727a824f58718a169",
+    "actions/4fe1baed10d1f5fac142e90b5a8eda95ecfd744bacb8191157fda957a36267bb": "439d3fb31bf1a224d590c334b77887fff4f8802960041a111cf60459e8384325",
+    "actions/b6917be857ee236504096b296a3c0af8d15e5dbc4424072d197771aac986dc13": "c3d85803a37b00350482232a9e0489daf367ca98b076e1e79fd88cb7b81901e7",
+    "actions/c1812467617c9ce6ccf546d518917945af696433369ff09a2d4b7e866b417a38": "9133c230d1f97266731f7ada68d214e7bd954f402a0b1fb1e6bb1bdfeba71e88",
+    "actions/c707e4d3c066b6fa902f5b35bcf0824f31bf1a914eeb58110e21d6eb8a24e6f4": "59d13875dc8c277a1ecd680bcfe0d2bcda96fbe148e8628fff51c27cbd05699f",
+    "actions/caf83891beadc7d7bac4d3cebfc7f0f084061753acda55cb4747ad7a40720d7a": "7f985a73f453eb34773bdf6f360be66ca8ac7d296047f1c18c8513fa8b8e1c31",
+    "actions/ce0f7421280589069c9706d19a514f2848c9fbdf7280165cec9359863ccc5343": "54f3bbd805b20e63deabcaa1020303d42471d05d49e5818ac25935765af63e62",
+    "actions/e9f04d807871e9e84d452cc558c4804e6f2ed7581aeaa9e2b03b08632e9c8dd7": "3f2b4a16339bb98935acd3448276d019f2c75a6897dd45669545ad72adfc9f3f",
+    "cas/0e/0ebb57aac289f58b54ca2be556c92ca2a983b6fc2aee35f182452b32a372d123": "e63fcae8315f7cf2f586ba6e5c953a8562ebff30a796159b0933bd5c0d33ed32",
+    "cas/14/14183bb6aee8e6f9080b0baf957cec5b7aa3bb245f7f6db50323dae12faeedb1": "247f32c0e636ade7b701730012505d3d84cfb2ab9cd126adf9c65b9db099ca02",
+    "cas/17/17fce4d6e40c92d31c91fd2b95cd508bc5fd91212e9327d917ab0dee7a05b8dc": "4ec981dca4eb5d04f92ca3294a6ba0260970cc0e693872400a993dcf567c326b",
+    "cas/55/5530580e6997486b48062db7cc9a83df2f94f66ecf7dbe8ff547d6556aeaa0b1": "10caa7191c9fc6e0116fb29d1361ab16c2efa4d0fc17b56127f5169e0feb1cf6",
+    "cas/5a/5a1b4d53f7396a7b1a5d4178f5f35eea8b1925e3127511a2bb05ba71c8fcd6ce": "dc708504ca32b3edff6c1bff1a258b524dc4f6d367d73f1db0829a93f66aef75",
+    "cas/62/6216e9963e178c6b81dfc51989df2a12dc0450ca18da3ee8fb2451b570c9f3b4": "04c3db60a69b0ab844c6aa89cc4218d1cfcc505305448331b571b117062959db",
+    "cas/70/70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d": "2ac7d5656ffb84e3a974d46904593f901a949caca20ddad575b00ab43d9c0425",
+    "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a": "064cc46e71a7291497a0ca4a1cf7c28961d347e0e7708f66d7a020a868dbaf85",
+    "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa": "098a3fab90925adcd7211ca5ced3e099a46990dbbeb8b3fb10f610f14f94b991",
+    "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638": "872e22f73f384f7ba1590dad038c4bb66d2552a2bb0cb2742615944ab027769b",
+    "stat-cache.bin": "140b3913cf9c1ddb15834d5046f89f0d1e3b2fea2ce75becaa460ab7ec85c444"
+  },
+  "hypothesis": "Retained slot-events.txt shows the target already exited normally, then Game Performance hung saving and export reported Document Missing Template Error. Therefore target exit is not a new hypothesis. The current template exposes Points of Interest excludeOSLogs=false. Test the same Game Performance template with excludeOSLogs=true and no desktop recorder: less unrelated global log material may avoid finalization failure while preserving the independent displayed-surfaces-interval table. Success requires readable TOC and actual app/window swaps within deadlines. Failure rejects this configuration; no unchanged retry.",
+  "qualified": false
+}

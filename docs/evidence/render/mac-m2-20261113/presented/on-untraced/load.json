@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    2.4736328125,
+    2.61572265625,
+    2.40087890625
+  ],
+  "after_load_1_5_15": [
+    2.92236328125,
+    2.7099609375,
+    2.4365234375
+  ],
+  "sample_duration_ns": 7517540541,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "11665  25.7 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "11670  10.5 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "82433  10.1 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+    "82413   6.1 /Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+    "81917   4.0 /Applications/ChatGPT.app/Contents/MacOS/ChatGPT",
+    "  402   3.5 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "  333   2.6 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+    "26112   1.5 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/usr/libexec/diagnosticd",
+    "55396   1.1 /Applications/Claude.app/Contents/Frameworks/Claude Helper.app/Contents/MacOS/Claude Helper",
+    "92310   0.9 /usr/libexec/trustd",
+    "  570   0.9 /System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN",
+    "45444   0.7 /Applications/Gemini.app/Contents/MacOS/Gemini",
+    "49551   0.7 /usr/libexec/diagnosticd",
+    "55476   0.7 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer)",
+    "82000   0.6 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

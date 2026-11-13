@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    3.0439453125,
+    2.67236328125,
+    2.27099609375
+  ],
+  "after_load_1_5_15": [
+    3.26416015625,
+    2.73193359375,
+    2.29638671875
+  ],
+  "sample_duration_ns": 7537677375,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "10721  98.0 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "92267  96.3 /usr/libexec/duetexpertd",
+    "  402  45.0 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "  333  10.2 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+    "15872   5.4 /Users/ryannel/Library/Application Support/Claude/claude-code/2.1.321/ddbdf2b334e1/claude.app/Contents/MacOS/claude",
+    "  329   4.4 /usr/libexec/logd",
+    "82000   4.1 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+    "82433   3.6 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+    "  669   2.8 /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter",
+    "10722   2.4 zstd",
+    "  615   1.9 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager",
+    "17562   1.0 /usr/libexec/sysmond",
+    "92308   0.7 /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/BiomeAgent",
+    "10686   0.6 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "  618   0.6 /usr/libexec/lsd"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

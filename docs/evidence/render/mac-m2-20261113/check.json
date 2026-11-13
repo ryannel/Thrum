@@ -1,0 +1,10 @@
+{
+  "command": "./dev check",
+  "exit": 0,
+  "at": "2026-11-13T10:16:58Z",
+  "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/ba8d06681dd3d9b3b107b214-97fbad59fed9d769.stdout",
+  "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/ba8d06681dd3d9b3b107b214-97fbad59fed9d769.stderr",
+  "role": "script",
+  "revision": "7a791b20dcd2c70b2537661b123c0d13978bd9f9",
+  "gpu_lock_held": true
+}

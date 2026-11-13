@@ -1,0 +1,13 @@
+{
+  "arm": "on-traced",
+  "rate": 1,
+  "duration_s": 7.093032,
+  "wall_ms": 7124.5,
+  "callbacks": 772,
+  "quality": {
+    "totalVideoFrames": 847,
+    "droppedVideoFrames": 6
+  },
+  "width": 1920,
+  "height": 1080
+}

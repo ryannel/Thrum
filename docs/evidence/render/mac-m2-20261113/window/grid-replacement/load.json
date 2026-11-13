@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    2.9609375,
+    2.650390625,
+    2.26123046875
+  ],
+  "after_load_1_5_15": [
+    3.0439453125,
+    2.67236328125,
+    2.27099609375
+  ],
+  "sample_duration_ns": 7529123958,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "59101  20.4 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/DVTInstrumentsFoundation.framework/DTServiceHub",
+    "59100  20.0 /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.YDOXcI/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/DVTInstrumentsFoundation.framework/DTServiceHub",
+    "  402  13.5 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "  333  11.1 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+    "10694   8.8 /Applications/Xcode.app/Contents/SharedFrameworks/DVTInstrumentsFoundation.framework/Resources/DTServiceHub",
+    "    1   6.3 /sbin/launchd",
+    "49551   5.1 /usr/libexec/diagnosticd",
+    "92302   3.9 /usr/libexec/trustd",
+    "82000   3.4 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif).app/Contents/MacOS/Codex (Aperitif)",
+    "10698   3.2 /private/var/db/com.apple.xpc.roleaccountd.staging/exec/16777232.231734305.xpc/Contents/MacOS/com.apple.dt.instruments.dtsecurity",
+    "10695   3.1 /private/var/db/com.apple.xpc.roleaccountd.staging/exec/16777232.231734314.xpc/Contents/MacOS/com.apple.dt.instruments.dtarbiter",
+    "61324   2.7 /usr/libexec/xpcroleaccountd",
+    "  329   2.6 /usr/libexec/logd",
+    "82433   2.5 /Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/157.0.8103.51/Helpers/Codex (Aperitif Renderer).app/Contents/MacOS/Codex (Aperitif Renderer)",
+    "  502   2.0 /usr/libexec/syspolicyd"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

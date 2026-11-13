@@ -19,6 +19,9 @@ and [the bounded frame host](../../design/decisions/V1-BOUNDED-FRAME-HOST.md) ·
 
 ## M2 The cooked valley presents smoothly on built-in ProMotion
 
+The [13 November current-build proof](../../evidence/render/mac-m2-20261113/README.md) supplies fresh motion,
+window replacement and matched cadence arms from the merged `7a791b20` source.
+
 Needs `T2-CAPTURE:M0` only; no item waits on `APPLE-TILE`. Each item's full protocol is in
 [the design](DESIGN.md#m2-and-m3-qualification-protocol), and the done-when file owns the criteria. Cadence is
 judged from the OS-reported presented time of each game drawable, because both 11 November traces had empty
