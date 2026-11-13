@@ -1,6 +1,28 @@
 {
   "module": "SEA",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/SEA/design-review.md",
+    "commit": "53767d79505df0d3ed7be9edc1553c4a7fb0c0c7",
+    "hash": "541394fc4f5d6471d98530a8da9123b2e3eb0db19f7c1b95aded1faf22c8944c",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 111394,
+      "cached": 1376384,
+      "output": 9482,
+      "turns": 1
+    },
+    "at": "2026-11-13T21:56:38Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "0e5a30c3bcaed6580c3b8f38fc50221c1a3f6cac4a15659b97d473ed56363d40",
