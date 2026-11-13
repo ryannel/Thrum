@@ -73,7 +73,7 @@ fn samples(
             "var sun_factor = input.position.x;",
         )
     } else {
-        prepared.surface.shader_source.to_string()
+        prepared.surface.shader_source.clone()
     };
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("production cloud-factor observer"),

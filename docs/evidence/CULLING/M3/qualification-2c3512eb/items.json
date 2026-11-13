@@ -1,0 +1,100 @@
+{
+  "module": "CULLING",
+  "milestone": "M3",
+  "tree": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling",
+  "plan": "/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/docs/plans/CULLING/DONE.json",
+  "pass": 6,
+  "fail": 0,
+  "error": 0,
+  "timeout": 0,
+  "items": [
+    {
+      "id": "M3.1",
+      "check": "python3 scripts/run_v1_showcase.py culling --target mac-metal",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-233848/run.json",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-ad1acbc8cc2d78fd.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-ad1acbc8cc2d78fd.stderr"
+    },
+    {
+      "id": "M3.2",
+      "check": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-chrome-webgpu-cubes-20261113-233911/run.json",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-badea384b4a84314.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-badea384b4a84314.stderr"
+    },
+    {
+      "id": "M3.3",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M3.4",
+      "check": "python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-mac-metal-meshes-20261113-234015/run.json",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-7e04f3fe657352f4.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-7e04f3fe657352f4.stderr"
+    },
+    {
+      "id": "M3.5",
+      "check": "python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "PASS: /Users/ryannel/Workspace/thrum/.claude/worktrees/culling/tmp/g7-showcase/runs/culling-chrome-webgpu-meshes-20261113-234116/run.json",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-1c82d4e46565e83e.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-1c82d4e46565e83e.stderr"
+    },
+    {
+      "id": "M3.6",
+      "check": "cargo test --locked --offline -p thrum-render --test culling_temporal",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest culled_modes_equal_direct_over_full_temporal_cycle ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.39s\n\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s\n     Running tests/culling_temporal.rs (target/debug/deps/culling_temporal-ff4d8df3ad97699d)",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-6e4a8c0a4fb3efc1.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-6e4a8c0a4fb3efc1.stderr"
+    },
+    {
+      "id": "M3.7",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "M3.8",
+      "result": "no check",
+      "proof": [
+        "inspect"
+      ]
+    },
+    {
+      "id": "M3.9",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M3.10",
+      "check": "python3 scripts/exact_baselines.py verify",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "RUN native-build\nRUN cooker-build\nRUN web-build\nRUN cook\nRUN apple_tile_m1\nRUN apple_tile_m2\nRUN chrome-day-sdr\nRUN chrome-day-sdr-compare\nRUN chrome-day-scene-linear\nRUN chrome-day-scene-linear-compare\nRUN chrome-night-sdr\nRUN chrome-night-sdr-compare\nRUN chrome-night-scene-linear\nRUN chrome-night-scene-linear-compare\nPASS exact baselines; proof tmp/baseline-guard/proofs/a02812b73538e42b1be0062e3054a62b6a9eb4aa6a93f47b539888969ad48aa2.json; 915.44s",
+      "stdout": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-12fcac4f682ea081.stdout",
+      "stderr": "/Users/ryannel/Workspace/thrum/.git/orchestrate/checks/249b34834cad72ce96b4ec27-12fcac4f682ea081.stderr"
+    }
+  ]
+}
