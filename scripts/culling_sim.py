@@ -43,7 +43,7 @@ def main():
         container = Path(run(['xcrun', 'simctl', 'get_app_container', device, 'org.thrum.v1', 'data']))
         state = container / 'tmp/thrum-v1-ios-state.txt'
         # Ordinary diagnostic grid: all entities are submitted by Direct.
-        run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], dict(os.environ, SIMCTL_CHILD_THRUM_CULLING='occlusion'))
+        run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], dict(os.environ, SIMCTL_CHILD_THRUM_CULLING='occlusion', SIMCTL_CHILD_THRUM_V1_ROUTE='1'))
         deadline = time.monotonic() + 90
         previous = 0
         while len(report['samples']) < 8:

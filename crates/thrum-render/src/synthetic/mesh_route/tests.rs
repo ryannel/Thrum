@@ -94,6 +94,11 @@ impl Gpu {
         scene: &SyntheticScene,
         lighting: FrameLighting,
     ) -> (Vec<u8>, Option<u32>) {
+        assert_eq!(
+            prepared.camera_culling(),
+            scene.camera_culling,
+            "resolved mesh oracle mode"
+        );
         let mut target =
             OffscreenTarget::new(&self.device, prepared, EXTENT[0], EXTENT[1]).expect("target");
         prepared
