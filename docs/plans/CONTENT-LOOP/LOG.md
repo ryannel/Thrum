@@ -41,3 +41,31 @@
   larger-size figure is a record. S3: the design says each reader switches whole in a frame of its own, with the
   coupled cases named and a second assumption for the owner.
 - 2026-11-13 The changed design needs a second review; the planner could not start one.
+- 2026-11-13 [Second design review](../../evidence/CONTENT-LOOP/design-review.md) of `a0620453`: changes
+  requested, one Must Fix finding (MF3) and one suggestion (S4). MF1, MF2 and S1 to S3 were found resolved. MF3
+  is right: the revision let placements, leases and rows switch in frames of their own and deferred C05's one
+  switch to source admission.
+- 2026-11-13 MF3 resolved by meeting C05 as written, with no contract change and no owner decision. Residency now
+  owns one publication per generation. Each reader prepares under its own bound without showing; the publication
+  is ready when the slowest reader is; one frame then switches placements, leases and rows together, tentatively,
+  and commits for all at submit. A ready publication is not superseded, which fixes the frame's generation
+  before any reader records and so needs no order between contributions. A publication one reader cannot take is
+  refused for every reader. Cost: one frame of latency for placements beside a lease, and the row write's frames
+  for a mesh entities draw. A scene with only placements is unchanged, so no retained image moves.
+- 2026-11-13 Items changed for MF3. New coupled-reader proofs M1.10 (a texture on a placement and in a lease) and
+  M2.9 (a mesh placed and as a row, with a write of several frames and an arena refusal). M1.2 reworded for the
+  shared switch frame; M1.5 refuses a publication for placements and leases alike. M2.3 was rewritten because a
+  ready replacement can no longer be superseded: it now proves a newer edit behind a discarded switch frame, and
+  supersession while the replacement is still being written. M3.1 to M3.4 run three edits, two of them to a
+  product read through two paths, and M3.1 and M3.3 assert one generation per frame across readers.
+- 2026-11-13 S4 taken: the design says which layer keeps the last good content, the manifest for a fault the
+  cooker finds and residency's resident generation for one the running game finds. Also fixed while there: a
+  lease's CPU reader takes the product the lease names, not `HEAD`; a row switch committed by a capture frame
+  keeps its history reset for the next frame that advances history.
+- 2026-11-13 Module list: a content-publication interface was added, the lease and entity-visibility lines and
+  the M2 seam ruling now name the shared switch frame. `CULLING`'s items do not change.
+- 2026-11-13 Researched for MF3: Unreal's reimport recreates the render state of every component using a mesh
+  under one scope; Bevy extracts changed assets at one point per frame and defers what exceeds a byte budget.
+  Checks: the done-when file passed the loop's validator, `./dev check-docs` passed, and the two test commands
+  the new items use fail as written. No number was added to any item.
+- 2026-11-13 The changed design needs a third review; the planner could not start one.
