@@ -160,7 +160,7 @@ async fn prove() {
                 {
                     let mut ppm = format!("P6\n{} {}\n255\n", extent[0], extent[1]).into_bytes();
                     for pixel in image.rgba.as_chunks::<4>().0 {
-                        ppm.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
+                        ppm.extend_from_slice(&pixel[..3]);
                     }
                     std::fs::write(output.join(format!("fixed-{tick}.ppm")), ppm)
                         .expect("fixed submitted frame");
@@ -180,7 +180,7 @@ async fn prove() {
                 if images[0] != images[index] {
                     for (i, image) in images.iter().enumerate() {
                         std::fs::write(
-                            output.join(format!("failure-{tick}-{:?}.bgra8", modes[i])),
+                            output.join(format!("failure-{tick}-{:?}.rgba8", modes[i])),
                             image,
                         )
                         .expect("failure pixels");
