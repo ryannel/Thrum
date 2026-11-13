@@ -7,7 +7,9 @@ Two processes exchange messages over real internet protocols, and one of them ma
 Read [Mechanisms](DESIGN.md#mechanisms) and [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before
 starting either milestone, and [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing.
 [The planning probe](../../evidence/TRANSPORT/planning-probe.md) says what was measured before the design was
-written; its code was thrown away on purpose, so build from the design.
+written, and [the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) how Quinn opens a
+stream and treats datagrams on a stalled path. The code of both was thrown away on purpose, so build from the
+design.
 
 ## Open for the human
 
@@ -46,7 +48,7 @@ Stop rules, for both milestones:
 - If the engine's Chrome adapter cannot hold datagrams to the local host, or the simulator cannot reach it, keep the measurements and end `BLOCKED`. Do not move a lane onto the stream, drop a target or shorten the script.
 - Never relax a certificate check to make a client connect: no Chrome flag that touches certificates, QUIC or origins, and no option that skips the hash.
 - Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the proof command, outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
-- No time, byte count or allocation count stops the build (brief, decision 3). Record a row that trips a tripwire as measured, note what you found in the log, and keep building. The one figure that fails a run is the design's 90% floor on datagrams delivered.
+- No time, byte count or allocation count stops the build (brief, decision 3). Record a row that trips a tripwire as measured, note what you found in the log, and keep building. The one figure that fails a run is the design's 90% floor on datagrams delivered in the script's lanes and load parts.
 - Record only runs of the commit being claimed, with the load on the machine.
 - Adding a dependency must not change the version of any crate already in the lockfile. Run the exact-baseline verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
 - Leave `thrum-network` and `thrum-core` as they are. A change either needs is a proposal in the log and `BLOCKED needs_dependency`.

@@ -30,3 +30,29 @@
   verifier items were not dry-run, because a builder held the GPU lock; they are the command `SIM-2D` uses.
   `./dev check-docs` passes with the new files.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
+- 2026-11-13 [Design review](../../evidence/TRANSPORT/design-review.md) of `f5749921`: design changes, three Must
+  Fix findings and two suggestions. [The planner's answer](../../evidence/TRANSPORT/design-review-response.md)
+  holds the reasoning for each entry below, what was considered and not chosen, and a second probe.
+- 2026-11-13 Must Fix, datagram expiry after handoff: the promise is narrowed and said outright. A datagram's age
+  runs from the send call until it leaves the link's own queue, where a timer enforces it. Beneath, a new profile
+  setting, the stack allowance, caps what Quinn or the browser holds with no deadline. `SESSION` rejects old
+  datagrams by content. The link script gains an expiry part and the in-memory link a stall.
+- 2026-11-13 Must Fix, native link open needs wire progress: the link hello. The client writes it as it opens the
+  stream, the host answers, and each end reports open on reading the other's, under a startup timeout. The script
+  opens an idle link and takes the host's message first.
+- 2026-11-13 Must Fix, session proof promised delivery after death: M1.5 and M2.9 are rewritten from delivery or
+  closure. A link open at the end loses nothing; an ended link delivers an unbroken run from the first message and
+  nothing after; the kill is the harness's note; the record must show sends that were interrupted.
+- 2026-11-13 Suggestions, both taken: at its cap the outbound datagram queue discards the oldest and counts it
+  apart from expiry, and the suspend rule is cited to the networking design, not C11.
+- 2026-11-13 Planner's second probe, Quinn 0.11.12 on sockets. A stream nobody wrote to was never accepted, and a
+  four-byte hello fixed it. On a cut path the link's queue expired all it held and at most three datagrams arrived
+  late, 0.7 to 5 s old. BBR sent 273 to 451 KB into the cut before blocking, so the expiry part sends until the
+  queue backs up, not for a fixed count.
+- 2026-11-13 Also changed: the 90% floor counts the script's lanes and load parts only; M1.6 records connect to
+  open; M2.7's guide and the module list's row and entry carry the two new limits on what `SESSION` may assume.
+  Not run: Chrome or the simulator on a stalled path.
+- 2026-11-13 Checks: no item's command changed, and each one without a lock still fails, as it should before the
+  work exists. The script's dry run waited on a lock and was stopped, so the two verifier items were again not
+  dry-run. `./dev check-docs` passes. The revised design has not been reviewed; no builder starts until a design
+  review returns Design Approved.

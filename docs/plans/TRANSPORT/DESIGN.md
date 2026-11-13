@@ -1,6 +1,6 @@
 # TRANSPORT: two processes exchange messages over real internet protocols, one of them a browser
 
-13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
+13 November 2026, revised the same day after [its design review](../../evidence/TRANSPORT/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the brief](../BRIEF.md). C11, C12 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
 [the networking design](../../design/modules/NETWORKING.md#transport-and-overload),
 [the A0 decision](../../design/decisions/A0-N1-TRANSPORT-CODEC.md) and
@@ -29,12 +29,14 @@ built.
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope and the
 input, state and acknowledgement codecs, none of which opens a socket), the tick-quantised `LinkConditioner` in
 `crates/thrum-core/tests/support/v1_workload.rs`, the contracts and decisions above, the sources of the candidate
-crates, and [a planning probe](../../evidence/TRANSPORT/planning-probe.md) run for it on all three targets.
+crates, [a planning probe](../../evidence/TRANSPORT/planning-probe.md) run for it on all three targets, and
+[a second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) of Quinn's stream opening and of datagrams on a stalled path, run to answer
+the design review.
 
 ## Purpose and scope
 
 A game opens a **link** to a host and exchanges whole messages on it: some that must all arrive in order, some that
-may be lost but must not be late. The link behaves the same whether the other end is a Mac program, a program in
+may be lost but must never wait behind another. The link behaves the same whether the other end is a Mac program, a program in
 the iPhone simulator or a page in Chrome, and a game can rehearse it with no socket at all.
 
 **Consumers.** `SESSION` builds the match on the link and tests it first on the in-memory link. `SWARM` starts a
@@ -58,10 +60,10 @@ machines: every proof here is on this Mac.
 | **N1 Send messages that all arrive, once, in order** | 1 to 65,536 bytes, the envelope's cap; a burst of 1 MiB queued at once; both directions; through the conditioner | Passing each read of the stream on as a message. On loopback reads match writes; a message that spans packets under loss does not. Rejected by content checks on multi-packet messages through the conditioner |
 | **N2 Send messages that may be lost but never wait behind a lost one** | 1 to 1,000 bytes; 60 a second each way on each of 2 to 4 links; while a large reliable transfer runs | Carrying them on the stream. Delivery is then perfect and ordered, and one lost packet delays everything after it. Rejected because under the conditioner this lane must lose some and reorder some |
 | **N3 Get the same behaviour from every adapter** | In-memory, Mac, iPhone simulator, Chrome | A Chrome row driven by hand-written JavaScript, or a simulator row run by the Mac binary. Rejected by [one script](#8-one-link-script-four-adapters) run through the engine's own adapter on each, with the peer's platform in the record |
-| **N4 Know that a link opened, that it closed, and why** | A clean close from either end; a peer that is killed; a path cut for longer than the idle timeout; a native client frozen and resumed; a wrong ticket; a full host | Learning of a dead peer only when the next send fails. Rejected by a cut on a link that is sending nothing |
+| **N4 Know that a link opened, that it closed, and why** | A link on which neither end has sent a message yet; a clean close from either end; a peer that is killed; a path cut for longer than the idle timeout; a native client frozen and resumed; a wrong ticket; a full host | Learning of a dead peer only when the next send fails. Rejected by a cut on a link that is sending nothing |
 | **N5 Be sure who the host is** | Every adapter; a host on a local machine with no public certificate | Switching certificate checks off to make Chrome connect. Rejected by a wrong ticket that must be refused on every target, and a Chrome launch with no flag that touches certificates |
 | **N6 Keep running when one peer is slow or hostile** | A peer that stops reading, floods either lane, breaks the framing, or never finishes a handshake; three healthy links beside it | A host that is fine with well-behaved peers. Rejected by M2's hostile and stalled peers beside healthy links |
-| **N7 Rehearse a match with no socket** | A0's delay, jitter and loss; reordering; a cut; a slow peer; the same seed twice | A lossless in-process queue. Rejected by running the link script, loss and all, on the in-memory link |
+| **N7 Rehearse a match with no socket** | A0's delay, jitter and loss; reordering; a cut; a stall; a slow peer; the same seed twice | A lossless in-process queue. Rejected by running the link script, loss and all, on the in-memory link |
 | **N8 See what the link is doing** | Bytes and messages each way on each lane, what was refused or discarded, how old the oldest waiting message is, and round trip and loss where the adapter knows them | Counters only on the Mac. The record marks what an adapter cannot supply as absent, never as zero |
 | **N9 Pay nothing when the game is not networked** | The V1 game, the starter and the creator scenes; and any package that uses the link's interface without sockets | A feature flag inside an existing crate. Rejected by a check of each package's dependency closure |
 
@@ -77,9 +79,27 @@ meaning to what they carry.
 | Unit | A whole message, 1 to 65,536 bytes (`thrum-network`'s `MAX_MESSAGE_BYTES`) | A whole message, 1 to 1,000 bytes (A5's datagram budget) |
 | Delivery | Every message, once, in the order sent, or the link closes | At most once; some are lost; any order |
 | Content | The bytes sent, whole | The bytes sent, whole |
-| A send it cannot take | Refused at the call: too large, empty, or `Full` when the lane's outbound queue is at its cap. Nothing is dropped silently | Refused at the call when too large or empty. A datagram that has waited longer than the profile's age limit is discarded, oldest first, and counted |
+| A send it cannot take | Refused at the call: too large, empty, the link not open, or `Full` when the lane's outbound queue is at its cap. Nothing is dropped silently | Refused at the call when too large, empty or the link not open. Otherwise taken into the link's outbound queue, where it is discarded and counted if it reaches the profile's age limit, or if it is the oldest when the queue is at its cap and a newer one is sent |
 
 Nothing is promised about order between the two lanes.
+
+**Delivery or closure.** A link can close at any moment: by either end's call, a killed process, a timeout. Reliable
+messages that were accepted and had not reached the other game are then lost. What arrived is a prefix of what was
+sent, once and in order, and none of the rest is ever delivered, on that link or a later one. This holds for a
+clean close too, since QUIC may discard what the peer has not yet read
+([Quinn's `close`](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.close)). A game that needs
+its last message to arrive waits for the peer's answer before it closes.
+
+**What the age limit covers.** A datagram's age starts when the send call takes it and stops when it leaves the
+link's own queue for the QUIC stack beneath: Quinn, or the browser. The limit bounds that wait and nothing after
+it. A datagram the stack holds, or the network delays, has no deadline, so one can arrive long after it was sent,
+and [mechanism 5](#5-bounds-backpressure-and-liveness) says how much can be held. In
+[the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe), with a 250 ms age limit and a
+path cut for 2 to 3 s, the one to three datagrams the stack still held arrived 0.7 to 5 s old once the path
+healed. The link gives no meaning to a datagram and cannot judge one stale on arrival. `SESSION` does that by content, as its contracts already require,
+since this lane reorders in any case: input by its target tick against "a bounded age/window"
+([networking design](../../design/modules/NETWORKING.md#commands-clocks-and-state-publication)), state by its
+envelope sequence (C13).
 
 **Both limits are constants of the link**, the same on every adapter, so `SESSION` sizes a packet once. The
 datagram limit is A5's budget and not the adapter's ceiling: the probe measured ceilings of 1,162 bytes for raw
@@ -87,8 +107,9 @@ QUIC at its 1,200-byte starting MTU and 1,211 in Chrome, and QUIC guarantees tha
 on ([RFC 9000, section 14](https://www.rfc-editor.org/rfc/rfc9000#section-14)). An adapter whose ceiling is below
 1,000 at open refuses the link.
 
-**Events.** A link is connecting, then open, then closed, and closed is final. A close carries one reason: closed
-here; closed by the peer, with the peer's code; timed out; refused (wrong ticket, wrong version or a full host);
+**Events.** A link is connecting, then open, then closed, and closed is final. Each end reports it open when
+[startup](#2-the-wire) has finished there, which needs no message from the game, and from then either end may send
+first. A close carries one reason: closed here; closed by the peer, with the peer's code; timed out; refused (wrong ticket, wrong version or a full host);
 the peer broke the link's own rules; or a transport error. A link has an identifier that is never reused in the
 process. A reconnect is a new link with a new identifier, and nothing sent on the old one is delivered on the new
 one, which is what lets `SESSION` give it a fresh connection epoch (C13).
@@ -96,8 +117,8 @@ one, which is what lets `SESSION` give it a fresh connection epoch (C13).
 **The interface is calls that return at once.** Send on a lane, take the messages that have arrived, take events,
 read counters, close with a code. A host adds: start with an identity and a bind address, take newly opened links,
 hand out its ticket. No call blocks, awaits or names a type from the libraries beneath. The **link profile**, set
-when a host or a client starts, holds the timeouts, queue caps and age limit; they are settings a game may change,
-as C13 says adapter settings are, and their starting values are the builder's to choose and record.
+when a host or a client starts, holds the timeouts, queue caps, age limit and stack allowance; they are settings a
+game may change, as C13 says adapter settings are, and their starting values are the builder's to choose and record.
 
 ### 2. The wire
 
@@ -111,6 +132,28 @@ kinds of client:
 
 The ALPN, and for a browser the request path, name the link's version. A client with another version is refused
 before any message.
+
+**Startup: the link hello.** Quinn does not tell the host about a stream until its opener writes to it: "calling
+`open_bi()` then waiting on the `RecvStream` without writing anything to `SendStream` will never succeed"
+([Quinn's `accept_bi`](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.accept_bi)), and
+`web-transport-quinn` writes nothing on a raw connection's stream. A game whose client waits for the host's
+welcome would never get one. The planning probe's client always sent first, so it did not show this;
+[the second probe](../../evidence/TRANSPORT/design-review-response.md#the-probe) did, on sockets: with no write
+the host's accept never completed, and after a four-byte hello the host accepted the stream and sent first. So the
+link writes first, on every adapter:
+
+1. The client opens the stream and at once writes the **link hello**, a short fixed frame that is the link's own
+   and carries nothing of the game's.
+2. The host accepts the stream, reads the hello, writes its own hello back and reports the link open. Messages the
+   host's game sends follow its hello on the stream.
+3. The client reports the link open when it has read the host's hello.
+
+A hello is never delivered as a message and is in no message counter. A first frame that is not the hello breaks
+the link's rules. Startup, from a connection's first packet to the hello, has one deadline on both ends, the
+profile's startup timeout: the host drops a client that has not finished by then and counts it against its cap on
+handshakes in progress until it does, and a client whose host has not answered reports the link closed as timed
+out. The hello costs the client one round trip before it reports open, 98 to 102 ms under A0's delay in the second
+probe; the host's first message rides behind its hello, so it is not delayed.
 
 **Libraries.** Audited on 13 November 2026 for licence, datagrams, a browser client and upkeep:
 
@@ -183,22 +226,42 @@ Every queue has a cap, so a link's memory is the sum of its caps and a host's is
   resynchronise or disconnect that peer.
 - **Reliable, inbound.** When the game stops draining, the adapter stops reading the stream, QUIC's flow control
   stops the sender, and the sender's own lane fills. A stalled reader fills only the lane that feeds it.
-- **Datagrams, outbound.** Bounded by age. Quinn's default buffer is 1 MiB, a minute and a half of input at the
-  game's rate, all of it stale; the adapter holds datagrams itself and hands Quinn only what it can send now. The
-  browser has the same control as `outgoingMaxAge`.
+- **Datagrams, outbound.** The link's own queue is bounded by age and by a cap. A timer discards a datagram at
+  the age limit whether or not another is ever sent, and counts it as expired. At the cap a new datagram is still
+  taken and the oldest waiting is discarded and counted as dropped at the cap, a separate count: on this lane the
+  newest is worth most. The queue hands on in the order sent, and only when the stack beneath has room.
+- **Datagrams, beneath the link's queue.** The **stack allowance** is a profile setting: how many bytes of
+  datagrams may sit in the QUIC stack, handed on and not yet sent. It has room for at least one datagram of the
+  limit and is meant to be a few. Those bytes have no deadline, and they are the only datagrams this end itself
+  can hold back. Quinn cannot give them a deadline: it queues a datagram with no expiry, sends it when congestion control and pacing allow, and has no call that takes one back
+  (`quinn-proto` 0.11.19, `connection/datagrams.rs`). So the native adapter sets Quinn's datagram send buffer to
+  the allowance in place of its 1 MiB default, which is a minute and a half of input at the game's rate, and
+  hands on with the call that waits for room (`send_datagram_wait`), never the one that drops the oldest queued
+  (`send_datagram`), so every discard is the link's and is counted. The second probe ran this with an allowance
+  of 4,096 bytes: in every run the link's queue was empty one age limit after sending stopped, with the path still
+  cut; every datagram was handed on, expired or dropped at the cap; and at most three arrived late. With Quinn's
+  default buffer and no queue of the link's, 277 of 300 arrived 1.4 to 3.4 s old. The browser adapter writes a
+  datagram only when the page's datagram writer is ready, keeps the browser's own outgoing buffer to a few datagrams, and sets
+  `outgoingMaxAge` to the age limit. The specification has the browser hold a datagram until it can be sent and
+  discard it there at that age ([WebTransport, sendDatagrams](https://www.w3.org/TR/webtransport/#senddatagrams)),
+  which is a tighter bound than the link promises. The write resolves either way and Chrome 157 has no `getStats`,
+  so what the browser discards is never counted as expired: that count is the link's queue only.
 - **Datagrams, inbound.** A bounded queue that drops the oldest and counts it. Chrome's own queue holds one
   datagram by default, so the adapter raises it to its cap.
 - **Liveness.** Each end sends keep-alives and closes a link as timed out after the profile's idle timeout with
   nothing heard. This is how a dead peer, a cut path or a frozen process is noticed, and it needs no traffic from
-  the game. C11's "a suspended app has lost its socket" follows for native clients: a client frozen for longer
-  than the timeout finds its link closed when it resumes, the host closed its end at the timeout, and the client
-  opens a new link. Calling close when an app goes to the background is the shell's and `SESSION`'s.
+  the game. The networking design's rule that on mobile suspend "the client stops input/acknowledgements and
+  treats the socket as lost"
+  ([networking design](../../design/modules/NETWORKING.md#identity-connection-and-content)) follows for native
+  clients: a client frozen for longer than the timeout finds its link closed when it resumes, the host closed its
+  end at the timeout, and the client opens a new link. Calling close when an app goes to the background is the
+  shell's and `SESSION`'s.
 - **A frozen page is not a dead link.** Chrome's network process answers keep-alives while a page's script is
   frozen: in the probe a page frozen for 9 s under a 4 s timeout kept its link and carried on. So the link reports
   a path or a process that has gone, never a peer that has gone quiet. A player who stops sending input is
   `SESSION`'s to time out, as its held-control expiry already requires.
-- **The host.** A cap on open links and on handshakes in progress; a client beyond it is refused. A handshake that
-  does not finish is dropped at a timeout.
+- **The host.** A cap on open links and on handshakes in progress; a client beyond it is refused. A client that
+  has not finished startup, the handshake and the hello, by the startup timeout is dropped.
 
 ### 6. Congestion control on the Quinn ends
 
@@ -233,16 +296,21 @@ every proof here, is 50 ms ± 10 ms each way, uniform and independent for each u
 "100 ms RTT, ±20 ms jitter and 2% loss with a fixed seed".
 
 - **The in-memory link** is a pair of link ends in one process, with the whole contract of mechanisms 1 and 5:
-  both lanes, the limits, `Full`, the age limit, events, the idle timeout and a host's link cap. It applies the
-  profile to each message. A datagram may be lost, delayed and so reordered; a reliable message is only delayed,
-  and a "lost" one pays a retransmission's delay, holding back those behind it. The caller supplies the time, so
+  both lanes, the limits, `Full`, the age limit, the stack allowance, startup, events, the idle timeout and a
+  host's link cap. It applies the profile to each message. A datagram may be lost, delayed and so reordered; a
+  reliable message is only delayed, and a "lost" one pays a retransmission's delay, holding back those behind it. The caller supplies the time, so
   nothing sleeps, and the same seed and the same calls give the same events. It can also cut the path, and
   duplicate datagrams as a named fault beyond the contract, which `SESSION`'s proof order asks for and which
-  serves here as the control that the link script's duplicate check can fail. It models no
-  congestion control and no MTU.
+  serves here as the control that the link script's duplicate check can fail. It models no MTU, and of
+  congestion control only a **stall**: while one holds, nothing leaves the sender's stack, so the allowance fills
+  and the link's queue backs up behind it; when it ends, what the allowance held is delivered, late. That is
+  where `SESSION` rehearses a late datagram.
 - **The relay** is a small program that sits between a client and the host and applies the profile to each UDP
   packet. The QUIC packets it delays and drops are real ones, so loss recovery and congestion control run for
-  real. It is proof tooling, never part of a game.
+  real. A cut it holds for less than the idle timeout is a stall to the sender. No acknowledgement returns, so
+  the stack first sends a congestion window's worth into the cut, where it is lost, and after that takes only
+  what its loss probes carry. In the second probe that window was 3 to 12 KB under Cubic and 273 to 451 KB under
+  BBR. It is proof tooling, never part of a game.
 
 **Why a relay.** macOS's own conditioners (`dnctl`, Network Link Conditioner) need root or a person at a settings
 pane, and act on the whole machine. Delaying messages inside the adapter would leave QUIC untouched, and mechanism
@@ -259,38 +327,66 @@ the contract there. Its parts:
    messages arrive once, in order, whole; datagrams arrive whole and at most once. Each end's counters match the
    script's own tally of what it sent and received.
 2. **Limits.** A send over a limit or of nothing is refused at the call. A reliable lane driven to its cap returns
-   `Full`, then drains with nothing lost. Datagrams sent into a path cut for a moment are discarded at the age
-   limit and counted, and after the path heals none arrives that waited longer than the limit.
-3. **Identity.** A ticket with one bit of the hash changed is refused, and so is another version.
-4. **Lifecycle.** A close from each end with a code; a peer that vanishes; a path cut on a link that is sending
-   nothing; a reconnect that gets a new identifier and receives nothing from the old link.
-5. **Load.** The game's rates for a stated time: a 189-byte datagram at 60 Hz each way and a reliable message at
+   `Full`, then drains with nothing lost. A datagram burst that overfills the queue is counted as dropped at the
+   cap, oldest first.
+3. **Expiry.** In each direction the path stalls, and the script sends datagrams of the limit's size, faster than
+   the game would, until the sender's queue has backed up, which its depth counter shows. It sends for one age
+   limit more and then stops. With the path still stalled and another age limit gone, the sender's queue is empty,
+   and its counters account for every datagram the script sent: handed on, expired, or dropped at the cap. So the
+   last ones queued expire with no later send to push them out. Then the stall ends, before the idle timeout.
+   The receiver gets no more than were handed on. A datagram handed on that never arrives is a loss, and one that
+   arrives after the stall is late; neither is expiry, and the record holds the sender's three counts beside the
+   receiver's tally and, on sockets, the relay's dropped packets. On the in-memory link and the Quinn ends some
+   must expire, and on the in-memory link, with the profile's loss off, exactly what the stack allowance held
+   arrives, late. In Chrome the accounting must hold, and the record says whether the page's queue backed up.
+4. **Identity.** A ticket with one bit of the hash changed is refused, and so is another version.
+5. **Lifecycle.** A link that opens at both ends while neither game sends, and on which the first reliable message
+   is then the host's. A link opened into a cut path, which closes as timed out at the startup timeout. A close
+   from each end with a code; a peer that vanishes; a path cut on a link that is sending nothing; a close while
+   reliable messages are still on their way, after which what arrived is an unbroken run from the first sent; a
+   reconnect that gets a new identifier and receives nothing from the old link.
+6. **Load.** The game's rates for a stated time: a 189-byte datagram at 60 Hz each way and a reliable message at
    10 Hz, with host-to-client transfers of 256 KiB and 1 MiB part-way through.
 
 The in-memory link runs it in virtual time inside `./dev check`. The three socket adapters run it through
-**the proof command**, one script with a target argument, directly and through the relay under A0's profile. The
+**the proof command**, one script with a target argument, directly and through the relay under A0's profile; the
+expiry part needs a stall, so on sockets it runs through the relay only. The
 **session run** puts four clients on one host through the relay for ten minutes: two on the Mac, one in Chrome, one
-in the simulator, with each kind closed and reconnected, one killed, and one path cut and healed, while the
-untouched links carry on.
+in the simulator, with each kind closed and reconnected, one killed, and one path cut and healed. Every link
+carries the script's load until its own end reports it closed, so each close, the kill and the cut catch sends
+part-way and nothing is drained first. The cut on a link that is sending nothing stays in the script's lifecycle
+part.
+
+**The session run is judged by delivery or closure, link by link.** A link still open when the run ends has lived
+through the other links' events. There the script stops sending, waits for what is on its way and then closes, and
+every reliable message that link accepted has arrived once and in order. A link that an event ended delivered an
+unbroken run from the first message sent, once and in order, and nothing after it, on that link or the one that
+replaces it. Reliable messages are patterned by link and position, so an end checks the run it received without
+the sender's tally. Where both ends outlive the link, the record counts the messages accepted and never delivered,
+each way. A killed process reports nothing: what it had received is not claimed, the host's side of its link is
+judged alone, and the record shows the host accepting messages for it after the kill. An end that survives reports
+the close and its reason, and the harness's own note of a kill or a cut is kept apart from what any link reported.
 
 **Under the conditioner the datagram lane must look unreliable**: some lost, some reordered. A run in which fewer
-than 90% arrive, in either direction, fails as a collapse; at 2% loss about 98% should. That floor is the
+than 90% of the datagrams sent in the lanes and load parts arrive, in either direction, fails as a collapse; at 2%
+loss about 98% should. The limits and expiry parts discard on purpose and are outside that count. That floor is the
 only figure in this module that decides a result.
 
 ### 9. What a stranger can send
 
 A host's port is open to anyone who can reach it, so every byte from a peer is untrusted.
 
-- **Parsed here:** the length prefix of a reliable message, and a ticket's text. Both get a property test in
+- **Parsed here:** the link hello, the length prefix of a reliable message, and a ticket's text. All get a property test in
   `./dev check` over valid input cut at every byte, lengths of zero, the limit, one over and the largest a prefix
-  can say, and random bytes; and a stdin target in the style of `thrum-network`'s. A peer that sends a prefix of
-  zero or over the limit, opens a second stream, or sends a datagram over the limit has broken the link's rules:
+  can say, and random bytes; and a stdin target in the style of `thrum-network`'s. A peer that sends anything but the hello first, a prefix
+  of zero or over the limit, a second stream, or a datagram over the limit has broken the link's rules:
   the link closes with that reason and the bytes are never delivered.
 - **Parsed beneath:** QUIC, TLS and HTTP/3 are Quinn's, rustls's and `web-transport-quinn`'s. No cryptography is
   written here.
 - **Proved on sockets in M2:** random UDP at the port, a wrong ALPN, a wrong path, each rule broken in turn, a
-  stream stalled mid-message, a flood on each lane, more clients than the link cap and handshakes that never
-  finish, each beside healthy links that must not lose a reliable message.
+  stream stalled mid-message, a flood on each lane, more clients than the link cap, handshakes that never
+  finish and clients that connect and never send the hello, each beside healthy links that must not lose a
+  reliable message.
 
 ## The system as it runs
 
@@ -308,19 +404,23 @@ socket. The socket adapters are an opt-in part of the same crate, and a game tha
 links none of it.
 
 **Counters,** for each link: messages and bytes sent and received on each lane; sends refused, by reason;
-datagrams discarded for age and dropped inbound; each outbound queue's depth and the age of its oldest message;
+datagrams handed on to the stack, expired in the link's queue, dropped at its cap, and dropped inbound, each its
+own count; each outbound queue's depth and the age of its oldest message; the bytes of datagrams waiting in the
+stack, which Quinn reports and a browser does not;
 and, where the adapter has them, the round-trip estimate, packets sent and lost, and bytes on the wire. Quinn has
 those. Chrome 157 has no `getStats`, so a browser link's own figures are marked absent and the host's side of the
 same link supplies the estimate.
 
 **A tick, walked.** (1) At the pre-tick barrier `SESSION` takes each link's arrived messages and events; nothing
 blocks. (2) It stages and admits input and the world steps. (3) `SESSION` sends: each message is copied into a
-lane's queue, and the I/O thread is woken. (4) The thread hands datagrams and stream bytes to Quinn, which
+lane's queue, and the I/O thread is woken. (4) The thread hands stream bytes to Quinn, and datagrams as Quinn has room for them; Quinn
 packs, encrypts and paces them. (5) Arriving packets are decrypted by Quinn; the thread reassembles reliable
 messages and moves whole messages to the inbound queues.
 
 **A join.** The host starts and its ticket exists. A client opens a link with the ticket; the handshake pins the
-hash; a browser then makes its WebTransport request; the client opens the stream; both ends report the link open.
+hash; a browser then makes its WebTransport request; the client opens the stream and writes the link hello; the host
+reads it, answers with its own and reports the link open; the client reads the answer and reports it open. Neither
+game has sent anything, and either may now send first.
 
 **A drop.** Nothing is heard for the idle timeout; both ends report the link closed as timed out; the game opens a
 new link with the same ticket and `SESSION` starts a new epoch on it.
@@ -331,14 +431,20 @@ Provided to other modules, as [the module list](../ARCHITECTURE.md#interfaces-tr
 
 | Interface | To | What it is |
 |---|---|---|
-| **Message link** | `SESSION` | Mechanisms 1 and 5: the two lanes with their limits, events and reasons, the profile, the counters, and a host's side |
+| **Message link** | `SESSION` | Mechanisms 1 and 5: the two lanes with their limits, delivery or closure on the reliable lane, the age limit and what it does not cover on the datagram lane, events and reasons, the profile, the counters, and a host's side |
 | **In-memory conditioned link** | `SESSION` | Mechanism 7: the same interface with no socket, deterministic under a conditioner profile |
 | **Join ticket** | `SESSION`, `SWARM`, `GAME-UI` | Mechanism 3: what a client needs to reach and trust one host |
 | **Proof command and relay** | `SESSION`, `SWARM` | Mechanisms 7 and 8: how a match is run across the three targets under a conditioner profile |
 
 The link is promised the same across adapters for one version of the link. It is not promised across versions.
 
-**No contract changes.** C13's "Networking-off removes sockets" is met by the crate boundary. A0 still selects a
+**What `SESSION` must not assume.** That a datagram which arrives is recent: the link bounds a datagram's wait in
+its own queue, never its age on arrival. That a reliable message accepted before a close arrived. That a link opens
+only after the client's game speaks. [The module list's row](../ARCHITECTURE.md#interfaces-track-3) says the first
+two.
+
+**No contract changes.** No numbered contract promised a datagram deadline; C13 and the networking design already
+give `SESSION` the check on old input. C13's "Networking-off removes sockets" is met by the crate boundary. A0 still selects a
 WebSocket fallback; this module does not build it. `thrum-network` is not edited: `SESSION` adds the dependency
 when it needs it.
 
@@ -352,7 +458,7 @@ No budget is set (brief, decision 3). The account, per link at the game's rates:
 | Reliable messages | About 10 a second, and a baseline at a join | 104 ms median round trip under A0's profile |
 | Copies of a message | One into a queue; Quinn's own; for a browser link the host's session prefix adds one more for each datagram | Not measured |
 | Thread wakes | About one for a tick's sends; one for each arriving packet | Not measured |
-| A join's handshake | Once | 0.5 ms direct; about one round trip for raw QUIC and three for WebTransport under the conditioner |
+| A join, from connect to open | Once | The handshake alone: 0.5 ms direct; about one round trip for raw QUIC and three for WebTransport under the conditioner. The hello adds one for the client, not measured |
 
 A host with four links moves about 500 packets a second, so the cost that matters is latency added to a message,
 not throughput. The design keeps that to one queue and one wake. The adapters are written to reuse their buffers,
@@ -373,6 +479,11 @@ each application byte that grow with the length of a run.
   [the handoff](#proof-and-builder-handoff) says.
 - **A convincing fake of the conditioned run:** a client that connects straight to the host. The record holds the
   relay's forwarded and dropped counts and the measured round trip, which must show the profile.
+- **A convincing fake of expiry:** datagrams lost on a cut path and called expired. Expiry is read from the
+  sender's counters while the path is still stalled, never from what failed to arrive.
+- **A convincing fake of the session run:** draining every link before each kill, cut or close, so that no send
+  is ever interrupted. The record holds, for each ended link, the reliable messages accepted and not delivered,
+  or for a killed client the messages the host accepted for it after the kill.
 - **A convincing fake of a reconnect:** a paused exchange on a link that never closed. The record holds both link
   identifiers and the close reason between them.
 - **Loopback hides the network.** MTU below 1,500, NAT rebinding, IPv6, Wi-Fi's bursts and a second machine are
