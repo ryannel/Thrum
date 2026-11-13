@@ -34,21 +34,12 @@ fn submitted(
         .expect("one image per frame")
 }
 
-// Decode the nonnegative finite fp16 lane of the existing graph witness. That lane is
-// textureLoad(actual R8Unorm reactive attachment).r, without filtering or re-shading.
-fn reactive(image: &SubmittedImage, x: usize, y: usize) -> f64 {
-    assert_eq!(image.pixel_source, CaptureSource::SceneLinear);
-    let at = (y * image.extent[0] as usize + x) * 8;
-    let bits = u16::from_le_bytes(image.rgba[at..at + 2].try_into().expect("fp16 red"));
-    assert_eq!(bits & 0x8000, 0, "reactive is nonnegative");
-    let exponent = i32::from((bits >> 10) & 31);
-    assert!(exponent < 31, "reactive is finite");
-    let mantissa = f64::from(bits & 1023);
-    if exponent == 0 {
-        mantissa * 2.0_f64.powi(-24)
-    } else {
-        (1024.0 + mantissa) * 2.0_f64.powi(exponent - 25)
-    }
+// The graph witness textureLoads the actual R8Unorm attachment, then the temporal
+// display diagnostic returns its red lane unchanged (no tone/gamma/dither). The
+// intermediate fp16 roundtrip preserves every R8Unorm code exactly.
+fn reactive(image: &SubmittedImage, x: usize, y: usize) -> u8 {
+    assert_eq!(image.pixel_source, CaptureSource::Sdr);
+    image.rgba[(y * image.extent[0] as usize + x) * 4]
 }
 
 fn retain(recipe: &str, image: &SubmittedImage, expected: u8, alpha: f64) {
@@ -57,9 +48,9 @@ fn retain(recipe: &str, image: &SubmittedImage, expected: u8, alpha: f64) {
     };
     let directory = Path::new(&directory);
     std::fs::create_dir_all(directory).expect("evidence directory");
-    std::fs::write(directory.join(format!("{recipe}.rgba16f")), &image.rgba).expect("raw witness");
+    std::fs::write(directory.join(format!("{recipe}.rgba8")), &image.rgba).expect("raw witness");
     let record = serde_json::json!({
-        "recipe": recipe, "extent": image.extent, "pixel_source": "SceneLinear/RGBA16Float",
+        "recipe": recipe, "extent": image.extent, "pixel_source": "Sdr/RGBA8 exact temporal diagnostic",
         "source_tick": image.source.tick, "device_generation": image.device_generation,
         "session": image.session, "expected_central_byte": expected,
         "analytic_alpha": alpha, "central_reactive": reactive(image, 32, 32),
@@ -197,8 +188,8 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
             let stats = assets.stats();
             host.set_scene_contribution(Box::new(assets))
                 .expect("attach cooked volume");
-            host.enable_submitted_capture_from(1, CaptureSource::SceneLinear)
-                .expect("raw temporal witness tap");
+            host.enable_submitted_capture(1)
+                .expect("submitted temporal diagnostic tap");
             let mut clock = Duration::ZERO;
             let deadline = Instant::now() + Duration::from_secs(30);
             loop {
@@ -233,13 +224,13 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
                 "shared W3 alpha quantization"
             );
             let actual = reactive(&image, 32, 32);
-            assert!(
-                (actual - f64::from(expected) / 255.0).abs() <= 1.0 / 4096.0,
-                "W3 production reactive {actual} must equal volume alpha byte {expected}"
+            assert_eq!(
+                actual, expected,
+                "W3 production reactive byte must equal volume alpha"
             );
             for [x, y] in [[0, 0], [64, 0], [0, 64], [64, 64]] {
                 assert_eq!(
-                    reactive(&image, x, y),
+                    f64::from(reactive(&image, x, y)),
                     fixture["rows"]["W3"]["outside"]
                         .as_f64()
                         .expect("uncovered zero")
