@@ -27,26 +27,26 @@ pub const UPLOAD_BUDGET: u64 = 8 << 20;
 /// The game's placement of the demo products from `source` (a store path converts).
 #[must_use]
 pub fn cooked_config(source: impl Into<CookedSource>) -> CookedConfig {
-    CookedConfig {
-        source: source.into(),
-        meshes: vec![{
+    let mut config = CookedConfig::new(
+        source,
+        vec![{
             let mut terrain = MeshPlacement::new("meshes/terrain", "textures/checker");
             // The grid's +Y tilts toward the camera, which looks down -Z from z = 2.
             terrain.transform =
                 placement(0.32, std::f32::consts::FRAC_PI_2 * 0.8, [-0.5, -0.2, 0.9]);
             terrain
         }],
-        volume: Some(VolumePlacement {
-            name: "cloud".into(),
-            transform: placement(0.5, 0.0, [0.05, -0.4, 0.95]),
-            extinction: 9.0,
-            steps: 64,
-            light_steps: 6,
-        }),
-        upload_budget: UPLOAD_BUDGET,
-        poll_interval: Duration::from_millis(2),
-        texture_preference: None,
-    }
+    );
+    config.volume = Some(VolumePlacement {
+        name: "cloud".into(),
+        transform: placement(0.5, 0.0, [0.05, -0.4, 0.95]),
+        extinction: 9.0,
+        steps: 64,
+        light_steps: 6,
+    });
+    config.upload_budget = UPLOAD_BUDGET;
+    config.poll_interval = Duration::from_millis(2);
+    config
 }
 
 /// Qualification fixture with a plain/mirrored pair beside the edge-straddling terrain.

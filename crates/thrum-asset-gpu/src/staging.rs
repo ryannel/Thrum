@@ -129,6 +129,16 @@ impl Stream {
 
     /// Write `chunk`'s copies into the mapped `buffer`, unmap it and queue it for recording.
     fn fill(&self, chunk: usize, buffer: wgpu::Buffer) -> Result<(), String> {
+        #[cfg(feature = "fault-probe")]
+        if self
+            .ring
+            .0
+            .fault
+            .as_ref()
+            .is_some_and(crate::FaultProbe::take)
+        {
+            return self.abandon(&buffer, "staging map: injected fill failure".to_owned());
+        }
         let written = buffer.get_mapped_range_mut(..).map(|mut mapped| {
             for copy in &self.copies[self.copies_of(chunk)] {
                 self.write(copy, &mut mapped);
@@ -203,6 +213,8 @@ impl Stream {
 pub(crate) struct StagingRing(Arc<Ring>);
 
 struct Ring {
+    #[cfg(feature = "fault-probe")]
+    fault: Option<crate::FaultProbe>,
     device: wgpu::Device,
     chunk_size: u64,
     limit: usize,
@@ -223,12 +235,19 @@ struct RingState {
 impl StagingRing {
     /// A ring of at most [`STAGING_CHUNKS`] chunks, each one `budget` (at least [`COPY_UNIT`],
     /// at most the device's buffer limit). Chunks are created on first need and then reused.
-    pub(crate) fn new(device: &wgpu::Device, budget: u64, stats: Arc<Mutex<CookedStats>>) -> Self {
+    pub(crate) fn new(
+        device: &wgpu::Device,
+        budget: u64,
+        stats: Arc<Mutex<CookedStats>>,
+        #[cfg(feature = "fault-probe")] fault: Option<crate::FaultProbe>,
+    ) -> Self {
         let chunk_size = budget
             .max(COPY_UNIT)
             .next_multiple_of(u64::from(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT))
             .min(device.limits().max_buffer_size);
         Self(Arc::new(Ring {
+            #[cfg(feature = "fault-probe")]
+            fault,
             device: device.clone(),
             chunk_size,
             limit: usize::try_from(STAGING_CHUNKS).unwrap_or(usize::MAX),

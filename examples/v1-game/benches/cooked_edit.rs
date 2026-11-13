@@ -29,6 +29,18 @@ type Metrics = Vec<(String, f64)>;
 /// Startup is bimodal (device creation warm or cold), so its floor sits above the cold runs.
 const RULES: &[Rule] = &[
     Rule {
+        metric: "leased_upload_cpu_p99_ms",
+        factor: 3.0,
+        floor: 5.0,
+        any_load: false,
+    },
+    Rule {
+        metric: "leased_staging_peak_mib",
+        factor: 1.0,
+        floor: 0.0,
+        any_load: true,
+    },
+    Rule {
         metric: "realistic_startup_ms",
         factor: 3.0,
         floor: 750.0,
@@ -79,6 +91,7 @@ const RULES: &[Rule] = &[
 ];
 
 struct Scenario {
+    leased: bool,
     key: &'static str,
     name: &'static str,
     volume: u32,
@@ -100,6 +113,7 @@ fn main() {
     .ok();
     for scenario in [
         Scenario {
+            leased: false,
             key: "realistic",
             name: "realistic: 256-grid mesh, 1024² texture, 256³ volume, all profiles",
             volume: 256,
@@ -107,11 +121,20 @@ fn main() {
             edits: 6,
         },
         Scenario {
+            leased: false,
             key: "large",
             name: "large: 512³ R8 volume (portable only)",
             volume: 512,
             profiles: vec![Profile::Portable],
             edits: 2,
+        },
+        Scenario {
+            leased: true,
+            key: "leased",
+            name: "leased: twelve 128³ volumes beside placements; one-volume edits",
+            volume: 128,
+            profiles: vec![Profile::Portable, Profile::DesktopBc],
+            edits: 3,
         },
     ] {
         run(&scenario, &mut report, &mut metrics);
@@ -197,6 +220,12 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
     demo::write_checker_png(&source.join("textures/checker.png"), 1024, [200, 40, 40])
         .expect("png");
     demo::write_cloud_volume(&source.join("cloud.tvol"), scenario.volume, 1).expect("volume");
+    if scenario.leased {
+        for index in 1..12 {
+            demo::write_cloud_volume(&source.join(format!("cloud{index}.tvol")), 128, index)
+                .expect("leased volume");
+        }
+    }
     let generated = generate.elapsed();
     let mut cooker = Cooker::open(CookConfig {
         source: source.clone(),
@@ -248,11 +277,38 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
         let mut config = v1_game::cooked::cooked_config(root.join("store"));
         config.upload_budget = BUDGET;
         config.poll_interval = Duration::from_millis(1);
+        if scenario.leased {
+            config.leased = (0..12)
+                .map(|index| thrum_asset_gpu::LeaseRequest {
+                    name: if index == 0 {
+                        "cloud".into()
+                    } else {
+                        format!("cloud{index}")
+                    },
+                    dimension: wgpu::TextureDimension::D3,
+                })
+                .collect();
+            config.leased.push(thrum_asset_gpu::LeaseRequest {
+                name: "textures/checker".into(),
+                dimension: wgpu::TextureDimension::D2,
+            });
+        }
         let assets = CookedAssets::new(config).expect("rigid placements");
         let stats: Arc<Mutex<CookedStats>> = assets.stats();
         let attach = Instant::now();
-        host.set_scene_contribution(Box::new(assets))
-            .expect("attach");
+        if scenario.leased {
+            let (consumer, _) = v1_game::lent::LentDiagnostic::new(assets.lease());
+            host.set_scene_contribution(Box::new(
+                thrum_render::contribution::SceneContributions::new(vec![
+                    Box::new(assets),
+                    Box::new(consumer),
+                ]),
+            ))
+            .expect("attach leased scenario");
+        } else {
+            host.set_scene_contribution(Box::new(assets))
+                .expect("attach");
+        }
         assert_eq!(
             stats.lock().expect("stats").draw_path,
             Some(thrum_asset_gpu::CookedDrawPath::Indirect)
@@ -310,7 +366,7 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
                 if edits_made == scenario.edits {
                     break;
                 }
-                let volume_edit = scenario.volume >= 512 || edits_made % 2 == 1;
+                let volume_edit = scenario.leased || scenario.volume >= 512 || edits_made % 2 == 1;
                 let write = Instant::now();
                 let path = if volume_edit {
                     let seed = u32::try_from(edits_made).expect("seed") + 2;

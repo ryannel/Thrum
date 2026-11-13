@@ -19,6 +19,10 @@ draw-probe = ["thrum-asset-gpu/draw-probe"]
 # shaders synchronously; only `web/build.sh --dev` enables it.
 dev-material = []
 
+[[test]]
+name = "cooked_fault_gpu"
+required-features = ["thrum-asset-gpu/fault-probe"]
+
 [dependencies]
 pollster = "=1.0.1"
 serde = { version = "=1.0.229", features = ["derive"] }

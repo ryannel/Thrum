@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Actual built-game qualification, not display cadence or a performance measurement.
 import fs from 'node:fs/promises';
+import { prepareLent } from './check_lent_browser.mjs';
 import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
 import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
@@ -14,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
+cases.push('lent-products');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -1879,7 +1881,8 @@ async function main() {
   let server, child, cdp, cook, ended = false, failure;
   const results = [];
   try {
-    const serving = await serve(files); server = serving.server;
+    const lent = ['lent-products', 'all'].includes(args.case) ? await prepareLent(files, output, args.cook) : undefined;
+    const serving = await serve(files, lent?.receive); server = serving.server;
     const chromeLog = await fs.open(path.join(output, 'chrome.log'), 'a');
     let startupError;
     child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
@@ -1914,7 +1917,8 @@ async function main() {
     let assetsSource;
     if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
     for (const mode of modes) {
-      if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
+      if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output));
+      else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
       else if (mode === 'effect-state') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
