@@ -369,7 +369,10 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
                 let volume_edit = scenario.leased || scenario.volume >= 512 || edits_made % 2 == 1;
                 let write = Instant::now();
                 let path = if volume_edit {
-                    let seed = u32::try_from(edits_made).expect("seed") + 2;
+                    // The leased library already contains seeds 1–11: use new content so
+                    // this measures an upload rather than a switch to another resident volume.
+                    let seed = u32::try_from(edits_made).expect("seed")
+                        + if scenario.leased { 100 } else { 2 };
                     demo::write_cloud_volume(&source.join("cloud.tvol"), scenario.volume, seed)
                         .expect("edit volume");
                     PathBuf::from("cloud.tvol")
