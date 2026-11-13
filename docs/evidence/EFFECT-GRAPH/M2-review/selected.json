@@ -1,0 +1,1403 @@
+{
+  "source_revision": "22376881066df244bc5386e36b0334230c32040e",
+  "binary_sha256": "19ab50a561e2c68194aab61b373d602c08b338f51adcbee94431658ee2520e67",
+  "mode": "realtime",
+  "adapter": "Apple M3 Max",
+  "backend": "Metal",
+  "extent": [
+    1920,
+    1080
+  ],
+  "images_verified": 963,
+  "ring_omissions": 0,
+  "writer_omissions": 0,
+  "selection": {
+    "moving": [
+      243
+    ],
+    "stop": [
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      306,
+      307,
+      308,
+      309,
+      310,
+      311
+    ],
+    "cadence": [
+      360,
+      361,
+      362,
+      363,
+      364,
+      365,
+      366,
+      367,
+      368,
+      369,
+      370,
+      371
+    ],
+    "wrap": [
+      452,
+      453,
+      454,
+      455,
+      456,
+      457,
+      458,
+      459,
+      460,
+      461,
+      462,
+      463
+    ],
+    "faded": [
+      723
+    ]
+  },
+  "frames": [
+    {
+      "index": 243,
+      "file": "frame-0243.png",
+      "rgba_sha256": "dba0ff9cca5c12c8f59ad0802238f4d83ee92d0f2edb34d11b37bbe25320b384",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 240,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192780035,
+          1097846998,
+          1201584740,
+          0,
+          476,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2046038791,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5785875,
+        "previous_endpoint_tick": 239,
+        "readback_copy_gpu_bracket_ns": 415417.0,
+        "submission_id": 475,
+        "submit_ns": 2028578500,
+        "surface_generation": 1,
+        "tick": 240,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 300,
+      "file": "frame-0300.png",
+      "rgba_sha256": "374b7d49e8ebd9e4c7796b1c73e0d8fd18859f6edefd133eb63d6441112044cf",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 268,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777322,
+          1097846587,
+          1201581913,
+          0,
+          533,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2519649041,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6623958,
+        "previous_endpoint_tick": 267,
+        "readback_copy_gpu_bracket_ns": 753375.0,
+        "submission_id": 532,
+        "submit_ns": 2502458291,
+        "surface_generation": 1,
+        "tick": 268,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 301,
+      "file": "frame-0301.png",
+      "rgba_sha256": "ed45c3522a4eda81c24a446d6f6e5ae2475566c2a8fd7e0b36ac6d58f876ef85",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 269,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777210,
+          1097846570,
+          1201581802,
+          0,
+          534,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2528822875,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5472625,
+        "previous_endpoint_tick": 268,
+        "readback_copy_gpu_bracket_ns": 268333.0,
+        "submission_id": 533,
+        "submit_ns": 2512166666,
+        "surface_generation": 1,
+        "tick": 269,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 302,
+      "file": "frame-0302.png",
+      "rgba_sha256": "957b1883bd80492aa2aed3a90bfb8332063a405dc89034afaa8f239995207a29",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 269,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777203,
+          1097846569,
+          1201581791,
+          0,
+          535,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2536512500,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6158875,
+        "previous_endpoint_tick": 268,
+        "readback_copy_gpu_bracket_ns": 958500.0,
+        "submission_id": 534,
+        "submit_ns": 2519491791,
+        "surface_generation": 1,
+        "tick": 269,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 303,
+      "file": "frame-0303.png",
+      "rgba_sha256": "5cd4e39cc721b1744504122702c2665294fc837f635ff998e78aadf4fd293d7e",
+      "image": {
+        "alpha": 0.8461624383926392,
+        "current_endpoint_tick": 270,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777098,
+          1097846553,
+          1201581682,
+          0,
+          536,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2545570958,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5702583,
+        "previous_endpoint_tick": 269,
+        "readback_copy_gpu_bracket_ns": 521417.0,
+        "submission_id": 535,
+        "submit_ns": 2528641416,
+        "surface_generation": 1,
+        "tick": 270,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 304,
+      "file": "frame-0304.png",
+      "rgba_sha256": "a941e1c397a3ddd89f89c2ea62b78755abb117fdc9f2931cebcbc280af627aec",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 270,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192777078,
+          1097846550,
+          1201581662,
+          0,
+          537,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2553212958,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6074625,
+        "previous_endpoint_tick": 269,
+        "readback_copy_gpu_bracket_ns": 726958.0,
+        "submission_id": 536,
+        "submit_ns": 2536342875,
+        "surface_generation": 1,
+        "tick": 270,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 305,
+      "file": "frame-0305.png",
+      "rgba_sha256": "2648bbfbe41ac1baf6d972410eb25d3e65b0dba17fccd5278ca4f6aa47bab418",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 271,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776972,
+          1097846534,
+          1201581554,
+          0,
+          538,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2562146416,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5748792,
+        "previous_endpoint_tick": 270,
+        "readback_copy_gpu_bracket_ns": 358292.0,
+        "submission_id": 537,
+        "submit_ns": 2545387250,
+        "surface_generation": 1,
+        "tick": 271,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 306,
+      "file": "frame-0306.png",
+      "rgba_sha256": "99db8dfa8d5574e537f102a04ef184d64eb4d2f07916b7943c7e784ac2427a3e",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 271,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776959,
+          1097846532,
+          1201581535,
+          0,
+          539,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2567816416,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6112667,
+        "previous_endpoint_tick": 270,
+        "readback_copy_gpu_bracket_ns": 659083.0,
+        "submission_id": 538,
+        "submit_ns": 2553025791,
+        "surface_generation": 1,
+        "tick": 271,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 307,
+      "file": "frame-0307.png",
+      "rgba_sha256": "8e0874ea728608ec18540a3a80936641cd153c141ee1f6d3cb54f34a1ca4e3c6",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 272,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776854,
+          1097846516,
+          1201581428,
+          0,
+          540,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2579765916,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5770750,
+        "previous_endpoint_tick": 271,
+        "readback_copy_gpu_bracket_ns": 664333.0,
+        "submission_id": 539,
+        "submit_ns": 2561977250,
+        "surface_generation": 1,
+        "tick": 272,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 308,
+      "file": "frame-0308.png",
+      "rgba_sha256": "ce8c9ad70aeab02e06ffe1c23770e87c7f30801992d394b4339702fd97b3e033",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 272,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776840,
+          1097846514,
+          1201581411,
+          0,
+          541,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2585939875,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 8078125,
+        "previous_endpoint_tick": 271,
+        "readback_copy_gpu_bracket_ns": 785833.0,
+        "submission_id": 540,
+        "submit_ns": 2567662250,
+        "surface_generation": 1,
+        "tick": 272,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 309,
+      "file": "frame-0309.png",
+      "rgba_sha256": "39c74fae151da39bea521547f8ea6b009f12ce991faa2129a7d96b086b7cfdd0",
+      "image": {
+        "alpha": 0.8461675047874451,
+        "current_endpoint_tick": 273,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776741,
+          1097846499,
+          1201581313,
+          0,
+          542,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2593219625,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 4737292,
+        "previous_endpoint_tick": 272,
+        "readback_copy_gpu_bracket_ns": 507416.0,
+        "submission_id": 541,
+        "submit_ns": 2579591666,
+        "surface_generation": 1,
+        "tick": 273,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 310,
+      "file": "frame-0310.png",
+      "rgba_sha256": "d36189ca65e4a45d8cc84070fba0d80613e328331c39a01ace1f8d499b767cbb",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 273,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776728,
+          1097846497,
+          1201581295,
+          0,
+          543,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2601074041,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6545208,
+        "previous_endpoint_tick": 272,
+        "readback_copy_gpu_bracket_ns": 1031792.0,
+        "submission_id": 542,
+        "submit_ns": 2585788333,
+        "surface_generation": 1,
+        "tick": 273,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 311,
+      "file": "frame-0311.png",
+      "rgba_sha256": "d24bd9383151e553fa78bd580b8642ce7a84bc67c79d32209f0e2188b3dbaa49",
+      "image": {
+        "alpha": 0.8461650609970093,
+        "current_endpoint_tick": 274,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192776623,
+          1097846481,
+          1201581189,
+          0,
+          544,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 2613125791,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7965209,
+        "previous_endpoint_tick": 273,
+        "readback_copy_gpu_bracket_ns": 522417.0,
+        "submission_id": 543,
+        "submit_ns": 2593040083,
+        "surface_generation": 1,
+        "tick": 274,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 360,
+      "file": "frame-0360.png",
+      "rgba_sha256": "8191fe26695d39fa0cb660c0419dd7c80086bc183446e0c2b57aca530dc122d6",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 298,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192773278,
+          1097845974,
+          1201577700,
+          0,
+          593,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3020134500,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6204500,
+        "previous_endpoint_tick": 297,
+        "readback_copy_gpu_bracket_ns": 1410000.0,
+        "submission_id": 592,
+        "submit_ns": 3002862916,
+        "surface_generation": 1,
+        "tick": 298,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 361,
+      "file": "frame-0361.png",
+      "rgba_sha256": "0a3ffe165ebd6db79a63420adbd0256d310b7075287c413d9a89c41c5b101ac8",
+      "image": {
+        "alpha": 0.8461624383926392,
+        "current_endpoint_tick": 299,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192773113,
+          1097845949,
+          1201577534,
+          0,
+          594,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3028530458,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6247416,
+        "previous_endpoint_tick": 298,
+        "readback_copy_gpu_bracket_ns": 1170666.0,
+        "submission_id": 593,
+        "submit_ns": 3011344125,
+        "surface_generation": 1,
+        "tick": 299,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 362,
+      "file": "frame-0362.png",
+      "rgba_sha256": "4fe5b4b4419de6eaaed80a3df9ea9bf87904751b425df8d6cfaa5f7b4bf4b70b",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 299,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192773093,
+          1097845946,
+          1201577509,
+          0,
+          595,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3036580750,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5754000,
+        "previous_endpoint_tick": 298,
+        "readback_copy_gpu_bracket_ns": 1381875.0,
+        "submission_id": 594,
+        "submit_ns": 3019946833,
+        "surface_generation": 1,
+        "tick": 299,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 363,
+      "file": "frame-0363.png",
+      "rgba_sha256": "3fa3ceffd13deee8baadf942fa65de5f3459c211821cd46f2dc96a2cdd59c477",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 300,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772967,
+          1097845927,
+          1201577380,
+          0,
+          596,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3043109375,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5895667,
+        "previous_endpoint_tick": 299,
+        "readback_copy_gpu_bracket_ns": 803500.0,
+        "submission_id": 595,
+        "submit_ns": 3028358000,
+        "surface_generation": 1,
+        "tick": 300,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 364,
+      "file": "frame-0364.png",
+      "rgba_sha256": "3b2f1a9ba9c685eee8312f2df496a54a75d17063ab7ede912c4f840bbface3d1",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 300,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772941,
+          1097845923,
+          1201577355,
+          0,
+          597,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3054349541,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5928125,
+        "previous_endpoint_tick": 299,
+        "readback_copy_gpu_bracket_ns": 1388541.0,
+        "submission_id": 596,
+        "submit_ns": 3036416125,
+        "surface_generation": 1,
+        "tick": 300,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 365,
+      "file": "frame-0365.png",
+      "rgba_sha256": "520796f570418d87a4c0df59a94c43122fb491213be4a56ae47ba4bc82aabb08",
+      "image": {
+        "alpha": 0.8461675047874451,
+        "current_endpoint_tick": 301,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772809,
+          1097845903,
+          1201577215,
+          0,
+          598,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3061493083,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 8071500,
+        "previous_endpoint_tick": 300,
+        "readback_copy_gpu_bracket_ns": 1036583.0,
+        "submission_id": 597,
+        "submit_ns": 3042934958,
+        "surface_generation": 1,
+        "tick": 301,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 366,
+      "file": "frame-0366.png",
+      "rgba_sha256": "c38884abd390f2d4211f2b8248deaba394f2c3c141e32047057e738c2ea7209c",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 301,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772789,
+          1097845900,
+          1201577192,
+          0,
+          599,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3070108875,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 4883417,
+        "previous_endpoint_tick": 300,
+        "readback_copy_gpu_bracket_ns": 1390042.0,
+        "submission_id": 598,
+        "submit_ns": 3054183041,
+        "surface_generation": 1,
+        "tick": 301,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 367,
+      "file": "frame-0367.png",
+      "rgba_sha256": "80438de4143c45abb1cc78f1d8b4094ec2eda5a3e61360cda314618d4a49fda3",
+      "image": {
+        "alpha": 0.8461650013923645,
+        "current_endpoint_tick": 302,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772657,
+          1097845880,
+          1201577054,
+          0,
+          600,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3078137916,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6335875,
+        "previous_endpoint_tick": 301,
+        "readback_copy_gpu_bracket_ns": 1114208.0,
+        "submission_id": 599,
+        "submit_ns": 3061292458,
+        "surface_generation": 1,
+        "tick": 302,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 368,
+      "file": "frame-0368.png",
+      "rgba_sha256": "5453f6026793f7f7887d8a6418f0a53d0c9658a369b895bfc178b93316d1b22e",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 302,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772625,
+          1097845875,
+          1201577025,
+          0,
+          601,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3085243791,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5744209,
+        "previous_endpoint_tick": 301,
+        "readback_copy_gpu_bracket_ns": 1238000.0,
+        "submission_id": 600,
+        "submit_ns": 3069945708,
+        "surface_generation": 1,
+        "tick": 302,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 369,
+      "file": "frame-0369.png",
+      "rgba_sha256": "a69ca8779dc3bf128c839d7e3f82e3cfa3f28c3698f5db085cd9353bb2f30829",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 303,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772499,
+          1097845856,
+          1201576891,
+          0,
+          602,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3096110833,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6315792,
+        "previous_endpoint_tick": 302,
+        "readback_copy_gpu_bracket_ns": 1097834.0,
+        "submission_id": 601,
+        "submit_ns": 3077967958,
+        "surface_generation": 1,
+        "tick": 303,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 370,
+      "file": "frame-0370.png",
+      "rgba_sha256": "9219a04c26e191ac6fdf7b34630a1428d0c10a221775558f5174a078c93aa9c2",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 303,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772460,
+          1097845850,
+          1201576853,
+          0,
+          603,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3102830916,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7331791,
+        "previous_endpoint_tick": 302,
+        "readback_copy_gpu_bracket_ns": 1237541.0,
+        "submission_id": 602,
+        "submit_ns": 3085067583,
+        "surface_generation": 1,
+        "tick": 303,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 371,
+      "file": "frame-0371.png",
+      "rgba_sha256": "edd57674204f02172aa212f3362bfbe8558fb46434e6bbac0140a42bc40e8d3b",
+      "image": {
+        "alpha": 0.8461624383926392,
+        "current_endpoint_tick": 304,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192772328,
+          1097845830,
+          1201576712,
+          0,
+          604,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3109495958,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5113125,
+        "previous_endpoint_tick": 303,
+        "readback_copy_gpu_bracket_ns": 940292.0,
+        "submission_id": 603,
+        "submit_ns": 3095942208,
+        "surface_generation": 1,
+        "tick": 304,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 452,
+      "file": "frame-0452.png",
+      "rgba_sha256": "df9bbc4c871bdf851442efa1a239715a453a158b62475dd889b7257905c3189a",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 344,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764725,
+          1097844677,
+          1201568797,
+          0,
+          685,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3784872375,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6195750,
+        "previous_endpoint_tick": 343,
+        "readback_copy_gpu_bracket_ns": 1272792.0,
+        "submission_id": 684,
+        "submit_ns": 3769528916,
+        "surface_generation": 1,
+        "tick": 344,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 453,
+      "file": "frame-0453.png",
+      "rgba_sha256": "1f0e5cbdb45e56a9fd6f720c718daa3c96eae2c5fb554254f5829a521d430596",
+      "image": {
+        "alpha": 0.8461650013923645,
+        "current_endpoint_tick": 345,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764554,
+          1097844651,
+          1201568615,
+          0,
+          686,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3796262458,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5682042,
+        "previous_endpoint_tick": 344,
+        "readback_copy_gpu_bracket_ns": 906250.0,
+        "submission_id": 685,
+        "submit_ns": 3778652166,
+        "surface_generation": 1,
+        "tick": 345,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 454,
+      "file": "frame-0454.png",
+      "rgba_sha256": "bb0422199bb8d46ed4938f6899d03a5a8b6f6b17117025c8197af7e3d609a03a",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 345,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764521,
+          1097844646,
+          1201568579,
+          0,
+          687,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3802727000,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7834125,
+        "previous_endpoint_tick": 344,
+        "readback_copy_gpu_bracket_ns": 1045042.0,
+        "submission_id": 686,
+        "submit_ns": 3784674708,
+        "surface_generation": 1,
+        "tick": 345,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 455,
+      "file": "frame-0455.png",
+      "rgba_sha256": "4695abe83e04950c6dcb2e72c8ce40141dfaadbfcf5c9a16315a4c6e341a9514",
+      "image": {
+        "alpha": 0.8461700081825256,
+        "current_endpoint_tick": 346,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764330,
+          1097844617,
+          1201568385,
+          0,
+          688,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3809529875,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 4934000,
+        "previous_endpoint_tick": 345,
+        "readback_copy_gpu_bracket_ns": 1029417.0,
+        "submission_id": 687,
+        "submit_ns": 3796097708,
+        "surface_generation": 1,
+        "tick": 346,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 456,
+      "file": "frame-0456.png",
+      "rgba_sha256": "89f842fe9da9c6fe1de2af36788a473f2dde99c711bafbeabf2bfc91d8b9e82c",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 346,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764297,
+          1097844612,
+          1201568349,
+          0,
+          689,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3818305375,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6456625,
+        "previous_endpoint_tick": 345,
+        "readback_copy_gpu_bracket_ns": 1035542.0,
+        "submission_id": 688,
+        "submit_ns": 3802565500,
+        "surface_generation": 1,
+        "tick": 346,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 457,
+      "file": "frame-0457.png",
+      "rgba_sha256": "ab579710678b75dec726ac89bc1a96064cddf5d89ede072da5b2c08ef67f18cd",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 347,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764112,
+          1097844584,
+          1201568158,
+          0,
+          690,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3826554333,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 8316125,
+        "previous_endpoint_tick": 346,
+        "readback_copy_gpu_bracket_ns": 960750.0,
+        "submission_id": 689,
+        "submit_ns": 3809347333,
+        "surface_generation": 1,
+        "tick": 347,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 458,
+      "file": "frame-0458.png",
+      "rgba_sha256": "14377b91f18a146f4c310ff605aca51b33ed8c69271fab8cbac3a11e70cb8d02",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 347,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192764086,
+          1097844580,
+          1201568125,
+          0,
+          691,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3835427791,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7575042,
+        "previous_endpoint_tick": 346,
+        "readback_copy_gpu_bracket_ns": 1020250.0,
+        "submission_id": 690,
+        "submit_ns": 3818140500,
+        "surface_generation": 1,
+        "tick": 347,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 459,
+      "file": "frame-0459.png",
+      "rgba_sha256": "fea44d362ac9e67104aff34b21f7ec887e50637e4c147473deee135a090c80c6",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 348,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192763888,
+          1097844550,
+          1201567924,
+          0,
+          692,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3845955708,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7995542,
+        "previous_endpoint_tick": 347,
+        "readback_copy_gpu_bracket_ns": 705625.0,
+        "submission_id": 691,
+        "submit_ns": 3826366708,
+        "surface_generation": 1,
+        "tick": 348,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 460,
+      "file": "frame-0460.png",
+      "rgba_sha256": "cb2ac58f23c282a0477ec90347d4920ba7b8a343e106bc4bbda7efd6d35986dd",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 348,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192763855,
+          1097844545,
+          1201567885,
+          0,
+          693,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3852833250,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 7087583,
+        "previous_endpoint_tick": 347,
+        "readback_copy_gpu_bracket_ns": 1269042.0,
+        "submission_id": 692,
+        "submit_ns": 3835274416,
+        "surface_generation": 1,
+        "tick": 348,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 461,
+      "file": "frame-0461.png",
+      "rgba_sha256": "d557259b0ee2211909474044b0eaf18945d59d32dad861af79bd592d9ef1c95c",
+      "image": {
+        "alpha": 0.8461599946022034,
+        "current_endpoint_tick": 349,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192763697,
+          1097844521,
+          1201567725,
+          0,
+          694,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3862225666,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5209917,
+        "previous_endpoint_tick": 348,
+        "readback_copy_gpu_bracket_ns": 886042.0,
+        "submission_id": 693,
+        "submit_ns": 3845785458,
+        "surface_generation": 1,
+        "tick": 349,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 462,
+      "file": "frame-0462.png",
+      "rgba_sha256": "bb120f94cdb6307b20eb794ba942d1aed302f8d804dff23b8f7d1dc619c83a86",
+      "image": {
+        "alpha": 1.0,
+        "current_endpoint_tick": 349,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192763651,
+          1097844514,
+          1201567676,
+          0,
+          695,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3868848458,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 6371083,
+        "previous_endpoint_tick": 348,
+        "readback_copy_gpu_bracket_ns": 1020417.0,
+        "submission_id": 694,
+        "submit_ns": 3852665500,
+        "surface_generation": 1,
+        "tick": 349,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 463,
+      "file": "frame-0463.png",
+      "rgba_sha256": "53195eef3d2dc3ddbf6012bd2dea51e860ef870f37ea2cf1aba37377b85ed8b4",
+      "image": {
+        "alpha": 0.8461599349975586,
+        "current_endpoint_tick": 350,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192763466,
+          1097844486,
+          1201567486,
+          0,
+          696,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 3879310125,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5580833,
+        "previous_endpoint_tick": 349,
+        "readback_copy_gpu_bracket_ns": 983334.0,
+        "submission_id": 695,
+        "submit_ns": 3862046083,
+        "surface_generation": 1,
+        "tick": 350,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    },
+    {
+      "index": 723,
+      "file": "frame-0723.png",
+      "rgba_sha256": "5882f655354e3f6b04b3b645c1fa5cc7405db106a8447caf90b38035bfd9ef71",
+      "image": {
+        "alpha": 0.8461624979972839,
+        "current_endpoint_tick": 480,
+        "device_generation": 1,
+        "epoch": 1,
+        "exposure_gpu_words": [
+          981467136,
+          1192723044,
+          1097838340,
+          1201525375,
+          0,
+          956,
+          0,
+          1
+        ],
+        "history_epoch": 1,
+        "map_observed_ns": 6043824500,
+        "pixel_source": "Sdr",
+        "presentation_lead_ns": 5731500,
+        "previous_endpoint_tick": 479,
+        "readback_copy_gpu_bracket_ns": 355333.0,
+        "submission_id": 955,
+        "submit_ns": 6028492666,
+        "surface_generation": 1,
+        "tick": 480,
+        "timeline": 0,
+        "visual_revision": null
+      }
+    }
+  ],
+  "source_archive_sha256": "906c698d7820c5f114a719d62933d6783ed4fa4d64b38053f3919015e713d394",
+  "native_crop_rectangles_xywh": {
+    "stop": [
+      600,
+      90,
+      512,
+      256
+    ],
+    "cadence": [
+      0,
+      90,
+      512,
+      256
+    ],
+    "wrap": [
+      1400,
+      100,
+      512,
+      256
+    ]
+  },
+  "wrap_camera_x_from_route": [
+    [
+      452,
+      31.733333333333334,
+      0
+    ],
+    [
+      453,
+      31.95897733370463,
+      0
+    ],
+    [
+      454,
+      32.0,
+      32
+    ],
+    [
+      455,
+      32.22564533551534,
+      32
+    ],
+    [
+      456,
+      32.266666666666666,
+      32
+    ],
+    [
+      457,
+      32.492309999465945,
+      32
+    ],
+    [
+      458,
+      32.53333333333333,
+      32
+    ],
+    [
+      459,
+      32.75897666613261,
+      32
+    ],
+    [
+      460,
+      32.8,
+      32
+    ],
+    [
+      461,
+      33.02564266522725,
+      32
+    ],
+    [
+      462,
+      33.06666666666666,
+      32
+    ],
+    [
+      463,
+      33.29230931599935,
+      32
+    ]
+  ]
+}

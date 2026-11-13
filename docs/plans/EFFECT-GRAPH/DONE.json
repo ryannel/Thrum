@@ -77,7 +77,7 @@
     {
       "id": "M2",
       "name": "A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome",
-      "state": "ready_for_review",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
@@ -91,8 +91,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -103,8 +103,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -115,8 +115,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -126,8 +126,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -137,8 +137,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -147,8 +147,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -157,8 +157,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         },
         {
           "id": "M2.8",
@@ -168,8 +168,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
         }
       ],
       "rounds": 0,

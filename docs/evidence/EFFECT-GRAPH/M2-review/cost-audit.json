@@ -1,0 +1,64 @@
+{
+  "effect": {
+    "effect 0: effect 1: trail": {
+      "samples": 420,
+      "median_ns": 6229.5
+    },
+    "effect 1: effect 1: derived": {
+      "samples": 136,
+      "median_ns": 3667.0
+    },
+    "effect 2: effect 1: consumer": {
+      "samples": 963,
+      "median_ns": 4375.0
+    },
+    "effect 3: effect 1: volume": {
+      "samples": 963,
+      "median_ns": 2667.0
+    },
+    "effect 4: effect 1: array mip 0": {
+      "samples": 136,
+      "median_ns": 2917.0
+    },
+    "effect 5: effect 1: array mip 1": {
+      "samples": 136,
+      "median_ns": 2917.0
+    },
+    "effect 6: effect 1: array mip 2": {
+      "samples": 136,
+      "median_ns": 2792.0
+    },
+    "effect 7: effect 1: cube": {
+      "samples": 420,
+      "median_ns": 2958.5
+    }
+  },
+  "no_effect_names": [
+    "V1 surface present",
+    "atmosphere aerial perspective",
+    "atmosphere diffuse irradiance",
+    "atmosphere reflection mip 0",
+    "atmosphere reflection mip 1",
+    "atmosphere reflection mip 2",
+    "atmosphere reflection mip 3",
+    "atmosphere reflection mip 4",
+    "atmosphere reflection mip 5",
+    "atmosphere reflection mip 6",
+    "atmosphere sky view",
+    "contribution compute",
+    "contribution upload",
+    "output readback",
+    "synthetic Sun air shadow heights",
+    "synthetic Sun horizon heights",
+    "synthetic Sun shadow far",
+    "synthetic Sun shadow near",
+    "synthetic cluster build",
+    "synthetic exposure resolve",
+    "synthetic forward opaque",
+    "synthetic tone encode",
+    "synthetic transform history",
+    "temporal exposure texture",
+    "timestamp query resolve/readback"
+  ],
+  "effect_bytes_recomputed": 23840
+}
