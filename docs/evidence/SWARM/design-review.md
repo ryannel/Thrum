@@ -1,60 +1,55 @@
 # SWARM design review
 
-Design changes requested: **2 Must Fix findings**. The revised design still covers the human's requested original swarm survivor, reusable 2D engine support and networked cooperative play. It resolves the original five findings at the level of the chosen behavior and acceptance policy. Two inconsistencies remain in how the revised behavior is assembled and proved.
+**Design approved. No Must Fix findings or new Suggestions.** The design provides the human's requested original swarm survivor, reusable engine support for 2D, and cooperative play over the network. Both Must Fix findings from the previous review are resolved without weakening the required outcomes.
 
-Reviewed on 13 November 2026 at `b7fbe03e9d36faebaac6a58060bec72e1a0abbaf`, against the previous review at `cea01c770118`. This is a design review, not implementation, visual or device qualification.
+Reviewed on 13 November 2026 at `f0a23e96738f6623cf4974e22bbc205aee72cb11`, against the review at `b7fbe03e9d36faebaac6a58060bec72e1a0abbaf`. This approves the design and its acceptance criteria; it does not qualify implementation, visuals or device performance.
 
-**1. Must Fix — `run-end-priority-precedes-damage` — verified design inconsistency; M3.17 and the tick walkthrough.**
+## Previous Must Fix findings
 
-The tick order does not produce the newly specified priority between a boss death, player defeat and the final deadline. [DESIGN.md](../../plans/SWARM/DESIGN.md), lines 164–173, says the boss's death wins over defeat, and defeat wins over the deadline, on the same tick. But its tick walkthrough, lines 505–510, advances the run's state and clocks in step 2, before weapons, damage and deaths in step 6. It then commits once in step 8, with no terminal adjudication between damage and commitment. The description of deciding the end from “one committed state” does not explain how the decision includes that tick's staged deaths.
+### `run-end-priority-precedes-damage` — resolved, verified
 
-Take the final wave with one clock tick left, the boss alive, and the last standing hero about to take lethal contact damage. Advancing the clock and run state in step 2 sees a standing hero and awards the timeout win; the winning transition also clears the field. The damage that should make this a loss has not yet been evaluated. Conversely, evaluating only the preceding committed deaths makes the run's outcome lag the death tick. Neither produces M3.17's same-tick result.
+[DESIGN.md](../../plans/SWARM/DESIGN.md), lines 171–200 and 555–563, now gives all three events one endpoint and places adjudication after the tick's other rules. The final rule reads staged boss death, hero standing/presence and the counted-down clock, then stages the outcome for the same commit. The priority remains boss death, defeat, then deadline. It applies to an ordinary wave's deadline as well as the last wave's. The last slot leaving explicitly overrides this with a return to gathering.
 
-Align the tick mechanism with the selected priority: identify the tick endpoint used for deadline, boss death and hero defeat, and where their combined outcome and cleanup are decided before publication. Keep M3.17's existing simultaneous-event cases; additional test procedures are unnecessary. This does not reopen the choice to win by outlasting the final wave. It is a new integration defect exposed by that choice and its explicit same-tick priority, rather than a repeat of the previous missing timeout outcome.
+This can use the existing engine boundary. [TickGame](../../../crates/thrum-core/src/sim/runtime.rs), lines 298–307, supplies shared mutable candidate scratch. The runtime passes that candidate through callbacks, validates after preparation, applies the edits and captures committed state afterwards (lines 1444–1616). A later rule can therefore read game-owned staged results without reading a future committed world or adding another commit. [EditWriter](../../../crates/thrum-core/src/sim/transaction.rs), lines 30–35, confirms that queued operations cannot be removed, while their candidate payloads remain late-bound.
 
-**2. Must Fix — `prediction-equality-includes-forced-fall` — verified contradictory proof; M5.6.**
+The revised cleanup respects that boundary: the first tick beginning in intermission, won or lost removes enemies and shots, including anything spawned on the deciding tick. Combat and spawning are gated by the state at the tick's start, so those remaining bodies cannot deal damage after the outcome. This is a one-tick delay in field cleanup, not a delay in deciding or publishing the result. M3.13 still judges the transition's visible clarity.
 
-[M5.6](../../plans/SWARM/DONE.json), lines 706–709, now requires the test hero to fall at least once, while still requiring prediction to equal the confirmed hero tick for tick wherever the host admitted the player's frame. It also requires a correction when the hero falls. Those requirements conflict on an ordinary fall tick with admitted movement input.
+The written sequence now produces the required ordinary cases:
 
-[DESIGN.md](../../plans/SWARM/DESIGN.md), lines 307–313, puts `standing` in the controller and explicitly says a fall is not announced by a command: the client learns it when it commits the tick. [SESSION's controller](../../plans/SESSION/DESIGN.md), lines 442–465, predicts without the crowd and compares the saved prediction with the newly confirmed controller **before** restoring and replaying it. For a hero moving from x=0 to x=1, a lethal contact on that tick gives a saved prediction `(x=1, standing=true)` and confirmed state `(x=1, standing=false)`, even when the host admitted exactly the authored frame. The correction is legitimate; pre-correction equality is false.
-
-Comparing only after restoration would make equality automatic and let a broken predictor pass. Arranging for the host to hold the fall tick would evade the ordinary admitted-input case. State the equality requirement for ticks without a legitimate correction cause, and separately require the recorded fall/revival corrections and their reconciled results. The selected controller mechanism can support that proof without any new engine capability.
-
-The previous suggestion, `prediction-correction-causes-omit-defeat`, was taken: defeat and presence changes are now represented and named as causes. This new finding concerns the remaining unconditional equality clause once a fall is mandatory; the former surviving-hero proof could avoid that conflict.
-
-**Disposition of the previous Must Fix findings.**
-
-| Previous finding | Result against this revision |
+| Events at the tick endpoint | Outcome committed on that tick |
 |---|---|
-| `spawn-depends-on-local-view` | Resolved. Mechanisms 3 and 9 use committed hero positions and rule-set constants for exclusion, and constrain every local view to the resulting sight square. The count is explicitly scoped to 16:9. M2.17 checks authority-only spawning, M2.18 checks the actual view function, and target and co-op items check each peer's own view. |
-| `final-wave-timeout-has-no-outcome` | The missing outcome is resolved: survival to the deadline wins, the last wave has no intermission, and M3.17 requires the deadline case and ties. Finding 1 above concerns the incompatible execution order for that newly defined result. |
-| `whole-run-tick-bound-conflicts-with-waiting` | Resolved. Combat time, waiting and world ticks are distinguished. Only retained scripted traces in M3.5 and M4.4 are limited to 36,000 ticks; M3.17 requires a longer intermission wait followed by a whole next wave. |
-| `cap-measurement-reintroduces-timing-gate` | Resolved. M2.1 records cost without selecting or rejecting the cap by a timing threshold. Mechanism 3, the cost section, risks and limits consistently use measurements as baselines and tripwires. Count, observed smoothness and functioning peers remain requirements. |
-| `owner-requested-fixes-can-remain-at-close` | Resolved. M8.12 requires acceptance and completion of requested changes or the owner's explicit deferral. M8.10 quotes that recorded acceptance; the plan keeps closure pending until it arrives. Recording unfinished work alone cannot pass. |
+| Boss dies and last standing hero falls | Won |
+| Boss lives, last hero falls and final clock reaches zero | Lost |
+| Boss lives, a hero stands and final clock reaches zero | Won |
+| Last hero falls as an earlier wave's clock reaches zero | Lost |
+| A hero stands as an earlier wave's clock reaches zero | Intermission |
 
-**Changed-item audit.** All 16 modified items and four additions were read against the old review and their milestone's available dependencies. No milestone verdict or planner field was changed.
+These are walkthroughs of the specified mechanism, not executed game tests.
 
-| Items | Assessment |
-|---|---|
-| M2.1, M2.2 | The baseline-only cost record and authority cap are judgeable on the slice. They preserve the crowd requirement without a numeric timing gate. |
-| M2.8 | Counts actual committed bodies against the selected 16:9 view. The revised window policy does not weaken that count. |
-| M2.9, M2.10 | Window-shape and resize runs compare real world digests and submitted rows. These can be exercised after the shell and renderer dependencies. |
-| M2.17, M2.18 | Separate authority exclusion from view containment, with a code question tying the tested camera function to the game. Prediction itself is not needed in M2 to supply an arbitrary drawn position to that function. |
-| M3.1, M3.4 | Run transitions and seed outcomes remain real committed-state proofs; ending behavior has moved to M3.17 rather than disappeared. |
-| M3.5, M4.4 | The retained-trace bound is now a bound on the chosen fixture, not on allowed player waiting. |
-| M3.17 | The timeout, simultaneous-event and long-wait cases are judgeable at M3. Finding 1 concerns the mechanism they are meant to prove. |
-| M4.16 | Finished cooked sprite sizes and upgraded speed are available here, so the spawn-margin proof has its inputs. |
-| M5.4 | Four-hero exclusion includes fallen heroes, preserving their views; the co-op rules are testable with the in-memory session. |
-| M5.6 | Finding 2 must be resolved so that a correct predictor can pass and a comparison after restoration cannot impersonate prediction accuracy. |
-| M6.2, M7.2, M8.1 | Rotation and peer-specific view checks extend the same spawn policy to the simulator and socket runs. Separate peer digests remain required. |
-| M8.10, M8.12 | Closing evidence and human acceptance now agree, with explicit owner authority over deferrals. |
+**M3.17:** its revised statement and reviewer question require the deciding event and outcome in the same committed state. The existing deadline, lethal-contact and boss-death cases remain; reading a later tick cannot satisfy the question. The longer-than-36,000-tick wait still steps real rules and must leave the next wave's whole clock available. M3 has the solo run and registered runtime needed to prove this; it does not depend on later networking work.
 
-The unchanged items were also read: **94 items in total**. The milestone sequence still brings concepts, a playable slice, a whole solo run, finished content, a rehearsed match, touch play, windowed sockets and final acceptance in a viable order. No additional content, platform or engine module is required by this review. The disclosed assumptions about one arena, content counts, no sound or gamepad, same-machine socket qualification and simulator speed remain visible to the owner.
+### `prediction-equality-includes-forced-fall` — resolved, verified
 
-The review used both verbatim tasks under `briefs` in [RECORD.json](../../plans/SWARM/RECORD.json), the [project brief](../../plans/BRIEF.md), the [owner's swarm goal](../../design/NEXT-GOAL-SWARM-GAME.md), the module list and SWARM seam rulings, the full revised design and plan, all items, relevant C02/C03/C13 contracts, and the SIM-2D, RENDER-2D and SESSION interfaces affected by this revision. The planner's log was read after forming the findings. The lead's re-plan request was not treated as authority to change the human's goal.
+[DESIGN.md](../../plans/SWARM/DESIGN.md), lines 341–352, and [M5.6](../../plans/SWARM/DONE.json) now distinguish accurate prediction from a legitimate correction. On admitted-input ticks without a rule changing speed or standing, the saved prediction must equal the confirmed controller bit for bit **before** restoration. Falls and revivals must instead produce their own corrections, followed by restored agreement. The player keeps steering while down, so a predictor that continues moving a fallen hero cannot pass by leaving the controls neutral.
 
-A small Python calculation checked view containment for landscape, portrait, square, the Mac panel aspect and the 32:9/9:32 extremes, and the 216,000 world ticks in an hour's wait. A controller-state example checked the pre-reconciliation inequality at an admitted-input fall. These are checks of the written mechanism, not SWARM runtime tests. No game, browser, simulator or visual capture was run. External game references were treated as proposed quality references, not independently verified research.
+This matches [SESSION's controller](../../plans/SESSION/DESIGN.md), lines 449–465: compare the ring entry for confirmed tick `t`, restore on a difference, then replay later authored frames. Replaying updates the future predicted states from the corrected standing state; the already authored future frames do not require repeated fall corrections. When prediction is dropped for repair or an excessive unconfirmed span, the design does not demand a fall correction from an inactive predictor.
 
-Validation: `./dev check-docs` passed (797 Markdown files, 5,343 local links, 30 module records, crate policy and current design hashes). Only this review file is changed; it is left uncommitted for the review script.
+For the previous counterexample, saved `(x=1, standing)` versus confirmed `(x=1, down)` is now an expected correction, even when the host admitted the player's frame. Replayed steering while down leaves the position unchanged. Revival is checked separately as another correction. Comparing only after restoration cannot impersonate prediction accuracy because the revised question explicitly rejects that comparison.
 
-DESIGN CHANGES: 2 must_fix findings
+**M5.6:** the whole-run crowd load remains, and revival and continued steering strengthen the fall case. Corrections must be accounted for from SESSION's report and confirmed controller changes. M5 follows SESSION M4, which provides the prediction and in-memory match machinery. No new engine capability or later socket milestone is needed to judge this item.
+
+## Scope and requirements
+
+I read all three verbatim planner tasks under `briefs` in [RECORD.json](../../plans/SWARM/RECORD.json), oldest first, and the [approved project brief](../../plans/BRIEF.md) before comparing the revision. The two re-plan tasks request repairs; they do not supersede the human's [swarm goal](../../design/NEXT-GOAL-SWARM-GAME.md).
+
+The complete design and plan still cover growing crowds, automatic attacks, between-wave upgrades, original identity and art, shared cooperative rules and actual socket play. The game remains outside engine crates. The module list's four seam rulings authorize the necessary shell, repository-guard and driven-world integration. Scope assumptions remain disclosed: one arena, the proposed content counts, no sound or gamepad, same-machine network qualification and simulator function rather than speed. M1 retains the owner's concept choice; M8 retains acceptance and completion of requested changes unless the owner explicitly defers them.
+
+I read every design change and all 94 acceptance items. A comparison against `b7fbe03e9d36` confirms that only M3.17 and M5.6 changed. Neither becomes easier to satisfy with a convincing fake, and both are judgeable at their respective milestones. The unchanged items retain the previous review's resolutions for authority-only spawning and view containment, the final-wave timeout outcome, unbounded waiting, baseline-only cost measurements and owner acceptance at close. No further Must Fix emerged from the revised assembly.
+
+The review also used README, ORCHESTRATE, the module list and seam rulings, the review skill and Thrum review guidance, the graded examples, relevant C02/C03/C13 contracts, SESSION's controller design and the core candidate/commit implementation. The planner's log was read after examining the fixes. External game references were treated as proposed quality references, not independently verified research.
+
+No game, browser, simulator, device timing or visual capture was run. No captures were needed for this design review. Only this review file is changed, left uncommitted for the review script; DONE.json and all planner fields are unchanged.
+
+Validation: `./dev check-docs` passed (799 Markdown files, 5,367 local links, 30 module records, crate policy and current design hashes). `git diff --check` passed.
+
+DESIGN OK
