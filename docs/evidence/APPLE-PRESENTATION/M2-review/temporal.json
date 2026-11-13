@@ -1,0 +1,2713 @@
+{
+  "fixture": {
+    "extent": [
+      640,
+      360
+    ],
+    "star_edit_tick": 15,
+    "sun_hours": 17.4,
+    "sun_yaw": -1.5707963267948966,
+    "sun_probe": [
+      367,
+      133
+    ],
+    "pan_tick": 30,
+    "pan_yaw": 0.05,
+    "rows": {
+      "W1": {
+        "step": "invalid object correspondence",
+        "reactive": 1
+      },
+      "W2": {
+        "step": "next steady submitted sample",
+        "reactive": 0
+      },
+      "W3": {
+        "step": "steady cooked volume",
+        "reactive": "volume alpha",
+        "outside": 0
+      },
+      "W4": {
+        "step": "phase edit with Sun or stars",
+        "reactive": 1
+      },
+      "W5": {
+        "step": "steady Sun, stars and uncovered region",
+        "reactive": 0
+      },
+      "W6": {
+        "step": "A, encoded acquisition refusal at P, submitted C at P",
+        "predecessor": "A"
+      },
+      "W7": {
+        "step": "same as W6",
+        "motion": "A to P, nonzero on static geometry"
+      }
+    },
+    "volume": {
+      "name": "temporal-witness",
+      "extent": [
+        2,
+        2,
+        2
+      ],
+      "density": 255,
+      "transform": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          -0.5,
+          244.2,
+          8,
+          1
+        ]
+      ],
+      "extinction": 1,
+      "steps": 16,
+      "light_steps": 4,
+      "expected_central_byte": 161
+    }
+  },
+  "record": {
+    "done": true,
+    "rows": {
+      "W1": {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192759533,
+            1097843889,
+            1201563387,
+            0,
+            1,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 0,
+          "submit_ms": 3.2,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 1,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 0,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 153406,
+        "one": 76994,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W2": {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192759533,
+            1097843889,
+            1201563387,
+            0,
+            2,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 1,
+          "submit_ms": 33.8,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 1,
+          "history_sample": 2,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 1,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 230400,
+        "one": 0,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W3": {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            5,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 4,
+          "submit_ms": 144.6,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 4,
+          "history_sample": 5,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 4,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 226800,
+        "one": 0,
+        "partial": 3600,
+        "skyReactive": 3374,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W4sun": {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            6,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 5,
+          "submit_ms": 160.8,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 6,
+          "pitch": null,
+          "rendered_solar_bits": 1099641652,
+          "rendered_solar_hours": 17.400001525878906,
+          "submission": 5,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 0,
+        "one": 230400,
+        "partial": 0,
+        "skyReactive": 145558,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          255,
+          0,
+          0,
+          255
+        ]
+      },
+      "W5sun": {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            7,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 6,
+          "submit_ms": 176.1,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 6,
+          "history_sample": 7,
+          "pitch": null,
+          "rendered_solar_bits": 1099641652,
+          "rendered_solar_hours": 17.400001525878906,
+          "submission": 6,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 230400,
+        "one": 0,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W4stars": {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            24,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 15,
+          "submission_id": 23,
+          "submit_ms": 463.7,
+          "surface_presented": true,
+          "tick": 15,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 23,
+          "history_sample": 24,
+          "pitch": null,
+          "rendered_solar_bits": 1017013248,
+          "rendered_solar_hours": 0.019334793090820312,
+          "submission": 23,
+          "tick": 15,
+          "yaw": null
+        },
+        "zero": 217458,
+        "one": 9130,
+        "partial": 3812,
+        "skyReactive": 12633,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W5stars": {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            25,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 16,
+          "submission_id": 24,
+          "submit_ms": 480.5,
+          "surface_presented": true,
+          "tick": 16,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 24,
+          "history_sample": 25,
+          "pitch": null,
+          "rendered_solar_bits": 1017729024,
+          "rendered_solar_hours": 0.02066802978515625,
+          "submission": 24,
+          "tick": 16,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 9130,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "W6": {
+        "A": {
+          "metadata": {
+            "alpha": 0.5000000596046448,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              1111085850,
+              1010206234,
+              3235383541,
+              976275536,
+              0,
+              38,
+              0,
+              769
+            ],
+            "history_epoch": 0,
+            "pixel_source": "Sdr",
+            "presenter_generation": 1,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 29,
+            "submission_id": 37,
+            "submit_ms": 705.7,
+            "surface_presented": true,
+            "tick": 29,
+            "timeline": 0
+          },
+          "identity": {
+            "alpha": 0.5000000596046448,
+            "alpha_bits": 1056964609,
+            "epoch": null,
+            "eye": null,
+            "history_predecessor": 37,
+            "history_sample": 38,
+            "pitch": null,
+            "rendered_solar_bits": 1025222144,
+            "rendered_solar_hours": 0.03800010681152344,
+            "submission": 37,
+            "tick": 29,
+            "yaw": null
+          },
+          "zero": 226588,
+          "one": 0,
+          "partial": 3812,
+          "skyReactive": 3503,
+          "geometryMotion": 0,
+          "starCleared": 0,
+          "sun_probe": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        "C": {
+          "metadata": {
+            "alpha": 0.4999999701976776,
+            "device_generation": 1,
+            "exposure_gpu_words": [
+              1111085850,
+              1010206234,
+              3235383541,
+              976275536,
+              0,
+              39,
+              0,
+              769
+            ],
+            "history_epoch": 0,
+            "pixel_source": "Sdr",
+            "presenter_generation": 2,
+            "session": 1,
+            "source_epoch": "1",
+            "source_tick": 30,
+            "submission_id": 38,
+            "submit_ms": 737.3,
+            "surface_presented": true,
+            "tick": 30,
+            "timeline": 0
+          },
+          "identity": {
+            "alpha": 0.4999999701976776,
+            "alpha_bits": 1056964607,
+            "epoch": null,
+            "eye": null,
+            "history_predecessor": 38,
+            "history_sample": 39,
+            "pitch": null,
+            "rendered_solar_bits": 1025580032,
+            "rendered_solar_hours": 0.039333343505859375,
+            "submission": 38,
+            "tick": 30,
+            "yaw": null
+          },
+          "zero": 226602,
+          "one": 0,
+          "partial": 3798,
+          "skyReactive": 3489,
+          "geometryMotion": 54687,
+          "starCleared": 0,
+          "sun_probe": [
+            0,
+            0,
+            255,
+            255
+          ]
+        },
+        "failures": 1,
+        "abandoned_tick": 30,
+        "trigger": "GPUCanvasContext.getCurrentTexture threw once after encode_scene"
+      },
+      "W7": {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            39,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 2,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 30,
+          "submission_id": 38,
+          "submit_ms": 737.3,
+          "surface_presented": true,
+          "tick": 30,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 38,
+          "history_sample": 39,
+          "pitch": null,
+          "rendered_solar_bits": 1025580032,
+          "rendered_solar_hours": 0.039333343505859375,
+          "submission": 38,
+          "tick": 30,
+          "yaw": null
+        },
+        "zero": 226602,
+        "one": 0,
+        "partial": 3798,
+        "skyReactive": 3489,
+        "geometryMotion": 54687,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          255,
+          255
+        ]
+      }
+    },
+    "frames": [
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192759533,
+            1097843889,
+            1201563387,
+            0,
+            1,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 0,
+          "submit_ms": 3.2,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 1,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 0,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 153406,
+        "one": 76994,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192759533,
+            1097843889,
+            1201563387,
+            0,
+            2,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 1,
+          "submit_ms": 33.8,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 1,
+          "history_sample": 2,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 1,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 230400,
+        "one": 0,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            3,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 2,
+          "submit_ms": 87,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 3,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 2,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 0,
+        "one": 226800,
+        "partial": 3600,
+        "skyReactive": 127512,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          255,
+          0,
+          255,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            4,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 3,
+          "submit_ms": 128.20000000000002,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 3,
+          "history_sample": 4,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 3,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 226800,
+        "one": 0,
+        "partial": 3600,
+        "skyReactive": 3374,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1192782339,
+            1097847347,
+            1201587145,
+            0,
+            5,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 4,
+          "submit_ms": 144.6,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 4,
+          "history_sample": 5,
+          "pitch": null,
+          "rendered_solar_bits": 1094713344,
+          "rendered_solar_hours": 12,
+          "submission": 4,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 226800,
+        "one": 0,
+        "partial": 3600,
+        "skyReactive": 3374,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            6,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 5,
+          "submit_ms": 160.8,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 6,
+          "pitch": null,
+          "rendered_solar_bits": 1099641652,
+          "rendered_solar_hours": 17.400001525878906,
+          "submission": 5,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 0,
+        "one": 230400,
+        "partial": 0,
+        "skyReactive": 145558,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          255,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            981467136,
+            1165844497,
+            1094421942,
+            1174665056,
+            0,
+            7,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 6,
+          "submit_ms": 176.1,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 6,
+          "history_sample": 7,
+          "pitch": null,
+          "rendered_solar_bits": 1099641652,
+          "rendered_solar_hours": 17.400001525878906,
+          "submission": 6,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 230400,
+        "one": 0,
+        "partial": 0,
+        "skyReactive": 0,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            8,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 7,
+          "submit_ms": 191.89999999999998,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 0,
+          "history_sample": 8,
+          "pitch": null,
+          "rendered_solar_bits": 0,
+          "rendered_solar_hours": 0,
+          "submission": 7,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 2,
+        "one": 226586,
+        "partial": 3812,
+        "skyReactive": 175373,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          255,
+          0,
+          255,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 1,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            9,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 0,
+          "submission_id": 8,
+          "submit_ms": 208.6,
+          "surface_presented": true,
+          "tick": 0,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 1,
+          "alpha_bits": 1065353216,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 8,
+          "history_sample": 9,
+          "pitch": null,
+          "rendered_solar_bits": 0,
+          "rendered_solar_hours": 0,
+          "submission": 8,
+          "tick": 0,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            10,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 1,
+          "submission_id": 9,
+          "submit_ms": 227.70000000000002,
+          "surface_presented": true,
+          "tick": 1,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 9,
+          "history_sample": 10,
+          "pitch": null,
+          "rendered_solar_bits": 976142336,
+          "rendered_solar_hours": 0.0006666183471679688,
+          "submission": 9,
+          "tick": 1,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            11,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 2,
+          "submission_id": 10,
+          "submit_ms": 244.9,
+          "surface_presented": true,
+          "tick": 2,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 10,
+          "history_sample": 11,
+          "pitch": null,
+          "rendered_solar_bits": 990056448,
+          "rendered_solar_hours": 0.0019998550415039062,
+          "submission": 10,
+          "tick": 2,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            12,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 3,
+          "submission_id": 11,
+          "submit_ms": 262.5,
+          "surface_presented": true,
+          "tick": 3,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 11,
+          "history_sample": 12,
+          "pitch": null,
+          "rendered_solar_bits": 995782656,
+          "rendered_solar_hours": 0.0033330917358398438,
+          "submission": 11,
+          "tick": 3,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            13,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 4,
+          "submission_id": 12,
+          "submit_ms": 280.8,
+          "surface_presented": true,
+          "tick": 4,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 12,
+          "history_sample": 13,
+          "pitch": null,
+          "rendered_solar_bits": 999876608,
+          "rendered_solar_hours": 0.004666328430175781,
+          "submission": 12,
+          "tick": 4,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            14,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 5,
+          "submission_id": 13,
+          "submit_ms": 297.20000000000005,
+          "surface_presented": true,
+          "tick": 5,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 13,
+          "history_sample": 14,
+          "pitch": null,
+          "rendered_solar_bits": 1002739712,
+          "rendered_solar_hours": 0.005999565124511719,
+          "submission": 13,
+          "tick": 5,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            15,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 6,
+          "submission_id": 14,
+          "submit_ms": 314.09999999999997,
+          "surface_presented": true,
+          "tick": 6,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 14,
+          "history_sample": 15,
+          "pitch": null,
+          "rendered_solar_bits": 1005602816,
+          "rendered_solar_hours": 0.007332801818847656,
+          "submission": 14,
+          "tick": 6,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            16,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 7,
+          "submission_id": 15,
+          "submit_ms": 331,
+          "surface_presented": true,
+          "tick": 7,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 15,
+          "history_sample": 16,
+          "pitch": null,
+          "rendered_solar_bits": 1007549440,
+          "rendered_solar_hours": 0.008666038513183594,
+          "submission": 15,
+          "tick": 7,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            17,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 8,
+          "submission_id": 16,
+          "submit_ms": 348,
+          "surface_presented": true,
+          "tick": 8,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 16,
+          "history_sample": 17,
+          "pitch": null,
+          "rendered_solar_bits": 1008984064,
+          "rendered_solar_hours": 0.01000213623046875,
+          "submission": 16,
+          "tick": 8,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            18,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 9,
+          "submission_id": 17,
+          "submit_ms": 364.70000000000005,
+          "surface_presented": true,
+          "tick": 9,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 17,
+          "history_sample": 18,
+          "pitch": null,
+          "rendered_solar_bits": 1010415616,
+          "rendered_solar_hours": 0.011335372924804688,
+          "submission": 17,
+          "tick": 9,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            19,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 10,
+          "submission_id": 18,
+          "submit_ms": 380.90000000000003,
+          "surface_presented": true,
+          "tick": 10,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 18,
+          "history_sample": 19,
+          "pitch": null,
+          "rendered_solar_bits": 1011847168,
+          "rendered_solar_hours": 0.012668609619140625,
+          "submission": 18,
+          "tick": 10,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            20,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 11,
+          "submission_id": 19,
+          "submit_ms": 397.5,
+          "surface_presented": true,
+          "tick": 11,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 19,
+          "history_sample": 20,
+          "pitch": null,
+          "rendered_solar_bits": 1013278720,
+          "rendered_solar_hours": 0.014001846313476562,
+          "submission": 19,
+          "tick": 11,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            21,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 12,
+          "submission_id": 20,
+          "submit_ms": 414,
+          "surface_presented": true,
+          "tick": 12,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 20,
+          "history_sample": 21,
+          "pitch": null,
+          "rendered_solar_bits": 1014710272,
+          "rendered_solar_hours": 0.0153350830078125,
+          "submission": 20,
+          "tick": 12,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            22,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 13,
+          "submission_id": 21,
+          "submit_ms": 430.59999999999997,
+          "surface_presented": true,
+          "tick": 13,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 21,
+          "history_sample": 22,
+          "pitch": null,
+          "rendered_solar_bits": 1015581696,
+          "rendered_solar_hours": 0.016668319702148438,
+          "submission": 21,
+          "tick": 13,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            23,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 14,
+          "submission_id": 22,
+          "submit_ms": 447.1,
+          "surface_presented": true,
+          "tick": 14,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 22,
+          "history_sample": 23,
+          "pitch": null,
+          "rendered_solar_bits": 1016297472,
+          "rendered_solar_hours": 0.018001556396484375,
+          "submission": 22,
+          "tick": 14,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            24,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 15,
+          "submission_id": 23,
+          "submit_ms": 463.7,
+          "surface_presented": true,
+          "tick": 15,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 23,
+          "history_sample": 24,
+          "pitch": null,
+          "rendered_solar_bits": 1017013248,
+          "rendered_solar_hours": 0.019334793090820312,
+          "submission": 23,
+          "tick": 15,
+          "yaw": null
+        },
+        "zero": 217458,
+        "one": 9130,
+        "partial": 3812,
+        "skyReactive": 12633,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            25,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 16,
+          "submission_id": 24,
+          "submit_ms": 480.5,
+          "surface_presented": true,
+          "tick": 16,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 24,
+          "history_sample": 25,
+          "pitch": null,
+          "rendered_solar_bits": 1017729024,
+          "rendered_solar_hours": 0.02066802978515625,
+          "submission": 24,
+          "tick": 16,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 9130,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            26,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 17,
+          "submission_id": 25,
+          "submit_ms": 498.8,
+          "surface_presented": true,
+          "tick": 17,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 25,
+          "history_sample": 26,
+          "pitch": null,
+          "rendered_solar_bits": 1018444800,
+          "rendered_solar_hours": 0.022001266479492188,
+          "submission": 25,
+          "tick": 17,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            27,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 18,
+          "submission_id": 26,
+          "submit_ms": 516.1,
+          "surface_presented": true,
+          "tick": 18,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 26,
+          "history_sample": 27,
+          "pitch": null,
+          "rendered_solar_bits": 1019160576,
+          "rendered_solar_hours": 0.023334503173828125,
+          "submission": 26,
+          "tick": 18,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            28,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 19,
+          "submission_id": 27,
+          "submit_ms": 533.2,
+          "surface_presented": true,
+          "tick": 19,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 27,
+          "history_sample": 28,
+          "pitch": null,
+          "rendered_solar_bits": 1019876352,
+          "rendered_solar_hours": 0.024667739868164062,
+          "submission": 27,
+          "tick": 19,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            29,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 20,
+          "submission_id": 28,
+          "submit_ms": 550.4,
+          "surface_presented": true,
+          "tick": 20,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 28,
+          "history_sample": 29,
+          "pitch": null,
+          "rendered_solar_bits": 1020592128,
+          "rendered_solar_hours": 0.0260009765625,
+          "submission": 28,
+          "tick": 20,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            30,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 21,
+          "submission_id": 29,
+          "submit_ms": 568,
+          "surface_presented": true,
+          "tick": 21,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 29,
+          "history_sample": 30,
+          "pitch": null,
+          "rendered_solar_bits": 1021307904,
+          "rendered_solar_hours": 0.027334213256835938,
+          "submission": 29,
+          "tick": 21,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            31,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 22,
+          "submission_id": 30,
+          "submit_ms": 586,
+          "surface_presented": true,
+          "tick": 22,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 30,
+          "history_sample": 31,
+          "pitch": null,
+          "rendered_solar_bits": 1022023680,
+          "rendered_solar_hours": 0.028667449951171875,
+          "submission": 30,
+          "tick": 22,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            32,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 23,
+          "submission_id": 31,
+          "submit_ms": 603.3,
+          "surface_presented": true,
+          "tick": 23,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 31,
+          "history_sample": 32,
+          "pitch": null,
+          "rendered_solar_bits": 1022739456,
+          "rendered_solar_hours": 0.030000686645507812,
+          "submission": 31,
+          "tick": 23,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            33,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 24,
+          "submission_id": 32,
+          "submit_ms": 620.1,
+          "surface_presented": true,
+          "tick": 24,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 32,
+          "history_sample": 33,
+          "pitch": null,
+          "rendered_solar_bits": 1023432704,
+          "rendered_solar_hours": 0.03133392333984375,
+          "submission": 32,
+          "tick": 24,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            34,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 25,
+          "submission_id": 33,
+          "submit_ms": 636.8000000000001,
+          "surface_presented": true,
+          "tick": 25,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 33,
+          "history_sample": 34,
+          "pitch": null,
+          "rendered_solar_bits": 1023790592,
+          "rendered_solar_hours": 0.03266716003417969,
+          "submission": 33,
+          "tick": 25,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            35,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 26,
+          "submission_id": 34,
+          "submit_ms": 654.5,
+          "surface_presented": true,
+          "tick": 26,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 34,
+          "history_sample": 35,
+          "pitch": null,
+          "rendered_solar_bits": 1024148480,
+          "rendered_solar_hours": 0.034000396728515625,
+          "submission": 34,
+          "tick": 26,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            36,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 27,
+          "submission_id": 35,
+          "submit_ms": 671.4,
+          "surface_presented": true,
+          "tick": 27,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 35,
+          "history_sample": 36,
+          "pitch": null,
+          "rendered_solar_bits": 1024506368,
+          "rendered_solar_hours": 0.03533363342285156,
+          "submission": 35,
+          "tick": 27,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            37,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 28,
+          "submission_id": 36,
+          "submit_ms": 689,
+          "surface_presented": true,
+          "tick": 28,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5,
+          "alpha_bits": 1056964608,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 36,
+          "history_sample": 37,
+          "pitch": null,
+          "rendered_solar_bits": 1024864256,
+          "rendered_solar_hours": 0.0366668701171875,
+          "submission": 36,
+          "tick": 28,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.5000000596046448,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            38,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 1,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 29,
+          "submission_id": 37,
+          "submit_ms": 705.7,
+          "surface_presented": true,
+          "tick": 29,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 37,
+          "history_sample": 38,
+          "pitch": null,
+          "rendered_solar_bits": 1025222144,
+          "rendered_solar_hours": 0.03800010681152344,
+          "submission": 37,
+          "tick": 29,
+          "yaw": null
+        },
+        "zero": 226588,
+        "one": 0,
+        "partial": 3812,
+        "skyReactive": 3503,
+        "geometryMotion": 0,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      {
+        "metadata": {
+          "alpha": 0.4999999701976776,
+          "device_generation": 1,
+          "exposure_gpu_words": [
+            1111085850,
+            1010206234,
+            3235383541,
+            976275536,
+            0,
+            39,
+            0,
+            769
+          ],
+          "history_epoch": 0,
+          "pixel_source": "Sdr",
+          "presenter_generation": 2,
+          "session": 1,
+          "source_epoch": "1",
+          "source_tick": 30,
+          "submission_id": 38,
+          "submit_ms": 737.3,
+          "surface_presented": true,
+          "tick": 30,
+          "timeline": 0
+        },
+        "identity": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 38,
+          "history_sample": 39,
+          "pitch": null,
+          "rendered_solar_bits": 1025580032,
+          "rendered_solar_hours": 0.039333343505859375,
+          "submission": 38,
+          "tick": 30,
+          "yaw": null
+        },
+        "zero": 226602,
+        "one": 0,
+        "partial": 3798,
+        "skyReactive": 3489,
+        "geometryMotion": 54687,
+        "starCleared": 0,
+        "sun_probe": [
+          0,
+          0,
+          255,
+          255
+        ]
+      }
+    ],
+    "omissions": 1,
+    "cooked": {
+      "drawPath": "Some(Indirect)",
+      "drawn": 1,
+      "errors": [],
+      "initialDownlevel": "Some(DownlevelFlags(COMPUTE_SHADERS | FRAGMENT_WRITABLE_STORAGE | INDIRECT_EXECUTION | BASE_VERTEX | READ_ONLY_DEPTH_STENCIL | NON_POWER_OF_TWO_MIPMAPPED_TEXTURES | CUBE_ARRAY_TEXTURES | COMPARISON_SAMPLERS | INDEPENDENT_BLEND | VERTEX_STORAGE | ANISOTROPIC_FILTERING | FRAGMENT_STORAGE | MULTISAMPLED_SHADING | DEPTH_TEXTURE_AND_BUFFER_COPIES | WEBGPU_TEXTURE_FORMAT_SUPPORT | BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED | UNRESTRICTED_INDEX_BUFFER | FULL_DRAW_INDEX_UINT32 | DEPTH_BIAS_CLAMP | VIEW_FORMATS | UNRESTRICTED_EXTERNAL_TEXTURE_COPIES | SURFACE_VIEW_FORMATS | NONBLOCKING_QUERY_RESOLVE | SHADER_F16_IN_F32 | MSL2_1 | TEXTURE_COMPRESSION))",
+      "submittedFrames": 37,
+      "swaps": 1,
+      "uploadedBytes": 2931576,
+      "visibleMeshlets": [
+        169,
+        680
+      ]
+    },
+    "actualWasmSha256": "b554141e2e59870dc98cab969c03fb5d47d37e9807a569f58ae30c9f1596da93"
+  },
+  "faults": [],
+  "scope": "Actual hardware Chrome game frame path, submitted reactive/depth/motion diagnostic through T2; no panel or cadence claim"
+}

@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "case": "temporal",
+      "passed": true,
+      "rows": [
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5",
+        "W6",
+        "W7"
+      ]
+    }
+  ],
+  "artifacts": {
+    "/index.html": "883b363c7a05d0e2d1d7786ae2d713f338e40b7d6136b4b5851eb74530f6a017",
+    "/v1_game.js": "1b027992a6353d8cae0f50ea0d911de88083f0e35ef696c0973aff1d60d937f7",
+    "/v1_game_bg.wasm": "b554141e2e59870dc98cab969c03fb5d47d37e9807a569f58ae30c9f1596da93",
+    "/thrum-controls.js": "77615aef41a06e6ab1bf4783ca1e08772b39736ace640644c29e15739761c1b7",
+    "/case.params.json": "df28be15b243af7c8432bd66fed3b812e1127f0a978c89ab85df18f48e765c15",
+    "/field-oracle.params.json": "cfb0db911fb7a822f546ba39fa2168a53f348ce7b3608ab7432c9b26d5ef3b47",
+    "/case.material.wgsl": "a7c41c1931d0f038587c404ee543a2742222c8873a113a280a6dbd8caf899a78"
+  },
+  "scope": "Actual built game; headless Apple M3 Max/Metal WebGPU function only; no timing/cadence claim"
+}

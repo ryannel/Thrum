@@ -133,7 +133,45 @@
     },
     "M2": {
       "definitions": "15d275beaf3b3b7fdd018bce7ae1eb4332654a275d7be73521a1170cc7a0c88a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "5b6c8aaaef0678966369373ef83855f3ef33a2f4",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "items": {
+            "D2.1": "pass",
+            "D2.2": "pass",
+            "D2.3": "pass",
+            "D2.4": "pass",
+            "D2.5": "pass",
+            "D2.6": "fail",
+            "D2.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "mac-volume-witness-bypasses-forward-pass",
+              "item": "D2.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 143104,
+            "cached": 2208768,
+            "output": 7149,
+            "turns": 1
+          },
+          "at": "2026-11-13T01:33:37Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks",
