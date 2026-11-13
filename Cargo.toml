@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/thrum-core", "crates/thrum-asset", "crates/thrum-app", "crates/thrum-asset-gpu", "crates/thrum-content-runtime", "crates/thrum-controls", "crates/thrum-cook", "crates/thrum-network", "crates/thrum-render", "examples/asset-loop", "examples/starter", "examples/lighthouse", "examples/stones", "examples/v1-game", "examples/v1-game-ios", "tools/xtask"]
+members = ["crates/thrum-core", "crates/thrum-asset", "crates/thrum-app", "crates/thrum-asset-gpu", "crates/thrum-content-runtime", "crates/thrum-controls", "crates/thrum-cook", "crates/thrum-network", "crates/thrum-render", "crates/thrum-sea-model", "examples/asset-loop", "examples/starter", "examples/lighthouse", "examples/stones", "examples/v1-game", "examples/v1-game-ios", "tools/xtask"]
 default-members = ["crates/thrum-core"]
 resolver = "3"
 

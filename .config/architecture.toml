@@ -8,6 +8,11 @@ game_manifest = "examples/v1-game/Cargo.toml"
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-sea-model]
+manifest = "crates/thrum-sea-model/Cargo.toml"
+# CPU spectrum and conformance oracle; no graphics or game dependencies.
+allowed_workspace_dependencies = []
+
 [packages.thrum-content-runtime]
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []
