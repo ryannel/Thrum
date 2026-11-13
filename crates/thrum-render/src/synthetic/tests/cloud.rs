@@ -47,22 +47,37 @@ fn samples(
             let index=u32(pixel.x);
             let selected=array<u32,4>(0u,1u,3u,5u);
             var input:VertexOutput;
-            input.position=vec4(0.5,0.5,0.0,1.0);
+            input.position=vec4(f32(index%2u),0.5,0.0,1.0);
             input.uv=vec2(0.5);input.material=0u;input.normal=vec3(0.0,1.0,0.0);
             input.world_position=CLOUD_TEST_POINTS[selected[index/2u]];
             input.clip_delta=vec4(0.0);input.current_clip=vec4(0.0,0.0,0.0,1.0);
             input.history_valid=0u;
-            return shade(input,f32(index%2u),true);
+            let receiver=ShadowReceiver(input.world_position,vec3(0.0),vec3(0.0),input.normal);
+            return shade(input,receiver,true,false);
         ",
         )
     } else {
         PROBE.into()
     };
+    // The paired pixels supply geometric Sun visibility 0/1 independently of
+    // the cloud field, preserving the production material and cloud evaluation.
+    let source = if shade {
+        assert!(
+            prepared
+                .surface
+                .shader_source
+                .contains("var sun_factor = 1.0;")
+        );
+        prepared.surface.shader_source.replace(
+            "var sun_factor = 1.0;",
+            "var sun_factor = input.position.x;",
+        )
+    } else {
+        prepared.surface.shader_source.to_string()
+    };
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("production cloud-factor observer"),
-        source: wgpu::ShaderSource::Wgsl(
-            format!("{}\n{probe}", prepared.surface.shader_source).into(),
-        ),
+        source: wgpu::ShaderSource::Wgsl(format!("{source}\n{probe}").into()),
     });
     let empty = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: None,

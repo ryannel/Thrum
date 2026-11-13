@@ -1,5 +1,12 @@
 # CULLING log
 
+- 2026-11-13 The complete current-source field capture passes all 1,930 ticks,
+  with Occlusion halving Frustum on 1,918 ticks. The repository gate exposed
+  the cloud test observer's obsolete `shade` signature. Its test-only adapter
+  now supplies the receiver and retains the paired geometric Sun-factor control.
+  Both focused Metal cloud tests pass. The final clean-source milestone checks
+  and checked integration follow with M3 `in_progress`.
+
 - 2026-11-13 M3 source `396132a1` passes all six automated target checks,
   including both native recipes, Chrome, 32 temporal phases and every retained
   exact baseline. Two current-source paired runs per recipe retain Frustum as
