@@ -1,0 +1,13 @@
+A  single level, dispersive (eWave)
+   U= 3.0 m/s  Fr(6 m)=0.39  ridge half-angle 20.94 deg (Kelvin cusp 19.47)  transverse wavelength   5.72 m (2 pi U^2/g =   5.77,  -0.8%)  max |h| 0.471 m
+   U= 6.0 m/s  Fr(6 m)=0.78  ridge half-angle  9.60 deg (Kelvin cusp 19.47)  transverse wavelength  23.44 m (2 pi U^2/g =  23.07,  +1.6%)  max |h| 0.415 m
+D  single level, constant-speed wave equation (wrong substitute), c0 = 2 m/s
+   U= 3.0 m/s  ridge half-angle 42.16 deg (Mach 41.81); centreline wavelength    nan m against   5.77
+   U= 6.0 m/s  ridge half-angle 17.26 deg (Mach 19.47); centreline wavelength   2.83 m against  23.07
+B  source off: hull at 3 m/s for 20 s, then stopped and its pressure removed
+   2 s after source-off the tracked crest moved  6.00 m (phase speed x 2 s = 6.00 m) with height 122.3 mm; max |h| 0.475 -> 0.224 m
+   10 s after source-off max |h| is 0.131 m (waves leave through the absorbing border; none wrap)
+C  two levels, complementary bands, against one level (hull at 6 m/s, 20 s, then a 60-degree turn over 6 s)
+   two levels, complementary bands: RMS error    0.93 mm (  2.2% of reference RMS 42.1 mm), max    5.01 mm
+   far level alone (2 m cells)    : RMS error   25.03 mm ( 59.4% of reference RMS 42.1 mm), max  267.73 mm
+   two full-band levels summed    : RMS error   28.86 mm ( 68.5% of reference RMS 42.1 mm), max  223.94 mm

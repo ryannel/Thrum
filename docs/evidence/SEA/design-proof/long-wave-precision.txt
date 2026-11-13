@@ -1,0 +1,4 @@
+significant height 6.00 m, sum of amplitudes 25.3 m, RMS slope_x 0.0669
+wrapped, exact f32 cosine   : height error max   0.0494 mm
+wrapped, cosine off by 1e-4 : height error max   0.4826 mm, slope error max 2.43e-05
+naive absolute f32          : height error max     17.7 mm
