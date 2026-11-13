@@ -82,13 +82,6 @@
         "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.",
         "at": "2026-11-10T22:13:33Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "42fdce97856de3d10a9cd71a911463cbf24603ea",
-        "review": "docs/evidence/CREATOR/M1-review.md",
-        "checked": "8244a46ecfd1637a0c25ff4a597553a248519d92",
-        "at": "2026-11-11T04:26:54Z"
-      },
       "ready_for_review": {
         "commit": "8244a46ecfd1637a0c25ff4a597553a248519d92",
         "checked": "8244a46ecfd1637a0c25ff4a597553a248519d92",
@@ -108,6 +101,13 @@
         "session_usage": {
           "incomplete_turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "42fdce97856de3d10a9cd71a911463cbf24603ea",
+        "review": "docs/evidence/CREATOR/M1-review.md",
+        "checked": "8244a46ecfd1637a0c25ff4a597553a248519d92",
+        "at": "2026-11-11T04:26:54Z"
       }
     },
     "M2": {

@@ -4,10 +4,6 @@
     {
       "id": "M7",
       "name": "Scene and internal render size follow the oriented iOS surface",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Native-resolution scene framing fills the settled iOS surface with undistorted geometry and correct camera aspect through rotation, like a shipped Unity iOS player using its native-resolution camera viewport. Function only; preserve G3b lifecycle ownership and race bounds.",
       "items": [
         {
           "id": "M7.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "target": "mac-metal",
           "ask": "Do GPU tests read actual target dimensions and projection/viewport state through portrait, landscape and return, rather than testing only requested values? Do they cover pending-frame refusal/defer, same-extent reuse, zero/invalid extent, failed/stale preparation without partial publication, history invalidation and a surface-only fixed-render-extent regression? Does the public V1 threaded facade reach this operation without constructing another host/world/device or changing cooked draw selection?",
-          "status": "pass",
           "evidence": "mac-metal: ./dev check passed, including two native GPU extent regressions with actual attachment dimensions, encoded projection/viewport, reuse, zero/busy/invalid/stale refusal, history reset, device refit and fixed-render surface-only regression. docs/evidence/render/ios-extent/README.md and records/verification.json.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M7.2",
@@ -28,40 +24,40 @@
           "lock": "gpu",
           "target": "ios-sim",
           "ask": "Does the route assert render_extent == current surface/drawable extent and viewport == [0,0,width,height] for identified presented frames in all three settled states, using resource-derived dimensions and the projection matrix actually encoded? Does it record source/binary identity, model/runtime, epochs, counters and real commands, without hard-coded 1206x2622/2622x1206 expectations or treating request echoes as actual target proof? Are skipped/partial routes nonzero?",
-          "status": "pass",
           "evidence": "ios-sim: full named check-simulator.sh passed on fresh owned iPhone 18 Pro / iOS 27.2, then deleted it. Actual targets, drawable, matrix and viewport match all three states. Epochs 16->17->18, two-reply gaps, unchanged identities, zero old-extent presents. docs/evidence/render/ios-extent/README.md and records/route.log.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M7.3",
           "statement": "The diagnostic scene fills the full current engine surface at startup, in landscape and back in portrait, with correct camera aspect and preserved vertical field of view. No stale-content borders, stretching, crop-to-fill substitute, missing geometry or persistent distortion remains after the first current-extent present.",
           "inspect": "Review native simctl screenshots whole and in full-resolution edge/object crops for initial portrait, landscape and returned portrait. Inspect all four engine frame edges, horizon and known round/square diagnostic geometry; distinguish OS overlays/rounded corners from engine borders. Review the existing 20 fps rotation strips through the first current-extent present, with timing/coverage and the M5 final-check race explicitly recorded. Join image states to the presented-frame extent/projection witnesses. Reject presenter-only scaling even when a screenshot fills the surface. Judge function only, never simulator speed/cadence.",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "ios-sim: builder inspected exact-build native startup/landscape/return screenshots, native edge/object crops and all 120 rotation-strip samples. Engine edges fill, cube/grid perspective and 65-degree vertical FOV agree with resource/matrix witnesses. M5 final-check race and sampled-capture limits recorded. docs/evidence/render/ios-extent/README.md.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M7.4",
           "statement": "The same extent policy survives background/foreground, surface replacement and device recovery, including a rotation after candidate preparation but before publication. The published candidate scene targets and presenter use the latest extent; old-size history/candidates cannot publish. Existing no-background-work, stale-generation refusal, world survival and nonblocking UIKit guarantees remain intact.",
           "ask": "Do the full M7.2 route records prove background/resume, replacement, held-drawable loss and hold-recover + real rotation with actual scene target dimensions and full viewport at the final extent? Does recovery refit the scene as well as the presenter, reject stale/lost candidates and defer background publication? Do the relevant host tests cover stale/zero extent and failure paths? Are M5/M6 race bounds retained, UIKit free of GPU waits, and world/camera/lighting/cooked selection preserved?",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "ios-sim: full route passed both background rows, replacement, held-drawable loss, stale generation refusal, held post-preparation recovery plus real rotation, and deferred background publication. Final recovery attachments/presenter/viewport match latest extent; world survives and UIKit remains nonblocking. docs/evidence/render/ios-extent/records/16-loss-rotation-extent.json and docs/evidence/render/ios-extent/README.md.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M7.5",
           "statement": "Extent-dependent allocation occurs only on distinct extent transitions, with bounded old/new overlap through existing completion ownership. The evidence accounts for native-resolution pixel work and target bytes without a simulator performance or physical-device claim.",
           "ask": "Read the implementation and resource records. Are the attachment formats/counts, bytes at both orientations, peak old/new overlap and resource creation counts for repeated identical extents recorded? Does per-frame steady state avoid new resize allocations/rebuilds/readbacks, and do obsolete extents coalesce without rebuilding device/world or size-independent content? Are the approximately 13.7x baseline pixel count and all limits reported without invented timing gates?",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "ios-sim: actual graph resources report six textures / 77,922,704 unpadded bytes per slot in either orientation. 120 steady presents retain revision 1 with zero target-ring replacements. Ordinary two-ring and recovery three-ring overlaps, formats, 13.7245x pixel work and limits recorded. docs/evidence/render/ios-extent/records/resources.json and docs/evidence/render/ios-extent/records/steady-extent.json.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M7.6",
@@ -69,13 +65,18 @@
           "check": "./dev check-docs",
           "target": "ios-sim",
           "ask": "Does the evidence README include commands, build identity, the item-by-item inspection and actual extent/resource/rotation records? Are implementation, correctness, visuals and device measurements separate, with no cooked visual acceptance inferred from diagnostic-scene M7 proof? Are the unchanged COOKED-DRAW M1.9-M1.11 reruns and T2 M2 handoff explicit, and is owned tmp/ios-extent scratch closed out?",
-          "status": "pass",
           "evidence": "ios-sim: ./dev check-docs passed. Selected evidence includes source/binary/model identity, commands, inspection, actual resource/rotation records and retention recipes. Plan, G3b work list and iOS maturity updated; COOKED-DRAW M1.9-M1.11 and M1.10 requirements retained, T2 handoff explicit. docs/evidence/render/ios-extent/README.md.",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-IOS/M7-review.md",
+          "builder_result": "pass"
         }
       ],
-      "depends_on": []
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "Native-resolution scene framing fills the settled iOS surface with undistorted geometry and correct camera aspect through rotation, like a shipped Unity iOS player using its native-resolution camera viewport. Function only; preserve G3b lifecycle ownership and race bounds."
     }
   ]
 }

@@ -4,10 +4,6 @@
     {
       "id": "M1",
       "name": "An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "A frame graph that validates as Unreal's RDG and Unity's render graph do: a wrong declaration is refused when the graph is prepared, with a named error, and never becomes a wrong frame.",
       "items": [
         {
           "id": "M1.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "ask": "Read the tests this check runs. Is every texel of each kind, every mip included, read back and compared exactly, and are the persistent and history cases rebuilt and compared again after device replacement?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -28,10 +24,10 @@
           "lock": "gpu",
           "ask": "Is there one refusal test for each misuse in the design's list, each asserting a named error, and a test that two transients that differ only in dimension never share an allocation?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -40,10 +36,10 @@
           "lock": "gpu",
           "ask": "Does validation read only the capability record, with no device query in a pass? Does the evidence record the storage formats, storage-texture count and 3D extent that Chrome's record reports on this Mac?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -52,10 +48,10 @@
           "lock": "gpu",
           "ask": "Which test pins the compiled pass names, order and attachment storage of the day, night and capture variants, and did any of them change in this milestone's diff?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -63,24 +59,24 @@
           "check": "cargo build --locked --offline --release -p v1-game --features draw-probe,thrum-render/creation-counters && cargo build --locked --offline --release -p thrum-cook && rm -rf tmp/exact-m0 && mkdir -p tmp/exact-m0 && target/release/thrum-cook cook examples/v1-game/assets/showcase tmp/exact-m0/valley && python3 scripts/apple_tile_m1.py --store tmp/exact-m0/valley --output tmp/exact-m0/m1 && python3 scripts/apple_tile_m2.py --store tmp/exact-m0/valley --output tmp/exact-m0/m2",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M1-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M1-review.md",
+          "builder_result": "pass"
         }
       ],
-      "rounds": 0,
       "depends_on": [
         "APPLE-TILE:M2"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "A frame graph that validates as Unreal's RDG and Unity's render graph do: a wrong declaration is refused when the graph is prepared, with a named error, and never becomes a wrong frame."
     },
     {
       "id": "M2",
       "name": "A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel.",
       "items": [
         {
           "id": "M2.1",
@@ -89,10 +85,10 @@
           "lock": "gpu",
           "ask": "Does the public seam let a crate outside thrum-render declare resources and passes with no access to renderer internals, and does the cooked contribution compile and draw unchanged?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -101,10 +97,10 @@
           "lock": "gpu",
           "ask": "Read the scripted run. Are the kept-state and reset expectations written from the design's state table, not taken from stepping code the GPU path shares? Is the field nonempty before the repeated ticks and the pause? Are the ticks a stall dropped beyond the declared bound counted?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
@@ -113,10 +109,10 @@
           "lock": "gpu",
           "ask": "Does the test read back the consumer's own output on each run-to-skip and skip-to-run boundary of both histories and after the discarded update, and every texel after the first frame of an epoch and after a reset? Does the compiler refuse each declaration the design's cadence section lists?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
@@ -124,10 +120,10 @@
           "check": "cargo test --locked --offline -p v1-game --test effect_state_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
@@ -135,30 +131,30 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.6",
           "statement": "In real time on the Mac the diagnostic trail persists and fades after its source stops, stays fixed to the ground as the camera pans across the wrapping boundary, and shows no jump when the cadence changes.",
           "inspect": "Capture with T2 engine capture in `realtime` mode: the source moving and then stopping, a pan that carries the anchor across at least one wrap, and a cadence change mid-run. Judge the trail in whole frames and native-size crops as consecutive frames at 1x.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
           "statement": "With no effect attached, the frame records show no added pass, resource or copy; with the diagnostic attached, per-pass GPU time, read from the executor's named pass timings, and bytes per effect are recorded on the valley route.",
           "ask": "Do the frame records with no effect attached list exactly the passes they listed before this milestone? Are the diagnostic's per-pass times and resource bytes recorded with the load, from the executor's named pass timings and without changing the host's frame-sample fields, which APPLE-TILE M3 owns?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.8",
@@ -166,24 +162,24 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M2-proof.md",
           "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md"
+          "review": "docs/evidence/EFFECT-GRAPH/M2-review.md",
+          "builder_result": "pass"
         }
       ],
-      "rounds": 0,
       "depends_on": [
         "BASELINE-GUARD:M1"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "State that behaves like the persistent simulations of a shipped game, such as Sea of Thieves' sea: it moves with the world's clock, never with the frame rate. A repeated tick or a pause changes nothing, and a hitch, a dropped frame or a device loss leaves no jump, smear or stale texel."
     },
     {
       "id": "M3",
       "name": "A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here.",
       "items": [
         {
           "id": "M3.1",
@@ -192,10 +188,10 @@
           "lock": "gpu",
           "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -204,10 +200,10 @@
           "lock": "gpu",
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
@@ -215,10 +211,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -227,10 +223,10 @@
           "lock": "gpu",
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -239,30 +235,30 @@
           "lock": "gpu",
           "inspect": "Capture a `fixed` still in Chrome with T2 engine capture, with the slab crossing terrain, a prop and open sky. Judge the whole frame and a native-size crop of each crossing.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.6",
           "statement": "On both native recipes the slab is cut cleanly by nearer geometry, refracts the scene behind it, dims the sky and stars behind it once, and leaves no seam where it meets opaque surfaces.",
           "inspect": "Capture `fixed` stills with T2 engine capture at noon and at night, on the portable and Apple tile recipes, with the slab crossing terrain, a prop and open sky. Judge whole frames and native-size crops of each crossing.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
           "statement": "The seam is documented for the modules that will use it, the cost of the refraction copy and the pass break is recorded on both native recipes, and the maturity ledger has a row for the seam.",
           "ask": "Could the SEA or CLOUDS planner write their passes from the public documentation and this design alone? Are the copy and pass-break costs recorded as paired rows with the load, and does the ledger keep implementation, correctness and device results apart?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.8",
@@ -270,17 +266,21 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0,
       "depends_on": [
         "APPLE-TILE:M3",
         "APPLE-PRESENTATION:M2"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here."
     }
   ]
 }

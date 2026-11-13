@@ -95,13 +95,6 @@
         "task": "Plan the rest of Thrum's road to delivering the engine, as a project-level plan that brings water and clouds into it.",
         "at": "2026-11-10T22:13:33Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
-        "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
-        "checked": "ba9549f5f67b0084325e24f10a3badf293da2d16",
-        "at": "2026-11-11T13:30:12Z"
-      },
       "ready_for_review": {
         "commit": "40319eafb334754d9753706283e9655c94bf3eb6",
         "checked": "ba9549f5f67b0084325e24f10a3badf293da2d16",
@@ -129,6 +122,13 @@
           "turns": 3,
           "incomplete_turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e0956ee65b4222ccf2bda6860351f490d7c19155",
+        "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+        "checked": "ba9549f5f67b0084325e24f10a3badf293da2d16",
+        "at": "2026-11-11T13:30:12Z"
       }
     },
     "M2": {
@@ -244,7 +244,7 @@
           "turns": 5
         }
       },
-      "accepted": {
+      "done": {
         "by": "review",
         "commit": "e0c113ba1d1a98165633cb2e93a94380c3c75580",
         "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",

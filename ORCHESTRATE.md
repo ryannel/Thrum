@@ -61,7 +61,7 @@ Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, 
 
 ## Rules
 - **Exclusive resources:** gpu (device timing and capture runs share one GPU).
-- **Owner decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
+- **Human decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
   actions. Gate order within the V1 exit is the agents' call.
 - **Licences and paths not to touch:** no GPL or share-alike code or data (restrictive-licence code may inform ideas
   only); never modify Broadsides (ported module by module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md));

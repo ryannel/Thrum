@@ -127,7 +127,7 @@
           "turns": 2
         }
       },
-      "accepted": {
+      "done": {
         "by": "review",
         "commit": "d4b5109f867d4b69fef1464c196e17ef6debf695",
         "review": "docs/evidence/CULLING/M1-review.md",
@@ -233,7 +233,7 @@
           "turns": 3
         }
       },
-      "accepted": {
+      "done": {
         "by": "review",
         "commit": "e6f7a54a3675d22179f0e276838778cdff129480",
         "review": "docs/evidence/CULLING/M2-review.md",

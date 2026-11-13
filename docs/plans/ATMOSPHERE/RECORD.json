@@ -66,13 +66,6 @@
         "task": "Unblock ATMOSPHERE M5: H2 fails its Metal precision bound. Current main retains the design instruction requiring a plann",
         "at": "2026-11-11T06:03:17Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
-        "review": "docs/evidence/ATMOSPHERE/M5-review.md",
-        "checked": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
-        "at": "2026-11-11T17:09:31Z"
-      },
       "ready_for_review": {
         "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
         "checked": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
@@ -100,6 +93,13 @@
           "output": 1033842,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "783502e58ee6ed24161f812c249cfd7e19e872da",
+        "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+        "checked": "c9dd6cd0d58617e5b269054e9b9b5a564095ced9",
+        "at": "2026-11-11T17:09:31Z"
       }
     },
     "M6": {

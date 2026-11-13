@@ -55,13 +55,6 @@
         "task": "Resolve APPLE-TILE M0's scope conflict: the builder blocked because done-when item D0.2 requires a native witness that t",
         "at": "2026-11-11T01:45:14Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
-        "review": "docs/evidence/APPLE-TILE/M0-review.md",
-        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
-        "at": "2026-11-11T03:34:51Z"
-      },
       "ready_for_review": {
         "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
         "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
@@ -81,6 +74,13 @@
         "session_usage": {
           "incomplete_turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "c2b6e42e2102b79e5a7a0339c08283e23376ebcc",
+        "review": "docs/evidence/APPLE-TILE/M0-review.md",
+        "checked": "cffd8ddc6a620b483cd42d95d964a72aaeb96a70",
+        "at": "2026-11-11T03:34:51Z"
       }
     },
     "M1": {
@@ -120,13 +120,6 @@
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
         "at": "2026-11-09T14:02:56Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
-        "review": "docs/evidence/APPLE-TILE/M1-review.md",
-        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
-        "at": "2026-11-11T05:52:52Z"
-      },
       "ready_for_review": {
         "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
         "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
@@ -146,6 +139,13 @@
         "session_usage": {
           "incomplete_turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "review": "docs/evidence/APPLE-TILE/M1-review.md",
+        "checked": "bffdc07f447d4ae207cdfb5ab29151119e278b63",
+        "at": "2026-11-11T05:52:52Z"
       }
     },
     "M2": {
@@ -220,13 +220,6 @@
         "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
         "at": "2026-11-09T14:02:56Z"
       },
-      "accepted": {
-        "by": "review",
-        "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
-        "review": "docs/evidence/APPLE-TILE/M2-review.md",
-        "checked": "22850993580103eafe7d63166484e3f51151fae2",
-        "at": "2026-11-11T15:24:43Z"
-      },
       "human_feedback": [
         {
           "asked": null,
@@ -280,6 +273,13 @@
           "output": 35399,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b74cae87a34e92a1db5095b20dd3f1ea0322377e",
+        "review": "docs/evidence/APPLE-TILE/M2-review.md",
+        "checked": "22850993580103eafe7d63166484e3f51151fae2",
+        "at": "2026-11-11T15:24:43Z"
       }
     },
     "M3": {

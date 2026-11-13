@@ -4,10 +4,6 @@
     {
       "id": "M1",
       "name": "The starter scene runs in Chrome from one command, with its controls and live asset edits",
-      "state": "done",
-      "fails": 1,
-      "replans": 0,
-      "bar": "As direct as serving a Bevy example with trunk or opening a three.js example: one command, one URL, the scene and its controls, with every failure named by object, cause and next step. Function and legibility only; render quality belongs to the render gates.",
       "items": [
         {
           "id": "M1.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "ask": "Read scripts/check_starter_browser.mjs. Does the scene case run the documented command, drive a real Chrome on hardware WebGPU, and fail on a software adapter, an undrawn cooked generation, a fallback scene, or a slider that changes state but not pixels?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/scene-run.json",
           "verdict": "pass",
-          "review": "docs/evidence/CREATOR/M1-review.md"
+          "review": "docs/evidence/CREATOR/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -28,10 +24,10 @@
           "lock": "gpu",
           "ask": "Is any control, group, range or refusal text declared separately for the web, or does the page render only what the model reports?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/controls-run.json",
           "verdict": "pass",
-          "review": "docs/evidence/CREATOR/M1-review.md"
+          "review": "docs/evidence/CREATOR/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -39,50 +35,51 @@
           "check": "node scripts/check_starter_browser.mjs --case edit",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/edit-run.json",
           "verdict": "pass",
-          "review": "docs/evidence/CREATOR/M1-review.md"
+          "review": "docs/evidence/CREATOR/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
           "statement": "A kit scene's game code is one file for both targets: examples/starter/src has no target-specific code and names no engine game types, and the web form adds no game lines.",
           "ask": "Read examples/starter/src and the kit's web runner. Is there any cfg on target, web-only item or engine game type in the scene's source, and does the reported game-line count match the Mac build's?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/source-files.json",
           "verdict": "pass",
-          "review": "docs/evidence/CREATOR/M1-review.md"
+          "review": "docs/evidence/CREATOR/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
           "statement": "The page stays legible and explains itself through first load, a missing asset store, a misspelt parameter key, a tab switch and a narrow window.",
           "inspect": "Open the starter's URL in Chrome and capture each state: loading, drawn, missing store, misspelt ?params key, after a tab switch, and a 480 px wide window. Use Chrome fixed capture for the canvas and page screenshots for the DOM. For each, is the scene or the message readable, and does every message name the object, the cause and a next step?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/CREATOR/M1-r1.md and docs/evidence/CREATOR/m1-r1/journey-run.json",
           "verdict": "pass",
-          "review": "docs/evidence/CREATOR/M1-review.md"
+          "review": "docs/evidence/CREATOR/M1-review.md",
+          "builder_result": "pass"
         }
-      ]
+      ],
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 1,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "As direct as serving a Bevy example with trunk or opening a three.js example: one command, one URL, the scene and its controls, with every failure named by object, cause and next step. Function and legibility only; render quality belongs to the render gates."
     },
     {
       "id": "M2",
       "name": "The demo UI shows where a frame's time goes on Mac and in Chrome",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off.",
       "items": [
         {
           "id": "M2.1",
           "statement": "With the profiler on, the Mac panel and the Chrome page show the frame-callback interval and present calls, CPU time of world tick, extract, upload and encode + submit, and GPU time per named graph pass, each a median over a stated window of recent completed frames, refreshed a few times a second.",
           "ask": "Does every CPU and GPU number come from the frame host's completed samples through the profile window, and every interval row from the shell's callback record, with no second timer and no row named as display cadence? Do tests in ./dev check cover the window, the median and the refresh rate?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.2",
@@ -91,20 +88,20 @@
           "lock": "gpu",
           "ask": "Read the profiler case and the tests. Does the case change the load only after frame 600 and fail when a row is fed from the shell's first-600 report buffer or shows a number while the adapter reports no timestamp-query feature? Do tests cover each reason, and the window emptying on a device replacement?",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.3",
           "statement": "Timing demand is one switch on the frame host, on by default. A frame encoded with it off writes no timestamp, submits no resolve or readback, and says GPU time was not requested. Switching either way with frames in flight, and across a device replacement, loses no frame sample and frees every slot.",
           "ask": "Read the thrum-render diff and its device tests in ./dev check. Do the tests switch both ways with frames in flight and across a replacement, and does a host that never touches the switch behave as before? Does the diff change anything else in the frame lifecycle?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.4",
@@ -113,73 +110,74 @@
           "lock": "gpu",
           "ask": "Read the profiler-switch case. Does it count real resolve and readback work, not a UI flag, and would it fail if a number from before the switch were shown after it?",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.5",
           "statement": "Only the window and page shells turn timing demand off, and only for an app that declared the profiler group, with its toggle off, in a run that writes no frames report. A paired on/off run on the V1 valley records what the profiler costs, with build, load, order and the spread of identical runs.",
           "ask": "Do THRUM_REPORT, the Mac qualification command and the V1 page's 600-sample report still run timed from their first frame, with their output unchanged? Are the paired figures recorded as observations, with no budget claimed?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.6",
           "statement": "On the Mac, two known changes each move the row that measures them by more than that row's spread with no change: pausing the valley's world lowers World tick, and a starter material-hook edit that adds fragment work raises the GPU pass that draws the cooked mesh. The panel stays legible at the default window size.",
           "inspect": "With the profiler on, repeat each change and a no-change control at least three times, capturing the panel offscreen before and after. Does the named row move the named way beyond its no-change spread each time, does no row outside the design's coupled list move beyond its spread without a recorded cause, and can every row be read without resizing?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.7",
           "statement": "The same profiler rows are present and readable on the starter's page in Chrome, with GPU rows either numeric with their step or showing their reason.",
           "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide, then again after switching it off. Are the rows the same set as on the Mac, readable, labelled by their source, and honest about step size or the reason a number is missing?",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M3"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off."
     },
     {
       "id": "M3",
       "name": "A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
       "items": [
         {
           "id": "M3.1",
           "statement": "Using only README.md, the creator guide and the starter's README, an agent that has not opened crates/ or any other design document builds a new small scene (not the starter, stones, the sunset or the lighthouse) with lit ground, sky, one cooked mesh of its own, a camera and one slider; it runs on the Mac and in Chrome in about 100 game lines with zero engine game types.",
           "inspect": "Do this first. Until your scene runs on both targets, read only the review skill, ORCHESTRATE.md, the graded examples, these items, the three documents and what they tell a creator to run or copy, and log every file you open. Build the scene under tmp/, run it offscreen on the Mac and in Chrome, and record the game-line count, every engine item it names, each point of friction and one capture per target. A step that needed crates/ fails the item. If you read this module's design, crates/ or another design document first, say so and give cant_tell.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
           "statement": "README.md, the creator guide and the starter's README, read alone, give every command, file and key a creator needs for a Mac and a Chrome scene: assets and placements, controls, the parameter file, the material hook, the web form and the profiler.",
           "ask": "Read only those three documents. Is any step missing, out of date against the commands as they run today, or dependent on reading engine source?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
@@ -188,36 +186,41 @@
           "lock": "gpu",
           "inspect": "Make each mistake in a copy of the starter and capture the report line and the offscreen frame after it. Does each message name the object, the cause and a next step, and does the last good scene stay drawn?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
           "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
           "inspect": "If the session is unlocked, launch the starter, drag the slider and save the parameter file and one asset yourself, capturing the real window and panel by window id around each. If it is locked, judge the attended run's window captures and report lines, and say so. Did each change the visible scene, in order, with no key press? An offscreen frame does not count.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
           "review": "",
           "needs": {
             "type": "access",
             "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
-          }
+          },
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
           "statement": "The maturity ledger's G6 rows state implementation, correctness, visuals and device separately for Mac and Chrome, and the build plan's G6 line links the evidence and lists what stays unbuilt: the clipping and cascade overlays and parameter files as a cooked product.",
           "ask": "Do the ledger rows and the build plan line match what this module's evidence shows, with nothing claimed for iOS or a physical device?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step."
     }
   ]
 }
