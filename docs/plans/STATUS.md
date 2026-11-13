@@ -51,7 +51,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - PLATFORM-RUNTIME-MAC M2 The cooked valley presents smoothly on built-in ProMotion: Blocked: Needs Context: paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff. The lead finds the missing fact, or asks you for it
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
-- On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M1-review.md)
+- On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1): Ready for Review · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M1-review.md)
 - EFFECT-GRAPH M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: Blocked: Needs Context: stopped for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff. The lead finds the missing fact, or asks you for it
 
 ### Recently done
@@ -81,7 +81,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · In Progress |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M1 of 3 · Ready for Review |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M2 of 3 · Blocked: Needs Context |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
