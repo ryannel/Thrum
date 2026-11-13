@@ -116,7 +116,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): In Progress · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../evidence/CONTENT-LOOP/M1-review.md)
 - SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
-- GAME-UI's design: Design Ready for Review · [design](GAME-UI/DESIGN.md) · [plan](GAME-UI/PLAN.md)
+- GAME-UI's design: Design Changes Requested · [design](GAME-UI/DESIGN.md) · [plan](GAME-UI/PLAN.md)
 
 ### Recently done
 
@@ -160,5 +160,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Waiting: On Dependency, SHOWCASE:M8, APPLE-TILE:M12, EFFECT-GRAPH:M3 |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones | Design Changes Requested |
-| 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 | Design Ready for Review |
+| 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 | Design Changes Requested |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
