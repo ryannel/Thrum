@@ -29,3 +29,22 @@
 - 2026-11-13 Checks: the done-when file passes the loop's validator; every check parses as shell and fails, as
   it should before the work exists. The verifier items were not dry-run, because the GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
+- 2026-11-13 Design review: Design Changes Requested, two Must Fix findings
+  ([review](../../evidence/SIM-2D/design-review.md)). The design, plan and done-when file were changed to answer it.
+- 2026-11-13 MF1, performance gates removed. The 16.7 ms line no longer fails the cost command or stops a builder,
+  and M2.4 no longer requires zero warmed allocations: brief decision 3 and the owner's decision of 6 November make
+  such figures baselines. Times and allocation counts are still recorded, tripwires are flagged in the record and
+  investigated while building goes on, and the index is still designed to reuse its storage. The plan's
+  assumption that proposed the hard line is deleted, having no owner exception behind it.
+- 2026-11-13 MF2, input conversion specified and proved. A rule gets an axis as the value the input wire's
+  receiver decodes (A5's rounding rule), through one conversion in `thrum-core`. Planner's check: all 65,535 wire
+  integers re-encode to themselves, so a local frame and its decoded copy convert to the same bits. New item
+  M1.12 compares the conversion with `thrum-network`'s real encode and decode in `./dev check`, and the
+  conformance run gains a wire route on every target (M1.1–M1.3). The codec is not edited; the test lives in the
+  crowd's runner package, `crowd-2d-run`.
+- 2026-11-13 Suggestions, both taken. S1: the fold is defined over the corrected timeline, one digest per tick as
+  last committed, and the run counts rewinds whose replay changed a digest. S2: "any finite radius" is replaced by
+  a query domain of 2²⁴ units with a cell size of at least 2⁻⁴, refusal outside it, and query work bounded by the
+  body count (new item M2.12). Both were edges a milestone reviewer would otherwise have tried.
+- 2026-11-13 The plan's ticked step lists became short notes, as the plan-module skill now asks. The changed and
+  new checks parse and fail, as they should before the work exists. The revised design has not been reviewed.

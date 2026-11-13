@@ -14,9 +14,9 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "On the Mac the profile number's retained vectors and the Crowd trace reproduce their retained values: every checkpoint digest and the fold of every tick's digest, at 10,000 bodies for 36,000 ticks and at 2,000 and 5,000 for 3,600, with the trace's rewinds replayed. A debug build reproduces the 2,000-body trace.",
+          "statement": "On the Mac the profile's retained vectors and the Crowd trace reproduce their retained values: every checkpoint digest and the fold of the corrected timeline's digests, at 10,000 bodies for 36,000 ticks and at 2,000 and 5,000 for 3,600, with the trace's rewinds replayed. The 2,000-body trace gives the same digests by the wire route. A debug build reproduces the 2,000-body trace.",
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
-          "ask": "Read the runner and the retained file. Were the retained digests made by a straight run that had the corrected inputs from the start and never rewound? Does the crowd step through thrum_core::sim's registered runtime, with spawns and despawns as structural edits and rewinds through its history, and not through a private loop? Does the run report slots reused, hits and rewinds, each above zero at every size?",
+          "ask": "Read the runner and the retained file. Were the retained digests made by a straight run that had the corrected inputs from the start and never rewound? Does the fold hold one digest per tick, that of the tick as last committed, with superseded digests left out? Does the crowd step through thrum_core::sim's registered runtime, with spawns and despawns as structural edits and rewinds through its history, and not through a private loop? Does the wire route pass every frame through thrum-network's own encode and decode? Does the run report slots reused, hits, rewinds, rewinds whose replay changed a digest, and axes the wire changed, each above zero at every size?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -25,7 +25,7 @@
         },
         {
           "id": "M1.2",
-          "statement": "As Wasm in Chrome the profile number's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed.",
+          "statement": "As Wasm in Chrome the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
           "status": "open",
@@ -33,7 +33,7 @@
         },
         {
           "id": "M1.3",
-          "statement": "In the iPhone simulator the profile number's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed.",
+          "statement": "In the iPhone simulator the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
           "status": "open",
@@ -52,8 +52,8 @@
         },
         {
           "id": "M1.5",
-          "statement": "The profile number offers the operations the design lists and no others, and its retained vectors exercise each of them at the edges of the format.",
-          "ask": "Does the type expose anything outside mechanism 1's list: a sine, a power, a fused multiply-add, a sign-bit read, raw bits or a total ordering? Do the retained vectors include, for each operation that can produce them, subnormal results, rounding ties, both zeros, overflow to infinity and NaN operands?",
+          "statement": "The profile number offers the operations the design lists and no others, and the profile's retained vectors exercise each of them at the edges of the format.",
+          "ask": "Does the type expose anything outside mechanism 1's list: a sine, a power, a fused multiply-add, a sign-bit read, raw bits, a total ordering, or a conversion from a raw f32 other than the input conversion? Do the retained vectors include, for each operation that can produce them, subnormal results, rounding ties, both zeros, overflow to infinity and NaN operands?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -84,9 +84,9 @@
         },
         {
           "id": "M1.8",
-          "statement": "On the Mac, tick, index build, digest, eight-tick rewind and eight-tick replay times for the Crowd trace at 2,000, 5,000 and 10,000 bodies are on record from two separate runs, each row with neighbours visited per tick, build and load. The median tick at 10,000 is under the tick's own period of 16.7 ms.",
+          "statement": "On the Mac, tick, index build, digest, eight-tick rewind and eight-tick replay times for the Crowd trace at 2,000, 5,000 and 10,000 bodies are on record from two separate runs, each row with neighbours visited per tick, build and load. The record flags each tripwire the design names that a row trips. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
-          "ask": "Were both retained runs release builds of the claimed commit, timed through the engine's runtime and not a stand-in, with the load on the machine recorded? Does the record give the replay figure SESSION needs: eight ticks at each size?",
+          "ask": "Were both retained runs release builds of the claimed commit, timed through the engine's runtime and not a stand-in, with the load on the machine recorded? Does the record give the replay figure SESSION needs: eight ticks at each size? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -95,7 +95,7 @@
         },
         {
           "id": "M1.9",
-          "statement": "In Chrome, tick, index build, digest, eight-tick rewind and eight-tick replay times for the Crowd trace at 2,000, 5,000 and 10,000 bodies are on record from two separate runs, each row with neighbours visited per tick, build and load. The median tick at 10,000 is under the tick's own period of 16.7 ms.",
+          "statement": "In Chrome, tick, index build, digest, eight-tick rewind and eight-tick replay times for the Crowd trace at 2,000, 5,000 and 10,000 bodies are on record from two separate runs, each row with neighbours visited per tick, build and load. The record flags each tripwire the design names that a row trips. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "status": "open",
@@ -120,6 +120,17 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
+        },
+        {
+          "id": "M1.12",
+          "statement": "The engine's input conversion gives a rule the bits the input wire's receiver decodes: for every value the wire can carry, the axes on either side of every rounding boundary, both ends and negative zero. A slice of the Crowd trace commits the retained digests from local frames and from their codec round trips.",
+          "check": "cargo test --locked --offline -p crowd-2d-run --test input_route",
+          "ask": "Read the test. Does the wire side go through thrum-network's public encode and decode of whole input batches, and not through a copy of its arithmetic? Does the slice hold axes the wire changes, counted above zero, and do they steer players? Does the test run inside ./dev check? Can a rule of the reference crowd turn a frame's axis into a profile number any other way than the engine's conversion?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -164,11 +175,13 @@
         },
         {
           "id": "M2.4",
-          "statement": "A warmed index build and each kind of query allocate nothing.",
-          "check": "cargo test --locked --offline -p thrum-sim2d --test warm_alloc",
+          "statement": "The index keeps its storage between builds. The allocations a warmed build and each kind of query make at 10,000 bodies are counted on the Mac and are in the cost record, with the source of any that remain. The counts are baselines: none decides the result.",
+          "ask": "Does the index reuse its buffers from one build to the next by design? Were the counts measured by a counting allocator around warmed calls, and not asserted? Does any check or test fail on a count? None should.",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.5",
@@ -235,6 +248,17 @@
           "target": "mac-metal",
           "status": "open",
           "evidence": ""
+        },
+        {
+          "id": "M2.12",
+          "statement": "A body or a query at the edge of the design's query domain is answered as the brute-force search answers it; one outside it, and a cell size below the limit, is refused with an error that names it. A query that covers more cells than the index holds bodies returns the brute-force sequence without walking its empty cells.",
+          "check": "cargo test --locked --offline -p thrum-sim2d --test domain",
+          "ask": "Does the wide query in the test cover so many cells, at the smallest cell size the index accepts, that walking them could not finish in the test's time?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0

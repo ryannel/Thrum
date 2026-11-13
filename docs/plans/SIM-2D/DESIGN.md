@@ -59,9 +59,9 @@ change to the V1 game's rules, which stay outside the profile; drawing.
 | **N1 Step the same state on every target** | 0 to 10,000 bodies; 36,000 ticks (ten minutes of play) at 10,000; spawn and despawn churn with slots reused; rewinds of up to 8 ticks with a corrected input; debug and release builds | Equality between the Mac and the simulator only, which share a processor and a maths library. Rejected by the Wasm row and by [a control](#6-the-check-that-enforces-the-profile) that must diverge there |
 | **N2 Compare two worlds by one value** | Every committed tick; worlds built in different processes; a world that rewound against one that did not | A hash of positions alone. Rejected by changing each covered value in turn and requiring the digest to change |
 | **N3 Be told when a rule breaks the profile** | The named classes in [mechanism 6](#6-the-check-that-enforces-the-profile) | A lint that passes because it was never switched on for the package. Rejected by one fixture per class that must fail |
-| **N4 Find overlaps, neighbours and the nearest body** | Radii from 0 to any finite size; from an empty index to 10,000 bodies packed three deep; anywhere inside the extent; from serial and parallel rules | An index that returns the right set in an order that depends on its internals. Rejected by comparing the whole visit sequence with a brute-force search |
+| **N4 Find overlaps, neighbours and the nearest body** | Radii from 0 to the edge of [the query domain](#5-the-index-and-its-queries), 2²⁴ units; a query from one point to wider than the whole crowd; from an empty index to 10,000 bodies packed three deep; anywhere inside the domain; from serial and parallel rules | An index that returns the right set in an order that depends on its internals. Rejected by comparing the whole visit sequence with a brute-force search |
 | **N5 Draw random numbers that need no saved state** | Any tick, entity and stream, in any order, on any thread, before or after a rewind | A generator with a stored cursor, which a rewind or a different thread order moves. Rejected by the rewinding trace |
-| **N6 Know what a tick costs** | 2,000, 5,000 and 10,000 bodies, on the Mac and in Chrome | A figure for bodies spread thinly. The record names the neighbours visited per tick beside each time |
+| **N6 Know what a tick costs** | 2,000, 5,000 and 10,000 bodies, on the Mac and in Chrome | A figure for bodies spread thinly. The record names the neighbours visited per tick beside each time. The figures are baselines: none decides whether a milestone passes |
 
 ## Mechanisms
 
@@ -131,9 +131,39 @@ rule set's constants. So the profile also fixes:
   no `usize`, pointer, raw `f32` or `f64`: [the state encoding](#4-the-world-digest) has no form for them, so such
   a component does not compile into a rule set.
 - **No outside facts.** No clock, thread identity, environment, address or hash-map iteration order.
-- **Input.** A rule reads an input frame's axes only through one engine conversion, which snaps each axis to the
-  input wire's 16-bit grid by the wire's own rounding rule and then converts it exactly. A frame made on this
-  device and its copy relayed from the host therefore give the same profile numbers.
+- **Input.** A rule reads an input frame's axes only through [the input conversion](#the-input-conversion), so
+  a frame made on this device and its copy relayed from the host give the same profile numbers.
+
+#### The input conversion
+
+**Why it is needed.** An `InputFrame` holds raw `f32` axes. [The input wire](../../design/decisions/A5-INPUT-WIRE.md)
+carries each axis as a signed 16-bit integer, so the copy another peer decodes is a different number: 0.5 arrives
+as 0.5000152587890625, 0.1 as 0.10000915825366974, and negative zero as zero. A rule that computed with the raw
+axis would pass every cross-target run of one trace and still disagree with a peer that received the frame.
+
+**Decision.** `thrum-core` has one conversion from a frame's axis to a profile number, and its result is the value
+the wire's receiver decodes: the axis is quantized by A5's rule (exact conversion to `f64`, multiply by 32767,
+round to the nearest integer with ties away from zero) and the integer is divided by 32767 as an `f32`. Mechanism
+1's list has no conversion from a raw `f32`, so this is the only way an axis becomes a number a rule can compute
+with or store, and held controls are stored converted. One gap is left to the conformance run: a rule could
+compare a raw axis without converting it, which no lint sees and [the wire route](#6-the-check-that-enforces-the-profile)
+does.
+
+**Why both routes agree.** A decoded axis converts to itself. Checked while planning for all 65,535 wire integers:
+each one, divided by 32767 as an `f32`, quantizes back to the same integer. So the conversion of a local axis and
+the conversion of its decoded copy are the same bits, whichever of the two a peer holds.
+
+**How it stays aligned with the wire.** A5's decision owns the rounding rule and `thrum-network`'s codec is its
+implementation on the wire. A rule package may not depend on `thrum-network`; it sees only `thrum-core`, which
+cannot depend on `thrum-network` either. So the engine's conversion is a second implementation of the same rule, and a test holds the two
+together: for every value the wire can carry, the axes on either side of every rounding boundary, both ends and
+negative zero, the conversion must give the bits that the codec's real encode and decode give a receiver, and a
+slice of the Crowd trace must commit the same digests from local frames and from their codec round trips. The
+test lives in the reference crowd's runner package, which may depend on both crates, and runs in `./dev check`,
+so a change to either side fails at once. [The conformance run](#6-the-check-that-enforces-the-profile) repeats
+the comparison of committed state on each target, for any rule package. No socket and no `SESSION` code is
+involved. Whether the codec later calls the engine's conversion in place of its own arithmetic is `SESSION`'s
+choice, since it owns `thrum-network`.
 
 ### 3. Random numbers keyed by seed, tick, stream and entity
 
@@ -174,7 +204,8 @@ cost 0.18 ms at 10,000 bodies; M1 records the engine's, and `SESSION` chooses ho
 **The index** is a uniform grid of circles, rebuilt from scratch when the game asks, normally once at the start
 of a tick from X[n] (C03: "Pre-step queries name X[n]"). The game feeds it (slot, centre, radius) in ascending
 slot order from whichever of its components hold them; the engine names no game component. A counting sort puts
-bodies into cells, so a build is linear in the body count and allocates nothing once warm. It needs no declared
+bodies into cells, so a build is linear in the body count. The index keeps its storage between builds, so a
+warmed build and a query are designed to allocate nothing; M2 counts what they do allocate and records it. It needs no declared
 arena: cells are found by hashing their coordinates. A game may keep several indexes, one for enemies and one for
 pick-ups, in place of category masks.
 
@@ -202,6 +233,20 @@ the thread count or the history. The cell size is therefore a constant of the ru
 and never a quality setting. Handing results back in slot order would hide the cell size, and the probe measured
 that at 25% to 37% more time per tick, so it was not chosen.
 
+**The query domain.** A centre, a radius, a box's or capsule's coordinates and a nearest query's maximum distance
+are each at most 2²⁴ units in magnitude (16,777,216, the last magnitude at which an `f32` still separates
+neighbouring whole units), and the cell size is at least 2⁻⁴ units. Inside those limits a query's bounds reach at
+most 2²⁵ units, so every squared distance is finite, far below the format's limit of about 3.4 × 10³⁸, and every
+cell coordinate is below 2²⁹ in magnitude and fits 32 bits. A body or a query outside the domain, and a smaller
+cell size, is refused with an error that names it. The refusal depends only on the value, so every
+peer gets it, and a rule set treats it as a fault, as it does a non-finite value. The reference crowd stays within
+16,384 units, where [mechanism 1](#1-the-profile-number-f32-held-to-exactly-rounded-operations) keeps millimetre
+resolution.
+
+**A query's work is bounded by the bodies indexed,** not by the area of its shape. A query that covers more cells
+than the index holds bodies returns the same sequence without walking its empty cells. How is the builder's
+choice; testing every body and sorting by the stated key is enough.
+
 **The oracle.** A brute-force search over the same list with the same intersection predicates, sorted by the
 stated key, must give the identical sequence. The predicates are shared on purpose: the oracle tests which
 candidates the index finds and in what order, and the predicates have their own tests on hand-worked cases.
@@ -226,11 +271,27 @@ A fifth class, a `usize`, pointer or raw float in state, is refused by the compi
 do the first three today: the probe's fixture was refused for `f32::sin`, `f32::max`, a raw multiply and
 `HashMap`.
 
-**When it runs.** The **conformance run** steps a rule package's recorded trace on a target, takes the digest of
-every tick, and compares their fold and a checkpoint digest every so many ticks with retained ones. It is one
-command with a target argument, and it takes any registered rule package, so `SWARM` runs its own rules through
-it. It catches what no lint can: a sort with an incomplete key, a
-defect in the engine's own tick, a compiler or browser that breaks its promise.
+**When it runs.** The **conformance run** steps a rule package's recorded trace on a target and compares two
+things with retained values: the fold of the timeline's digests, and a checkpoint digest every so many ticks. It
+is one command with a target argument, and it takes any registered rule package, so `SWARM` runs its own rules
+through it. It catches what no lint can: a sort with an incomplete key, a defect in the engine's own tick, a
+compiler or browser that breaks its promise.
+
+**The fold describes the corrected timeline.** The run keeps one digest for each tick number: that of the tick as
+last committed. When a rewind replays ticks, their new digests replace the superseded ones, which take no further
+part. The fold runs over that list in tick order, and the checkpoints are entries of it. A run
+that rewound and a straight run that had the corrected inputs from the start are therefore compared on the same
+history. The run also counts the rewinds whose replayed digests differ from the ones they replaced, so a trace
+whose corrections change nothing is visible.
+
+**Two input routes.** The run steps a trace by the **local route**, with each frame admitted as the trace holds
+it, and by the **wire route**, with each frame first encoded and decoded by `thrum-network`'s input-batch codec,
+with no socket. Both must give the retained digests. The local route runs every size; the wire route runs each
+trace's smallest. This is what catches a rule that reaches a raw axis: the lint refuses arithmetic on one but
+cannot see one compared, and one trace on three targets cannot see it either.
+
+**The profile's retained vectors** run in the same command on each target: every operation of the profile number
+at the edges of the format, and the input conversion at the wire's rounding boundaries.
 
 **The control.** A copy of the reference crowd with the platform's sine in one rule must produce digests in Chrome
 that differ from the Mac's. If it ever stops diverging, the control is replaced, not removed.
@@ -243,7 +304,9 @@ the trace. Enemies chase the nearest player and push apart from neighbours; play
 hits the first overlapping enemy in query order; enemies lose integer health, die and despawn; new ones spawn on
 a ring to hold the count. It steps through `thrum_core::sim`'s registered runtime, with spawns and despawns as
 structural edits and history recorded, and its trace schedules rewinds of up to 8 ticks, each replayed with one
-corrected input frame.
+corrected input frame that steers a player differently, so the replayed ticks differ from the ones they replace.
+The trace's frames hold raw axes as a device makes them, most of them off the wire's 16-bit grid, among them 0.1,
+0.5, −0.5 and negative zero.
 
 It has two retained traces. **Crowd** (M1): radii no larger than a cell, at 10,000 bodies for 36,000 ticks and at
 2,000 and 5,000 for 3,600 ticks each. **Mixed** (M2): the same sizes and lengths, with oversize bodies and
@@ -258,13 +321,14 @@ traces only. Once retained, a trace's digests are an exact comparison owned by t
 | The profile number, the random function, the state encoding, the digest, the refusal of non-finite values | `thrum-core` (this module) | Engine code; no stored state |
 | The index and its queries | `thrum-sim2d`, a new crate that depends on `thrum-core` only (this module) | Derived, rebuilt each tick |
 | The profile's Clippy configuration, the rule-package guard, the conformance command | `.config/`, `scripts/` (this module) | Tooling |
-| The reference crowd (package `crowd-2d`), its traces and retained digests; its runners for the three targets in a package beside it | `examples/crowd-2d` (this module) | Game content |
+| The reference crowd (rule package `crowd-2d`), its traces and retained digests; its runners for the three targets and the input-route test in a package beside it, `crowd-2d-run`, which is not a rule package and also depends on `thrum-network` for the wire's codec | `examples/crowd-2d` (this module) | Game content |
 | The tick, committed state, undo, pages, input admission | `thrum-core`, as G1 and G2S left it | Authority |
 
 The queries sit beside `thrum-core`, not in it: they are scene queries (P3), not world state (W1), and a game
 with no 2D crowd should not compile them.
 
-**A tick, walked.** (1) The game admits the tick's input frames. (2) A rule registered early feeds X[n]'s circles
+**A tick, walked.** (1) The game admits the tick's input frames; a rule that reads their axes gets converted
+profile numbers. (2) A rule registered early feeds X[n]'s circles
 to the index. (3) Steering rules read X[n] and the index, in parallel chunks where the game asks, and stage new
 velocities. (4) Hit rules query the index and stage integer damage and structural edits. (5) The engine validates
 the candidate, refuses it whole if a stored profile number is non-finite, and otherwise applies it in stable
@@ -293,8 +357,13 @@ Results are promised equal across devices for one build of one rule set, which i
 identity pins. They are not promised across engine versions, so the digest's mixing function, the random function
 and the query order may change between builds.
 
+**For `SESSION`, on input.** A relayed frame needs no step of its own: a rule reads a local frame and a decoded
+one through the same conversion and gets the same numbers. A predictor that stores `canonical_axes` values, as the
+codec's documentation asks, stores exactly what the conversion returns.
+
 **No contract changes.** C02 and C13 promise no bit identity across platforms; a rule package earns it for itself.
-The rule-set addition to C13 is `SESSION`'s proposal.
+A5's input-wire decision and the codec are unchanged; this module adds no file to `thrum-network`. The rule-set
+addition to C13 is `SESSION`'s proposal.
 
 ## Cost
 
@@ -315,8 +384,19 @@ beside its time, so a slower row can be told from a denser crowd.
 **For `SESSION`:** replaying a tick costs a tick. Eight ticks of this crowd at 10,000 would be about 40 ms in the
 probe, which does not fit a frame. M1 records the engine's figure.
 
-**Tripwires.** A median tick at 10,000 bodies that reaches the tick's own period of 16.7 ms cannot keep up and
-fails the cost command. Later rows about a quarter slower than M1's at the same neighbour count are investigated.
+**Baselines and tripwires.** Every time and every allocation count this module records is a baseline (brief,
+decision 3, and [the owner's decision of 6 November](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)).
+None is a pass condition: the cost command succeeds when its record is complete and made at the claimed commit,
+whatever the figures are, and no figure stops a builder. Three things are flagged in the record and investigated
+while building goes on:
+
+- a row about a quarter slower than the last comparable one at the same neighbour count;
+- cost that grows faster than the neighbours visited;
+- a median tick longer than the game clock's period, 16.7 ms at the initial 60 Hz, because a simulation that slow
+  cannot hold that clock. The finding goes in the log for `SESSION`'s and `SWARM`'s planners, who own the cadence
+  and the crowd's size.
+
+What stays required is correctness: equal digests, the oracle, and the runs on the three targets.
 
 ## Risks
 
@@ -327,9 +407,14 @@ fails the cost command. Later rows about a quarter slower than M1's at the same 
 - **The simulator row adds little.** It shares the Mac's processor and maths library, so it proves that the rules
   build, link and run there, and nothing about a different processor. A physical iPhone, an x86 PC and Android are
   not run; the profile is designed to hold there and that stays unproved.
-- **A dense crowd in Chrome crowds the frame.** Early sign: M1's Chrome row near the tripwire. Then the game's
-  rules cap density or crowd size for every peer, because one match has one crowd; the engine never thins a crowd
-  on one device, which would change the result there.
+- **A dense crowd in Chrome crowds the frame.** Early sign: M1's Chrome row near the clock's period. That is a
+  finding to investigate and report, not a stop. If it holds, the game's rules cap density or crowd size for every
+  peer, because one match has one crowd; the engine never thins a crowd on one device, which would change the
+  result there.
+- **A convincing fake of the input conversion:** a rule that wraps the raw axis. One trace replayed on three
+  targets cannot see it. The wire route and
+  [the input conversion's test](#the-input-conversion) do, as long as the trace holds axes the wire changes,
+  which both count.
 - **A divergence lands unnoticed later.** The Mac slice of the crowd trace runs in `./dev check`, so any change to
   the result on the Mac fails at once. A change that only Wasm sees is caught at the next conformance run. If that
   ever happens, the Node run of the slice joins the test command.
@@ -340,8 +425,11 @@ fails the cost command. Later rows about a quarter slower than M1's at the same 
   the iPhone 18 Pro simulator through `simctl spawn`, which the probe confirmed works without an app bundle. None
   needs the GPU. Chrome and the simulator start outside the Codex sandbox, by a request for each run.
 - **Retained digests** are made on the Mac by a straight run that has the corrected inputs from the start and
-  never rewinds. Every target, rewinding, must then reproduce them. That is cross-target equality and G2S's
+  never rewinds. Every target, rewinding, must then reproduce them on
+  [its corrected timeline](#6-the-check-that-enforces-the-profile). That is cross-target equality and G2S's
   corrected-replay equality in one comparison.
+- **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found. The
+  crowd is not thinned and the trace is not shortened to improve a row.
 - **Stopping.** If the three targets cannot be made equal inside the profile, the builder keeps the first
   differing tick, the component and both values, and ends `BLOCKED`; a planner then chooses between fixed point
   and the fallback.
