@@ -220,6 +220,11 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         return Err(format!("edit changed {count} products"));
     }
     let checked_edit = verify(&device, &queue, &witness, &edited_references).await?;
+    // WebGPU adapters are consumed by requestDevice; recovery obtains a fresh adapter.
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .map_err(|error| error.to_string())?;
     let (replacement, replacement_queue) = adapter
         .request_device(&wgpu::DeviceDescriptor::default())
         .await
