@@ -13,6 +13,10 @@
   Its covered-content proof key is `57788bc9592743b7f6c13f0e9dadaeccf8cf32e80baa89a6e6ea703b11ef3c83`.
   The retained target logs in the compact evidence remain the underlying proof; this entry records
   the final strengthened source's automatic verification. All ten items are now marked passed.
+  Full milestone check job `20261113-172340-10345` then passed at `23f3cf2f`: ten automated
+  passes including `./dev check`, plus M1.8's source inspection. The repository suite ran outside
+  the sandbox under the GPU lock and also reran the lease GPU tests. Integration follows through
+  the required merge command; M1's state remains `in_progress` for the lead's checks and review.
 
 - 2026-11-13 M1 built and target-proved. The native lease and coupled-reader tests pass, including both
   profiles, all portable mips, BC4 quality, discarded recordings, capture invalidation, device loss and shared
