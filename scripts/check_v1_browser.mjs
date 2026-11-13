@@ -1917,7 +1917,7 @@ async function main() {
     let assetsSource;
     if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
     for (const mode of modes) {
-      if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output));
+      if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
       else if (mode === 'effect-state') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });

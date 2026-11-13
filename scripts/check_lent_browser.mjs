@@ -33,12 +33,16 @@ export async function prepareLent(files, output, cooker) {
       if (advanced && pathname.startsWith('/cas/')) changedRequests.set(pathname, (changedRequests.get(pathname) ?? 0) + 1);
       return false;
     },
-    async qualify(cdp, origin, output) {
+    async qualify(cdp, origin, output, waitFor) {
       const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
       const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
       try {
         await cdp.call('Runtime.enable', {}, sessionId);
         await cdp.call('Page.navigate', { url: `${origin}/lent.html` }, sessionId);
+        await waitFor(async () => {
+          const r = await cdp.call('Runtime.evaluate', { expression: `location.pathname === '/lent.html' && document.readyState === 'complete'`, returnByValue: true }, sessionId);
+          return r.result.value;
+        }, 15000, 'lease page startup');
         // Run on a blank, controlled page so no ordinary demo RAF competes with this host.
         const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const m=await import('/v1_game.js');await m.default();return await m.qualify_lent_products(${JSON.stringify(origin)});})()`, awaitPromise: true, returnByValue: true }, sessionId);
         if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
