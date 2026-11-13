@@ -32,3 +32,31 @@
   item changed, and no contract's text changed.
 - 2026-11-13 Not read for the design: the Atlas GDC 2019 slides (over the fetch limit), Crest's source and
   Horvath 2015. Rabaud and Moisy 2013 was read as an abstract only.
+- 2026-11-13 Design review: [changes requested](../../evidence/SEA/design-review.md), five Must Fix findings and
+  three Suggestions. The design, the plan and the done-when file were revised the same day; the entries below
+  say how. New reproductions are parts A to E of `revision_proof.py` in
+  [the evidence folder](../../evidence/SEA/design-proof/).
+- 2026-11-13 MF1, numeric gates. No timing figure decides an item or a milestone. `sea_cost.py check` fails only
+  on a missing or incomplete record or an uninvestigated tripwire. M3.6, M6.8, M7.9, M8.7, M9.10 and M10.5 were
+  written again as paired records with investigations; M3 no longer ends `BLOCKED` on its frame time; M10 was
+  renamed, since its name claimed the refresh.
+- 2026-11-13 MF2, reflections. The gather's source rectangles (what is copied) and each body's receiving
+  rectangle (which sea pixels may show it) are now separate. The receiving rectangle bounds every mirror image
+  and refracted view of the body's box within a reach of 64 m and a slope allowance of 20°. Part C: no ray
+  outside it in 36 cases. M8.5 holds that bound; M8.3 asks for whole reflections. Only registered bodies
+  reflect, which is a new assumption in the plan.
+- 2026-11-13 MF3, units. The gather turns copied scene colour back into radiance with the exposure scale and
+  `ATMOSPHERE`'s lent camera aerial lookup, and the design declares four approximations with their range. Nothing
+  new is asked of `ATMOSPHERE`. New item M8.9 holds a panel's reflection and submerged view to the equation at
+  two exposures and two distances.
+- 2026-11-13 MF4, hitches. The two banks are the committed state and the state committed before it, each with its
+  tick, blended by time across the real span; a full frame writes both at one tick; a capture frame reads and
+  changes nothing. Wake and foam take one step of up to 8 ticks (part A: 0.16% of RMS for one 8-tick step, 0.6%
+  with one a second). M2.4 and M4.2 were written again to the endpoint table; M6.10 and M7.11 are new lifecycle
+  items.
+- 2026-11-13 MF5, foam. M7.1 was written again as an account of transfers and sinks: recipients rise with no
+  birth, the inventory never rises, every stock ends at nothing (part D).
+- 2026-11-13 Suggestions, all three taken. S1: the wake's source and border are stated as approximations, and
+  the catch-up bound of 8 ticks is set from part A. S2: a query answer is valid at its use tick, and carries that
+  tick and its state tick (design, M5.1, M5.2, the module list's body-query row). S3: inspections name the mode,
+  the views and the range, and leave the route to the reviewer; the design's capture rule says so once.
