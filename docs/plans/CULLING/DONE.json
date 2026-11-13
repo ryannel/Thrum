@@ -99,8 +99,8 @@
           "check": "python3 scripts/culling_sim.py",
           "lock": "gpu",
           "target": "ios-sim",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "fail",
           "review": "docs/evidence/CULLING/M2-review.md"
         },

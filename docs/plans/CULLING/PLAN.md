@@ -40,9 +40,9 @@ Criteria: M2.1–M2.5 in the done-when file.
 - [x] Run the simulator with a culled mode requested and record the Direct fallback.
 - [x] Give Chrome the mixed-mesh field and its oracle case.
 - [x] Record paired Direct, Frustum and Occlusion rows on the mixed-mesh field at 1920×1080 from two runs, and set the field's default by the design's rule.
-- [ ] Fix review finding `simulator_complete_scene_unchecked` for M2.2 by comparing the actual simulator fallback host with a same-input explicit-Direct image oracle, while checking its capability reason and progressing presentations.
-- [ ] Demonstrate that omitted scene geometry fails the simulator check, and retain reachable positive and negative image evidence with source and binary identity.
-- [ ] Update the maturity ledger's paired timing medians to the retained M2 runs, re-verify affected items and merge the review repair with M2 `in_progress`.
+- [x] Fix review finding `simulator_complete_scene_unchecked` for M2.2 by comparing the actual simulator fallback host with a same-input explicit-Direct image oracle, while checking its capability reason and progressing presentations.
+- [x] Demonstrate that omitted scene geometry fails the simulator check, and retain reachable positive and negative image evidence with source and binary identity.
+- [x] Update the maturity ledger's paired timing medians to the retained M2 runs, re-verify affected items and merge the review repair with M2 `in_progress`.
 
 ## M3 The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome
 
