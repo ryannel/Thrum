@@ -26,6 +26,48 @@ pub(crate) fn run() {
     pollster::block_on(prove());
 }
 
+// Failure-only diagnosis. The first comparison and its bytes remain unchanged.
+// Repeating the same elapsed time distinguishes cross-host differences from
+// variation on one prepared host; receipts expose any changed alpha/exposure.
+fn recapture_failure(
+    hosts: &mut [FrameHost],
+    device: &wgpu::Device,
+    surface: &SurfaceOutput<'_>,
+    times: &[Duration],
+    modes: &[CullMode],
+    output: &std::path::Path,
+    tick: u64,
+) {
+    let mut log = std::fs::File::create(output.join("failure-recaptures.jsonl"))
+        .expect("failure recapture log");
+    for repeat in 0..3 {
+        for (index, host) in hosts.iter_mut().enumerate() {
+            let frame = host
+                .drive(times[index], Some(surface))
+                .expect("repeat frame");
+            let sample = complete(host, device);
+            let image = loop {
+                if let Some(image) = host.try_submitted_image().expect("repeat tap") {
+                    break image;
+                }
+                device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(30)),
+                    })
+                    .expect("repeat image wait");
+            };
+            let file = format!(
+                "failure-{tick}-repeat-{repeat}-{index}-{:?}.raw",
+                modes[index]
+            );
+            std::fs::write(output.join(&file), &image.rgba).expect("repeat bytes");
+            writeln!(log, "{}", serde_json::json!({"file":file,"repeat":repeat,"host":index,"mode":format!("{:?}",modes[index]),"requested_elapsed_ns":times[index].as_nanos(),"tick":frame.tick,"completed_ticks":frame.completed_ticks,"source_tick":image.source.tick,"submission":sample.submission_order,"alpha_bits":sample.presentation_alpha.to_bits(),"exposure_gpu_words":image.exposure_gpu_words})).expect("repeat receipt");
+            host.recycle_submitted_image(image);
+        }
+    }
+}
+
 async fn prove() {
     let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
         .expect("route file");
@@ -128,6 +170,7 @@ async fn prove() {
     let mut log = std::fs::File::create(output.join("rows.jsonl")).expect("rows");
     writeln!(log, "{}", serde_json::json!({"adapter":adapter.get_info().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
     let mut hidden = [0_u64; 2];
+    let mut last_times = vec![Duration::ZERO; modes.len()];
     for tick in 1..=last {
         if tick == route.origin_tick {
             for host in &mut hosts {
@@ -143,6 +186,7 @@ async fn prove() {
         for index in (0..count).map(|step| (step + usize::try_from(tick).expect("small")) % count) {
             let host = &mut hosts[index];
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
+            last_times[index] = now;
             let frame = host.drive(now, Some(&surface)).expect("route frame");
             assert_eq!(frame.tick, tick);
             assert!(frame.surface_presented && !frame.dropped_view && frame.completed_ticks == 1);
@@ -208,6 +252,15 @@ async fn prove() {
                         )
                         .expect("failure pixels");
                     }
+                    recapture_failure(
+                        &mut hosts,
+                        &device,
+                        &surface,
+                        &last_times,
+                        &modes,
+                        &output,
+                        tick,
+                    );
                     panic!("{:?} differs at submitted tick {tick}", modes[index]);
                 }
             }
