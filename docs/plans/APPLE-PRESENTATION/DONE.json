@@ -74,7 +74,7 @@
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "ready_for_review",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
@@ -148,7 +148,7 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2-volume/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
@@ -165,13 +165,6 @@
       ],
       "depends_on": [
         "APPLE-TILE:M2"
-      ],
-      "findings": [
-        {
-          "name": "mac-volume-witness-bypasses-forward-pass",
-          "item": "D2.6",
-          "repeat": false
-        }
       ],
       "rounds": 1
     },

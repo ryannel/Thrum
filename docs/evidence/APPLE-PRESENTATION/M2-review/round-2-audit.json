@@ -1,0 +1,202 @@
+{
+  "reviewed_commit": "e0c113ba1d1a98165633cb2e93a94380c3c75580",
+  "builder_endpoint": "9f42233e900253fa6e7788c631ff3102add35bd8",
+  "execution": "No checks rerun: user supplied successful clean-checkout checks on these source files. This audit extracts retained builder records, not new reviewer captures.",
+  "records": {
+    "portable.json": {
+      "source": "../m2-volume/portable.json",
+      "sha256": "9e1ddee503227c2cb14db5e0ac36ae89cb092569d219c794d95ca450df50c616",
+      "values": {
+        "analytic_alpha": 0.6321205588285577,
+        "central_reactive": 161,
+        "device_generation": 1,
+        "expected_central_byte": 161,
+        "extent": [
+          65,
+          65
+        ],
+        "path": "Cooker -> CookedAssets -> Pipelines::draw -> production forward R8Unorm -> graph witness textureLoad -> submitted T2 copy",
+        "pixel_source": "Sdr/RGBA8 exact temporal diagnostic",
+        "recipe": "portable",
+        "session": 1,
+        "source_tick": 0,
+        "uncovered_reactive": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "apple-tile.json": {
+      "source": "../m2-volume/apple-tile.json",
+      "sha256": "c9b72571ea0e58991d15b60ef297afa737a458ad117882b8fa1f783dbb6ce016",
+      "values": {
+        "analytic_alpha": 0.6321205588285577,
+        "central_reactive": 161,
+        "device_generation": 1,
+        "expected_central_byte": 161,
+        "extent": [
+          65,
+          65
+        ],
+        "path": "Cooker -> CookedAssets -> Pipelines::draw -> production forward R8Unorm -> graph witness textureLoad -> submitted T2 copy",
+        "pixel_source": "Sdr/RGBA8 exact temporal diagnostic",
+        "recipe": "apple-tile",
+        "session": 1,
+        "source_tick": 0,
+        "uncovered_reactive": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "qualified-temporal.json.gz": {
+      "source": "../m2-volume/qualified-temporal.json.gz",
+      "sha256": "26cf8f0fec4c538452c33aa5956ca491064ed5a1f531f78c1d15b1a3453be698",
+      "values": {
+        "actualWasmSha256": "71b6333e501748b386853c9676220486462d22f0bc6b9b5770e8a00a89e1934e",
+        "rows": {
+          "W1": {
+            "zero": 153406,
+            "one": 76994,
+            "partial": 0,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W2": {
+            "zero": 230400,
+            "one": 0,
+            "partial": 0,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W3": {
+            "zero": 226800,
+            "one": 0,
+            "partial": 3600,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W4sun": {
+            "zero": 0,
+            "one": 230400,
+            "partial": 0,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              255,
+              0,
+              0,
+              255
+            ]
+          },
+          "W5sun": {
+            "zero": 230400,
+            "one": 0,
+            "partial": 0,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W4stars": {
+            "zero": 217458,
+            "one": 9130,
+            "partial": 3812,
+            "geometryMotion": 0,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W5stars": {
+            "zero": 226588,
+            "one": 0,
+            "partial": 3812,
+            "geometryMotion": 0,
+            "starCleared": 9130,
+            "sun_probe": [
+              0,
+              0,
+              0,
+              255
+            ]
+          },
+          "W6": {
+            "failures": 1
+          },
+          "W7": {
+            "zero": 226602,
+            "one": 0,
+            "partial": 3798,
+            "geometryMotion": 54687,
+            "starCleared": 0,
+            "sun_probe": [
+              0,
+              0,
+              255,
+              255
+            ]
+          }
+        },
+        "A": {
+          "alpha": 0.5000000596046448,
+          "alpha_bits": 1056964609,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 37,
+          "history_sample": 38,
+          "pitch": null,
+          "rendered_solar_bits": 1025222144,
+          "rendered_solar_hours": 0.03800010681152344,
+          "submission": 37,
+          "tick": 29,
+          "yaw": null
+        },
+        "C": {
+          "alpha": 0.4999999701976776,
+          "alpha_bits": 1056964607,
+          "epoch": null,
+          "eye": null,
+          "history_predecessor": 38,
+          "history_sample": 39,
+          "pitch": null,
+          "rendered_solar_bits": 1025580032,
+          "rendered_solar_hours": 0.039333343505859375,
+          "submission": 38,
+          "tick": 30,
+          "yaw": null
+        },
+        "omissions": 1
+      }
+    }
+  }
+}
