@@ -1,10 +1,10 @@
 {
   "module": "GAME-UI",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/GAME-UI/design-review.md",
-    "commit": "faa2d8433be9e7d9a6b83b7acc31b201308e0ff1",
-    "hash": "8f8e794c178d912575a2e7494ba70ad0af3302f9a45921bc90e2daf7ce36ba24",
+    "commit": "97b83136ffb65764a32329a0c5e50cf38b72d3bb",
+    "hash": "62b614fd13ce740a6ee2435d8a0240d1e632af7e7715a7209e1963d6117f3238",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.167.0-alpha.4.1",
     "path": "headless",
     "usage": {
-      "input": 122536,
-      "cached": 1175808,
-      "output": 6196,
+      "input": 118005,
+      "cached": 1682688,
+      "output": 6611,
       "turns": 1
     },
-    "at": "2026-11-13T19:25:37Z"
+    "at": "2026-11-13T19:44:18Z"
   },
   "milestones": {
     "M1": {
@@ -83,5 +83,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-13T19:40:18Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/GAME-UI/design-review-1.md",
+      "commit": "faa2d8433be9e7d9a6b83b7acc31b201308e0ff1",
+      "hash": "8f8e794c178d912575a2e7494ba70ad0af3302f9a45921bc90e2daf7ce36ba24",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 122536,
+        "cached": 1175808,
+        "output": 6196,
+        "turns": 1
+      },
+      "at": "2026-11-13T19:25:37Z"
+    }
+  ]
 }
