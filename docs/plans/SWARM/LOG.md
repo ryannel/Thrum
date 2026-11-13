@@ -62,3 +62,18 @@
   M5.6's run now includes a fall and allows those causes, and a speed upgrade the rules make when a clock runs
   out. Left as written, M5.6 could not be met by a hero that spends a run in the crowd.
 - 2026-11-13 The revised design still needs its review.
+- 2026-11-13 Second design review: changes requested, two Must Fix and no Suggestions
+  ([review](../../evidence/SWARM/design-review.md)). The entries below are the planner's answers.
+- 2026-11-13 `run-end-priority-precedes-damage`. The priority is unchanged; the tick now produces it. Run rules
+  early in a tick count the clock and judge no ending. One rule, the last of the tick, reads what the tick has
+  staged (the boss's death, who still stands, the clock) and stages the new state, so one commit carries the
+  event and its outcome. A tick is stepped for the state it began in, and the first tick of an intermission, a
+  win or a loss clears the field, because `thrum-core`'s staged edits cannot be withdrawn. The loss beats the
+  clock of any wave, not only the last. M3.17 keeps its cases and now reads each outcome from the state that
+  same tick committed.
+- 2026-11-13 `prediction-equality-includes-forced-fall`. M5.6 written again from what it claims. Equality before
+  any restore is asked of ticks the host admitted on which no rule changed the hero's speed or standing. A fall
+  and a standing again are each asked for as one correction, on its own tick, to the confirmed controller, with
+  equality from the next tick. The causes on record now include the session's own return from a stall or a
+  repair, which `SESSION:M4.2` names. No engine capability is added.
+- 2026-11-13 The revised design still needs its review.

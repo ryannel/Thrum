@@ -168,9 +168,34 @@ every present slot is ready. No slot has a privilege, so a run needs no host pla
   intermission follows the last wave: the end of its clock is the end of the run.
 - **Lost** at the tick a slot is present and no present hero is standing, in any wave.
 
-A rule decides the end from one committed state, in a fixed order: the boss's death, then the loss, then the
-clock. So a boss that dies on the tick the last hero falls is a win, and a last hero who falls on the tick the
-clock ends is a loss. Either end clears the field as an intermission does, the boss included.
+**One endpoint for the three events.** Each belongs to the tick whose commit carries it: the boss dies at the
+tick whose commit removes it, a hero falls at the tick whose commit puts it down, and a clock ends at the tick
+whose commit carries it at zero. A wave's clock is counted early in a tick and damage lands late
+([a tick, walked](#the-system-as-it-runs)). So a rule early in the tick cannot judge the end, because it would
+miss that tick's deaths, and a rule that read only committed deaths would end the run a tick late.
+
+One rule decides, and it is the last of the tick. It runs after every other rule has staged its results, and
+reads what the tick is about to commit: whether the boss's death is staged, whether a present hero still stands
+after this tick's roster events and damage, and whether the wave's clock has reached zero. It takes the first
+of these that holds, in a fixed order:
+
+1. the boss's death is staged: **won**;
+2. a slot is present and no present hero stands: **lost**;
+3. the clock is at zero: **won** in the last wave, [the intermission](#5-pick-ups-the-team-level-and-the-intermission)
+   in any other.
+
+It stages the new state beside them, so one commit carries the event and its outcome. A boss that dies on the
+tick the last hero falls is a win. A last hero who falls on the tick a clock ends has lost, in the last wave or
+any other. No committed state shows a wave whose boss is dead, whose clock is at zero, or in which a slot is
+present and nobody stands. A tick on which the last slot leaves returns the world to gathering whatever else it
+stages ([mechanism 8](#8-playing-together)): nobody is there to win or lose.
+
+**A tick is stepped for the state it began in.** The run's state changes only in a commit. Only on a tick that
+began in a wave does an enemy spawn, anything take damage, or the wave's clock count. So nothing left on the
+field can hurt a hero or change an outcome after the tick that decided it. The first tick that begins in an
+intermission, a win or a loss clears the field of enemies and of every shot, the boss included. The deciding
+tick does not clear it, because a spawn or a shot another rule staged earlier in that tick cannot be withdrawn:
+`thrum-core`'s staged edits are append-only.
 
 Both show the run's figures and return to gathering when every present slot is ready. The next run's random
 streams are keyed by the match seed and a run counter, so each run differs and every peer agrees.
@@ -278,9 +303,10 @@ pick-ups are many, those close together merge into one of their summed worth, so
 Each level gained gives every hero one owed choice. Nobody races a friend for a drop, and a hero who joined
 late or was down is never behind.
 
-**The intermission** begins the tick a wave's clock ends, for every wave but the last, whose end is
-[the run's](#2-the-run-is-a-state-machine-in-the-world): enemies and their shots are cleared, and pick-ups
-left on the field fly to the pool. For each owed choice a rule makes that hero an **offer** of three upgrades,
+**The intermission** is the state committed by the tick a wave's clock ends, for every wave but the last,
+whose end is the run's, and unless the last hero fell on that tick
+([how a run ends](#2-the-run-is-a-state-machine-in-the-world)). Its first tick clears enemies and every shot,
+and pick-ups left on the field fly to the pool. For each owed choice a rule makes that hero an **offer** of three upgrades,
 drawn with the random function from what that hero can still take. The offer is world state, so every peer
 shows the same one. A player's answer is the *choose an upgrade* action, and the rule applies it once.
 
@@ -311,6 +337,18 @@ leaving or entering the field. A fall is the one thing the crowd does to the con
 announces it. The client learns of it when it commits that tick, so the prediction is corrected once, to a hero
 that no longer moves, and once more when the hero stands. Leaving and entering correct once each in the same
 way.
+
+**What equal means, and where it does not hold.** [The session](../SESSION/DESIGN.md#11-the-predicted-controller)
+compares the prediction it saved for a tick with the confirmed controller before it restores anything. On a
+tick where the host admitted the player's frame and no rule changed the hero's speed or its standing, the two
+are equal bit for bit. That is the proof that prediction and authority are one function. On the tick of a fall
+they differ, though the host admitted the very frame the client authored: the prediction has the hero standing
+at the place both agree on, and the confirmed hero is down there. That difference is the correction, and it is
+right. The client restores the confirmed controller and replays its later frames from it, so from the next tick
+the prediction is a hero that is down and ignores the axes, equal to the confirmed one again, until the tick it
+stands. Equality is therefore claimed for the ticks with no cause to differ, and each fall and each standing
+again is claimed as one correction to the confirmed controller. A comparison made after the restore would be
+equal on every tick whatever the predictor did, so it proves nothing.
 
 The four heroes differ in their first weapon and their starting figures.
 
@@ -476,6 +514,18 @@ It makes runs that reach the last wave, so that the late game can be measured an
 - **A long wait.** A player alone who sits in an intermission for an hour commits 216,000 world ticks. Nothing
   in the rules counts them: the wave's clock is not running, and the countdowns that are (weapons, a brief
   safety) reach zero and stop.
+- **The end of a run.** Take the last wave with one tick of its clock left, the boss alive, and the last
+  standing hero about to take a lethal touch. Step 2 of [the tick](#the-system-as-it-runs) brings the clock to
+  zero and judges nothing. Step 6 stages the fall. Step 8 finds no boss death and nobody standing, so the run
+  is lost, and the clock is never asked. Had the boss died in step 6 as well, it is won; had the hero lived, the
+  clock wins it. One commit carries the fall and the loss, and the next tick clears the field. A rule that
+  reads another's staged result is no new capability: a death is already a rule's reading of the damage staged
+  before it, in `thrum-core`'s candidate for the tick.
+- **A fall under prediction.** A hero moves from `x = 0` to `x = 1` on a tick the host admitted, and a touch
+  on that tick spends its health. The client's saved prediction is `(1, standing)` and the confirmed controller
+  is `(1, down)`: unequal before the restore, in standing alone. After it the replayed ticks are `(1, down)`
+  whatever the axes, as the confirmed hero's are. So equality cannot be asked of that tick, and can be asked
+  of the next.
 - **The tick.** `SIM-2D`'s probe stepped 10,000 seeking, separating bodies in 5.0 ms on the Mac and 5.6 ms in
   Chrome. The game adds weapons, pick-ups and the budget, each a few queries a hero, against a 16.7 ms tick
   period. Chrome is the tight target, which is why its cost is on record before the cap is chosen.
@@ -503,11 +553,14 @@ It makes runs that reach the last wave, so that the late game can be measured an
 | Traces and their retained digests | `swarm-proof` | Exact comparisons, this module's |
 
 **A tick, walked.** (1) The driver hands the rules each slot's admitted frame and any roster events. (2) Run
-rules apply actions and roster events and advance the run's state and clocks. (3) The indexes are built from
-the committed bodies. (4) Hero movement calls the controller's function. (5) Enemies steer; the budget spawns.
-(6) Weapons fire and query; projectiles move and hit; damage and deaths are staged as integers and structural
-edits. (7) Pick-ups fly, merge and are collected; the team level rises. (8) The engine validates and commits
-the tick once.
+rules apply actions and roster events and count down the clock of the state the tick began in. They judge no
+ending of a wave. On the first tick of an intermission, a win or a loss they clear the field. (3) The indexes
+are built from the committed bodies. (4) Hero movement calls the controller's function. (5) Enemies steer; the
+budget spawns. (6) Weapons fire and query; projectiles move and hit; damage and deaths are staged as integers
+and structural edits. (7) Pick-ups fly, merge and are collected; the team level rises. (8) On a tick that began
+in a wave, [the rule that ends a wave or a run](#2-the-run-is-a-state-machine-in-the-world) reads what steps 2
+to 7 staged and stages the new state. (9) The engine validates and commits the tick once. On a tick that began
+outside a wave, steps 5 and 6 spawn nothing and damage nothing.
 
 **A frame, walked.** The shell routes events to the interface, then the game. The game turns what it was handed
 into axes and actions for the driver. On a new committed tick the scene source extracts rows. The game gives
