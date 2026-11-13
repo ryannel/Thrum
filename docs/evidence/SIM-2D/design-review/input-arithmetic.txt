@@ -1,0 +1,9 @@
+PASS: all 65,535 admitted wire integers re-encode to themselves
+PASS: adjacent binary32 values on both sides of 65,534 boundaries
+axis -1.0: local=-1.0, decoded=-1.0, bits=000080bf
+axis -0.5: local=-0.5, decoded=-0.5000152587890625, bits=000100bf
+axis -0.0: local=-0.0, decoded=0.0, bits=00000000
+axis 0.0: local=0.0, decoded=0.0, bits=00000000
+axis 0.1: local=0.10000000149011612, decoded=0.10000915825366974, bits=9ad1cc3d
+axis 0.5: local=0.5, decoded=0.5000152587890625, bits=0001003f
+axis 1.0: local=1.0, decoded=1.0, bits=0000803f
