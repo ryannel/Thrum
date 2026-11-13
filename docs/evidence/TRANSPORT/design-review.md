@@ -1,151 +1,134 @@
 # TRANSPORT design review
 
-13 November 2026. Reviewed commit `f574992194499bc5f2e5f6f5e6450e90eabacff2`.
+13 November 2026. Reviewed commit `50be8377a702f2cee6da806e1aef1c0fc89052d6` against the previous review at
+`f574992194499bc5f2e5f6f5e6450e90eabacff2`.
 
-**Design changes requested: three Must Fix findings.** The design provides the right transport layer for the
-human's multiplayer request, within its explicitly recorded loopback-only qualification. Its datagram expiry
-mechanism and native link-opening sequence have gaps, and its session acceptance item promises delivery through
-failures that the link contract correctly permits to interrupt delivery.
+**Design approved: no Must Fix findings.** The revision provides TRANSPORT's part of the human's request for
+several players together over the network. All three previous Must Fix findings are resolved. Approval covers
+the declared module scope and proof definitions; it does not qualify play between separate machines or complete
+the multiplayer game. One wording suggestion below does not hold up building.
 
-**Must Fix — datagram-expiry-after-handoff. Verified design gap by source inspection.**
+**Previous Must Fix — datagram-expiry-after-handoff: resolved. Verified by design and source inspection.**
 
-[DESIGN.md](../../plans/TRANSPORT/DESIGN.md), lines 80, 186–188 and 261–263, promises to discard datagrams after
-the profile's age limit. The native mechanism is to retain them in the adapter and hand Quinn only what it can
-send immediately. M1.1–M1.4 require every adapter to pass this expiry part of the link script.
+[DESIGN.md](../../plans/TRANSPORT/DESIGN.md), lines 86–102, 229–248 and 332–341, now bounds time only in the
+link's own outbound queue. It expressly permits late delivery after handoff. A timer expires queued datagrams
+even after production stops; capacity drops have a separate counter. Quinn's buffer has a small configured
+allowance, and handoff waits for capacity instead of silently evicting older datagrams. Chrome's internal
+discards are not misreported as observed adapter expiry.
 
-The selected Quinn 0.11.12 API does not provide that handoff. `send_datagram` enqueues bytes;
-`send_datagram_wait` waits for buffer space; `datagram_send_buffer_space` reports capacity, not permission to
-transmit now. These are documented in [Quinn's connection API](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.send_datagram).
-I also read the installed quinn-proto 0.11.19 source: `src/connection/datagrams.rs:27–54` queues a `Datagram`
-containing data without an expiry; `src/connection/mod.rs:604–640` subsequently applies congestion and pacing.
-The inspected documentation identifies version 0.11.12.
+I read installed Quinn 0.11.12 `src/connection.rs:468–483, 845–891` and quinn-proto 0.11.19
+`src/connection/datagrams.rs:27–54, 97–109`. A blocked `send_datagram_wait` future retains its bytes without
+enqueuing them; successful polling enqueues them, and capacity accounting includes datagram storage overhead.
+The adapter can therefore keep a pending handoff subject to its queue deadline and cancel it on expiry. The
+design no longer requires Quinn to withdraw an already queued datagram. Treating a pending handoff as completed
+would still violate the revised queue-age and accounting requirements.
 
-Consider a datagram admitted while a reliable transfer has filled the congestion window. It leaves the adapter's
-age-tracked queue but remains inside Quinn, with no deadline. The application then stops producing datagrams.
-When the path recovers, nothing in the specified mechanism expires that last queued datagram. Making Quinn's
-buffer small does not give its final entry an age limit. This counterexample follows from the source; I did
-not run a socket reproduction. QUIC explicitly makes expiration an optional implementation facility, while
-datagrams remain subject to congestion control. [RFC 9221, section 5.4](https://www.rfc-editor.org/rfc/rfc9221.html#section-5.4)
+The browser design observes writer readiness and distinguishes its queue from the browser's. The
+[WebTransport datagram procedure](https://www.w3.org/TR/webtransport/#senddatagrams) resolves writes for both
+expiration and transmission; a resolved write does not establish delivery. The revised counters respect that
+distinction. M1.1–M1.3 and mechanism 8 require sender-side accounting while the path remains stalled and sending
+has stopped, with positive expiry on the in-memory and Quinn ends. Relay loss cannot substitute for expiry.
+Chrome's own queue backing up remains an observation, not an assumed capability. The in-memory stack allowance
+also represents late datagrams permitted by the revised contract.
 
-Chrome's `outgoingMaxAge` concerns time in its outgoing queue. It does not establish a deadline covering an
-adapter queue plus browser buffering plus the network, and a resolved write need not mean the datagram was
-sent rather than discarded. [WebTransport datagram processing](https://www.w3.org/TR/webtransport/#senddatagrams)
-The design must also distinguish an adapter's observable expiry counts from browser-internal discards, especially
-given its recorded absence of `getStats`.
+The narrowing reaches the consumer: [ARCHITECTURE.md](../../plans/ARCHITECTURE.md), lines 552 and 649–653,
+and design lines 441–449 tell SESSION to reject old content and not assume delivery before closure. C13 and
+[NETWORKING.md](../../design/modules/NETWORKING.md#commands-clocks-and-state-publication) already place epoch,
+ordering and input-age validation there. M2.7 requires these limits in the consumer guide. No numbered contract
+promises the stronger datagram deadline that was removed.
 
-Resolve this by defining exactly where age starts and stops and supplying an enforceable mechanism on each
-adapter. State what remains SESSION's responsibility for rejecting old input. The proof must distinguish expiry
-from packets simply lost at the relay and cover a queued final datagram after production stops. If the promise
-is narrowed to time in an adapter-owned queue, change the shared contract and its consumer guidance explicitly;
-do not keep claiming that the native and browser mechanisms enforce the stronger promise.
+**Previous Must Fix — native-link-open-needs-wire-progress: resolved. Verified by design and source inspection.**
 
-**Must Fix — native-link-open-needs-wire-progress. Verified design gap by source inspection.**
+Design lines 136–156 define startup independently of game traffic: the client writes a link hello, the host
+reads it and writes its answer before reporting open, and the client reports open after reading that answer.
+The hello is excluded from application messages and their counters. A startup deadline covers the handshake
+and hello; incomplete startup remains charged to the host's pending-connection cap.
 
-[DESIGN.md](../../plans/TRANSPORT/DESIGN.md), lines 96–100, 104 and 322–323, lets the host take newly opened
-links and send messages, but its join sequence only says that the client opens a bidirectional stream and both
-ends report open. No transport startup bytes are specified. Zero-length application messages are forbidden.
+I confirmed the write-before-accept requirement in Quinn's `src/connection.rs:344–356` and the empty raw-session
+header in web-transport-quinn 0.13.6 `src/session.rs:570–576`. The hello supplies those missing bytes; the host's
+first application message follows its hello on the ordered stream. M1.1 and the common lifecycle script require
+an otherwise idle link with the host sending first. M2.1 and M2.2 cover malformed and missing hellos. M1.6 now
+measures connect-to-open time, including startup. None of these checks needs SESSION's later handshake.
 
-Quinn does not announce a newly opened stream until the opener writes to it. The host's `accept_bi` therefore
-cannot complete merely because the client called `open_bi`.
-[Quinn's stream-opening contract](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.accept_bi)
-The selected web-transport-quinn 0.13.6 raw-session wrapper does not supply the missing header: in the inspected
-`src/session.rs:570–576`, its `header_bi` is empty.
+**Previous Must Fix — session-proof-promises-delivery-after-death: resolved. Verified by acceptance-item and
+design inspection.**
 
-An ordinary consumer connects and waits for the host's welcome or baseline without first sending an application
-message. If open awaits stream acceptance, the host never reports that link open. If open is reported earlier,
-the host still has no accepted stream on which to deliver its first reliable message. Client-first traffic in
-the planning probe conceals this dependency. This is a missing transport mechanism, not a demand to implement
-SESSION's handshake inside TRANSPORT.
+M1's bar, M1.5 and M2.9 distinguish surviving links from event-ended links. Healthy links must deliver all
+accepted reliable messages after the final drain. Interrupted links deliver an ordered prefix, with no remaining
+old-link traffic replayed onto a replacement. Design lines 360–368 explicitly limit judgement of a killed
+process to the surviving host's observations; no report or receipt tally is demanded from the dead process.
+This matches Quinn's immediate-close semantics, inspected in `src/connection.rs:403–436`.
 
-Specify how link establishment makes the stream usable independently of application traffic, and when each end
-reports open. M1's shared script should establish an otherwise idle link and allow the first reliable application
-message to come from the host. Keep any startup framing out of delivered application messages and account for
-a peer that stalls during startup. No socket reproduction was run; the gap is established by the selected API's
-documented behaviour and the absence of startup traffic in the design.
+The repair retains a meaningful interruption test. Links carry load until closure; the cut must leave accepted
+messages undelivered, and the host must accept messages for the killed client after the kill. Harness observations
+of destructive events are separate from endpoint close reasons. Draining every link before disruption no longer
+satisfies M1.5. The quiet-link timeout test remains in the common lifecycle script. M2.9 uses the same session
+command and mechanism at the closing commit.
 
-**Must Fix — session-proof-promises-delivery-after-death. Verified contradiction in the acceptance item.**
+**Previous Suggestions: both resolved.** `datagram-cap-policy` is explicit: discard the oldest queued datagram
+to admit a new one, counting capacity drops separately from expiry (design lines 229–232).
+`lifecycle-contract-citation` now points to NETWORKING's mobile-suspend rule (lines 251–258), with background
+close integration still assigned to the shell and SESSION.
 
-[DONE.json](../../plans/TRANSPORT/DONE.json), M1.5 at lines 60–63, requires every reliable message on every link
-to arrive, while the same run kills a client and times another link out. It also asks for the close reason
-reported by both ends for each event. M2.9 repeats this result. In contrast,
-[DESIGN.md](../../plans/TRANSPORT/DESIGN.md), line 78, correctly promises delivery **or closure**.
+**Suggestion — shorten-expiry-proof-wording. Verified wording issue; not a missing mechanism.**
 
-A send can be accepted into the local queue just before its recipient is killed. That message cannot arrive at
-the dead application, and that application cannot report a close event. Reconnect deliberately does not replay
-old-link traffic. Even an orderly QUIC close can discard data not yet consumed by the peer application.
-[Quinn's close semantics](https://docs.rs/quinn/latest/quinn/struct.Connection.html#method.close)
-
-As written, a reviewer must either fail a correct implementation or silently reinterpret the item. Draining
-everything before every destructive event could produce a pass while avoiding the interrupted-send case.
-Align M1.5 and M2.9 with the delivery-or-closure contract: distinguish uninterrupted links from interrupted
-ones, account for incomplete old-link traffic without replaying it, and distinguish a surviving endpoint's
-reported reason from the harness's observation that a process was killed. Retain the requirement that healthy
-links lose no reliable messages. This changes the proof's meaning, not its testing procedure.
-
-**Suggestion — datagram-cap-policy. Verified omission in the interface description.**
-
-The design says every queue has a cap, and M1.8 checks that, but the datagram send row only describes rejection
-for size and emptiness plus expiry by age. A burst can fill a byte/message cap before any entry expires.
-State the outbound datagram policy at that point and how it appears in counters. The bounded-queue requirement
-already prevents an implementation from treating age alone as a memory cap; this clarification need not hold
-up the build separately from the expiry finding.
-
-**Suggestion — lifecycle-contract-citation. Verified attribution error.**
-
-DESIGN.md line 193 attributes “a suspended app has lost its socket” to C11. C11 contains no such sentence.
-The relevant obligation is in [NETWORKING.md](../../design/modules/NETWORKING.md#identity-connection-and-content),
-which requires mobile suspend to stop input and acknowledgements and resume with a new epoch and baseline.
-Correct the citation. The design already assigns background-close integration to the shell and SESSION, so
-this attribution error does not itself leave the obligation unowned.
+Design lines 332–341 begin with a prescribed sequence that sends until the queue backs up, then finish by
+allowing Chrome's queue not to back up. M1.3's question and the planner's response make the intended exception
+clear. On the next edit, state the required observations and the Chrome distinction together, leaving the
+harness route to the builder. Preserve stopped-production expiry, separate loss/cap/expiry accounting and the
+positive-expiry requirement on Quinn and the in-memory link. This is a suggestion to simplify the existing
+proof, not to add steps or require a positive browser-expiry count.
 
 **Comparison with the human's request.**
 
-I read [ACCEPTED.json](../../plans/TRANSPORT/ACCEPTED.json) and the project brief before the design. There is one
-recorded planner task: “Plan module TRANSPORT. It needs: SHOWCASE”. The human's request carried by
-[the project brief](../../plans/BRIEF.md) and [the next-goal page](../../design/NEXT-GOAL-SWARM-GAME.md) is several
-players together over the network, with multiplayer additive to the reusable engine. The Mac, Chrome,
-simulator and two-to-four-player range are recorded defaults. The pre-planning TRANSPORT brief at `ee9ac160`
-already assigns native QUIC, browser WebTransport, an in-memory link, local host identity and counters to this
-module, leaving fallback and runtime choices to its planner.
+I read the whole `briefs` array in [ACCEPTED.json](../../plans/TRANSPORT/ACCEPTED.json), oldest first, and
+[BRIEF.md](../../plans/BRIEF.md) before the design. The initial task commissions TRANSPORT after SHOWCASE;
+the second requests repair of the previous review and includes a log-length correction. Neither changes the
+human's request, recorded in [the next-goal page](../../design/NEXT-GOAL-SWARM-GAME.md): several players play
+together over the network, as part of an original swarm-survival game on a reusable engine.
 
-The proposed opaque message boundary, optional crate, single I/O owner, two lanes, host identity and reusable
-conditioner fit that commission. SESSION retains authority, epochs, input timing, baseline and repair. No
-game state or competing simulation authority is introduced. SHOWCASE:M8 remains the prerequisite. Omitting
-WebSocket is a choice the prior module brief explicitly allowed.
+Opaque messages, an optional socket crate, nonblocking calls, bounded per-link storage, host identity and an
+in-memory rehearsal link fit TRANSPORT's assigned responsibility. SESSION retains game meaning, authority,
+epochs, admission and recovery. The hello is transport framing, not a competing session protocol. The revision
+adds no game state or unrequested hosting service. SHOWCASE:M8 remains the prerequisite.
 
-The design does not prove play between separate machines or through an internet path. This narrowing is
-explicit in PLAN.md's assumptions for the human, the architecture's owner decision 10, the design's risks and
-M2.8's required maturity record. I therefore treat it as the declared qualification boundary of this module,
-not an undisclosed reinterpretation or proof that the whole online-game goal is finished. No deployment or
-spending is required to settle this review. Physical iPhone and other-browser qualification are also explicitly
-owed rather than claimed.
+As in the previous review, [PLAN.md](../../plans/TRANSPORT/PLAN.md) explicitly presents loopback-only proof,
+Chrome-only browser qualification, no WebSocket fallback and no physical iPhone as assumptions for the human.
+M2.8 preserves those limits in the maturity ledger. They remain limitations of this module's qualification,
+not evidence that the full online-game goal has been achieved. No new narrowing of the human's request is
+hidden in this revision.
 
-**Done-when review.** I read every item in both milestones. The following assesses whether each can be judged
-when built; it does not award milestone passes.
+**Changed-item review.** These are design-stage assessments, not milestone passes. I read every item in both
+milestones, including each item named in the review request.
 
-| Items | Design-stage assessment |
+| Changed definition | Assessment against the previous findings |
 |---|---|
-| M1.1–M1.4 | The common Rust script, virtual-time control, platform provenance, relay evidence and duplicate-check control reject useful fakes. Expiry and idle/host-first establishment need the first two fixes. |
-| M1.5 | The third finding prevents literal acceptance as written. Four simultaneous clients and unaffected-link checks otherwise exercise the intended composition. |
-| M1.6–M1.7 | Costs are measurable with M1 alone, compare both controllers and record absent Chrome statistics. Large transfers must use the stated message limit; the probe's oversized individual messages are not engine conformance evidence. |
-| M1.8 | A public-boundary and queue-ownership read can judge nonblocking calls. Clarify the datagram cap policy as suggested. |
-| M1.9–M1.11 | Dependency closure, Wasm linting and identity-path inspection can judge these without SESSION. Negative-ticket checks complement the identity inspection. |
-| M1.12 | Existing exact-baseline verification is available independently of transport or later game work. |
-| M2.1–M2.3 | Production-parser inspection, hostile peers beside healthy links, queue caps and one-thread sends make malformed-input and overload claims judgeable after M1. |
-| M2.4–M2.6 | Process freeze/resume and page reload can be judged on the specified targets. The frozen-page observation correctly avoids equating a quiet renderer with a dead transport. |
-| M2.7–M2.8 | Runnable consumer documentation and explicitly limited maturity claims are inspectable at M2. |
-| M2.9 | Inherits M1.5's impossible delivery/reporting requirement; fix both together. |
-| M2.10–M2.11 | Closing-commit closure and image verification can be judged without downstream modules. |
+| M1 bar / dependency | The bar now conditions complete reliable delivery on the link staying up. SHOWCASE:M8 is unchanged. |
+| M1.1 | Virtual-time stall, stopped-production expiry and idle host-first startup cover the first two repairs. The shared script and deliberate duplicate fault remain. |
+| M1.2 | Sender expiry must be positive in both directions and separate from relay loss. The 90% delivery floor excludes intentional limit/expiry discards while retaining lanes/load coverage. |
+| M1.3 | Still requires the engine's Wasm adapter and same script. Browser queue behaviour is recorded; unavailable browser discards are absent, not zero. Mechanism 8 supplies the deliberate browser distinction discussed above. |
+| M1.5 | Judgeable with delivery-or-closure, surviving-end reports and evidence of interrupted sends. Healthy links retain full delivery requirements. |
+| M1.6 | Connect-to-open includes the hello. Costs remain baselines under both controllers, not performance gates. |
+| M2.1 | Adds the actual hello decoder to malformed/partial-input tests and stdin targets. Available after M1; no later session code is needed. |
+| M2.2 | Adds incorrect-first-frame and never-send-hello peers beside healthy links. Together with the startup cap/deadline, this tests the new pre-open resource lifetime. |
+| M2.7 | Requires consumer documentation of late datagrams and reliable-message loss at close, completing the shared-interface repair. |
+| M2.9 | Repeats the corrected session result using the same command; it no longer requires a killed endpoint to deliver or report. |
 
-**Evidence and limits.** This is an independent design and proof-definition review, performed without delegation.
-I read the request, brief, current and prior module entry, full design, plan and done-when file, applicable
-contracts, networking/A0 decisions, calibration guidance, planning-probe report and module log. I inspected the
-selected libraries' relevant source and primary protocol documentation for the findings above. The probe's
-discarded source and raw captures were unavailable; its performance claims are treated as provisional findings
-to repeat in M1. I did not build an adapter, run socket/platform proofs, inspect game imagery or claim runtime,
-visual or device qualification. No earlier design review exists in this checkout. Only this review file is changed.
+The remaining definitions retain their previous judgeability: simulator provenance, public-boundary and
+dependency inspection, identity checks, hostile/slow-peer isolation, lifecycle observations, maturity limits and
+exact-baseline verification. Newly empty `verdict`/`review` fields do not alter their obligations. None needs
+SESSION or SWARM built to demonstrate TRANSPORT's assigned behaviour.
 
-Validation: `./dev check-docs` passed (764 Markdown files, 4,796 local links, 30 module records, crate policy
-and current design hashes). Its code-size notes concern existing files outside this review.
+**Evidence and limits.** This review was performed independently without delegation. I read the full revised
+design, plan and done-when file, the previous review, both planner tasks, relevant shared contracts and consumer
+guidance, A0/A5 decisions, the revision diff and planner response/probe report. I checked the changed mechanisms
+against installed library source and the primary WebTransport specification. The planner discarded its probe
+source, so its numerical rows are supporting claims to repeat in M1, not independent runtime evidence here.
+I did not build adapters, rerun socket/platform probes, inspect game imagery or claim device qualification.
+Only this review file was edited; DONE.json and the plans remain unchanged.
 
-DESIGN CHANGES: 3 must_fix findings
+Validation: `./dev check-docs` passed (765 Markdown files, 4,813 local links, 30 module records, crate policy
+and current design hashes). Its code-size notes concern existing files outside this review. `git diff --check`
+passed; the working-tree status lists only this review file.
+
+DESIGN OK
