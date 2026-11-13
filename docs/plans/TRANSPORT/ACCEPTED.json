@@ -1,0 +1,34 @@
+{
+  "module": "TRANSPORT",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "5c02e435eb2d2f385a2cd28a608e5a4819f5f43d3dbbe13459e2706f81c83dc7",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module TRANSPORT. It needs: SHOWCASE",
+        "at": "2026-11-13T16:38:51Z"
+      }
+    },
+    "M2": {
+      "definitions": "619b2d181a47ab1d0f1efd06f3b1e299fe42fe55532db549e990adae890bd315",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module TRANSPORT. It needs: SHOWCASE",
+        "at": "2026-11-13T16:38:51Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module TRANSPORT. It needs: SHOWCASE",
+      "at": "2026-11-13T16:38:51Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T16:38:51Z"
+  }
+}
