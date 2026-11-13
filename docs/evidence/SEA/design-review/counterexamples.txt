@@ -1,0 +1,17 @@
+Reflection support, calm sea:
+  body screen ordinate interval: (-0.1, 0.0)
+  reflected body interval:       (-0.2, -0.1)
+  sea point reflecting body top: 10.0 m from camera
+  Padding must cover the receiving interval, not only the opaque silhouette.
+
+Skipped tick, literal alternating bank update:
+  after 10 -> 12: [9, 12]; required endpoints: [11, 12]
+
+Gathered scene colour used as physical behind-surface radiance:
+  expected stored contribution: 1.250
+  raw-copy substitution:        0.312
+  Dividing out exposure alone does not remove the source's aerial transport.
+
+Foam with no external cause, fresh -> aged -> sink:
+  fresh: 1 -> 0.904837; aged: 0 -> 0.090484
+  Aged increases while total inventory decreases.
