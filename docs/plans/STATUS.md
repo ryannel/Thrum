@@ -145,7 +145,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
+- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Not Started · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory (SEA M1): Not Started · [plan](SEA/PLAN.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
@@ -179,7 +179,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
