@@ -98,7 +98,7 @@
         {
           "id": "M1.8",
           "statement": "On the Mac the sprite scene's test card reads as drawn: upright, unmirrored, colours as authored, flat blocks of colour with hard edges, nothing missing and nothing 3D behind it.",
-          "inspect": "Capture `fixed` stills of the sprite scene with T2 engine capture at 1280×720 and at 3456×2234, at scales of 2 and 4. Judge each frame whole and in native-size crops of the card's lines, colour ramps and marks.",
+          "inspect": "Capture `fixed` stills of the sprite scene with T2 engine capture at 1280\u00d7720 and at 3456\u00d72234, at scales of 2 and 4. Judge each frame whole and in native-size crops of the card's lines, colour ramps and marks.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -107,7 +107,7 @@
         },
         {
           "id": "M1.9",
-          "statement": "On the Mac, CPU and GPU times for the sprite scene are on record at 1920×1080 and at 3456×2234, with the sprite pass, tone and present apart and the bytes of each target, from two separate runs with build and load. The valley route is timed before and after this milestone with no 2D scene. Each tripwire the design names is flagged. The figures are baselines: no time decides the result.",
+          "statement": "On the Mac, CPU and GPU times for the sprite scene are on record at 1920\u00d71080 and at 3456\u00d72234, with the sprite pass, tone and present apart and the bytes of each target, from two separate runs with build and load. The valley route is timed before and after this milestone with no 2D scene. Each tripwire the design names is flagged. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/render2d.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the valley's paired figure from the same route and build settings on both sides?",
           "lock": "gpu",
@@ -119,7 +119,7 @@
         },
         {
           "id": "M1.10",
-          "statement": "In Chrome, CPU and GPU times for the sprite scene are on record at 1920×1080 and at the page's full backing size, from two separate runs with build and load, with the limits Chrome's capability record reports for sampled textures, array layers and storage buffers. Each tripwire is flagged. The figures are baselines: no time decides the result.",
+          "statement": "In Chrome, CPU and GPU times for the sprite scene are on record at 1920\u00d71080 and at the page's full backing size, from two separate runs with build and load, with the limits Chrome's capability record reports for sampled textures, array layers and storage buffers. Each tripwire is flagged. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -135,7 +135,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M2",
@@ -226,7 +227,7 @@
         {
           "id": "M2.8",
           "statement": "In real time on the Mac the movers glide: no sprite steps at the tick rate, jumps, or slides in from elsewhere. Where sprites overlap the same one stays in front. A flashed sprite turns the flash colour inside its own outline, and an additive one glows without hiding what is behind it.",
-          "inspect": "Capture the sprite scene's field at 1920×1080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
+          "inspect": "Capture the sprite scene's field at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -245,7 +246,7 @@
         },
         {
           "id": "M2.10",
-          "statement": "On the Mac, with 2,000, 5,000 and 10,000 world rows whose pose changes every tick, extraction, ordering, upload bytes, the sprite pass's GPU time and the whole frame are on record at 1920×1080 and at 3456×2234, with shaded pixels beside each time, from two separate runs with build and load. Each tripwire is flagged. The figures are baselines: no time decides the result.",
+          "statement": "On the Mac, with 2,000, 5,000 and 10,000 world rows whose pose changes every tick, extraction, ordering, upload bytes, the sprite pass's GPU time and the whole frame are on record at 1920\u00d71080 and at 3456\u00d72234, with shaded pixels beside each time, from two separate runs with build and load. Each tripwire is flagged. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/render2d.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Does every row's pose really change every tick in these runs, so that every row is uploaded?",
           "lock": "gpu",
@@ -273,7 +274,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M3",
@@ -339,7 +341,7 @@
         },
         {
           "id": "M3.6",
-          "statement": "On the Mac, in windows of 640×360, 1280×720 and 1707×933 points on the built-in display, the sprite target has the window's backing pixel extent, present copies it one to one, and the test card's aligned region is exact; after a resize the next frame is drawn at the new extent. A Mac window on a display of density 1 is not run: that density is proved in Chrome and by extent.",
+          "statement": "On the Mac, in windows of 640\u00d7360, 1280\u00d7720 and 1707\u00d7933 points on the built-in display, the sprite target has the window's backing pixel extent, present copies it one to one, and the test card's aligned region is exact; after a resize the next frame is drawn at the new extent. A Mac window on a display of density 1 is not run: that density is proved in Chrome and by extent.",
           "check": "python3 scripts/render2d.py window --target mac-metal",
           "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
@@ -361,7 +363,7 @@
         {
           "id": "M3.8",
           "statement": "In real time on the Mac, pixel art scrolling slowly on a diagonal and fast, at scales of 1.5, 2 and 2.37, stays still: no texel changes width, no line thickens and thins, nothing sparkles or crawls, and no seam opens between ground tiles. Rotating sprites keep clean edges.",
-          "inspect": "Capture the sprite scene at 1920×1080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
+          "inspect": "Capture the sprite scene at 1920\u00d71080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -371,7 +373,7 @@
         {
           "id": "M3.9",
           "statement": "On the Mac, stills of pixel and smooth sprites at each claimed scale are clean: pixel art has square, even texels with edges no wider than one output pixel, and smooth art has no fringe, halo or bleed and does not alias at 0.25.",
-          "inspect": "Capture `fixed` stills with T2 engine capture at 640×360, 1920×1080 and 3456×2234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -397,7 +399,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M4",
@@ -521,7 +524,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M5",
@@ -568,7 +572,7 @@
         },
         {
           "id": "M5.4",
-          "statement": "On the Mac, at 1920×1080 and at 3456×2234, for the Crowd trace at 2,000, 5,000 and 10,000 bodies, the tick, extraction, ordering, upload bytes, the sprite pass's GPU time, the whole frame, and shaded pixels over screen pixels are on record, from two separate runs with build and load. Each tripwire the design names is flagged, with what was found. The figures are baselines: no time decides the result.",
+          "statement": "On the Mac, at 1920\u00d71080 and at 3456\u00d72234, for the Crowd trace at 2,000, 5,000 and 10,000 bodies, the tick, extraction, ordering, upload bytes, the sprite pass's GPU time, the whole frame, and shaded pixels over screen pixels are on record, from two separate runs with build and load. Each tripwire the design names is flagged, with what was found. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/render2d.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the crowd packed as SIM-2D's trace packs it, and not thinned or shrunk on screen to improve a row?",
           "lock": "gpu",
@@ -590,7 +594,7 @@
         {
           "id": "M5.6",
           "statement": "In real time on the Mac the crowd of 10,000 reads clearly: players, enemies and projectiles can be told apart at a glance, the horde moves as one smooth mass, nothing flickers where bodies overlap, a spawn and a death are clean, and a hit flash and a projectile's glow show in the thick of it.",
-          "inspect": "Capture the crowd view at 10,000 with T2 engine capture: in `realtime` mode at 1920×1080, at least twenty seconds from a view of the whole crowd and twenty from a view close on one player, and `fixed` stills of both views at 3456×2234. Judge consecutive frames at 1x and the stills, whole and in native-size crops of the densest overlap, a player, and a projectile hit.",
+          "inspect": "Capture the crowd view at 10,000 with T2 engine capture: in `realtime` mode at 1920\u00d71080, at least twenty seconds from a view of the whole crowd and twenty from a view close on one player, and `fixed` stills of both views at 3456\u00d72234. Judge consecutive frames at 1x and the stills, whole and in native-size crops of the densest overlap, a player, and a projectile hit.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -665,7 +669,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     }
   ]
 }

@@ -1,0 +1,61 @@
+{
+  "module": "RENDER-2D",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "b6ecab26149f2b213660d04a8c75d0e9f68a226ab606ac23bdd55545b57ee0fd",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+        "at": "2026-11-13T17:43:28Z"
+      }
+    },
+    "M2": {
+      "definitions": "846429f46091f7c0f06e47426fb22ac1613853a10347f2f6a888eda8856de80b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+        "at": "2026-11-13T17:43:28Z"
+      }
+    },
+    "M3": {
+      "definitions": "30118b2f1bfef56c63cab30f82f491e7bd509f6206e6ad0ec70bd3b6c9075bc0",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+        "at": "2026-11-13T17:43:28Z"
+      }
+    },
+    "M4": {
+      "definitions": "edbc8f26c377ee9d74f0aea79f19c0650ff5a721b83becf00717e90c504b3b0f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+        "at": "2026-11-13T17:43:28Z"
+      }
+    },
+    "M5": {
+      "definitions": "e80e9e0faf20ea7694035bc39bb4f7cd7117bd49b37a07b89c63a9f6a76886d6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+        "at": "2026-11-13T17:43:28Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module RENDER-2D. It needs: SHOWCASE, APPLE-TILE, CONTENT-LOOP",
+      "at": "2026-11-13T17:43:28Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T17:43:28Z"
+  }
+}
