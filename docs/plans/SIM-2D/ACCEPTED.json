@@ -1,10 +1,10 @@
 {
   "module": "SIM-2D",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/SIM-2D/design-review.md",
-    "commit": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
-    "hash": "c80a9eadceff7ad395739b5613aa93336bbe7af27209f4efacb4b0b5d348a27a",
+    "commit": "aed1cd02c2333f4fa1ad039a448074b64dca7306",
+    "hash": "e05b00bb005523e071379260ec477efef6eb7b494cae30970c31346d5c9ac2c4",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.167.0-alpha.4.1",
     "path": "headless",
     "usage": {
-      "input": 90167,
-      "cached": 1042816,
-      "output": 7559,
+      "input": 94861,
+      "cached": 1074944,
+      "output": 6237,
       "turns": 1
     },
-    "at": "2026-11-13T15:29:42Z"
+    "at": "2026-11-13T15:42:42Z"
   },
   "milestones": {
     "M1": {
@@ -65,5 +65,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-13T15:38:44Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/SIM-2D/design-review-1.md",
+      "commit": "081d74e86a6663988955fa4ce7bf71a305ace6b5",
+      "hash": "c80a9eadceff7ad395739b5613aa93336bbe7af27209f4efacb4b0b5d348a27a",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 90167,
+        "cached": 1042816,
+        "output": 7559,
+        "turns": 1
+      },
+      "at": "2026-11-13T15:29:42Z"
+    }
+  ]
 }

@@ -1,172 +1,130 @@
 # SIM-2D design review
 
-Reviewed 13 November 2026 at `081d74e86a6663988955fa4ce7bf71a305ace6b5`.
-Result: **Design Changes Requested — 2 Must Fix findings.**
+Reviewed 13 November 2026 at `aed1cd02c2333f4fa1ad039a448074b64dca7306`, against the previous review at
+`081d74e86a6663988955fa4ce7bf71a305ace6b5`.
 
-The design supplies the simulation part of the requested 2D multiplayer swarm game. Its scope, separation from
-rendering and game policy, restricted-float approach, reference crowd and early three-target proof fit that job.
-It does not yet satisfy the owner's instructions in full: it reinstates performance admission gates, and its
-acceptance criteria omit the local-input/wire-input equivalence on which the deterministic profile relies.
+Result: **Design Approved — no Must Fix findings.** The revised design meets this module's part of the human's
+request. Both previous Must Fix findings are resolved. Both previous Suggestions were taken and are resolved.
+This approves the design and its acceptance criteria; it does not certify an implemented simulation.
 
-## Must Fix findings
+## Previous Must Fix findings
 
-### MF1 — Numeric performance and allocation gates contradict the owner's decision
+### MF1 — Numeric performance and allocation gates contradict the owner's decision — resolved
 
-**Verified by document comparison.** Affects M1.8, M1.9 and M2.4;
-[DESIGN.md](../../plans/SIM-2D/DESIGN.md), lines 318–319;
-[PLAN.md](../../plans/SIM-2D/PLAN.md), the final assumption and line 59;
-[DONE.json](../../plans/SIM-2D/DONE.json).
+**Verified by comparing the revised design, plan and items with the owner's decision.**
+[DESIGN.md](../../plans/SIM-2D/DESIGN.md), lines 387–399 and 431–432, now makes all recorded times and allocation
+counts baselines. Cost-command success depends on a complete record at the claimed commit, not a threshold.
+M1.8 and M1.9 say the same. M2.4 retains storage reuse and measured allocation counts with attribution, but
+removes the zero-allocation admission test. [PLAN.md](../../plans/SIM-2D/PLAN.md), line 54, explicitly keeps
+building when a measurement trips a tripwire; the unsupported hard-line assumption is gone.
 
-M1.8 and M1.9 require the median 10,000-body tick to be below 16.7 ms. The cost command fails otherwise, and the
-plan explicitly tells the builder to stop `BLOCKED`. M2.4 separately makes zero warmed allocations an acceptance
-condition. Calling the time limit a tripwire does not change that these conditions hold up the build.
+This now follows [brief decision 3](../../plans/BRIEF.md#decisions) and the
+[6 November owner decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md). The 16.7 ms period
+remains useful information for SESSION and SWARM, without deciding admission. Correctness, target execution,
+record completeness and investigation remain required. M2.12's rejection of an enormous empty-cell walk is an
+algorithmic requirement, not a reintroduced tick-time or allocation budget.
 
-[Brief decision 3](../../plans/BRIEF.md#decisions) says numeric performance and allocation figures are baselines,
-not gates. The [owner's 6 November decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md), lines
-8–17, says to investigate without blocking other building and explicitly overrides numeric performance/allocation
-admission gates. The [performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design)
-also distinguishes designing storage for reuse from making allocation targets an admission condition.
+### MF2 — No acceptance item proves local inputs equal their wire-decoded copies — resolved
 
-The planner has identified a real concern: a simulation slower than its selected cadence cannot sustain that
-cadence. It should be measured and investigated. It does not authorize overriding the owner's chosen development
-sequence. The proposed hard line is listed as an assumption, but ACCEPTED.json contains only the lead's task,
-“Plan module SIM-2D. It needs: SHOWCASE”; it records no owner exception.
+**Verified against the existing input and codec boundary and the revised proofs.**
+[DESIGN.md](../../plans/SIM-2D/DESIGN.md), lines 137–166, now specifies A5's conversion precisely, stores held
+controls converted, and explains the dependency boundary. The rule package and core do not depend on networking.
+The separate `crowd-2d-run` package can depend on both core and the existing codec; its test keeps the two
+implementations of the wire rule aligned. The codec and its owning decision remain unchanged.
 
-**Resolution:** keep the cost and allocation measurements, density accounting, storage-reuse design and regression
-investigation. Remove their numeric pass/fail and stop conditions from the design, plan and done-when items,
-consistent with the existing owner policy. Correctness and the required target executions remain gates.
+M1.12 requires the real public whole-batch encode/decode route, including all wire values, rounding boundaries,
+endpoints and negative zero. It also requires a runtime trace slice whose changed axes actually steer players,
+with local and decoded inputs reproducing retained committed-state digests. M1.1, M1.2 and M1.3 add the wire
+route to the 2,000-body run on each target, alongside the full local-route runs. M1.5 closes the direct raw-float
+constructor route. Together these reject the earlier plausible substitute: feeding the same unquantized trace
+to every target and calling that input-wire equivalence.
 
-### MF2 — No acceptance item proves local inputs equal their wire-decoded copies
+I read [InputFrame](../../../crates/thrum-core/src/sim/input.rs), including axis admission, and
+[input_batch.rs](../../../crates/thrum-network/src/input_batch.rs), including the public batch interfaces,
+`quantize`, `dequantize` and `canonical_axes`. The specified arithmetic matches that existing implementation.
+An independent [arithmetic witness](design-review/input_arithmetic.py) verified idempotence for all 65,535
+admitted wire integers and adjacent binary32 inputs on both sides of all 65,534 rounding boundaries, plus the
+named sample axes and signed zero. [Output](design-review/input-arithmetic.txt).
 
-**Verified acceptance gap, with a numerical witness; not a claim about unbuilt implementation.** Affects the
-deterministic-rules interface and M1's proofs;
-[DESIGN.md](../../plans/SIM-2D/DESIGN.md), lines 134–136;
-[DONE.json](../../plans/SIM-2D/DONE.json), M1.1–M1.7 and M3.1–M3.4.
+That witness checks the mathematical premise only. It neither executes the Rust codec nor replaces M1.12's
+real codec and runtime proof. The conformance trace also remains a check of exercised behaviour, not a static
+proof of every possible branch in an arbitrary game rule.
 
-Mechanism 2 promises one engine conversion that makes a locally constructed input frame and its host-relayed
-copy yield identical profile numbers. None of the items exercises those two routes or asks whether the rule
-actually uses that conversion. M1.1–M1.3 replay the same trace on different targets. M1.5 covers the profile
-number's operations, not this input conversion. M3's lint fixtures do not detect a missing conversion performed
-inside the allowed engine API.
+## Previous Suggestions
 
-A convincing incomplete implementation can wrap the raw local axis as a profile number, use the same raw-axis
-trace on every target, retain its digests and pass the cross-target comparisons. It still disagrees with a peer
-that receives the quantized input. This is an omitted interface behaviour, not merely another floating-point
-edge case.
+- **S1 — Name which history the retained fold describes — resolved.** Design lines 280–285 define one digest
+  per tick on the final corrected timeline, replacing superseded digests before folding in tick order. M1.1
+  asks the reviewer to inspect this and requires a positive count of corrections that changed a digest. Design
+  lines 306–309 require corrections that steer a player differently. The straight-run oracle therefore compares
+  the same timeline and cannot be satisfied by corrections that do nothing.
+- **S2 — Bound query arithmetic and work as clearly as position precision — resolved.** Design lines 236–248
+  replace the unlimited finite-radius claim with an explicit coordinate/radius domain, a minimum cell size,
+  named refusal and a body-count-dependent fallback for wide queries. The plan discloses the finite-world
+  assumption. M2.12 checks edge acceptance, out-of-domain refusal and the same ordered brute-force result for
+  a query too wide to walk its empty cells. The stated domain keeps distance squares and cell coordinates
+  representable; the fallback makes area-independent work feasible without changing result order.
 
-The existing boundary makes the difference concrete:
+No new Must Fix findings or Suggestions.
 
-- [InputFrame](../../../crates/thrum-core/src/sim/input.rs), lines 5–45, admits raw finite normalized `f32` axes.
-- [The input-wire decision](../../design/decisions/A5-INPUT-WIRE.md), line 11, requires signed 16-bit
-  quantization with ties away from zero and canonicalizes negative zero.
-- [The codec](../../../crates/thrum-network/src/input_batch.rs), lines 196–221, implements this in `quantize`,
-  `dequantize` and `canonical_axes`.
+## Request and scope
 
-I independently evaluated that specified arithmetic using Python `struct.pack/unpack('<f', ...)` for binary32
-rounding, binary64 multiplication by 32767, and ties-away integer rounding:
+I read both planner tasks in [ACCEPTED.json](../../plans/SIM-2D/ACCEPTED.json), oldest first, and the project
+brief before comparing the design. The first task commissions SIM-2D after SHOWCASE; the second asks for the
+two previous Must Fix findings to be resolved. Neither changes the human's request or overrides the performance
+policy. The human's [swarm-game request](../../design/NEXT-GOAL-SWARM-GAME.md) and the module list require
+reusable 2D support and a crowd that later multiplayer can share by causes.
 
-| Local axis | Local binary32 value | Wire integer | Decoded binary32 value |
-|---|---:|---:|---:|
-| `0.1` | 0.10000000149011612 | 3277 | 0.10000915825366974 |
-| `0.5` | 0.5 | 16384 | 0.5000152587890625 |
-| `-0.5` | -0.5 | -16384 | -0.5000152587890625 |
+The design supplies that simulation foundation: deterministic rules, complete committed-state comparison,
+spawn/despawn and corrected replay, ordered neighbour and hit queries, enforceable named rule restrictions,
+and a reusable reference crowd. Rendering, transport, session repair and the finished game's policy remain
+with their named consumers. Circle bodies, the 10,000-body demonstrated range, finite coordinates and same-build
+replay are explicit assumptions. The revised domain does not exclude a commissioned ordinary swarm-game case.
 
-Negative zero also changes from little-endian bytes `00000080` to `00000000`. These are normal admitted inputs,
-and the digest deliberately observes stored profile-number bits.
+The restricted-float mechanism remains credible for the stated profile. Rust's
+[float semantics](https://rust-lang.github.io/rfcs/3514-float-semantics.html) and
+[primitive documentation](https://doc.rust-lang.org/std/primitive.f32.html) support its distinction between
+specified primitive arithmetic and observable NaN-bit nondeterminism. The unchanged design refuses stored
+non-finite values and keeps platform-dependent operations outside the API. Actual target agreement still has
+to be earned in M1; the planner's stand-in probe is not engine qualification.
 
-**Resolution:** include an M1 proof that the profile's actual rule-input route produces the same values and
-committed state from a local frame and its real codec round trip, including inputs that quantization changes.
-State how the conversion stays aligned with the existing wire authority while rule packages retain their stated
-dependency boundary. This can use the existing codec without sockets or a built SESSION module. Leave the test's
-implementation route to the builder.
+## Changed acceptance items
 
-## Suggestions
+Every changed item was read in full, including its check and reviewer question, against the previous findings.
+The remaining items and all three milestone quality bars were also read for interactions with the revision.
 
-### S1 — Name which history the retained fold describes
-
-**Verified ambiguity, not a demonstrated inability to implement replay.**
-[DESIGN.md](../../plans/SIM-2D/DESIGN.md), lines 229–231 and 342–344, and M1.1–M1.3 compare a fold of every
-tick's digest with a straight run that had corrected inputs from the start. A rewinding run also visits the
-superseded, uncorrected endpoints. Those endpoints should differ when the correction changes gameplay; an
-append-only fold over execution order would therefore differ too.
-
-Clarify that the comparison describes the final corrected timeline, and how superseded endpoints are excluded
-or replaced. Preserve a meaningful correction in the trace. This is a clarification of an otherwise sound
-straight-run-versus-replay oracle, not a request for another replay subsystem.
-
-### S2 — Bound query arithmetic and work as clearly as position precision
-
-**Verified missing detail; failure of a future implementation is only suspected.**
-[DESIGN.md](../../plans/SIM-2D/DESIGN.md), N4 and mechanism 5, promises radii up to any finite size and queries
-over hashed cells without a declared arena. The proof examples reach several cells and positions at 16,384 units.
-Finite binary32 values alone do not ensure finite squared distances, valid cell-coordinate conversion, or a
-practical cell walk for a query much larger than the occupied region.
-
-State the supported radius/cell-coordinate domain and large-query behaviour, or explain how the implementation
-keeps the broader promise. A bounded scan of occupied data is one possible treatment; the design need not commit
-to that implementation. This does not block the ordinary crowd range already commissioned.
-
-## Request and scope assessment
-
-I read ACCEPTED.json and the project brief before the design. There is one recorded planner task, quoted above,
-and no prior design review. The human's request is the original swarm survivor, 2D engine support and several
-players over the network in [the next-goal page](../../design/NEXT-GOAL-SWARM-GAME.md). Thousands of bodies,
-2–4 players and the target mix are explicitly defaults. I also read the original SIM-2D module brief preserved at
-`7a3694b8:docs/plans/ARCHITECTURE.md`, then the current module responsibilities and consumer interfaces.
-
-For this module that means deterministic simulation with spawn/despawn and replay, complete peer-comparison
-state, reusable neighbour/hit queries, enforceable rule restrictions, and a crowd later modules can consume.
-It does not mean building sockets, sprites, UI or the finished game here. Those deferrals fit the module map.
-The circle-body, finite-world and same-build assumptions are visible in the plan rather than silently narrowing
-the human's request. The new query crate and game-owned reference crowd preserve the reusable-engine boundary.
-
-The restricted-float decision is credible for the named scope. I checked the cited
-[Rust float semantics](https://rust-lang.github.io/rfcs/3514-float-semantics.html) and
-[primitive documentation](https://doc.rust-lang.org/std/primitive.f32.html): the selected arithmetic guarantee,
-NaN-bit caveat and nondeterministic signed-zero choice in primitive minimum/maximum support the wrapper's
-restrictions. This supports attempting M1; it does not prove the engine deterministic. The planner's discarded
-stand-in probe is reported evidence only, and M1 correctly requires the registered runtime on all three targets.
-
-The centre-cell grid, oversize list, deterministic query order, brute-force candidate oracle and separate
-predicate examples form a plausible mechanism. I also checked the cited
-[uniform-grid source](https://developer.download.nvidia.com/assets/cuda/files/particles.pdf). Nothing in this
-review qualifies integrated query cost or runtime correctness.
-
-## Done-when review
-
-Every item was read, including its check and reviewer question. The milestone sequence is feasible: M1 builds
-the profile, digest, basic queries and target runners; M2 extends queries and proves parallel use; M3 enforces
-package restrictions and documents the consumer route. None requires later rendering or transport work.
-
-| Items | Assessment |
+| Item | Assessment |
 |---|---|
-| M1.1–M1.4 | Real target executions, runtime/structural/history inspection and a divergent control reject a private simulation stand-in or same-process comparison. Add the omitted input-boundary proof in MF2; clarify the fold as S1. |
-| M1.5–M1.7 | Operation inspection, runtime refusal and per-kind authority-state perturbations are judgeable in M1 and materially stronger than a positions-only hash. |
-| M1.8–M1.9 | Cost and replay records are useful to SESSION; numeric admission clauses conflict with owner policy (MF1). |
-| M1.10–M1.11 | The retained slice, unchanged V1 tests and registered exact-baseline verifier are judgeable regression protections. |
-| M2.1–M2.3 | Whole-sequence comparison, independent expected geometry and an endpoint-miss/swept-hit case distinguish real queries from merely equal peer mistakes. S2 concerns the broader advertised domain. |
-| M2.4 | Reuse is a sound design objective; zero allocations as an admission condition conflicts with owner policy (MF1). |
-| M2.5–M2.8 | Preserved Crowd digests, exercised Mixed cases and positive forced-parallel dispatch counts can be judged using M1 and M2 alone. |
-| M2.9–M2.11 | Comparable density-aware costs and the baseline verifier are judgeable; regression explanations do not impose the M1 hard threshold. |
-| M3.1–M3.2 | One-violation controls and inspection of registry discovery and check integration can prove the explicitly enumerated guard classes. They do not prove arbitrary rule code deterministic, and the design appropriately supplies a separate conformance route. |
-| M3.3–M3.4 | The second runner consumer and executable guide can be inspected before SWARM exists. A fresh guide-only consumer would sharpen the usability claim, but is not needed to unblock this design. |
-| M3.5–M3.9 | Closing target reruns, separated maturity claims and exact-baseline verification are judgeable without later modules. |
+| M1.1 | Judgeable in M1. Preserves runtime, churn, three crowd sizes, long trace and debug proof; adds corrected-history inspection, meaningful corrections and the actual wire route. Resolves S1 and contributes to MF2. |
+| M1.2 | Judgeable in M1 using the already-existing codec. Chrome must reproduce the retained values and run the wire route, not merely repeat a local raw-axis trace. |
+| M1.3 | Same input proof in the simulator; appropriately proves function rather than another processor or device speed. |
+| M1.5 | The allowed API and operation vectors are inspectable in M1. Excluding a general raw-float constructor supports the specified input route without depending on M3's lint work. |
+| M1.8 | Requires real runtime costs and replay information from two attributed Mac runs, with tripwires recorded. No numeric acceptance condition remains. |
+| M1.9 | Preserves the corresponding Chrome measurements and removes the same numeric gate. |
+| M1.12 | A real codec comparison and committed-state trace test can be built in M1 without SESSION or sockets. Raw values changed by quantization must affect gameplay, so a helper-only comparison is insufficient. |
+| M2.4 | Buffer reuse is reviewable and allocation sources must be measured. Replacing the automated zero-count assertion with inspection is appropriate for the owner's baseline policy. |
+| M2.12 | Judgeable once M2's queries exist. The brute-force sequence and huge-area case test domain handling and bounded search work independently of target speed. |
+
+The order remains feasible: M1 proves the profile, digest, basic circle/nearest queries and target runners;
+M2 adds the remaining geometry and parallel use; M3 supplies the package guard and consumer guide. M2's existing
+Crowd-baseline preservation, predicate cases and forced-parallel counts remain intact. M3's named guard classes,
+second runner consumer and final target reruns are unchanged. No changed item requires a later module to exist.
 
 ## Review limits and validation
 
-This is an independent design review, not a milestone verdict. I read the full SIM-2D design, plan and done-when
-file, the accepted task, relevant brief and architecture sections, contracts C01–C03/C13, G2 and input-wire
-decisions, performance policy, review calibration and planning-probe report. Scoped code reads covered the existing
-input/codec boundary, runtime authority hash, registered-world metadata capture and history interface; I did not
-review the entire engine. No work was delegated.
+This review read the full current design, plan and done-when file, their changes since the previous review,
+the previous findings, accepted tasks, project brief, relevant architecture sections, contracts C01–C03/C13,
+input-wire decision, performance policy, review calibration and planner's probe/report. Scoped implementation
+reads covered the input/codec boundary and its dependency direction; this was not a fresh audit of all runtime
+or networking code. No work was delegated.
 
-I did not run the unbuilt conformance commands, recreate the planner's probe, inspect visual output or measure
-device speed. No visual claim is made by this module. Only this review and its evidence folder are changed;
-DONE.json and all planner files are untouched.
+No conformance commands for the unbuilt module, visual inspections or device measurements were performed.
+The numerical witness is explicitly separate from future implementation proof. Only this review and its
+permitted evidence folder are changed; the done-when file and all planner fields are untouched. The review
+is left uncommitted for the script.
 
 Validation: `CARGO_TARGET_DIR=/private/tmp/thrum-sim2d-design-review-target ./dev check-docs` passed:
-756 Markdown files, 4,719 local links, 30 module records, crate policy and current design hashes. It emitted
-existing large-file responsibility notes, with no errors. `git diff --check` was clean, and `git status --short`
-showed only the new review file. The review is left uncommitted for the script.
+756 Markdown files, 4,725 local links, 30 module records, crate policy and current design hashes. It emitted
+existing large-file responsibility notes, with no errors. `git diff --check` passed, and `git status --short`
+showed only this review and its evidence folder.
 
-DESIGN CHANGES: 2 must_fix findings
+DESIGN OK
