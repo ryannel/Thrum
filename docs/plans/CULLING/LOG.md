@@ -146,3 +146,9 @@
   this still rejects silent fallback. Both formerly failing Frustum bucket tests
   pass after the correction. Only the test helper changes; refresh the covered-key
   proof and retry the repository gate before merging.
+
+- 2026-11-13 Clean `0b520c56` passes both repaired Frustum bucket tests and the full
+  exact verifier in 891.16 seconds: 38 + 4 native comparisons and four Chrome sets of
+  481 records. Retained the original gate failure, focused pass and fresh exact proof
+  in [M2 evidence](../../evidence/CULLING/M2.md). The checked merge retries the whole
+  repository gate with M2 left `in_progress`.
