@@ -1,0 +1,8 @@
+{
+  "reviewed_commit": "85a3212c50a6bbe951cf82550c5a040909716fa0",
+  "builder_boundary": "04e0e7d2ff51139f3d6d6de2e4ff4d9e01fac1a4",
+  "measurement_commit": "7dca0b33146452ef1cc14c85065c77d71af76344",
+  "benchmark_source_sha256": "73d3049acd7ea2626cd48a2fe47894bd2b1521fcc2632e86b4994dfc7d4af745",
+  "measurement_to_review_source_diff": "diff --git a/crates/thrum-render/src/synthetic/mesh_route/tests.rs b/crates/thrum-render/src/synthetic/mesh_route/tests.rs\nindex 7f4869c9..b2968e06 100644\n--- a/crates/thrum-render/src/synthetic/mesh_route/tests.rs\n+++ b/crates/thrum-render/src/synthetic/mesh_route/tests.rs\n@@ -94,9 +94,11 @@ impl Gpu {\n         scene: &SyntheticScene,\n         lighting: FrameLighting,\n     ) -> (Vec<u8>, Option<u32>) {\n+        // Direct and culled renderers share frame inputs; each must keep the\n+        // mode requested when it was prepared, without a silent fallback.\n         assert_eq!(\n             prepared.camera_culling(),\n-            scene.camera_culling,\n+            prepared.culling_selection().requested,\n             \"resolved mesh oracle mode\"\n         );\n         let mut target =\n",
+  "script_check_basis": "User handoff and docs/plans/CULLING/ACCEPTED.json ready_for_review record; checks passed on builder boundary; no redundant re-run of M2.1, M2.3, M2.5 or ./dev check."
+}

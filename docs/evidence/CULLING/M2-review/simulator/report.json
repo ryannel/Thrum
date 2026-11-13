@@ -1,0 +1,52 @@
+{
+  "target": "ios-sim",
+  "scope": "function only",
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "exit": 0,
+      "stdout": "85a3212c50a6bbe951cf82550c5a040909716fa0\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "HEAD"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "examples/v1-game-ios/ios/build-simulator.sh"
+      ],
+      "exit": 0,
+      "stdout": "Built /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/v1-game-ios-sim/ThrumV1.app\n",
+      "stderr": "    Finished `release` profile [optimized] target(s) in 0.48s\n"
+    },
+    {
+      "argv": [
+        "xcrun",
+        "simctl",
+        "create",
+        "Thrum CULLING owned",
+        "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro",
+        "com.apple.CoreSimulator.SimRuntime.iOS-27-2"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "2026-11-13 15:09:47.882 simctl[89603:185932817] CoreSimulatorService connection became invalid.  Simulator services will no longer be available.\n2026-11-13 15:09:48.041 simctl[89603:185932818] Logging connecton invalid: <OS_xpc_error: <dictionary: 0x1fdf3a080> { count = 1, transaction: 0, voucher = 0x0, contents =\n\t\"XPCErrorDescription\" => <string: 0x1fdf3a1c0> { string cache = 0x0, length = 18, contents = \"Connection invalid\" }\n}>\n2026-11-13 15:09:48.041 simctl[89603:185932814] Error Domain=NSPOSIXErrorDomain Code=61 \"Connection refused\" UserInfo={NSLocalizedDescription=CoreSimulatorService connection became invalid.  Simulator services will no longer be available.}\n2026-11-13 15:09:48.041 simctl[89603:185932817] Error opening log file (/Users/ryannel/Library/Logs/CoreSimulator/CoreSimulator.com.apple.CoreSimulator.simctl.log): Operation not permitted\n[-[SimDiskImageManager init]:226] ERROR : Could not kickstart simdiskimaged; SimDiskImageManager services will not be available: Error Domain=NSPOSIXErrorDomain Code=53 \"Software caused connection abort\" UserInfo={NSLocalizedDescription=Error returned in reply from CoreSimulatorService: Connection invalid}\n[-[SimDiskImageManager _onQueue_checkConnection:]:290] ERROR : simdiskimaged returned error (invalid), marking disconnected.\n[-[SimServiceContext sendRequest:reply:error:]:2152] ERROR : Unable to deliver request ({\n    request = \"notification_subscription\";\n    \"set_path\" = \"/Users/ryannel/Library/Developer/CoreSimulator/Devices\";\n}) because we are not connected to CoreSimulatorService.\n[-[SimServiceContext initWithDeveloperDir:connectionType:error:]:504] WARN  : Unable to discover any Simulator runtimes. Developer Directory is /Applications/Xcode.app/Contents/Developer.\n[-[SimDiskImageManager _onQueue_checkConnection:]:290] ERROR : simdiskimaged returned error (invalid), marking disconnected.\n[-[SimServiceContext initWithDeveloperDir:connectionType:error:]_block_invoke:561] ERROR : Could not get list of trusted mount directories: Error Domain=com.apple.CoreSimulator.SimError Code=410 \"The service used to manage runtime disk images (simdiskimaged) crashed or is not responding\" UserInfo={NSLocalizedDescription=The service used to manage runtime disk images (simdiskimaged) crashed or is not responding}\nUnable to locate device set: Error Domain=NSPOSIXErrorDomain Code=61 \"Connection refused\" UserInfo={NSLocalizedFailureReason=Failed to subscribe to notifications from CoreSimulatorService., NSLocalizedDescription=Failed to initialize simulator device set., NSUnderlyingError=0x8df288930 {Error Domain=NSPOSIXErrorDomain Code=61 \"Connection refused\" UserInfo={NSLocalizedDescription=CoreSimulatorService connection became invalid.  Simulator services will no longer be available.}}}\n"
+    }
+  ],
+  "samples": [],
+  "commit": "85a3212c50a6bbe951cf82550c5a040909716fa0",
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "pass": false,
+  "failure": "Command ['xcrun', 'simctl', 'create', 'Thrum CULLING owned', 'com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro', 'com.apple.CoreSimulator.SimRuntime.iOS-27-2'] returned non-zero exit status 1."
+}
