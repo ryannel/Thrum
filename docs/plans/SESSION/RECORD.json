@@ -34,21 +34,21 @@
       }
     },
     "M2": {
-      "definitions": "93731c1b0fffd14d21179da50f3f5384da55131ea439cba1617bbd2a87995c3e",
+      "definitions": "8f8c31ac643caf81d4b8c243dcac7e74d4524b3917674b10774dd8cc2a519796",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
-        "at": "2026-11-13T18:43:49Z"
+        "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
+        "at": "2026-11-13T19:29:49Z"
       }
     },
     "M3": {
-      "definitions": "95b4c65921582ea9cff659e257117e0acd1dc4e03faec4131cadec38bc97c7f1",
+      "definitions": "cf5ce1f22bda07e7e197661106c77e01a7b4fb0377dc7b52fb58945d19517399",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
-        "at": "2026-11-13T18:43:49Z"
+        "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
+        "at": "2026-11-13T19:29:49Z"
       }
     },
     "M4": {
@@ -61,21 +61,21 @@
       }
     },
     "M5": {
-      "definitions": "26b3a42faf44aaefee23c7ca8f99923faed84823633daaa43f12ba6958ece064",
+      "definitions": "91502d3d4cda8e7c4b94451627b2acfc74f5efc3cb79f7a27723571e116ebeef",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
-        "at": "2026-11-13T18:43:49Z"
+        "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
+        "at": "2026-11-13T19:29:49Z"
       }
     },
     "M6": {
-      "definitions": "d9d03561386e6abcb0ce4d55ab7ae26dd79312e95d73ade664a66b42f5c70f39",
+      "definitions": "4651e116f83e37a9bc3186e34c1946638e1527cd4714961e1617f50c7b93179a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
-        "at": "2026-11-13T18:43:49Z"
+        "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
+        "at": "2026-11-13T19:29:49Z"
       }
     }
   },
@@ -83,10 +83,14 @@
     {
       "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
       "at": "2026-11-13T18:43:49Z"
+    },
+    {
+      "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T19:29:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T18:43:49Z"
+    "at": "2026-11-13T19:29:49Z"
   }
 }
