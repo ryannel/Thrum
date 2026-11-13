@@ -1,6 +1,28 @@
 {
   "module": "TRANSPORT",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/TRANSPORT/design-review.md",
+    "commit": "f574992194499bc5f2e5f6f5e6450e90eabacff2",
+    "hash": "c9fda0855c1b38df50ff421e538a15c61d6a9c56db811378d7f10597655a7382",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 109128,
+      "cached": 1164800,
+      "output": 7193,
+      "turns": 1
+    },
+    "at": "2026-11-13T16:43:45Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "5c02e435eb2d2f385a2cd28a608e5a4819f5f43d3dbbe13459e2706f81c83dc7",
