@@ -1470,6 +1470,14 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files) 
     if (state?.done) break;
     if (!state?.waiting) { await sleep(10); continue; }
     if (captures.some(capture => capture.name === state.waiting)) throw new Error(`moving-route held checkpoint ${state.waiting} twice`);
+    const submittedPng = await evaluate('window.thrumCheckpointPng ?? null');
+    if (submittedPng) {
+      const checkpoint = JSON.parse(await evaluate('JSON.stringify(window.thrumRoute.checkpoints.at(-1))'));
+      const png = Buffer.from(submittedPng.replace(/^data:image\/png;base64,/, ''), 'base64');
+      if (sha(decodePng(png).rgba) !== checkpoint.sha256) throw new Error('Submitted checkpoint PNG changed a byte');
+      await fs.mkdir(path.join(output, 'moving-route-submitted'), { recursive: true });
+      await fs.writeFile(path.join(output, 'moving-route-submitted', `${state.waiting}.png`), png);
+    }
     const clip = await evaluate(`(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height, scale: 1 }; })()`);
     const image = await screenshot(cdp, sessionId, output, 'moving-route', { file: `${folder}/${state.waiting}.png`, clip });
     if (image.width !== route.render_extent[0] || image.height !== route.render_extent[1]) throw new Error(`moving-route: checkpoint ${state.waiting} captured ${image.width}x${image.height}, not the route extent`);
