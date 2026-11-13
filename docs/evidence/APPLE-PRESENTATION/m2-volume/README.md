@@ -56,3 +56,8 @@ of 481 records, with unchanged references, in 917.57 seconds. [Verifier output](
 An earlier attempt stopped on an incomplete route-motion capture with 67 ring omissions during a
 concurrent GPU test; the unchanged retry passed. This is correctness evidence, not device timing.
 Subsequent rebases, final qualification and integration are recorded in the module log.
+
+After the documentation/Mac-qualification-script rebase, exact verification at `7bcf2b02` passes
+the same 1,966 comparisons in 889.44 seconds. [Integration proof](integration-exact.json.gz)
+and [verifier output](integration-exact.log.gz). The runtime and browser-checker source objects
+are unchanged from `cf0c424a`; only the unrelated qualification script changes the covered-content key.

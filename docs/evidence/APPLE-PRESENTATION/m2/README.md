@@ -1,5 +1,8 @@
 # APPLE-PRESENTATION M2 builder evidence
 
+The [review-repair qualification](../m2-volume/README.md) retains the latest production W3 proof,
+all seven passing item checks, 33 Chrome regression cases and the rebased exact-image records.
+
 D2.6's review repair now has [production cooked-volume W3 evidence](../m2-volume/README.md), including
 an exact alpha-byte assertion through the real forward graph and a production-write negative control.
 
