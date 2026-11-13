@@ -121,7 +121,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M2",
@@ -235,7 +236,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     },
     {
       "id": "M3",
@@ -330,7 +332,8 @@
           "status": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "rounds": 0
     }
   ]
 }

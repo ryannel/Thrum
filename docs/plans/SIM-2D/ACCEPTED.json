@@ -1,0 +1,43 @@
+{
+  "module": "SIM-2D",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "047e7ada8c2079ea50475e7c8c1ffc568c0527eb40a7b5322de6abc194aa5bc7",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SIM-2D. It needs: SHOWCASE",
+        "at": "2026-11-13T15:24:39Z"
+      }
+    },
+    "M2": {
+      "definitions": "f7fd78a7bdf66d43ff1d055dfc4f502e9ce68c3f3b69eb557c21bd169b4f06ad",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SIM-2D. It needs: SHOWCASE",
+        "at": "2026-11-13T15:24:39Z"
+      }
+    },
+    "M3": {
+      "definitions": "71f48bf28f89e09b3cf348d7a65f986ed5c5efcff21e495568e3414d6fb3b812",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SIM-2D. It needs: SHOWCASE",
+        "at": "2026-11-13T15:24:39Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module SIM-2D. It needs: SHOWCASE",
+      "at": "2026-11-13T15:24:39Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T15:24:39Z"
+  }
+}
