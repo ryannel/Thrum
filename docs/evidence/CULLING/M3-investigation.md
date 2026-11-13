@@ -191,3 +191,26 @@ pool because vector capacity grew beyond its diagnostic recycling bound; it
 was stopped at tick 187 and supplies no renderer result. Final qualification
 must include the newer upstream cooked-product lease repair, both targets,
 capture-off timing and fresh motion inspection before any M3 item passes.
+
+## Preserve the unshadowed profile's resource boundary
+
+The rebased candidate passes the five non-baseline item checks. The first
+complete-verifier attempt terminates at the check tool's default 600-second
+limit after its 38 native comparisons and part of the surface matrix; no image
+mismatch is reported. A longer retry is stopped during an additional source audit.
+
+That audit identifies a separate compatibility gap: Naga reflects Sun bindings
+2 and 3 as used by the candidate's `fragment` entry even though the caller passes
+a constant false flag. Backend constant folding comes after resource reflection.
+The unshadowed scene layout omits these resources, so a false runtime parameter
+is insufficient to preserve its pipeline boundary. The
+[original reflection and input hashes](M3/unshadowed-compatibility/identity.json)
+retain this CPU witness. It is not an attribution of the original pixel mismatch.
+
+Preparation now removes the Sun call from the composed unshadowed shader; the
+shadowed source is unchanged. A CPU regression checks actual Naga resource uses
+on plain and atmospheric profiles, with both Sun bindings required as a positive
+control for shadowed entries. It passes, and the production material-bind-group
+compute test also passes on Metal in 0.33 seconds. No dummy Sun resources or
+new persistent tables are introduced. All final checks and captures must run on
+this corrected source, using a per-check timeout long enough for the verifier.

@@ -1,0 +1,2 @@
+fragment ResourceBinding { group: 0, binding: 2 } GlobalUse(READ)
+fragment ResourceBinding { group: 0, binding: 3 } GlobalUse(READ | QUERY)

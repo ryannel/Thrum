@@ -1537,6 +1537,7 @@ impl PreparedSynthetic {
             atmosphere.is_some(),
             air_shadow.is_some(),
             cloud.is_some(),
+            shadow.is_some(),
         );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("prepared synthetic shader ABI2"),

@@ -1,0 +1,13 @@
+{
+  "source": "c1dfbed0ae82e22ce9d0a6c5c8520eebb5ebb698",
+  "target": "CPU Naga resource reflection; not a GPU image",
+  "inputs": {
+    "atmosphere/storage.wgsl": "7aa7051da8f805c808b294020fc019899ca4c46597569151951977845244818b",
+    "atmosphere/brdf.wgsl": "e805bf88baec9652be18d073d144b9535550ee12662c706743d6ad9c8849c87a",
+    "atmosphere/irradiance.wgsl": "7fc45f72033347b51b28154efe11e0593074c51b676f6981f972d1ee7fa0b05d",
+    "synthetic.wgsl": "faa2ae5808be906105bdd0d062bb03f44bbf2f8e4004f08dd56a57106969fb3a",
+    "synthetic_plain.wgsl": "b6510d348c336f13d315abb2b7aed53f063840151f4a48ed77c2c4f95a66c6c7"
+  },
+  "composition": "join the five input files in listed order with newlines, matching the unshadowed plain source before the compatibility correction",
+  "shader_sha256": "5abe5d0e038a4e3118dcd0de541e5856556aabf47372f54c20b07e1d81df69e4"
+}
