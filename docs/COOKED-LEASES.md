@@ -50,7 +50,8 @@ Residency supplies texels, not their meaning: physical extent, placement, optics
 sampling conventions and history policy belong to the consumer. It never cooks, creates a
 consumer's pipeline, keeps its history, submits its command buffer or provides another loader.
 For a CPU reader, map the portable product named by the lease through `thrum-asset`, pinned by
-its hash; never independently follow `HEAD`. A foam texture can use a `.linear.png` source;
+its `portable_hash`; never independently follow `HEAD`. The selected GPU encoding's identity
+is `hash`; both hashes belong to the same offered publication. A foam texture can use a `.linear.png` source;
 volumes use portable R8 and preferred BC4 where sliced-3D BC is available. Font and sprite-sheet
 metadata, array pages, volume atlases and iPhone-specific volume encodings remain later work.
 

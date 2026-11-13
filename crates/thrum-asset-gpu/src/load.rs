@@ -33,6 +33,14 @@ enum Source<'a> {
 }
 
 impl<'a> Source<'a> {
+    fn portable_hash(self, name: &str) -> Option<ContentHash> {
+        match self {
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Store(_, manifest) => manifest.resolve(name, &[Profile::Portable]),
+            Self::Remote(generation) => generation.manifest().resolve(name, &[Profile::Portable]),
+        }
+        .map(|entry| entry.product)
+    }
     fn resolve(self, name: &str, preferences: &[Profile]) -> Option<ManifestEntry<'a>> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
@@ -88,7 +96,7 @@ pub(crate) struct GpuTexture {
 
 /// Every product one publication draws.
 pub(crate) struct ResidentSet {
-    pub(crate) leased: Vec<(ContentHash, Profile, Arc<GpuTexture>)>,
+    pub(crate) leased: Vec<(ContentHash, ContentHash, Profile, Arc<GpuTexture>)>,
     pub(crate) generation: u64,
     pub(crate) meshes: Vec<(Arc<GpuMesh>, Arc<GpuTexture>)>,
     pub(crate) volume: Option<Arc<GpuTexture>>,
@@ -125,7 +133,7 @@ pub(crate) struct Loader {
 
 /// Products a set needs, before upload.
 struct Opened {
-    leased: Vec<(ContentHash, Profile, Option<Ktx2>)>,
+    leased: Vec<(ContentHash, ContentHash, Profile, Option<Ktx2>)>,
     meshes: Vec<(ContentHash, Option<MeshProduct>, ContentHash, Option<Ktx2>)>,
     volume: Option<(ContentHash, Option<Ktx2>)>,
 }
@@ -306,7 +314,7 @@ impl Loader {
         if let (Some(volume), Some(hash)) = (&set.volume, products.next()) {
             next.textures.insert(*hash, Arc::clone(volume));
         }
-        for (hash, _, texture) in &set.leased {
+        for (hash, _, _, texture) in &set.leased {
             next.textures.insert(*hash, Arc::clone(texture));
         }
         next
@@ -430,7 +438,10 @@ impl Loader {
                         })?,
                 )
             };
-            opened.leased.push((entry.product, entry.profile, product));
+            let portable_hash = source.portable_hash(&request.name).ok_or_else(missing)?;
+            opened
+                .leased
+                .push((entry.product, portable_hash, entry.profile, product));
         }
         Ok((opened, texture_profile, volume_profile))
     }
@@ -480,7 +491,7 @@ impl Loader {
         }
         // Reuse placement textures and repeated lease names within this publication too.
         let mut textures = Self::confirm(&set).textures;
-        for ((hash, profile, product), request) in
+        for ((hash, portable_hash, profile, product), request) in
             opened.leased.into_iter().zip(&self.config.leased)
         {
             let texture = if let Some(texture) = textures
@@ -500,7 +511,7 @@ impl Loader {
                 ));
             }
             textures.insert(hash, Arc::clone(&texture));
-            set.leased.push((hash, profile, texture));
+            set.leased.push((hash, portable_hash, profile, texture));
         }
         let (upload, filler) = plan.finish(&self.ring)?;
         Ok((set, upload, filler))
