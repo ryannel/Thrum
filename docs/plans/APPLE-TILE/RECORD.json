@@ -283,7 +283,7 @@
       }
     },
     "M3": {
-      "definitions": "57b00a5c0e2cb254ac3a3653a5ad5e3f0e8d79ac07f28fd01062a97ad2b5f66d",
+      "definitions": "68482204cbe19c4a6b26d0d406bc3f047d8c2fe608eeb2e77c4cf9c2f4a042dc",
       "reviews": [
         {
           "verdict": "fail",
@@ -322,39 +322,21 @@
         }
       ],
       "authorised": {
-        "by": "plan",
-        "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
-        "at": "2026-11-09T14:02:56Z"
+        "by": "human decision",
+        "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
+        "at": "2026-11-13T23:35:19Z"
       },
-      "ready_for_review": {
-        "commit": "4159a2b769d771fdd4d74db6a953262d1d6de7c3",
-        "checked": "879db31a2c116acda5a9612d5358c8ad5b73f273",
-        "at": "2026-11-11T22:24:28Z",
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.167.0-alpha.3.2",
-        "path": "visible",
-        "usage": {
-          "incomplete_turns": 1
-        },
-        "session_usage": {
-          "incomplete_turns": 1
-        }
-      }
+      "counted_after": 1
     },
     "M10": {
-      "definitions": "ab2e2619d37a41869a0ac6da08fafecacde68e91bb071cc653a9de3d8c744a19",
+      "definitions": "150ae298e726d562d690337eadc8be3e7b3d7948e12cbd818e29fded39b7129e",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Re-plan APPLE-TILE (G3t, tile dataflow and Metal boundary) so it can pass design review and unpark. It was parked after two failed design reviews; docs/evidence/APPLE-TILE/design-review-2.md lists sev",
-        "at": "2026-11-09T14:02:56Z"
-      }
+        "by": "human decision",
+        "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
+        "at": "2026-11-13T23:35:19Z"
+      },
+      "counted_after": 0
     },
     "M11": {
       "definitions": "3e35fe0b1eb719be5c57bddb462add2199a6ee96e72b1cbec8e174611f4ee48a",
@@ -402,6 +384,12 @@
       "words": "[Asked how to finish the resize and 1x playback checks, given Codex Computer Use calls Thrum M2 and IINA not approved:] Show it in Codex",
       "at": "2026-11-11T10:16:52Z",
       "item": "D2.5"
+    },
+    {
+      "action": "scope",
+      "milestone": "M3",
+      "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
+      "at": "2026-11-13T23:35:19Z"
     }
   ],
   "briefs": [
