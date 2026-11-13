@@ -25,12 +25,12 @@ evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exa
 
 Criteria: M1.1–M1.10 in the done-when file.
 
-- [ ] Add leases to residency: names fixed in its configuration, made resident through the same loader, staging ring and budget as placements, and offered as a whole set only after the frame that recorded the last copy is submitted. Carry identity and a change serial per product, so a consumer keeps a change pending until a submitted frame that advances history has used it.
-- [ ] Make the publication residency's, under [one publication, one switch](DESIGN.md#one-publication-one-switch-m1-m2), so that placements and leases switch in the same frame. A scene with only placements behaves as it does today.
-- [ ] Build a diagnostic consumer in `examples/v1-game`, off by default, that holds only a lease and reads the twelve generated volumes and one texture in its own pass. Prove texels, the commit rule, an edit, both profiles, the shared budget and device replacement on the Mac.
-- [ ] Add the fault probe to staging and the test of the fill-failure path; test a generation with a missing, invalid or refused leased product.
-- [ ] Add the leased scenario to the `cooked_edit` bench and record it with its load class.
-- [ ] Add the Chrome case; document the lease for `SEA`, `CLOUDS` and `RENDER-2D`.
+- [x] Add leases to residency: names fixed in its configuration, made resident through the same loader, staging ring and budget as placements, and offered as a whole set only after the frame that recorded the last copy is submitted. Carry identity and a change serial per product, so a consumer keeps a change pending until a submitted frame that advances history has used it.
+- [x] Make the publication residency's, under [one publication, one switch](DESIGN.md#one-publication-one-switch-m1-m2), so that placements and leases switch in the same frame. A scene with only placements behaves as it does today.
+- [x] Build a diagnostic consumer in `examples/v1-game`, off by default, that holds only a lease and reads the twelve generated volumes and one texture in its own pass. Prove texels, the commit rule, an edit, both profiles, the shared budget and device replacement on the Mac.
+- [x] Add the fault probe to staging and the test of the fill-failure path; test a generation with a missing, invalid or refused leased product.
+- [x] Add the leased scenario to the `cooked_edit` bench and record it with its load class.
+- [x] Add the Chrome case; document the lease for `SEA`, `CLOUDS` and `RENDER-2D`.
 
 ## M2 An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome
 
