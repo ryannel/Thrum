@@ -178,3 +178,16 @@ with the sampled values and material factors live across the Sun search.
 Native exact images, repeated route controls, final target qualification and
 GPU cost remain pending. The candidate must be rejected if it changes a retained
 image or still reproduces the original failure.
+
+On clean `c98b6578`, that candidate passes the
+[38-comparison native matrix and eight repeated complete mesh routes](M3/pre-sample-c98b6578/report.json).
+Four runs per recipe compare all 361 scene-linear submissions, including a
+second independently prepared Direct host. All 2,888 submitted frames match;
+every run asserts both modes resolve as requested and hide work. The unchanged
+native retained images match exactly. This is bounded evidence for the
+candidate, not retrospective attribution of the old intermittent failures.
+The separate Sun-visibility attachment probe exhausted its enlarged CPU lease
+pool because vector capacity grew beyond its diagnostic recycling bound; it
+was stopped at tick 187 and supplies no renderer result. Final qualification
+must include the newer upstream cooked-product lease repair, both targets,
+capture-off timing and fresh motion inspection before any M3 item passes.
