@@ -111,7 +111,7 @@
         {
           "id": "M1.9",
           "statement": "On the Mac the interface scene's panel card reads as drawn over the sprite field and over the valley: upright and unmirrored with its corner marks in their corners, flat authored colours, hard edges, an even half-transparent scrim, nothing missing. Over the moving valley its edges do not swim, shimmer or trail.",
-          "inspect": "Capture the interface scene with T2 engine capture. `fixed` stills over the sprite field at 1280×720 and 3456×2234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture of at least ten seconds over the valley at 1920×1080 with the camera moving; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
+          "inspect": "Capture the interface scene with T2 engine capture. `fixed` stills over the sprite field at 1280\u00d7720 and 3456\u00d72234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture of at least ten seconds over the valley at 1920\u00d71080 with the camera moving; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -120,7 +120,7 @@
         },
         {
           "id": "M1.10",
-          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920×1080 and at 3456×2234, with no interface, an empty one and one of 2,000 rows: the stage's pass alone, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
+          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920\u00d71080 and at 3456\u00d72234, with no interface, an empty one and one of 2,000 rows: the stage's pass alone, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
           "check": "python3 scripts/game_ui.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Are the before and after runs paired and alternated, and is any tripwire of the design's cost account that tripped written in the log with what was found?",
           "lock": "gpu",
@@ -132,7 +132,7 @@
         },
         {
           "id": "M1.11",
-          "statement": "In Chrome the same three cases are on record at 1920×1080 and at the page's full backing size, from two separate runs with build and load, with whether Chrome accepted the sRGB view of the display image. No time is a pass mark.",
+          "statement": "In Chrome the same three cases are on record at 1920\u00d71080 and at the page's full backing size, from two separate runs with build and load, with whether Chrome accepted the sRGB view of the display image. No time is a pass mark.",
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -156,7 +156,7 @@
     },
     {
       "id": "M2",
-      "name": "Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game",
+      "name": "Text is drawn from a cooked font, every glyph crisp at 1\u00d7, 2\u00d7 and 3\u00d7, and an edited font shows in the running game",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -165,7 +165,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "A font source with an outline font cooks to one font table and one pixel-kind sheet for each scale of 1, 2 and 3. Each glyph's frame is white at the glyph's coverage, rasterised at size × scale on a whole-pixel origin, with its pivot at the pen's origin on the baseline. The table's advances and kerning are the font file's own, rounded to whole output pixels. With no character list the set is Basic Latin, the Latin-1 Supplement, Latin Extended-A and the design's punctuation, with a missing-glyph box for each size. A size with an outline has a second frame for each glyph.",
+          "statement": "A font source with an outline font cooks to one font table and one pixel-kind sheet for each scale of 1, 2 and 3. Each glyph's frame is white at the glyph's coverage, rasterised at size \u00d7 scale on a whole-pixel origin, with its pivot at the pen's origin on the baseline. The table's advances and kerning are the font file's own, rounded to whole output pixels. With no character list the set is Basic Latin, the Latin-1 Supplement, Latin Extended-A and the design's punctuation, with a missing-glyph box for each size. A size with an outline has a second frame for each glyph.",
           "check": "cargo test --locked --offline -p thrum-cook --test font_cook",
           "ask": "Read the test. Does it read advances, kerning and line metrics from the font file by a path the cooker does not use, and compare them with the table for each size and scale? Does it show each frame holds its whole glyph (the outline's bounds at that size lie inside it), that an asymmetric glyph is neither flipped nor mirrored, and that a kerned pair and an accented letter of Latin Extended-A are present?",
           "target": "mac-metal",
@@ -298,7 +298,7 @@
         {
           "id": "M2.13",
           "statement": "In real time on the Mac, a right-aligned counter that grows digits, a timer with tabular digits and a label drifting by less than a pixel a frame keep their shapes: no gap between two glyphs ever changes, no digit shivers, and the label moves by whole pixels without its letters changing.",
-          "inspect": "Capture the interface scene's counting card at 1920×1080 with T2 engine capture in `realtime` mode for at least ten seconds at a scale of 1 and ten at a scale of 2. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
+          "inspect": "Capture the interface scene's counting card at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least ten seconds at a scale of 1 and ten at a scale of 2. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -340,7 +340,7 @@
         },
         {
           "id": "M3.2",
-          "statement": "For any tree the nodes allow and any extent from 320×320 to 3456×2234 points with insets up to 64 points a side, every node's box lies inside its parent's unless the layout reports an overflow that names it, a stack's children never overlap, the same input gives the same boxes, and every node not marked full-bleed lies inside the safe box.",
+          "statement": "For any tree the nodes allow and any extent from 320\u00d7320 to 3456\u00d72234 points with insets up to 64 points a side, every node's box lies inside its parent's unless the layout reports an overflow that names it, a stack's children never overlap, the same input gives the same boxes, and every node not marked full-bleed lies inside the safe box.",
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Does the generator build stacks, overlays, text and every kind of size, nested, and sweep extents and insets to both ends of the range? Would a layout that ignores insets, or lets a share go below nothing, fail it?",
           "target": "mac-metal",
@@ -374,7 +374,7 @@
         },
         {
           "id": "M3.5",
-          "statement": "Across every extent from 320×320 to 3456×2234 points in steps of no more than 16, in both orientations of a phone-sized extent and with insets up to 64 points, at each scale, the interface scene's status display reports no overflow and no elided text, no two of its nodes overlap, and all of it lies inside the safe box.",
+          "statement": "Across every extent from 320\u00d7320 to 3456\u00d72234 points in steps of no more than 16, in both orientations of a phone-sized extent and with insets up to 64 points, at each scale, the interface scene's status display reports no overflow and no elided text, no two of its nodes overlap, and all of it lies inside the safe box.",
           "check": "cargo test --locked --offline -p v1-game --test interface_status_sweep",
           "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself?",
           "target": "mac-metal",
@@ -385,7 +385,7 @@
         },
         {
           "id": "M3.6",
-          "statement": "On the Mac, in windows of 640×360, 1280×720 and 1707×933 points on the built-in display, the shell reports the window's extent, the display's density and its insets, the interface takes a scale of 2, and the status display is exact against the CPU reference. After a resize the next submitted frame is laid out for the new extent and equals a fresh interface there.",
+          "statement": "On the Mac, in windows of 640\u00d7360, 1280\u00d7720 and 1707\u00d7933 points on the built-in display, the shell reports the window's extent, the display's density and its insets, the interface takes a scale of 2, and the status display is exact against the CPU reference. After a resize the next submitted frame is laid out for the new extent and equals a fresh interface there.",
           "check": "python3 scripts/game_ui.py window --target mac-metal",
           "ask": "Does the run take extent, density and insets from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
@@ -409,7 +409,7 @@
         {
           "id": "M3.8",
           "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, nothing touches an edge or another node, and the bar's level is plain.",
-          "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640×360 and 1280×720 points at a scale of 2, at 3456×2234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
+          "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -419,7 +419,7 @@
         {
           "id": "M3.9",
           "statement": "In real time on the Mac, with the bar draining and refilling, the timer counting and the counters ticking over a moving crowd, only the values change: nothing shivers, shifts or overlaps, and through a run of window sizes every frame is laid out whole, with nothing cut off or left behind.",
-          "inspect": "Capture the interface scene at 1920×1080 with T2 engine capture in `realtime` mode for at least twenty seconds, and a second capture that steps the extent through at least six sizes. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
+          "inspect": "Capture the interface scene at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, and a second capture that steps the extent through at least six sizes. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -561,7 +561,7 @@
         {
           "id": "M4.8",
           "statement": "On the Mac the level-up choice reads at a glance in every state: four cards of equal size with their text inside them, the focused one unmistakable, pressed and disabled cards distinct from it, the scrim even, and the crowd still legible behind.",
-          "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640×360 and 1280×720 points at a scale of 2, at 3456×2234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
+          "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -571,7 +571,7 @@
         {
           "id": "M4.9",
           "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
-          "inspect": "Capture the scripted level-up at 1920×1080 with T2 engine capture in `realtime` mode, three times through, with the event times from the run's record beside the frames. Judge the consecutive frames around each event at 1x, whole and in native-size crops of the cards and of the player.",
+          "inspect": "Capture the scripted level-up at 1920\u00d71080 with T2 engine capture in `realtime` mode, three times through, with the event times from the run's record beside the frames. Judge the consecutive frames around each event at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -581,7 +581,7 @@
         {
           "id": "M4.10",
           "statement": "On the Mac the join screen reads plainly in each state: hosting with its ticket and Copy; joining with no ticket, with a pasted ticket, connecting, joined with a roster of four, refused with its reason, closed with its reason. The ticket's two ends are legible, a reason is never cut off, and nothing overlaps at the smallest window.",
-          "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640×360 and 1280×720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
+          "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
