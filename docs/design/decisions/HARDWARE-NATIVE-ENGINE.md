@@ -44,9 +44,11 @@ Each view publishes one frame contract, so reconstruction, interpolation and den
 
 Providers include Thrum's own TAAU, MetalFX spatial and temporal, DLSS, FSR, XeSS, frame interpolation, and neural or vendor denoisers. Each is an optional provider selected by the registry, with own TAAU as the portable fallback. Rendering below output resolution and reconstructing is the default for heavy views on every recipe. Native resolution remains a quality setting.
 
+That list is the full form of the contract, which every view of a 3D scene publishes. A view of a 2D scene declares no reconstruction when its scene is prepared, as [C07](../CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) defines: it is drawn at its output extent and publishes one unjittered projection, exposure and output extent, and none of the provider inputs above. The registry resolves no provider for it, and a request that names one is refused by name at preparation. Rendering below output resolution does not apply to it.
+
 ## Quality governor
 
-A closed loop responds to observed frame, thermal and power conditions. Its inputs are GPU pass time, CPU tick and encode time, missed presents, thermal state, power mode and link quality. Its outputs are render scale (feeding reconstruction), per-effect quality and update cadence for time-sliced passes. It applies hysteresis and records every change in the profiler. It never changes simulation rate, authority or replicated state.
+A closed loop responds to observed frame, thermal and power conditions. Its inputs are GPU pass time, CPU tick and encode time, missed presents, thermal state, power mode and link quality. Its outputs are render scale (feeding reconstruction), per-effect quality and update cadence for time-sliced passes. It applies hysteresis and records every change in the profiler. It never changes simulation rate, authority or replicated state. A view that declares no reconstruction has no render scale for it to lower; its other outputs are unaffected.
 
 ## Hardware use by layer
 

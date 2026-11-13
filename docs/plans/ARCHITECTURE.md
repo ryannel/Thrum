@@ -551,6 +551,12 @@ design says each ask becomes a milestone there, and ruling 2 replaces that for t
    its own colour as the pre-tone input with a fixed exposure, selects a
    [display-referred transfer](RENDER-2D/DESIGN.md#7-colour) with no tone curve and no dither, and declares no
    reconstruction: its extent is the surface's, with no jitter, no history and no scale for the governor.
+   C07 and [the hardware-native frame contract](../design/decisions/HARDWARE-NATIVE-ENGINE.md#frame-contract) carry
+   this as the contract's second form: a view of a 2D scene publishes one unjittered projection, exposure and
+   output extent and none of the provider inputs, the registry resolves no provider for it, and a request that
+   names one is refused by name at preparation. Every view of a 3D scene still publishes the full form, so no
+   provider, history rule or governor behaviour of `APPLE-PRESENTATION` changes. The declaration is the frame
+   runtime's and the refusal is `APPLE-PRESENTATION`'s; both are built in `RENDER-2D:M1`.
 2. **Content, in `RENDER-2D:M4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
    `thrum-asset-gpu` and the contribution list). The [sheet product](RENDER-2D/DESIGN.md#8-sheets) is a new
    product kind; its pages are lent as an array texture under the lease's rules, and they switch with its frame
@@ -574,10 +580,10 @@ review passes. Changes to a numbered contract are settled with its producers and
 | **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target. Rules live in a rule package that `./dev check` guards, and one conformance command runs any rule package's trace on the three targets | `SIM-2D` → `SWARM` (its rules), `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#mechanisms); C02 |
 | **World digest**: one value for each committed tick over all authority state, computed on request. A baseline must restore everything it covers | `SIM-2D` → `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#4-the-world-digest) |
 | **2D queries**: overlap, nearest and neighbours, with results in a fixed order that depends on the index's cell size, which is a constant of the rule set and never a quality setting | `SIM-2D` → `SWARM` | [SIM-2D](SIM-2D/DESIGN.md#5-the-index-and-its-queries); C03 |
-| **Sprite rows**: a game's read-model components map to sheet frame, layer, sort value, tint, flash and transform, interpolated between tick endpoints on the GPU; rows the game gives each frame are drawn among them. One total order: layer, sort value, stable identity | `RENDER-2D` → `SWARM`, any 2D game | [RENDER-2D](RENDER-2D/DESIGN.md#3-sprite-rows); C07 |
+| **Sprite rows**: a game's read-model components map to sheet frame, layer, sort value, tint, flash and transform, interpolated between tick endpoints on the GPU; rows the game gives each frame are drawn among them. One total order: layer, sort value, stable identity, kept from tick to tick so that two rows near each other exchange places only when one has passed the other by more than the scene's band | `RENDER-2D` → `SWARM`, any 2D game | [RENDER-2D](RENDER-2D/DESIGN.md#3-sprite-rows); C07 |
 | **Sheets**: a folder of images cooks to pages and a frame table; a sheet is pixel or smooth; a game names frames by name, and a scene shows at most eight sheets. A glyph is a frame, so a font cooks to a sheet | `RENDER-2D` → `SWARM`, `GAME-UI` | [RENDER-2D](RENDER-2D/DESIGN.md#8-sheets); C05 |
 | **The sprite pass at another stage**: the pass takes its target, view and rows as inputs, so a second instance draws a paint list at the interface stage | `RENDER-2D` → `GAME-UI` | [RENDER-2D](RENDER-2D/DESIGN.md#interfaces) |
-| **2D scene half**: a host created for the 2D scene kind compiles only that scene's pass and the output half's, writing the pre-tone scene-linear input at the surface's pixel extent | `APPLE-TILE` → `RENDER-2D`, by [ruling 1](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#1-the-scene-kind); [APPLE-TILE](APPLE-TILE/DESIGN.md), C06 |
+| **2D scene half**: a host created for the 2D scene kind compiles only that scene's pass and the output half's, writing the pre-tone scene-linear input at the surface's pixel extent | `APPLE-TILE` → `RENDER-2D`, by [ruling 1](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#1-the-scene-kind); [APPLE-TILE](APPLE-TILE/DESIGN.md), C06, C07's no-reconstruction form |
 | Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games. The sheet product by [ruling 2](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#8-sheets); C05 |
 | **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
@@ -841,3 +847,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   are settled as [seam rulings](#seam-rulings-for-render-2d) that its own builder builds after V1, so no V1
   module's design, plan or done-when item changed. The sprite-rows, sheets and 2D-scene-half interfaces now link
   to its design. No contract or exact baseline changed.
+- 2026-11-13 `RENDER-2D`'s design review asked for two changes, and both reach this page. C07 required every view
+  to publish motion, depth, a reactive mask and jitter, which a 2D scene under ruling 1 never makes; C07 and the
+  hardware-native frame contract now name two forms, full for every view of a 3D scene and no reconstruction for a
+  view of a 2D scene, with the refusal of a provider named for one. Ruling 1 states it. No 3D view's obligations
+  changed, so no V1 module's design, plan or done-when item changed. The sprite-rows interface now says the order
+  is kept from tick to tick with a band between near rows, replacing a band on each row's own value that the
+  review showed could not hold.
