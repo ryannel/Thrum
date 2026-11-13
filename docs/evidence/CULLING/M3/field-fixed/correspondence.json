@@ -1,0 +1,110 @@
+[
+  {
+    "group": "enter",
+    "index": 0,
+    "tick": 301,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00301.ppm",
+    "sha256": "935cbf70c70d9e7b89f84cbb4dbd9be3c062811d75f7be1148813340de75d7e4",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "enter",
+    "index": 1,
+    "tick": 302,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00302.ppm",
+    "sha256": "7c5dbca617144a4dac1c63784aa85a0e693a8b995c847a5ee6cdba19418b4478",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "enter",
+    "index": 2,
+    "tick": 303,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00303.ppm",
+    "sha256": "86e6307003b483ed5bb3d64718e908aca1e5afd55382d735cc4e44850c570019",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "enter",
+    "index": 3,
+    "tick": 304,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00304.ppm",
+    "sha256": "97022e7f3a2636a73ef3502759960969e9e44bd7ba2e4ef28efc84344306205c",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "enter",
+    "index": 4,
+    "tick": 305,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00305.ppm",
+    "sha256": "179eecac2c18dda72dcf6cff17dd3ac9a0c570d69cd061702a7f272a97075c49",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "enter",
+    "index": 5,
+    "tick": 306,
+    "box": "240:200:400:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00306.ppm",
+    "sha256": "09c84a2024510b2cdf09a592a10b0d5e71d4390ec1590c171a4bc105e38c41c7",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 0,
+    "tick": 421,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00421.ppm",
+    "sha256": "27b9b1292b62d0d69cf92b83990f0e39bc4bdd43dc22cbc20d7a8c22b8f4869c",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 1,
+    "tick": 422,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00422.ppm",
+    "sha256": "e10d4f5771a406c9f492a001b80d58ce13c93df9abe4cfd7dee3f725a8d529c5",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 2,
+    "tick": 423,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00423.ppm",
+    "sha256": "9b3e60e3b26b1cecfc3b0ad7c34661b0c867f193ae407febad59e894b8a71dc0",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 3,
+    "tick": 424,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00424.ppm",
+    "sha256": "e20374330fc3b254ef1f793da8b98f2499cf95ee2d7975aa93a3d2b608b53f5c",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 4,
+    "tick": 425,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00425.ppm",
+    "sha256": "fce4006676945e78aaa117e48bcc9c428af684a59cee6682b6438203aa993898",
+    "frustum_equals_occlusion": true
+  },
+  {
+    "group": "exit",
+    "index": 5,
+    "tick": 426,
+    "box": "240:200:0:140",
+    "source": "tmp/culling-m3/capture-20261113-175512/field-fixed/meshes-occlusion/00426.ppm",
+    "sha256": "e4ee72fa069f97e4af51f47e091a27623858d21fe1e00cecd1826a4f0d7a6056",
+    "frustum_equals_occlusion": true
+  }
+]

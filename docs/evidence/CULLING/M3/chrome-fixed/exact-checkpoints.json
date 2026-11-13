@@ -1,0 +1,157 @@
+[
+  {
+    "name": "approach",
+    "tick": 225,
+    "submitted": {
+      "alpha": 0.4999999701976776,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1166652782,
+        1094548132,
+        1175417432,
+        0,
+        225,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 225,
+      "source_epoch": "1",
+      "source_tick": 225,
+      "submission_id": 224,
+      "submit_ms": 2.3,
+      "surface_presented": true,
+      "tick": 225,
+      "timeline": 0
+    },
+    "bytes": 3686400,
+    "sha256": "fa4849bded7fa51ac86f85ba05d50239f813f1fb0cba5bc6bdbfcb78ce8ba4ad"
+  },
+  {
+    "name": "mirror-light",
+    "tick": 350,
+    "submitted": {
+      "alpha": 0.5000000596046448,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1161595503,
+        1093974830,
+        1170498953,
+        0,
+        350,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 350,
+      "source_epoch": "1",
+      "source_tick": 350,
+      "submission_id": 349,
+      "submit_ms": 1.6,
+      "surface_presented": true,
+      "tick": 350,
+      "timeline": 0
+    },
+    "bytes": 3686400,
+    "sha256": "eae9ed7018e66a4b688b452b5de14de8519d1aee97ceb30c61d71454ced7a635"
+  },
+  {
+    "name": "pre-cut",
+    "tick": 376,
+    "submitted": {
+      "alpha": 0.5,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1160504886,
+        1093835041,
+        1169362896,
+        0,
+        376,
+        0,
+        1
+      ],
+      "history_epoch": 1,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 376,
+      "source_epoch": "1",
+      "source_tick": 376,
+      "submission_id": 375,
+      "submit_ms": 1.7,
+      "surface_presented": true,
+      "tick": 376,
+      "timeline": 0
+    },
+    "bytes": 3686400,
+    "sha256": "6f5c64e21e89bed93007d74173e09dc199e9583cd401d4bbd68c685daff08a7f"
+  },
+  {
+    "name": "post-cut",
+    "tick": 386,
+    "submitted": {
+      "alpha": 0.5000000596046448,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1160096642,
+        1093779203,
+        1168937646,
+        0,
+        386,
+        0,
+        1
+      ],
+      "history_epoch": 2,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 386,
+      "source_epoch": "1",
+      "source_tick": 386,
+      "submission_id": 385,
+      "submit_ms": 1.3,
+      "surface_presented": true,
+      "tick": 386,
+      "timeline": 0
+    },
+    "bytes": 3686400,
+    "sha256": "b798bc4c51cbe5115dfcbab845d67cf760c70185bd5d2fdba338fe224139d2fb"
+  },
+  {
+    "name": "near-plane",
+    "tick": 530,
+    "submitted": {
+      "alpha": 0.5000000596046448,
+      "device_generation": 1,
+      "exposure_gpu_words": [
+        981467136,
+        1152353134,
+        1092817941,
+        1161221016,
+        0,
+        530,
+        0,
+        1
+      ],
+      "history_epoch": 2,
+      "pixel_source": "Sdr",
+      "presenter_generation": 1,
+      "session": 530,
+      "source_epoch": "1",
+      "source_tick": 530,
+      "submission_id": 529,
+      "submit_ms": 1.8,
+      "surface_presented": true,
+      "tick": 530,
+      "timeline": 0
+    },
+    "bytes": 3686400,
+    "sha256": "6b0f5ae2eafdc1b06b9122e183c754cab976e273614c4535604d3ece43479f3b"
+  }
+]

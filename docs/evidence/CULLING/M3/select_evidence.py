@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Select exact 1x M3 crops and retain their immutable submission correspondence.
 
-Usage: python3 docs/evidence/CULLING/M3/select.py --capture tmp/culling-m3/capture-...
+Usage: python3 docs/evidence/CULLING/M3/select_evidence.py --capture tmp/culling-m3/capture-...
 The complete local sources remain under the capture folder through review.
 """
 import argparse
