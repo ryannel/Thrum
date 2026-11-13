@@ -138,8 +138,8 @@ impl RemoteFeed {
 struct Remote {
     loader: load::Loader,
     feed: RemoteFeed,
-    /// Feed serial last prepared.
-    seen: u64,
+    /// Feed serial and drawn generation last considered for preparation.
+    seen: Option<(u64, Option<thrum_asset::Head>)>,
     /// Products of the drawn set, reused by later generations.
     confirmed: load::Confirmed,
     /// Staging of the newest prepared generation, filled as chunks free up.
@@ -149,12 +149,14 @@ struct Remote {
 impl Remote {
     fn prepare_newest(&mut self, mailbox: &load::Mailbox, stop: &AtomicBool) {
         if let Some((serial, generation)) = self.feed.latest()
-            && serial != self.seen
+            && Some((serial, self.confirmed.head)) != self.seen
         {
-            self.seen = serial;
-            self.filler = self
-                .loader
-                .prepare_remote(&generation, &self.confirmed, mailbox, stop);
+            self.seen = Some((serial, self.confirmed.head));
+            if Some(generation.head()) != self.confirmed.head {
+                self.filler =
+                    self.loader
+                        .prepare_remote(&generation, &self.confirmed, mailbox, stop);
+            }
         }
         // No thread here: fill whatever staging is free now, never waiting for more.
         let progress = self.filler.as_mut().map(staging::Filler::fill_available);
@@ -644,7 +646,7 @@ impl CookedAssets {
                 let mut state = Remote {
                     loader,
                     feed: feed.clone(),
-                    seen: u64::MAX,
+                    seen: None,
                     confirmed: load::Confirmed::default(),
                     filler: None,
                 };
@@ -787,13 +789,19 @@ impl SceneContribution for CookedAssets {
         if !live.pending.as_ref().is_some_and(|pending| pending.ready)
             && let Some(set) = live.mailbox.take()
         {
-            live.pending = set.ok().map(|set| Pending {
-                ready: false,
-                set,
-                first_copy: None,
-                frames: 0,
-                bound: None,
-            });
+            // A publication prepared behind a ready switch may reuse an older drawn
+            // set. Never record its redundant destinations: the loader replans it
+            // when the switch is submitted, on both native and remote feeds.
+            live.pending = set
+                .ok()
+                .filter(|set| set.base_head == live.current.as_ref().map(|(set, _)| set.head))
+                .map(|set| Pending {
+                    ready: false,
+                    set,
+                    first_copy: None,
+                    frames: 0,
+                    bound: None,
+                });
         }
         // A set whose staging could not be filled never completes; the loader reported why.
         if live

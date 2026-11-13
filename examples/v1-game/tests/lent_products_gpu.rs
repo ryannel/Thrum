@@ -283,9 +283,163 @@ fn assert_edit_upload(
         })
         .sum();
     assert_eq!(
-        stats.swaps[1].uploaded_bytes, expected,
+        stats.swaps.last().expect("swap").uploaded_bytes,
+        expected,
         "only the edited product's padded rows are uploaded"
     );
+}
+
+/// Exercise the same fetched-generation preparation path Chrome uses, with verified store
+/// bytes supplied by a deterministic transport instead of a server.
+struct StoreFetch(std::path::PathBuf);
+
+impl thrum_asset::Fetch for StoreFetch {
+    fn get(
+        &self,
+        url: &str,
+    ) -> impl Future<Output = Result<thrum_asset::FetchReply, thrum_asset::AssetError>> + use<>
+    {
+        let path = url.strip_prefix("http://fixture/").expect("fixture origin");
+        let path = if path.starts_with("head") {
+            self.0.join("HEAD")
+        } else {
+            let hash = path.strip_prefix("cas/").expect("CAS path");
+            self.0.join("cas").join(&hash[..2]).join(hash)
+        };
+        std::future::ready(std::fs::read(path).map_err(Into::into).map(|bytes| {
+            thrum_asset::FetchReply {
+                status: 200,
+                body: thrum_asset::ProductBytes::copy_from(&bytes),
+            }
+        }))
+    }
+}
+
+#[test]
+fn overlapping_edits_reuse_the_ready_publication() {
+    for compressed in [false, true] {
+        for remote in [false, true] {
+            for consumer_first in [false, true] {
+                overlapping_edits_case(compressed, remote, consumer_first);
+            }
+        }
+    }
+}
+
+fn overlapping_edits_case(compressed: bool, remote: bool, consumer_first: bool) {
+    let root = std::env::temp_dir().join(format!(
+        "thrum-lent-overlap-{}-{compressed}-{remote}-{consumer_first}",
+        std::process::id()
+    ));
+    std::fs::remove_dir_all(&root).ok();
+    let cook = fixture(&root);
+    let mut cooker = Cooker::open(cook.clone()).expect("cooker");
+    assert_eq!(cooker.cook_all().expect("cook").failed, []);
+    pollster::block_on(async {
+        let mut client =
+            thrum_asset::DevClient::new(StoreFetch(cook.store.clone()), "http://fixture")
+                .expect("client");
+        if compressed {
+            client.prefer(
+                thrum_asset::ProductKind::Volume,
+                &[Profile::DesktopBc, Profile::Portable],
+            );
+        }
+        let feed =
+            thrum_asset_gpu::RemoteFeed::new(client.poll().await.expect("fetch").expect("head"));
+        let mut configured = config(&cook);
+        if remote {
+            configured.source = thrum_asset_gpu::CookedSource::Remote(feed.clone());
+        }
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (device, queue, caps) = gpu(&instance, 1, compressed).await;
+        let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+            .await
+            .expect("host");
+        let (lease, stats, witness) = attach(&mut host, configured, consumer_first);
+        let mut clock = Duration::ZERO;
+        until(&lease, &mut host, &device, &mut clock, || {
+            stats.lock().expect("stats").drawn == Some(1)
+        });
+        let pipelines = host.pipeline_creation_count();
+        for (index, seed) in [(0, 98), (1, 99)] {
+            demo::write_cloud_volume(&cook.source.join(format!("cloud{index}.tvol")), 128, seed)
+                .expect("edit");
+            assert_eq!(cooker.cook_all().expect("recook").failed, []);
+            if remote {
+                feed.publish(client.poll().await.expect("fetch edit").expect("new head"));
+            }
+            if index == 0 {
+                until(&lease, &mut host, &device, &mut clock, || {
+                    lease.offered().is_some_and(|set| set.generation == 2)
+                });
+            }
+        }
+        assert_eq!(stats.lock().expect("stats").drawn, Some(1));
+        let ready = lease.offered().expect("ready generation 2");
+        // Prepare generation 3 while generation 2 is protected, but has not switched.
+        // Remote preparation happens inside this discarded recording; native preparation
+        // runs independently and must be observed before the switch is submitted.
+        clock += Duration::from_millis(16);
+        host.advance(clock)
+            .expect("advance")
+            .encode_scene()
+            .expect("discard switch")
+            .skip();
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while stats.lock().expect("stats").staged != Some(3) {
+            assert!(Instant::now() < deadline, "newer HEAD not prepared");
+            std::thread::park_timeout(Duration::from_millis(1));
+        }
+        host.capture_pixels().expect("capture generation 2 switch");
+        assert_eq!(stats.lock().expect("stats").drawn, Some(2));
+        assert_edit_upload(&cook, &ready.products[0], &stats.lock().expect("stats"));
+        until(&lease, &mut host, &device, &mut clock, || {
+            lease.offered().is_some_and(|set| set.generation == 3)
+        });
+        host.capture_pixels().expect("capture generation 3 switch");
+        frame(&mut host, &device, &mut clock);
+        let next = lease.offered().expect("generation 3");
+        for (index, (a, b)) in ready.products.iter().zip(&next.products).enumerate() {
+            assert_eq!(
+                a.serial == b.serial,
+                a.view == b.view,
+                "serial follows view"
+            );
+            if index == 1 {
+                assert_ne!(a.hash, b.hash);
+                assert_ne!(a.texture, b.texture);
+            } else {
+                assert_eq!(a.hash, b.hash);
+                assert_eq!(a.texture, b.texture);
+                assert_eq!(a.view, b.view);
+                assert_eq!(a.serial, b.serial);
+            }
+        }
+        assert_edit_upload(&cook, &next.products[1], &stats.lock().expect("stats"));
+        assert_eq!(host.pipeline_creation_count(), pipelines);
+        assert_eq!(
+            witness
+                .lock()
+                .expect("witness")
+                .changed
+                .iter()
+                .filter(|changed| **changed)
+                .count(),
+            1
+        );
+        assert_texels(&cook, &device, &queue, &witness, compressed);
+        frame(&mut host, &device, &mut clock);
+        assert!(
+            witness
+                .lock()
+                .expect("witness")
+                .changed
+                .iter()
+                .all(|changed| !changed)
+        );
+    });
+    std::fs::remove_dir_all(root).expect("cleanup");
 }
 
 #[test]

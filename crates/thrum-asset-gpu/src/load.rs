@@ -96,6 +96,7 @@ pub(crate) struct GpuTexture {
 
 /// Every product one publication draws.
 pub(crate) struct ResidentSet {
+    pub(crate) head: Head,
     pub(crate) leased: Vec<(ContentHash, ContentHash, Profile, Arc<GpuTexture>)>,
     pub(crate) generation: u64,
     pub(crate) meshes: Vec<(Arc<GpuMesh>, Arc<GpuTexture>)>,
@@ -107,6 +108,8 @@ pub(crate) struct ResidentSet {
 
 /// A set whose destinations exist but whose bytes are still in staging.
 pub(crate) struct PendingSet {
+    /// Drawn generation whose resources this upload reuses.
+    pub(crate) base_head: Option<Head>,
     pub(crate) set: ResidentSet,
     pub(crate) upload: StagedUpload,
     pub(crate) head_seen: Instant,
@@ -116,6 +119,7 @@ pub(crate) struct PendingSet {
 /// Resources by product hash, only for sets the render thread has confirmed resident.
 #[derive(Default)]
 pub(crate) struct Confirmed {
+    pub(crate) head: Option<Head>,
     meshes: HashMap<ContentHash, Arc<GpuMesh>>,
     textures: HashMap<ContentHash, Arc<GpuTexture>>,
 }
@@ -196,43 +200,55 @@ impl Loader {
         };
         let mut watcher = HeadWatcher::new(AssetStore::new(store));
         let mut confirmed = Confirmed::default();
+        let mut latest = None;
         // The newest posted upload still being filled. HEAD is polled between bounded fill
         // slices, so a newer publication supersedes it instead of waiting for it to finish.
         let mut filling: Option<Filler> = None;
         while !stop.load(Ordering::Relaxed) {
+            let mut prepare = false;
             while let Ok(set) = resident.try_recv() {
                 confirmed = Self::confirm(&set);
+                // A newer HEAD may have been prepared behind this publication while it
+                // waited to switch. Replan against the resources that actually won.
+                prepare = true;
             }
             match watcher.poll() {
                 Ok(Some(head)) => {
-                    let seen = Instant::now();
-                    let store = watcher.store();
-                    let prepared = store_manifest(store, &head).and_then(|manifest| {
-                        self.prepare(Source::Store(store, &manifest), &head, &confirmed)
-                    });
-                    match prepared {
-                        Ok((set, upload, filler)) => {
-                            report(&self.stats, stop, |stats| {
-                                stats.staged = Some(head.generation);
-                            });
-                            let pending = PendingSet {
-                                set,
-                                upload,
-                                head_seen: seen,
-                                staged: Instant::now(),
-                            };
-                            mailbox.post(pending);
-                            filling = Some(filler);
-                        }
-                        Err(error) => {
-                            mailbox.refuse();
-                            filling = None;
-                            self.fail(stop, &format!("generation {}: {error}", head.generation));
-                        }
-                    }
+                    latest = Some((head, Instant::now()));
+                    prepare = true;
                 }
                 Ok(None) => {}
                 Err(error) => self.fail(stop, &error.to_string()),
+            }
+            if prepare
+                && let Some((head, seen)) = &latest
+                && Some(*head) != confirmed.head
+            {
+                let store = watcher.store();
+                let prepared = store_manifest(store, head).and_then(|manifest| {
+                    self.prepare(Source::Store(store, &manifest), head, &confirmed)
+                });
+                match prepared {
+                    Ok((set, upload, filler)) => {
+                        report(&self.stats, stop, |stats| {
+                            stats.staged = Some(head.generation);
+                        });
+                        let pending = PendingSet {
+                            base_head: confirmed.head,
+                            set,
+                            upload,
+                            head_seen: *seen,
+                            staged: Instant::now(),
+                        };
+                        mailbox.post(pending);
+                        filling = Some(filler);
+                    }
+                    Err(error) => {
+                        mailbox.refuse();
+                        filling = None;
+                        self.fail(stop, &format!("generation {}: {error}", head.generation));
+                    }
+                }
             }
             // Fill the bounded staging as the render thread frees it, for at most one poll
             // interval before looking at HEAD again.
@@ -269,6 +285,7 @@ impl Loader {
                     stats.staged = Some(head.generation);
                 });
                 mailbox.post(PendingSet {
+                    base_head: confirmed.head,
                     set,
                     upload,
                     head_seen: seen,
@@ -303,7 +320,10 @@ impl Loader {
     /// Keep exactly the resources the newest resident set uses; older ones retire when the
     /// render thread drops its last reference after their final submission.
     pub(crate) fn confirm(set: &ResidentSet) -> Confirmed {
-        let mut next = Confirmed::default();
+        let mut next = Confirmed {
+            head: Some(set.head),
+            ..Confirmed::default()
+        };
         let mut products = set.products.iter();
         for (mesh, texture) in &set.meshes {
             if let (Some(mesh_hash), Some(texture_hash)) = (products.next(), products.next()) {
@@ -462,6 +482,7 @@ impl Loader {
             .map_err(|error| error.to_string())?;
         let mut plan = StagingPlan::default();
         let mut set = ResidentSet {
+            head: *head,
             leased: Vec::new(),
             generation: head.generation,
             meshes: Vec::new(),
