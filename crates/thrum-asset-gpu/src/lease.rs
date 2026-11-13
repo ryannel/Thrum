@@ -52,13 +52,13 @@ pub struct ProductLease(Arc<Mutex<LeaseState>>);
 
 #[derive(Debug, Default)]
 struct LeaseState {
-    offered: Option<LentSet>,
+    offered: Option<Arc<LentSet>>,
     serial: u64,
 }
 
 impl ProductLease {
     /// Snapshot for this frame. Empty during first load and after device replacement.
-    pub fn offered(&self) -> Option<LentSet> {
+    pub fn offered(&self) -> Option<Arc<LentSet>> {
         self.0.lock().ok().and_then(|state| state.offered.clone())
     }
 
@@ -85,10 +85,10 @@ impl ProductLease {
                     state.serial
                 };
             }
-            state.offered = Some(LentSet {
+            state.offered = Some(Arc::new(LentSet {
                 generation,
                 products,
-            });
+            }));
         }
     }
 }

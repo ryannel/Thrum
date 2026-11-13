@@ -14,7 +14,7 @@ pub(crate) mod browser;
 #[derive(Default)]
 pub struct LentWitness {
     /// Publication the most recent recording sampled.
-    pub offered: Option<LentSet>,
+    pub offered: Option<Arc<LentSet>>,
     /// Per-product outputs, usable only after that recording is submitted.
     pub outputs: Vec<wgpu::Buffer>,
     /// Products invalidated by this recording, retained through capture/discard.
@@ -189,18 +189,19 @@ impl SceneContribution for LentDiagnostic {
             return;
         };
         self.bind(&set);
-        self.recorded = set
-            .products
-            .iter()
-            .map(|product| (product.device_generation, product.serial))
-            .collect();
-        if let Ok(mut witness) = self.witness.lock() {
-            witness.changed = self
-                .recorded
+        self.recorded.extend(
+            set.products
                 .iter()
-                .enumerate()
-                .map(|(i, key)| self.committed.get(i) != Some(key))
-                .collect();
+                .map(|product| (product.device_generation, product.serial)),
+        );
+        if let Ok(mut witness) = self.witness.lock() {
+            witness.changed.clear();
+            witness.changed.extend(
+                self.recorded
+                    .iter()
+                    .enumerate()
+                    .map(|(i, key)| self.committed.get(i) != Some(key)),
+            );
             witness.invalidations.resize(self.recorded.len(), 0);
             witness.offered = Some(set);
         }

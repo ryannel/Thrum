@@ -21,7 +21,7 @@ export async function prepareLent(files, output, cooker) {
       files.set(`/cas/${hash}`, file(await fs.readFile(path.join(store, 'cas', shard, hash))));
     }
   }
-  const changedRequests = new Set();
+  const changedRequests = new Map();
   let advanced = false;
   return {
     receive(request, response) {
@@ -30,7 +30,7 @@ export async function prepareLent(files, output, cooker) {
         files.set('/head', file(second)); advanced = true;
         response.writeHead(200).end('advanced'); return true;
       }
-      if (advanced && pathname.startsWith('/cas/')) changedRequests.add(pathname);
+      if (advanced && pathname.startsWith('/cas/')) changedRequests.set(pathname, (changedRequests.get(pathname) ?? 0) + 1);
       return false;
     },
     async qualify(cdp, origin, output) {
@@ -43,8 +43,8 @@ export async function prepareLent(files, output, cooker) {
         const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const m=await import('/v1_game.js');await m.default();return await m.qualify_lent_products(${JSON.stringify(origin)});})()`, awaitPromise: true, returnByValue: true }, sessionId);
         if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
         const exact = JSON.parse(r.result.value);
-        // One changed product plus its manifest. Independent CPU reference uses the same hashes.
-        if (changedRequests.size !== 2) throw new Error(`Expected one product and one manifest, fetched ${changedRequests.size}`);
+        // One changed product plus its manifest, each fetched once by the game's client.
+        if (changedRequests.size !== 2 || [...changedRequests.values()].some(count => count !== 1)) throw new Error(`Expected one product and one manifest, once each: ${JSON.stringify([...changedRequests])}`);
         const record = { case: 'lent-products', target: 'chrome-webgpu', exact, changedRequests: [...changedRequests] };
         await fs.writeFile(path.join(output, 'lent-products.json'), JSON.stringify(record, null, 2));
         return record;
