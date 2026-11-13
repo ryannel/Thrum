@@ -47,8 +47,8 @@ but no general engine runtime exists yet; future SDK commands in design document
 
 ## Broadsides
 
-Broadsides is a resource, not a design authority or a build dependency. Its code, shaders and assets may be copied
-into this repository and reused as is wherever they are useful and fit the approach Thrum's own design has chosen;
-Thrum's designs and contracts decide, and Broadsides never dictates them. Its sea and clouds come across module by
-module under [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md). Don't modify Broadsides itself or apply
-its TS/foundation workflow here.
+Broadsides is a resource, not a design authority or a build dependency. Designs start from first principles and aim
+for the best system for Thrum; what Broadsides built, and [the port decision](docs/design/decisions/SEA-AND-CLOUD-PORT.md)
+that describes it, are evidence to judge, not a template. Once a design is settled, Broadsides code, shaders and assets
+may be copied in and reused as is wherever they serve it. Don't modify Broadsides itself or apply its TS/foundation
+workflow here.
