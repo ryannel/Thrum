@@ -990,9 +990,7 @@ impl PreparedSynthetic {
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
         let culling_selection = CullingSelection::resolve(scene.camera_culling, capabilities);
-        let mut resolved_scene = scene.clone();
-        resolved_scene.camera_culling = culling_selection.resolved;
-        let scene = &resolved_scene;
+        let camera_mode = culling_selection.resolved;
         let device = capabilities.device();
         // Admit the whole selection before GPU work.
         let (mut mesh_arena, admitted) = admit_meshes(
@@ -1141,7 +1139,7 @@ impl PreparedSynthetic {
                 camera_culling::VISIBLE_BINDING,
             ));
         } else {
-            view_entries.extend(camera_culling::view_layout_entry(scene.camera_culling));
+            view_entries.extend(camera_culling::view_layout_entry(camera_mode));
         }
         if shadow_enabled {
             view_entries.extend([
@@ -1549,7 +1547,7 @@ impl PreparedSynthetic {
         } else {
             "fragment"
         };
-        let vertex_entry = camera_culling::vertex_entry(scene.camera_culling);
+        let vertex_entry = camera_culling::vertex_entry(camera_mode);
         let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
@@ -1616,7 +1614,7 @@ impl PreparedSynthetic {
                     |primitive, depth_only| {
                         create_route_pipeline("compacted_vertex", primitive, depth_only)
                     },
-                    scene.camera_culling == CullMode::Occlusion,
+                    camera_mode == CullMode::Occlusion,
                 )
             })
             .transpose()?;
@@ -1624,13 +1622,13 @@ impl PreparedSynthetic {
             device,
             queue,
             generation,
-            scene.camera_culling,
+            camera_mode,
             (instance_count, instance_upload.active_count()),
             bucket_route.as_ref().map(|route| (route, &mesh_arena)),
         )?;
         let pipeline = create_pipeline(Some(wgpu::Face::Back), false);
         let pipeline_two_sided = create_pipeline(None, false);
-        let depth_prepass = (scene.camera_culling == CullMode::Occlusion).then(|| {
+        let depth_prepass = (camera_mode == CullMode::Occlusion).then(|| {
             [
                 create_pipeline(Some(wgpu::Face::Back), true),
                 create_pipeline(None, true),
