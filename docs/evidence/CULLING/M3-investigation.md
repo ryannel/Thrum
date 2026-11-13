@@ -159,3 +159,22 @@ These results rule out differences in the stored Sun and air maps for this
 particular failure. Receiver-side shadow evaluation and the other forward
 inputs remain unproved. The next diagnostic preserves colour and records the
 Sun visibility result into a separate attachment on the same submission.
+
+## Pending implicit-sampling-order candidate
+
+A separate candidate keeps the original three `textureSample` operations and
+sampler, but evaluates them inside `shade` before calling the Sun visibility
+search. The entry point passes a constant shadow-selection flag and the same
+receiver derivatives. The single material hook remains inside `shade`, before
+its samples; the CPU composed-source contract test passes. No material, culling
+rule, comparison or retained reference changes.
+
+This is a compiler-shape hypothesis, not a finding of invalid source: WGSL
+[preserves uniform control flow across a returning function call](https://www.w3.org/TR/WGSL/#uniformity-analysis),
+so the original function call does not itself establish a derivative-uniformity
+violation. Unlike the rejected explicit-gradient candidate, the new candidate
+retains implicit sampling. Its cost account is the same three texture reads,
+with the sampled values and material factors live across the Sun search.
+Native exact images, repeated route controls, final target qualification and
+GPU cost remain pending. The candidate must be rejected if it changes a retained
+image or still reproduces the original failure.
