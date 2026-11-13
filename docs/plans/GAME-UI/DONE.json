@@ -15,9 +15,9 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "On the Mac, on both native recipes, rows of an embedded sheet handed over as a paint list are drawn at the interface stage over a 2D scene, in list order. An opaque, untinted texel leaves the frame as its authored 8-bit code. A tinted or part-transparent texel is within one code of the linear-light blend over the scene's own submitted pixel. This holds at whole-number scales on the pixel grid and at even and odd extents; Y runs down from the top-left corner and nothing is mirrored.",
+          "statement": "On the Mac, on both native recipes and in each display mode the host offers, rows of an embedded sheet handed over as a paint list are drawn at the interface stage over a 2D scene, in list order. An opaque, untinted texel leaves the frame as its authored colour: its 8-bit code in the 8-bit mode, and in the float mode the linear value that the sRGB curve rounds back to that code. A tinted or part-transparent texel is within one code, in the mode's encoding, of the linear-light blend over the scene's own submitted pixel. This holds at whole-number scales on the pixel grid and at even and odd extents; Y runs down from the top-left corner and nothing is mirrored.",
           "check": "cargo test --locked --offline -p thrum-ui --test stage_exact",
-          "ask": "Read the test. Is the reference built on the CPU from the sheet's source texels, the rows and the same frame captured with no interface, without any of the renderer's shaders? Does it compare every pixel of the submitted output on the portable and the Apple tile recipe, with the one-code allowance used only for tinted and blended texels, and with an asymmetric mark that would show a flip?",
+          "ask": "Read the test. Is the reference built on the CPU from the sheet's source texels, the rows and the same frame captured with no interface, without any of the renderer's shaders? Does it compare every pixel of the submitted output on the portable and the Apple tile recipe, in the 8-bit mode and in the float mode, each read in its own encoding as the design's mechanism 2 defines it, with the one-code allowance used only for tinted and blended texels, and with an asymmetric mark that would show a flip?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -27,9 +27,9 @@
         },
         {
           "id": "M1.2",
-          "statement": "A frame drawn with an interface equals the same frame drawn without one, byte for byte, at every pixel no row covers, over a 2D scene and over the 3D valley.",
+          "statement": "A frame drawn with an interface equals the same frame drawn without one at every pixel no row covers, over a 2D scene and over the 3D valley: byte for byte in the 8-bit mode, and bit for bit in the float mode, scene values above SDR white included.",
           "check": "cargo test --locked --offline -p thrum-ui --test stage_exact",
-          "ask": "Does the test take both frames from one scene state through engine capture's tap, for the 2D scene and for the valley on both recipes, and compare every uncovered pixel?",
+          "ask": "Does the test take both frames from one scene state through engine capture's tap, for the 2D scene and for the valley, on both recipes and in both display modes, and compare every uncovered pixel? Does the float mode's frame hold uncovered values above 1?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -51,9 +51,9 @@
         },
         {
           "id": "M1.4",
-          "statement": "Over the 3D valley with jitter and temporal reconstruction running and the camera moving, the interface is drawn after reconstruction and the display transform: its opaque texels are the same bytes in every frame, and it is drawn at the output extent when the render extent is smaller.",
+          "statement": "Over the 3D valley with jitter and temporal reconstruction running and the camera moving, in each display mode and at a headroom above 1 in the float mode, the interface is drawn after reconstruction and the display transform: its opaque texels are their authored colours and the same values in every frame, whatever the scene's exposure, and it is drawn at the output extent when the render extent is smaller.",
           "check": "cargo test --locked --offline -p v1-game --test interface_valley",
-          "ask": "Does the test run a recipe that resolves a reconstructor at a render scale below 1, with the camera moving for many frames? Would an interface drawn before reconstruction or before the tone stage fail it?",
+          "ask": "Does the test run a recipe that resolves a reconstructor at a render scale below 1, with the camera moving for many frames and the exposure changing? Would an interface drawn before reconstruction, before the 8-bit mode's tone stage, or before the float mode's transform in the present pass fail it?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -63,9 +63,9 @@
         },
         {
           "id": "M1.5",
-          "statement": "In every display mode the output half offers at the claimed commit, an opaque white interface texel leaves the frame at that mode's SDR white whatever the display's headroom, and the interface over a black scene matches the SDR mode's to within one code of that mode's own encoding.",
+          "statement": "In the float mode, at a headroom of 1 and at headrooms above it, an opaque white interface texel leaves the frame at exactly 1.0, which is SDR white, and no opaque texel is above it. A scene highlight above white beneath a half-transparent row leaves the frame within one code of its own value times one minus the row's alpha, plus the row's colour. At a headroom of 1 the interface over a black scene matches the 8-bit mode's to within one code.",
           "check": "cargo test --locked --offline -p thrum-ui --test stage_display_modes",
-          "ask": "Which display modes does the output half offer at this commit, for a 2D scene and for a 3D one? Does the test run each of them, at a headroom of 1 and above 1 where a mode has headroom?",
+          "ask": "Which display modes does the output half offer at this commit, for a 2D scene and for a 3D one? Is each of them one of the design's two, and does the test run each? Is the highlight's value taken from the same frame captured with no interface, and is the float frame read as stored half-floats and not from a converted preview?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -75,9 +75,9 @@
         },
         {
           "id": "M1.6",
-          "statement": "After a resize to another extent, a discarded frame, a refused surface, a capture frame and a replaced device, the interface draws exactly what a fresh one draws at that extent. A list laid out for another extent than the frame's is drawn unscaled from the top-left corner and counted in the frame's record.",
+          "statement": "After a resize to another extent, a discarded frame, a refused surface, a capture frame, a replaced device and a generation build that changes the display mode, the interface draws exactly what a fresh one draws there, and the change of mode creates no pipeline. A list laid out for another extent than the frame's is drawn unscaled from the top-left corner and counted in the frame's record.",
           "check": "cargo test --locked --offline -p thrum-ui --test stage_lifecycle",
-          "ask": "Is each of the five events driven through the host's own calls, and is the fresh interface's image compared pixel for pixel after each?",
+          "ask": "Is each of the six events driven through the host's own calls, and is the fresh interface's image compared pixel for pixel after each? Are pipeline creations counted across the change of mode?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -111,7 +111,7 @@
         {
           "id": "M1.9",
           "statement": "On the Mac the interface scene's panel card reads as drawn over the sprite field and over the valley: upright and unmirrored with its corner marks in their corners, flat authored colours, hard edges, an even half-transparent scrim, nothing missing. Over the moving valley its edges do not swim, shimmer or trail.",
-          "inspect": "Capture the interface scene with T2 engine capture. `fixed` stills over the sprite field at 1280\u00d7720 and 3456\u00d72234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture of at least ten seconds over the valley at 1920\u00d71080 with the camera moving; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
+          "inspect": "Capture the interface scene with T2 engine capture in the 8-bit mode. `fixed` stills over the sprite field at 1280\u00d7720 and 3456\u00d72234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture over the valley at 1920\u00d71080, long enough for the camera to pass near and far ground behind the card; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -120,7 +120,7 @@
         },
         {
           "id": "M1.10",
-          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920\u00d71080 and at 3456\u00d72234, with no interface, an empty one and one of 2,000 rows: the stage's pass alone, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
+          "statement": "On the Mac, CPU and GPU times for the interface stage are on record over the sprite scene at 1920\u00d71080 and at 3456\u00d72234, with no interface, an empty one and one of 2,000 rows, in each display mode: the stage's work alone, whether the float mode's rows share the present pass, the bytes it loads and stores, and the bytes uploaded for an unchanged and for a wholly changed list, from two separate runs with build and load. The valley route and the sprite field are timed with no interface before and after this milestone, as paired runs. No time is a pass mark.",
           "check": "python3 scripts/game_ui.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Are the before and after runs paired and alternated, and is any tripwire of the design's cost account that tripped written in the log with what was found?",
           "lock": "gpu",
@@ -219,9 +219,9 @@
         },
         {
           "id": "M2.6",
-          "statement": "When the interface scale changes among 1, 2 and 3, the new scale is drawn only once its font sheets are resident and from one submitted frame on; until then the interface is drawn whole at the old scale, and no frame mixes two scales. Afterwards only the scale in use is resident.",
+          "statement": "When the interface scale changes among 1, 2 and 3, every submitted frame is whole at one scale: pixel for pixel what a fresh interface at the old scale draws until the new scale's font sheets are lent, and what a fresh one at the new scale draws from that frame on. Afterwards only the scale in use is resident.",
           "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
-          "ask": "Does the test hold the new sheet's last copy unsubmitted and show the old scale still drawn? Does it read resident bytes from residency's own account?",
+          "ask": "Does the test hold the new sheet's last copy unsubmitted and show the old scale still drawn? Is every submitted frame of the change compared with both fresh references, so that glyphs of one scale at the other's offsets would fail? Does it read resident bytes from residency's own account?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -242,9 +242,9 @@
         },
         {
           "id": "M2.8",
-          "statement": "Saving a changed font source reaches the running interface without a restart. Every frame of the edit window shows each glyph whole, from the old font or the new, never a blank, a missing-glyph box or a glyph of another size, and the interface settles on exactly what a fresh start with the new source draws. A source that cannot be cooked, or that drops a size a live text uses, leaves the last good font drawn and names the reason.",
+          "statement": "Saving a changed font source reaches the running interface without a restart, and no frame mixes two fonts. Every submitted frame of the edit is, pixel for pixel, what a fresh start with the old source or with the new one draws for that frame's values (glyphs, offsets, wraps and elisions together) and from the switch frame on it is the new one. A discarded switch frame commits nothing and the next frame makes the same switch. A source that cannot be cooked, or that drops a size or a scale a live text uses, is refused whole: the last good font stays drawn and the reason is named.",
           "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
-          "ask": "Does the edit change both a glyph's shape and its advance, so that a table and a sheet from different saves would be seen? Is the settled frame compared with a fresh start pixel for pixel?",
+          "ask": "Does the edit keep the cooked size and widen the advances, as from 8 to 12 pixels for two glyphs in a 16-pixel box, so that new glyphs at old offsets would overlap and leave the box? Is every submitted frame of the edit captured and compared with both fresh references, and not only the settled one, while a value in the text keeps changing? Does the test discard the switch frame once, and show that a refused publication leaves no prepared layout behind?",
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
@@ -254,7 +254,7 @@
         },
         {
           "id": "M2.9",
-          "statement": "In Chrome, at device pixel ratios of 1, 2 and 3, the interface scene draws runs from a cooked font in the fetched store exactly as the CPU reference at the matching scale, and an edited font appears without a reload of the page.",
+          "statement": "In Chrome, at device pixel ratios of 1, 2 and 3, the interface scene draws runs from a cooked font in the fetched store exactly as the CPU reference at the matching scale, and an edited font appears without a reload of the page, with each submitted frame of the edit whole from the old font or from the new.",
           "check": "node scripts/check_v1_browser.mjs --case interface-text",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -298,7 +298,7 @@
         {
           "id": "M2.13",
           "statement": "In real time on the Mac, a right-aligned counter that grows digits, a timer with tabular digits and a label drifting by less than a pixel a frame keep their shapes: no gap between two glyphs ever changes, no digit shivers, and the label moves by whole pixels without its letters changing.",
-          "inspect": "Capture the interface scene's counting card at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least ten seconds at a scale of 1 and ten at a scale of 2. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
+          "inspect": "Capture the interface scene's counting card at 1920\u00d71080 with T2 engine capture in `realtime` mode at scales of 1 and 2, long enough for the counter to gain a digit and the label to cross several pixels. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -325,7 +325,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "not_started",
-      "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: nothing overlaps, touches an edge, leaves the safe area or jumps when the window is resized.",
+      "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: no element covers another, touches an edge, leaves the safe area or jumps when the window is resized.",
       "items": [
         {
           "id": "M3.1",
@@ -374,9 +374,9 @@
         },
         {
           "id": "M3.5",
-          "statement": "Across every extent from 320\u00d7320 to 3456\u00d72234 points in steps of no more than 16, in both orientations of a phone-sized extent and with insets up to 64 points, at each scale, the interface scene's status display reports no overflow and no elided text, no two of its nodes overlap, and all of it lies inside the safe box.",
+          "statement": "Across every extent from 320\u00d7320 to 3456\u00d72234 points in steps of no more than 16, in both orientations of a phone-sized extent and with insets up to 64 points, at each scale, the interface scene's status display reports no overflow and no elided text, none of its elements (the bar, the timer and each counter with its label) covers another, every node lies inside its parent, and all of it lies inside the safe box.",
           "check": "cargo test --locked --offline -p v1-game --test interface_status_sweep",
-          "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself?",
+          "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself? Is overlap tested between the separately placed elements, and not between a text and its panel or a fill and its track?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -408,7 +408,7 @@
         },
         {
           "id": "M3.8",
-          "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, nothing touches an edge or another node, and the bar's level is plain.",
+          "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, no element touches an edge or another element, and the bar's level is plain.",
           "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
           "target": "mac-metal",
           "evidence": "",
@@ -418,8 +418,8 @@
         },
         {
           "id": "M3.9",
-          "statement": "In real time on the Mac, with the bar draining and refilling, the timer counting and the counters ticking over a moving crowd, only the values change: nothing shivers, shifts or overlaps, and through a run of window sizes every frame is laid out whole, with nothing cut off or left behind.",
-          "inspect": "Capture the interface scene at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, and a second capture that steps the extent through at least six sizes. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
+          "statement": "In real time on the Mac, with the bar draining and refilling, the timer counting and the counters ticking over a moving crowd, only the values change: no element shivers, shifts or covers another, and through a run of window sizes every frame is laid out whole, with nothing cut off or left behind.",
+          "inspect": "Capture the interface scene at 1920\u00d71080 with T2 engine capture in `realtime` mode through a full drain and refill of the bar, and a second capture that steps the extent through several sizes across the claimed range. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -429,7 +429,7 @@
         {
           "id": "M3.10",
           "statement": "In Chrome, at device pixel ratios of 1 and 2, the status display reads at a glance over the field and only its values change in motion.",
-          "inspect": "Capture the interface scene in Chrome with T2 engine capture at each ratio: `fixed` stills at two canvas sizes, and `realtime` for at least ten seconds. Judge stills whole and in native-size crops, and consecutive frames at 1x.",
+          "inspect": "Capture the interface scene in Chrome with T2 engine capture at each ratio: `fixed` stills at two canvas sizes, and `realtime` through a drain and refill of the bar. Judge stills whole and in native-size crops, and consecutive frames at 1x.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -469,6 +469,18 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "M3.14",
+          "statement": "Through a font edit that widens its glyphs, an art-sheet edit that changes a frame's size and a change of scale, each submitted frame of the status display is whole from one layout: pixel for pixel what a fresh interface draws with the old sheets or with the new, boxes, wraps and the bar included, and from the switch frame on it is the new one.",
+          "check": "cargo test --locked --offline -p v1-game --test interface_status_switch",
+          "ask": "Is every submitted frame of each change captured and compared with both fresh references, with the bar and the counters changing throughout? Would boxes laid out for the old font drawn under the new glyphs fail it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ]
     },
@@ -494,7 +506,7 @@
         },
         {
           "id": "M4.2",
-          "statement": "A button is activated once, when the contact that pressed it is released inside it, and not when it slides off or the button is removed or disabled. A pointer over a control focuses it; a touch shows no focus style. A control's hit box is at least 44 points a side, and a point inside two grown boxes goes to the control whose drawn box is nearest.",
+          "statement": "A button is activated once, when the contact that pressed it is released inside it, and not when it slides off or the button is removed or disabled. A pointer over a control focuses it; a touch shows no focus style. While a font edit or a change of scale waits to be shown, a press is tested against the layout the shell last saw drawn. A control's hit box is at least 44 points a side, and a point inside two grown boxes goes to the control whose drawn box is nearest.",
           "check": "cargo test --locked --offline -p thrum-ui --test controls",
           "target": "mac-metal",
           "evidence": "",
@@ -571,7 +583,7 @@
         {
           "id": "M4.9",
           "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
-          "inspect": "Capture the scripted level-up at 1920\u00d71080 with T2 engine capture in `realtime` mode, three times through, with the event times from the run's record beside the frames. Judge the consecutive frames around each event at 1x, whole and in native-size crops of the cards and of the player.",
+          "inspect": "Capture the scripted level-up at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -580,7 +592,7 @@
         },
         {
           "id": "M4.10",
-          "statement": "On the Mac the join screen reads plainly in each state: hosting with its ticket and Copy; joining with no ticket, with a pasted ticket, connecting, joined with a roster of four, refused with its reason, closed with its reason. The ticket's two ends are legible, a reason is never cut off, and nothing overlaps at the smallest window.",
+          "statement": "On the Mac the join screen reads plainly in each state: hosting with its ticket and Copy; joining with no ticket, with a pasted ticket, connecting, joined with a roster of four, refused with its reason, closed with its reason. The ticket's two ends are legible, a reason is never cut off, and no element covers another at the smallest window.",
           "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
           "target": "mac-metal",
           "evidence": "",
@@ -697,7 +709,7 @@
         {
           "id": "M5.7",
           "statement": "The maturity ledger says what this module proved and what it did not.",
-          "ask": "Do the ledger's rows for the interface keep implementation, correctness, visuals and device results apart? Do they name as not run: key and pointer events delivered by the system to the Mac window, a physical iPhone, how the interface feels under the hand, the interface's look on an EDR panel, displays of fractional density, and every script and bridge the design lists as unqualified?",
+          "ask": "Do the ledger's rows for the interface keep implementation, correctness, visuals and device results apart? Do they name as not run: key and pointer events delivered by the system to the Mac window, a physical iPhone, how the interface feels under the hand, the interface's look on an EDR panel and whether text over a scrim can be read over a highlight brighter than white, displays of fractional density, and every script and bridge the design lists as unqualified?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
