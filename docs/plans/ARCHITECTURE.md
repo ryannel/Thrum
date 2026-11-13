@@ -15,7 +15,7 @@
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
-| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
+| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | Nothing to start; EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion, and its governor and MetalFX milestones to close |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
@@ -75,7 +75,8 @@ closed before the loop. Nothing in track 2 gates it.
 **Track 2, sea and clouds.** Two engine modules, `SEA` and `CLOUDS`, built in Thrum on the foundation track 1
 lays. They are finished here, not in Broadsides; [the reasons](#where-sea-and-clouds-are-finished) are below.
 Track 2 adds one foundation module, `EFFECT-GRAPH`, and asks track 1 for three things it was already going to
-build. When builders start track 2 is the owner's decision; this plan only fixes the order.
+build. `SEA` is planned and starts under [its plan's assumption](SEA/PLAN.md#open-for-the-human) on the owner's
+words of 13 November; when `CLOUDS` builders start is still the owner's decision.
 
 **Track 3, the goal after V1.** An original swarm-survival game that proves 2D and online multiplayer, set by the
 owner in [the brief](../design/NEXT-GOAL-SWARM-GAME.md). Six new modules, none of which starts before the exit or gates
@@ -99,7 +100,7 @@ the road to the exit.
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
 | `SHOWCASE` | G7 | The exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
-| `SEA` | track 2 | Sea state on the GPU (spectral cascades, wake fields, foam material), the body-query ring, sea optics | [Brief](SEA/BRIEF.md) |
+| `SEA` | track 2 | The sea model and its f64 oracle (`thrum-sea-model`); sea state on the GPU (long-wave field, spectral cascades, wake levels, foam stocks), the body-query ring, the sea surface and its optics (`thrum-sea`); the sea example scene (`examples/sea`) | [Design](SEA/DESIGN.md); [brief](SEA/BRIEF.md) |
 | `CLOUDS` | track 2 | The weather field, cloud density and lighting caches, the cloud optical-depth product, placed cloud volumes | [Brief](CLOUDS/BRIEF.md) |
 
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
@@ -154,11 +155,12 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    `SHOWCASE` M7 and M8.
 8. **Track 2.** `SEA` and `CLOUDS` each start with a CPU authority and oracle milestone that needs nothing from the
    renderer. Their GPU milestones start where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
-   are met. Their closing milestones need the governor.
+   are met. Their closing milestones need the governor. `SEA` M1 (the CPU model) and M2 (GPU state, on
+   `EFFECT-GRAPH:M2`) can run beside track 1 in files of their own; its first frame, M3, follows `EFFECT-GRAPH:M3`.
 
 **The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
 `APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)),
-`SEA`, `CLOUDS`. `CONTENT-LOOP` and `SHOWCASE` are planned. Each waits on `APPLE-TILE`, on a milestone
+`CLOUDS`. `CONTENT-LOOP`, `SHOWCASE` and `SEA` are planned. Each waits on `APPLE-TILE`, on a milestone
 that itself waits on `APPLE-TILE`, or on the owner's port timing, so each is planned before a builder could reach it.
 
 ## Where the port's readiness conditions are met
@@ -177,6 +179,9 @@ a named milestone.
 So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`,
 `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3` are Done. That point falls at step 5–6 of the build order, before G7. The
 ports close after `APPLE-PRESENTATION:M7`. Demo scenes in Chrome also need `CREATOR:M1`.
+
+`SEA`'s first frame, its M3, waits only on `EFFECT-GRAPH:M3`, which itself waits on `APPLE-TILE:M3`. How the sea
+looks under TAAU is its M9, after `APPLE-PRESENTATION:M3`.
 
 `EFFECT-GRAPH:M3` proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs. How
 an effect looks after reconstruction (shimmer, ghosting, a cut) is accepted in `SEA`'s and `CLOUDS`' own
@@ -199,12 +204,12 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `SEA`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `SEA`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
 | **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver | `CLOUDS` (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products) |
-| Ordered medium segments `(T,S)` and the reflection provider | `SEA`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08 |
+| Ordered medium segments `(T,S)` and the reflection provider. The sea composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `SEA` precedes `CLOUDS` in a scene's contribution list | `SEA`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [SEA](SEA/DESIGN.md#optics) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
 | **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:M1` (placements and leases), `CONTENT-LOOP:M2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
-| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09; `SEA`'s design |
-| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision |
+| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (height, slope, surface velocity, time derivative, evaluation tick, a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09, [SEA](SEA/DESIGN.md#bodies-and-the-query) |
+| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [SEA](SEA/DESIGN.md#recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
@@ -239,6 +244,38 @@ write done, and switches the row only in the frame residency's
 [publication](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) names; `thrum-render` gains no dependency
 on `thrum-asset-gpu`. `CULLING`'s items and its exact comparisons do not change. Once built, row replacement
 belongs to the route: later work there keeps its tests passing.
+
+### Seam rulings for SEA
+
+The sea draws after opaque geometry, and two things it needs there are not in `EFFECT-GRAPH`'s after-opaque
+stage as designed. Both are built in `contribution.rs` and `synthetic/{contributed,scene_graph}.rs` by the `SEA`
+builder, after `EFFECT-GRAPH:M3` is Done, with the behaviour [SEA](SEA/DESIGN.md#the-surface-and-the-frame-contract)
+defines. `EFFECT-GRAPH`'s items do not change and its tests keep passing: a scene with no effect that uses them
+compiles to the same passes and storage as before. If M3 as built already allows either, nothing is added. A
+third ruling covers the sea's example scene, the first game after the V1 game to run on the shell with a world
+that ticks.
+
+1. **An after-opaque pass may write scene depth** (`SEA` M3). The stage let an effect read depth and write
+   colour, motion and reactive coverage. A sea that left depth alone would hand reconstruction the depth of
+   whatever lies behind the water, and a cloud march drawn later would run through it. Stored depth still follows
+   the union of its readers.
+2. **An effect's own pass may read scene colour and scene depth as textures and write only that effect's
+   targets** (`SEA` M8). The sea gathers the scene behind its surface only inside the screen rectangles of
+   bodies, in place of the shared whole-scene refraction copy, which it never requests. Depth cannot be sampled
+   in the pass that writes it, so the gather is a pass of its own.
+
+3. **The window, the page and the capture tap for a second ticking game** (`SEA` M3 on the Mac, M4 in Chrome;
+   `CREATOR`'s and `PLATFORM-RUNTIME-WEB`'s shell in `thrum-app`, `T2-CAPTURE`'s tap and the scene packaging
+   scripts). `examples/sea` is a game on the shell with its own ticking world and the engine's sky. Whatever the
+   shell, the page, the packaging or the tap still assume of the V1 game, or of the sky kit's world that never
+   ticks, is made a property of the game. The V1 game, the starter and the creator scenes build, run and draw as
+   they did, no item of an owning module changes, and no engine crate gains a type or file of the sea scene.
+   `CREATOR` M2 and M3 edit the same crate; the `SEA` builder integrates on top of what has landed.
+   [`SWARM`'s ruling 2](#track-3-the-swarm-survival-game-after-v1) then covers only what a 2D game with no sky
+   still needs.
+
+Once built, rulings 1 and 2 belong to `EFFECT-GRAPH`'s seam and ruling 3 to the shell's owners: later work there
+keeps their tests passing, and `CLOUDS` uses the same accesses and adds none.
 
 Track 3's interfaces are in [their own table](#interfaces-track-3).
 
@@ -373,7 +410,9 @@ interface above, so `SEA` and `CLOUDS` can register knobs without a second gover
 restate the sizing after M3's first measurements. The same run adds `APPLE-PRESENTATION:M11` to the `depends_on`
 of `SHOWCASE` M7, which until then lists `APPLE-PRESENTATION:M3` and carries a check of the record files that fails
 while M11 is missing. M4 to M11 also give the game the resolved reconstructor, display mode and governor state, for the
-resolved-selections interface above.
+resolved-selections interface above. The same run adds the governor's and MetalFX's milestones (M7 and M8 in the
+drafts) to the `depends_on` of `SEA` M10, which until then carries a check of the record file that fails while
+either is missing; if the migration renumbers them, `SEA` M10.1's check is rewritten with it.
 
 ### CULLING (G3c)
 
@@ -403,7 +442,10 @@ cloud frame needs its last milestone, M3.
 
 ### SEA and CLOUDS
 
-[SEA brief](SEA/BRIEF.md) and [CLOUDS brief](CLOUDS/BRIEF.md).
+`SEA` was planned on 13 November 2026: [design](SEA/DESIGN.md), [plan](SEA/PLAN.md), from [its brief](SEA/BRIEF.md).
+`CLOUDS` is still [a brief](CLOUDS/BRIEF.md). Its planner takes from `SEA`'s design that the sea writes scene
+depth and comes first in a scene's contribution list, and that cloud reflections in the sea come from the
+environment reflection product.
 
 ## Track 3: the swarm-survival game, after V1
 
@@ -824,10 +866,14 @@ Nothing below is decided by this plan.
 1. **Port timing.** [The water decision](../design/decisions/E1-GPU-WATER.md) says implementation follows G7, and the
    port decision says the owner schedules it. The readiness conditions are met before G7, so the owner can start
    `SEA` and `CLOUDS` builders at their CPU milestones now, at their GPU milestones at step 5–6, or after G7.
-   Until the owner says, those modules are planned no further than their briefs.
+   On 13 November the owner said planning can start and "you can bring that across when it makes sense".
+   `SEA` is planned on the reading that its plan decides when; that reading is
+   [an assumption](SEA/PLAN.md#open-for-the-human) the owner can overturn. `CLOUDS` is planned no further than
+   its brief until its own planning run.
 2. **Licence.** Broadsides code is marked `UNLICENSED` and its cloud library carries an owner-only licence.
    Thrum's demos are meant to have public source. Lifting either into this repository needs the owner's licence
-   for it first.
+   for it first. `SEA`'s plan is written so that it can be built without lifting, and nothing is copied until the
+   owner names the licence.
 3. **The V1 exit stays as written.** Sea and clouds are not added to it. Adding them is the owner's call.
 4. **Builders.** The profile says one Codex builder. Steps 2–4 of the build order hold work that is safe beside
    `APPLE-TILE` if the owner allows a second.
@@ -860,8 +906,7 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
 Each stands until the owner overturns it, and moves to its module's plan, under `Open for the owner`, when that module is planned.
 
-- Assumption: finished sea excludes inland water, coasts and surf, and the three cues the 10 November spikes left
-  open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
+- The sea's assumption has moved to [SEA's plan](SEA/PLAN.md#open-for-the-human).
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
   the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
 - The track 3 assumptions have moved to their modules' plans: the readings of "2D support in the engine" to
@@ -957,3 +1002,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   fourth, the window and the page for a game with no sky kit; the ask of core that was open for this planner is
   ruling 4. The last two assumptions for unplanned modules moved to [SWARM's plan](SWARM/PLAN.md). No contract,
   exact baseline or other module's done-when item changed.
+- 2026-11-13 `SEA` planned, with a design, plan and done-when file, from the lead's task and
+  [its brief](SEA/BRIEF.md), on the owner's words of 13 November quoted in its design. Ten milestones: the CPU
+  model (needs nothing), GPU state (on `EFFECT-GRAPH:M2`), the first frame at cost (after `EFFECT-GRAPH:M3`),
+  Chrome, bodies and the query, the wake, foam, optics, the whole range in motion (after
+  `APPLE-PRESENTATION:M3`) and the close, which waits for the governor and MetalFX. The body-query, medium-segment
+  and quality-knob rows now link to its design, and [three seam rulings](#seam-rulings-for-sea) settle its asks
+  of `EFFECT-GRAPH` and the shell. The sea's assumption moved to [its plan](SEA/PLAN.md). No contract, exact
+  baseline or other module's done-when item changed.
