@@ -1,10 +1,10 @@
 {
   "module": "SWARM",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/SWARM/design-review.md",
-    "commit": "b7fbe03e9d36faebaac6a58060bec72e1a0abbaf",
-    "hash": "a41e2ad543e7f9a20cde2b1367f7277a7b47e0424074c9ef2a27560b5c031af4",
+    "commit": "f0a23e96738f6623cf4974e22bbc205aee72cb11",
+    "hash": "075eb1b669206b7002354ede27256a12f23e6c66642d4bb58279a6ec4b64857f",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.167.0-alpha.4.1",
     "path": "headless",
     "usage": {
-      "input": 95626,
-      "cached": 1425792,
-      "output": 7111,
+      "input": 91817,
+      "cached": 1010048,
+      "output": 6176,
       "turns": 1
     },
-    "at": "2026-11-13T20:33:16Z"
+    "at": "2026-11-13T21:02:36Z"
   },
   "milestones": {
     "M1": {
@@ -138,6 +138,29 @@
         "turns": 1
       },
       "at": "2026-11-13T20:18:02Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/SWARM/design-review-2.md",
+      "commit": "b7fbe03e9d36faebaac6a58060bec72e1a0abbaf",
+      "hash": "a41e2ad543e7f9a20cde2b1367f7277a7b47e0424074c9ef2a27560b5c031af4",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 95626,
+        "cached": 1425792,
+        "output": 7111,
+        "turns": 1
+      },
+      "at": "2026-11-13T20:33:16Z"
     }
   ]
 }
