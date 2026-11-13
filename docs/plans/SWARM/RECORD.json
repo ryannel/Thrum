@@ -1,0 +1,88 @@
+{
+  "module": "SWARM",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "74915d847111f8b4b1fb3d0c0c0a21a44533acc38c5f5307e6c8fa610dacca3f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M2": {
+      "definitions": "beff72abe315b3a8d2197da5eaeffdda65057ca65a9ededbd7b1bc9ce3198d0e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M3": {
+      "definitions": "7effe07dfb5941ffe6bb295adbc1a1c3ec918458df4a54976ead20be95f54e3e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M4": {
+      "definitions": "31824e1dc2d084506998b00cfc448faaab3b9c91f9d60d1d13e8c29b066059f5",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M5": {
+      "definitions": "49c3ac8aff339b3fd2cb566ee6a969da75a0d0903e329f9a886eead80517b1ea",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M6": {
+      "definitions": "02ed5ed26c82ff8269fb5a8769db96af6807fe8dfd6a0755cd0dd9a9929edfea",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M7": {
+      "definitions": "ae68a7ccc3a1b99e64a7128fa87360f2b090b123be24bb5566bfdf685067f0f6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    },
+    "M8": {
+      "definitions": "f0db5191d770474a5a06b9196a91e626da1c421f964a609047a2ac31cddc25c6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+        "at": "2026-11-13T20:12:27Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
+      "at": "2026-11-13T20:12:27Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T20:12:27Z"
+  }
+}
