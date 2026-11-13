@@ -22,7 +22,7 @@
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 |
-| 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION |
+| 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-UI M5 for the game alone; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 and 15 are sea and clouds, and 16 to 21 are
 the goal after V1. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -510,7 +510,7 @@ registers any new crate in `.config/architecture.toml`. Each module is built by 
 | `GAME-UI` | U1 | Text and interface drawn in the frame: the interface tree and its layout, focus and scopes, text runs, the paint list; which of the interface and the game gets each key, pointer and touch event. Glyphs are rasterised when a font is cooked, so it keeps no glyph cache | A new crate `thrum-ui`, and the interface scene in `examples/v1-game` ([design](GAME-UI/DESIGN.md)) |
 | `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity and its join ticket. It holds no game state and gives no meaning to a message | A new crate `thrum-transport`, so a game that is not networked links no sockets, and `examples/link-proof` for the proof programs and the relay ([design](TRANSPORT/DESIGN.md)) |
 | `SESSION` | N1 | The match, its roster and each connection's epoch; the handshake and the rule-set identity; the input lead and the playout clock; input staging, commands and the set stream; the baseline and join; digest exchange and repair; the predicted controller; retained results | `thrum-network`, and `examples/match-proof` for the proof programs and the scripted players ([design](SESSION/DESIGN.md)) |
-| `SWARM` | Game policy and content | The game: its name, premise, characters, art, rules, waves, upgrades and screens; the schemas and rule set it declares to `SESSION`; its sprite and font sources; the record that closes track 3 | A new folder in `examples/`, never an engine crate |
+| `SWARM` | Game policy and content | The game: its name, premise, characters, art, rules, waves, upgrades and screens; the schemas and rule set it declares to `SESSION`; its sprite and font sources; its traces and their retained digests; the record that closes track 3 | `examples/swarm/`, never an engine crate: the rule package `swarm-rules`, the game `swarm`, the iOS app `swarm-ios` and the proof package `swarm-proof` ([design](SWARM/DESIGN.md)) |
 
 State no module above owns stays where it is: the tick, committed world state, rewind and the tick page in
 `thrum-core` (G1 and G2S); cooked products in `CONTENT-LOOP`; the graph, the split and the output half in
@@ -531,11 +531,11 @@ it to the asking module's builder. None is added now, so no V1 plan changes.
 | `RENDER-2D` | The sprite pass runs a second time in a frame, at the interface stage, with its own sheets and rows. Built in `GAME-UI:M1` under [ruling 2](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `CREATOR`, `SHOWCASE` and `PLATFORM-RUNTIME-IOS` | The shells give a game pointer and touch events as well as keys, the display's density, the safe-area insets, text drops and the clipboard; the V1 game gains an interface scene. Built in `GAME-UI` M1 to M5 under [ruling 4](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
-| `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game | `SWARM` |
-| Repository guard | `.config/architecture.toml` names one external game; it must admit a second | `SWARM` |
+| `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game. Built in `SWARM:M2` for the window and the page and `SWARM:M6` for iOS, under [rulings 2 and 3](#seam-rulings-for-swarm) | `SWARM` |
+| Repository guard | `.config/architecture.toml` names one external game; it must admit a second. Built in `SWARM:M2` under [ruling 1](#seam-rulings-for-swarm) | `SWARM` |
 | Core (W1) and `SIM-2D` | A world image: the bytes the digest covers, with a way back into a fresh runtime in another process. Built in `SESSION:M1` under [ruling 1](#seam-rulings-for-session) | `SESSION` |
 | `SIM-2D` | The reference crowd's player movement as one function its own rule calls, so a predictor can call it too. Built in `SESSION:M4` under [ruling 2](#seam-rulings-for-session) | `SESSION` |
-| Core (F1 and W1), with `CREATOR` | A world lane that commits ticks when the session says, in place of its own clock, for a client's copy of a match. Open for `SWARM`'s planner | `SWARM` |
+| Core (F1 and W1), with `CREATOR` | A world lane that commits ticks when the session says, in place of its own clock, for a host's and a client's copy of a match. Built in `SWARM:M7` under [ruling 4](#seam-rulings-for-swarm) | `SWARM` |
 
 `RENDER-2D`'s own sprite pass is declared in the one graph by `thrum-render`, as the 3D scene's forward pass is.
 An engine module outside `thrum-render` attaches to a 2D scene through `EFFECT-GRAPH`'s seam, at the upload and
@@ -630,6 +630,37 @@ it. Once built, each belongs to its owner: later work there keeps its tests pass
    translation sits behind a feature of `thrum-app`. An `interface` scene selection is added to the V1 game, off
    by default and never part of the showcase.
 
+<a id="seam-rulings-for-swarm"></a>
+
+**Seam rulings for `SWARM`.** `SWARM` needs four changes inside state other modules own, which no interface
+offered. Each is built by the `SWARM` builder of the milestone named, after the owning modules' last milestones
+and `GAME-UI`'s are Done, with the behaviour [SWARM](SWARM/DESIGN.md#mechanisms) defines. No item of an owning
+module changes and its exact comparisons are not loosened. The V1 game, the starter and the creator scenes
+build, run and draw as they did. Once built, each belongs to its owner: later work there keeps its tests
+passing. No engine crate gains a type, string or file of either game.
+
+1. **The repository guard, in `SWARM:M2`** (`scripts/repo_check.py` and `.config/architecture.toml`). The guard
+   admits more than one external game. No engine crate may depend on any game, and a game may not depend on
+   another game. The V1 game's boundary is as it was, and `SIM-2D`'s rule-package guard is unchanged.
+2. **The window and the page for a second game, in `SWARM:M2`** (`CREATOR` and `PLATFORM-RUNTIME-WEB`;
+   `thrum-app`'s window and page, with `T2-CAPTURE`'s and the packaging scripts). `RENDER-2D:M5` runs a second
+   program on both and `GAME-UI` gives them events, density, insets and text drops. Whatever they still assume
+   of the V1 game or the sky kit when a game with a 2D scene, an interface and no sky kit runs, is capturable
+   and is packaged for Chrome, is made a property of the game.
+3. **The iOS shell for a second game, in `SWARM:M6`** (`PLATFORM-RUNTIME-IOS`, with what `COOKED-DRAW`,
+   `RENDER-2D` and `GAME-UI` added; `examples/v1-game-ios` and `thrum-app`). The UIKit lifecycle, touch
+   delivery, the render owner and its surface lease, rotation, device-loss recovery and `GAME-UI`'s reports of
+   extent, density and insets move into `thrum-app`, generic over a game as the Mac shell is.
+   `examples/v1-game-ios` becomes its first user and passes every simulator check those modules left,
+   unchanged; `swarm-ios` is its second. Neither game keeps a copy of that policy.
+4. **A driven world, in `SWARM:M7`** (core F1 and W1, with `CREATOR`; `thrum-core`'s world lane and clocked
+   world, the frame host's world observer in `thrum-render`, and `thrum-app`). A world may be
+   [driven](SWARM/DESIGN.md#7-who-admits-the-frames-alone-and-in-a-match): its driver names how many ticks to
+   commit at each advance, none, one or several, and where the presentation stands between the last two. A
+   driven world raises no overload for ticks nobody asked for. A world on the fixed clock behaves as it did,
+   and its tests pass unchanged. The engine side names no session and no link: the driver is the game's, which
+   asks `SESSION`.
+
 <a id="interfaces-track-3"></a>
 
 ### Interfaces (track 3)
@@ -680,8 +711,9 @@ builder starts it. The modules are planned in the order below.
    same files. It builds the interface-stage and font-product asks itself under
    [the seam rulings](#seam-rulings-for-game-ui).
 5. **The game.** `SWARM` opens with the owner's choice of concept, which only `SWARM` waits on. Then a
-   single-player slice after `SIM-2D` and `RENDER-2D`, the full run after `GAME-UI`, co-op after `SESSION` on
-   sockets, and the close.
+   single-player slice and the full run after `SIM-2D`, `RENDER-2D` and `GAME-UI`, a rehearsed match after
+   `SESSION`'s fourth milestone, co-op on sockets after its last, and the close. It builds its asks of the
+   guard, the shells and the world lane itself under [the seam rulings](#seam-rulings-for-swarm).
 
 A lone builder takes them in that order: `SIM-2D`, `TRANSPORT`, `RENDER-2D`, `SESSION`, `GAME-UI`, `SWARM`.
 `SWARM`'s options milestone is built first of all, so the owner's answer is in before any art is made.
@@ -691,7 +723,9 @@ A lone builder takes them in that order: `SIM-2D`, `TRANSPORT`, `RENDER-2D`, `SE
 reviewer reach those targets; [the choice](#owner-decisions) is the owner's. `TRANSPORT` puts every socket proof
 behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps sockets out of `./dev check`.
 `SESSION` does the same with [one match command](SESSION/DESIGN.md#proof-and-builder-handoff), through
-`TRANSPORT`'s relay, and `SWARM` runs its matches through that command.
+`TRANSPORT`'s relay. `SWARM` puts every proof that needs a window, Chrome, the simulator or a socket behind
+[one command of its own](SWARM/DESIGN.md#proof-and-builder-handoff), which reuses `SESSION`'s match harness and
+the relay.
 
 ### What finished means (track 3)
 
@@ -772,21 +806,16 @@ a peer too slow for the match is dropped, since one match has one crowd.
 
 #### SWARM
 
-- **For.** The owner's game: an original swarm survivor that proves the five modules above in a product.
-- **Requirement.** "One or more players hold out against ever-growing crowds of enemies, with automatic attacks
-  and upgrades between waves. It's an original game: its own name, characters, art and rules."
-- **Owns the taste.** Its first milestone lays out a few concepts that differ in kind (a name, a premise, one
-  hero, two enemies and a palette on one mock arena) and the owner picks one. The quality bar starts from the
-  chosen concept.
-- **To build.** A single-player slice with the crowd at the brief's size. The run: waves, pick-ups, upgrades,
-  winning and losing, the status display and menus. Co-op for 2 to 4 with its own rules (shared or separate
-  upgrades, what a fallen player does, whether a choice pauses the run). The three targets.
-- **Contracts.** Every interface in the table above; C13 for what the game declares.
-- **Art.** Made in this repository, original or under the project's PD and CC0 rules. A paid generation service is
-  spending.
-- **Bar.** Vampire Survivors, Brotato, Halls of Torment and Deep Rock Galactic: Survivor.
-- **Done.** [What finished means](#what-finished-means-track-3). The owner's judgement of how it plays is an
-  attended item in the last milestone.
+Planned on 13 November 2026: [design](SWARM/DESIGN.md), [plan](SWARM/PLAN.md). Its planner settled the co-op
+rules this brief carried: one team level from shared pick-ups, every player choosing their own upgrades at the
+same time between waves, a fallen hero back at the next wave, and no choice that pauses the run. It read
+"upgrades between waves" as Brotato's shape, with nothing paused inside a wave, and the brief's "thousands" as
+at least 2,000 enemies and projectiles in one view, which makes a common enemy about a fiftieth of the screen's
+height. Eight milestones: the owner's pick of a concept (after `SHOWCASE:M8`), a single-player slice that first
+measures how large a crowd Chrome can hold, the whole run with its screens, the finished content and look, a
+rehearsed match (after `SESSION:M4`), the iPhone simulator, co-op on sockets (after `SESSION:M6`), and the
+close with the owner's play and the record that ends track 3. The three asks this brief named, and a fourth for
+the window and the page, are built in M2, M6 and M7 under [the seam rulings](#seam-rulings-for-swarm).
 
 ## Owner decisions
 
@@ -810,7 +839,7 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
 7. **When track 3 starts.** The brief says after V1, and this plan holds every track 3 module until `SHOWCASE` is
    Done. Whether the game goes before, after or beside sea and clouds is the owner's order to set.
 8. **The game's identity.** Its name, premise, characters and look are the owner's taste. `SWARM`'s first
-   milestone lays out options and waits for the owner's pick.
+   milestone lays out options and waits for the owner's pick. Its last waits for the owner to play the game.
 9. **Art and licence.** The plan assumes art made in this repository, original or PD and CC0. A paid generation
    service is spending. The licence the game and its art are published under is the owner's.
 10. **A public host.** Play across the internet needs a machine others can reach, a domain and a certificate,
@@ -835,10 +864,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
   the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
-- Assumption: no sound. The readings of "2D support in the engine" moved to the plans of
-  [RENDER-2D](RENDER-2D/PLAN.md), [SIM-2D](SIM-2D/PLAN.md) and [GAME-UI](GAME-UI/PLAN.md), and "no gamepad"
-  to GAME-UI's.
-- Assumption: the iOS simulator proves function for the game, never speed, as in V1.
+- The track 3 assumptions have moved to their modules' plans: the readings of "2D support in the engine" to
+  [RENDER-2D](RENDER-2D/PLAN.md), [SIM-2D](SIM-2D/PLAN.md) and [GAME-UI](GAME-UI/PLAN.md), "no gamepad" to
+  GAME-UI's and [SWARM](SWARM/PLAN.md)'s, and "no sound" and "the simulator proves function, never speed" to
+  SWARM's.
 
 ## Log
 
@@ -920,3 +949,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-13 `SESSION`'s design review asked for four changes; one reaches this page. The line on what keeps a
   miss from spreading now says the digest catches a divergence that lasts to the next digest tick, since a digest
   is taken over one committed endpoint. No interface, seam ruling or other module's done-when item changed.
+- 2026-11-13 `SWARM` planned, the last module of track 3, with a design, plan and done-when file, from the
+  lead's task. Eight milestones: the owner's pick of a concept (after `SHOWCASE:M8`), a slice alone at the
+  brief's crowd size (after `SIM-2D:M3`, `SESSION:M1`, `RENDER-2D:M5` and `GAME-UI:M5`), the whole run, the
+  finished content, a rehearsed match (after `SESSION:M4`), the simulator, co-op on sockets (after
+  `SESSION:M6`) and the close. The seam rulings for `SWARM` settle the three asks its brief carried and a
+  fourth, the window and the page for a game with no sky kit; the ask of core that was open for this planner is
+  ruling 4. The last two assumptions for unplanned modules moved to [SWARM's plan](SWARM/PLAN.md). No contract,
+  exact baseline or other module's done-when item changed.
