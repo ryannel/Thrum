@@ -445,16 +445,21 @@ impl Owner {
             .unwrap_or(Some(wgpu::TextureFormat::Bgra8Unorm))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
+        let setup = v1_game::selected_setup()?;
+        let config = FrameConfig {
+            render_extent: extent,
+            surface: Some(SurfaceProfile { format, extent }),
+        };
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             &device,
             &queue,
             &capabilities,
-            FrameConfig {
-                render_extent: extent,
-                surface: Some(SurfaceProfile { format, extent }),
-            },
-            v1_game::selected_setup()?,
+            config,
+            setup,
         ))?;
+        if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
+            super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
+        }
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;

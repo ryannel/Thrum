@@ -8,10 +8,44 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def complete_scene(container, out, report, run):
+    source = container / 'tmp/thrum-culling-oracle'
+    target = out / 'oracle'
+    shutil.copytree(source, target)
+    identity = json.loads((target / 'identity.json').read_text())
+    fallback = (target / 'fallback.rgba').read_bytes()
+    direct = (target / 'direct.rgba').read_bytes()
+    width, height = identity['extent']
+    expected = width * height * 4
+    if len(fallback) != expected or len(direct) != expected or expected == 0:
+        raise RuntimeError('simulator oracle readback size mismatch')
+    oracle = dict(identity=identity, bytes=expected,
+                  fallback_sha256=hashlib.sha256(fallback).hexdigest(),
+                  direct_sha256=hashlib.sha256(direct).hexdigest(),
+                  differing_pixels=sum(fallback[i:i + 4] != direct[i:i + 4]
+                                       for i in range(0, expected, 4)))
+    report['oracle'] = oracle
+    for name in ['fallback', 'direct']:
+        run(['ffmpeg', '-v', 'error', '-f', 'rawvideo', '-pixel_format', 'rgba',
+             '-video_size', f'{width}x{height}', '-i', str(target / f'{name}.rgba'),
+             '-frames:v', '1', str(target / f'{name}.png')])
+    if identity['fallback'] != dict(requested='Occlusion', resolved='Direct', reason='MissingIndirectExecution'):
+        raise RuntimeError('oracle did not use the real simulator capability fallback')
+    if identity['direct'] != dict(requested='Direct', resolved='Direct', reason='RequestedDirect'):
+        raise RuntimeError('oracle reference did not prepare explicit Direct')
+    if identity['tick'] != 0 or identity['direct_tick'] != 0 or identity['expected_instances'] != 10_000:
+        raise RuntimeError('oracle did not use the complete initial diagnostic scene')
+    if not any(direct[i:i + 4] != direct[:4] for i in range(0, expected, 4)):
+        raise RuntimeError('explicit Direct oracle is uniform')
+    if oracle['differing_pixels']:
+        raise RuntimeError(f"incomplete fallback scene: {oracle['differing_pixels']} pixels differ from explicit Direct")
 
 
 def main():
@@ -42,8 +76,7 @@ def main():
         run(['xcrun', 'simctl', 'install', device, str(app)])
         container = Path(run(['xcrun', 'simctl', 'get_app_container', device, 'org.thrum.v1', 'data']))
         state = container / 'tmp/thrum-v1-ios-state.txt'
-        # Ordinary diagnostic grid: all entities are submitted by Direct.
-        run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], dict(os.environ, SIMCTL_CHILD_THRUM_CULLING='occlusion', SIMCTL_CHILD_THRUM_V1_ROUTE='1'))
+        run(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], dict(os.environ, SIMCTL_CHILD_THRUM_CULLING='occlusion', SIMCTL_CHILD_THRUM_V1_ROUTE='1', SIMCTL_CHILD_THRUM_CULLING_ORACLE='1'))
         deadline = time.monotonic() + 90
         previous = 0
         while len(report['samples']) < 8:
@@ -61,6 +94,7 @@ def main():
                 raise RuntimeError(f'no progressing fallback: {s}')
             time.sleep(.5)
         run(['xcrun', 'simctl', 'io', device, 'screenshot', str(out / 'direct-fallback.png')])
+        complete_scene(container, out, report, run)
         report['pass'] = True
     except BaseException as error:
         report.update({'pass': False, 'failure': str(error)})

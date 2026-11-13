@@ -152,3 +152,12 @@
   481 records. Retained the original gate failure, focused pass and fresh exact proof
   in [M2 evidence](../../evidence/CULLING/M2.md). The checked merge retries the whole
   repository gate with M2 left `in_progress`.
+
+- 2026-11-13 Review round 1 reopens M2.2 for `simulator_complete_scene_unchecked`.
+  The iOS render owner now captures its actual fallback host at the initial committed
+  endpoint and an independently prepared explicit-Direct host with the same game input.
+  The named simulator check compares every RGBA byte, validates both selections and
+  retains both images alongside eight progressing presentations. A development run
+  matches all 12,648,528 bytes at 1206×2622. Qualify committed source and demonstrate
+  rejection of an actual omitted-geometry draw before marking M2.2 pass. Corrected
+  the ledger's timing medians to the two retained M2 runs.

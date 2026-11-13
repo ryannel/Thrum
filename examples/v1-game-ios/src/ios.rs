@@ -25,6 +25,7 @@ use crate::{
 
 mod capture;
 mod cooked_view;
+mod culling;
 mod render;
 mod witness;
 
