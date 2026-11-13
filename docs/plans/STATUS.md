@@ -73,11 +73,12 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md) · [latest review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
-- The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): Ready for Review · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M2-review.md)
+- The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): Not Started · [plan](CONTENT-LOOP/PLAN.md)
 
 ### Recently done
 
+- The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2), 13 Nov · [review](../evidence/CULLING/M2-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2), 13 Nov · [review](../evidence/APPLE-PRESENTATION/M2-review.md)
 - A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome (EFFECT-GRAPH M2), 13 Nov · [review](../evidence/EFFECT-GRAPH/M2-review.md)
 - On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel (CULLING M1), 13 Nov · [review](../evidence/CULLING/M1-review.md)
@@ -107,7 +108,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M2 of 3 · Ready for Review |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M1 of 3 · Not Started |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
