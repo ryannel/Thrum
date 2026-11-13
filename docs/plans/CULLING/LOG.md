@@ -162,12 +162,9 @@
   rejection of an actual omitted-geometry draw before marking M2.2 pass. Corrected
   the ledger's timing medians to the two retained M2 runs.
 
-- 2026-11-13 Review repair qualifies on clean `1ed70fa7`. The simulator compares all
-  12,648,528 RGBA bytes at tick zero and 1206×2622 against explicit Direct, with zero
-  differing pixels and presentations progressing from 120 to 960. An actual half-draw
-  mutant keeps the capability fallback and eight progressing samples, then fails the
-  named check by 1,158,221 pixels. The restored source passes all four automated M2
-  checks and iOS-target Clippy. The exact verifier passes native 38 + 4 comparisons
-  and four Chrome sets of 481 records in 1001.45 seconds. Reports, raw readbacks,
-  viewable stills and the mutation patch are reachable from [M2 evidence](../../evidence/CULLING/M2.md).
-  M2.2 is pass, and M2 is `in_progress` for the checked merge and script-owned checks.
+- 2026-11-13 Clean `1ed70fa7` qualifies the review repair. The simulator matches all
+  12,648,528 RGBA bytes against explicit Direct and presents eight progressing samples.
+  The actual omitted-geometry draw fails by 1,158,221 pixels. All four M2 automated
+  checks and iOS Clippy pass, including native 38 + 4 exact comparisons and four Chrome
+  sets of 481 records. [M2 evidence](../../evidence/CULLING/M2.md) retains the reports,
+  raw readbacks, stills and mutation patch. M2.2 is pass, and M2 is `in_progress`.
