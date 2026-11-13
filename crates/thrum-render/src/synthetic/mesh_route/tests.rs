@@ -94,9 +94,11 @@ impl Gpu {
         scene: &SyntheticScene,
         lighting: FrameLighting,
     ) -> (Vec<u8>, Option<u32>) {
+        // Direct and culled renderers share frame inputs; each must keep the
+        // mode requested when it was prepared, without a silent fallback.
         assert_eq!(
             prepared.camera_culling(),
-            scene.camera_culling,
+            prepared.culling_selection().requested,
             "resolved mesh oracle mode"
         );
         let mut target =

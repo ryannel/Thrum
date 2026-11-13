@@ -139,3 +139,10 @@
   references unchanged. The current proof, complete verifier log and record are
   retained in [M2 evidence](../../evidence/CULLING/M2.md). Retry the checked merge
   with M2 still `in_progress`; no production source changed in this rebase.
+
+- 2026-11-13 The full repository gate caught two mesh-route fixture assertions that
+  compared an already prepared Direct oracle with a shared scene marked Frustum.
+  Assert the resolved mode against each renderer's retained preparation request;
+  this still rejects silent fallback. Both formerly failing Frustum bucket tests
+  pass after the correction. Only the test helper changes; refresh the covered-key
+  proof and retry the repository gate before merging.
