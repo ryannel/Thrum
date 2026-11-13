@@ -2812,6 +2812,8 @@ mod tests {
     #[cfg(target_os = "macos")]
     mod cloud;
 
+    mod compute_material;
+
     impl PreparedSynthetic {
         /// Prepare with each slot's mesh row selected: the bucket route.
         pub(in crate::synthetic) async fn prepare_selected(
