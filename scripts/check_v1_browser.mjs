@@ -115,6 +115,25 @@ const observeFaults = `document.addEventListener('DOMContentLoaded', () => {
   const inspect = () => { if (/fault:/i.test(status.textContent)) console.error(status.textContent); };
   new MutationObserver(inspect).observe(status, {childList:true,subtree:true,characterData:true}); inspect();
 });`;
+// Hash the actual instantiation input in the page. Returning the entire Wasm response
+// through Network.getResponseBody can close DevTools once the artifact grows.
+const observeWasm = `(() => {
+  const remember = async bytes => {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    globalThis.__thrumLoadedWasmSha256 = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  };
+  const instantiate = WebAssembly.instantiate;
+  WebAssembly.instantiate = async function(bytes, ...args) {
+    if (!(bytes instanceof WebAssembly.Module)) await remember(bytes);
+    return instantiate.call(this, bytes, ...args);
+  };
+  const streaming = WebAssembly.instantiateStreaming;
+  if (streaming) WebAssembly.instantiateStreaming = async function(source, ...args) {
+    const response = await source;
+    await remember(await response.clone().arrayBuffer());
+    return streaming.call(this, response, ...args);
+  };
+})();`;
 const readState = `JSON.stringify({status:document.querySelector('#status')?.textContent,player:document.querySelector('#player')?.textContent,width:document.querySelector('canvas')?.width,height:document.querySelector('canvas')?.height,hidden:document.hidden})`;
 const playerX = state => { const match = /player x=([-\d.]+)/.exec(state.player ?? ''); return match ? Number(match[1]) : undefined; };
 const field = (status, key) => Number(new RegExp(`(?:^|[ ;])${key}=(\\d+)(?:[ ;]|$)`).exec(status)?.[1]);
@@ -1207,6 +1226,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await cdp.call('Network.enable', { maxResourceBufferSize: wasm.bytes.length * 2, maxTotalBufferSize: wasm.bytes.length * 3 + (valleyCase || valleyRecovery || lateAttach || materialCase || materialDisabled || routeCase || movingCase || mode === 'params' ? 256 << 20 : 0) }, sessionId);
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true }, sessionId);
     await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeFaults }, sessionId);
+    await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: observeWasm }, sessionId);
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1100, deviceScaleFactor: 1, mobile: false }, sessionId);
     await cdp.call('Target.activateTarget', { targetId });
     // The hidden-start control loads the route page behind another active tab.
@@ -1387,8 +1407,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     let actualWasmSha256 = null;
     if (movingControl !== 'hidden-start') {
       if (!response || response.response.status !== 200) throw new Error('Actual Wasm response missing or not HTTP 200');
-      const body = await cdp.call('Network.getResponseBody', { requestId: response.requestId }, sessionId);
-      actualWasmSha256 = sha(Buffer.from(body.body, body.base64Encoded ? 'base64' : 'utf8'));
+      const loaded = await cdp.call('Runtime.evaluate', { expression: 'globalThis.__thrumLoadedWasmSha256', returnByValue: true }, sessionId);
+      actualWasmSha256 = loaded.result.value;
+      if (!/^[a-f0-9]{64}$/.test(actualWasmSha256 ?? '')) throw new Error('Actual Wasm instantiation digest missing');
       const disk = sha(await fs.readFile(path.join(directory, 'v1_game_bg.wasm')));
       if (actualWasmSha256 !== disk || disk !== wasm.sha256) throw new Error('Loaded Wasm differs from the built artifact on disk');
     } else if (response) throw new Error('The route page loaded the game while hidden at start');
