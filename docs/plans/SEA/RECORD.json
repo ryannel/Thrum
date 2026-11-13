@@ -1,0 +1,106 @@
+{
+  "module": "SEA",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "0e5a30c3bcaed6580c3b8f38fc50221c1a3f6cac4a15659b97d473ed56363d40",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M2": {
+      "definitions": "1eb49d1e02a63271c91a6e21952d357913eb1573977111ce2d938759a4e827c9",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M3": {
+      "definitions": "25c6f29df3d206c133d984d1a4fd81cb233a92fdd153e8908c86e3ee1995ae51",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M4": {
+      "definitions": "43e580ac861c21c3774995faa73e2ac9319f978d5137b6a6647b3cfb592f736d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M5": {
+      "definitions": "26d18719cc93aa1901787cf04a5c63fc07a97291e104ed78826075e6ea3f974a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M6": {
+      "definitions": "3e92b25263a3f27b0ab9c93221413a4c2bdc734e5c183f895bc6d07dbb5c7a00",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M7": {
+      "definitions": "7cde5dec3f398d259499fd23e01b8139afba786f2240738b9950439da6799646",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M8": {
+      "definitions": "5a748540198fdb1973a9c51babeb898090d4705ce9af834541c8d74d333b476b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M9": {
+      "definitions": "58a3a616b350a0c08e92a31f69a88bca503178e5e3b6415f609fe1df86a5b944",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    },
+    "M10": {
+      "definitions": "e164764a2a2ece99fc9510425e210c4185d4a343197d4fd4395723c997242e71",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
+        "at": "2026-11-13T21:50:42Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather than waiting on their port timing, said (13 Nov 2026): \"On 2 use the fable planner like normal but you can bring that across when it makes sense.\" Lead's reading, to record as an assumption: planning starts now, and the owner leaves to this plan when the Broadsides Rust work is brought across, within docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched). Milestones that depend on unfinished modules wait on them as usual.",
+      "at": "2026-11-13T21:50:42Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T21:50:42Z"
+  }
+}
