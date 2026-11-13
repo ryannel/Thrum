@@ -19,7 +19,7 @@
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
-| 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP |
+| 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION |
@@ -504,7 +504,7 @@ registers any new crate in `.config/architecture.toml`. Each module is built by 
 | Module | Responsibility | Owns (state and code) | Expected code home |
 |---|---|---|---|
 | `SIM-2D` | W1 and P3, for crowds | The deterministic rules profile and the check that enforces it; the digest of committed state; the 2D spatial index and its overlap, nearest and neighbour queries; the reference crowd and its retained traces | `thrum-core` for the profile and the digest, a new crate `thrum-sim2d` for the queries, `examples/crowd-2d` for the reference crowd ([design](SIM-2D/DESIGN.md)) |
-| `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its passes; the 2D view record (orthographic camera, world units to pixels); sprite rows extracted from the tick page; draw order; sprite materials and blending; GPU residency of sprite sheets | `thrum-render` |
+| `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its pass; the 2D view record (a centre and a scale in output pixels per world unit); sprite rows extracted from the tick page and given each frame; draw order; sprite sampling and blending; sheet slots and frame tables on the GPU; the crowd view | `thrum-render`, and `examples/crowd-2d-view` for the crowd view ([design](RENDER-2D/DESIGN.md)) |
 | `GAME-UI` | U1 | Text and interface drawn in the frame: the glyph cache, the interface tree and its layout, focus, the paint list; routing of key, pointer and touch events to the interface before the game | A new crate |
 | `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity and its join ticket. It holds no game state and gives no meaning to a message | A new crate `thrum-transport`, so a game that is not networked links no sockets, and `examples/link-proof` for the proof programs and the relay ([design](TRANSPORT/DESIGN.md)) |
 | `SESSION` | N1 | The match and each connection's epoch; the handshake and its manifests; clock sync and input lead; input staging and relay; baseline and join; digest exchange and repair; the prediction branch; retained results | `thrum-network` |
@@ -517,19 +517,49 @@ State no module above owns stays where it is: the tick, committed world state, r
 ### What track 3 asks of existing modules
 
 Each ask is new work inside state that an existing module owns. It becomes a milestone of that module, numbered
-after its V1 milestones and added by that module's planner when track 3 starts. None is added now, so no V1 plan
-changes.
+after its V1 milestones and added by that module's planner when track 3 starts, unless a seam ruling below gives
+it to the asking module's builder. None is added now, so no V1 plan changes.
 
 | Owner | Ask | For |
 |---|---|---|
-| `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots) and a font product, cooked, mapped and hot-reloaded like meshes and textures | `RENDER-2D`, `GAME-UI` |
-| `APPLE-TILE` | A profile selects the 2D scene half in place of the 3D one. The output half gains an interface stage at output extent, after reconstruction | `RENDER-2D`, `GAME-UI` |
-| `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp | `RENDER-2D` |
+| `CONTENT-LOOP` | A sprite-sheet product (pages, frames, pivots), cooked, mapped and hot-reloaded like meshes and textures. Built in `RENDER-2D:M4` under [ruling 2](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `CONTENT-LOOP` | A font product, in the sheet form `RENDER-2D` defines | `GAME-UI` |
+| `APPLE-TILE` | A game selects the 2D scene half in place of the 3D one, and the output half gains a display-referred transfer. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `APPLE-TILE` | The output half gains an interface stage at output extent, after reconstruction | `GAME-UI` |
+| `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
 | `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game | `SWARM` |
 | Repository guard | `.config/architecture.toml` names one external game; it must admit a second | `SWARM` |
 
-If `EFFECT-GRAPH` is Done when `RENDER-2D` is planned, the 2D scene half declares its passes through that seam.
-A second way to declare passes is not built.
+`RENDER-2D`'s own sprite pass is declared in the one graph by `thrum-render`, as the 3D scene's forward pass is.
+An engine module outside `thrum-render` attaches to a 2D scene through `EFFECT-GRAPH`'s seam, at the upload and
+simulate stages; a 2D scene has no shadow, opaque or after-opaque stage. A second way to declare passes is not
+built.
+
+<a id="seam-rulings-for-render-2d"></a>
+
+**Seam rulings for `RENDER-2D`.** `RENDER-2D` needs three changes inside state other modules own, which no
+interface offered. Each is built by the `RENDER-2D` builder of the milestone named, after the owning modules'
+last V1 milestones are Done, with the behaviour [RENDER-2D](RENDER-2D/DESIGN.md#mechanisms) defines. No item of
+the owning module changes, its exact comparisons are not loosened, and a scene that asks for none of it compiles
+to the same passes and draws the same bytes. Once built, each belongs to its owner: later work there keeps its
+tests passing. The rulings were written while V1 was being built, so that no V1 plan changed; `CONTENT-LOOP`'s
+design says each ask becomes a milestone there, and ruling 2 replaces that for the sheet product.
+
+1. **The frame runtime, in `RENDER-2D:M1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame host,
+   scene graph and display files). A frame host is created for one
+   [scene kind](RENDER-2D/DESIGN.md#1-the-scene-kind), 2D or 3D, and the 3D kind is the default. A 2D scene binds
+   its own colour as the pre-tone input with a fixed exposure, selects a
+   [display-referred transfer](RENDER-2D/DESIGN.md#7-colour) with no tone curve and no dither, and declares no
+   reconstruction: its extent is the surface's, with no jitter, no history and no scale for the governor.
+2. **Content, in `RENDER-2D:M4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
+   `thrum-asset-gpu` and the contribution list). The [sheet product](RENDER-2D/DESIGN.md#8-sheets) is a new
+   product kind; its pages are lent as an array texture under the lease's rules, and they switch with its frame
+   table under the content publication. In a 2D scene residency runs with leases only, and a contribution that
+   declares a shadow, opaque or after-opaque stage is refused when it is attached.
+3. **The V1 game and its shells, in `RENDER-2D:M1` and, for the simulator, `M5`** (`SHOWCASE`, `T2-CAPTURE` and
+   `PLATFORM-RUNTIME-IOS`; `examples/v1-game`, `examples/v1-game-ios` and the capture and check scripts). A
+   `sprites` scene selection, off by default, as the other modules' diagnostics are. It is never part of the
+   showcase.
 
 <a id="interfaces-track-3"></a>
 
@@ -544,15 +574,17 @@ review passes. Changes to a numbered contract are settled with its producers and
 | **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target. Rules live in a rule package that `./dev check` guards, and one conformance command runs any rule package's trace on the three targets | `SIM-2D` → `SWARM` (its rules), `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#mechanisms); C02 |
 | **World digest**: one value for each committed tick over all authority state, computed on request. A baseline must restore everything it covers | `SIM-2D` → `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#4-the-world-digest) |
 | **2D queries**: overlap, nearest and neighbours, with results in a fixed order that depends on the index's cell size, which is a constant of the rule set and never a quality setting | `SIM-2D` → `SWARM` | [SIM-2D](SIM-2D/DESIGN.md#5-the-index-and-its-queries); C03 |
-| **Sprite rows**: a game's read-model components map to sheet frame, layer, tint and transform, interpolated between tick endpoints on the GPU | `RENDER-2D` → `SWARM`, any 2D game | `RENDER-2D`'s design; C07 |
-| **2D scene half**: passes declared through the one graph, writing the pre-tone scene-linear input | `APPLE-TILE` → `RENDER-2D` | [APPLE-TILE](APPLE-TILE/DESIGN.md), C06; `RENDER-2D`'s design |
-| Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
+| **Sprite rows**: a game's read-model components map to sheet frame, layer, sort value, tint, flash and transform, interpolated between tick endpoints on the GPU; rows the game gives each frame are drawn among them. One total order: layer, sort value, stable identity | `RENDER-2D` → `SWARM`, any 2D game | [RENDER-2D](RENDER-2D/DESIGN.md#3-sprite-rows); C07 |
+| **Sheets**: a folder of images cooks to pages and a frame table; a sheet is pixel or smooth; a game names frames by name, and a scene shows at most eight sheets. A glyph is a frame, so a font cooks to a sheet | `RENDER-2D` → `SWARM`, `GAME-UI` | [RENDER-2D](RENDER-2D/DESIGN.md#8-sheets); C05 |
+| **The sprite pass at another stage**: the pass takes its target, view and rows as inputs, so a second instance draws a paint list at the interface stage | `RENDER-2D` → `GAME-UI` | [RENDER-2D](RENDER-2D/DESIGN.md#interfaces) |
+| **2D scene half**: a host created for the 2D scene kind compiles only that scene's pass and the output half's, writing the pre-tone scene-linear input at the surface's pixel extent | `APPLE-TILE` → `RENDER-2D`, by [ruling 1](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#1-the-scene-kind); [APPLE-TILE](APPLE-TILE/DESIGN.md), C06 |
+| Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games. The sheet product by [ruling 2](#seam-rulings-for-render-2d) | [RENDER-2D](RENDER-2D/DESIGN.md#8-sheets); C05 |
 | **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
 | **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A reliable message arrives or the link closes, and a close can cut off the last ones sent. A datagram's wait is bounded in the link's own queue only, so one may arrive late and `SESSION` rejects old ones by content. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM` and `GAME-UI` | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
 | **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION`'s design; C13, A0 and the A5 decisions |
 | **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION`'s design |
-| Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged |
+| Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged. `RENDER-2D` registers none: a 2D scene has no scale, cadence or step budget to lower |
 | The app runner and typed controls | `CREATOR` → `SWARM` | C11, [CREATOR](CREATOR/DESIGN.md) |
 | Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md); unchanged |
 
@@ -566,7 +598,9 @@ builder starts it. The modules are planned in the order below.
    on Mac, in Chrome and on the iOS simulator at the brief's crowd size, with tick, rewind and replay costs
    recorded. `TRANSPORT`, first milestone: one native host holds a Mac client, a Chrome client and an iOS-simulator
    client over real sockets under the A0 conditioner. They share no files with each other or with the renderer.
-2. **Sprites.** `RENDER-2D`, after `APPLE-TILE`'s and `CONTENT-LOOP`'s asks. It can run beside step 1.
+2. **Sprites.** `RENDER-2D`, which builds its asks of `APPLE-TILE` and `CONTENT-LOOP` itself under
+   [the seam rulings](#seam-rulings-for-render-2d). Its first four milestones can run beside step 1; its last
+   draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first milestone.
 3. **A match without pictures.** `SESSION` on the in-memory conditioned link, after `SIM-2D`'s first milestone.
    Its socket milestones follow `TRANSPORT`'s first milestone.
 4. **Interface.** `GAME-UI`, after `RENDER-2D`'s first milestone and the interface-stage ask.
@@ -605,21 +639,16 @@ builder stops and [mechanism 1](#mechanisms-settled-here) is replanned.
 
 #### RENDER-2D
 
-- **For.** A game draws thousands of sprites that read clearly and move smoothly, and pays for nothing 3D.
-- **Cues.** A crowd at the brief's size at full refresh. Sprites crisp at every window size and pixel density,
-  with no shimmer when the camera scrolls. Overlap order that never flickers. Motion smooth between ticks. Frame
-  animation, hit flash and tint, and blended effects.
-- **Built already.** The instance field's changed-row upload and GPU interpolation between tick endpoints, the
-  graph, cooked textures.
-- **To build.** The 2D scene half and view record, sprite rows, instanced drawing from sheet pages so a crowd is a
-  few draws, a stable draw order, sheet residency.
-- **Contracts.** C04, C05, C06, C07, C12. `needs`: `APPLE-TILE:M3`, and the `APPLE-TILE` and `CONTENT-LOOP` asks.
-- **Open for its planner.** How order is resolved (sorted rows or depth). Reconstruction for sprites, with none as
-  the default. Whether bright effects use EDR. How text shares the sprite path with `GAME-UI`.
-- **Not in scope.** 2D lights, tile-map tools, skeletal 2D animation, sprites in a 3D scene.
-- **Bar.** Crowd legibility as in Vampire Survivors and Halls of Torment; pixel stability as in Celeste.
-- **Done.** `SIM-2D`'s reference crowd drawn on `mac-metal` and `chrome-webgpu`, and working on `ios-sim`; the
-  frame record shows no sky, cascade or cluster work; a second small 2D scene builds on it.
+Planned on 13 November 2026: [design](RENDER-2D/DESIGN.md), [plan](RENDER-2D/PLAN.md). Its planner settled the
+four choices this brief carried: order is sorted rows on the CPU, with a band that stops jitter from reordering a
+packed crowd; a 2D scene has no reconstruction and is drawn at the surface's own pixel size; values above white
+are kept for the output half, and how they look on an EDR panel is not judged; and text shares the path as rows,
+a glyph being a frame on a sheet. Five milestones. `GAME-UI` needs M1, which delivers the 2D scene and the sprite
+pass; `SWARM` needs M5. The asks of `APPLE-TILE`, `APPLE-PRESENTATION` and `CONTENT-LOOP` are built in M1 and M4
+under [the seam rulings](#seam-rulings-for-render-2d). Three findings bind later planners: sprites blend in
+linear light, so soft art looks lighter over dark than in a paint tool; a scene shows at most eight sheets; and
+no iOS app for a second game exists yet, so the crowd view is drawn on the Mac and in Chrome and the simulator
+is reached through the V1 game's shell.
 
 #### GAME-UI
 
@@ -737,9 +766,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   open (spray release at chase distance, the attached sheet, a visibly rising gas cloud); they are parked spikes.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and
   the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
-- Assumption: "2D support in the engine" means a reusable sprite path (sprites, layers, a 2D camera, text and
-  interface) that a second 2D game can build on. 2D lights, tile-map tools, skeletal 2D animation and 2D rigid
-  bodies are not built.
+- Assumption: "2D support in the engine" includes text and interface drawn in the frame, for `GAME-UI`. The
+  sprite path's part of this reading moved to [RENDER-2D's plan](RENDER-2D/PLAN.md) and the rigid-body part to
+  [SIM-2D's](SIM-2D/PLAN.md).
 - Assumption: a native process hosts; Chrome and the iOS simulator only join. Players join with
   [`TRANSPORT`'s join ticket](TRANSPORT/DESIGN.md#3-the-hosts-identity-and-the-join-ticket). Matchmaking, accounts,
   relays and host migration are not built.
@@ -804,3 +833,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   say two things the design had left unclear: a close can cut off the last reliable messages sent, and a
   datagram's wait is bounded in the link's own queue only, so `SESSION` rejects old ones by content. No contract,
   exact baseline or other module's done-when item changed.
+- 2026-11-13 `RENDER-2D` planned, the third module of track 3, with a design, plan and done-when file, from the
+  lead's task. Five milestones: a 2D scene through the game's frame with nothing 3D (after `SHOWCASE:M8`,
+  `APPLE-TILE:M12` and `EFFECT-GRAPH:M3`), ten thousand rows that glide in a stable order, crisp sampling at
+  every window size, cooked sheets with live edits (after `CONTENT-LOOP:M3`), and the reference crowd with the
+  simulator and the close (after `SIM-2D:M1`). Its asks of `APPLE-TILE`, `APPLE-PRESENTATION` and `CONTENT-LOOP`
+  are settled as [seam rulings](#seam-rulings-for-render-2d) that its own builder builds after V1, so no V1
+  module's design, plan or done-when item changed. The sprite-rows, sheets and 2D-scene-half interfaces now link
+  to its design. No contract or exact baseline changed.
