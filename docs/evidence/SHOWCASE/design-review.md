@@ -26,7 +26,7 @@ Add a short handoff note requiring duration, extent, colour format, expected pea
 
 ## What the human asked for
 
-I read [ACCEPTED.json](../../plans/SHOWCASE/ACCEPTED.json)'s complete `briefs` list first. It contains one lead task: plan row 13, the V1 exit, the showcase valley on Mac and in Chrome, reviewed with its closing record, depending on the last milestones of modules 1–10 and 12. It is not presented as a direct human quotation.
+I read [ACCEPTED.json](../../plans/SHOWCASE/RECORD.json)'s complete `briefs` list first. It contains one lead task: plan row 13, the V1 exit, the showcase valley on Mac and in Chrome, reviewed with its closing record, depending on the last milestones of modules 1–10 and 12. It is not presented as a direct human quotation.
 
 The governing requirements come from [BRIEF.md](../../plans/BRIEF.md), especially decision 1 and G7. They require:
 

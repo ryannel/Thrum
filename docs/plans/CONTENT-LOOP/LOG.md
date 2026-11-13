@@ -108,3 +108,6 @@
   Verified on this Mac's Metal device: all three lease tests passed, including both profiles, both contribution
   orders and native/fetched overlapping edits; Clippy passed. The full exact verifier passed both native
   matrices and all four Chrome sets (977.48 seconds). [Compact proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
+- 2026-11-13 The repository gate exposed 27 historical evidence links left pointing to `ACCEPTED.json`
+  after the plan migration. Retargeted only those links to `RECORD.json`, which owns the cited briefs and
+  human feedback. `./dev check-docs` passed (774 Markdown files, 4,955 links); review prose and verdicts are unchanged.

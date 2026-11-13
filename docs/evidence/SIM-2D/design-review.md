@@ -68,7 +68,7 @@ No new Must Fix findings or Suggestions.
 
 ## Request and scope
 
-I read both planner tasks in [ACCEPTED.json](../../plans/SIM-2D/ACCEPTED.json), oldest first, and the project
+I read both planner tasks in [ACCEPTED.json](../../plans/SIM-2D/RECORD.json), oldest first, and the project
 brief before comparing the design. The first task commissions SIM-2D after SHOWCASE; the second asks for the
 two previous Must Fix findings to be resolved. Neither changes the human's request or overrides the performance
 policy. The human's [swarm-game request](../../design/NEXT-GOAL-SWARM-GAME.md) and the module list require
