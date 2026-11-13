@@ -1,0 +1,70 @@
+{
+  "module": "SESSION",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "dba19daf3e531b9f4cce02d3642036530b84b6ef256884c7f2d86932ec375f32",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    },
+    "M2": {
+      "definitions": "93731c1b0fffd14d21179da50f3f5384da55131ea439cba1617bbd2a87995c3e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    },
+    "M3": {
+      "definitions": "95b4c65921582ea9cff659e257117e0acd1dc4e03faec4131cadec38bc97c7f1",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    },
+    "M4": {
+      "definitions": "6121293ef18d977ebe55956accb4fc69e0ba67ccb37fcbcdac3d1bc002b9a426",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    },
+    "M5": {
+      "definitions": "26b3a42faf44aaefee23c7ca8f99923faed84823633daaa43f12ba6958ece064",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    },
+    "M6": {
+      "definitions": "d9d03561386e6abcb0ce4d55ab7ae26dd79312e95d73ade664a66b42f5c70f39",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+        "at": "2026-11-13T18:43:49Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module SESSION. It needs: SIM-2D, TRANSPORT",
+      "at": "2026-11-13T18:43:49Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T18:43:49Z"
+  }
+}
