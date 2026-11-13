@@ -126,3 +126,10 @@
   views and all registered baselines (38 + 4 native, four Chrome sets of 481 records).
   [Current evidence](../../evidence/CULLING/M2.md) retains identities, reports and the
   failed transport trace. M2 remains `in_progress`; integration and lead review follow.
+
+- 2026-11-13 Final clean-source simulator samples progress from 117 to 957 presents
+  with requested Occlusion, Direct fallback and the capability reason; the inspected
+  screenshot and repeated Metal selection witness are retained. Merge rebased to
+  `83e9150e`, bringing only reviews/evidence and APPLE-PRESENTATION's new volume test,
+  then refused the new covered-content key. Production and benchmark sources are
+  unchanged; refresh the exact verifier rather than repeat unaffected timing runs.
