@@ -4,15 +4,11 @@
     {
       "id": "M1",
       "name": "A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
       "depends_on": [
         "SHOWCASE:M8",
         "APPLE-TILE:M12",
         "EFFECT-GRAPH:M3"
       ],
-      "bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour.",
       "items": [
         {
           "id": "M1.1",
@@ -21,10 +17,10 @@
           "ask": "Read the test. Is the reference image built on the CPU from the sheet's source texels and the design's view rule, without any of the renderer's shaders? Does it compare every pixel of the submitted SDR output at each of the five scales, on the portable and the Apple tile recipe, at an odd extent, with a sprite cut by each edge of the view and an asymmetric sprite that would show a flip?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.2",
@@ -33,10 +29,10 @@
           "ask": "Is the expected pass list written out in the test and compared whole? Does the storage check walk everything the generation allocated, and does the 3D control, on a recipe that resolves a reconstructor, prove the check would see such a resource or selection if a 2D scene had one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.3",
@@ -45,10 +41,10 @@
           "ask": "Is there one refusal test for each request, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead? If the frame runtime offers no way to ask for a reconstructor by name, is that shown, with where the builder looked?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.4",
@@ -57,10 +53,10 @@
           "ask": "Is the 'before' side taken from main at the commit this milestone started from, for the variants the V1 game prepares, and not produced by the changed code?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.5",
@@ -69,10 +65,10 @@
           "ask": "Does the test run on both native recipes and read the submitted SDR bytes and the scene-linear checkpoint through engine capture's tap? Is the one-code allowance used only for blended texels, with opaque texels compared exactly? Are the 3D scene's two tone operators and its dither unchanged?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.6",
@@ -81,10 +77,10 @@
           "ask": "Is each of the six events driven through the host's own calls, and is the fresh scene's image compared pixel for pixel after each?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.7",
@@ -92,20 +88,20 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-2d",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.8",
           "statement": "On the Mac the sprite scene's test card reads as drawn: upright, unmirrored, colours as authored, flat blocks of colour with hard edges, nothing missing and nothing 3D behind it.",
           "inspect": "Capture `fixed` stills of the sprite scene with T2 engine capture at 1280\u00d7720 and at 3456\u00d72234, at scales of 2 and 4. Judge each frame whole and in native-size crops of the card's lines, colour ramps and marks.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.9",
@@ -114,10 +110,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the valley's paired figure from the same route and build settings on both sides?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.10",
@@ -125,10 +121,10 @@
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.11",
@@ -136,21 +132,21 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour."
     },
     {
       "id": "M2",
       "name": "Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it.",
       "items": [
         {
           "id": "M2.1",
@@ -159,10 +155,10 @@
           "ask": "Read the test. Does it cover a slot reused by a new entity within one tick, a rewind onto a new timeline, and a rotation that crosses the wrap from one side of a turn to the other?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.2",
@@ -171,10 +167,10 @@
           "ask": "Does the test read pixels back at the overlaps, and not the order list? Are there rows with equal sort values whose order only identity decides, and does it run for many ticks while other rows change?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.3",
@@ -183,10 +179,10 @@
           "ask": "Is the CPU blend written from the design's rules for tint, flash and additive, without the renderer's shader? Does a case put an additive sprite between two normal ones?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.4",
@@ -195,10 +191,10 @@
           "ask": "Is the draw count taken from the recorded pass, with rows from all eight sheets interleaved in order? Are uploaded bytes counted where they are written, and compared with the rows that changed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.5",
@@ -206,10 +202,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_rows",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.6",
@@ -218,10 +214,10 @@
           "ask": "Do the rows come from the tick page through the game's scene source, on the game's own world lane, and not from a list built for the test?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.7",
@@ -229,30 +225,30 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-field",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.8",
           "statement": "In real time on the Mac the movers glide: no sprite steps at the tick rate, jumps, or slides in from elsewhere. Where sprites overlap the same one stays in front. A flashed sprite turns the flash colour inside its own outline, and an additive one glows without hiding what is behind it.",
           "inspect": "Capture the sprite scene's field at 1920\u00d71080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
           "statement": "In real time in Chrome the movers glide and overlaps hold still, as on the Mac.",
           "inspect": "Capture the same field in Chrome with T2 engine capture in `realtime` mode for at least twenty seconds. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.10",
@@ -261,10 +257,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Does every row's pose really change every tick in these runs, so that every row is uploaded?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.11",
@@ -272,10 +268,10 @@
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.12",
@@ -283,10 +279,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.13",
@@ -295,21 +291,21 @@
           "ask": "Read the test. Does it replay the design's travelling pair and its chain of three, and read the pair's overlap back as pixels? Does a long randomized run, with three or more rows overlapping at once, spawns, despawns and reused slots, check every change of relative order between rows with history against the rule, with code that does not share the order's own update? Does the same run fail an order made by sorting a held value for each row?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it."
     },
     {
       "id": "M3",
       "name": "Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles.",
       "items": [
         {
           "id": "M3.1",
@@ -318,10 +314,10 @@
           "ask": "Is the box-filter reference computed on the CPU from texel areas? Is the weight figure measured, from a lit texel's sum over the screen, and not inferred from the pixel figure? Is each retained figure the measured one, of a size a sampler's weight precision explains (a small fraction of the contrast between two neighbouring texels), and not a number loosened to pass?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -330,10 +326,10 @@
           "ask": "Is the nearest-sampling control run through the same measurement and required to fail? Does the test read the bound from the retained record, with no path that rewrites it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
@@ -341,10 +337,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -353,10 +349,10 @@
           "ask": "Are the frames in the bleed test packed against frames of a contrasting colour on every side? Does the tile test sweep fractional scales and offsets over a background colour that neither tile contains?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -364,10 +360,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.6",
@@ -376,10 +372,10 @@
           "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
@@ -387,40 +383,40 @@
           "check": "node scripts/check_v1_browser.mjs --case sprites-crisp",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.8",
           "statement": "In real time on the Mac, pixel art scrolling slowly on a diagonal and fast, at scales of 1.5, 2 and 2.37, stays still: no texel changes width, no line thickens and thins, nothing sparkles or crawls, and no seam opens between ground tiles. Rotating sprites keep clean edges.",
           "inspect": "Capture the sprite scene at 1920\u00d71080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
           "statement": "On the Mac, stills of pixel and smooth sprites at each claimed scale are clean: pixel art has square, even texels with edges no wider than one output pixel, and smooth art has no fringe, halo or bleed and does not alias at 0.25.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 640\u00d7360, 1920\u00d71080 and 3456\u00d72234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.10",
           "statement": "In real time in Chrome, at device pixel ratios of 1 and 2, scrolling pixel art stays still and tile seams stay closed, as on the Mac.",
           "inspect": "Capture the same slow and fast scrolls in Chrome with T2 engine capture in `realtime` mode at each ratio, at a scale of 1.5 and of 2.37. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, tile seams and sprite outlines.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.11",
@@ -428,24 +424,24 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles."
     },
     {
       "id": "M4",
       "name": "An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
       "depends_on": [
         "CONTENT-LOOP:M3"
       ],
-      "bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why.",
       "items": [
         {
           "id": "M4.1",
@@ -453,18 +449,18 @@
           "check": "cargo test --locked --offline -p thrum-cook --test sheet_cook",
           "ask": "Read the test. Does it decode the cooked pages and compare each frame's texels with its source image, premultiplied, including a trimmed frame and a grid cell? Does it measure that the gutter between frames is wide enough for every mip level written?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.2",
           "statement": "The runtime refuses a malformed sheet product before any of it is used, each with a named error: a truncated table, a rectangle outside its page, a page count that disagrees with the texture, a duplicate name, and a pivot or density that is not finite.",
           "check": "cargo test --locked --offline -p thrum-cook --test sheet_hostile",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.3",
@@ -473,10 +469,10 @@
           "ask": "Does the sprite pass get its pages only from the lease, with no loader, store access or upload of its own? Does the test hold the frame with the last copy unsubmitted and show the sheet still absent?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.4",
@@ -485,10 +481,10 @@
           "ask": "Does the edit change both the pixels and the packing, so that new pixels under old rectangles would match neither reference?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.5",
@@ -496,8 +492,8 @@
           "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.6",
@@ -506,10 +502,10 @@
           "ask": "Is each of the five failures injected by its own test, through the cooker or residency's own failure path?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.7",
@@ -517,8 +513,8 @@
           "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.8",
@@ -526,28 +522,28 @@
           "check": "node scripts/check_v1_browser.mjs --case sprite-sheets",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.9",
           "statement": "In real time on the Mac an edited sheet replaces the old art on every sprite in one frame: no blank frame, no sprite with the wrong picture, no mix of old and new.",
           "inspect": "Capture the sprite scene's field with T2 engine capture in `realtime` mode with a moving view: one edit that recolours a character, and one that adds frames so the cooker repacks the sheet. Judge the eight frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.10",
           "statement": "The public documentation tells an artist how to lay out a sheet folder, what the two kinds of sheet are, how pivots, tiles and grids are declared and how frames are named, and says that blending is in linear light and what that does to half-transparent art.",
           "ask": "Does a folder and description written from the documentation alone cook and draw as it says, at the claimed commit?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.11",
@@ -555,22 +551,22 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why."
     },
     {
       "id": "M5",
       "name": "The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
       "depends_on": [
         "SIM-2D:M1"
       ],
-      "bar": "Crowd legibility as in Vampire Survivors and Halls of Torment: with thousands on screen every enemy, projectile and player stays readable, the horde moves as one smooth mass at the display's refresh, and nothing flickers where bodies overlap. Pixel stability as in Celeste. A guide a game maker can follow without reading engine source, as Bevy's 2D examples are.",
       "items": [
         {
           "id": "M5.1",
@@ -579,10 +575,10 @@
           "ask": "Does the view depend on SIM-2D's rule package and draw through the public sprite interface only? Does the run report slots reused and rows that skipped interpolation, each above zero? Is the retained digest file SIM-2D's own, unchanged?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.2",
@@ -590,10 +586,10 @@
           "check": "python3 scripts/render2d.py crowd --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.3",
@@ -601,10 +597,10 @@
           "check": "python3 scripts/render2d.py band --target mac-metal",
           "ask": "Is the band the crowd view uses the value the record derives, with the reasoning stated? Are the counts taken over pairs that overlap on screen? Is the pair rule checked across the whole run by code that does not share the order's own update? Are the out-of-order figures recorded as measured, with none treated as a pass mark?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.4",
@@ -613,10 +609,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the crowd packed as SIM-2D's trace packs it, and not thinned or shrunk on screen to improve a row?",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.5",
@@ -624,30 +620,30 @@
           "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.6",
           "statement": "In real time on the Mac the crowd of 10,000 reads clearly: players, enemies and projectiles can be told apart at a glance, the horde moves as one smooth mass, nothing flickers where bodies overlap, a body clearly lower on the screen is in front of the one it overlaps, a spawn and a death are clean, and a hit flash and a projectile's glow show in the thick of it.",
           "inspect": "Capture the crowd view at 10,000 with T2 engine capture: in `realtime` mode at 1920\u00d71080, at least twenty seconds from a view of the whole crowd and twenty from a view close on one player, and `fixed` stills of both views at 3456\u00d72234. Judge consecutive frames at 1x and the stills, whole and in native-size crops of the densest overlap, a player, and a projectile hit.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.7",
           "statement": "In real time in Chrome the crowd of 10,000 reads clearly, moves smoothly and does not flicker where bodies overlap.",
           "inspect": "Capture the crowd view at 10,000 in Chrome with T2 engine capture in `realtime` mode: at least twenty seconds from a view of the whole crowd and twenty from a view close on one player. Judge consecutive frames at 1x, whole and in native-size crops of the densest overlap and a player.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.8",
@@ -655,50 +651,50 @@
           "check": "python3 scripts/render2d_sim.py",
           "lock": "gpu",
           "target": "ios-sim",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.9",
           "statement": "On the simulator's screen the sprite scene is upright in both orientations and inside the screen's bounds, with the card's texels square.",
           "inspect": "Take `simctl` screenshots in portrait and in landscape, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the card. Function only.",
           "target": "ios-sim",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.10",
           "statement": "The engine crates name no game's type, both proof scenes draw through the public sprite interface alone, and the sprite pass can run a second time in a frame with another target, view and row list.",
           "ask": "Does `thrum-render`, `thrum-asset`, `thrum-asset-gpu` or `thrum-cook` name a type, constant or sheet of the V1 game, the crowd or SWARM? Do the sprite scene and the crowd view reach the pass only through the interfaces the design lists? Does the pass take its target, view and rows as inputs, with no state that assumes one instance a frame?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.11",
           "statement": "A guide linked from the creator guide tells a game maker how to declare a 2D scene, give it sheets, map components to world rows, supply a view and frame rows, choose layers and a band, and pick a scale for a window. It says that blending is in linear light and that a scene shows at most eight sheets.",
           "ask": "Do the commands and code the guide gives build and run as written at the claimed commit? Does it cover each interface the design provides?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.12",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's rows for 2D keep implementation, correctness, visuals and device results apart? Do they name as not run: motion measured on the built-in panel itself, how values above white look on an EDR display, a physical iPhone, a Mac window on a display of density 1, Android, and any browser other than Chrome?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M5.13",
@@ -706,13 +702,17 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Crowd legibility as in Vampire Survivors and Halls of Torment: with thousands on screen every enemy, projectile and player stays readable, the horde moves as one smooth mass at the display's refresh, and nothing flickers where bodies overlap. Pixel stability as in Celeste. A guide a game maker can follow without reading engine source, as Bevy's 2D examples are."
     }
   ]
 }

@@ -4,10 +4,6 @@
     {
       "id": "M1",
       "name": "Cooked scene draws on adapters without indirect execution, selected from the capability record",
-      "state": "done",
-      "fails": 0,
-      "replans": 1,
-      "bar": "Where both paths run, the same correct scene, with exact production-direct parity against a diagnostic full-range indirect reference at matching partitions (M1.3); on the iOS simulator the cooked valley is as complete as on Mac through lifecycle and rotation, and continuous in every sampled pan frame (function only), the way shipped compatibility renderers such as Unreal's ES3.1 mobile path or Unity's GLES fallback draw the same content with less GPU-driven work. The indirect path on Mac and Chrome is untouched.",
       "items": [
         {
           "id": "M1.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "ask": "Read the diff. Is the cooked draw path chosen only from the record lent through SceneSurface, never from cfg(target_os), adapter or device name, backend, or a private adapter/device query? Can any record not built from an adapter report INDIRECT_EXECUTION, by default, assumption or provenance marker? Does a test build a host through FrameHost::new (capture_device), attach cooked content and prove the direct path is selected with no INDIRECT-usage buffer or indirect draw recorded, alongside the adapter-backed and masked-record arms? Do the Mac app, Chrome and iOS routes build their record with the adapter-backed capture? Is the diagnostic mask unreachable without explicit opt-in, applied to the record (not inside thrum-asset-gpu), and recorded in evidence when used? Do unit tests cover selection with the flag, without it, with unknown facts, and re-selection on a new device generation?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/check.json and README.md. ./dev check passes. Selection unit cases cover known support, missing flag and unknown facts; GPU replacements reselect in both directions. Adapter-backed and masked cases assert selected paths. The feature-observed child invokes FrameHost::new then actual attach_cooked_scene, records None facts, Direct, zero INDIRECT-usage buffers/cull/count/readback resources and core indexed commands. Source audit traces Mac, Chrome and iOS records to adapter-backed capture; the mask only clears an adapter-read flag and is explicit in each probe record. Plain ./dev check is reverified with the launcher default and no caller overrides after correcting inherited sccache startup failure. check.json records the reproduction and unset/empty/explicit wrapper regression controls. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -28,10 +24,10 @@
           "lock": "gpu",
           "ask": "Does ./dev check run the cooked GPU suite (examples/v1-game/tests/cooked_assets_gpu.rs) under both an adapter-backed record (built with capture, not FrameHost::new) and an indirect-masked record, with each arm asserting its selected path, cull-count assertions on the indirect arm and None-count assertions on the direct arm? Does the direct arm cover discard, capture-no-history, device replacement, remote feed, material promotion and casters, not only a happy-path draw? Is the motion-history flag maintained in a step both paths run, and does the direct path allocate nothing it does not use?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/check.json, paths/report.json.gz and README.md. Both-path cooked/material suites pass through discard, capture-no-history, history reset, replacements, remote feed, deferred material promotion and Sun casters. Actual bound resources/commands show production D has zero INDIRECT buffers and no cull/count/readback, with one indexed full-range draw per placed mesh; visible_meshlets is None. Common upload work maintains history before either draw path. Direct loading also omits unused meshlet bounds/ranges. Probe controls are compile-time opt-in. Plain ./dev check is reverified with the launcher default and no caller overrides after correcting inherited sccache startup failure. check.json records the reproduction and unset/empty/explicit wrapper regression controls. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -39,12 +35,12 @@
           "check": "python3 scripts/cooked_draw_parity.py paths --target mac-metal --output tmp/cooked-draw/paths-$(date +%s)",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/paths/report.json.gz, paths/inspection.json and retained per-view I/D/omit images, native crops and unthresholded differences. Final integrated-M7 named paths run passes all five views: D/R exact, all I/D/R repeats exact, visible D-only missing terrain detected, R output/arguments unchanged and restored D/R exact. Independent R arguments validate complete cooked range/placement coverage. I/all-meshlets exact in every view. Fifteen refreshed decoded images and all differences/crops reproduce the inspected payloads exactly; residuals remain classified as draw-partition shading with matching scene content, no tolerance or low-level cause claim. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
           "review": "docs/evidence/COOKED-DRAW/M1-review.md",
           "inspect": "For every named view, compare selected production meshlet indirect I with production direct D: whole frames and native-resolution crops, with unthresholded difference maps. Check terrain triangle edges, silhouettes and entering geometry; mirrored and edge-straddling meshes; material/texture detail; Sun lighting and shadows; and volume. Require complete, correctly placed geometry, matching materials/lighting/shadows and no visible cracks, holes or objectionable shading seams. Record the assessment of every residual class, using retain-all-meshlets and full-range-indirect controls where attribution is uncertain. Edge location alone is insufficient. The checkpoint's 1,506 pixels and delta 18 are observations, never acceptance thresholds.",
-          "ask": "Does D exercise the real masked-record production direct encoder while I stays the unmodified selected meshlet path? Is R a separately labelled, opt-in probe reference using independent cooked ranges/placement records rather than copied D commands or pixels, with validated complete per-placement coverage, base vertex 0 and one instance? Are every view and all three exact same-arm repeats present? Does the D-only visibly missing-mesh control leave R and its arguments unchanged, fail exact comparison, and regain equality after restoration? Can any control leak into ordinary selection, production shaders, direct resources, indirect work/output, M1.4/M1.5 comparisons or M1.6 cost runs? Do full differences and inspection reject geometry/culling and visible shading defects without claiming the unverified derivative/ordering hypothesis as fact?"
+          "ask": "Does D exercise the real masked-record production direct encoder while I stays the unmodified selected meshlet path? Is R a separately labelled, opt-in probe reference using independent cooked ranges/placement records rather than copied D commands or pixels, with validated complete per-placement coverage, base vertex 0 and one instance? Are every view and all three exact same-arm repeats present? Does the D-only visibly missing-mesh control leave R and its arguments unchanged, fail exact comparison, and regain equality after restoration? Can any control leak into ordinary selection, production shaders, direct resources, indirect work/output, M1.4/M1.5 comparisons or M1.6 cost runs? Do full differences and inspection reject geometry/culling and visible shading defects without claiming the unverified derivative/ordering hypothesis as fact?",
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -52,10 +48,10 @@
           "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target mac-metal --output tmp/cooked-draw/indirect-mac-$(date +%s)",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/BASE, indirect/mac.json.gz and indirect/payloads.json. Named mac-metal indirect command passes all five M1.3 views. BASE is dbf79d6b1d6eabf628f49d5aac89bba7fcb322cb, the parent of the first implementation commit after rebase. One cooked store; isolated archived builds with caller/fixture/witness overlays only; production encoders/shaders untouched. BASE, claim and both-build repeats have byte-identical T2 submitted output and identical visible counts. Retained paths/<view>/I.png is the identical payload for every native arm; reports record source, caller, binary/store and submission identity. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -63,10 +59,10 @@
           "check": "python3 scripts/cooked_draw_parity.py indirect --base \"$(cat docs/evidence/render/cooked-draw/BASE)\" --target chrome-webgpu --output tmp/cooked-draw/indirect-chrome-$(date +%s)",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/indirect/chrome.json.gz, indirect/payloads.json and indirect/chrome/*.png. Named chrome-webgpu indirect command passes noon 0/18/36 and low sun: BASE, claim and both-build repeats have exact T2 submitted RGBA bytes and equal visible counts in one Chrome 156.0.8078.81 session. Hardware WebGPU is enabled on Apple M3 Max/Metal; software adapters rejected. Claim first adapter-backed record reports INDIRECT_EXECUTION and actual CookedStats selects Some(Indirect), no mask. Both Screen Recording preflights false, clean Chrome exit; source/wasm/store and frame identities retained. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -75,10 +71,10 @@
           "lock": "gpu",
           "ask": "Compare the indirect path's per-frame recording in the diff against the base: are dispatches, draws, queue writes and buffer usages identical? Are the paired direct/indirect figures recorded with their conditions, labelled for load, and free of any promotion or selection claim?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/cost/command-audit.json, paired.json.gz, tripwires.json.gz and baseline-history.json.gz; shared histories in docs/evidence/integration/tripwires/. Source audit against BASE finds unchanged indirect dispatches/draws/buffer usages and queue-write values/counts; conditional history writes move earlier to common upload recording before submission. All production shaders unchanged. Required tripwire command passes every metric with no seeding, against at least three genuine quiet BASE measurements; cooked_edit asserts/reports adapter-backed Indirect. Four order-alternated release I/D pairs, 128 completed samples each, record GPU forward/contribution and encode CPU plus build, order and actual quiet load/iostat. Direct compute time absent. Descriptive only; no promotion, simulator timing or speed claim. Planner console-witness revision leaves these target sources unchanged as recorded in console-revalidation.json. The full repository Check is rerun for the refreshed claim.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.7",
@@ -87,10 +83,10 @@
           "lock": "gpu",
           "ask": "Is the route's cooked attach the existing attach_cooked_scene selection, with the route unchanged when THRUM_ASSET_STORE and THRUM_SCENE are unset? Do the retained state records name the simulated model, runtime, host, adapter flags, selected path, drawn generation, lock state and source/content hashes? Are console observations retained without waiting for manual locking or making their value an admission or pass condition? Do the denied before/after Screen Recording preflights identify the process responsible for launching the route, rather than an unrelated helper, and is the ordinary engine-state/simctl route independent of desktop capture? Is any OS grant requested?",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/ios-function-only.json.gz, ios-valley.png and check.json. Exact standalone named command passes on a fresh owned iPhone 18 Pro / iOS 27.2. Twelve observations span 22.054 seconds with presented/cooked counts advancing 119 to 1438, no held controls. Adapter omits INDIRECT_EXECUTION, Direct draws generation 1/current device 1, errors empty. Actual launcher bundle, executable/source hashes, PID and direct harness child PID attribute denied read-only Screen Recording preflights before and after. Console witnesses happened to be true before/after and are recorded only. No lock refusal or setup wait remains. Eight tests accept locked/unlocked/changing/unavailable witnesses and refuse invalid permission proof. No permission request. Build/cook/install/run/cleanup retained, owned simulator deleted. Historical manual-lock reports preserved under history/.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.8",
@@ -99,10 +95,10 @@
           "lock": "gpu",
           "ask": "Do the state records after each lifecycle row show the new generation, the re-selected direct path and the drawn set, and do the route's existing witness counters show zero background or lost-queue submissions? Does this standalone command retain its own before/after console observations and identified denied Screen Recording preflights, without a manual-lock wait or lock state refusal?",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/ios-function.json.gz and check.json. Exact standalone --lifecycle command passes with its own identified launcher denied read-only preflights before/after and matching actual harness parent/child PIDs. Console witnesses true/true are metadata only. Background holds presented/cooked submissions and generation, foreground resumes, replacement redraws the cooked set through Direct on device generation 2 with presented/cooked counts reaching 1792. Zero lost empty submissions and recovery failures, no validation/loader errors. No permission request or lock setup wait. Fresh owned simulator deleted.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.9",
@@ -111,45 +107,50 @@
           "lock": "gpu",
           "ask": "Do the state records before and after each orientation show the presented extent, surface epoch, unchanged process/generation, selected path, drawn set and advancing cooked submitted frames? If the XCUITest gesture needed an unlocked console or an OS grant, is that reason recorded for this row alone, with the engine-state rows (M1.7, M1.8) proved separately under their denied Screen Recording preflights and console state recorded only as a witness?",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/rotation/function.json.gz, 12-landscape.png and 13-portrait.png. Fresh standalone --rotation run reuses the existing real XCUITest rotation/swipe row with cooked content. Attributed denied launcher preflights before/after, console witnesses true/true recorded only, same process/window/lease/device generation through portrait 1206x2622 to landscape 2622x1206 and back. New epochs/current presented extents, Direct and drawn set persist, cooked counters advance; no validation error. Actual attachment/source/destination/drawable extents and full viewport match; selected valley authored FOV is checked at 46 degrees.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
           "statement": "The cooked valley reads as complete, textured, lit and shadowed on the simulator.",
           "inspect": "Native-size simctl screenshots of the valley start view, the 36\u00b0 pan end, a low-sun view, the diagnostic scene, and the valley in landscape after rotation and back in portrait, each judged whole and in full-resolution crops of the frame edges, horizon and objects. Inspection list: (1) terrain complete to the horizon and frame edges, with no missing patches, meshlet-shaped gaps, cracks or holes; (2) terrain reads as textured ground with its base colour, not default white, black or magenta, and no channel swap; (3) sphere reads metallic with sky reflection, rock matte, both facing outward; the mirrored diagnostic node faces and lights like its plain twin; (4) Sun direction and sky ambient read the same as the Mac indirect capture of that view (content presence only, not an image target); (5) sphere and rock cast Sun shadows onto the terrain; (6) the diagnostic volume is present and not clipped or blacked out; (7) after each rotation the image fills the new extent with the scene at the correct aspect, not stretched, letterboxed by stale content or missing cooked meshes; (8) no z-fighting, flicker or differences between two successive stills of a held view. Label simulator function only.",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/ios-visuals/inspection.json, run.json.gz, six native *-a.png views and native crops, held-comparison.json. Final --visuals run covers valley start, yaw36, low sun, mirrored/edge-straddling diagnostic with volume, landscape and restored portrait. Builder inspected all eight required points whole/native: complete textured terrain, outward metallic sphere/matte rock and mirrored twins, matching Mac content/Sun direction, shadows and visible translucent volume; no missing patches, holes, flicker or z-fighting. Accepted M7 fills each oriented extent with full viewport and matching projection/aspect. Held scene pairs are exact; only restored portrait differs in compositor UI at x=0..745/y=0..152, with all scene pixels identical. Simulator function only; prior letterboxing failure is superseded. Fresh --visuals run has attributed denied preflights before/after and observed console witnesses without an admission gate.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.11",
           "statement": "Within its recorded sampling, the route's camera pan on the simulator shows continuous cooked content: every sample is complete, terrain fills the frame edges as it enters view, and no sample shows popping, flicker or missing geometry. The evidence states the coverage (presented frames over the pan, samples and their times, holds and the largest gap between samples) and draws no conclusion about unsampled frames; proof over every submitted frame stays with T2-CAPTURE M2.",
           "inspect": "A frame sequence of the route's camera pan (simctl screenshots or a simctl recording decoded to frames) with its coverage record, including samples where terrain enters at each frame edge and the start and end holds. Judge content continuity in the sampled frames only, check that the stated conclusion stays within the recorded coverage, and never judge speed or cadence.",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/ios-visuals/inspection.json, run.json.gz, pan-strip-*.png, pan-native-*.png and pan-lossless.mkv. All sixteen native simctl samples inspected chronologically and in native edge/horizon/object crops; continuous complete entering terrain, no sampled popping/flicker/missing geometry. Coverage spans presented counts 1559 to 2759; recorded capture begin/end times and bracketing states, two-second start hold, eight-second 0-to-36-degree pan, observed end hold at least 8.75195 seconds; largest sample-start gap 1.125629 seconds. Lossless movie round-trips every sample; playback timestamps are inspection packaging only. No conclusion about unsampled frames, speed or cadence; every-submitted-frame proof remains T2-CAPTURE M2.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.12",
           "statement": "The G5 decision, the maturity ledger and the evidence README record both draw paths, the selection rule, each target's actual adapter flags and selected path, the parity and cost results and their limits, and T2-CAPTURE M2's handoff; scratch is closed out under the storage rules.",
           "ask": "Do the G5 decision's meshlet section and capability inventory, maturity.json and docs/evidence/render/cooked-draw/README.md agree with the code and the evidence, keep implementation, correctness, visual and device status separate, and claim no speed or physical-device result? Is owned scratch under tmp/cooked-draw/ retired or recorded with its closeout condition?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/cooked-draw/README.md, closeout.json and selected-hashes.json; docs/design/decisions/G5-CONTENT-ADDRESSED-LOOP.md and docs/design/maturity.json. Records both paths, actual facts/masks/selection on all targets, exact oracle and BASE preservation, paired descriptive Mac cost and fully gated tripwires, separate builder visual/function status and no speed/physical-device claim. T2 M2 handoff names ordinary cooked attach after acceptance while retaining its submitted-frame/time/every-frame obligations. All owned bulk scratch directories retired after source/evidence and lossless round-trip verification; small logs have explicit lead-review expiry, target cleanup at stop. Console witness revision and attributed denied preflight proof are reflected in all current records, with historical lock setup explicitly superseded.",
           "verdict": "pass",
-          "review": "docs/evidence/COOKED-DRAW/M1-review.md"
+          "review": "docs/evidence/COOKED-DRAW/M1-review.md",
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
         "PLATFORM-RUNTIME-IOS:M7"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
+      "status": "done",
+      "quality_bar": "Where both paths run, the same correct scene, with exact production-direct parity against a diagnostic full-range indirect reference at matching partitions (M1.3); on the iOS simulator the cooked valley is as complete as on Mac through lifecycle and rotation, and continuous in every sampled pan frame (function only), the way shipped compatibility renderers such as Unreal's ES3.1 mobile path or Unity's GLES fallback draw the same content with less GPU-driven work. The indirect path on Mac and Chrome is untouched."
     }
   ]
 }

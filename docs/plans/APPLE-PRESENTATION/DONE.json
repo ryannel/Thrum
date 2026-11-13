@@ -4,10 +4,6 @@
     {
       "id": "M1",
       "name": "Every pixel of the valley carries correct motion under jitter, including the sky and stars",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Motion fit to drive a shipped temporal reconstructor such as MetalFX or Unreal's TSR: zero for a static scene under jitter, exact at infinity for the sky, Sun and stars, and marked invalid where there is no history rather than fabricated. Judged on the current portable output, before any reconstruction exists.",
       "items": [
         {
           "id": "D1.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "ask": "Do tests in ./dev check assert the sequence values, the absence of (0,0) and the record layout byte for byte, and does RENDER-SPEC state the same layout with its design hash refreshed? Do the previous matrices come from the last submitted frame, not the last encoded one?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D1.2",
@@ -28,10 +24,10 @@
           "lock": "gpu",
           "ask": "Does the test read the real motion target back from the GPU over several jitter phases and fail on any nonzero texel, with a moving-object control that must be nonzero?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D1.3",
@@ -40,44 +36,44 @@
           "lock": "gpu",
           "ask": "Is the expected sky motion derived independently of the shader, does the test cover a time step with the camera still (phase delta only), and is the change inside the atmosphere shaders limited to motion output as the module list's seam 4 ruling says?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D1.4",
           "statement": "Objects with invalid history are marked as such, ready for the reactive target, instead of writing a fabricated zero vector: a spawn, a camera cut, a device replacement and a cooked asset swap each mark their geometry.",
           "ask": "For each of the four cases, where is the mark set and where is it cleared, and can any drawer in the forward pass (synthetic, contribution, cooked on both draw paths) still emit zero motion for geometry with no previous position?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D1.5",
           "statement": "A motion view in the existing display pass shows motion on the valley route: during a pan, terrain, objects, sky and stars all move in the expected direction with magnitudes that grow sensibly from the pan's centre to its edge.",
           "inspect": "Capture a pan on the valley route with the motion view on, as a fixed-time sequence from the Mac engine capture. Watch it in motion and check whole frames and crops of: the skyline, a near object against far terrain, the star field at night, and a moving object. Say that you watched motion.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m1-mf1/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M1-review.md",
+          "builder_result": "pass"
         }
       ],
-      "rounds": 1,
       "depends_on": [
         "APPLE-TILE:M0"
-      ]
+      ],
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "Motion fit to drive a shipped temporal reconstructor such as MetalFX or Unreal's TSR: zero for a static scene under jitter, exact at infinity for the sky, Sun and stars, and marked invalid where there is no history rather than fabricated. Judged on the current portable output, before any reconstruction exists."
     },
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
       "items": [
         {
           "id": "D2.1",
@@ -86,10 +82,10 @@
           "lock": "gpu",
           "ask": "Does the eligibility report from APPLE-TILE M1 list depth and motion as stored only when a reader exists, and is the disabled path's attachment storage unchanged from before this milestone?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.2",
@@ -98,10 +94,10 @@
           "lock": "gpu",
           "ask": "Does every forward drawer declare the third target, including the cooked direct and indirect paths with their COOKED-DRAW selection and history rules intact, and does the star pass attach and declare access to every target its shader writes? Does a contribution get the target through the contribution seam rather than a private binding?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.3",
@@ -110,10 +106,10 @@
           "lock": "gpu",
           "ask": "Does a test change the storage scale between two frames and show the history sample rescaled correctly rather than reinterpreted?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.4",
@@ -122,10 +118,10 @@
           "lock": "gpu",
           "ask": "Read the pipelined tests. Is each of the six clauses asserted separately on the real frame host, are the cancelled-acquisition and background-drop cases counted in the proof log, and does the existing presentation-drop contract behave as before?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.5",
@@ -134,10 +130,10 @@
           "lock": "gpu",
           "ask": "Read the temporal case. Are the reactive and motion values taken from frames the page submitted, not from a side render or a declaration? Is the unsubmitted view abandoned at the latest point the browser frame path allows, with the predecessor identity read from the state the previous matrices are packed from? Would a reactive target that is never written, and history advanced before submission, each fail a row?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.6",
@@ -146,10 +142,10 @@
           "lock": "gpu",
           "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2-volume/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "D2.7",
@@ -157,24 +153,24 @@
           "check": "node scripts/check_v1_browser.mjs --case all",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md",
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M2"
       ],
-      "rounds": 1
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet."
     },
     {
       "id": "M3",
       "name": "TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
       "items": [
         {
           "id": "D3.1",
@@ -183,10 +179,10 @@
           "lock": "gpu",
           "ask": "Is the reconstructor resolved from the registry with TAAU as the portable default, and does its output enter only through the pre-tone input APPLE-TILE M3 delivered, with no second tone or exposure step?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.2",
@@ -195,30 +191,30 @@
           "lock": "gpu",
           "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, with the held state checked and not assumed? Is the difference the design's CIEDE2000 over the whole frame without masks, against the bound the design states? Does a deliberately broken TAAU (history disabled) fail?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.3",
           "statement": "On the Mac, motion sequences show no ghosting or crawl: pans and translating lights, a reveal behind a moving prop, a spawn, a held-camera star field with no shimmer, and a time-of-day scrub with no brightness lag.",
           "inspect": "Capture each of the five sequences with the Mac real-time engine capture, TAAU on, and the same sequences with it off. Watch each at 1x and check native-size crops of trailing edges, the revealed background, the spawned object's first frames, individual stars, and the sky during the scrub. Say that you watched motion.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.3c",
           "statement": "In Chrome the same five sequences show no ghosting, crawl, shimmer or brightness lag.",
           "inspect": "Capture the five sequences with Chrome real-time capture, TAAU on and off, and judge the same crops. Note any sequence where Chrome differs from the Mac.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.4",
@@ -227,25 +223,30 @@
           "lock": "gpu",
           "ask": "Does the cut arm compare the post-cut frame with an independently reset render, and does a control with the reset suppressed fail?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.5",
           "statement": "TAAU's GPU time on the route is recorded at M3's own 640x360 extent, kept apart from the design's 1080p estimate, with build, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
           "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M3"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
     }
   ]
 }

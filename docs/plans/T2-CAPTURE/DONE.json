@@ -4,181 +4,184 @@
     {
       "id": "M0",
       "name": "Mac engine images and runtime motion without a desktop capture grant",
-      "state": "done",
-      "fails": 2,
-      "replans": 2,
-      "bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit.",
       "items": [
         {
           "id": "M0.1",
           "statement": "An opt-in FrameHost tap reads the actual final submitted engine output, preserving normal temporal history, one GPU coordinator and platform lease/loss rules. Disabled capture has no frame copies, readback resources or per-frame allocation.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md and verification.json \u2014 renderer tap/provenance unchanged from passing second review. Fresh full Check on Metal gates integration; default/creation-counter real-device correspondence, channel/padding, disabled-hook zero-resource and history/loss regressions retained. New writer preserves every original RGBA hash.",
           "ask": "Trace submitted frame to graph copy to image digest; verify no endpoint redraw, second scene render, private game queue submit, drawable bridge or present-lease extension. Run real Metal tests comparing tap pixels with the same output texture, known colour/channel/row-padding cases including odd widths, and submitted history with capture on/off. Preserve existing endpoint-capture tests and Mac M1 loss behavior. Verify disabled-capture zero-allocation and unchanged submitted-history tests run in ./dev check; these required real-Metal tests fail when no device is available.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md",
           "check": "./dev check",
-          "lock": "gpu"
+          "lock": "gpu",
+          "builder_result": "pass"
         },
         {
           "id": "M0.2",
           "statement": "Bounded asynchronous staging and writer queues preserve frame/generation identity through resize, loss, abandon, exhaustion and cancellation; slow or failed output cannot block world/render work or silently complete the evidence interval.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/sessions/writer-slow-raw/runtime.json.gz and README.md \u2014 explicit raw slow-sink refusal: 479 continuing submissions, ticks 0\u2013119, 109 images/370 omissions, finite 6/96 pixel peaks and writer deadline failure. Compressed grid slow control fits its finite reserve and honestly completes; not used as saturation proof. Compressed write/flush/byte-limit/size/round-trip and independent decoder corruption/refusal tests pass.",
           "ask": "Run pending-map loss/replacement and stale-callback controls, ring/writer saturation, disk-limit/write error and bounded-finalization failure. Show finite allocated/queued bytes and continuing ticks/render progress while capture is incomplete; no lost-queue submit or lost-fence wait. Check frames are recycled only after their GPU/CPU leases end, and old generations cannot populate a new session. Include automated incomplete-manifest refusal and decoded raw-spool/PNG hash equality; prove bounded CPU pool ownership through slow disk writes and packaging failures. These regressions run in ./dev check and fail on unavailable required hardware.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md",
           "check": "./dev check",
-          "lock": "gpu"
+          "lock": "gpu",
+          "builder_result": "pass"
         },
         {
           "id": "M0.3",
           "statement": "Before full scenario integration, a measured bounded raw-spool writer sustains the required four-second 1920x1080, 120-record/s workload without overflow; lossless packaging runs after the interval.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md, order.json, summary.json and sessions/ \u2014 five consecutive full 480-record native writer probes, then 30 consecutive complete integrated sessions (10 pan, 10 input-stall, 10 running): 14,423/14,423 exact submissions/images, zero omitted/skipped samples. Last 20 strictly cap uncached writes at 200 MB/s on the 96\u201397%-full normal volume; GPU/CPU peaks only 2/2 against 6/96. Full 1080p RGBA input preserved through lossless XOR/Zstd, original pre-encoding SHA checked independently for every frame. Separate finite 256 MiB encoded burst reserve; actual write/full-sync/drain/verification/RSS and every attempt retained.",
           "ask": "Run the writer probe on the actual target disk using full raw frame records, declared finite GPU/CPU byte caps and a 16 GiB per-session output allowance. Record write service rate, queue peaks, actual storage/flush behavior, drain and deferred packaging time; verify every decoded image hash. Start with three staging slots/eight CPU buffers in integrated capture. A cached write-acceptance rate alone is insufficient. If the probe overflows, revise the writer before the complete pan; no session-sized RAM queue, live PNG requirement or reduced fidelity may hide failure. Retain commands and measurements; do not call this measured until run.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M0-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M0-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M0.4",
           "statement": "One documented implemented workflow produces exact-build stills, fixed-time sequences and separately labelled real-time offscreen sequences on Metal while the console is locked and Screen Recording permission is unavailable, without requesting a grant.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/sessions/series-00/manifest.json.gz and runtime.json.gz through series-29 \u2014 all 30 locked before/after with preflight false, one frozen binary/source/recipe, actual engine generations and consumed lead. Paused-world pan fresh contiguous IDs at tick 0 through ordinary presenter; no renderer/lead changes from passing second review. Still/fixed/all pan endpoint hashes equal.",
           "ask": "Rerun retained commands on the actual M3 Max under gpu exclusivity. Inspect recorded lock/permission status, adapter/backend, recipe, source/dirty/build/shader/cooked/parameter hashes and per-frame world/interpolation/history/submission IDs. Verify the headless real-time driver uses actual monotonic elapsed time, the ordinary threaded world/render paths and validated semantic controls. Verify complete source-frame coverage and finalized manifest; no GPU timestamps or OS capture grant required. Preserve fixed-time route/endpoint parity. Unavailable hardware or inability to establish the required locked condition cannot pass. Record the locked condition opportunistically; never lock an active user or unlock by automation. Trace engine output through the ordinary presenter/SurfaceOutput admission path: paused-world semantic camera edits must create fresh submissions with unchanged committed tick and no capture-only admission bypass.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M0-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M0-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M0.5",
           "statement": "The locked-console real-time cooked noon paused-world pan retains complete endpoint holds and coherent scene motion through the ordinary presenter path.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/inspection.json, views/pan-1x.mp4, native frames/crops and sessions/series-00 \u2014 ten complete cooked real-time pans with all submitted originals verified. Selected pan holds 1.0106/1.0066 s, maximum image gap 12.13 ms; coherent rock/ridges, sphere exit, monotone camera, no cut/reversal/copy corruption. Tick 0, ordinary presenter, host PTS max error 0.5 microseconds; fixed/still endpoints equal.",
           "ask": "Join every submitted image to requested/accepted/submitted controls in the 1920x1080 0-to-36-degree two-second pan at 120 Hz requested opportunities, with one-second initial and final holds. Show fresh submission IDs while the committed world tick stays paused. Account for all opportunities/submissions; capture omissions make the interval inconclusive. A fixed-step route or endpoint redraw cannot pass.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md",
-          "inspect": "At 1x inspect the full noon pan and both one-second holds: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. Inspect native-size full frames and crops. The Ground E PNG identifies scene and framing only; judge quality against this worded list and the milestone bar, never by matching a target image or awaiting owner image approval. This proves engine runtime motion, not built-in-display smoothness."
+          "inspect": "At 1x inspect the full noon pan and both one-second holds: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. Inspect native-size full frames and crops. The Ground E PNG identifies scene and framing only; judge quality against this worded list and the milestone bar, never by matching a target image or awaiting owner image approval. This proves engine runtime motion, not built-in-display smoothness.",
+          "builder_result": "pass"
         },
         {
           "id": "M0.6",
           "statement": "A locked-console elapsed-time sequence of a running 60 Hz world preserves intermediate-alpha presentation and temporal history.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/sessions/series-02/runtime.json.gz and manifest.json.gz, inspection.json and views/series-02-* \u2014 ten complete running-grid sessions; selected 481/481, ticks 0\u2013119, history epoch 0, 113 strict intermediate-alpha samples. Native full/crop and host-time sequence inspected. Existing 123 interior alpha-one clamps remain exposed; world/presentation pacing is outside T2.",
           "ask": "Join source images to adjacent committed endpoints, interpolation alpha, history and submission IDs in a declared moving-actor scenario at 120 Hz requested opportunities. Show intermediate-alpha samples and no endpoint redraw/history reset; account for gaps and refuse incomplete capture.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md",
-          "inspect": "Inspect full frames, native-size moving-actor crops and the host-time-preserving 1x sequence through initial hold, running motion and final hold for continuity and interpolation/history artifacts."
+          "inspect": "Inspect full frames, native-size moving-actor crops and the host-time-preserving 1x sequence through initial hold, running motion and final hold for continuity and interpolation/history artifacts.",
+          "builder_result": "pass"
         },
         {
           "id": "M0.7",
           "statement": "Explicit diagnostic render and input-dispatch stalls remain visible for their actual elapsed duration; ordinary runs never activate these actions.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/sessions/render-stall and series-01 runtime/manifest gzip, inspection.json and contact/native crops \u2014 render delay 254.69 ms gives 260.05 ms image gap then recovery; input delay 258.58 ms retains fresh pixel-identical held submissions then recovery. Exact originals and all host PTS verified. Ordinary runs have no actions; fixed-time controls remain refused.",
           "ask": "Trace scenario-only actions that delay render-actor work and input dispatch before normal semantic handling, with start/end monotonic times and pinned scenario hash. Verify they are off by default and cannot fire in an ordinary schedule. Compare elapsed delays with image repeats/gaps and PTS; never edit timestamps or compress time to simulate the control. Demonstrate why fixed-time movie smoothness cannot satisfy this item.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M0-review.md",
-          "inspect": "At 1x inspect both stall controls and their timelines: the held content or delayed input response must last for the recorded host-time delay and then recover; distinguish capture omissions from actual runtime stalls."
+          "inspect": "At 1x inspect both stall controls and their timelines: the held content or delayed input response must last for the recorded host-time delay and then recover; distinguish capture omissions from actual runtime stalls.",
+          "builder_result": "pass"
         },
         {
           "id": "M0.8",
           "statement": "Matched capture-on/off runs record observer cost and bounded working-set/disk scaling.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md, cpu-diagnosis.json, summary.json and sessions/cost-* \u2014 sleep-paced inversion diagnosed with active CPU/wall clocks and real E/P CPU IDs; QoS/activity-only failures retained. Explicit matched active-pacing OFF/ON/ON/OFF twice stabilizes unfiltered OFF step medians 0.516\u20130.526 ms (~2%); paired ON step +0.138\u20130.152 ms, loop +0.310\u20130.330 ms. Scene GPU, positive copy upper bracket 1.184\u20131.191 ms, CPU profiles, load, queue/bytes/RSS/full-sync/deferred verification retained. Pacing burns CPU; whole-child spread including warmup reported separately, no noisy percentage or native cadence claim.",
           "ask": "Read paired same-build/recipe/workload CPU/GPU/interval/queue/memory/bytes/disk results with run order and load, including deferred packaging and flush costs. Investigate visible hitches, comparable regressions and unexpected scaling under C12 without inventing numeric gates. Captured timing is never the uncaptured baseline.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M0-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M0-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M0.9",
           "statement": "The implemented runbook and consumer handoff state capture modes, provenance, limits, storage retention and the separate attended Mac proof owners.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m0/reliability/README.md, retention.json, historical-retirement.json and docs/CAPTURE.md \u2014 commands rerun for modes, repeated normal/capped sessions, active cost control and explicit raw saturation. Exact compressed source restoration, pre-encoding hashes, finite pixel/encoded budgets, 16 GiB session allowance and full flush recorded. 80.71 MB historical duplicate views retired after source verification; 13.99 MB selected replacement views. Full local sources/binaries retained through next review. Mac M2/window/panel owners and Chrome/simulator scope unchanged.",
           "ask": "Rerun retained documented commands; review C12 and Mac M2 handoff, including M2.3 windowed tap and M2.4 trace investigation. Neither engine PTS nor synthetic opportunities are called compositor swaps, panel refresh or input-to-photon. Verify ASSET-LIFECYCLE records, 16 GiB session allowance, free-space preflight, selected source/time retention and ownership-scoped closeout. Chrome endpoint and simctl interim evidence keeps its explicit limited scope; stronger submitted-motion rows retain their target dependency.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M0-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M0-review.md",
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
         "PLATFORM-RUNTIME-MAC:M1"
-      ]
+      ],
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 2,
+      "diagnoses": 1,
+      "status": "done",
+      "quality_bar": "Camera continuity expected of Red Dead Redemption 2 and evidence fit for a shipped high-end game: complete native-size images and honest 1x elapsed-time motion, with every omitted sample and observer limit explicit."
     },
     {
       "id": "M1",
       "name": "Chrome WebGPU images and runtime motion without desktop capture",
-      "state": "done",
-      "fails": 0,
-      "replans": 1,
-      "bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming milestone.",
       "items": [
         {
           "id": "M1.1",
           "statement": "Chrome captures the actual submitted portable output in fixed-time and elapsed-time modes on hardware WebGPU while the desktop is locked, without OS Screen Recording access or silent software fallback.",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m1/README.md, audit.json, final-order.json, sessions/fixed-final-* and final-00..04-* \u2014 Apple M3 Max/Metal Chrome 156 hardware WebGPU, locked console and denied launcher Screen Recording preflight before/after. Fixed 481 images and five consecutive elapsed-time sessions with 2,407 exact native 1280x720 images, zero omissions/dropped views/overload. Full source/bundle/content/clock joins and independent decoded hashes retained. Native checkpoints/cut and bounded Chrome playback at rate 1 inspected; full previews verify PTS to <=0.34 microseconds. Canvas/engine overlay inclusion and DOM/browser/native exclusions explicit.",
           "ask": "Rerun the documented cooked-route commands; verify real adapter/backend, browser build/flags and scheduling/throttling profile, exact bundle/content/recipe hashes, clocks and complete frame joins. Do not pass by faking visibility, weakening the existing route refusal rules or asserting headless Chrome is the real visible-tab/display path.",
           "inspect": "Inspect full-resolution route checkpoints, cuts and 1x moving output for missing content, temporal artifacts and pauses. The manifest names canvas/engine UI included and DOM/browser/native controls excluded.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M1-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M1-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
           "statement": "Browser asynchronous capture and artifact export survive loss/resize and slow output with bounded queues and explicit gaps; elapsed-time stalls remain visible and existing lifecycle policy is preserved.",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m1/README.md, audit.json, sessions/*-final-*, lifecycle-order.json and check-full.log.gz \u2014 actual pending-readback device destruction refuses lost/stale sessions, authority 179->191 and fresh full generation-2 image. Resize advances presenter with correct source-grid identity. Corrected ring saturation records 118 omissions and continuing tick 599; slow export records 387 omissions within eight-request bounds; both refuse completion. Actual 250 ms stall produces a 270.9 ms source/preview gap and ordinary overload recovery. Existing actual-tab, resize, device loss/recovery and seven deterministic-route controls pass on the same Wasm. GPU-locked ./dev check passes; final integration repeats the profile Check.",
           "ask": "Run pending-readback loss/recovery, saturation and injected-stall controls; show the page loop/authority continue, stale captures fail, PTS do not hide delay and missing samples refuse completion. Rerun affected actual-tab/visibility/device-loss consumers; headless canvas proof cannot replace them. Run ./dev check for shared regressions under gpu; additionally retain and rerun the implemented target-specific Chrome command on this target, failing rather than skipping unavailable required hardware. The workspace check alone cannot prove this target row.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M1-review.md",
           "check": "./dev check",
-          "lock": "gpu"
+          "lock": "gpu",
+          "builder_result": "pass"
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
+      "status": "done",
+      "quality_bar": "Portable cooked-scene camera continuity expected of Red Dead Redemption 2, with complete canvas sample identity and explicit browser scheduling and surface limits; scene-specific artistic bars remain with the consuming milestone."
     },
     {
       "id": "M2",
       "name": "iOS simulator engine motion without desktop capture",
-      "state": "done",
-      "fails": 0,
-      "replans": 1,
-      "bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim.",
       "items": [
         {
           "id": "M2.1",
           "statement": "The real simulator foreground route captures engine-rendered stills and elapsed-time motion without desktop capture through the shared renderer tap and normal control handler. Denied read-only Screen Recording preflights before and after under the identified launcher/harness permission identity prove independence from desktop capture, with no permission request. Console state before and after is witness metadata only, accepting locked, unlocked or changed state, with unavailable observations recorded with a reason. Missing, failed or granted permission preflights cannot pass this proof.",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m2/qualified/README.md, audit.json, report.json.gz and sessions/ \u2014 actual iPhone 18 Pro/iOS 27.2 Metal foreground route at 1206x2622. Denied attributed launcher preflights before/after; unlocked-to-locked console witness accepted without gating. Three complete pans and running/stall/fresh lifecycle intervals preserve 3,130 exact originals with zero omissions. Pending surface/background/device sessions cancel, fresh generations contain no stale images, background counters hold and lost empty submits stay zero. Ring saturation and Raw slow output explicitly refuse with continuing world progress; actual 8.037 s stall preserved. Independent decoded hashes, native inspection and 1x PTS verification retained. Real UIKit touch/rotation regression, pinned iOS Clippy, ten Python tests and serial full Check pass. Simulator function only; lead review owed.",
           "ask": "Rerun the documented route; verify booted model/runtime, host/backend, source/content/recipe and actual world/view/submission IDs and before/after console observations. Verify the denied before/after Screen Recording preflights and their actual launcher/harness attribution; an unrelated denied helper cannot establish this proof. No wait, refusal or pass condition may depend on console lock state. Separate semantic input from real UIKit touch and mark any OS UI/automation grant row attended with its reason. Required unattended engine-output proof stays open if the target is unavailable.",
           "inspect": "Inspect complete native-size output and 1x camera/actor motion with initial/final holds and transition frames; identify missing scene content, repeats and continuity breaks. Label simulator function only.",
           "verdict": "pass",
-          "review": "docs/evidence/T2-CAPTURE/M2-review.md"
+          "review": "docs/evidence/T2-CAPTURE/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
           "statement": "Pending captures cancel safely across background/foreground, surface replacement and device-generation recovery without background submission or stale pixels; output remains bounded and gaps explicit.",
           "target": "ios-sim",
-          "status": "pass",
           "evidence": "docs/evidence/render/t2-capture-m2/qualified/README.md, audit.json, report.json.gz and sessions/ \u2014 actual iPhone 18 Pro/iOS 27.2 Metal foreground route at 1206x2622. Denied attributed launcher preflights before/after; unlocked-to-locked console witness accepted without gating. Three complete pans and running/stall/fresh lifecycle intervals preserve 3,130 exact originals with zero omissions. Pending surface/background/device sessions cancel, fresh generations contain no stale images, background counters hold and lost empty submits stay zero. Ring saturation and Raw slow output explicitly refuse with continuing world progress; actual 8.037 s stall preserved. Independent decoded hashes, native inspection and 1x PTS verification retained. Real UIKit touch/rotation regression, pinned iOS Clippy, ten Python tests and serial full Check pass. Simulator function only; lead review owed.",
           "ask": "Run lifecycle rows with a capture pending plus saturation/stall controls. Trace foreground/surface leases and generation IDs; prove no background GPU submit, lost-queue work or stale publication, and fresh output after resume. Validate PTS/coverage and incomplete-result refusal; preserve affected iOS route tests and keep physical iPhone evidence pending. Run ./dev check for shared regressions under gpu; additionally retain and rerun the implemented target-specific iOS simulator command on this target, failing rather than skipping unavailable required hardware. The workspace check alone cannot prove this target row. Apply M2.1's denied permission preflights and console witness policy throughout the lifecycle/capture command; neither console state nor a lock transition gates engine-output proof.",
           "verdict": "pass",
           "review": "docs/evidence/T2-CAPTURE/M2-review.md",
           "check": "./dev check",
-          "lock": "gpu"
+          "lock": "gpu",
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
         "COOKED-DRAW:M1"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
+      "status": "done",
+      "quality_bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim."
     }
   ]
 }

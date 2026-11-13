@@ -4,13 +4,9 @@
     {
       "id": "M1",
       "name": "A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
       "depends_on": [
         "SHOWCASE:M8"
       ],
-      "bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail.",
       "items": [
         {
           "id": "M1.1",
@@ -18,30 +14,30 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Read the runner and the retained file. Were the retained digests made by a straight run that had the corrected inputs from the start and never rewound? Does the fold hold one digest per tick, that of the tick as last committed, with superseded digests left out? Does the crowd step through thrum_core::sim's registered runtime, with spawns and despawns as structural edits and rewinds through its history, and not through a private loop? Does the wire route pass every frame through thrum-network's own encode and decode? Does the run report slots reused, hits, rewinds, rewinds whose replay changed a digest, and axes the wire changed, each above zero at every size?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.2",
           "statement": "As Wasm in Chrome the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.3",
           "statement": "In the iPhone simulator the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.4",
@@ -49,20 +45,20 @@
           "check": "python3 scripts/sim2d_conformance.py control --target chrome-webgpu",
           "ask": "Does the control differ from the reference crowd by that one rule only, and run through the same runner and comparison as M1.2?",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.5",
           "statement": "The profile number offers the operations the design lists and no others, and the profile's retained vectors exercise each of them at the edges of the format.",
           "ask": "Does the type expose anything outside mechanism 1's list: a sine, a power, a fused multiply-add, a sign-bit read, raw bits, a total ordering, or a conversion from a raw f32 other than the input conversion? Do the retained vectors include, for each operation that can produce them, subnormal results, rounding ties, both zeros, overflow to infinity and NaN operands?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.6",
@@ -70,10 +66,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test profile_refusal",
           "ask": "Read the test. Does it drive the refusal through a registered rule and the runtime's own commit, once for an infinity and once for a NaN?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.7",
@@ -81,10 +77,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test world_digest",
           "ask": "Read the test. Does it change, one at a time, each kind of value in the design's coverage list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Is any covered value hashed through std::hash or at the machine's width?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.8",
@@ -92,20 +88,20 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, timed through the engine's runtime and not a stand-in, with the load on the machine recorded? Does the record give the replay figure SESSION needs: eight ticks at each size? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.9",
           "statement": "In Chrome, tick, index build, digest, eight-tick rewind and eight-tick replay times for the Crowd trace at 2,000, 5,000 and 10,000 bodies are on record from two separate runs, each row with neighbours visited per tick, build and load. The record flags each tripwire the design names that a row trips. The figures are baselines: no time decides the result.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.10",
@@ -113,10 +109,10 @@
           "check": "cargo test --locked --offline -p crowd-2d --test retained_slice",
           "ask": "Does the test compare with the same retained file the conformance command reads, with no path that regenerates it? Do the V1 game's own simulation tests still pass unchanged?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.11",
@@ -124,10 +120,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.12",
@@ -135,21 +131,21 @@
           "check": "cargo test --locked --offline -p crowd-2d-run --test input_route",
           "ask": "Read the test. Does the wire side go through thrum-network's public encode and decode of whole input batches, and not through a copy of its arithmetic? Does the slice hold axes the wire changes, counted above zero, and do they steer players? Does the test run inside ./dev check? Can a rule of the reference crowd turn a frame's axis into a profile number any other way than the engine's conversion?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail."
     },
     {
       "id": "M2",
       "name": "A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one.",
       "items": [
         {
           "id": "M2.1",
@@ -157,10 +153,10 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test oracle",
           "ask": "Read the test. Does the brute-force side enumerate every body without using the index's cells or tables, and sort by the design's key? Is each scene kind in the statement generated?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.2",
@@ -168,30 +164,30 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test predicates",
           "ask": "Are the expected answers written out from geometry in the test, and not computed by the predicates under test?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.3",
           "statement": "A projectile that crosses an enemy's whole diameter within one tick hits it through the capsule query, and the test shows the same projectile missing when only its end position is tested.",
           "check": "cargo test --locked --offline -p crowd-2d --test swept_hit",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.4",
           "statement": "The index keeps its storage between builds. The allocations a warmed build and each kind of query make at 10,000 bodies are counted on the Mac and are in the cost record, with the source of any that remain. The counts are baselines: none decides the result.",
           "ask": "Does the index reuse its buffers from one build to the next by design? Were the counts measured by a counting allocator around warmed calls, and not asserted? Does any check or test fail on a count? None should.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.5",
@@ -199,30 +195,30 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Is the Crowd trace's retained file byte for byte the one M1 was accepted with, by git history? Does the Mixed run report oversize bodies indexed and capsule hits, each above zero?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.6",
           "statement": "As Wasm in Chrome both retained traces reproduce the same digests the Mac does.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.7",
           "statement": "In the iPhone simulator both retained traces reproduce the same digests the Mac does.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.8",
@@ -230,10 +226,10 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal --parallel",
           "ask": "Does the run report the crowd's steering rules dispatched in parallel chunks, with a count above zero?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
@@ -241,20 +237,20 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Do the rows support the explanation given for each slower one? Is forced-parallel reported as measured, whichever way it came out?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.10",
           "statement": "In Chrome, for both traces at the three sizes, tick, index build and time per neighbour visited are on record from two separate runs with build and load. Any row about a quarter slower than M1's at the same neighbour count is explained.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.11",
@@ -262,10 +258,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.12",
@@ -273,21 +269,21 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test domain",
           "ask": "Does the wide query in the test cover so many cells, at the smallest cell size the index accepts, that walking them could not finish in the test's time?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one."
     },
     {
       "id": "M3",
       "name": "A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "As hard to get wrong as Rapier's `enhanced-determinism` build or Photon Quantum's fixed-point API, where the operations that differ between machines are simply not on offer. A rule that breaks the profile fails `./dev check` with a message that names the class, and the guide is enough to write a rule package without reading engine source.",
       "items": [
         {
           "id": "M3.1",
@@ -295,10 +291,10 @@
           "check": "python3 scripts/sim2d_profile.py controls",
           "ask": "Does each fixture differ from a passing rule package by its one violation only, and does the command fail if any fixture passes the guard?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -306,64 +302,64 @@
           "check": "python3 scripts/sim2d_profile.py check",
           "ask": "Is the guard run by `./dev check`? Does it find rule packages from `.config/architecture.toml`, and compare each one's Clippy configuration with the profile's single source?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
           "statement": "The engine crates name nothing of the reference crowd, and the conformance command runs any registered rule package's trace.",
           "ask": "Does `thrum-core` or `thrum-sim2d` name a type, constant or rule of the reference crowd? Does the conformance command take the rule package as an argument, with the control as its second user, so that SWARM can run its own rules without editing the script?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
           "statement": "A guide linked from the creator guide tells a game maker how to write rules under the profile: every operation of the profile number, each refused class with its reason, the random function, the queries with their order, and how to record a trace and run it on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it list every operation mechanism 1 names and every class mechanism 6 names, and say that the cell size is part of the rule set?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
           "statement": "On the Mac both retained traces reproduce their retained digests at the closing commit, unchanged since M2.",
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.6",
           "statement": "As Wasm in Chrome both retained traces reproduce the same digests at the closing commit.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
           "statement": "In the iPhone simulator both retained traces reproduce the same digests at the closing commit.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.8",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's W1 and P3 rows keep implementation, correctness and device results apart? Do they name as not run a physical iPhone, an x86 processor, Android and any browser other than Chrome, and claim no speed for the simulator?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
@@ -371,11 +367,15 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "builder_result": "open"
         }
       ],
-      "rounds": 0
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As hard to get wrong as Rapier's `enhanced-determinism` build or Photon Quantum's fixed-point API, where the operations that differ between machines are simply not on offer. A rule that breaks the profile fails `./dev check` with a message that names the class, and the guide is enough to write a rule package without reading engine source."
     }
   ]
 }

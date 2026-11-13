@@ -4,40 +4,37 @@
     {
       "id": "M0",
       "name": "The Mac qualification plan passes independent review",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "A qualification plan for a shipped high-end game: every recovery and presentation claim has an observable proof on the named Mac target, respects C02/C06/C07 ownership and states what its instrumentation cannot establish.",
       "items": [
         {
           "id": "M0.1",
           "statement": "Independent review verifies runtime ownership, both Mac game outcomes and the limits of their instrumentation; the build plan links the qualification plan.",
           "ask": "Do the shared platform design, bounded-frame-host decision and Mac plan preserve one world clock, platform surface/device ownership and FrameHost submission/history ownership? Do the held-drawable recovery and slow-pan proofs distinguish authority, queue calls, GPU completion, display refresh and app-attributed presentation, without claiming unmeasured input-to-photon timing or taking over G3t/G4 or sibling platform work? Is this plan linked from G3b in docs/BUILD-PLAN.md?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/review-briefs.md#design-and-plan-review-brief",
           "verdict": "pass",
-          "review": "docs/plans/PLATFORM-RUNTIME-MAC/LOG.md"
+          "review": "docs/plans/PLATFORM-RUNTIME-MAC/LOG.md",
+          "builder_result": "pass"
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "A qualification plan for a shipped high-end game: every recovery and presentation claim has an observable proof on the named Mac target, respects C02/C06/C07 ownership and states what its instrumentation cannot establish."
     },
     {
       "id": "M1",
       "name": "The same Mac game resumes after graphics loss",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Recovery fit for a shipped high-end game: the same cooked noon valley, world, window and controls survive graphics loss. The same-build uninterrupted run is the exact paused-image oracle; the proposed Ground E noon view supplies intact composition, and normal-speed motion proves restored interaction.",
       "items": [
         {
           "id": "M1.1",
           "statement": "A Metal destroy with a drawable held recovers in the same PID/window without old-queue submit or present calls after destroy. Running authority commits ticks during loss before replacement submission; paused authority retains its tick, epoch, timeline and pause intent. Injected P/E use the normal app key handler, and Resume is acknowledged before arming the running row.",
           "ask": "Do the arm-disabled, paused-loss and running-loss rows use the same diagnostic binary, parameters and cooked generation? Trace held-drawable acquire/destroy/callback/abandon/replacement and every old-queue call including empty submits in the raw events and audit. Are same PID/window identity, injected P and Resume acknowledgement, ticks 80 and 81 before replacement submit, the paused endpoint and E's shared physical-key handler all established?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m1-recovery/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/render/mac-m1-recovery/README.md#independent-review"
+          "review": "docs/evidence/render/mac-m1-recovery/README.md#independent-review",
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -45,30 +42,31 @@
           "inspect": "Review the original arm-disabled, paused-loss and running-loss recordings at 1\u00d7 beside the proposed Ground E noon reference. Inspect the pre-loss valley, recovery transition and post-replacement E response in both loss rows, using decoded transition frames as well as the complete motion. Confirm intact composition and an actual composited camera shift while the control holds framing; record capture gaps without treating recording PTS as panel cadence.",
           "ask": "Do the raw readbacks and audit establish equality of all 8,294,400 RGBA bytes across pre-loss, post-loss and arm-disabled paused endpoints, with matching acknowledged state and build identity?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m1-recovery/README.md",
           "verdict": "pass",
-          "review": "docs/evidence/render/mac-m1-recovery/README.md#independent-review"
+          "review": "docs/evidence/render/mac-m1-recovery/README.md#independent-review",
+          "builder_result": "pass"
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "Recovery fit for a shipped high-end game: the same cooked noon valley, world, window and controls survive graphics loss. The same-build uninterrupted run is the exact paused-image oracle; the proposed Ground E noon view supplies intact composition, and normal-speed motion proves restored interaction."
     },
     {
       "id": "M2",
       "name": "The cooked valley presents smoothly on built-in ProMotion",
-      "state": "ready_for_review",
-      "fails": 0,
-      "replans": 4,
-      "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
       "items": [
         {
           "id": "M2.1",
           "statement": "The current release cooked noon valley retains coherent elapsed-time input-driven motion in an unattended real-time offscreen run, including both endpoint holds and the full two-second 0-to-36-degree pan. This qualifies engine runtime motion; it does not establish display-link, compositor or panel behavior. M2 qualifies the current surface path without waiting for APPLE-TILE; Mac M3 owns post-APPLE-TILE-M3 requalification.",
           "inspect": "Using T2-CAPTURE M0, rerun the documented 1920x1080 pan with a paused world, 120 Hz requested opportunities and normal semantic controls with denied read-only Screen Recording preflights before and after under the identified launcher/driver permission identities, without requesting a grant. Missing, failed or granted preflights cannot pass the no-desktop-capture proof. Review full-resolution source images, native-size crops and the host-time-preserving 1x movie using the worded inspection list: rock and ridges retain coherent relative placement; the sphere follows the authored sweep, including its exit from frame; settled endpoints agree with the declared yaw and scene; no cut, snap or reversal. Record repeats, local holds and gross pauses against host time. The Ground E PNG identifies scene and framing only; judge quality against this list and the milestone bar, never by matching a target image or awaiting owner image approval. Record before/after console observations as witness metadata only, accepting locked, unlocked or changed state and recording unavailable observations with a reason. Do not wait for manual locking or gate admission or success on lock values. Verify actual monotonic timing, complete one-second initial/final holds and full two-second sweep, and join requested, accepted and submitted yaw to image/submission IDs. Capture omissions make the interval inconclusive. Do not substitute a fixed-step route, endpoint redraw or static parity. Preserve the historical 0d53d3aa motion pass and its 38.3/51.7 ms content holds as historical evidence only.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "verdict": "could_not_judge",
-          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -76,43 +74,42 @@
           "inspect": "After M2.3, M2.4 and M2.5, run three matched arms on M2.1's build, content, recipe, extent and AppKit slider sweep, or rerun M2.1: capture ON untraced, capture ON traced, capture OFF traced. Review the original host-time 1x ON sequences and local holds against M2.1's worded list. For the OFF arm review the witness result: retained rows spanning both MacM2Whole markers, every submission joined or reported unmatched, intervals in refresh periods, and each interval over one period with its drawable, time, yaw, the game's present-call record and host load. The OFF arm creates no capture targets, copies, readbacks or workers.",
           "ask": "Does the evidence keep callback target, opportunity, acquisition/submit, GPU completion, engine image time, movie PTS and OS-reported presented time as separate measurements, with ON-arm intervals labelled under capture? Is cadence claimed only from this build's capture-OFF arm, never from handler callback times, engine records or an earlier trace? Are kernel display swaps, scan-out, input-to-photon and physical iPhone timing stated as unmeasured?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "verdict": "could_not_judge",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "needs": {
             "type": "access",
             "what": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
-          }
+          },
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
           "statement": "ATTENDED SETUP: the shared T2 tap is integrated and qualified on a real CAMetalLayer window, preserving presented-output correspondence, surface leases and the capture-disabled direct path.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "ask": "Trace T2 renderer-owned tap integration through normal AppKit callbacks and the real CAMetalLayer surface. With a known channel/row pattern, prove capture bytes equal the engine output consumed by the normal present pass, including any declared format/channel conversion. Establish the single producer binding to the actual surface submission; this is not a claim to observe compositor pixels. Prove capture neither reacquires nor extends the drawable lease. Lose/replace the surface with readback pending and show stale-generation refusal plus healthy fresh presentation. With capture OFF prove no tap texture/copy/readback/worker/per-frame allocation or changed present path; retain the current direct-output behavior and Mac M1 loss rules. Run real-Metal regressions with ./dev check under gpu, plus the documented live-window scenario; unavailable/occluded window cannot pass.",
           "verdict": "could_not_judge",
           "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
           "inspect": "On the unlocked active panel inspect the known-pattern window and same-build cooked scene before/after surface replacement, joining engine tap IDs to real surface submissions. Screen Recording permission is not required; label engine versus compositor limits.",
           "check": "./dev check",
-          "lock": "gpu"
+          "lock": "gpu",
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
           "statement": "One reusable command turns an Instruments trace of the game into OS-reported presented intervals per drawable, and it finds the known missed refreshes in the retained 11 November tables.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "ask": "Read the command and its tests, and run it on docs/evidence/PLATFORM-RUNTIME-MAC/m2-presented-off-traced.tsv.gz and m2-presented-on-traced.tsv.gz. Does it take presented time only from the game PID's ca-client-presented-handler rows, never from handler callback time or the delta column? Does it find the two-refresh intervals at drawables 526 to 527 and 544 to 545 (capture OFF) and 558 to 559 (capture ON), and join 544 to 545 to the 15.47 ms present-call gap in docs/evidence/render/mac-m2-20261111/off-traced/surface.tsv.gz? Does it refuse a trace whose retained rows do not span both MacM2Whole markers, and report a missing ordinal, a zero or absent presented time and an unfamiliar status as unmatched?",
           "verdict": "pass",
-          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md"
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
           "statement": "ATTENDED SETUP: a fresh recording of the release game on the active built-in panel yields the presented-time witness for the whole marked hold, pan and hold, with its time conversion validated.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/render/mac-m2-20261113/README.md",
           "ask": "In the fresh trace, do the TOC recording mode and the first and last retained rows show coverage of both MacM2Whole markers? Does every game submission in that interval join by ordinal to one presented row, or appear as unmatched? Is the presented-time conversion validated against the same-process markers with a stated error? Does the display identity list the built-in panel as the only display, or is the window's display identified separately? Are the display tables' row counts recorded, and the recordings used counted against the six granted on 11 November?",
           "verdict": "pass",
@@ -120,7 +117,8 @@
           "needs": {
             "type": "access",
             "what": "Unlock the Mac, wake the built-in panel and keep it awake for the sitting. No Developer mode change, Instruments authorization, Screen Recording grant or play is needed."
-          }
+          },
+          "builder_result": "pass"
         }
       ],
       "findings": [
@@ -140,45 +138,50 @@
           "repeat": false
         }
       ],
-      "rounds": 1,
       "depends_on": [
         "T2-CAPTURE:M0"
-      ]
+      ],
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
+      "status": "ready_for_review",
+      "quality_bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate."
     },
     {
       "id": "M3",
       "name": "After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 4,
-      "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
       "items": [
         {
           "id": "M3.1",
           "statement": "After APPLE-TILE M3 lands, fresh elapsed-time engine motion qualifies its integrated surface/present path using the full Mac M2.1 protocol; pre-G3t evidence remains valid only for its earlier build.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "inspect": "Rerun the implemented M2.1 command on the post-APPLE-TILE-M3 release assembly: 1920x1080 paused-world noon pan, 120 Hz requested opportunities, normal semantic input, one-second holds and full two-second 0-to-36-degree sweep. Apply M2.1's denied launcher/driver Screen Recording preflights and console witness policy, accepting either console state and transitions. Apply every M2.1 timing, coverage, provenance and worded visual criterion to fresh full-resolution frames, native-size crops and host-time-preserving 1x motion. A pre-change run or fixed-step movie cannot pass.",
           "ask": "Join source/build/shader/content/recipe identity to the integrated APPLE-TILE M3 path. Are the complete M2.1 proof and observer limits retained, with no reuse of an earlier verdict for changed output?",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
           "statement": "ATTENDED SETUP: after APPLE-TILE M3 lands, fresh built-in-panel cadence and matched capture observer arms qualify the changed path under the full Mac M2.2 protocol, with the windowed tap and trace tooling revalidated on that build.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "inspect": "On the unlocked active built-in panel, rerun all three M2.2 arms on the same post-G3t build/content/recipe/extent as M3.1: ON untraced, ON traced and OFF traced. Require the complete pan and holds, normal AppKit controls and fresh presented times from Mac M2's qualified witness, covering the full interval with the validated conversion and stated error. Review full-resolution ON sequences at 1x; cadence comes only from OFF. Apply every M2.2 attribution, completeness, overhead and clock-separation criterion. No earlier trace or functional-window-only run can pass.",
           "ask": "Revalidate the M2.3 known-pattern correspondence, lease, pending-readback loss and capture-OFF direct-path proofs on the changed graph/present path. Rerun Mac M2's qualified recording configuration and witness command; M3 grants one recording per traced arm and no diagnostic recordings. If trace tooling regresses, record it blocked and require a scoped re-plan before further diagnostic attempts. Does fresh M3.1 motion match this build, and are both post-change items independently reviewed before claiming final Mac qualification for V1?",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M3"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
+      "status": "not_started",
+      "quality_bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate."
     }
   ]
 }

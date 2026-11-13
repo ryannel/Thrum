@@ -4,10 +4,6 @@
     {
       "id": "M5",
       "name": "Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once",
-      "state": "done",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were.",
       "items": [
         {
           "id": "M5.1",
@@ -16,10 +12,10 @@
           "lock": "gpu",
           "ask": "Do tests in ./dev check cover an epoch change on profile change and on device replacement, no change across a time scrub, and the true Sun staying continuous through sunset while the apparent surface light fades? Is the identity produced in one place and only read elsewhere?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.2",
@@ -28,10 +24,10 @@
           "lock": "gpu",
           "ask": "Read the referee tests. Does the contribution use only the lent layout and library, with no private chart, mip or storage-gain knowledge? Does each of H1-H5 assert the bound its row names against the reference its row names, and never against the forward pass's own output? For H2 and H4, is the expected value an f64 filtered decode written apart from the library's code, on the live product and on the known field, and does the test fail if a single-texel or single-slice lookup passes? Is their allowance the design's C/32 + 1e-5 M + Q, with Q one stored half-float step and nothing wider, on a known field whose neighbouring texels differ by at least 32 stored steps? Is one case of each row repeated at a non-unit exposure scale? Does H5 vary direction, roughness, the raw Sun's illuminance, the night term and a rewritten sky? Are the preserved referees P1-P11 unchanged in reference, cases and bound?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.3",
@@ -40,10 +36,10 @@
           "lock": "gpu",
           "ask": "Read the environment case. Does it run the lent operations in a real hardware Chrome session, apply the H1-H5 bounds itself, including the filtered decode of H2 and H4, and fail on a missing or unresolved row or on a wrong lookup that passes?",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.4",
@@ -52,10 +48,10 @@
           "lock": "gpu",
           "ask": "Read scripts/environment_products.py. Does off-parity render the base commit and the claimed commit from one cooked store through the engine tap, compare bytes with no tolerance or mask, and include a same-build rerun control and a negative control that must fail?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.5",
@@ -63,10 +59,10 @@
           "check": "python3 scripts/environment_products.py off-parity --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.6",
@@ -75,30 +71,30 @@
           "lock": "gpu",
           "ask": "Do GPU tests show a uniform tau of ln 2 halving the direct term, and only the direct term, on each receiver kind including the cooked volume; a field that differs between two world points giving each receiver, and each volume march sample, its own point's factor; and tau of zero, a receiver above the plane and a read outside the region all matching no provider? Is exp(-tau) one shared cloud-factor function that the direct-Sun term and the volume's march both call, never a per-receiver patch or a darkening of final colour?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.7",
           "statement": "In the V1 valley on the Mac with the diagnostic provider on, shade patches cross terrain, instances and cooked meshes together in world space at the declared drift; shaded ground stays sky-lit and is not darkened again inside geometric shadow; the boundary lines up across receiver kinds.",
           "inspect": "Capture the valley at noon and at low Sun with the Mac real-time engine capture, provider off then on, with a slow pan. Look at whole frames and native-size crops of: a patch edge crossing from terrain onto a cooked mesh, shaded ground beside sunlit ground, a patch passing over ground already in a ridge's shadow, and the same world point over two seconds of drift.",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.8",
           "statement": "The same shade reads the same way in Chrome on the valley at noon and low Sun.",
           "inspect": "Capture the same four views with Chrome fixed-time capture and a short real-time sequence. Compare each with the Mac capture for the placement and depth of shade and for any receiver that disagrees.",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.9",
@@ -107,10 +103,10 @@
           "lock": "gpu",
           "ask": "Are the paired figures recorded with build, load class and order and labelled as observations? Is every forward pipeline within the sampled-texture limit read from the capability record, with the count stated?",
           "target": "mac-metal",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         },
         {
           "id": "M5.10",
@@ -118,40 +114,41 @@
           "check": "python3 scripts/environment_products.py cost --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "pass",
           "evidence": "docs/evidence/ATMOSPHERE/m5-claim.md",
           "verdict": "pass",
-          "review": "docs/evidence/ATMOSPHERE/M5-review.md"
+          "review": "docs/evidence/ATMOSPHERE/M5-review.md",
+          "builder_result": "pass"
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "done",
+      "quality_bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were."
     },
     {
       "id": "M6",
       "name": "The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes",
-      "state": "not_started",
-      "fails": 0,
-      "replans": 0,
-      "bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged.",
       "items": [
         {
           "id": "M6.1",
           "statement": "On the Mac, on the six-stop route and a continuous dawn-to-night scrub with slow pans, a clean-context reviewer finds none of: a horizontal brightness step across the ground, a flat near ridge with a hard bright rim at low Sun, a ridge lit warm with the Sun behind it, missing object shadows at sunrise, shadow acne at low Sun, a hard horizon line, or banding in the sky gradient and twilight.",
           "inspect": "Capture the route stops as fixed-time stills and the scrub and pans, including the Ground E pan, with the Mac real-time engine capture, TAAU on. Judge each named defect at every stop in whole frames and native-size crops, and in motion at 1x. Leave out only the moving shadow edge on the authored spur between 17.40 and 17.80 h. The held 17.4 h stop is judged, and the Ground E terrain lip is judged as a brightness step.",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M6.2",
           "statement": "The same review passes in Chrome on the same route and scrub.",
           "inspect": "Capture the same stops and scrub with Chrome fixed-time and real-time capture, TAAU on. Judge the same list, and note any stop where Chrome and the Mac differ in more than texture profile.",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M6.3",
@@ -160,10 +157,10 @@
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test in the numerical acceptance table change in this milestone? If one did, is the change justified by the model and not by the image? Does any referee run a test-only variant of a producer instead of the production one?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M6.4",
@@ -171,35 +168,40 @@
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M6.5",
           "statement": "Whole-frame and atmosphere pass costs on the route are recorded on the final build and, in the same session and configuration, on the commit this milestone started from; the M1 and M2 records are quoted as history only. Any visible hitch during the scrub is investigated and explained.",
           "ask": "Is the comparison a fresh rerun of the starting commit at a matched extent, TAAU setting, load class and alternated order, with no budget claim and no earlier record called paired? Does the evidence name the cause of each hitch seen in the scrub, or state that none was seen?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M6.6",
           "statement": "The maturity ledger's G3s rows state implementation, correctness, visuals and device separately, and name what is not qualified: the west-lookout crossing, the exact disk match, solar sky and solar aerial accuracy against an all-orders reference, Moon, weather, calibrated night colour and physical display cadence.",
           "ask": "Do the ledger rows and the build plan's G3s line match the evidence, with the known defects listed and nothing claimed for a physical iPhone?",
           "target": "mac-metal",
-          "status": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [
         "APPLE-PRESENTATION:M3"
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
     }
   ]
 }
