@@ -41,7 +41,7 @@
           "ask": "Does the test discard the first frame that uses the new view, and in another run make that frame a capture, and then assert the diagnostic consumer still applies its invalidation in the next submitted frame that advances history, and in no frame after it?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair; docs/evidence/CONTENT-LOOP/M1/repair-native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
           "builder_result": "pass"
         },
@@ -125,17 +125,10 @@
           "builder_result": "pass"
         }
       ],
-      "findings": [
-        {
-          "name": "unchanged-product-reuploaded-behind-ready-publication",
-          "item": "M1.3",
-          "repeat": false
-        }
-      ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Residency that behaves like streaming in a shipped open-world game such as Marvel's Spider-Man 2: content arrives over several frames and none of them is late, a product is never seen half-loaded, and a failed load leaves the last good one in use."
     },
     {

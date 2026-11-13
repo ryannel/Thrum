@@ -1,0 +1,55 @@
+   Compiling num-traits v0.2.19
+   Compiling objc2-core-foundation v0.3.2
+   Compiling thiserror v2.0.21
+   Compiling blake3 v1.8.7
+   Compiling wgpu-core v30.0.1
+   Compiling wgpu v30.0.1
+   Compiling rustix v1.1.6
+   Compiling errno v0.3.14
+   Compiling astcenc-sys v0.2.0
+   Compiling meshopt v0.7.0
+   Compiling clap_lex v1.1.1
+   Compiling anstyle v1.0.14
+   Compiling gltf-json v1.4.1
+   Compiling divan-macros v0.1.21
+   Compiling regex-lite v0.1.9
+   Compiling condtype v1.3.0
+   Compiling naga-types v30.0.1
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling objc2-core-services v0.3.2
+   Compiling wgpu-types v30.0.1
+   Compiling notify v8.2.1
+   Compiling objc2-metal v0.3.2
+   Compiling objc2-app-kit v0.3.2
+   Compiling terminal_size v0.4.4
+   Compiling clap_builder v4.6.7
+   Compiling clap v4.6.7
+   Compiling divan v0.1.21
+   Compiling objc2-quartz-core v0.3.2
+   Compiling half v2.7.1
+   Compiling moxcms v0.8.1
+   Compiling float-cmp v0.10.0
+   Compiling thrum-controls v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-controls)
+   Compiling raw-window-metal v1.1.0
+   Compiling naga v30.0.1
+   Compiling image v0.25.10
+   Compiling gltf v1.4.1
+   Compiling thrum-asset v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-asset)
+   Compiling astcenc-rs v0.2.0
+   Compiling thrum-cook v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-cook)
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CONTENT-LOOP/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `v1-game` (bench "cooked_edit") generated 1 warning
+    Finished `bench` profile [optimized] target(s) in 23.09s
+  Executable benches/cooked_edit.rs (target/release/deps/cooked_edit-63fe15ed8cd97bb4)
