@@ -31,6 +31,40 @@
         "by": "plan",
         "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",
         "at": "2026-11-13T06:52:33Z"
+      },
+      "ready_for_review": {
+        "commit": "79a42debb607a9e7b6fd0f9eca49c0376dbcae2a",
+        "checked": "79a42debb607a9e7b6fd0f9eca49c0376dbcae2a",
+        "at": "2026-11-13T17:53:17Z",
+        "reused": [
+          "Test command",
+          "M1.2",
+          "M1.3",
+          "M1.4",
+          "M1.6",
+          "M1.10"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.4.1",
+        "path": "headless",
+        "usage": {
+          "input": 398089,
+          "cached": 60091648,
+          "output": 206313,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 398089,
+          "cached": 60091648,
+          "output": 206313,
+          "turns": 2
+        }
       }
     },
     "M2": {
