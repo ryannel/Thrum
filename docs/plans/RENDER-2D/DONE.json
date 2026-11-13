@@ -1,0 +1,671 @@
+{
+  "module": "RENDER-2D",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "depends_on": [
+        "SHOWCASE:M8",
+        "APPLE-TILE:M12",
+        "EFFECT-GRAPH:M3"
+      ],
+      "bar": "A 2D path as separate from 3D as Bevy's `core_2d`, Godot's canvas renderer or Unity's 2D Renderer: a 2D game prepares and runs nothing 3D, and a request it cannot meet is refused by name. As exact as a pixel-art game shown at a whole-number scale, such as Celeste: every texel is a clean block of its authored colour.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "On the Mac, on both native recipes, frame rows of an embedded test sheet drawn at whole-number scales of 1, 2, 3, 4 and 6 on the pixel grid leave the frame as their source texels: every submitted pixel of an opaque texel is that texel's 8-bit colour, each texel a clean block, at even and odd output extents and where a sprite crosses an edge of the view. World Y is up and nothing is mirrored.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_exact",
+          "ask": "Read the test. Is the reference image built on the CPU from the sheet's source texels and the design's view rule, without any of the renderer's shaders? Does it compare every pixel of the submitted SDR output at each of the five scales, on the portable and the Apple tile recipe, at an odd extent, with a sprite cut by each edge of the view and an asymmetric sprite that would show a flip?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "A prepared 2D scene's compiled pass list is its sprite pass and the output half's passes and nothing else. Its generation allocates no sky table, cascade, cluster, depth, motion, reactive, mesh, star or reconstruction resource and creates none of their pipelines, and a completed frame's timing names no 3D pass. The same test finds each of those in a 3D scene.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d",
+          "ask": "Is the expected pass list written out in the test and compared whole? Does the storage check walk everything the generation allocated, and does the 3D control prove the check would see such a resource if a 2D scene had one?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "A request only a 3D scene can meet is refused when a 2D scene is prepared, with an error that names it: a contribution that declares a shadow, opaque or after-opaque stage, temporal sampling, and a culling mode. A contribution with only upload and simulate stages attaches and runs. The game can read which scene kind was prepared.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d",
+          "ask": "Is there one refusal test for each of the three requests, each asserting a named error and an unchanged scene? Is any of them accepted and ignored instead?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "Every existing 3D scene variant compiles to the same pass order, attachment storage and transient slots as before this milestone, on both recipes.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_2d",
+          "ask": "Is the 'before' side taken from main at the commit this milestone started from, for the variants the V1 game prepares, and not produced by the changed code?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "Through the display-referred transfer, an opaque texel of each of the 256 grey codes and of a set of saturated colours leaves the frame as the same 8-bit code, with no dither. A half-transparent texel over a known background equals the linear-light blend to within one code. A value above 1 is kept in the scene-linear checkpoint and clips at white, channel by channel, in SDR output.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_colour",
+          "ask": "Does the test run on both native recipes and read the submitted SDR bytes and the scene-linear checkpoint through engine capture's tap? Is the one-code allowance used only for blended texels, with opaque texels compared exactly? Are the 3D scene's two tone operators and its dither unchanged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.6",
+          "statement": "After a resize to another extent, a change of density, a discarded frame, a refused surface, a capture frame and a replaced device, a 2D scene draws exactly what a fresh scene draws at that extent, with the sprite target at the surface's pixel extent and no resource of an old generation in use.",
+          "check": "cargo test --locked --offline -p thrum-render --test scene_2d_lifecycle",
+          "ask": "Is each of the six events driven through the host's own calls, and is the fresh scene's image compared pixel for pixel after each?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.7",
+          "statement": "In Chrome the V1 game's sprite scene draws its test card exactly as the CPU reference at whole-number scales, compiles no 3D pass, follows a canvas resize, and draws again on a replaced device.",
+          "check": "node scripts/check_v1_browser.mjs --case sprites-2d",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.8",
+          "statement": "On the Mac the sprite scene's test card reads as drawn: upright, unmirrored, colours as authored, flat blocks of colour with hard edges, nothing missing and nothing 3D behind it.",
+          "inspect": "Capture `fixed` stills of the sprite scene with T2 engine capture at 1280×720 and at 3456×2234, at scales of 2 and 4. Judge each frame whole and in native-size crops of the card's lines, colour ramps and marks.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.9",
+          "statement": "On the Mac, CPU and GPU times for the sprite scene are on record at 1920×1080 and at 3456×2234, with the sprite pass, tone and present apart and the bytes of each target, from two separate runs with build and load. The valley route is timed before and after this milestone with no 2D scene. Each tripwire the design names is flagged. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target mac-metal",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the valley's paired figure from the same route and build settings on both sides?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "In Chrome, CPU and GPU times for the sprite scene are on record at 1920×1080 and at the page's full backing size, from two separate runs with build and load, with the limits Chrome's capability record reports for sampled textures, array layers and storage buffers. Each tripwire is flagged. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Crowd motion and layering as in Vampire Survivors and Halls of Torment: thousands of bodies glide between simulation ticks at the display's refresh, and where two overlap the same one stays in front from frame to frame. Effects as in those games: a hit flashes the whole sprite, a glow adds light without hiding what is behind it.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "A world row is drawn at the pose between its two tick endpoints that the frame's alpha names, in position, rotation by the shorter arc and scale: at alphas of 0, 0.25, 0.5 and 1 its pixels are where a CPU reference puts them. A repeated tick and a pause change nothing. A row whose identity or slot generation was not extracted at the previous tick, or whose timeline changed, is drawn at its committed pose with no slide.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_rows",
+          "ask": "Read the test. Does it cover a slot reused by a new entity within one tick, a rewind onto a new timeline, and a rotation that crosses the wrap from one side of a turn to the other?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "Rows are drawn back to front by layer, then sort value, then stable identity, world rows and frame rows together: for overlapping rows of known colours, the colour read at every overlap is the one that order puts on top, across uploads that change other rows, with equal sort values and reused slots. With a band set, a row whose sort value moves back and forth by less than the band never changes place, and one that travels further does.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_order",
+          "ask": "Does the test read pixels back at the overlaps, and not the order list? Are there rows with equal sort values whose order only identity decides, and does it run for many ticks while other rows change?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "Tint, flash, transparency and additive sprites, interleaved in one pass in any order, give the pixels that a CPU blend of the same rows in the same order gives, to within one code: a normal sprite over an additive one over a normal one is three layers in that order.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_blend",
+          "ask": "Is the CPU blend written from the design's rules for tint, flash and additive, without the renderer's shader? Does a case put an additive sprite between two normal ones?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The sprite pass records one draw for the whole frame however many sheets, layers and blends its rows mix, with eight sheets bound; a ninth sheet is refused at preparation by name. A tick uploads the rows that changed and the order list, and nothing for a row that did not change. A row beyond the declared capacity, or with a value that is not finite, is dropped and counted.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_rows",
+          "ask": "Is the draw count taken from the recorded pass, with rows from all eight sheets interleaved in order? Are uploaded bytes counted where they are written, and compared with the rows that changed?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "A row whose frame the game advances by tick shows each frame for exactly the ticks it was set, on a display running at twice the tick rate: no frame is skipped, shown early or repeated out of order, and a pause holds the frame.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_rows",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "On the Mac the sprite scene draws the V1 game's 10,000 simulated entities as world rows through the game's ordinary host: 10,000 rows accepted and none dropped, its movers interpolated, one sprite draw, no 3D pass, and frame rows drawn among them.",
+          "check": "python3 scripts/render2d.py field --target mac-metal",
+          "ask": "Do the rows come from the tick page through the game's scene source, on the game's own world lane, and not from a list built for the test?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "In Chrome the sprite scene draws the same 10,000 entities as world rows with one sprite draw and no 3D pass, none dropped, its movers interpolated.",
+          "check": "node scripts/check_v1_browser.mjs --case sprites-field",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.8",
+          "statement": "In real time on the Mac the movers glide: no sprite steps at the tick rate, jumps, or slides in from elsewhere. Where sprites overlap the same one stays in front. A flashed sprite turns the flash colour inside its own outline, and an additive one glows without hiding what is behind it.",
+          "inspect": "Capture the sprite scene's field at 1920×1080 with T2 engine capture in `realtime` mode for at least twenty seconds, with movers crossing each other and with flashed, tinted and additive sprites among them. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.9",
+          "statement": "In real time in Chrome the movers glide and overlaps hold still, as on the Mac.",
+          "inspect": "Capture the same field in Chrome with T2 engine capture in `realtime` mode for at least twenty seconds. Judge consecutive frames at 1x, whole and in native-size crops of single movers and of overlaps.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.10",
+          "statement": "On the Mac, with 2,000, 5,000 and 10,000 world rows whose pose changes every tick, extraction, ordering, upload bytes, the sprite pass's GPU time and the whole frame are on record at 1920×1080 and at 3456×2234, with shaded pixels beside each time, from two separate runs with build and load. Each tripwire is flagged. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target mac-metal",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Does every row's pose really change every tick in these runs, so that every row is uploaded?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.11",
+          "statement": "In Chrome, with 2,000, 5,000 and 10,000 world rows whose pose changes every tick, extraction, ordering, upload bytes, the sprite pass's GPU time and the whole frame are on record, with shaded pixels beside each time, from two separate runs with build and load. Each tripwire is flagged. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "bar": "Pixel stability as in Celeste: a texel never changes size, swims or sparkles as the view moves, at any window size. Edges as clean as the painted sprites of Hades or Hollow Knight: no fringe, no halo, no bleed from a neighbouring frame, no seam between ground tiles.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "How far the renderer's coverage sampling is from the exact box filter is on record for each native recipe: for a pixel sheet of random texels, axis-aligned, at scales of 1, 1.25, 1.5, 2, 2.37, 3, 4 and 6 and 256 sub-pixel offsets, the largest difference in the scene-linear checkpoint, with where it occurs. Nearest and plain bilinear sampling, measured the same way, are recorded beside it and are larger at every fractional scale. The retained figure is the bound M3.2 tests against.",
+          "check": "python3 scripts/render2d.py coverage --target mac-metal",
+          "ask": "Is the box-filter reference computed on the CPU from texel areas? Is the retained bound the measured figure, of a size a sampler's weight precision explains (a small fraction of the contrast between two neighbouring texels), and not a number loosened to pass?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "Under a scroll through 256 sub-pixel offsets at scales of 1.25, 1.5 and 2.37, every texel of a pixel sheet keeps the same total weight on screen to within the retained bound, so no texel is wider at one offset than at another. The same test with nearest sampling fails, by a whole output pixel.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
+          "ask": "Is the nearest-sampling control run through the same measurement and required to fail? Does the test read the bound from the retained record, with no path that rewrites it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "At whole-number scales, a view that scrolls by whole output pixels moves the image by exactly that many pixels and changes no other byte, and the image is the source texels.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "A white sprite over a white background shows only white along its outline at any sub-pixel offset, scale and rotation, for both kinds of sheet. No pixel inside a sprite shows a neighbouring frame's colour, at any claimed scale down to 0.25 and through every mip level the sheet holds. Two tiles that share an edge show no background between them at any offset or scale.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_edges",
+          "ask": "Are the frames in the bleed test packed against frames of a contrasting colour on every side? Does the tile test sweep fractional scales and offsets over a background colour that neither tile contains?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "A smooth sheet's one-texel checker drawn at a scale of 0.25 is the flat mean of its two colours in linear light, to within one code, at every scroll offset.",
+          "check": "cargo test --locked --offline -p thrum-render --test sprite_crisp",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "On the Mac, in windows of 640×360, 1280×720 and 1707×933 points on the built-in display, the sprite target has the window's backing pixel extent, present copies it one to one, and the test card's aligned region is exact; after a resize the next frame is drawn at the new extent. A Mac window on a display of density 1 is not run: that density is proved in Chrome and by extent.",
+          "check": "python3 scripts/render2d.py window --target mac-metal",
+          "ask": "Does the run report the window's points, backing scale and surface extent from the shell, and compare the engine's own capture, with no desktop capture? Does it record console state and pass either way?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.7",
+          "statement": "In Chrome, at device pixel ratios of 1 and 2 and after a canvas resize, the canvas has one backing pixel for each device pixel, the sprite scene's aligned card is exact, and the scroll test of M3.2 passes against a bound measured and retained in Chrome.",
+          "check": "node scripts/check_v1_browser.mjs --case sprites-crisp",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.8",
+          "statement": "In real time on the Mac, pixel art scrolling slowly on a diagonal and fast, at scales of 1.5, 2 and 2.37, stays still: no texel changes width, no line thickens and thins, nothing sparkles or crawls, and no seam opens between ground tiles. Rotating sprites keep clean edges.",
+          "inspect": "Capture the sprite scene at 1920×1080 with T2 engine capture in `realtime` mode: a diagonal scroll of less than a pixel a frame and a fast one, at each of the three scales, over the test card, a tiled ground and a field of pixel-art sprites, some of them rotating. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, checker areas, tile seams and sprite outlines.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.9",
+          "statement": "On the Mac, stills of pixel and smooth sprites at each claimed scale are clean: pixel art has square, even texels with edges no wider than one output pixel, and smooth art has no fringe, halo or bleed and does not alias at 0.25.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 640×360, 1920×1080 and 3456×2234: pixel sprites at scales of 1, 1.5, 2.37, 4 and 6, and smooth sprites at 0.25, 0.5, 1 and 2, over light and dark backgrounds. Judge each frame whole and in native-size crops of outlines, thin lines and the gaps between neighbouring sprites.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.10",
+          "statement": "In real time in Chrome, at device pixel ratios of 1 and 2, scrolling pixel art stays still and tile seams stay closed, as on the Mac.",
+          "inspect": "Capture the same slow and fast scrolls in Chrome with T2 engine capture in `realtime` mode at each ratio, at a scale of 1.5 and of 2.37. Judge consecutive frames at 1x, whole and in native-size crops of one-texel lines, tile seams and sprite outlines.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "depends_on": [
+        "CONTENT-LOOP:M3"
+      ],
+      "bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "A sheet folder cooks to one product for each profile: pages of one size as an array texture, and a frame table that returns every frame's name, page, rectangle, trim, source size, pivot and tile mark as authored, for single images and for grids. Texels are premultiplied in linear light. A pixel sheet is uncompressed on every profile. Cooking the same folder twice gives the same bytes. A frame larger than a page, a duplicate name and a description that names a missing file are each refused by name, and the previous product stays in the manifest.",
+          "check": "cargo test --locked --offline -p thrum-cook --test sheet_cook",
+          "ask": "Read the test. Does it decode the cooked pages and compare each frame's texels with its source image, premultiplied, including a trimmed frame and a grid cell? Does it measure that the gutter between frames is wide enough for every mip level written?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "The runtime refuses a malformed sheet product before any of it is used, each with a named error: a truncated table, a rectangle outside its page, a page count that disagrees with the texture, a duplicate name, and a pivot or density that is not finite.",
+          "check": "cargo test --locked --offline -p thrum-cook --test sheet_hostile",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "In a 2D scene, residency runs with leases only and lends a cooked sheet's pages to the sprite pass. Sprites are drawn with the cooked texels. A sheet is never sampled before the frame that recorded its last copy is submitted; until then its rows draw nothing and are counted, and then they all appear in one frame. A placement configured for a 2D scene is refused by name.",
+          "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
+          "ask": "Does the sprite pass get its pages only from the lease, with no loader, store access or upload of its own? Does the test hold the frame with the last copy unsubmitted and show the sheet still absent?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "Saving a changed image switches that sheet's pages and its frame table in one submitted frame: every frame of the edit window equals the all-old or the all-new reference, never a mix. A discarded switch frame commits nothing. Only the changed sheet's pages are uploaded, other sheets keep their textures by identity, and no pipeline or graph is created.",
+          "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
+          "ask": "Does the edit change both the pixels and the packing, so that new pixels under old rectangles would match neither reference?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "A frame handle taken by name keeps showing that name's picture after an edit adds, removes or repacks other frames. A name the current sheet lacks draws nothing and is counted in the frame's record, and draws again when a later save restores it.",
+          "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.6",
+          "statement": "A save that cannot be cooked or taken leaves the last good sheet on screen and names the reason: an image that does not parse, a frame larger than a page, a missing file, a sheet the device cannot hold, and a failed upload.",
+          "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
+          "ask": "Is each of the five failures injected by its own test, through the cooker or residency's own failure path?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.7",
+          "statement": "After the device is replaced, embedded sheets draw at once, cooked sheets are absent until they are staged again and then appear whole, and no view of the old device is used.",
+          "check": "cargo test --locked --offline -p v1-game --test sprite_sheets_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.8",
+          "statement": "In Chrome the sprite scene draws a cooked sheet from the fetched store, and an edit to it appears with one switch and only the changed product fetched.",
+          "check": "node scripts/check_v1_browser.mjs --case sprite-sheets",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.9",
+          "statement": "In real time on the Mac an edited sheet replaces the old art on every sprite in one frame: no blank frame, no sprite with the wrong picture, no mix of old and new.",
+          "inspect": "Capture the sprite scene's field with T2 engine capture in `realtime` mode with a moving view: one edit that recolours a character, and one that adds frames so the cooker repacks the sheet. Judge the eight frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.10",
+          "statement": "The public documentation tells an artist how to lay out a sheet folder, what the two kinds of sheet are, how pivots, tiles and grids are declared and how frames are named, and says that blending is in linear light and what that does to half-transparent art.",
+          "ask": "Does a folder and description written from the documentation alone cook and draw as it says, at the claimed commit?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "The reference crowd of 10,000 is drawn on the Mac and in Chrome, the sprite scene works on the iPhone simulator, and a game maker can start a 2D scene from the guide",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "depends_on": [
+        "SIM-2D:M1"
+      ],
+      "bar": "Crowd legibility as in Vampire Survivors and Halls of Torment: with thousands on screen every enemy, projectile and player stays readable, the horde moves as one smooth mass at the display's refresh, and nothing flickers where bodies overlap. Pixel stability as in Celeste. A guide a game maker can follow without reading engine source, as Bevy's 2D examples are.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "On the Mac the crowd view draws SIM-2D's Crowd trace at 2,000, 5,000 and 10,000 bodies: every live body is a world row each tick, slots are reused and no row interpolates across a reuse, the frame is one sprite draw with no 3D pass, and the run ends at the digests SIM-2D retained, so drawing changed nothing in the world.",
+          "check": "python3 scripts/render2d.py crowd --target mac-metal",
+          "ask": "Does the view depend on SIM-2D's rule package and draw through the public sprite interface only? Does the run report slots reused and rows that skipped interpolation, each above zero? Is the retained digest file SIM-2D's own, unchanged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "In Chrome the crowd view draws the Crowd trace at the three sizes with every live body a world row, one sprite draw and no 3D pass, and ends at the retained digests.",
+          "check": "python3 scripts/render2d.py crowd --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "The crowd's tick-to-tick jitter in sort value is measured and on record, the band is set from it, and overlap reversals a tick are recorded with the band off and on. With the band on, wherever a pair reverses and reverses back within 30 ticks, one of the two moved further than the band in between.",
+          "check": "python3 scripts/render2d.py band --target mac-metal",
+          "ask": "Is the band the crowd view uses the value the record derives, with the reasoning stated? Is the reversal count taken over pairs that overlap on screen?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "On the Mac, at 1920×1080 and at 3456×2234, for the Crowd trace at 2,000, 5,000 and 10,000 bodies, the tick, extraction, ordering, upload bytes, the sprite pass's GPU time, the whole frame, and shaded pixels over screen pixels are on record, from two separate runs with build and load. Each tripwire the design names is flagged, with what was found. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target mac-metal",
+          "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the crowd packed as SIM-2D's trace packs it, and not thinned or shrunk on screen to improve a row?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "In Chrome, for the Crowd trace at 2,000, 5,000 and 10,000 bodies, the tick, extraction, ordering, upload bytes, the sprite pass's GPU time, the whole frame, and shaded pixels over screen pixels are on record, from two separate runs with build and load. Each tripwire is flagged, with what was found. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/render2d.py costs --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.6",
+          "statement": "In real time on the Mac the crowd of 10,000 reads clearly: players, enemies and projectiles can be told apart at a glance, the horde moves as one smooth mass, nothing flickers where bodies overlap, a spawn and a death are clean, and a hit flash and a projectile's glow show in the thick of it.",
+          "inspect": "Capture the crowd view at 10,000 with T2 engine capture: in `realtime` mode at 1920×1080, at least twenty seconds from a view of the whole crowd and twenty from a view close on one player, and `fixed` stills of both views at 3456×2234. Judge consecutive frames at 1x and the stills, whole and in native-size crops of the densest overlap, a player, and a projectile hit.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.7",
+          "statement": "In real time in Chrome the crowd of 10,000 reads clearly, moves smoothly and does not flicker where bodies overlap.",
+          "inspect": "Capture the crowd view at 10,000 in Chrome with T2 engine capture in `realtime` mode: at least twenty seconds from a view of the whole crowd and twenty from a view close on one player. Judge consecutive frames at 1x, whole and in native-size crops of the densest overlap and a player.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.8",
+          "statement": "On the iPhone simulator the sprite scene runs through the iOS shell: the test card's aligned region is exact against the CPU reference, the game's entities are drawn as world rows, the compiled passes hold nothing 3D, and the scene keeps drawing after a rotation and after going to the background and back. Function only: no speed is claimed.",
+          "check": "python3 scripts/render2d_sim.py",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.9",
+          "statement": "On the simulator's screen the sprite scene is upright in both orientations and inside the screen's bounds, with the card's texels square.",
+          "inspect": "Take `simctl` screenshots in portrait and in landscape, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the card. Function only.",
+          "target": "ios-sim",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.10",
+          "statement": "The engine crates name no game's type, both proof scenes draw through the public sprite interface alone, and the sprite pass can run a second time in a frame with another target, view and row list.",
+          "ask": "Does `thrum-render`, `thrum-asset`, `thrum-asset-gpu` or `thrum-cook` name a type, constant or sheet of the V1 game, the crowd or SWARM? Do the sprite scene and the crowd view reach the pass only through the interfaces the design lists? Does the pass take its target, view and rows as inputs, with no state that assumes one instance a frame?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.11",
+          "statement": "A guide linked from the creator guide tells a game maker how to declare a 2D scene, give it sheets, map components to world rows, supply a view and frame rows, choose layers and a band, and pick a scale for a window. It says that blending is in linear light and that a scene shows at most eight sheets.",
+          "ask": "Do the commands and code the guide gives build and run as written at the claimed commit? Does it cover each interface the design provides?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.12",
+          "statement": "The maturity ledger says what this module proved and what it did not.",
+          "ask": "Do the ledger's rows for 2D keep implementation, correctness, visuals and device results apart? Do they name as not run: motion measured on the built-in panel itself, how values above white look on an EDR display, a physical iPhone, a Mac window on a display of density 1, Android, and any browser other than Chrome?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.13",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}
