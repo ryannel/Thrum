@@ -197,7 +197,7 @@ async fn prove() {
     writeln!(
         log,
         "{}",
-        serde_json::json!({"compared":last-route.origin_tick+1,"hidden_ticks":hidden,"equal":true})
+        serde_json::json!({"compared":if timing {0} else {last-route.origin_tick+1},"timed":timing,"hidden_ticks":hidden,"equal":!timing})
     )
     .expect("result");
 }
