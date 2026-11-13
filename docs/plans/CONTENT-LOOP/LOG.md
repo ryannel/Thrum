@@ -23,3 +23,21 @@
   commands that pass today; they were parsed as shell and not run, because they need release builds, the shared
   GPU and Chrome.
 - 2026-11-13 The design still needs its review; the planner could not start one.
+- 2026-11-13 [Design review](../../evidence/CONTENT-LOOP/design-review.md) of `8d09e6b4`: changes requested, two
+  Must Fix findings and three suggestions. Both findings were checked against the code and are right.
+- 2026-11-13 MF1 resolved by narrowing the claim, not by building source admission. M3.7 promised that a "partial
+  change set keeps the previous set"; the watcher and cooker cannot know where an external save ends, and the G5
+  decision already records that. The design now says what a publication promises and what it does not; M3.7
+  claims presentation-only reading and that an incomplete save converges on a fresh cook of the finished sources,
+  with a new `thrum-cook` test. M3.8 and M3.9 name the limit. C05 is unchanged; the reading is an assumption for
+  the owner.
+- 2026-11-13 MF2 resolved by matching the proof to the host. M2.3 asked for a frame encoded before a row switch
+  and submitted after it, which the exclusive encoded-frame token makes impossible. The item now proves a
+  discarded switch frame and a newer edit superseding an unswitched replacement, and asks that every write and
+  switch go through the host. The design drops "the case the builder must fence".
+- 2026-11-13 Suggestions, all three taken. S1: the lease's change signal became a serial the consumer compares
+  and commits in `submitted`, so a discarded or capture frame cannot lose a change (design rule 5, M1.3, M1.7,
+  M1.8, the module list's lease line). S2: M3.3 says a stall this module causes at the claimed sizes fails; the
+  larger-size figure is a record. S3: the design says each reader switches whole in a frame of its own, with the
+  coupled cases named and a second assumption for the owner.
+- 2026-11-13 The changed design needs a second review; the planner could not start one.
