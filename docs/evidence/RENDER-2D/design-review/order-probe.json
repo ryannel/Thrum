@@ -1,0 +1,34 @@
+{
+  "travelling_pair": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "passing_pair": [
+    1,
+    0
+  ],
+  "chain": [
+    0,
+    1,
+    2
+  ],
+  "exhaustive_three_row_states": 750,
+  "random_ticks": 2000,
+  "random_rows": 24,
+  "random_exchanges": 260299,
+  "result": "PASS"
+}
