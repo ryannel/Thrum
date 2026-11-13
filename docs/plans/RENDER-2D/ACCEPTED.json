@@ -1,6 +1,28 @@
 {
   "module": "RENDER-2D",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/RENDER-2D/design-review.md",
+    "commit": "fe5c89f9a19238e83e829db8775eb79b0eedf063",
+    "hash": "bec4906ba3eabceab466f29f6831e5faa754f3ff04e3b2796cf2eedcbfa087fb",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 95178,
+      "cached": 1701376,
+      "output": 10606,
+      "turns": 1
+    },
+    "at": "2026-11-13T17:50:31Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "b6ecab26149f2b213660d04a8c75d0e9f68a226ab606ac23bdd55545b57ee0fd",
