@@ -1,6 +1,28 @@
 {
   "module": "SWARM",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/SWARM/design-review.md",
+    "commit": "cea01c770118aafb3d7b65302d8fccb3c17ef483",
+    "hash": "fc8255c7aaaefc34339b0650f7a0c3c4131113c43ae973f89962fbd8c113a5a4",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 115488,
+      "cached": 1632256,
+      "output": 8809,
+      "turns": 1
+    },
+    "at": "2026-11-13T20:18:02Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "74915d847111f8b4b1fb3d0c0c0a21a44533acc38c5f5307e6c8fa610dacca3f",
