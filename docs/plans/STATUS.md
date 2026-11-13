@@ -62,6 +62,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SHOWCASE assumes: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how. ([plan](SHOWCASE/PLAN.md))
 - SHOWCASE assumes: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing. ([plan](SHOWCASE/PLAN.md))
 - SHOWCASE assumes: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it. ([plan](SHOWCASE/PLAN.md))
+- SIM-2D assumes: SIM-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it edits `crates/`. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: "thousands" is proved at 2,000, 5,000 and 10,000 bodies, and 10,000 is the largest crowd claimed. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: the devices are the Mac, Chrome and the iPhone simulator. The simulator shares the Mac's processor, so it proves only that the rules build and run there. A physical iPhone, an x86 PC, Android and other browsers are designed for and not run. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: bodies are circles. Boxes and capsules are shapes a game can ask about, and no rigid-body physics (stacking, joints, spinning) is built. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: a world is finite. Positions keep millimetre resolution within 16 km of the origin at one unit per metre, and an endless map is not built. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: devices agree for one build of one rule set. A recording made on one engine version is not promised to replay on a later one. ([plan](SIM-2D/PLAN.md))
+- SIM-2D assumes: no budget is set for the crowd's tick. Costs are recorded, and the one hard line is a tick at 10,000 bodies that takes longer than its own 16.7 ms period. ([plan](SIM-2D/PLAN.md))
 
 ### Now and next
 
@@ -69,6 +76,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M2-review.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): Not Started · [plan](CONTENT-LOOP/PLAN.md)
+- SIM-2D's design: Design Ready for Review · [design](SIM-2D/DESIGN.md) · [plan](SIM-2D/PLAN.md)
 
 ### Recently done
 
@@ -107,7 +115,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
-| 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE | Not planned yet |
+| 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Design Ready for Review |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Not planned yet |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
