@@ -9,9 +9,10 @@ use thrum_asset_gpu::CookedStats;
 /// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
 /// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
 /// moving-route proof overlay or one of its controls.
-/// The field draws mixed meshes with `THRUM_FIELD_MESHES=on`.
+/// The field draws mixed meshes with `THRUM_FIELD_MESHES=on`; the valley uses
+/// `THRUM_VALLEY_MESHES=on` for the same prop arena on its entities.
 /// Without `THRUM_CULLING`, the mixed-mesh field uses measured Occlusion,
-/// the cube field uses Frustum, and the fully visible grid keeps Direct.
+/// the cube field and valley use Frustum, and the fully visible grid keeps Direct.
 /// # Errors
 /// Refuses an unknown culling mode or route overlay.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
@@ -21,11 +22,16 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     } else {
         crate::GameContent::Grid
     };
-    let field_meshes = content == crate::GameContent::Field
-        && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on");
+    let field_meshes = (content == crate::GameContent::Field
+        && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on"))
+        || (scene.as_deref() == Ok("valley")
+            && std::env::var("THRUM_VALLEY_MESHES").as_deref() == Ok("on"));
     let camera_culling = match std::env::var("THRUM_CULLING").as_deref() {
         Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
             crate::GameSetup::field_default_culling(field_meshes)
+        }
+        Err(std::env::VarError::NotPresent) if scene.as_deref() == Ok("valley") => {
+            crate::GameSetup::valley_default_culling()
         }
         Err(std::env::VarError::NotPresent) | Ok("direct") => {
             thrum_render::synthetic::CullMode::Direct

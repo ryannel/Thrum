@@ -113,6 +113,8 @@ pub async fn create_browser_game(
     valley_stars: Option<bool>,
     diagnostic_clouds: Option<bool>,
     temporal_inputs: Option<bool>,
+    culling: Option<String>,
+    meshes: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     create_game(
         canvas,
@@ -124,7 +126,8 @@ pub async fn create_browser_game(
             },
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
-            field_meshes: false,
+            field_meshes: meshes.unwrap_or(false),
+            camera_culling: valley_culling(culling.as_deref(), valley_stars.unwrap_or(false))?,
             ..crate::GameSetup::default()
         },
     )
@@ -313,6 +316,8 @@ pub async fn create_route_game(
     canvas: HtmlCanvasElement,
     route: String,
     diagnostic_clouds: Option<bool>,
+    culling: Option<String>,
+    meshes: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     canvas.set_width(extent[0]);
@@ -323,10 +328,32 @@ pub async fn create_route_game(
             valley_stars: true,
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
+            camera_culling: valley_culling(culling.as_deref(), true)?,
+            field_meshes: meshes.unwrap_or(false),
             ..crate::GameSetup::default()
         },
     )
     .await
+}
+
+fn valley_culling(
+    request: Option<&str>,
+    valley: bool,
+) -> Result<thrum_render::synthetic::CullMode, JsValue> {
+    use thrum_render::synthetic::CullMode;
+    match request.unwrap_or("default") {
+        "default" => Ok(if valley {
+            crate::GameSetup::valley_default_culling()
+        } else {
+            CullMode::Direct
+        }),
+        "direct" => Ok(CullMode::Direct),
+        "frustum" => Ok(CullMode::Frustum),
+        "occlusion" => Ok(CullMode::Occlusion),
+        _ => Err(JsValue::from_str(
+            "culling must be default, direct, frustum or occlusion",
+        )),
+    }
 }
 
 #[wasm_bindgen]

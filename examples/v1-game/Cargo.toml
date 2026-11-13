@@ -80,6 +80,10 @@ harness = false
 name = "field_culling"
 harness = false
 
+[[bench]]
+name = "valley_culling"
+harness = false
+
 [[bin]]
 name = "cooked_draw_probe"
 path = "src/bin/cooked_draw_probe.rs"

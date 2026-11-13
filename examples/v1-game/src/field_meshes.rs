@@ -23,9 +23,14 @@ pub(crate) fn mirrored(index: usize) -> bool {
 /// The authored meshes and each slot's choice: the ground and walls keep the
 /// cube; props cycle through the three meshes by a hash of their slot.
 pub(crate) fn selection() -> Arc<SyntheticMeshes> {
-    let slots = (0..field::ENTITY_COUNT)
+    selection_for(field::ENTITY_COUNT, true)
+}
+
+/// Reuse the bounded prop arena for the valley's entity count as well.
+pub(crate) fn selection_for(count: usize, keep_walls: bool) -> Arc<SyntheticMeshes> {
+    let slots = (0..count)
         .map(|index| {
-            if index <= field::WALL_COUNT {
+            if keep_walls && index <= field::WALL_COUNT {
                 SyntheticMeshChoice::Cube
             } else {
                 SyntheticMeshChoice::Mesh(
