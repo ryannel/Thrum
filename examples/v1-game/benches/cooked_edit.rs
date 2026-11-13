@@ -222,7 +222,7 @@ fn run(scenario: &Scenario, report: &mut String, metrics: &mut Metrics) {
     demo::write_cloud_volume(&source.join("cloud.tvol"), scenario.volume, 1).expect("volume");
     if scenario.leased {
         for index in 1..12 {
-            demo::write_cloud_volume(&source.join(format!("cloud{index}.tvol")), 128, index)
+            demo::write_cloud_volume(&source.join(format!("cloud{index}.tvol")), 128, index + 1)
                 .expect("leased volume");
         }
     }

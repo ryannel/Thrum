@@ -1,10 +1,11 @@
 //! GPU residency for cooked G5 products, drawn inside the prepared scene.
 //!
 //! [`CookedAssets`] is a [`SceneContribution`]: a loader thread follows the store's `HEAD`, maps
-//! and validates the products a placement table names, creates their destinations and fills one
-//! staging buffer per publication. The frame host's render thread then records that set's copies
-//! under a per-frame byte budget in its own encoder, swaps the set in the frame its last copy is
-//! recorded, culls each mesh's meshlets on the GPU and draws meshes with the scene's own fragment
+//! and validates configured products, creates their destinations and fills a bounded staging
+//! ring. The frame host records copies under one per-frame byte budget in its own encoder.
+//! With placements alone it swaps the set in the frame that records its last copy. Configured
+//! [`ProductLease`] readers defer that shared switch until the next frame after those copies
+//! are submitted, independent of contribution order. The host culls meshlets and draws meshes with the scene's own fragment
 //! shader (so they receive the scene's selected lighting) and the volume as a lit raymarch.
 //!
 //! Content identity survives device reconstruction: on a new device generation the loader is

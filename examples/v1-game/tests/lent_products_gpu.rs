@@ -355,6 +355,29 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                     ]
                 );
                 let edited = lease.offered().expect("edited");
+                let product = Ktx2::open(
+                    AssetStore::new(&cook.store)
+                        .map(&edited.products[0].hash)
+                        .expect("edited product"),
+                )
+                .expect("edited KTX2");
+                let expected_upload: u64 = product
+                    .levels()
+                    .iter()
+                    .map(|level| {
+                        u64::from(
+                            level
+                                .bytes_per_row(product.format())
+                                .next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT),
+                        ) * u64::from(level.rows_per_image(product.format()))
+                            * u64::from(level.depth)
+                    })
+                    .sum();
+                assert_eq!(
+                    stats.lock().expect("stats").swaps[1].uploaded_bytes,
+                    expected_upload,
+                    "only the edited product's padded rows are uploaded"
+                );
                 assert_eq!(
                     witness.lock().expect("witness").bind_groups_created,
                     bind_groups + u64::from(edited.products[0].texture.mip_level_count())

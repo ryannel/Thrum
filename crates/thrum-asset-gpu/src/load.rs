@@ -438,7 +438,12 @@ impl Loader {
                         })?,
                 )
             };
-            let portable_hash = source.portable_hash(&request.name).ok_or_else(missing)?;
+            let portable_hash = source.portable_hash(&request.name).ok_or_else(|| {
+                AssetError::Io(std::io::Error::other(format!(
+                    "lease {}: portable product unavailable",
+                    request.name
+                )))
+            })?;
             opened
                 .leased
                 .push((entry.product, portable_hash, entry.profile, product));
