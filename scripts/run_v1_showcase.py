@@ -905,15 +905,22 @@ def culling(args):
     try:
         if not args.no_build:
             build(run, web=args.target == 'chrome-webgpu')
+        report['builds'] = identities(web=args.target == 'chrome-webgpu', built=not args.no_build)
         if args.target == 'mac-metal':
             with open(run / 'cook.log', 'w') as log:
                 if bounded([str(COOK), 'cook', str(SOURCE), str(run / 'store')], log, 120):
                     raise Failure('valley cook failed')
+            report['cooked_root'] = store_root(run / 'store')
+            if report['cooked_root'] != json.loads(MOVING_ROUTE.read_text())['cooked_root']:
+                raise Failure('the cooked valley does not match the moving route root')
             with open(run / 'test-build.log', 'w') as log:
                 command = ['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
                            '--test', 'valley_culling_gpu', '--no-run']
                 if bounded(command, log, 1200, cwd=REPO):
                     raise Failure(f'valley test build failed: {run / "test-build.log"}')
+            report['oracle_binaries'] = {str(path.relative_to(REPO)): sha256(path)
+                                        for path in (REPO / 'target/release/deps').glob('valley_culling_gpu-*')
+                                        if path.is_file() and os.access(path, os.X_OK)}
             report['recipes'] = {}
             for recipe in ('portable', 'apple-tile'):
                 output = run / recipe
