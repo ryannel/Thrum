@@ -383,6 +383,12 @@ impl GameScene {
                 if setup.valley_stars {
                     scene.star_catalogue = Some(&star_catalogue::HARVARD);
                 }
+                if setup.field_meshes {
+                    scene.meshes = Some(crate::field_meshes::selection_for(
+                        scene::ENTITY_COUNT,
+                        false,
+                    ));
+                }
                 scene
             }
             GameContent::Field => field_scene(extent, setup.field_meshes)?,

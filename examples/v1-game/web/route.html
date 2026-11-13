@@ -77,7 +77,7 @@
         const text = await (await fetch(query.get("route"), { cache: "no-store" })).text();
         const route = JSON.parse(text);
         const canvas = document.querySelector("#scene");
-        const game = await create_route_game(canvas, text);
+        const game = await create_route_game(canvas, text, false, query.get('culling') ?? undefined, query.get('meshes') === 'on');
         const dpr = window.devicePixelRatio;
         canvas.style.width = `${route.render_extent[0] / dpr}px`;
         canvas.style.height = `${route.render_extent[1] / dpr}px`;
@@ -95,6 +95,7 @@
           device_pixel_ratio: dpr, phase: query.has("phi") ? [phi, 1] : route.phase, origin_tick: origin, overlay: route.overlay,
           user_agent: navigator.userAgent,
           cooked_admission: "generation only; the served root is checked outside the page, by the checker",
+          culling: game.report(),
         };
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
@@ -125,6 +126,8 @@
           record.slot_waits += slot.waits;
           record.slot_wait_max_ms = Math.max(record.slot_wait_max_ms, slot.ms);
           deadline = performance.now() + PERIOD_MS;
+          const checkpointCapture = query.has('culling-proof') && checkpoints.has(tick + 1) && !routed;
+          if (checkpointCapture) game.begin_submitted_capture(tick + 1);
           game.frame(game.route_step_ms(phi));
           const report = JSON.parse(game.route_report(nextSample));
           const step = {
@@ -153,7 +156,21 @@
           before = report;
           const name = checkpoints.get(step.tick);
           if (name && !routed) {
-            record.checkpoints.push({ name, tick: step.tick });
+            const checkpoint = { name, tick: step.tick };
+            if (checkpointCapture) {
+              const deadline = performance.now() + 15000;
+              let image;
+              while (!(image = game.next_submitted_image())) {
+                if (performance.now() > deadline) fail('checkpoint submitted capture timed out');
+                game.route_slot_ready();
+                await wait(1);
+              }
+              checkpoint.submitted = JSON.parse(image.metadata);
+              checkpoint.bytes = image.pixels.length;
+              checkpoint.sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', image.pixels)), b => b.toString(16).padStart(2, '0')).join('');
+              game.end_submitted_capture();
+            }
+            record.checkpoints.push(checkpoint);
             record.waiting = name;
             await new Promise((resolve) => { record.resume = resolve; });
             record.waiting = null;

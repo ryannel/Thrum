@@ -51,7 +51,7 @@ pub struct GameSetup {
     /// one mirrored basis and one retuned local light). Grid content only; off by default.
     pub route_overlay: RouteOverlay,
     /// Draw the flythrough field's props as a rock, a column and a spruce,
-    /// some mirrored, instead of boxes. Ignored for the grid. Occlusion uses
+    /// some mirrored, instead of boxes. Also selects meshes for valley entities. Occlusion uses
     /// the same mesh buckets with a class-matched depth prepass.
     pub field_meshes: bool,
 }
@@ -71,6 +71,12 @@ impl Default for GameSetup {
 }
 
 impl GameSetup {
+    /// Valley entities use conservative Frustum; promotion to Occlusion requires
+    /// two paired moving-route runs winning both behind cover and in the open.
+    pub fn valley_default_culling() -> CullMode {
+        CullMode::Frustum
+    }
+
     /// Two paired 1080p runs favour Occlusion on mixed meshes in cover and open
     /// views (docs/evidence/CULLING/M2.md). The cube field retains Frustum.
     pub(crate) fn field_default_culling(meshes: bool) -> CullMode {

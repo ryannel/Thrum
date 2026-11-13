@@ -1361,7 +1361,7 @@ impl PreparedSynthetic {
         });
         let mut entries = vec![storage_layout(
             0,
-            wgpu::ShaderStages::FRAGMENT,
+            wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
             abi::MATERIAL_BYTES as u64,
         )];
         for binding in 1..=4 {

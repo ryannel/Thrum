@@ -1189,6 +1189,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const onDestroy = () => { intentionalDestroys++; };
   const url = movingCase ? `${origin}/route.html?route=${movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
+  const cullingQuery = movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
     cdp.event = packet => {
@@ -1221,7 +1222,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
-    await cdp.call('Page.navigate', { url: url + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
+    await cdp.call('Page.navigate', { url: url + cullingQuery + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
       if (interrupted) throw interrupted;

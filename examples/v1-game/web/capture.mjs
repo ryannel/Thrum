@@ -51,7 +51,7 @@ try {
   record.effective_route = route;
   record.scene = scene;
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on');
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on');
   window.captureGame = game;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')));
   game.set_visible(true, 0);
@@ -65,6 +65,7 @@ try {
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
   record.initial_report = JSON.parse(game.route_report(0));
+  record.culling = game.report();
   record.start_before_ms = performance.now();
   if (control !== 'off') {
     if (source === 'scene-linear') {

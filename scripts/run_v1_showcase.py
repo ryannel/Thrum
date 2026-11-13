@@ -896,15 +896,85 @@ def moving(args):
         raise SystemExit(1)
 
 
+def culling(args):
+    """Exact mode oracles on the existing moving route. Hold the gpu lock outside this command."""
+    run = new_run(f'culling-{args.target}-{"meshes" if args.meshes else "cubes"}')
+    report = {'command': 'culling', 'target': args.target, 'meshes': args.meshes,
+              'commit': git('rev-parse', 'HEAD'), 'route_sha256': sha256(MOVING_ROUTE), 'passed': False}
+    write_json(run / 'run.json', report)
+    try:
+        if not args.no_build:
+            build(run, web=args.target == 'chrome-webgpu')
+        if args.target == 'mac-metal':
+            with open(run / 'cook.log', 'w') as log:
+                if bounded([str(COOK), 'cook', str(SOURCE), str(run / 'store')], log, 120):
+                    raise Failure('valley cook failed')
+            with open(run / 'test-build.log', 'w') as log:
+                command = ['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
+                           '--test', 'valley_culling_gpu', '--no-run']
+                if bounded(command, log, 1200, cwd=REPO):
+                    raise Failure(f'valley test build failed: {run / "test-build.log"}')
+            report['recipes'] = {}
+            for recipe in ('portable', 'apple-tile'):
+                output = run / recipe
+                env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(run / 'store'),
+                           THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE), THRUM_CULLING_OUTPUT=str(output),
+                           THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_RECIPE=recipe)
+                with open(run / f'{recipe}.log', 'w') as log:
+                    if bounded(['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
+                                '--test', 'valley_culling_gpu', '--', '--ignored', '--nocapture'], log, 1200, env=env, cwd=REPO):
+                        raise Failure(f'{recipe} oracle failed: {run / f"{recipe}.log"}')
+                rows = [json.loads(line) for line in (output / 'rows.jsonl').read_text().splitlines()]
+                if rows[-1].get('compared') != 361 or rows[-1].get('equal') is not True:
+                    raise Failure(f'{recipe}: incomplete route')
+                report['recipes'][recipe] = rows[-1]
+        else:
+            report['modes'] = {}
+            route_file = json.loads(MOVING_ROUTE.read_text())
+            for mode in ('direct', 'default', 'frustum', 'occlusion'):
+                output = run / mode
+                env = dict(os.environ, THRUM_ROUTE_CULLING=mode, THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_CULLING_PROOF='on')
+                with open(run / f'{mode}.log', 'w') as log:
+                    if bounded(['node', str(CHECKER), '--case', 'moving-route', '--cook', str(COOK),
+                                '--web-root', str(WEB), '--output', str(output)], log, 600, env=env, cwd=REPO):
+                        raise Failure(f'Chrome {mode} oracle failed: {run / f"{mode}.log"}')
+                record = json.loads((output / 'moving-route.record.json').read_text())
+                direct_record = json.loads((run / 'direct/moving-route.record.json').read_text())
+                resolved = 'Direct' if mode == 'direct' else 'Occlusion' if mode == 'occlusion' else 'Frustum'
+                if f'culling={resolved}' not in record['header']['culling']:
+                    raise Failure(f'Chrome {mode} did not resolve to {resolved}')
+                report['modes'][mode] = {'resolved': resolved, 'checkpoints': []}
+                for index, checkpoint in enumerate(route_file['checkpoints']):
+                    name = checkpoint['name']
+                    captured = record['checkpoints'][index]
+                    oracle = direct_record['checkpoints'][index]
+                    if not captured.get('sha256') or captured['bytes'] != 1280 * 720 * 4 or captured['sha256'] != oracle.get('sha256'):
+                        raise Failure(f'Chrome {mode} submitted bytes differ from Direct at {name}')
+                    image = read_png(output / 'moving-route-checkpoints' / f'{name}.png')
+                    direct = read_png(run / 'direct/moving-route-checkpoints' / f'{name}.png')
+                    if image != direct:
+                        raise Failure(f'Chrome {mode} differs from Direct at {name}')
+                    report['modes'][mode]['checkpoints'].append(name)
+        report['passed'] = True
+    except Exception as error:
+        report['error'] = str(error)
+        raise
+    finally:
+        write_json(run / 'run.json', report)
+        print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('mac', 'chrome', 'check', 'startup', 'moving'):
+    for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
         if name in ('mac', 'chrome'):
             command.add_argument('--stop', choices=ROUTE, default=ROUTE[0])
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
+    commands.choices['culling'].add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
+    commands.choices['culling'].add_argument('--meshes', action='store_true')
     commands.choices['check'].add_argument('--save-baseline', action='store_true',
                                            help='write the baseline after a passing run (a reviewed, recorded act); '
                                                 'drift from the old baseline alone does not block it')
@@ -922,7 +992,7 @@ def main():
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
-        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving}[args.command](args)
+        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling}[args.command](args)
     except Failure as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)
