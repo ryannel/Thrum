@@ -72,7 +72,7 @@ fn compute_reads_the_forward_material_table() {
             layout: Some(&layout),
             module: &shader,
             entry_point: Some("main"),
-            compilation_options: Default::default(),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -89,7 +89,7 @@ fn compute_reads_the_forward_material_table() {
         mapped
             .slice(..)
             .map_async(wgpu::MapMode::Read, move |result| {
-                tx.send(result).expect("map channel")
+                tx.send(result).expect("map channel");
             });
         device
             .poll(wgpu::PollType::Wait {
@@ -100,8 +100,10 @@ fn compute_reads_the_forward_material_table() {
         rx.recv().expect("map callback").expect("map success");
         let view = mapped.slice(..).get_mapped_range().expect("mapped bytes");
         let values: Vec<f32> = view
-            .chunks_exact(4)
-            .map(|b| f32::from_le_bytes(b.try_into().expect("f32")))
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes(*b))
             .collect();
         assert_eq!(values, [0.125, 0.25, 0.5, 1.0]);
     });
