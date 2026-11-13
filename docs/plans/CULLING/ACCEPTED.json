@@ -67,6 +67,37 @@
         "by": "plan",
         "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
         "at": "2026-11-11T15:55:43Z"
+      },
+      "ready_for_review": {
+        "commit": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
+        "checked": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
+        "at": "2026-11-13T00:53:58Z",
+        "reused": [
+          "Test command",
+          "M1.3",
+          "M1.4"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.4.1",
+        "path": "headless",
+        "usage": {
+          "input": 324144,
+          "cached": 38273792,
+          "output": 46645,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 324144,
+          "cached": 38273792,
+          "output": 46645,
+          "turns": 2
+        }
       }
     },
     "M2": {
