@@ -22,7 +22,7 @@
       "source_epoch": "1",
       "source_tick": 225,
       "submission_id": 224,
-      "submit_ms": 2.3,
+      "submit_ms": 1.1,
       "surface_presented": true,
       "tick": 225,
       "timeline": 0
@@ -53,7 +53,7 @@
       "source_epoch": "1",
       "source_tick": 350,
       "submission_id": 349,
-      "submit_ms": 1.6,
+      "submit_ms": 2.6,
       "surface_presented": true,
       "tick": 350,
       "timeline": 0
@@ -84,7 +84,7 @@
       "source_epoch": "1",
       "source_tick": 376,
       "submission_id": 375,
-      "submit_ms": 1.7,
+      "submit_ms": 0.9,
       "surface_presented": true,
       "tick": 376,
       "timeline": 0
@@ -115,7 +115,7 @@
       "source_epoch": "1",
       "source_tick": 386,
       "submission_id": 385,
-      "submit_ms": 1.3,
+      "submit_ms": 0.7,
       "surface_presented": true,
       "tick": 386,
       "timeline": 0
@@ -146,7 +146,7 @@
       "source_epoch": "1",
       "source_tick": 530,
       "submission_id": 529,
-      "submit_ms": 1.8,
+      "submit_ms": 2.1,
       "surface_presented": true,
       "tick": 530,
       "timeline": 0

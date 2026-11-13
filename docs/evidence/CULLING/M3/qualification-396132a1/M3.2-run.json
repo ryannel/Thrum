@@ -1,0 +1,60 @@
+{
+  "command": "culling",
+  "target": "chrome-webgpu",
+  "meshes": false,
+  "commit": "396132a1178aa32fb0f017e1f4bfeebf4d9db6fd",
+  "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+  "passed": true,
+  "builds": {
+    "commit": "396132a1178aa32fb0f017e1f4bfeebf4d9db6fd",
+    "main_base": "b0b4379096f440aff573f20e5c3d39feaf477774",
+    "origin_main_at_run": "b0b4379096f440aff573f20e5c3d39feaf477774",
+    "dirty": false,
+    "built_by_this_run": true,
+    "thrum_cook_sha256": "fa031a9b6e9e92648e702e666501a6458fd802e0f7aee7e3c3db42cb55c5547d",
+    "v1_game_sha256": "ea3a6daf765690a3b6895bbc7a44e4a45b748094aae0f23d79ca75e8665fc864",
+    "wasm_sha256": "9e92f525f5818028e0f91da873a1f230cf337b0ee9f0be91e18c03d1ab4c64ad"
+  },
+  "modes": {
+    "direct": {
+      "resolved": "Direct",
+      "checkpoints": [
+        "approach",
+        "mirror-light",
+        "pre-cut",
+        "post-cut",
+        "near-plane"
+      ]
+    },
+    "default": {
+      "resolved": "Frustum",
+      "checkpoints": [
+        "approach",
+        "mirror-light",
+        "pre-cut",
+        "post-cut",
+        "near-plane"
+      ]
+    },
+    "frustum": {
+      "resolved": "Frustum",
+      "checkpoints": [
+        "approach",
+        "mirror-light",
+        "pre-cut",
+        "post-cut",
+        "near-plane"
+      ]
+    },
+    "occlusion": {
+      "resolved": "Occlusion",
+      "checkpoints": [
+        "approach",
+        "mirror-light",
+        "pre-cut",
+        "post-cut",
+        "near-plane"
+      ]
+    }
+  }
+}

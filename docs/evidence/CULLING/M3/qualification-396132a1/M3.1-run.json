@@ -1,0 +1,42 @@
+{
+  "command": "culling",
+  "target": "mac-metal",
+  "meshes": false,
+  "commit": "396132a1178aa32fb0f017e1f4bfeebf4d9db6fd",
+  "route_sha256": "7cedae789b8f04470c46ed94c13bc13094d97dfbe1e32cc83b8f70457115a094",
+  "passed": true,
+  "builds": {
+    "commit": "396132a1178aa32fb0f017e1f4bfeebf4d9db6fd",
+    "main_base": "b0b4379096f440aff573f20e5c3d39feaf477774",
+    "origin_main_at_run": "b0b4379096f440aff573f20e5c3d39feaf477774",
+    "dirty": false,
+    "built_by_this_run": true,
+    "thrum_cook_sha256": "fa031a9b6e9e92648e702e666501a6458fd802e0f7aee7e3c3db42cb55c5547d",
+    "v1_game_sha256": "ea3a6daf765690a3b6895bbc7a44e4a45b748094aae0f23d79ca75e8665fc864"
+  },
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "oracle_binaries": {
+    "target/release/deps/valley_culling_gpu-38751adfeaabe6a6": "15e6ef0788a2a873db9bd6a06f0cc900739eb6367614934016fca79c36fa0f45",
+    "target/release/deps/valley_culling_gpu-3358ff9ee4447fb0": "242e716ab0d543fe82fa3b70e5129fe51e5daabf710ebe696b53e1cdd5c27c86"
+  },
+  "recipes": {
+    "portable": {
+      "compared": 361,
+      "equal": true,
+      "hidden_ticks": [
+        361,
+        361
+      ],
+      "timed": false
+    },
+    "apple-tile": {
+      "compared": 361,
+      "equal": true,
+      "hidden_ticks": [
+        361,
+        361
+      ],
+      "timed": false
+    }
+  }
+}

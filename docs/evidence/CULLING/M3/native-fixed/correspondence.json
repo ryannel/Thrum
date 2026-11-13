@@ -1,0 +1,37 @@
+{
+  "source_revision": "396132a1178aa32fb0f017e1f4bfeebf4d9db6fd",
+  "capture_mode": "fixed",
+  "recipe": "Portable",
+  "checkpoints": [
+    {
+      "tick": 225,
+      "source": "tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-225001/portable/fixed-225.ppm",
+      "source_sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752",
+      "png_sha256": "c6f1692279960e7937178322e93e4a357ac7b8141bf44e63f4a1b36d265b2b8a"
+    },
+    {
+      "tick": 350,
+      "source": "tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-225001/portable/fixed-350.ppm",
+      "source_sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4",
+      "png_sha256": "2482d745e0468c9fb74ca36fd972885269beab0d58c7227b3cbfa33aabec5553"
+    },
+    {
+      "tick": 376,
+      "source": "tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-225001/portable/fixed-376.ppm",
+      "source_sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55",
+      "png_sha256": "827ae4e9764d65b1a457819a4e929362f4515757b5c55fdcd57654d57e878e85"
+    },
+    {
+      "tick": 386,
+      "source": "tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-225001/portable/fixed-386.ppm",
+      "source_sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb",
+      "png_sha256": "dadeab8b08fe6ac685f07f4d46c1a2046cdb6a4452555afeafdb3599b09d4f02"
+    },
+    {
+      "tick": 530,
+      "source": "tmp/g7-showcase/runs/culling-mac-metal-cubes-20261113-225001/portable/fixed-530.ppm",
+      "source_sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b",
+      "png_sha256": "43c88e985d3351fbe612ffa462b0583e2e1b5c57a67facbfef20e91dc2526fd4"
+    }
+  ]
+}

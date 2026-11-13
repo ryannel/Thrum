@@ -152,10 +152,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.2",
@@ -163,20 +163,20 @@
           "check": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.3",
           "statement": "The valley's default mode is set by the design's rule from paired rows on the moving route, recorded with their load and the reason.",
           "ask": "Do the retained rows support the valley's default mode by the design's rule, and does the game report that mode on the Mac and in Chrome?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
@@ -184,10 +184,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",
@@ -195,10 +195,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.6",
@@ -206,40 +206,40 @@
           "check": "cargo test --locked --offline -p thrum-render --test culling_temporal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
           "statement": "In real time on the Mac, with the default mode, nothing pops, flickers or goes missing at the frame edges during a fast yaw or at occluder silhouettes when stepping out of cover.",
           "inspect": "Capture the valley with T2 engine capture: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback, not elapsed-time motion. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",
           "statement": "In real time in Chrome, with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the valley route.",
           "inspect": "Capture the valley in Chrome with T2 engine capture: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.9",
           "statement": "Gate G3c holds as the brief words it, and the maturity ledger says what was and was not proved.",
           "ask": "Does each clause of gate G3c in the brief hold on main, with evidence linked from docs/evidence/CULLING/: compute frustum and Hi-Z culling; GPU-written indirect instance counts; one indexed indirect draw per mesh and pipeline bucket; stable mesh offsets; a material table that compute can read; visibility and image equivalence; full- and partial-visibility costs recorded as tripwires? Is the ledger's G3c row current, with implementation, correctness, visuals and device results kept apart?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.10",
@@ -247,10 +247,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
