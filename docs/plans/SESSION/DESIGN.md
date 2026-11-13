@@ -44,7 +44,9 @@ character moves when its own player says so, and a player who arrives late or dr
 **Words used here.** A **match** is one run shared by a host and its players. The **host** is the native process
 that holds the authority world. A **peer** is any process in the match. A **player slot** is one of the places a
 player can hold; a match has up to four. The **roster** says which peer holds which slot. An **admitted set** is
-everything the host admitted for one tick. The **world image** is a world's whole authority state as bytes.
+everything the host admitted for one tick. The **world image** is a world's whole authority state as bytes. A
+client's **progress report** is two ticks: **held**, up to which it holds every set, and **stepped**, which its
+world has committed. Their difference is its **backlog**.
 
 **Consumers.** `SWARM` declares its rule set and actions to a match, starts a host, and reads the confirmed world
 and its own predicted character. `GAME-UI` shows what the session reports about each connection.
@@ -70,10 +72,10 @@ by this module. Drawing: this module's proofs have no window.
 | **N1 Keep every peer's world the same** | A host and 1 to 4 players; 0 to 10,000 bodies; 36,000 ticks; A0's profile and a harsh one (250 ms round trip, ±50 ms, 5% loss), with reordering and duplicated datagrams; any mix of the three targets | Peers that share one world in one process, or digests compared once at the end. Rejected by separate worlds, on sockets separate processes, compared at every digest tick |
 | **N2 Get input to the host in time as the link changes** | Round trips from under 2 ms to 250 ms; a link that worsens and recovers mid-match | A fixed lead. The old fixture's five ticks pass A0 and miss every tick on the harsh profile ([probe](../../evidence/SESSION/planning-probe.md)). Rejected by the harsh profile and a profile change, with a pinned lead as the control that must fail |
 | **N3 Make a one-time choice happen once, in order, on every peer** | Under loss, a stalled link, and a choice made while a join is under way | Sending it on a timed input frame, where a late frame is dropped. Rejected by commands issued into loss and a stall |
-| **N4 Join a match that is already running** | A world of 10,000 bodies at any tick; while the others play; a join that takes longer than a second | Everyone starting together at tick 0. Rejected by a join after tick 3,600 with slots reused |
+| **N4 Join a match that is already running** | A world of 10,000 bodies at any tick; while the others play; a join that takes longer than a second; two joins under way at once | Everyone starting together at tick 0. Rejected by a join after tick 3,600 with slots reused |
 | **N5 Drop and come back** | A link lost for longer than the idle timeout; a client killed and started again; an app sent to the background | Pausing on a link that never closed. Rejected by a new link and epoch, the same slot, and old input refused |
-| **N6 Have a wrong copy found and put right** | Any one value the digest covers, changed on one peer; a peer that goes wrong again and again | A comparison that never fires. Rejected by a forced difference that must be found within one digest interval |
-| **N7 Play on when one peer is slow, silent or hostile** | A peer that stops reading, steps at half speed, freezes, floods or sends malformed bytes | A host that waits for every peer's input. Rejected by the host committing every tick on schedule beside each kind |
+| **N6 Have a wrong copy found and put right** | Any one value the digest covers, changed on one peer and still different at a digest tick; a peer that goes wrong again and again. A difference the rules overwrite before a digest tick is outside this need ([mechanism 8](#8-digests-and-repair)) | A comparison that never fires. Rejected by a forced difference, in state the rules carry forward, that must be found at the next digest tick |
+| **N7 Play on when one peer is slow, silent or hostile** | A peer that stops reading, reads on time and steps at half speed, freezes, floods or sends malformed bytes | A host that waits for every peer's input, or one that watches only what a peer received. Rejected by the host committing every tick on schedule beside each kind, and by a slow stepper that never stops acknowledging |
 | **N8 See your own character answer at once** | Every tick the host admitted your frame; a tick it did not; a link stalled for longer than the history | Drawing the confirmed position, about 150 ms late at A0. Or a prediction never checked against the host, which drifts. Rejected by exact equality with the confirmed state, tick for tick |
 | **N9 Be refused when your copy would disagree** | Another protocol, another rule set, another build of the same rule set, a full match | A version number someone has to remember to raise. Rejected by a changed rule constant that must change the identity with no other edit |
 | **N10 Know what the match is doing** | Each state a connection passes through, with the reason for a refusal or a close; round trip, lead, bytes, corrections | Counters on the host only. The record names each peer's own |
@@ -83,14 +85,33 @@ by this module. Drawing: this module's proofs have no window.
 
 ### 1. One authority, shared by admitted sets
 
-**Decision.** The host commits one tick at a time from the frames it admitted for that tick, and sends each
-client exactly what it admitted. A client commits tick `n` from the host's admitted set for `n` and from nothing
-else. Its own input reaches its own world only by coming back in a set.
+**Decision.** The host commits one tick at a time from the frames it admitted for that tick, and once the tick
+has committed it sends each client exactly what it admitted. A client commits tick `n` from the host's admitted
+set for `n` and from nothing else. Its own input reaches its own world only by coming back in a set.
 
 **The admitted set** for tick `n` is, for each player slot in order, either the frame the host admitted or
 nothing, and after them any roster events of [mechanism 2](#2-the-world-knows-slots-the-session-knows-peers). A
 slot with no frame holds its last axes and fires no action, on every peer alike (C13). The host builds the set at
-the pre-tick barrier, sends it, then steps; a client's wait for a set therefore never includes the host's tick.
+the pre-tick barrier, steps, and sends the set only when that step has committed.
+
+**A set is sent only for a committed tick.** A set's arrival is therefore the confirmation that the authority
+committed that tick with that input, as C13 and
+[the A5 timing decision](../../design/decisions/A5-INPUT-TIMING-RECONCILIATION.md) require: origins are "reported
+committed only **after** `Simulation::step` commits". No set is a proposal and a client needs no second signal.
+The price is that a client's wait for a set includes the host's own tick: about 5 ms at 10,000 bodies by
+`SIM-2D`'s probe, beside a wait of 76 ms at A0. M2 records it.
+
+**When the host's step fails.** The runtime can refuse a tick and leave the world where it was (`TickError` in
+`thrum-core`'s `sim`). A game in a match makes its rules step for every set its admission accepts, so no peer's
+input can cause a refusal: a frame is refused at admission, or a rule that finds it senseless changes nothing
+([mechanism 4](#4-timed-frames-and-ordered-commands)). A step that still fails is a fault of the authority. The
+host sends no set for that tick and does not retry it, since the same set on the same world fails the same way.
+It ends the match: on the reliable lane each client gets the sets it has not acknowledged and then a
+**match-ended message** with the reason and the host's last committed tick, and the host's game is handed the
+error. A client steps what it holds up to that tick and stops there. Any frame or command of its own that those
+sets did not answer is resolved as not committed, because the host has said where commitment stopped. A host that
+stops on purpose ends the match with the same message. If the host vanishes without it, as when its process dies,
+a client's unanswered inputs are uncertain and are not resent (C13).
 
 **Why this gives one world.** `SIM-2D`'s profile makes X[n+1] a function of X[n], the admitted frames and the rule
 set's constants. Every peer has the same three, so every peer has the same X[n+1]. C13's authority is kept whole:
@@ -105,7 +126,9 @@ the player input", and the server's job is "making sure all clients execute the 
 lagging client.
 
 **What would change the decision.** If `SIM-2D`'s first milestone cannot hold the three targets equal,
-[the module list's fallback](../ARCHITECTURE.md#mechanisms-settled-here) applies and this design is replanned.
+[the module list's fallback](../ARCHITECTURE.md#mechanisms-settled-here) applies and this design is replanned. If
+M2's record shows the host's tick to be a large part of a client's wait, a later plan can send a set early as a
+proposal and confirm it with a committed tick in the next datagram; that is not built here.
 
 ### 2. The world knows slots, the session knows peers
 
@@ -130,8 +153,12 @@ staged for a tick, admitted at the barrier and sent in the set (C13's one rules 
 ### 3. The set stream
 
 **Decision.** Sets travel to each client on the datagram lane. Each tick the host sends that client one datagram
-holding every set the client has not yet acknowledged, oldest first. A client acknowledges by tick: each datagram
-it sends names the highest tick up to which it holds every set.
+holding every set the client has not yet acknowledged, oldest first. A client acknowledges by tick, in the
+**progress report** that rides in each datagram it sends: `held`, the highest tick up to which it holds every
+set, and `stepped`, the tick its world has committed. The host frees sets up to `held`. A client sends the report
+from the moment it has a baseline, whether or not it has frames to send. `stepped` is never above `held`, and a
+report that says otherwise is a protocol error. Datagrams reorder, so the host keeps the highest of each tick it
+has been told and ignores an older report.
 
 **Why not the reliable lane.** A client cannot step tick `n` without set `n`, so on an ordered stream one lost
 packet holds back every later tick until it is resent. In [the probe](../../evidence/SESSION/planning-probe.md)
@@ -151,13 +178,22 @@ lane, many to a message, and returns to datagrams when the client is within a da
 takes sets from both lanes by tick and ignores one it has.
 
 **The ring.** The host keeps, for each client, the sets it has not acknowledged, in a ring with a cap. A client
-that falls off the end is not sent the backlog; it is resynchronised by [repair](#8-digests-and-repair) or closed
-([mechanism 10](#10-slow-silent-and-hostile-peers)).
+that falls off the end is not sent what it missed; it is resynchronised by [repair](#8-digests-and-repair) or
+closed ([mechanism 10](#10-slow-silent-and-hostile-peers)).
 
-**Results.** C13 gives every admitted input "a bounded committed/rejected result". The set is that result. For
-each slot a set names the sequence of the timed frame it admitted and the last command sequence it admitted, so
-the client that authored them knows which were committed at which tick, and that an earlier one that never
-appeared was refused. The ring is what retains results until they are acknowledged.
+**The backlog.** `held − stepped` is the sets a client holds and has not stepped. Both ticks come from the client
+in one datagram, so the link's delay is not in the figure. Receiving and stepping are thereby seen apart: a client
+that cannot receive fills the host's ring, and a client that receives and cannot step shows a growing backlog
+while its ring stays short. The client keeps its sets in a buffer capped at the **backlog cap**, a match setting.
+A set that would not fit is not taken, so it is not acknowledged and stays in the host's ring.
+[Mechanism 10](#10-slow-silent-and-hostile-peers) says what the host does with each measure.
+
+**Results.** C13 gives every admitted input "a bounded committed/rejected result". The set is that result, and a
+true one, because a set is sent only for a tick the host committed
+([mechanism 1](#1-one-authority-shared-by-admitted-sets)). For each slot a set names the sequence of the timed
+frame it admitted and the last command sequence it admitted, so the client that authored them knows which were
+committed at which tick, and that an earlier one that never appeared was refused. The ring is what retains
+results until they are acknowledged. At a match's end the match-ended message resolves what is left.
 
 **Old datagrams.** A datagram can arrive long after it was sent
 ([TRANSPORT](../TRANSPORT/DESIGN.md#1-the-link)). A set for a tick a client holds is ignored, a frame for a tick
@@ -190,7 +226,7 @@ for the next tick, in order.
 
 ### 5. The input lead
 
-**Decision.** A client stamps each new frame with a tick ahead of the present, and sizes that lead from what the
+**Decision.** A client stamps each new frame with a tick ahead of the host's, and sizes that lead from what the
 host reports. For each client the host notes how many barriers before its own tick the newest frame was staged:
 its **margin**, negative when late. The margin rides in every set datagram to that client. The client holds the
 low end of its recent margins at one barrier: it raises the lead at once when frames run late and lowers it
@@ -203,10 +239,21 @@ that the client always runs ahead of the server"
 ([`ServerCommandAge`](https://docs.unity3d.com/Packages/com.unity.netcode@1.1/api/Unity.NetCode.NetworkSnapshotAck.ServerCommandAge.html),
 [time synchronisation](https://docs.unity3d.com/Packages/com.unity.netcode@1.5/manual/time-synchronization.html)).
 
+**Whose present.** A client never learns the host's clock, and its own starts wherever its process did. It keeps
+an **authoring tick** that advances one tick for each tick period of its own monotonic clock. When it starts to
+play, the authoring tick is set to the newest tick it holds a set for, plus the handshake's round trip in ticks,
+plus the starting lead; the tick named in the welcome is too old to use after a long baseline. From then on only
+the margin moves it: raising the lead jumps it forward, and lowering the lead holds it for a tick. A first
+estimate that is wrong, or two clocks that run at slightly different rates, reach the client as a margin that is
+too small or too large, and are corrected as a change in the link is. The lead a client reports is an estimate:
+the authoring tick less the host tick it infers from its newest set and half the round trip.
+
 **Checked.** In the probe the lead settled at 4.6 ticks at A0, 9.6 on the harsh profile and 1.6 on a local link.
 After the first minute about one tick a minute was held at A0. When the link worsened mid-run 46 ticks were held
 in the next ten seconds and the lead followed; when it recovered the lead came back down. A lead fixed at the old
-fixture's five ticks missed every tick on the harsh profile.
+fixture's five ticks missed every tick on the harsh profile. The probe's host and client shared one virtual time,
+so it did not try a wrong first estimate or a clock that runs fast; M2 does, with an origin for each client and
+one clock at another rate.
 
 **Limits.** A client authors at most one frame for a tick, and its target ticks only rise: when the lead falls it
 skips a tick of authoring, and when the lead rises the ticks it jumps over are held. The lead is capped by the
@@ -222,7 +269,9 @@ records the held ticks at each depth.
 **Decision.** A client steps its confirmed world on a clock of its own, a little behind the sets' arrival, so
 that it steps at an even pace however unevenly datagrams land. The delay is a buffer sized from how late sets
 have recently been. When the next set is not there the client waits, and counts a stall. When it is behind it
-steps more than one tick in a frame, up to a cap, until it is back on its clock.
+steps more than one tick in a frame, up to a cap, until it is back on its clock. The clock is the client's own
+monotonic clock, placed by when sets arrive and never by a time the host sent. What it has not yet stepped waits
+in the client's buffer of sets, whose length is [the backlog](#3-the-set-stream).
 
 **What the game gets.** Each time it polls the session with the time, it is told how many ticks to commit now and
 where between the last two confirmed ticks the playout clock stands, which is the interpolation the frame draws
@@ -269,21 +318,36 @@ minute of them, and a join has a deadline, a match setting, after which the host
 may try again. A client steps a 10,000-body tick in about 5 ms, so while it catches up it steps about three
 ticks in the time the host steps one.
 
-**A slot is reserved at the welcome and joins at a tick.** When the joiner reports that it has reached the
-present, the host puts the roster event in the next set, and from that tick the slot takes its frames.
+**A slot is reserved at the welcome and joins at a tick.** A reserved slot counts as taken: a hello that arrives
+when every slot is held or reserved is refused as full, and a join that misses its deadline gives its slot back.
+Several joins can be under way at once, each from an image written at its own barrier. A joiner is **in step**
+when its progress report shows it back on the datagram lane with a backlog at or under the behind threshold
+([mechanism 10](#10-slow-silent-and-hostile-peers)). The host then puts the roster event in the next set, and from
+that tick the slot takes its frames.
 
 ### 8. Digests and repair
 
 **Decision.** Every peer takes the world digest at each tick that is a multiple of the match's **digest
-interval**. The host's digest travels in the set stream, with the sets that follow it. A client compares it with
-its own before it steps on. A client that differs stops stepping, tells the host on the reliable lane with its
+interval**. The host's digest travels in the set stream, with that tick's set. A client compares it with its own
+when it has committed that tick, before it steps on. A client that differs stops stepping, tells the host on the reliable lane with its
 own digest for that tick, and is given a new baseline: a **repair**. Its link, slot and epoch stay, and its
 player keeps moving on the host from the input it keeps sending.
 
-**How often.** The interval is a match setting from 1 to 600 ticks, and it starts at 30: twice a second. A
-difference, once made, stays, because the digest covers everything a later tick reads; so the interval sets only
-how soon it is found, and a repair takes a second or more whatever the interval. `SIM-2D`'s probe took the digest
-in 0.18 ms at 10,000 bodies, which twice a second is about 0.04% of a peer's time.
+**What is promised.** Equal digests at a digest tick mean equal worlds at that tick, to within the chance of a
+64-bit collision. The digest covers everything a later tick reads, so two worlds equal there step on equally.
+A difference that is still in the world at a digest tick is therefore found at that tick. The digest is taken
+over one committed endpoint and not over the ticks between. A difference the rules overwrite with the same value
+on both peers before the next digest tick, such as a resource every tick assigns or a held control the next
+admitted frame replaces, is gone by then: the two worlds are the same again, nothing is left to repair, and it is
+not reported. Whatever that peer drew in between, it drew from a wrong copy.
+
+**How often.** The interval is a match setting from 1 to 600 ticks, and it starts at 30: twice a second. It sets
+how soon a lasting difference is found and how long a passing one can go unseen; at 1 every committed endpoint is
+compared. A repair takes a second or more whatever the interval. `SIM-2D`'s probe took the digest in 0.18 ms at
+10,000 bodies, which twice a second is about 0.04% of a peer's time and every tick about 1%.
+
+**A client whose own step fails** on a set the host committed holds a wrong copy by definition. It stops and asks
+for a repair as it does for a differing digest.
 
 **A copy that keeps going wrong.** A client repaired more often than the match allows is closed with that reason.
 That is the fate of a client whose rules were changed, and it costs the others nothing.
@@ -316,18 +380,20 @@ slot. The game may refuse a hello through a hook. There are no passwords and no 
 
 **The token** is a random value the host gives each player. A client that returns with it within the match's
 grace period gets its slot back, on a new link, with a new epoch and a new baseline; nothing sent under the old
-epoch is admitted (C13). After the grace period the slot is left and free.
+epoch is admitted (C13). After the grace period the slot is left and free, and the token opens nothing. Its
+holder, like a client with no token, joins as a new player, with a join event and no claim on the old character.
+It may be given the same slot number, as any free slot may be.
 
 **States a screen can show.** For this peer: connecting, negotiating, refused (with the reason), synchronising
-(with how much of the baseline has arrived and how many ticks remain), playing, repairing, link too slow, and
-closed (with the reason). For every slot: free, present or away. With them, the round trip the lead implies,
+(with how much of the baseline has arrived and how many ticks remain), playing, behind (with its backlog),
+repairing, link too slow, and closed (with the reason, a match that ended among them). For every slot: free, present or away. With them, the round trip the lead implies,
 the lead and the confirmed delay.
 
 **Answers before closes.** A close can cut off the last reliable messages
 ([TRANSPORT](../TRANSPORT/DESIGN.md#1-the-link)). So a host that refuses sends the refusal and waits, up to a
 timeout, for the client to close; and a client that leaves sends its goodbye and waits for the host to close. A
 goodbye that arrives frees the slot at once. A link that closes without one puts the slot away, for the grace
-period.
+period. A host that ends the match sends the match-ended message and waits in the same way.
 
 ### 10. Slow, silent and hostile peers
 
@@ -336,11 +402,22 @@ and each cap has one outcome.
 
 | The peer | What the host sees | What happens |
 |---|---|---|
-| Stops acknowledging sets, or lags further each second because it cannot step as fast as the host | Its ring fills | A repair when it next answers. One that needs repair after repair is closed as unable to keep up |
+| Stops acknowledging sets, as on a stalled link | Its ring fills: `held` stands still while the host's tick goes on | Nothing more is kept for it. A repair when it next answers. One repaired more often than the match allows is closed with that reason |
+| Takes and acknowledges sets on time and cannot step them at the pace of play | Its ring stays short and the backlog it reports grows | It is shown as behind while its reports show a backlog above the **behind threshold**. When they have shown one for longer than the **catch-up deadline**, with no report at or under the threshold between, it is closed as unable to keep up. It is not repaired: a new baseline does not make a client step faster |
 | Stops taking reliable messages | The reliable lane returns `Full` | Nothing is queued for it beyond the lane's cap; a baseline or a command result that cannot be sent by the deadline closes it |
 | Sends no input while its link stays open, as a frozen browser page does ([TRANSPORT](../TRANSPORT/DESIGN.md#5-bounds-backpressure-and-liveness)) | No frame staged for its slot | After the held-control expiry its slot is sent neutral axes. After the absence limit it is closed and its slot is away |
 | Loses its link | The link's close event | Its slot is away for the grace period, then left |
 | Sends bytes that do not decode, a message out of state, input for another slot, or more than its rate | A refusal in the decoder or the session | Nothing is admitted from the message. A peer that breaks the protocol is closed with that reason |
+
+**Lag, measured.** The host's tick less `held` is how far a client's link is behind, and the ring measures it.
+`held` less `stepped` is how far its stepping is behind, and only the progress report shows it. The behind
+threshold starts at 30 ticks: the probe's playout buffer was about three ticks on the harsh profile, and a stall
+or a join leaves a backlog of hundreds. The catch-up deadline starts at 600 ticks, counted in host ticks from the
+first report above the threshold. Both are match settings, and M3 records the backlogs they are set against. The
+deadline judges a playing client. One that is synchronising or repairing is judged by the join deadline alone,
+and the catch-up deadline first applies when it is in step. A client closed as unable to keep up leaves its slot
+away for the grace period and may return with its token. The two ticks are the client's own word: a client that
+misreports them hides only its own lag.
 
 Every decoder that reads a peer's bytes gets a property test over valid input cut at every byte, bad lengths and
 random bytes, and a stdin target in the style of `thrum-network`'s existing two (A0: "Fuzz untrusted envelope,
@@ -397,7 +474,7 @@ whole-world prediction as a client's choice; nothing here prevents it.
 |---|---|---|
 | The match identity, the roster, each link's epoch and token, the match settings | `thrum-network` (this module) | Session |
 | Staged future frames, pending commands, each client's ring of unacknowledged sets, baselines in flight | `thrum-network`, on the host | Session, capped |
-| The lead, the playout clock, the predicted controller's ring | `thrum-network`, on a client | Session, local |
+| The lead and the authoring tick, the playout clock, the buffer of sets, the predicted controller's ring | `thrum-network`, on a client | Session, local, capped |
 | The world image's encoding and restore | `thrum-core`, by [seam ruling](../ARCHITECTURE.md#seam-rulings-for-session) | Engine code; no stored state |
 | The tick, committed state, pages, the digest | `thrum-core`, as G2S and `SIM-2D` leave them | Authority |
 | A link, its lanes and counters | `thrum-transport` | Runtime |
@@ -410,19 +487,21 @@ once, and takes the time from its caller, so the in-memory proofs run in virtual
 
 **A host tick, walked.** (1) At the barrier the session drains each link: hellos, input batches, commands,
 acknowledgements, goodbyes. Frames are checked and staged for their ticks. (2) For each slot it takes the frame
-due, adds waiting commands, and hands it to the game to admit. (3) It writes the tick's set, with roster events,
-and sends each client its datagram of unacknowledged sets with that client's margin. (4) The game steps and
-commits. (5) On a digest tick the host takes the digest. (6) A client waiting for a baseline gets one written
-now. Nothing in the walk waits on a peer.
+due, adds waiting commands, and hands it to the game to admit. (3) It writes the tick's set, with roster events.
+(4) The game steps and commits; if the step fails the match ends as
+[mechanism 1](#1-one-authority-shared-by-admitted-sets) says and the walk stops. (5) On a digest tick the host
+takes the digest. (6) It sends each client its datagram of unacknowledged sets, with the digest if one was taken
+and that client's margin. (7) A client waiting for a baseline gets one written now. Nothing in the walk waits on a
+peer.
 
 **A client tick, walked.** (1) It drains its link: sets go to its buffer, margins to the lead. (2) It authors
-this tick's frame at the lead, steps the predicted controller, and sends its datagram with recent frames and its
-acknowledgement. (3) While the playout clock says a tick is due and its set is here: compare the digest if one is
-due, admit the set, step, commit, then check the prediction against the new confirmed state.
+this tick's frame at its authoring tick, steps the predicted controller, and sends its datagram with recent frames
+and its progress report. (3) While the playout clock says a tick is due and its set is here: admit the set, step,
+commit, compare the digest if that tick has one, then check the prediction against the new confirmed state.
 
 **A join.** Link open; hello; welcome with a slot and a token; the host writes an image at `b`; pieces arrive;
-the client restores, steps from `b + 1` to the present, and says so; the host puts the join in the next set; the
-hero appears on every peer at that tick.
+the client restores and steps from `b + 1` until its progress report shows it in step; the host puts the join in
+the next set; the hero appears on every peer at that tick.
 
 **A drop.** The link closes as timed out; the host puts "away" in the next set; every peer sees the hero go idle
 at that tick. The client opens a new link and says hello with its token; from there it is a join into its own
@@ -451,15 +530,16 @@ milestone, in these words:
 
 > A game may declare a deterministic rule set under the rules profile. Its gameplay semantic manifest then names
 > the rule set and its build, and a peer whose identity differs is refused at negotiation. Such a match shares
-> state by the host's admitted input for each tick, compares peers by world digest, and repairs a peer with a
-> full baseline. Bit identity across platforms is that rule package's claim, proved by its conformance run; the
+> state by the input the host admitted for each tick it committed, compares peers by world digest at the ticks
+> the match sets, and repairs a peer with a full baseline. Bit identity across platforms is that rule package's claim, proved by its conformance run; the
 > engine makes no such claim for any other game.
 
 Its producers and consumers are this module, `SIM-2D`, core and the game. `SIM-2D`'s design already leaves the
 wording to this one.
 
 **No other contract changes.** C13's authority, epochs, results, bounded peers and optional prediction are kept
-as written, and the mechanisms above say where each is met. A5's input batch is used byte for byte, so
+as written, and the mechanisms above say where each is met. In particular a result is reported committed only
+after the host's step has committed, because no set is sent before it. A5's input batch is used byte for byte, so
 `SIM-2D`'s wire-route proofs stay valid. A5's state deltas, their acknowledgements and the three `StateGroup`
 modes are not used by a deterministic match and stay in `thrum-network` as they are. New message kinds join the
 envelope.
@@ -489,10 +569,12 @@ No budget is set (brief, decision 3). The account, for a host and four players a
 | A join or a repair | One image write on the host, one transfer, one restore, then a catch-up | About 1.3 MiB at 10,000 bodies (estimate); 0.7 s under BBR, 18 s under Cubic (`TRANSPORT`'s probe) |
 | A correction of the predicted controller | When the host held a tick: about one a minute at A0 | 9 to 10 steps of a function of a few operations |
 | Memory on the host, for each client | A ring of sets, staged frames, at most one baseline in flight | Bounded by the match settings; M3 records it |
+| Memory on a client | Its buffer of sets, up to the backlog cap | Bounded by the match settings; M3 records the largest backlog |
 
 The costs that matter are the wait a set adds before a client can step, which the playout buffer turns into
-latency, and the tick the host writes an image in. The design sends a set before the host steps, writes it once
-for all clients, and writes an image in one pass. The session's buffers are reused, and M2 counts what a warmed
+latency, and the tick the host writes an image in. The design sends a set as soon as its tick has committed,
+which puts the host's own tick, about 5 ms at 10,000 bodies, in every client's wait; it writes a set once for all
+clients, and writes an image in one pass. The session's buffers are reused, and M2 counts what a warmed
 host tick and client tick allocate.
 
 **A0's proposed 64 kbit/s** was written for travelling state at 20 Hz. By the arithmetic above the upward stream
@@ -526,8 +608,13 @@ adapt holds all of them. The floor catches a collapse and is no target.
   bounds it and the finding goes to `SWARM`'s planner.
 - **The host hitches when it writes an image.** Early sign: M3's row for that tick. If it is long, the image is
   written over several ticks from a leased page, which is a new design.
-- **A hidden browser tab** is throttled and falls behind. It is repaired when it returns or closed as absent.
-  M5 records what the host sees.
+- **A hidden browser tab** is throttled and falls behind. It is closed as unable to keep up or as absent, or
+  repaired when it returns, by whichever rule its reports meet first, and it can come back with its token. M5
+  records what the host sees.
+- **The lag rule closes a client that would have caught up.** Early sign: M3's record of how long a backlog
+  stays above the threshold after a stall and a join, set beside the catch-up deadline. Both are settings.
+- **The host's tick in every client's wait.** Early sign: M2's time from a tick's barrier to its set leaving the
+  host, beside the confirmed delay.
 - **Cubic.** If `TRANSPORT` falls back to it, a join at 10,000 bodies takes tens of seconds. M5 records both.
 - **Loopback hides the network,** as [TRANSPORT's risks](../TRANSPORT/DESIGN.md#risks) say. Nothing here is run
   between two machines.

@@ -471,7 +471,8 @@ digest of its committed state, and a peer whose digest differs is repaired with 
   floats held to add, subtract, multiply, divide and square root with non-finite values refused; no platform maths
   library; no order taken from hashing, threads or pointer width; random streams keyed by seed, tick and entity.
   `SIM-2D` owns that profile and its first milestone tries to break it on all three targets.
-- *What keeps a miss from spreading.* The digest catches a divergence within the interval `SESSION` sets, and
+- *What keeps a miss from spreading.* The digest catches a divergence that lasts to the next digest tick, at the
+  interval `SESSION` sets, and
   repair is the reliable full image A5 already selects. A client that changes its rules only desyncs itself.
 - *Range.* 2 to 4 peers and the brief's thousands. A full-world replay does not fit a frame at that size, so the
   crowd is shown at the confirmed tick and only the player's own character is predicted, which needs no crowd
@@ -910,3 +911,6 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   which writes the rule-set addition into C13. The seam rulings for `SESSION`, the world-image and
   connection-state interfaces and three asks were added above, one of them open for `SWARM`'s planner. Two
   assumptions moved to [SESSION's plan](SESSION/PLAN.md). No other module's done-when item changed.
+- 2026-11-13 `SESSION`'s design review asked for four changes; one reaches this page. The line on what keeps a
+  miss from spreading now says the digest catches a divergence that lasts to the next digest tick, since a digest
+  is taken over one committed endpoint. No interface, seam ruling or other module's done-when item changed.

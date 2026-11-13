@@ -35,3 +35,30 @@
   `TRANSPORT` use. `./dev check-docs` fails, and did before this plan: older evidence files still link to
   `ACCEPTED.json`, which the move to `RECORD.json` renamed. It reports nothing in a file this plan wrote.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
+- 2026-11-13 [Design review](../../evidence/SESSION/design-review.md): changes requested, four Must Fix findings
+  and two suggestions. The plan was revised the same day; the next four entries say how.
+- 2026-11-13 Finding 1, a set reported commitment before the host committed. The host now steps first and sends
+  a set only for a committed tick, so a set's arrival is the confirmation. Cost: the host's tick, about 5 ms at
+  10,000 bodies, joins every client's wait; M2.8 records it. A host step that fails ends the match with a
+  match-ended message naming the last committed tick, which resolves unanswered inputs as not committed. New item
+  M2.11 proves it against an ordinary tick. Sending early with a later commit mark was weighed and left out: it
+  waits a whole tick longer, or lets a client's world run ahead of the authority.
+- 2026-11-13 Finding 2, receipt could not show a slow simulation. A client now reports two ticks, held and
+  stepped; their difference, the backlog, shows stepping lag with no link delay in it. A playing client whose
+  backlog stays above the behind threshold for the catch-up deadline is closed as unable to keep up, and is not
+  repaired. A joiner is judged by the join deadline until it is in step. The client's buffer has a cap. M3.5
+  lost its half-speed case to new item M3.11, where the slow client keeps reading and acknowledging.
+- 2026-11-13 Finding 3, the digest promise was too strong. Detection is now scoped to a difference still in the
+  world at a digest tick; one the rules overwrite first is not reported, and an interval of 1 compares every
+  committed endpoint. N6, mechanism 8, M3.4 and M5.2 to M5.4 say so, and M3.4 changes state the rules carry
+  forward. The module list's line on the digest follows.
+- 2026-11-13 Finding 4, M3.2 needed five slots. M3.2 keeps the late fourth player. New item M3.12 has two
+  players joined by two more at once, a hello refused as full while both are joining, and a reservation freed at
+  the join deadline. A reserved slot counts as taken.
+- 2026-11-13 Suggestions, both taken. 5: the design says how a client places its authoring tick with no host
+  clock, and M2.3 gives each client its own clock origin and one a different rate, because the probe shared one
+  virtual time and a builder would otherwise have had to invent the mapping. 6: an expired or missing token makes
+  a new player, who may be given the same slot number; M3.3 and mechanism 9 say so.
+- 2026-11-13 Checks after the revision: the three new item checks parse and fail, as they should before the work
+  exists, and `./dev check-docs` passes. The verifier items were again not dry-run. The revised design needs a
+  new design review.

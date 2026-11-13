@@ -35,21 +35,25 @@ files of its own. New packages are registered in `.config/architecture.toml`.
 
 ## M2 Four players on a simulated bad connection steer one crowd of 10,000, and every player's copy stays identical
 
-Criteria: M2.1–M2.10 in the done-when file.
+Criteria: M2.1–M2.11 in the done-when file.
 
 `thrum-network` holds the envelope, A5's input batch (`input_batch.rs`, used byte for byte), the staging window
 (`future_input.rs`) and the state-delta codec, which this module leaves alone. `TRANSPORT` left the link's
 interface and the in-memory conditioned link in `thrum-transport`. The session, the match settings and the
 headless host's loop go in `thrum-network`; the four-player proofs and the scripted players go in a new package,
 `examples/match-proof`; the tests' second rule set stays with `thrum-network`'s tests. The reference crowd's
-rules take no actions, which is why commands and refusals are proved on the second rule set.
+rules take no actions, which is why commands and refusals are proved on the second rule set. The runtime's
+refusal of a step is `TickError` in `crates/thrum-core/src/sim/runtime.rs`; M2.11's failure is that refusal,
+raised on the host by the second rule set.
 
 ## M3 A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up
 
-Criteria: M3.1–M3.10 in the done-when file.
+Criteria: M3.1–M3.12 in the done-when file.
 
 The in-memory link can cut a path, stall one and duplicate datagrams; those are the faults to use. A fault that
-needs a client's world changed is made by the proof harness, which owns that world.
+needs a client's world changed is made by the proof harness, which owns that world. A client that steps slowly
+is made by the harness stepping that client's world less often than its session asks, while its link is drained
+and its datagrams sent at the full pace.
 
 ## M4 A player's own character answers at once, while the crowd stays exact
 
