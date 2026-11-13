@@ -120,8 +120,8 @@
           "statement": "The mixed-mesh field's default mode follows the design's rule: paired whole-GPU rows for Direct, Frustum and Occlusion at 1920x1080, behind cover and in the open, from two separate runs, are recorded with their load, and the default is Occlusion only if it wins in both.",
           "ask": "Do the two retained run logs support the default the code sets, by the design's rule? Does the bench assert that Occlusion's prepass is non-empty and that it hides slots, so a row cannot repeat the fault that withdrew the rows of 8 November?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "",
           "review": ""
         },
