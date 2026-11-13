@@ -88,8 +88,8 @@
           "lock": "gpu",
           "ask": "Trace the mode from the request to the prepared pipelines. Is the capability record its only input, and do the existing equality tests assert the resolved mode, so a fallback cannot pass as culling?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -99,8 +99,8 @@
           "check": "python3 scripts/culling_sim.py",
           "lock": "gpu",
           "target": "ios-sim",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -110,8 +110,8 @@
           "check": "node scripts/check_v1_browser.mjs --case field-mixed-oracle",
           "lock": "gpu",
           "target": "chrome-webgpu",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/CULLING/M2.md",
           "verdict": "",
           "review": ""
         },

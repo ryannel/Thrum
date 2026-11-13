@@ -1,0 +1,6 @@
+{
+  "commit": "f0bd38511cfd0a2afc983668287a1f41352984e9",
+  "benchmark_sha256": "cd8199d8fb00a8abb625b9cbba2116b8b43f4bc48cd657d13aa3e57a7462853d",
+  "benchmark_source_sha256": "73d3049acd7ea2626cd48a2fe47894bd2b1521fcc2632e86b4994dfc7d4af745",
+  "scope": "Same compiled benchmark and production sources for both queued GPU runs; f0bd3851 only makes the selection integration test Metal assertion conditional on macOS."
+}
