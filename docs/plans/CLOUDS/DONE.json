@@ -62,9 +62,9 @@
         },
         {
           "id": "M1.6",
-          "statement": "One density function in m\u207b\u00b9 serves every consumer. Extinction follows from liquid water content and droplet radius. The column optical depth a query returns equals the vertical integral of the density before detail erosion. Erosion never raises extinction above that bound. Where a volume stands for a cell, the two forms' weights sum to one, and a volume scaled to the cell's mean column leaves the footprint's mean column optical depth unchanged.",
+          "statement": "One density function in m\u207b\u00b9 serves every consumer, as a full density and a coarse density that differ only in the coarse one taking the detail noise at its mean. Extinction follows from liquid water content and droplet radius. At every point, the column optical depth a query returns equals the vertical integral of the density with nothing eroded; the full and the coarse density each integrate to no more than it, and to zero where it is zero.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test density",
-          "ask": "Is the integral in the test a quadrature of its own over the public density function, with its tolerance derived from the step it uses?",
+          "ask": "Is the integral in the test a quadrature of its own over the public density function, with its tolerance derived from the step it uses? Does it include points at a cloud's edge, where erosion removes extinction?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -73,6 +73,17 @@
         },
         {
           "id": "M1.7",
+          "statement": "A placed cell's column is its shape's own. The model derives a footprint from a density grid, and over a placed cell the query returns the footprint at that point, scaled by the cell's envelope and added to any other cloud there, with no camera in it. For the test's own shape, which is asymmetric with an overhang and a hollow, the volume form's uneroded column equals the query at every point tried, and the eroded volume form, the column form and their blends at any weight never exceed it and are zero where it is zero. No point has two placed shapes over it.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test placed",
+          "ask": "Is the shape the test's own and unlike a dome, and would a volume that was only scaled to match a cell's mean column fail this test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.8",
           "statement": "The model's optics match the retained references: a Beer segment with its limit at zero extinction, the composition of ordered segments, and the four-order phase model with the references' weights, extinction scales and asymmetries.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test optics",
           "ask": "Do the expected values come from `scripts/reference/cloud/optical_reference.py`, recorded with the command that printed them, and not from the code under test?",
@@ -83,15 +94,15 @@
           "review": ""
         },
         {
-          "id": "M1.8",
-          "statement": "The model gives an f64 reference for optical depth along any Sun direction from any point, and a conformance harness that takes any provider of weather-map columns or of Sun-path optical depth and reports its largest difference from the model over stated points and ticks. Given the model it reports zero; given the model with one cell's depth changed it reports that change.",
+          "id": "M1.9",
+          "statement": "The model gives f64 references for optical depth along any direction from any point, through the full density and through the coarse density, and a conformance harness that takes any provider of weather-map columns or of Sun-path optical depth and reports its largest difference from the model over stated points and ticks. Given the model it reports zero; given the model with one cell's depth changed it reports that change.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test conformance",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
         },
         {
-          "id": "M1.9",
+          "id": "M1.10",
           "statement": "`thrum-cloud-model` builds and its tests run with no graphics device and no dependency on `thrum-render` or `wgpu`, and it holds no preset, type table or look.",
           "check": "cargo tree --locked --offline -p thrum-cloud-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the crate or its tests name a preset, a cloud type's values or a look that belongs to a game?",
@@ -102,7 +113,7 @@
           "review": ""
         },
         {
-          "id": "M1.10",
+          "id": "M1.11",
           "statement": "No file in this milestone is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/CLOUDS/PROVENANCE.md` lists the file with its source commit, path and licence.",
           "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
           "target": "mac-metal",
@@ -112,7 +123,7 @@
           "review": ""
         },
         {
-          "id": "M1.11",
+          "id": "M1.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -149,7 +160,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "On every level of the GPU weather map, each texel names the same cells as the CPU field and matches its column within the bound this milestone measured first and recorded. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device.",
+          "statement": "On every level of the GPU weather map, each texel names the same cells as the CPU field and matches its column, at the tick its part of the map was last written, within the bound this milestone measured first and recorded. No part is older than its cadence allows in weather time, at 1x and at 60x. That holds after a day of travel at 40 m/s, and after repeated ticks, a pause, a hitch, a backward tick and a replaced device.",
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_map_gpu",
           "ask": "Is the bound the measured one in `docs/evidence/CLOUDS/M2-conformance.md`, with the arithmetic that explains it? Does the test compare cell identities as integers, and not only values that happen to be close?",
           "lock": "gpu",
@@ -161,7 +172,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "At points under and inside cloud, with the Sun at 60\u00b0, at 20\u00b0 and at the profile's lowest valid elevation, the transmittance read from the Sun-path product is within the recorded bound of the model's reference. In clear weather the ground factor is exactly 1. Below the lowest elevation and outside the field's region it is `exp(-tau_far)`.",
+          "statement": "At points under and inside cloud, with the Sun at 60\u00b0, at 20\u00b0 and at the lowest elevation of the Sun's path, the transmittance read from the Sun-path product is within the recorded bound of the model's reference for the coarse density along the path direction. In clear weather the ground factor is exactly 1. Outside the field it is the far value, the mean transmittance of the outermost level's ground slice.",
           "check": "cargo test --locked --offline -p thrum-clouds --test sun_path_gpu",
           "ask": "Are the bounds the measured ones in the same record, set beside the design proof's figures, with any that is worse explained?",
           "lock": "gpu",
@@ -173,9 +184,9 @@
         },
         {
           "id": "M2.4",
-          "statement": "`ATMOSPHERE`'s cloud factor reads a field the provider writes on the GPU. Terrain, synthetic instances, cooked meshes and the cooked volume each take the factor once, on direct sunlight only. With no provider, and with the CPU-fed diagnostic provider, shader text, pipelines and frames are as before.",
-          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_shade_gpu",
-          "ask": "Did any existing test, bound or reference of `ATMOSPHERE` change? None may. Is `tau_far` zero for a provider that sets none, so that its factor outside the field is exactly 1?",
+          "statement": "The ground factor never steps. Under a broken sky, at receivers under a gap, under a thick cloud and at a cloud's edge, it changes continuously as the Sun sinks from 20\u00b0 through the lowest elevation of the Sun's path to below the horizon, and as a receiver crosses the field's border and its edge: halving the step halves the largest change, within the factor the test states.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test sun_path_continuity_gpu",
+          "ask": "Would a factor that switched to any single value at the lowest elevation, or at the field's edge, fail this test at the receiver under a gap? A clear sky or a uniform deck alone would not show it.",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -185,6 +196,18 @@
         },
         {
           "id": "M2.5",
+          "statement": "`ATMOSPHERE`'s cloud factor reads a field the provider writes on the GPU: along the provider's path direction at every Sun elevation, as `mix(exp(-tau_far), exp(-tau), w)` with ruling 1's border weight. Terrain, synthetic instances, cooked meshes and the cooked volume each take the factor once, on direct sunlight only. With no provider, and with the CPU-fed diagnostic provider, shader text, pipelines and frames are as before.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_shade_gpu",
+          "ask": "Did any existing test, bound or reference of `ATMOSPHERE` change? None may. Does the CPU-fed form, which states no path direction, border or far value, still get exactly 1 outside its region and below its lowest elevation?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
           "statement": "With a fair sky's weather, at noon and at a 15\u00b0 Sun, patches of sunlight and shade lie over the valley with soft edges. Shaded ground stays lit by the sky and is never black. Terrain, an object and a cooked mesh under one patch agree. No tile, band or line shows where a level of the product ends.",
           "inspect": "Capture `fixed` stills with T2 engine capture in the valley at noon and at a 15\u00b0 Sun, from 2 m and from 40 m. Judge each frame whole, and in native-size crops of a shade edge on terrain, of an object that an edge crosses, and of the far valley.",
           "target": "mac-metal",
@@ -194,7 +217,7 @@
           "review": ""
         },
         {
-          "id": "M2.6",
+          "id": "M2.7",
           "statement": "At 1x the shade drifts with the wind, smoothly, with no step at the product's refresh and no swimming. At 60x, patches form and dissolve with no pop.",
           "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence.",
           "target": "mac-metal",
@@ -204,7 +227,7 @@
           "review": ""
         },
         {
-          "id": "M2.7",
+          "id": "M2.8",
           "statement": "With the device held to WebGPU's default limits on the Mac, the weather map and the Sun-path product are built and pass the two conformance tests.",
           "check": "cargo test --locked --offline -p thrum-clouds --test portable_limits_gpu",
           "lock": "gpu",
@@ -213,10 +236,10 @@
           "evidence": ""
         },
         {
-          "id": "M2.8",
-          "statement": "At 2560\u00d71440, capture off, with shade on the valley's whole frame stays within the 8.33 ms interval of the 120 Hz display wherever it does with clouds absent. A paired record gives each cloud pass's GPU time by name, the cost of one full refill of the Sun-path product, and bytes per resource.",
+          "id": "M2.9",
+          "statement": "The shade's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with clouds absent gives the whole frame, each cloud pass's GPU time by name at 1x, 8x and 60x, the cost of one full refill of the Sun-path product and the bytes of each resource, beside the design's estimates. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene shade",
-          "ask": "Is the record paired and from the claimed commit, with the load on the machine? Does the shadow-only profile declare no trace, layer, detail noise or overlay? Does the record become the baseline later milestones compare with?",
+          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up? Does the shadow-only profile declare no trace, layer, detail noise or overlay?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -225,7 +248,7 @@
           "review": ""
         },
         {
-          "id": "M2.9",
+          "id": "M2.10",
           "statement": "The maturity ledger's `E1.clouds` row keeps implementation, correctness, visuals and device apart.",
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
@@ -235,7 +258,7 @@
           "review": ""
         },
         {
-          "id": "M2.10",
+          "id": "M2.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -255,7 +278,7 @@
       "depends_on": [
         "EFFECT-GRAPH:M3"
       ],
-      "quality_bar": "A fair-weather sky as in Red Dead Redemption 2 or Horizon Forbidden West: heaped clouds with flat shared bases and bright sunlit sides, large overhead and fading into haze far off, in the same light as the land, at the display's full refresh.",
+      "quality_bar": "A fair-weather sky as in Red Dead Redemption 2 or Horizon Forbidden West: heaped clouds with flat shared bases and bright sunlit sides, large overhead and fading into haze far off, in the same light as the land, and stable as the camera moves.",
       "items": [
         {
           "id": "M3.1",
@@ -336,18 +359,21 @@
         },
         {
           "id": "M3.8",
-          "statement": "With the shadow-only profile, the trace, the layer's history and the detail noise are not declared, and the ground field holds the same bytes as with visible clouds on.",
+          "statement": "The Sun's path integrates the coarse density in both profiles. With the shadow-only profile, the trace, the layer's history and the detail noise are not declared, and the ground field holds the same bytes as with visible clouds on, under a sky where the detail noise changes the full density's extinction along the Sun paths the test probes. How far the coarse density's Sun path is from the full density's at those probes is on record, in transmittance.",
           "check": "cargo test --locked --offline -p thrum-clouds --features thrum-render/creation-counters --test shadow_only_gpu",
+          "ask": "Does the test first show that detail erosion changes the full density's extinction at its probes, so that equal bytes could not come from a sky with nothing to erode? Is the recorded difference set beside the design proof's figure?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.9",
-          "statement": "At 2560\u00d71440, capture off, under the fair preset, the valley's whole frame stays within the 8.33 ms interval wherever it does with clouds absent. A paired record gives each cloud pass's GPU time by name, the rays traced, the mean and 95th-percentile samples a ray, and bytes per resource.",
+          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, under the fair preset, a paired record with clouds absent gives the whole frame, each cloud pass's GPU time by name, the rays traced, the mean and 95th-percentile samples a ray and the bytes of each resource, beside the design's estimates. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene first-frame",
-          "ask": "Is the record paired and from the claimed commit, with the load on the machine? Is each pass over the design's estimate named with a cause? Does it say which refresh fraction and how many local light samples were chosen, and what the look lost or kept at the alternatives tried?",
+          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up? Does the record say which refresh fraction and how many local light samples were chosen, and what the look lost or kept at the alternatives tried?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -407,7 +433,7 @@
         },
         {
           "id": "M4.2",
-          "statement": "In Chrome, through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the weather map and the ground field after each submitted frame are the model's for that frame's tick.",
+          "statement": "In Chrome, through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, after each submitted frame every part of the weather map and of the ground field is the model's for the tick that part was last written, and none is older than its cadence allows.",
           "check": "node scripts/check_v1_browser.mjs --case clouds-state",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -426,8 +452,8 @@
         },
         {
           "id": "M4.4",
-          "statement": "In Chrome the shade crosses the valley as M2.5 describes and the layer is stable in a pan as M3.7 describes. The page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
-          "inspect": "Capture `fixed` stills at M2.5's views and a `realtime` 10-second pan in Chrome. Judge them by M2.5's and M3.7's lists.",
+          "statement": "In Chrome the shade crosses the valley as M2.6 describes and the layer is stable in a pan as M3.7 describes. The page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
+          "inspect": "Capture `fixed` stills at M2.6's views and a `realtime` 10-second pan in Chrome. Judge them by M2.6's and M3.7's lists.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -489,7 +515,7 @@
         },
         {
           "id": "M5.4",
-          "statement": "From a Sun at +3\u00b0 to \u221218\u00b0, cloud colour comes from the sky: warm, then pink and grey, then dark. A tall cloud's top stays lit after its base has gone dark. Nothing flickers or steps as the Sun crosses the lowest valid elevation and the horizon. At night clouds are dark shapes that hide stars, and none glows.",
+          "statement": "From a Sun at +3\u00b0 to \u221218\u00b0, cloud colour comes from the sky: warm, then pink and grey, then dark. A tall cloud's top stays lit after its base has gone dark. Nothing flickers or steps as the Sun crosses the lowest elevation of the Sun's path and the horizon. At night clouds are dark shapes that hide stars, and none glows.",
           "inspect": "Capture `fixed` stills at Sun elevations +3\u00b0, 0\u00b0, \u22123\u00b0, \u22126\u00b0, \u221212\u00b0 and \u221218\u00b0, and a `realtime` sweep across them. Judge the stills as a contact sheet and in native-size crops of one tall cloud, and consecutive frames of the sweep.",
           "target": "mac-metal",
           "builder_result": "open",
@@ -499,12 +525,15 @@
         },
         {
           "id": "M5.5",
-          "statement": "In a sweep of the Sun from 20\u00b0 to below the horizon, radiance at fixed probes on cloud and on ground changes continuously: halving the sweep's step halves the largest change. Under a closed deck the ground's direct-Sun factor never rises as the Sun sinks.",
+          "statement": "In a sweep of the Sun from 20\u00b0 to below the horizon under a fair sky, radiance at fixed probes on cloud, and on ground under a gap, under a cloud and at a shade edge, changes continuously through the lowest elevation of the Sun's path and the horizon: halving the sweep's step halves the largest change, within the factor the test states. Under a closed deck the ground's direct-Sun factor stays below the transmittance of the deck's thinnest column through the whole sweep.",
           "check": "cargo test --locked --offline -p v1-game --test clouds_day_gpu",
+          "ask": "Would a ground factor that switched to any single value at the lowest elevation fail this test at the probe under a gap?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M5.6",
@@ -518,9 +547,9 @@
         },
         {
           "id": "M5.7",
-          "statement": "At a 10\u00b0 Sun the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent.",
+          "statement": "With the day's light running, the paired cost record is taken again at a 10\u00b0 Sun at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene low-sun",
-          "ask": "Is each cloud pass's time recorded beside the last milestone's record for the same view, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -553,7 +582,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "A stacked volume product lent through a lease supplies placed clouds. A placed cell's density is read from its slab, the weights of the cell's two forms sum to one, and no mip of one slab reads a neighbour's voxels.",
+          "statement": "A stacked volume product lent through a lease supplies placed clouds. A placed cell's volume form is read from its slab, and the weights of its two forms sum to one. At every level the march may read, down to one texel a slab, a slab's read holds nothing of its neighbours: slabs of contrasting constant density return their own value.",
           "check": "cargo test --locked --offline -p thrum-clouds --test placed_gpu",
           "ask": "Does the test cook its own products with `thrum-cook`, and hold no shape that belongs to a game?",
           "lock": "gpu",
@@ -565,16 +594,19 @@
         },
         {
           "id": "M6.2",
-          "statement": "A placed cloud goes through the one density function. The ground factor under it matches the model's reference for the volume's density within M2's bound, the Sun-path product inside it likewise, and its footprint's mean column optical depth equals its cell's.",
+          "statement": "A placed cloud goes through the one density function. For a cooked shape that is not a dome, the ground factor under it matches the model's reference for the volume's coarse density within M2's bound, and the Sun-path product inside it likewise. At stated points over its footprint and around it, at volume-form weights of 0, 1 and between, the column the GPU draws never exceeds the model's query by more than the bound this milestone measured first, and is zero where the query and its neighbours within a texel are clear.",
           "check": "cargo test --locked --offline -p thrum-clouds --test placed_shade_gpu",
+          "ask": "Is the bound the measured one in `docs/evidence/CLOUDS/M6-conformance.md`, with the filtering that explains it? Is the shape asymmetric, so that a dome of the same mean column would fail?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M6.3",
-          "statement": "In the game, a changed volume product stays pending until a submitted frame that advances history has used it, marks the layer's history invalid, and uploads only what changed. With no lease resident, cells stay procedural. Cells beyond the placed capacity stay procedural, nearest first, and the refusal is counted and reported.",
+          "statement": "In the game, a changed volume product stays pending until a submitted frame that advances history has used it, marks the layer's history invalid, and uploads only what changed. With no lease resident, and beyond the volume-form capacity nearest first, placed cells are drawn in their column form, the refusal is counted and reported, and no query answer changes.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_placed_lease_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -603,7 +635,7 @@
         },
         {
           "id": "M6.6",
-          "statement": "The stand-in shapes and the stand-in growth track are made in this repository by a tool that is committed with them, are labelled as stand-ins in the game, and take nothing from Broadsides.",
+          "statement": "The stand-in shapes and the stand-in growth track are made in this repository by a tool that is committed with them, with footprints derived by the model's function, are labelled as stand-ins in the game, and take nothing from Broadsides.",
           "ask": "Does the tool's source show how each stand-in is made, and does `docs/evidence/CLOUDS/PROVENANCE.md` say so?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -622,9 +654,9 @@
         },
         {
           "id": "M6.8",
-          "statement": "With placed stand-ins in view, the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent, and the bytes of the stacked products are on record for each profile.",
+          "statement": "With placed stand-ins in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of the stacked products and the footprints for each profile. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene placed",
-          "ask": "Is each cloud pass's time recorded beside the last milestone's record, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -695,7 +727,7 @@
         {
           "id": "M7.5",
           "statement": "At 8x and at 60x, a cloud followed through its life is born, rises and thins away. Nothing reappears where it stood on a beat, a deck's gaps do not open and close in step, and nothing pops.",
-          "inspect": "Capture `realtime` sequences of 60 seconds at 8x and at 60x under the fair and the broken presets, from 40 m. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
+          "inspect": "Capture `realtime` sequences at 8x and at 60x under the fair and the broken presets, from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -704,7 +736,7 @@
         },
         {
           "id": "M7.6",
-          "statement": "Across the four presets and the ramps between them, the GPU weather map matches the CPU field within the recorded bound, and a wind change mid-run alters only later travel. Over any ground point, the optical depth that is drawn never exceeds the queried column optical depth, and is zero where the query says clear.",
+          "statement": "Across the four presets and the ramps between them, the GPU weather map matches the CPU field within the recorded bound, and a wind change mid-run alters only later travel. At the map's texel centres, over cells, the deck and placed cells, the column the GPU draws never exceeds the queried column optical depth by more than the recorded bound, and is zero where the query and its neighbours within a texel are clear.",
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_range_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -723,9 +755,9 @@
         },
         {
           "id": "M7.8",
-          "statement": "Under the broken and the overcast presets the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent.",
+          "statement": "Under the broken and the overcast presets, the paired cost record is taken again at 2560\u00d71440, beside the fair preset's record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene decks",
-          "ask": "Is each cloud pass's time recorded for both presets beside the fair preset's record, with the load on the machine, and is growth of a quarter or more explained?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -829,9 +861,9 @@
         },
         {
           "id": "M8.8",
-          "statement": "Under the overcast preset with the overlay and the haze scale on, the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent.",
+          "statement": "Under the overcast preset with the overlay and the haze scale on, the paired cost record is taken again at 2560\u00d71440, beside M7's record for the same view, with the overlay's and the atmosphere's added passes timed by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene overcast-lit",
-          "ask": "Are the overlay's and the atmosphere's added passes timed by name beside M7's record, with the load on the machine?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -922,7 +954,7 @@
         },
         {
           "id": "M9.7",
-          "statement": "Each cadence, extent and count in the design's list of knobs is a named runtime value with a range and a declared invalidation. Setting each to both ends of its range while the scene runs applies that invalidation, changes no weather-map texel and no query answer, and creates no pipeline or resource.",
+          "statement": "Each cadence, extent and count in the design's list of knobs is a named runtime value with a range and a declared invalidation. Setting each to both ends of its range while the scene runs applies that invalidation, changes no query answer and no column the weather map holds, and creates no pipeline or resource.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_knobs_gpu",
           "ask": "Can a caller that knows nothing of clouds list the knobs and set one, as the governor will? Is any cadence in `thrum-clouds` a constant that is not in the list?",
           "lock": "gpu",
@@ -934,9 +966,9 @@
         },
         {
           "id": "M9.8",
-          "statement": "Across the four presets, at noon and at a 10\u00b0 Sun, with placed stand-ins, the overlay and the haze scale on, the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent.",
+          "statement": "Across the four presets, at noon and at a 10\u00b0 Sun, with placed stand-ins, the overlay and the haze scale on, the paired cost record is taken again at 2560\u00d71440, beside the earlier records for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene range",
-          "ask": "Is each cloud pass's time recorded for every preset and Sun beside the earlier records, with the load on the machine, and is growth of a quarter or more explained?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -975,7 +1007,7 @@
         },
         {
           "id": "M10.2",
-          "statement": "The six fair, three mediocris and three congestus volumes and the congestus growth track are in the game as stacked volume products. Each slab's voxels hash to the value recorded for its shape from the source, and `docs/evidence/CLOUDS/PROVENANCE.md` lists every lifted file with its source commit, path and licence.",
+          "statement": "The six fair, three mediocris and three congestus volumes and the congestus growth track are in the game as stacked volume products, with footprints derived from them. Each slab's voxels hash to the value recorded for its shape from the source, and `docs/evidence/CLOUDS/PROVENANCE.md` lists every lifted file with its source commit, path and licence.",
           "check": "cargo test --locked --offline -p v1-game --test clouds_library",
           "ask": "Does the provenance file match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides source at the brief's commits?",
           "target": "mac-metal",
@@ -1026,9 +1058,9 @@
         },
         {
           "id": "M10.7",
-          "statement": "With all twelve shapes and the track resident and in view, the valley's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent, and the library's bytes are on record for each profile.",
+          "statement": "With all twelve shapes and the track resident and in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of each stacked product for R8 and for BC4. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene library",
-          "ask": "Is the record paired and from the claimed commit, with the load on the machine and the bytes of each stacked product for R8 and for BC4?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1114,9 +1146,9 @@
         },
         {
           "id": "M11.6",
-          "statement": "With clouds on, the sea scene's whole frame at 2560\u00d71440 stays within the 8.33 ms interval wherever it does with clouds absent.",
+          "statement": "With clouds on, the paired cost record is taken for the sea scene at 2560\u00d71440 against the same scene with clouds absent, with each cloud and sea pass timed by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene sea",
-          "ask": "Is the record paired and from the claimed commit, with the load on the machine and each cloud and sea pass timed by name?",
+          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1137,7 +1169,7 @@
     },
     {
       "id": "M12",
-      "name": "On the Mac's Apple recipe the sky runs with MetalFX and the governor at the display's full refresh, and the module is closed",
+      "name": "On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -1165,7 +1197,7 @@
         },
         {
           "id": "M12.3",
-          "statement": "The governor lists the clouds' knobs and moves each. When the scene is loaded past the refresh it lowers them, and it restores them when the load is gone, with each knob's declared invalidation applied and no weather-map texel or query answer changed.",
+          "statement": "The governor lists the clouds' knobs and moves each. When the scene is loaded past the refresh it lowers them, and it restores them when the load is gone, with each knob's declared invalidation applied and no query answer and no column the weather map holds changed.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_governor_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1184,9 +1216,9 @@
         },
         {
           "id": "M12.5",
-          "statement": "At the showcase's extent on both of the Mac's recipes, capture off, across the four presets with the library in view, the valley's whole frame stays within the 8.33 ms interval wherever it does with clouds absent, with each cloud pass's time and the texture memory on record.",
+          "statement": "At the showcase's extent on both of the Mac's recipes, capture off, across the four presets with the library in view, the paired cost record is taken with each cloud pass's time and the texture memory beside the clouds-absent run. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene range --extent showcase --recipes",
-          "ask": "Is the extent the one `SHOWCASE`'s Mac rows use? Are both recipes in the record, with the load on the machine and bytes per resource?",
+          "ask": "Is the extent the one `SHOWCASE`'s Mac rows use, and are both recipes in the record, with the load on the machine and bytes per resource? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1197,7 +1229,7 @@
         {
           "id": "M12.6",
           "statement": "ATTENDED SETUP: on the built-in display the capture-off release game runs the valley's route with clouds on, on both recipes, with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated.",
-          "ask": "Does the presented-time witness, as `PLATFORM-RUNTIME-MAC` qualified it, cover the whole route on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the clouds?",
+          "ask": "Does the presented-time witness, as `PLATFORM-RUNTIME-MAC` qualified it, cover the whole route on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, shown to lie outside the clouds, or logged as a follow-up for the performance phase?",
           "target": "mac-metal",
           "needs": {
             "type": "access",

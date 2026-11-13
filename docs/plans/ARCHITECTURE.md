@@ -206,7 +206,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `SEA`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `SEA`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
-| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, with a far value for receivers below its lowest Sun elevation or outside its region | `CLOUDS` from its M2 (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
+| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2 (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
 | **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `SEA` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
 | Ordered medium segments `(T,S)` and the reflection provider. The cloud segment never starts below its profile's lowest base and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The sea composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `SEA` precedes `CLOUDS` in a scene's contribution list | `SEA`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [SEA](SEA/DESIGN.md#optics) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
@@ -292,11 +292,16 @@ text and draws the same bytes as today, which is that module's cue E3. `ATMOSPHE
 whichever builder lands second integrates on top. A fifth ruling covers the two games clouds are shown in.
 
 1. **A provider may write the Sun-path optical depth on the GPU** (`CLOUDS` M2). M5's field is CPU bytes with a
-   rigid drift. A provider may instead register a 2D texture that its own `simulate` pass writes, with its plane,
-   region, displacement, lowest Sun elevation and validity given each frame, and one `tau_far`. A receiver below
-   the lowest elevation or outside the region gets `exp(-tau_far)`. A provider that sets none has `tau_far` zero,
-   and its receivers get exactly 1 there, as now. A receiver at or above the plane, and an invalid frame, still
-   get exactly 1.
+   rigid drift, read along the true Sun, and a receiver below its lowest Sun elevation or outside its region gets
+   exactly 1. A provider may instead register a 2D texture that its own `simulate` pass writes, with, each
+   frame, its plane, region, displacement and validity, the **path direction** its columns follow, a border
+   width and one `tau_far`. Such a field has no lowest elevation: the provider keeps its path direction a
+   continuous function of the true Sun (`CLOUDS` holds its elevation at a floor), and a receiver is projected
+   to the plane along it at every Sun elevation. Its factor is `mix(exp(-tau_far), exp(-tau), w)`, where `w` is
+   1 inside the region, falls smoothly to 0 across the border inside the region's edge, and is 0 outside. So
+   the factor is continuous in the Sun's elevation and across the edge, whatever the field holds there. The
+   CPU-fed form states none of these and its receivers get exactly what they do now. A receiver at or above the
+   plane, and an invalid frame, still get exactly 1.
 2. **Aerial transport to a far sky point** (`CLOUDS` M3). The lent aerial operation stops at 32 km. For a point
    beyond it on a ray that ends in the sky, it returns the transmittance chart's ratio between the two ends, and
    an in-scatter that is the sky's radiance in that direction apportioned by optical depth: a stated
@@ -316,8 +321,10 @@ whichever builder lands second integrates on top. A fifth ruling covers the two 
    Putting clouds in the V1 exit scene by default would change the exit, which is the owner's.
 
 Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. `CONTENT-LOOP`'s
-anticipated cook-time atlas is not asked for: a game stacks its shapes into one `TVOL` source, whose slabs keep
-their mips apart.
+anticipated cook-time atlas is not asked for: a game stacks its shapes into one `TVOL` source of power-of-two
+slabs, cooked as any volume is. Its mips stay inside a slab only down to the level with one texel a slab, so
+`CLOUDS` reads no coarser level and holds its coordinate inside the slab
+([CLOUDS](CLOUDS/DESIGN.md#placed-volumes)); nothing is asked of the cooker.
 
 Track 3's interfaces are in [their own table](#interfaces-track-3).
 
@@ -1063,3 +1070,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   the sky overlay and haze scale was added, and [five seam rulings](#seam-rulings-for-clouds) settle its asks of
   `ATMOSPHERE` and of the two games it is shown in. The clouds' assumption moved to [its plan](CLOUDS/PLAN.md).
   No contract, exact baseline or other module's done-when item changed.
+- 2026-11-14 `CLOUDS` revised after [its design review](../evidence/CLOUDS/design-review.md).
+  [Ruling 1](#seam-rulings-for-clouds) now gives a GPU-written Sun-path field a path direction, a border and a
+  far value, so its factor is continuous in the Sun's elevation and across the field's edge; the Sun-path row
+  says the same. The note on stacked volumes states how far their mips stay inside a slab. No other ruling,
+  contract, exact baseline or other module's done-when item changed.
