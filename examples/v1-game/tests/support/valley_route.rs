@@ -68,16 +68,7 @@ fn recapture_failure(
     }
 }
 
-async fn prove() {
-    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
-        .expect("route file");
-    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
-    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
-    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
-        CaptureSource::SceneLinear
-    } else {
-        CaptureSource::Sdr
-    };
+async fn metal() -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -92,6 +83,20 @@ async fn prove() {
         })
         .await
         .expect("device");
+    (adapter, device, queue)
+}
+
+async fn prove() {
+    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
+        .expect("route file");
+    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
+    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
+    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
+        CaptureSource::SceneLinear
+    } else {
+        CaptureSource::Sdr
+    };
+    let (adapter, device, queue) = metal().await;
     let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("valley oracle surface"),
