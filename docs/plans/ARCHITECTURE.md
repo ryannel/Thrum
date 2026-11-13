@@ -13,10 +13,10 @@
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 |
-| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing |
-| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing |
+| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
+| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP |
@@ -95,7 +95,7 @@ the road to the exit.
 | `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | [Design](ATMOSPHERE/DESIGN.md) |
 | `BASELINE-GUARD` | T2 | The exact-baseline registry, the one-command verifier, its proofs and the proof gate in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
-| `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes | [Brief](#content-loop-g5) |
+| `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
 | `SHOWCASE` | G7 | The exit scene and route in `examples/v1-game`, the V1 exit record | [Brief](#showcase-g7) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
@@ -115,7 +115,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 |---|---|
 | One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE`; `PLATFORM-RUNTIME-MAC` M2 and M3 |
 | Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` M6 |
-| Cooked meshes and textures; hot reload | `CONTENT-LOOP` close; `CREATOR` |
+| Cooked meshes and textures; hot reload | `CONTENT-LOOP` M3; `CREATOR` |
 | Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` M6 |
 | GPU culling | `CULLING` M3 |
 | MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` M10–M12; `APPLE-PRESENTATION` M4–M11 |
@@ -147,7 +147,8 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    after the other with the two beside it.
 6. **After TAAU.** `ATMOSPHERE` M6, because antialiasing changes every edge and gradient the sky review judges.
    `APPLE-PRESENTATION` M4–M7 (extent, scale, EDR, governor). `APPLE-TILE` M10–M11, then `APPLE-PRESENTATION` M8
-   (MetalFX), M9 and M10. `CONTENT-LOOP` and `CREATOR` M3 close at any point here.
+   (MetalFX), M9 and M10. `CONTENT-LOOP` M3 and `CREATOR` M3 close at any point here. `CONTENT-LOOP` M1
+   (leases) starts earlier, after `APPLE-PRESENTATION:M2`, and its M2 (cooked mesh rows) after `CULLING:M3`.
 7. **The exit.** `APPLE-TILE` M12 and `APPLE-PRESENTATION` M11 (paired proof), then `SHOWCASE`.
 8. **Track 2.** `SEA` and `CLOUDS` each start with a CPU authority and oracle milestone that needs nothing from the
    renderer. Their GPU milestones start where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
@@ -168,7 +169,7 @@ a named milestone.
 | G3s: one shared sky, Sun, light-transmittance and environment-reflection products | `ATMOSPHERE:M5` (identity, lent products, the one cloud optical-depth path) |
 | Graph: 3D and cube resources, cadence; async-compute eligibility as a declared seam | `EFFECT-GRAPH:M3` (kinds in M1, state and cadence in M2, the stage after opaque and the declared seam in M3) |
 | Frame and V4: effects supply motion, reactivity and reset epochs; reconstruction | `APPLE-PRESENTATION:M2` (third forward target, history protocol) and `M3` (TAAU) |
-| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP` (density volume product, R8 portable and BC4 desktop) |
+| G5: cook and map 3D-volume products; cloud volumes loaded | `CONTENT-LOOP:M1` (leased density volumes, R8 portable and BC4 desktop) |
 | Recipes and governor: resource and quality selection, history-safe cadence | `APPLE-TILE:M1` (recipe selection), `APPLE-PRESENTATION:M7` (governor), `M8` for the Apple reconstructor |
 
 So a first sea or cloud frame can be built in Thrum once `APPLE-TILE:M3`, `APPLE-PRESENTATION:M3`,
@@ -191,13 +192,14 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
 | Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) |
 | **Effect passes and resources**: a contribution declares its own compute and render passes at five named frame stages, with 3D, cube and mipped storage-array textures, persistent, ping-pong and world-anchored wrapping state stepped by the tick and committed only with a submitted frame, a runtime cadence, and quality knobs. A scene holds an ordered list of contributions | `EFFECT-GRAPH` → `SEA`, `CLOUDS`, `ATMOSPHERE`; `RENDER-2D` later | [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#mechanisms) |
-| **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows | `CULLING` (the route and its culling), `CONTENT-LOOP` (cooked meshes as rows) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity) |
+| **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs | `CULLING` (the route and its culling), `CONTENT-LOOP:M2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) |
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `SEA`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `SEA`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
 | **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver | `CLOUDS` (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `SEA` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products) |
 | Ordered medium segments `(T,S)` and the reflection provider | `SEA`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08 |
-| Cooked products, including density volumes | `CONTENT-LOOP` → `CLOUDS`, `SEA` (foam atlas), games | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
+| Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
+| **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted. Each product carries identity and is reported once when it changes. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
 | **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09; `SEA`'s design |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
@@ -223,6 +225,13 @@ runtime and timing files by the `CREATOR` M2 builder, after `APPLE-TILE:M3` is D
 [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) defines. `APPLE-TILE`'s items do not change. Once built, the switch
 belongs to the frame runtime: later work there (`APPLE-TILE` M10–M12, `APPLE-PRESENTATION`, `EFFECT-GRAPH`) keeps
 its tests passing, and any timing it adds, a native segment's included, is not gathered while the switch is off.
+
+**Seam ruling for `CONTENT-LOOP` M2.** Replacing a mesh row's geometry in a prepared scene needs a change to the
+mesh arena and the bucket route, which `CULLING` owns and which no interface offered. It is built in
+`thrum-render`'s `synthetic/{mesh_arena,mesh_route,camera_culling,shadow}.rs` and the frame host by the
+`CONTENT-LOOP` M2 builder, after `CULLING:M3` is Done, with the behaviour
+[CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) defines. `CULLING`'s items and its exact comparisons
+do not change. Once built, row replacement belongs to the route: later work there keeps its tests passing.
 
 Track 3's interfaces are in [their own table](#interfaces-track-3).
 
@@ -362,17 +371,9 @@ G3c closes on the scenes that exist, the mixed-mesh field and the valley as it s
 
 ### CONTENT-LOOP (G5)
 
-Close the gate and serve track 2. The native loop, the Wasm client and both cooked draw paths are built
-([evidence](../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)). Remaining for V1: the untested
-staging-fill failure path, an independent closing review of code and evidence, and current maturity rows. For
-track 2: a density-volume product a module can map and sample (R8 on the portable recipe, BC4 on desktop, the
-iPhone encoding recorded as owed), with placement, identity and history invalidation as explicit inputs, as the
-port decision requires. Parked and staying parked: CAS garbage collection and leases, layered EAC, parameter
-files as a product kind. For the exit scene: cooked meshes offered as mesh rows of a scene's mesh selection, so
-the instance field draws and culls them under [the entity-visibility interface](#interfaces). Contracts: C05, C06.
-`needs`: `APPLE-PRESENTATION:M2`, which adds the third forward
-target to the cooked pipelines in `draw.rs`, so the gate's closing review reads the cooked draw path once, in the
-shape the exit ships.
+Planned on 13 November 2026: [design](CONTENT-LOOP/DESIGN.md), [plan](CONTENT-LOOP/PLAN.md). The first sea or
+cloud frame that samples a cooked product needs its M1; `SHOWCASE` needs its last milestone, M3. Parked and
+staying parked: CAS garbage collection and leases on the store, layered EAC, parameter files as a product kind.
 
 ### SHOWCASE (G7)
 
@@ -786,3 +787,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   Chrome baseline is four retained digest manifests, by a ruling with `APPLE-TILE`. `CULLING` M2 and `EFFECT-GRAPH`
   M2 gained `BASELINE-GUARD:M1` in their `needs`. `CULLING` no longer builds a live mode switch. No other module's
   done-when item changed.
+- 2026-11-13 `CONTENT-LOOP` planned, with a design, plan and done-when file, from the lead's task quoted in its
+  design. Three milestones: leases (after `APPLE-PRESENTATION:M2`), cooked mesh rows with live replacement (after
+  `CULLING:M3`) and the close of G5 (after `APPLE-PRESENTATION:M3`). The leases interface and the seam ruling for
+  row replacement were added above; `SEA` and `CLOUDS` now name `CONTENT-LOOP` M1, and the port's G5 condition is
+  met there. No other module's done-when item changed.
