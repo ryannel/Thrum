@@ -343,9 +343,23 @@ impl Loader {
     fn open_texture(
         &self,
         source: Source<'_>,
+        confirmed: &Confirmed,
         hash: &ContentHash,
         volume: bool,
-    ) -> Result<Ktx2, AssetError> {
+    ) -> Result<Option<Ktx2>, AssetError> {
+        if let Some(texture) = confirmed.textures.get(hash) {
+            let dimension = if volume {
+                wgpu::TextureDimension::D3
+            } else {
+                wgpu::TextureDimension::D2
+            };
+            if texture.texture.dimension() != dimension {
+                return Err(AssetError::Malformed(
+                    "texture dimension does not match its use",
+                ));
+            }
+            return Ok(None);
+        }
         let product = Ktx2::open(source.map(hash)?)?;
         if product.is_3d() != volume {
             return Err(AssetError::Malformed(
@@ -373,7 +387,7 @@ impl Loader {
                 "format not enabled on this device",
             ));
         }
-        Ok(product)
+        Ok(Some(product))
     }
 
     fn open(
@@ -404,11 +418,7 @@ impl Loader {
                 product.validate_references()?;
                 Some(product)
             };
-            let texture_product = if confirmed.textures.contains_key(&texture.product) {
-                None
-            } else {
-                Some(self.open_texture(source, &texture.product, false)?)
-            };
+            let texture_product = self.open_texture(source, confirmed, &texture.product, false)?;
             opened
                 .meshes
                 .push((mesh, mesh_product, texture.product, texture_product));
@@ -419,11 +429,7 @@ impl Loader {
                 .resolve(&placement.name, &self.volume_profiles)
                 .ok_or_else(missing)?;
             volume_profile = Some(entry.profile);
-            let product = if confirmed.textures.contains_key(&entry.product) {
-                None
-            } else {
-                Some(self.open_texture(source, &entry.product, true)?)
-            };
+            let product = self.open_texture(source, confirmed, &entry.product, true)?;
             opened.volume = Some((entry.product, product));
         }
         for request in &self.config.leased {
@@ -445,19 +451,14 @@ impl Loader {
                     request.name
                 )))
             })?;
-            let product = if confirmed.textures.contains_key(&entry.product) {
-                None
-            } else {
-                Some(
-                    self.open_texture(source, &entry.product, volume)
-                        .map_err(|error| {
-                            AssetError::Io(std::io::Error::other(format!(
-                                "lease {}: {error}",
-                                request.name
-                            )))
-                        })?,
-                )
-            };
+            let product = self
+                .open_texture(source, confirmed, &entry.product, volume)
+                .map_err(|error| {
+                    AssetError::Io(std::io::Error::other(format!(
+                        "lease {}: {error}",
+                        request.name
+                    )))
+                })?;
             let portable_hash = source.portable_hash(&request.name).ok_or_else(|| {
                 AssetError::Io(std::io::Error::other(format!(
                     "lease {}: portable product unavailable",
