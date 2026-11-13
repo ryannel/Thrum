@@ -34,66 +34,66 @@
       }
     },
     "M2": {
-      "definitions": "beff72abe315b3a8d2197da5eaeffdda65057ca65a9ededbd7b1bc9ce3198d0e",
+      "definitions": "acd8803e8cfc59c5491db2d0cbf8fe38946d63bbe06549d37226bdb5313dfa0c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M3": {
-      "definitions": "7effe07dfb5941ffe6bb295adbc1a1c3ec918458df4a54976ead20be95f54e3e",
+      "definitions": "e1e9eca2577fd966162d4905e7366ec193bb18ab08c741a311e249b7d2db2813",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M4": {
-      "definitions": "31824e1dc2d084506998b00cfc448faaab3b9c91f9d60d1d13e8c29b066059f5",
+      "definitions": "83778d96e4254bc98b35ee6e35607026d61047565b3c1e7b00f56b8fb499fd1a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M5": {
-      "definitions": "49c3ac8aff339b3fd2cb566ee6a969da75a0d0903e329f9a886eead80517b1ea",
+      "definitions": "cdaf51e321f9a55f8c37a31045821c05ac909d079f04b168791572a6d5769ff5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M6": {
-      "definitions": "02ed5ed26c82ff8269fb5a8769db96af6807fe8dfd6a0755cd0dd9a9929edfea",
+      "definitions": "6ca9c1bca7e8184fec2f484e8d7e820524f500d044db681f7c745b5e487e09ff",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M7": {
-      "definitions": "ae68a7ccc3a1b99e64a7128fa87360f2b090b123be24bb5566bfdf685067f0f6",
+      "definitions": "87408093360d3e98af2ea16c73f6c76bc473d2f97ef4819e5fcb6b2ceed40d49",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     },
     "M8": {
-      "definitions": "f0db5191d770474a5a06b9196a91e626da1c421f964a609047a2ac31cddc25c6",
+      "definitions": "8835b2ac069f4032ecb4594ecb13f6df75e1790b1aeac290a395e3c161e2a312",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
-        "at": "2026-11-13T20:12:27Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
+        "at": "2026-11-13T20:28:50Z"
       }
     }
   },
@@ -101,10 +101,14 @@
     {
       "task": "Plan module SWARM. It needs: SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION",
       "at": "2026-11-13T20:12:27Z"
+    },
+    {
+      "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T20:28:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T20:12:27Z"
+    "at": "2026-11-13T20:28:50Z"
   }
 }
