@@ -1,0 +1,61 @@
+{
+  "module": "GAME-UI",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "f5d83cd39c98a6ac504f8fa938d663d1cb91ba5e7c0d028228248a1e2b1704da",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module GAME-UI. It needs: RENDER-2D",
+        "at": "2026-11-13T19:21:23Z"
+      }
+    },
+    "M2": {
+      "definitions": "fa78a36d764eac6076c375d071a8b60f9115aa0b23fb128382d18f491d8a0357",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module GAME-UI. It needs: RENDER-2D",
+        "at": "2026-11-13T19:21:23Z"
+      }
+    },
+    "M3": {
+      "definitions": "0c6cd4fdee5c50695bef9648de5f8ef98016008729293a527fb1e922f3d68144",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module GAME-UI. It needs: RENDER-2D",
+        "at": "2026-11-13T19:21:23Z"
+      }
+    },
+    "M4": {
+      "definitions": "cb597e3e445e6c12e9c3572816e06821f29706a59e709144d558788f5a37bd1d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module GAME-UI. It needs: RENDER-2D",
+        "at": "2026-11-13T19:21:23Z"
+      }
+    },
+    "M5": {
+      "definitions": "49a1f03c25386a0e510bf239b40c885ec4cefce5d724b479b4b818f247e7232f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module GAME-UI. It needs: RENDER-2D",
+        "at": "2026-11-13T19:21:23Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module GAME-UI. It needs: RENDER-2D",
+      "at": "2026-11-13T19:21:23Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T19:21:23Z"
+  }
+}
