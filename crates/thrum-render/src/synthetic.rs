@@ -1533,21 +1533,13 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
-        let shader_source = scene_source::compose_with_cloud(
+        let (shader_source, shader, fragment_entry) = scene_source::prepare(
+            device,
             atmosphere.is_some(),
             air_shadow.is_some(),
             cloud.is_some(),
-            shadow.is_some(),
+            scene_source::SunShadows::from(shadow.is_some()),
         );
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("prepared synthetic shader ABI2"),
-            source: wgpu::ShaderSource::Wgsl(shader_source.as_str().into()),
-        });
-        let fragment_entry = if shadow.is_some() {
-            "shadowed_fragment"
-        } else {
-            "fragment"
-        };
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
         let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
             device.render(&wgpu::RenderPipelineDescriptor {
