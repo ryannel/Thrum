@@ -1,6 +1,28 @@
 {
   "module": "CONTENT-LOOP",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/CONTENT-LOOP/design-review.md",
+    "commit": "8d09e6b4d2a67b72fe88d449be1f94baf297e008",
+    "hash": "fd97d6fef8ae0697c49e29457b0302a23cd9163a7682316147909fe585708430",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 107987,
+      "cached": 1367808,
+      "output": 8968,
+      "turns": 1
+    },
+    "at": "2026-11-13T06:31:48Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "cbaacdc6eec4a2d4cdbf9e78ccb208754deb352c9afcc08822690378420743ea",
