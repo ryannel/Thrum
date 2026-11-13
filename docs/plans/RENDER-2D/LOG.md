@@ -31,3 +31,29 @@
   GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
   The reviewer should also read the seam rulings in the module list, which this design depends on.
+- 2026-11-13 [Design review](../../evidence/RENDER-2D/design-review.md): changes requested, two Must Fix findings
+  and two Suggestions. The planner resolved all four in the entries below.
+- 2026-11-13 Must Fix `sort-band-does-not-prevent-reversals`. The band held around each row's own sort value is
+  gone: two rows that travel together use it up and then swap freely, as the review's trace shows. The order is
+  now one list kept from tick to tick, in which two near rows exchange only when one has passed the other by more
+  than the band. The design states what that guarantees, with the argument, and what it does not: rows that are
+  not neighbours in the list can be further out of order through a chain, and no total order avoids that without
+  exchanging a pair that has not passed. M2.2 now claims the exact order alone, M2.13 is new and claims the rule,
+  M5.3 measures the crowd and no longer rests the guarantee on a trace, and M5.6 also asks that a clearly lower
+  body is in front.
+- 2026-11-13 Planner's probe 4, in [the evidence folder](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
+  The rule held on the review's pair and on 144,000 ticks of random motion, where the old band failed 2,805 times.
+  It first put the band between every two rows; in a packed crowd of 10,000 that left 1.2% of overlapping pairs
+  more than a band out of order, growing with the crowd, so the rule applies the band to near rows only (0.04%).
+  Researched: no published source for hysteresis in sprite order was found; shipped advice stops at a tie-break.
+- 2026-11-13 Must Fix `c07-no-reconstruction-exception-unresolved`. C07 and the hardware-native frame contract now
+  name two forms of the frame contract, full for every view of a 3D scene and no reconstruction for a view of a 2D
+  scene, with a provider asked for a 2D scene refused by name. Seam ruling 1 in the module list states it, with
+  the frame runtime as producer and `APPLE-PRESENTATION`'s registry and governor as consumer. No 3D view's
+  obligations changed. M1.2 now also checks that no reconstructor is resolved, and M1.3 the refusal. The current
+  design hashes in the maturity ledger were refreshed for the changed contract file.
+- 2026-11-13 Both Suggestions taken, because each removes a wording a reviewer could fail a correct build on.
+  M3.1 retains a pixel figure and a weight figure, measured apart, and M3.2 and M3.7 test the weight. M1.2 names
+  the scene with no contribution, and M1.3 and mechanism 1 say what a contribution adds.
+- 2026-11-13 The revised design has not been reviewed. No builder starts until a design review returns Design
+  Approved. The reviewer should also read C07's new paragraph and seam ruling 1, which the design depends on.

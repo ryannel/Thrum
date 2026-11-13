@@ -22,6 +22,7 @@ written; its code was thrown away on purpose, so build from the design.
 - Assumption: sprites blend in linear light, as the rest of the engine does. Half-transparent art looks lighter over dark than in Aseprite or Photoshop (white at half alpha over black is 188, not 128); hard-edged pixel art is unaffected. The other choice blends in display space, matches paint tools, and gives up the shared output path.
 - Assumption: bright effects clip at white on an SDR display. The frame keeps values above white for an EDR display, and how they look on the XDR panel is not judged in this module.
 - Assumption: a scene shows at most eight sprite sheets at once.
+- Assumption: where sprites overlap in a crowd, an order that holds still matters more than one sorted exactly by height. A sprite can therefore be drawn behind a neighbour that is very slightly higher on the screen (by a few times the jitter the engine is hiding), so that packed sprites do not flicker. The other choice sorts exactly and lets neighbours that push each other swap every few ticks.
 - Assumption: test art is made by the builder (generated test cards and a few simple original sprites), and the owner's judgement of a look is not an item here. The game's art is `SWARM`'s.
 
 ## M1 A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome
@@ -32,25 +33,29 @@ Start by reading what V1 left: the design was written before `APPLE-TILE` M10 to
 to M11 were built. `FrameHost` in `crates/thrum-render/src/runtime.rs` held one prepared 3D scene when this was
 planned, and the tone stage took one bound scene-linear colour with its exposure (`synthetic/display.rs`,
 `synthetic_display.wgsl`). Scene-kind selection, the display-referred transfer and a scene with no reconstruction
-are built in those files under ruling 1; the 3D kind stays the default and must compile to the same passes.
+are built in those files under ruling 1; the 3D kind stays the default and must compile to the same passes. C07's
+no-reconstruction form, added for this module, is the contract for the last of them, and the refusal of a
+reconstructor asked for a 2D scene belongs with `APPLE-PRESENTATION`'s registry code.
 Sheets are embedded in this milestone and rows are frame rows; world rows are M2's. The sprite scene is a new `THRUM_SCENE` selection beside the ones in
 `examples/v1-game/src/content.rs`; `thrum_app`'s window, `offscreen` capture and `web` shell are already generic
 over the host. `scripts/render2d.py` is new and this module's.
 
 ## M2 Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still
 
-Criteria: M2.1–M2.12 in the done-when file.
+Criteria: M2.1–M2.13 in the done-when file.
 
 The 3D instance field is the precedent for extraction, changed-row upload and interpolation: `extract.rs` and
 `synthetic/upload.rs`. The world rows of the sprite scene come from the V1 game's own simulation, which stays
-as it is.
+as it is. The order is new: nothing in the 3D path keeps a list from tick to tick. Its rule and the cases a test
+must cover are in [mechanism 4](DESIGN.md#4-order), and the planner's throwaway version is described in
+[probe 4](../../evidence/RENDER-2D/planning-probe.md#4-does-a-kept-order-with-a-band-stop-reversals-and-what-does-it-cost).
 
 ## M3 Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls
 
 Criteria: M3.1–M3.11 in the done-when file.
 
-The order is part of the task: M3.1 measures and retains the coverage bound first, and M3.2 and M3.7 then test
-against the retained record. Mip levels and gutters for embedded sheets are made by the engine here; M4's cooker
+The order is part of the task: M3.1 measures and retains the two coverage figures first, and M3.2 and M3.7 then
+test against the retained weight figure. Mip levels and gutters for embedded sheets are made by the engine here; M4's cooker
 must make the same.
 
 ## M4 An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome
@@ -77,7 +82,7 @@ Stop rules, for every milestone:
 - A 3D scene must compile to the same passes and draw the same bytes. If it does not, stop and fix that first.
 - If your change fails an exact test, a baseline or a witness another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`.
 - If the code V1 left cannot carry a mechanism of the design, write the difference in the log and end `BLOCKED`. Do not build a second frame host, a second output path or a loader of your own.
-- An exact comparison that fails is diagnosed. Never widen it, and never rewrite the retained coverage bound to pass.
+- An exact comparison that fails is diagnosed. Never widen it, and never rewrite a retained coverage figure to pass.
 - No time stops the build (brief decision 3). Record a row that trips a tripwire as measured, note what you found in the log, and keep building. Do not thin a crowd or shrink a window to improve a row.
 - Record only runs of the commit being claimed, with the load on the machine.
 - Chrome and the simulator start outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.

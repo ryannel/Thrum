@@ -291,6 +291,16 @@ motion vectors in the convention above, reversed-Z depth, exposure, reactive/tra
 optional guide buffers (albedo, normals, roughness, hit distance). V4 reconstruction, frame interpolation and
 denoising providers, whether Thrum's own, platform hardware (MetalFX) or vendor (DLSS, FSR, XeSS), consume only this
 contract and are selected through F2's registry.
+That is the **full** form, and every view of a 3D scene publishes it. A view of a 2D scene instead declares **no
+reconstruction** when its scene is prepared; this is a load-time selection under C04 and never changes while the
+scene runs. Such a view is drawn at its output extent and publishes the reduced form: one unjittered projection,
+exposure and output extent. It publishes none of the provider inputs (jitter, previous view-projection, motion
+vectors, depth, reactive/transparency mask, cut/reset flags, guide buffers) and need not allocate them; it has no
+history key and gives the governor no render scale. The registry resolves no reconstruction, frame-interpolation or
+denoising provider for it, whatever the device's default, and a request that names one is refused by name when the
+scene is prepared: never accepted and ignored, and never fed fabricated inputs. The frame runtime owns the
+declaration and V4 owns the refusal
+([seam ruling 1 for RENDER-2D](../plans/ARCHITECTURE.md#seam-rulings-for-render-2d)).
 Exposure distinguishes the CPU camera request from its GPU-resolved sample. The request selects fixed gain or a
 declared physical incident meter; SDR display-operator selection is independent. The resolved resource carries storage scale,
 inverse gain, actual metered lux, operator identity, validity and submitted identity. A fixed fallback is not a
