@@ -68,8 +68,9 @@ describes; where it and this design disagree, this design wins, and M3 brings it
 **Not built.** CAS garbage collection and reader leases; layered EAC volumes; any iPhone volume encoding (owed,
 see [open questions](#open-questions)); parameter files as a product kind; sprite-sheet and font products (track
 3 adds them when it starts); cooked textures on entity materials (entities keep the scene's material table); a
-mesh-shader meshlet path; build provenance in the manifest (it waits for T1 admission); a browser client that
-verifies and stages off the page's thread. None of these is needed by the exit or by the first sea or cloud
+mesh-shader meshlet path; source admission, and with it a boundary for an external save and build provenance in
+the manifest (both wait for T1; see [what a publication promises](#what-a-publication-promises-m3)); a browser
+client that verifies and stages off the page's thread. None of these is needed by the exit or by the first sea or cloud
 frame.
 
 **Consumers.** The V1 game and `SHOWCASE` (placements and mesh rows), `CREATOR`'s sky kit (placements), `SEA` (a
@@ -81,8 +82,8 @@ foam texture), `CLOUDS` (density volumes), `RENDER-2D` and `GAME-UI` after V1 (s
 |---|---|---|
 | **C1 An edit appears.** Saving a source changes the running game | glTF meshes with separate buffers, PNG and JPEG textures, `TVOL` volumes; drawn as a placement, as an entity's mesh row, or through a lease; a mapped store on the Mac and a fetched one in Chrome | A reload that restarts the scene or re-uploads everything. Rejected by uploaded bytes that equal the changed products, unchanged textures kept by identity, and no pipeline or graph creation |
 | **C2 Nothing stalls.** No frame is late because of a first load or an edit | On the Mac, any product the device admits (a 149 MiB 512³ volume is on record), several consumers loading at once, frames in flight. In Chrome, products of the size the exit scene and the cloud library use | An offscreen proof that hides a stall in the game. Rejected by per-frame copy bytes asserted in the game, staging held to its bound, and the game's own frame records across edit windows |
-| **C3 It appears whole.** One frame shows the old content and the next the new | Every product kind; a discarded frame at the swap; reconstruction on | A half-uploaded texture, a mesh drawn with new indices over old vertices, or a ghost of the old content under TAAU. Rejected by frames compared with all-old and all-new references, and by an inspected sequence |
-| **C4 A bad save is harmless.** The last good content stays on screen and the reason is named | A broken or half-written source, a product the device cannot hold, a failed upload, a name the manifest lacks | An error that blanks the scene or repeats forever. Rejected by tests that inject each failure |
+| **C3 It appears whole.** For each reader of a product (a placement set, a lease, a mesh row), one frame shows the old content and the next the new | Every product kind; a discarded frame at the swap; reconstruction on. Readers on different paths switch in frames of their own | A half-uploaded texture, a mesh drawn with new indices over old vertices, or a ghost of the old content under TAAU. Rejected by frames compared with all-old and all-new references, and by an inspected sequence |
+| **C4 A bad save is harmless.** The last good content stays on screen and the reason is named | Every save the cooker or the runtime can tell is bad: a source that does not parse, a truncated file, a glTF whose buffer is missing or too short, a file changed while it cooks, a product the device cannot hold, a failed upload, a name the manifest lacks. An incomplete save that still validates is outside this range and is shown | An error that blanks the scene or repeats forever. Rejected by tests that inject each failure |
 | **C5 It survives the lifecycle.** Resize, capture frames and a replaced device | With an upload in flight | A view from the old device. Rejected by generation checks and equal output after restaging |
 | **C6 Other modules use products.** A sea or cloud pass samples a cooked texture or volume | Twelve 128³ volumes and a texture at once; an edit to one | A consumer with its own loader, or one that sees a product before its upload is committed. Rejected by the commit rule's test and a question on the code |
 | **C7 Shipping excludes authoring.** | Every shipping package | A clean dependency graph over a dirty binary. Rejected by the symbol scan with its positive control |
@@ -134,9 +135,15 @@ configured, as placements are.
 4. **Identity.** Each lent product carries its manifest name, content hash, profile, format, dimension, extent
    and mip count. A product whose hash did not change keeps its texture and view across generations and is not
    uploaded again.
-5. **The change signal.** The lease reports each changed product once, in the first frame its new view is
-   offered. What to do about it is the consumer's: it applies the history invalidation it declared (none, its own
-   history, or the view's reconstruction history) and writes reactive coverage under
+5. **The change signal is a comparison, not an event.** Each lent product carries a serial that moves when its
+   view does. The consumer records the serials a frame used when that frame is submitted and advances history
+   (`submitted(true)`); a product whose offered serial differs from the recorded one has changed. So a change
+   cannot be lost: when the first frame that used the new view is discarded, or is a capture that does not advance
+   history, the next frame still sees the difference. The consumer treats the change as pending in every frame it
+   records until one that used the new view is submitted and advances history, and not after. This is the
+   contribution seam's commit rule applied to the consumer, and residency keeps no state per consumer. What the
+   change means is the consumer's: it applies the history invalidation it declared (none, its own history, or
+   the view's reconstruction history) and writes reactive coverage under
    [the temporal contribution](../APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals).
 6. **A stable binding shape.** For one kind, every profile samples as filterable float with the same view
    dimension (R8 and BC4 volumes; RGBA8, BC7 and ASTC textures). A swap or a different profile needs a new bind
@@ -166,11 +173,23 @@ scene's mesh selection. Today those rows are authored in code and "changing a sl
 - **A row keeps its identity.** The row's number, each slot's choice and bucket membership do not change. Only
   the row's geometry, index range, base vertex and bounds do.
 - **Write, then switch.** The new geometry is written into arena space no drawn row uses, at most a fixed number
-  of bytes per frame. Then every reader of the row switches at one frame boundary: the forward draw ranges, the
+  of bytes per frame. Then one frame records the switch of every reader of the row: the forward draw ranges, the
   compaction's mesh table (range and bounds), the depth prepass, and the Sun casters' draws and fits. No frame
   mixes old and new.
-- **Retired space** is reused only when no frame that can still read it remains. Submitted frames are safe by
-  queue order; the one frame that is encoded and not yet submitted is the case the builder must fence.
+- **The switch is tentative, like every recording.** It commits when its frame is submitted. A discarded switch
+  frame commits nothing, and the next frame records the switch again. A buffer write queued by a discarded frame
+  still reaches the device with the next submission, so a table written for a switch that did not commit must
+  never be drawn with the old ranges; the frame after a discarded switch frame is the test of that.
+- **No switch overtakes a recorded frame.** The arena write, the switch and the retirement all go through the
+  frame host, and the host's encoded-frame token borrows it exclusively until the frame is submitted or dropped
+  ([`runtime/tokens.rs`](../../../crates/thrum-render/src/runtime/tokens.rs),
+  [EFFECT-GRAPH](../EFFECT-GRAPH/DESIGN.md)'s rule that recording is tentative). When a switch is recorded, every
+  earlier frame has been submitted or dropped. A frame encoded before a switch and submitted after it cannot
+  occur, so nothing fences it and no test builds it. Allowing it would be a change to the host contract, made in
+  `EFFECT-GRAPH`'s design first.
+- **Retired space.** The old geometry's arena space is retired when the switch frame is submitted and reused only
+  after that. Frames submitted earlier are safe by queue order. A replacement superseded before it switches gives
+  back its own space, never the space the drawn row still reads.
 - **History.** The switch frame carries the frame's history-reset flag. The instance path keys history by slot,
   with no per-mesh marker, and an edit is an authoring event, so one reset of reconstruction is accepted.
 - **Refusal.** A replacement the arena refuses, or a broken source, leaves the old row drawing with the reason
@@ -191,6 +210,42 @@ A staging chunk that cannot be filled frees its slot, records the error once, an
 pending set; the drawn and lent sets stay. wgpu cannot be made to fail a mapped range on demand, which is why
 this path has no test. M1 adds a fault probe, compiled only on request as `draw-probe` is, at the point where a
 chunk is mapped or written, so the production branch is the code that runs.
+
+### What a publication promises (M3)
+
+G5 publications are **previews**: the watcher cooks working files, not an admitted source revision. Two promises
+hold for every publication and two do not. The items claim only the first two.
+
+**Held: presentation only.** Nothing in simulation, collision, navigation or region activation reads a cooked
+product, so no publication can activate a gameplay product. This is the reading of C05's "Filesystem watcher
+events cannot activate a partly written external change set" that
+[the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md#contract-questions-recorded-reversible-option-taken)
+put in force, and it stays in force.
+
+**Held: a product that is invalid or cannot be resolved keeps the last good one.** Every case in C4's range leaves
+the previous product published, drawn and lent, with the reason recorded.
+
+**Not held: a save has no boundary.** The watcher closes a batch after 8 ms of quiet, 250 ms at most, and neither
+it nor the cooker knows where an external save ends. An incomplete save that still validates is cooked and shown:
+a changed glTF over its old buffer when the accessors still fit, or a file an editor rewrites in place and pauses
+on. The creator sees that intermediate content, whole in C3's sense, until the rest of the save lands. The next
+cook then publishes exactly what a fresh cook of the finished sources publishes, because a product is keyed by
+the bytes of every input. Refusing such a save needs source admission, which is cooking from T1's captured tree,
+and that is not built here. Readers confined to presentation, an atomic manifest and whole resident sets do not
+supply it, and no item claims it.
+
+**Not held: one switch for every reader.** C3 is a promise per reader: a placement set, a lease's set and a mesh
+row each switch whole, in a frame of their own. Placements switch in the frame that records the last copy, a
+lease in the frame after that one is submitted, and a row when its own bounded write is done. A product read
+through two paths (a mesh that is both placed and an entity's row, a texture on a placement and in a lease)
+shows new through one and old through the other in between: one frame for a placement and a lease, and as many
+frames as the row's write takes for a row. No reader is ever half switched. C05's qualified visual preview, which
+"computes the entire affected presentation closure" and "publishes at extraction", asks for one switch across
+readers. That means residency holding placements and leases back until the route's write is ready; it is
+designed with source admission, or sooner if a consumer shows a visible mismatch. M3's four edits each change a
+product read through one path.
+
+Both limits are assumptions in [the plan](PLAN.md#open-for-the-owner) for the owner to overturn.
 
 ### Closing G5 (M3)
 
@@ -214,6 +269,11 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
   records, the arena buffers and the caster set are all buffers or CPU tables. Occlusion's proof needs only that
   a mesh lies inside its row's bounds, which admission recomputes. A grown mesh with stale bounds would lose
   pixels, which M2.2's oracle shows.
+- **Frames in flight.** A submitted frame executes before any later write, by queue order. An unsubmitted one
+  holds the host, so no write or switch can be recorded behind it. That leaves two orderings to prove, and M2.3
+  proves both: a discarded switch frame, and a newer edit that supersedes a replacement before it switches.
+- **An incomplete save converges.** The action key hashes every input's bytes, so the cook after the last file
+  lands cannot reuse a product of the intermediate state. M3.7 checks it against a fresh cook.
 - **Chrome.** A fetched feed has no loader thread: verification, conversion and staging run on the page's thread
   between frames. That is cheap at showcase sizes (the valley's whole first load is under 3 MiB) and grows with
   size, which is why C2's range in Chrome is narrower than on the Mac.
@@ -235,7 +295,8 @@ every placement, lease and row by name, keeps each product whose hash is unchang
 rest. It fills staging chunks off the render thread. Each frame records at most a budget of copies. The frame
 that records the last copy draws the new placements; once it is submitted, leases offer the new set and consumers
 bind it in the next frame. A changed row's geometry goes to the host, which writes it under its own bound and
-switches the row at a frame boundary.
+records the row's switch in one frame; the switch commits when that frame is submitted. The three paths switch
+in frames of their own ([what a publication promises](#what-a-publication-promises-m3)).
 
 ## What later modules will ask
 
@@ -264,7 +325,7 @@ volume, belong to those modules and are not loosened.
 ## Cost account
 
 - **No lease, no cooked rows:** nothing is added to any frame.
-- **A steady frame with a lease:** one comparison of a serial per consumer.
+- **A steady frame with a lease:** one comparison of a serial per lent product.
 - **An upload frame:** at most one budget of GPU copies from residency (8 MiB in the game) and at most the
   route's bound of row bytes, written on the render thread. An earlier render-thread write of 16 MiB cost 1.4 to
   1.9 ms on this Mac, so the row bound is set from that and recorded.
@@ -288,6 +349,8 @@ route with nothing attached.
 5. **Tripwires on a shared machine flap.** They are judged per load class and catch doublings; a failure is
    investigated, never re-recorded to pass.
 6. **A cooked-draw change moves a retained image.** The proof gate refuses it at every landing.
+7. **A creator takes an intermediate preview for the result.** It lasts until the save finishes and is replaced
+   without a restart. M3.9's documentation says so; source admission removes it.
 
 ## Proof and builder handoff
 

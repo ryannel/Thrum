@@ -18,13 +18,14 @@ evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exa
 - Assumption: in Chrome, "without a stall" is claimed for products of the size the valley and a twelve-volume cloud library use. The browser client verifies and stages on the page's one thread; M3 records the size at which a frame is first lost, and a client that works off that thread is built only if the record shows a need.
 - Assumption: gate G5 closes after TAAU (M3 waits for `APPLE-PRESENTATION:M3`), so an edit is judged once on the image the exit shows. The other choice closes G5 earlier and leaves the reconstructed look of an edit to `SHOWCASE`.
 - Assumption: G5 closes with CAS garbage collection, layered EAC volumes and parameter files as a product kind still parked, and with any iPhone volume encoding owed; the ledger names each.
-- Assumption: G5 closes with watcher publications as presentation-only previews. Build provenance in the manifest waits for source admission (T1), as the G5 decision recommends.
+- Assumption: G5 closes with watcher publications as presentation-only previews, which the G5 decision put in force as the reading of C05. A save the cooker can tell is bad keeps the last good content, but an incomplete save that still validates (a changed glTF saved before its buffer) is shown until the save finishes, then replaced by the intended content. Refusing it needs source admission (T1), which also brings build provenance and is not built here.
+- Assumption: each reader of a product switches whole, but placements, leases and mesh rows switch in frames of their own, so a product read through two paths shows old and new side by side for a frame or a few. One switch across all readers, which C05 asks of a qualified preview, is designed with source admission.
 
 ## M1 A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome
 
 Criteria: M1.1–M1.9 in the done-when file.
 
-- [ ] Add leases to residency: names fixed in its configuration, made resident through the same loader, staging ring and budget as placements, and offered as a whole set only after the frame that recorded the last copy is submitted. Carry identity per product and report each change once.
+- [ ] Add leases to residency: names fixed in its configuration, made resident through the same loader, staging ring and budget as placements, and offered as a whole set only after the frame that recorded the last copy is submitted. Carry identity and a change serial per product, so a consumer keeps a change pending until a submitted frame that advances history has used it.
 - [ ] Build a diagnostic consumer in `examples/v1-game`, off by default, that holds only a lease and reads the twelve generated volumes and one texture in its own pass. Prove texels, the commit rule, an edit, both profiles, the shared budget and device replacement on the Mac.
 - [ ] Add the fault probe to staging and the test of the fill-failure path; test a generation with a missing, invalid or refused leased product.
 - [ ] Add the leased scenario to the `cooked_edit` bench and record it with its load class.
@@ -35,9 +36,9 @@ Criteria: M1.1–M1.9 in the done-when file.
 Criteria: M2.1–M2.8 in the done-when file.
 
 - [ ] Convert cooked mesh products to row geometry off the render thread, with the arena's admission, and let a scene's mesh selection be built from a store's current generation.
-- [ ] Under [the seam ruling](../ARCHITECTURE.md#interfaces), add row replacement to the route: a bounded write into arena space no drawn row uses, one switch of every reader of the row at a frame boundary, a history-reset frame, reuse of retired space, and the retained scene following.
+- [ ] Under [the seam ruling](../ARCHITECTURE.md#interfaces), add row replacement to the route: a bounded write into arena space no drawn row uses, one switch of every reader of the row that commits when its frame is submitted, a history-reset frame, reuse of retired space only after that, and the retained scene following. Everything goes through the frame host.
 - [ ] Give the valley's entities cooked mesh rows behind the existing opt-in selection, on the Mac and in Chrome.
-- [ ] Prove equality with a fresh scene in Direct, Frustum and Occlusion through an upload, a discarded switch frame, frames in flight, a refusal, a resize and device replacement.
+- [ ] Prove equality with a fresh scene in Direct, Frustum and Occlusion through an upload, a discarded switch frame, a newer edit that supersedes a replacement before it switches, a refusal, a resize and device replacement.
 - [ ] Measure render-thread time for the row write and record the bound; capture the two edits for the reviewer.
 
 ## M3 Edits to meshes, textures and volumes appear in the running valley without a hitch, on Mac and in Chrome, and the content gate closes
@@ -45,15 +46,16 @@ Criteria: M2.1–M2.8 in the done-when file.
 Criteria: M3.1–M3.10 in the done-when file.
 
 - [ ] Run one edit of each kind in the running valley with TAAU, on the Mac and in Chrome: record frame records with capture off, then capture each swap for the reviewer.
-- [ ] Add the Chrome case with its interval record, and find the product size at which Chrome first loses a frame.
+- [ ] Add the Chrome case with its interval record. A stall this module causes at the valley's or the twelve-volume fixture's sizes is fixed here, by the worker fallback the design names if need be. Then find the larger product size at which Chrome first loses a frame, as a record.
 - [ ] Rerun the G5 tripwires and the shipping-link scan on the commit to be claimed.
-- [ ] List the test behind each bad save, and add any that is missing.
-- [ ] Bring the maturity ledger's G5 row, the G5 decision's capability table and open items, and the public documentation up to date.
+- [ ] List the test behind each bad save, and add any that is missing. Add the test that an incomplete save which still validates ends at what a fresh cook of the finished sources publishes.
+- [ ] Bring the maturity ledger's G5 row, the G5 decision's capability table and open items, and the public documentation up to date, with the two preview limits in [what a publication promises](DESIGN.md#what-a-publication-promises-m3) stated as limits.
 
 Stop rules, for every milestone:
 - A scene with no lease and no cooked rows must compile to the same passes and draw the same bytes. If it does not, stop and fix that first.
 - If your change fails an exact test, a baseline or a witness another module owns (`APPLE-TILE`'s baselines, `CULLING`'s equalities, `APPLE-PRESENTATION`'s temporal witness), do not edit it. Write the proposal in the log and end `BLOCKED`.
 - In M2, if a live-edited scene differs from a fresh one in any pixel, stop and diagnose. Never widen the comparison or change the oracle.
+- In M2, never test a row switch by changing the arena or the route around the host's encoded-frame token. If a proof seems to need a frame encoded before a switch and submitted after it, write the proposal in the log.
 - A consumer never gets its own loader, store access or upload path. If a lease cannot serve a consumer, write the proposal in the log.
 - Run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
 - A tripwire that fails is investigated. Never re-record history to make it pass, and record only runs of accepted code.
