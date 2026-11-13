@@ -1,0 +1,101 @@
+{
+  "reviewed_commit": "e6f7a54a3675d22179f0e276838778cdff129480",
+  "scope": "Independent recomputation of retained artifacts; no new target execution",
+  "simulator": {
+    "positive": {
+      "bytes": 12648528,
+      "differing_pixels": 0,
+      "fallback_sha256": "aba4f5d8520edee1b89242121a145fa44671ba8edf9f3bfbaca8b8e45f615c44",
+      "direct_sha256": "aba4f5d8520edee1b89242121a145fa44671ba8edf9f3bfbaca8b8e45f615c44",
+      "identity": {
+        "alpha": 1.0,
+        "direct": {
+          "reason": "RequestedDirect",
+          "requested": "Direct",
+          "resolved": "Direct"
+        },
+        "direct_setup": "GameSetup { display_overlay: Off, diagnostic_clouds: false, content: Grid, camera_culling: Direct, valley_stars: false, route_overlay: Off, field_meshes: false }",
+        "direct_tick": 0,
+        "downlevel": "Some(DownlevelFlags(COMPUTE_SHADERS | FRAGMENT_WRITABLE_STORAGE | READ_ONLY_DEPTH_STENCIL | NON_POWER_OF_TWO_MIPMAPPED_TEXTURES | INDEPENDENT_BLEND | VERTEX_STORAGE | ANISOTROPIC_FILTERING | FRAGMENT_STORAGE | MULTISAMPLED_SHADING | DEPTH_TEXTURE_AND_BUFFER_COPIES | WEBGPU_TEXTURE_FORMAT_SUPPORT | BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED | UNRESTRICTED_INDEX_BUFFER | FULL_DRAW_INDEX_UINT32 | DEPTH_BIAS_CLAMP | VIEW_FORMATS | UNRESTRICTED_EXTERNAL_TEXTURE_COPIES | SURFACE_VIEW_FORMATS | NONBLOCKING_QUERY_RESOLVE | SHADER_F16_IN_F32 | MSL2_1 | TEXTURE_COMPRESSION))",
+        "expected_instances": 10000,
+        "extent": [
+          1206,
+          2622
+        ],
+        "fallback": {
+          "reason": "MissingIndirectExecution",
+          "requested": "Occlusion",
+          "resolved": "Direct"
+        },
+        "mode": "still",
+        "scope": "same initial committed game input, final SDR engine readback on the simulator device",
+        "setup": "GameSetup { display_overlay: Off, diagnostic_clouds: false, content: Grid, camera_culling: Occlusion, valley_stars: false, route_overlay: Off, field_meshes: false }",
+        "tick": 0
+      },
+      "run": {
+        "commit": "1ed70fa7bbb81e4261882409251334541481e5a8",
+        "binary_sha256": "f9887d3112ef0785f218f44234ce4c890d228afec8414cbeaf49c6bec7e9f3e4",
+        "pass": true
+      },
+      "presented": [
+        "120",
+        "240",
+        "360",
+        "480",
+        "600",
+        "720",
+        "840",
+        "960"
+      ]
+    },
+    "negative": {
+      "bytes": 12648528,
+      "differing_pixels": 1158221,
+      "fallback_sha256": "6d5c5111c0a80f3d11725db15f06d5b89c1a45642e129946cdaa040c825ef6ac",
+      "direct_sha256": "aba4f5d8520edee1b89242121a145fa44671ba8edf9f3bfbaca8b8e45f615c44",
+      "identity": {
+        "alpha": 1.0,
+        "direct": {
+          "reason": "RequestedDirect",
+          "requested": "Direct",
+          "resolved": "Direct"
+        },
+        "direct_setup": "GameSetup { display_overlay: Off, diagnostic_clouds: false, content: Grid, camera_culling: Direct, valley_stars: false, route_overlay: Off, field_meshes: false }",
+        "direct_tick": 0,
+        "downlevel": "Some(DownlevelFlags(COMPUTE_SHADERS | FRAGMENT_WRITABLE_STORAGE | READ_ONLY_DEPTH_STENCIL | NON_POWER_OF_TWO_MIPMAPPED_TEXTURES | INDEPENDENT_BLEND | VERTEX_STORAGE | ANISOTROPIC_FILTERING | FRAGMENT_STORAGE | MULTISAMPLED_SHADING | DEPTH_TEXTURE_AND_BUFFER_COPIES | WEBGPU_TEXTURE_FORMAT_SUPPORT | BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED | UNRESTRICTED_INDEX_BUFFER | FULL_DRAW_INDEX_UINT32 | DEPTH_BIAS_CLAMP | VIEW_FORMATS | UNRESTRICTED_EXTERNAL_TEXTURE_COPIES | SURFACE_VIEW_FORMATS | NONBLOCKING_QUERY_RESOLVE | SHADER_F16_IN_F32 | MSL2_1 | TEXTURE_COMPRESSION))",
+        "expected_instances": 10000,
+        "extent": [
+          1206,
+          2622
+        ],
+        "fallback": {
+          "reason": "MissingIndirectExecution",
+          "requested": "Occlusion",
+          "resolved": "Direct"
+        },
+        "mode": "still",
+        "scope": "same initial committed game input, final SDR engine readback on the simulator device",
+        "setup": "GameSetup { display_overlay: Off, diagnostic_clouds: false, content: Grid, camera_culling: Occlusion, valley_stars: false, route_overlay: Off, field_meshes: false }",
+        "tick": 0
+      },
+      "run": {
+        "commit": "1ed70fa7bbb81e4261882409251334541481e5a8",
+        "binary_sha256": "5602eb4ebba6168bf71acd8ee9b013015927204b501eed4c51bd9c3f93a443da",
+        "pass": false
+      },
+      "presented": [
+        "120",
+        "240",
+        "360",
+        "476",
+        "596",
+        "716",
+        "836",
+        "956"
+      ]
+    }
+  },
+  "negative_patch_matches_report_after_script_strip": true,
+  "benchmark_source_matches": true,
+  "production_changes_since_measurement": " crates/thrum-render/src/synthetic/mesh_route/tests.rs | 4 +++-\n 1 file changed, 3 insertions(+), 1 deletion(-)\n"
+}

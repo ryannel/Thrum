@@ -1,66 +1,139 @@
 # CULLING M2 review
 
-**FAIL — four items pass; M2.2 fails its complete-scene proof.** No outside-item Must Fix.
+**PASS — all five items pass. No Must Fix or new Suggestion.**
 
-Reviewed 13 November 2026 at `85a3212c50a6bbe951cf82550c5a040909716fa0`, with builder boundary `04e0e7d2ff51`. This is M2's first review. Applied review-milestone, Thrum engineering review guidance and prompting-agents for actionable findings. No delegation, production edits or commits.
+Reviewed 13 November 2026 at `e6f7a54a3675d22179f0e276838778cdff129480`, builder boundary
+`0146f8d2fbcf`. Applied review-milestone and Thrum engineering review guidance. No delegation,
+production edits or commits. This replaces the previous review.
 
-## Findings
+## Basis and independence
 
-### Must Fix — `simulator_complete_scene_unchecked` — M2.2
+I judged the item statements, changed implementation, proof commands and raw measurement rows before reading
+`M2-review.md`, the builder's evidence narrative and log, and `ACCEPTED.json`. Existing verdict/finding metadata
+in DONE and repair descriptions in PLAN were visible while reading the required planning files; they were not
+used as the acceptance criteria.
 
-**Verified proof defect, not a demonstrated missing-geometry defect.** In [scripts/culling_sim.py](../../../scripts/culling_sim.py#L49), the only rendering assertions are eight increasing `presented` values and requested/resolved/reason strings. Lines 63–64 save a screenshot and immediately set `pass = True`. No screenshot pixels, actual draw population or Direct reference are checked. A renderer which reports Direct but omits instances can pass this check. Thus the command does not establish the item's “draws the complete scene” clause.
-
-I ran the actual command against this checkout, under the GPU lock, with `--output docs/evidence/CULLING/M2-review/simulator-retry`. It returned success: [report](M2-review/simulator-retry/report.json). Presentations advance from 115 to 955; all eight samples report Occlusion → Direct, `MissingIndirectExecution`. The [reviewer screenshot](M2-review/simulator-retry/direct-fallback.png) visibly contains the dense grid and foreground cubes. That corroborates functioning rendering, but neither the screenshot nor its unchecked capture establishes completeness. The Mac masked-capability image comparison is useful independent evidence for M2.1, not a complete-scene assertion on the simulator target named by M2.2.
-
-Make the simulator check reject incomplete rendering while retaining the real capability fallback and progressing presentations. A same-input explicit-Direct image oracle, or an equivalent witness tied to the actual complete draw, would settle this. Demonstrate that omission of expected scene geometry makes the check fail. The requirement is completeness, not a particular new harness or a simulator speed target.
-
-### Suggestion — stale timing values in the maturity ledger
-
-**Verified documentation discrepancy.** [maturity.json, G3c platform performance](../../design/maturity.json#L112) records cover O−F medians −7.844/−7.835 ms and open −0.231/−0.255 ms. The two retained current logs and M2 evidence instead give −7.827/−7.822 and −0.239/−0.256 ms. Update the ledger to the current rows, or identify the older run it describes. This does not reverse the default decision or fail M2.4.
+The supplied clean-checkout qualification at `081d74e86a66` establishes `./dev check` and the four named
+checks, M2.1, M2.2, M2.3 and M2.5. I accept those results as the handoff and skill permit; I found no reason
+to repeat their device runs. This review adds source inspection and independent recomputation of retained
+simulator pixels, mutation identity and benchmark source identity. It does not claim a fresh reviewer GPU run.
 
 ## Item verdicts
 
-| Item | Verdict | Assessment |
+| Item | Verdict | Judgment |
 | --- | --- | --- |
-| M2.1 | pass | The automated target genuinely prepares and executes all three requested modes against adapter-read, indirect-masked and unknown records. It asserts selection reason and actual prepared mode, requires nonuniform pixels, and compares fallback images with explicit Direct. The request-to-pipeline trace below answers the reviewer question. |
-| M2.2 | fail | Actual simulator launch, capability reason and progressing presentations work; complete-scene rejection is absent from the named automated proof. See Must Fix above. |
-| M2.3 | pass | The checker builds the current default web bundle and supplies `field-meshes` to the real field setup. It compares all 16 RGBA readbacks at matching tick, extent, yaw and pitch against bucket-ordered Direct without tolerance. Resolved-mode and nonzero/reduced-count assertions prevent Direct masquerading as culling. Retained results have zero differing pixels for both modes, with reported Frustum/Occlusion counts 20,789/1,415 of 100,513. |
-| M2.4 | pass | Both independent retained 1080p runs support Occlusion under the written selection rule, in cover and open groups. The benchmark rotates mode order per tick, records segment load, includes every timed scene pass, and asserts nonempty prepasses and actual hiding. Native and browser defaults call the same mixed-mesh selector. |
-| M2.5 | pass | The named verifier rebuilds native and Web artifacts, runs the registered native matrices and four Chrome digest sets, and refuses changed checkout/content identity before publishing proof. It retains exact comparisons rather than weakening baselines. The script's supplied pass at the builder boundary is accepted. |
+| M2.1 | pass | Selection consumes the immutable capability record before pipeline creation. Missing indirect execution and unknown facts prepare actual Direct, with the reason reported. The automated check exercises supported, masked and unknown records for all requests, compares fallback images with Direct and asserts actual prepared modes. Existing equality witnesses reject silent fallback. |
+| M2.2 | pass | The actual simulator host requests Occlusion and resolves Direct with `MissingIndirectExecution`. The named check now compares every pixel with an independently prepared explicit-Direct host using the same initial game input, and checks eight progressing presentations. Its retained omission control fails the comparison while preserving both the capability reason and presentation progress. |
+| M2.3 | pass | The current-source browser build runs the mixed-mesh field, captures the 16 prescribed views and compares Frustum and Occlusion against bucket-ordered Direct without tolerance. It checks matching tick/view/extent, actual resolved modes, active/drawn counts and fewer Occlusion draws. The supplied clean-checkout pass establishes the target result. |
+| M2.4 | pass | Both retained 1920×1080 runs support the mixed-field Occlusion default in cover and open groups. All three modes are paired, timed scene passes include tone and occlusion work, load is recorded, and the benchmark requires nonempty prepasses and actual hiding. Native and browser defaults use the same selector. |
+| M2.5 | pass | The verifier rebuilds native and browser artifacts, runs both registered native matrices and all four Chrome digest sets, and binds success to unchanged source content. No baseline or pixel tolerance was changed by M2. The supplied clean-checkout verifier pass establishes the claimed integrated result. |
 
-### Request, preparation and reporting trace
+### M2.1: request, capability and prepared draw boundary
 
-`selected_setup` / browser `create_field_game` pass the requested mode through `GameSetup` into the retained `SyntheticScene`. `PreparedSynthetic::prepare_internal` resolves it once using `CullingSelection::resolve` and the immutable capability record. The resolved value controls the vertex entry, visibility resources, bucket depth pipelines and prepass creation. Unknown or missing indirect facts select Direct; explicit Direct stays Direct. The final camera draw uses ordinary indexed draws when no visibility resources exist, including the bucket route. Caster culling is also absent on that Direct route.
+`selected_setup` and browser `create_field_game` carry the request through `GameSetup` into the retained
+scene. `PreparedSynthetic::prepare_internal` calls `CullingSelection::resolve` in
+[camera_culling.rs](../../../crates/thrum-render/src/synthetic/camera_culling.rs#L55).
+Besides the requested mode itself, only `DeviceCapabilities::downlevel()` influences this selection.
+Explicit Direct remains Direct; absent indirect or compute support and unknown facts resolve conservatively.
+The capability producer captures adapter facts once; recording does not probe the device.
 
-The scene's original request is preserved. Device replacement calls the common preparation body with that scene and the new capability generation. Recording does not query adapter facts. The stored selection reaches frame samples and native reports, browser reports and the simulator state file. I read producers and consumers across these boundaries, including capabilities capture, runtime preparation/replacement, mesh drawing and reporting.
+The resolved mode selects the view layout, vertex entry, visibility resources and depth-prepass pipelines.
+`draw_camera` uses the complete active instance range when visibility resources are absent; the mesh route
+likewise receives no indirect arguments for Direct. This is a real prepared fallback, not a report-only substitution.
+The original scene request is retained: device replacement calls common preparation with that scene and the new
+capability record. Selection reaches runtime frame samples, native app summaries, browser reports and simulator
+state. I read both producer and consumer sides of these boundaries.
 
-The cube equality helpers, mesh helper, `visibility_buckets` and full-field host helper assert prepared/resolved modes. The repaired mesh assertion compares each prepared renderer to its own request, correctly avoiding the shared frame input's mode marker; it does not relax pixel equality.
+The cube oracle helpers and mesh oracle helper assert actual prepared mode. The mesh helper compares with its
+own preparation request because Direct and culled renderers intentionally share frame inputs. Bucket and field
+witnesses also assert resolved modes. No equality tolerance was relaxed by that correction.
 
-### Measurement assessment
+### M2.2: simulator completeness and previous Must Fix
 
-[Run 1 rows](M2-review/bench-1-rows.txt) and [run 2 rows](M2-review/bench-2-rows.txt) are excerpts from the retained builder logs, not new reviewer timing runs. Both measure 1,800 ticks after 60 warm-up ticks, with 920 cover and 880 open samples; both report 1,800 nonempty prepasses and 1,065 hiding ticks. Cover is classified by Occlusion retaining at most half of Frustum's list; pitch changes halfway through to expose open views.
+**Resolved: `simulator_complete_scene_unchecked`.** The former proof only checked presentation progress and
+reported strings. [The current oracle](../../../examples/v1-game-ios/src/ios/culling.rs) captures the very host
+which becomes the presenting app host, plus a separate explicit-Direct host. Both use the ordinary diagnostic
+10,000-instance setup, the same device, extent, initial committed tick and capture alpha. It refuses incompatible
+setup and attached cooked content. The capture path extracts the ordinary world publication and draws through
+the prepared renderer; it does not synthesize reference pixels.
+
+[The check](../../../scripts/culling_sim.py#L21) validates readback lengths, both selection records, tick zero,
+expected population, a nonuniform Direct image and zero differing pixels. The ordinary draw source still uses
+`0..self.instance_upload.active_count()`; the half-draw mutation is absent from production.
+
+I independently decompressed and compared the retained positive and negative RGBA artifacts. The
+[audit](M2-review/current-artifact-audit.json) records:
+
+- Positive: 12,648,528 bytes per image at 1206×2622; **zero differing pixels**; presentations 120–960.
+- Negative: the same extent and Direct reference hash; **1,158,221 differing pixels**; eight progressing
+  presentation samples, 120–956. The retained check reports failure.
+- The [mutation patch](M2/simulator-completeness/omission.patch) halves the actual fallback draw while leaving
+  explicit Direct complete. Its hash matches the negative report after the same whitespace stripping used by
+  the script's command helper. The positive and negative binary identities are retained in the audit.
+
+These checks close the prior proof defect on its named simulator target. This is function and same-input image
+completeness, not physical-device speed or a new motion-quality claim.
+
+### M2.3: Chrome oracle boundary
+
+`field-mixed-oracle` supplies `field-meshes` to all three pages. Browser setup passes that flag into the field
+scene; all three modes therefore use the mesh bucket route. The checker captures eight headings at two pitches,
+keeps the world paused, compares all RGBA bytes and rejects a mode/count fallback. Retained qualification has
+20,789 Frustum draws versus 1,415 Occlusion draws out of 100,513 active slots and no unequal view.
+The actual instantiated Wasm receipt is compared with the freshly built disk artifact, avoiding a stale-bundle
+pass. I read the shared receipt implementation and its call sites, including the replacement for the oversized
+DevTools response transfer. Its assertions remain fail-closed for missing or mismatched receipts.
+
+### M2.4: measured default
+
+[Run 1 excerpt](M2-review/current-bench-1-rows.txt) and
+[run 2 excerpt](M2-review/current-bench-2-rows.txt) are copied from the retained raw logs, not new measurements.
+Both have 1,800 measured ticks after 60 warm-up ticks, 920 cover and 880 open samples, 1,800 nonempty prepasses
+and 1,065 hiding ticks. Order rotates among the modes each tick. Cover means Occlusion keeps at most half
+Frustum's list; the camera pitch changes halfway through to expose open views. Both groups are required.
 
 | Run | Cover paired O−F median | Open paired O−F median | Open paired p95 |
 | --- | --- | --- | --- |
 | 1 | −7.827 ms | −0.239 ms | +0.023 ms |
 | 2 | −7.822 ms | −0.256 ms | −0.000 ms |
 
-Occlusion also has lower whole-GPU p50/p95 than Direct in both groups. The small open-view median win satisfies the written rule; it is not a claim of winning every sample or providing full-refresh cadence. Rows are explicitly contended, and the sum excludes untimed transfer/query work and physical presentation. The [source audit](M2-review/source-audit.json) confirms the benchmark source hash matches the retained measurement identity; the relevant renderer/game difference since that measurement is the mesh test assertion, not production rendering.
+Occlusion's whole-GPU p50 and p95 also beat Direct in both groups of both runs. The small open median win
+satisfies the design's rule; the positive run-1 open p95 prevents claiming that every sample wins. Segment
+loads and `contended=true` are explicit. Whole GPU here is the sum of timed scene passes, not physical
+presentation or untimed transfer/query overhead. No full-refresh claim follows from these rows.
 
-## Review execution and inspection limits
+The independent audit verifies that the current benchmark source matches the measurement identity. The only
+difference in renderer/game source since measured `7dca0b33` is the mesh test-helper assertion, not production
+rendering. Thus these rows remain applicable. The previous suggestion about stale maturity timing medians is
+also resolved: the ledger now uses the retained values above.
 
-I read the M2 implementation changes, follow-up test repair, default selection, simulator/browser harness changes, shared Wasm receipt repair and M2 documentation changes. Unrelated concurrent module implementations were not treated as CULLING changes. `git show 04e0e7d2ff51` itself changes STATUS only; the M2 implementation is in its ancestors. The checkout also includes the later browser receipt repair, which I inspected. No hard-coded render result, weakened pixel oracle or test-only production path was found.
+### M2.5: exact baseline proof
 
-Per the handoff, I accepted the script's successful `./dev check`, M2.1, M2.3 and M2.5 runs rather than repeating them. I repeated only M2.2 to investigate its output-proof gap. The first attempt built successfully but could not reach CoreSimulator inside the sandbox; the escalated retry succeeded. [Initial access report](M2-review/simulator/report.json) and [successful target report](M2-review/simulator-retry/report.json) keep those outcomes distinct. Access is not blocked.
+The registry names the native APPLE-TILE baseline and day/night SDR/scene-linear Chrome sets. The verifier
+requires a clean checkout, rebuilds artifacts, compares against retained references and publishes proof only
+after every comparison succeeds and content identity remains unchanged. The retained builder run reports
+38 + 4 native comparisons and four Chrome sets of 481 records. The later supplied clean-checkout pass is the
+basis for accepting the integrated source; an old proof alone would not establish it.
 
-M2 declares no `inspect` item. For the supplemental simulator check I wrote an [inspection list](M2-review/inspection-plan.md) before looking at the capture:
+## Scope and limits
 
-- **Scene content:** dense cube grid and large foreground cubes are visible; the frame is neither blank nor a fault screen. The image does not prove every expected instance was drawn.
-- **Identity and decision:** report names this checkout, the built binary hash and the real simulator adapter, with the requested/resolved/reason values above.
-- **Direct draw mechanism:** source submits the full active range, corroborated by the Mac fallback equality test; no target-side completeness assertion exists in the simulator check.
+Read the M2 implementation and follow-up changes: capability selection and reporting; native, browser and iOS
+host consumers; default selection; benchmark; equality-helper assertions; browser and simulator checkers; Wasm
+receipt repair; simulator oracle and omission patch; plan, evidence and maturity updates. Builder boundary
+`git show 0146f8d2fbcf` itself only shortens LOG; the substantive changes are its ancestors. Unrelated concurrent
+modules are not represented as CULLING implementation. No canned render result, weakened comparison, omitted
+production draw or test-only substitute was found.
 
-I viewed a whole-frame simulator still scaled to fit, not elapsed-time motion or native-size edge crops. No claim is made about physical iPhone speed. Rotation and background/foreground were not exercised in this supplemental run and are not inferred from its counters. Mac low sun/storm/full-refresh motion and Chrome temporal inspection were not rerun: M2's accepted checks establish bounded capability/equality results; the explicit motion and temporal-culling items remain in M3.
+M2 has **no `inspect` proof**, so no visual inspection list or new screenshots are required for its items.
+I did not inspect stills or motion in this round and make no new visual-quality claim. Accepted automated
+coverage includes unknown/masked capabilities, real simulator fallback and presentation progress, Chrome's
+16 changed views and device-loss recovery, and registered day/night native/browser baselines. I did not rerun
+rotation, simulator background/foreground, storm, low-sun motion or active-panel full-refresh checks. Those
+broader target conditions are not inferred from this bounded capability/equality review; valley, temporal
+culling and explicit motion inspection remain M3 work.
 
-Set M2 back to `in_progress`, with only the M2.2 finding above. Builder status and all counts remain unchanged for the script.
+Set all M2 item verdicts to `pass` and M2 state to `done`. Builder status, counts and other milestones are
+unchanged; the script owns clearing the prior findings on success. Existing older files in the review evidence
+folder remain historical; only the `current-*` audit files above belong to this round.
 
-FAIL M2: 1 fail, 0 could_not_judge, 0 outside the items
+PASS M2

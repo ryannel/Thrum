@@ -76,7 +76,7 @@
     {
       "id": "M2",
       "name": "The game picks its culling mode from the device and the measurements, and says which mode ran",
-      "state": "ready_for_review",
+      "state": "done",
       "fails": 0,
       "replans": 0,
       "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do: a device that cannot run a culled mode still draws the whole scene, and a default is never set on a guess.",
@@ -101,7 +101,7 @@
           "target": "ios-sim",
           "status": "pass",
           "evidence": "docs/evidence/CULLING/M2.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CULLING/M2-review.md"
         },
         {
@@ -140,13 +140,6 @@
       "rounds": 1,
       "depends_on": [
         "BASELINE-GUARD:M1"
-      ],
-      "findings": [
-        {
-          "name": "simulator_complete_scene_unchecked",
-          "item": "M2.2",
-          "repeat": false
-        }
       ]
     },
     {

@@ -1,0 +1,21 @@
+adapter=Apple M3 Max; field 100513 instances, meshes true; 1920x1080; shadows on; 1800 ticks after 60 warm-up; rotating order, shared machine; pitch 0 then 0.6 rad after 900 measured ticks
+segment to tick 360: paired F−D median -50.139 ms, O−F median -7.879 ms, load 2.65
+segment to tick 660: paired F−D median -50.405 ms, O−F median -7.753 ms, load 1.94
+segment to tick 960: paired F−D median -50.650 ms, O−F median -7.880 ms, load 0.98
+segment to tick 1260: paired F−D median -59.782 ms, O−F median -0.236 ms, load 1.00
+segment to tick 1560: paired F−D median -59.610 ms, O−F median -0.235 ms, load 3.29
+segment to tick 1860: paired F−D median -59.166 ms, O−F median -0.253 ms, load 1.69
+contended=true; nonempty_prepasses=1800; hiding_ticks=1065; whole includes every timed scene pass
+Direct pass p50 ms (near, far+heights, clusters, forward, history, tone): 22.937, 45.795, 0.000, 38.816, 0.076, 0.924
+Frustum pass p50 ms (near, far+heights, clusters, forward, history, tone): 0.968, 45.623, 0.000, 2.020, 0.052, 0.965
+Occlusion pass p50 ms (near, far+heights, clusters, forward, history, tone): 0.971, 45.598, 0.000, 1.499, 0.046, 0.872
+behind cover Direct: 920 ticks, whole GPU p50 110.840 ms, p95 111.374 ms
+behind cover Frustum: 920 ticks, whole GPU p50 60.474 ms, p95 61.236 ms
+behind cover Occlusion: 920 ticks, whole GPU p50 52.220 ms, p95 54.133 ms
+open Direct: 880 ticks, whole GPU p50 108.367 ms, p95 108.921 ms
+open Frustum: 880 ticks, whole GPU p50 48.716 ms, p95 49.635 ms
+open Occlusion: 880 ticks, whole GPU p50 48.486 ms, p95 49.404 ms
+whole GPU ms p50 (p95) D→F: 109.807 (111.254) → 53.666 (61.011); forward p50 (p95) D→F: 38.816 (39.516) → 2.020 (10.191); paired F−D median -57.816 ms
+whole GPU ms p50 (p95) D→O: 109.807 (111.254) → 50.180 (53.840); forward p50 (p95) D→O: 38.816 (39.516) → 1.499 (3.160); paired O−D median -59.299 ms
+paired O−F behind cover: 920 ticks, median -7.827 ms, p95 -5.831 ms
+paired O−F open: 880 ticks, median -0.239 ms, p95 +0.023 ms
