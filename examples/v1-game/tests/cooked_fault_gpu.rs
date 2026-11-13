@@ -47,6 +47,14 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
     };
     let mut cooker = Cooker::open(config.clone()).expect("cooker");
     assert_eq!(cooker.cook_all().expect("cook").failed, []);
+    let store = thrum_asset::AssetStore::new(&config.store);
+    let original = store
+        .load_manifest(&store.read_head().expect("HEAD").expect("published"))
+        .expect("manifest");
+    let resident_texture = original
+        .resolve("textures/checker", &[Profile::Portable])
+        .expect("placement texture")
+        .product;
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let adapter = instance
@@ -117,8 +125,10 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
                 4 => {
                     std::fs::remove_file(source.join("density.tvol")).expect("missing leased name");
                 }
-                5 => demo::write_checker_png(&source.join("density.png"), 32, [10, 20, 30])
-                    .expect("invalid dimension"),
+                // The invalid leased product is already resident through a placement.
+                // Reuse must validate its new use too, before refusing the whole set.
+                5 => demo::write_checker_png(&source.join("density.png"), 64, [200, 40, 20])
+                    .expect("cached invalid dimension"),
                 _ => {
                     std::fs::remove_file(source.join("density.png")).expect("remove invalid");
                     demo::write_cloud_volume(&source.join("density.tvol"), 256, 7)
@@ -126,6 +136,19 @@ fn staging_fill_failure_frees_slot_retains_set_and_next_publication_recovers() {
                 }
             }
             assert_eq!(cooker.cook_all().expect("bad publication").failed, []);
+            if generation == 5 {
+                let manifest = store
+                    .load_manifest(&store.read_head().expect("HEAD").expect("published"))
+                    .expect("invalid publication manifest");
+                assert_eq!(
+                    manifest
+                        .resolve("density", &[Profile::Portable])
+                        .expect("density")
+                        .product,
+                    resident_texture,
+                    "the invalid lease exercises the resident texture reuse path"
+                );
+            }
             let expected = u64::from(generation - 2);
             drive(&mut host, &device, &mut clock, || {
                 stats.lock().expect("stats").failures == expected
