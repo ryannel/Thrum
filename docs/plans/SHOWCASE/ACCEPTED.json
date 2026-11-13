@@ -1,6 +1,28 @@
 {
   "module": "SHOWCASE",
-  "design": null,
+  "design": {
+    "verdict": "ok",
+    "review": "docs/evidence/SHOWCASE/design-review.md",
+    "commit": "555c80067c5b0778b579d1e79573e7b49f0067d8",
+    "hash": "a326abc79de09148fdafca9eeb4174c1aab83154945695d9ef0dbd062190c88d",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 92084,
+      "cached": 959488,
+      "output": 7423,
+      "turns": 1
+    },
+    "at": "2026-11-13T14:27:10Z"
+  },
   "milestones": {
     "M5": {
       "definitions": "488d35b3ffee5874a4e139b2e1bafc0e2d5da62800c99445e5fb747b23ba6150",
