@@ -168,11 +168,16 @@
               checkpoint.submitted = JSON.parse(image.metadata);
               checkpoint.bytes = image.pixels.length;
               checkpoint.sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', image.pixels)), b => b.toString(16).padStart(2, '0')).join('');
+              const png = document.createElement('canvas');
+              png.width = route.render_extent[0]; png.height = route.render_extent[1];
+              png.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(image.pixels), png.width, png.height), 0, 0);
+              window.thrumCheckpointPng = png.toDataURL('image/png');
               game.end_submitted_capture();
             }
             record.checkpoints.push(checkpoint);
             record.waiting = name;
             await new Promise((resolve) => { record.resume = resolve; });
+            window.thrumCheckpointPng = null;
             record.waiting = null;
             deadline = performance.now() + PERIOD_MS;
           }
