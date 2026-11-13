@@ -2,7 +2,9 @@
 
 use std::{io::Write, time::Duration};
 use thrum_render::{
-    capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::CullMode,
+    capabilities::DeviceCapabilities,
+    present::SurfaceProfile,
+    synthetic::{CaptureSource, CullMode},
 };
 use v1_game::{CameraRoute, FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
@@ -29,6 +31,11 @@ async fn prove() {
         .expect("route file");
     let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
     let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
+    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
+        CaptureSource::SceneLinear
+    } else {
+        CaptureSource::Sdr
+    };
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -63,9 +70,12 @@ async fn prove() {
         view: &view,
         extent,
     };
-    let modes = [CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
+    let mut modes = vec![CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
+    if !timing {
+        modes.push(CullMode::Direct);
+    }
     let mut hosts = Vec::new();
-    for mode in modes {
+    for &mode in &modes {
         let mut setup = v1_game::selected_setup().expect("setup");
         assert_eq!(
             setup.camera_culling,
@@ -123,12 +133,14 @@ async fn prove() {
             for host in &mut hosts {
                 host.set_camera_route(route.clone()).expect("install route");
                 if !timing {
-                    host.enable_submitted_capture(1).expect("enable T2 tap");
+                    host.enable_submitted_capture_from(1, capture_source)
+                        .expect("enable T2 tap");
                 }
             }
         }
-        let mut images: [Vec<u8>; 3] = Default::default();
-        for index in (0..3).map(|step| (step + usize::try_from(tick % 3).expect("small")) % 3) {
+        let mut images: Vec<Vec<u8>> = (0..modes.len()).map(|_| Vec::new()).collect();
+        let count = modes.len();
+        for index in (0..count).map(|step| (step + usize::try_from(tick).expect("small")) % count) {
             let host = &mut hosts[index];
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
             let frame = host.drive(now, Some(&surface)).expect("route frame");
@@ -138,6 +150,7 @@ async fn prove() {
             if tick < route.origin_tick {
                 continue;
             }
+            let mut capture_identity = None;
             if !timing {
                 let image = loop {
                     if let Some(image) = host.try_submitted_image().expect("tap") {
@@ -152,7 +165,11 @@ async fn prove() {
                 };
                 assert_eq!(image.source.tick, tick);
                 assert_eq!(image.sample.submission_order, sample.submission_order);
+                capture_identity = Some(
+                    serde_json::json!({"source_tick":image.source.tick,"submission":sample.submission_order,"alpha_bits":sample.presentation_alpha.to_bits(),"exposure_gpu_words":image.exposure_gpu_words}),
+                );
                 if index == 1
+                    && capture_source == CaptureSource::Sdr
                     && route
                         .checkpoints
                         .iter()
@@ -170,17 +187,23 @@ async fn prove() {
             }
             if let Some(counts) = sample.camera_culling {
                 assert_eq!(counts.mode, modes[index]);
-                hidden[index - 1] += u64::from(counts.drawn < counts.active);
+                if index <= 2 {
+                    hidden[index - 1] += u64::from(counts.drawn < counts.active);
+                }
             }
-            writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":format!("{:?}",modes[index]),"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
+            writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":if index==3 {"DirectControl".to_owned()}else{format!("{:?}",modes[index])},"capture":capture_identity,"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
         }
         if tick >= route.origin_tick && !timing {
-            assert_eq!(images[0].len(), (extent[0] * extent[1] * 4) as usize);
-            for index in 1..3 {
+            assert_eq!(
+                images[0].len(),
+                (extent[0] * extent[1]) as usize
+                    * usize::try_from(capture_source.bytes_per_pixel()).expect("pixel size")
+            );
+            for index in 1..count {
                 if images[0] != images[index] {
                     for (i, image) in images.iter().enumerate() {
                         std::fs::write(
-                            output.join(format!("failure-{tick}-{:?}.rgba8", modes[i])),
+                            output.join(format!("failure-{tick}-{i}-{:?}.raw", modes[i])),
                             image,
                         )
                         .expect("failure pixels");
