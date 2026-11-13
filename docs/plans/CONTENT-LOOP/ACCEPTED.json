@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "b2354dbedd7ab48013228aa14d38f3c681b93d173e36ce813756aefa68ec819c",
+      "definitions": "e7d79e7cd07aab685584fadffc2889c14a29c9f0903c3efa429c1120d6965205",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
-        "at": "2026-11-13T06:37:21Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",
+        "at": "2026-11-13T06:52:33Z"
       }
     },
     "M2": {
-      "definitions": "c366c243a64af2cc17828dfe4710bcbd76321bc7b2f051352aa67a6b5053f3cc",
+      "definitions": "c7e54b2a9400f77c193987498fbcb1097a5b69e03334063eb859fee9e326c4c9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
-        "at": "2026-11-13T06:37:21Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",
+        "at": "2026-11-13T06:52:33Z"
       }
     },
     "M3": {
-      "definitions": "848ce6a8b53201972e403ccfc61248999ade07469ef71aa7028912928cdf738a",
+      "definitions": "4a5cb399d04e3df60b2f88bb2887634183f5c8b9981162877c05f7829edb331d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
-        "at": "2026-11-13T06:37:21Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",
+        "at": "2026-11-13T06:52:33Z"
       }
     }
   },
@@ -60,11 +60,15 @@
     {
       "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T06:37:21Z"
+    },
+    {
+      "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-reader publication deferred against C05. Resolve it: either make the design meet C05 (one switch across every reader of a cooked product), or, if meeting it now is unjustified, propose the C05 change itself through the contract process with its producers and consumers, rather than deferring inside this design. If it truly needs an owner decision, say so plainly in the plan and the result. Suggestions are yours to take or leave.",
+      "at": "2026-11-13T06:52:33Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T06:37:21Z"
+    "at": "2026-11-13T06:52:33Z"
   },
   "design_history": [
     {
