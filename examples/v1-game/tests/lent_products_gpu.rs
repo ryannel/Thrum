@@ -187,8 +187,9 @@ fn assert_texels(
         let portable = manifest
             .resolve(&product.name, &[Profile::Portable])
             .expect("portable");
+        assert_eq!(product.portable_hash, portable.product);
         let reference =
-            Ktx2::open(store.map(&portable.product).expect("map product")).expect("ktx");
+            Ktx2::open(store.map(&product.portable_hash).expect("map product")).expect("ktx");
         let actual = read(device, queue, output);
         let volume = product.texture.dimension() == wgpu::TextureDimension::D3;
         if volume && compressed {

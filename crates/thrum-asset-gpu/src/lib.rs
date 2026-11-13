@@ -932,10 +932,11 @@ impl SceneContribution for CookedAssets {
                     .leased
                     .iter()
                     .zip(&self.config.leased)
-                    .map(|((hash, profile, texture), request)| {
+                    .map(|((hash, portable_hash, profile, texture), request)| {
                         LentProduct {
                             name: request.name.clone(),
                             hash: *hash,
+                            portable_hash: *portable_hash,
                             profile: *profile,
                             device_generation: live.generation,
                             serial: 0, // Assigned by the lease's lifetime counter at offer.

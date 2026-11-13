@@ -20,6 +20,8 @@ pub struct LentProduct {
     pub name: String,
     /// Exact product identity, suitable for a CPU reader's pinned map.
     pub hash: ContentHash,
+    /// Portable bytes of this same publication, for a CPU reader pinned independently of HEAD.
+    pub portable_hash: ContentHash,
     /// Selected encoding profile.
     pub profile: Profile,
     /// Device generation that owns the view.
@@ -75,6 +77,7 @@ impl ProductLease {
                     set.products.iter().find(|old| {
                         old.name == product.name
                             && old.hash == product.hash
+                            && old.portable_hash == product.portable_hash
                             && old.device_generation == product.device_generation
                     })
                 });
