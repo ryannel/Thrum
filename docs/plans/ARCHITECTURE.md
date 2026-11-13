@@ -17,7 +17,7 @@
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
-| 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE |
+| 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT |
@@ -503,7 +503,7 @@ registers any new crate in `.config/architecture.toml`. Each module is built by 
 
 | Module | Responsibility | Owns (state and code) | Expected code home |
 |---|---|---|---|
-| `SIM-2D` | W1 and P3, for crowds | The deterministic rules profile and the check that enforces it; the digest of committed state; the 2D spatial index and its overlap, nearest and neighbour queries | `thrum-core` |
+| `SIM-2D` | W1 and P3, for crowds | The deterministic rules profile and the check that enforces it; the digest of committed state; the 2D spatial index and its overlap, nearest and neighbour queries; the reference crowd and its retained traces | `thrum-core` for the profile and the digest, a new crate `thrum-sim2d` for the queries, `examples/crowd-2d` for the reference crowd ([design](SIM-2D/DESIGN.md)) |
 | `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its passes; the 2D view record (orthographic camera, world units to pixels); sprite rows extracted from the tick page; draw order; sprite materials and blending; GPU residency of sprite sheets | `thrum-render` |
 | `GAME-UI` | U1 | Text and interface drawn in the frame: the glyph cache, the interface tree and its layout, focus, the paint list; routing of key, pointer and touch events to the interface before the game | A new crate |
 | `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity. It holds no game state and gives no meaning to a message | A new crate, so a game that is not networked links no sockets |
@@ -541,9 +541,9 @@ review passes. Changes to a numbered contract are settled with its producers and
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
 | Tick page, committed and previous endpoints, rewind and replay | core → `SIM-2D`, `RENDER-2D`, `SESSION` | C02, [G2 decision](../design/decisions/G2-GENERIC-SIMULATION.md); unchanged |
-| **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target | `SIM-2D` → `SWARM` (its rules), `SESSION` | `SIM-2D`'s design; C02 |
-| **World digest**: one value for each committed tick over all authority state | `SIM-2D` → `SESSION` | `SIM-2D`'s design |
-| **2D queries**: overlap, nearest and neighbours, with results in a fixed order | `SIM-2D` → `SWARM` | `SIM-2D`'s design; C03 |
+| **Deterministic rules profile**: what a rule may compute with and in what order, so one input trace gives one result on every target. Rules live in a rule package that `./dev check` guards, and one conformance command runs any rule package's trace on the three targets | `SIM-2D` → `SWARM` (its rules), `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#mechanisms); C02 |
+| **World digest**: one value for each committed tick over all authority state, computed on request. A baseline must restore everything it covers | `SIM-2D` → `SESSION` | [SIM-2D](SIM-2D/DESIGN.md#4-the-world-digest) |
+| **2D queries**: overlap, nearest and neighbours, with results in a fixed order that depends on the index's cell size, which is a constant of the rule set and never a quality setting | `SIM-2D` → `SWARM` | [SIM-2D](SIM-2D/DESIGN.md#5-the-index-and-its-queries); C03 |
 | **Sprite rows**: a game's read-model components map to sheet frame, layer, tint and transform, interpolated between tick endpoints on the GPU | `RENDER-2D` → `SWARM`, any 2D game | `RENDER-2D`'s design; C07 |
 | **2D scene half**: passes declared through the one graph, writing the pre-tone scene-linear input | `APPLE-TILE` → `RENDER-2D` | [APPLE-TILE](APPLE-TILE/DESIGN.md), C06; `RENDER-2D`'s design |
 | Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
@@ -595,25 +595,11 @@ no budget below is a gate. The quality bar is a shipped game, named for each mil
 
 #### SIM-2D
 
-- **For.** A game runs a crowd of thousands whose every tick gives the same bytes on every target, and finds
-  neighbours and hits cheaply.
-- **Requirement.** "Thousands of enemies and projectiles on screen at once" and "Several players play together
-  over the network".
-- **Built already.** One atomic tick in canonical slot order, sparse undo and replay, and equality of serial and
-  forced-parallel runs (G2S). The G2 decision records 61 µs for tick and page and 81 µs for an eight-tick rewind
-  at 10,000 simple movers.
-- **To build.** The rules profile and a check that fails a rule which breaks it. The digest. A uniform-grid index
-  with overlap, nearest and neighbour queries in a fixed order. A reference crowd (chase, separation, projectile
-  hits, spawn and despawn churn) that later modules reuse as their diagnostic scene.
-- **Contracts.** C01, C02, C03; the rule-set addition to C13 with `SESSION`.
-- **Open for its planner.** Fixed point or restricted floats, chosen by the three-target proof. Whether the
-  queries sit in `thrum-core` or beside it.
-- **First proof and what rejects it.** Equal digests on the three targets for a long trace with churn. If a
-  difference cannot be removed inside the profile, mechanism 1 falls back and `SESSION` is planned on corrections.
-- **Research.** Cross-platform determinism in shipped engines (Rapier's deterministic build, Photon Quantum's
-  fixed point, Box2D 3); uniform grids and separation for crowds.
-- **Done.** Equal digests across the targets and across serial and parallel runs; queries match a brute-force
-  oracle; tick, rewind and replay costs at 2,000, 5,000 and 10,000 bodies are on record.
+Planned on 13 November 2026: [design](SIM-2D/DESIGN.md), [plan](SIM-2D/PLAN.md). Its planner settled the two
+choices this brief carried: rules compute in `f32` held to exactly rounded operations, not fixed point, and the
+queries sit beside `thrum-core` in a new crate. Three milestones; `SESSION` needs M1, whose record holds the tick,
+rewind and replay costs it chooses from, and `SWARM` needs M3. If M1's three targets cannot be made equal, the
+builder stops and [mechanism 1](#mechanisms-settled-here) is replanned.
 
 #### RENDER-2D
 
@@ -812,3 +798,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   The resolved-selections interface and the exit baselines' row were added above. No exact baseline moves and no
   other module's done-when item changed. `APPLE-PRESENTATION` M4 to M11 are still to be planned, and the exit
   waits on them.
+- 2026-11-13 `SIM-2D` planned, the first module of track 3, with a design, plan and done-when file, from the
+  lead's task. Three milestones: the three-target proof at 10,000 bodies (after `SHOWCASE:M8`), the queries
+  against a brute-force search, and the check that refuses a rule which breaks the profile. Its three interfaces
+  now link to its design. No contract, exact baseline or other module's done-when item changed.
