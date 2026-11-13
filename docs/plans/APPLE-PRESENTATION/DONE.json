@@ -74,7 +74,7 @@
     {
       "id": "M2",
       "name": "Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames",
-      "state": "ready_for_review",
+      "state": "in_progress",
       "fails": 0,
       "replans": 0,
       "bar": "The temporal inputs and acceptance rules a shipped reconstructor relies on: history that never includes a frame the display did not get, and reactive marking wherever history cannot be trusted. Correctness only; nothing visible changes yet.",
@@ -88,8 +88,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.2",
@@ -100,8 +100,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.3",
@@ -112,8 +112,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.4",
@@ -124,8 +124,8 @@
           "target": "mac-metal",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.5",
@@ -136,8 +136,8 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.6",
@@ -146,10 +146,10 @@
           "lock": "gpu",
           "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
-          "status": "pass",
-          "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "status": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },
         {
           "id": "D2.7",
@@ -159,13 +159,21 @@
           "target": "chrome-webgpu",
           "status": "pass",
           "evidence": "docs/evidence/APPLE-PRESENTATION/m2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         }
       ],
       "depends_on": [
         "APPLE-TILE:M2"
-      ]
+      ],
+      "findings": [
+        {
+          "name": "mac-volume-witness-bypasses-forward-pass",
+          "item": "D2.6",
+          "repeat": false
+        }
+      ],
+      "rounds": 1
     },
     {
       "id": "M3",
