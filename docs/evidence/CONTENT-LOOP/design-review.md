@@ -1,186 +1,138 @@
 # CONTENT-LOOP design review
 
-13 November 2026. Reviewed commit `8d09e6b4d2a67b72fe88d449be1f94baf297e008`.
+13 November 2026. Reviewed commit `a06204535dde8dc3e87278c399a1ebe4215fc6c7`, against the previous review
+of `8d09e6b4d2a67b72fe88d449be1f94baf297e008`.
 
-**Design changes requested: two Must Fix findings.** The proposed work substantially answers the request,
-but its partial-save guarantee exceeds its mechanism, and one mandatory proof requires an ordering excluded
-by the frame host. Both should be settled before builders are held to these items.
+**Design changes requested: one Must Fix finding.** Both previous Must Fix findings are resolved. The design
+substantially answers the human-approved brief, but the revision explicitly defers C05's requirement to publish
+the affected presentation closure together. The recorded exception for incomplete external saves does not
+settle this separate interface change.
 
-This is the first design review; there is no previous review to resolve. Findings below are verified against
-the documents and code cited, not reproduced runtime defects in the proposed implementation.
+## Must Fix finding
 
-## Must Fix findings
+### MF3 — Cross-reader publication is deferred against C05
 
-### MF1 — Partial-source-save guarantee has no mechanism
+**Must Fix · verified design/interface conflict · DESIGN.md lines 237–248; PLAN.md line 22; consequences for
+M3.2, M3.4 and M3.8.** This is distinct from MF1's external-save boundary and MF2's impossible frame ordering.
 
-**Must Fix · verified · M3.7, with consequences for M3.5 and M3.8.**
+The revised [design](../../plans/CONTENT-LOOP/DESIGN.md#what-a-publication-promises-m3) expressly permits a
+single cooked product to appear new through one reader and old through another. Placements switch in the
+last-copy frame, leases in the following frame, and mesh rows after their separate bounded write. It acknowledges
+that C05 asks for one switch across readers, but defers that to source admission or a later visible mismatch.
+The new [plan assumption](../../plans/CONTENT-LOOP/PLAN.md#open-for-the-owner) repeats this deferral.
 
-[DONE.json](../../plans/CONTENT-LOOP/DONE.json), lines 300–302, promises that an “invalid or partial change
-set keeps the previous set.” Its only reviewer question checks whether readers are confined to presentation.
-That question cannot establish the second half of the statement.
+[C05](../../design/CONTRACTS.md#c05-assets-streaming-and-retirement--f4-with-w2-v1-and-p7), lines 191–196,
+requires a qualified visual preview to compute the entire affected presentation closure, prepare replacements
+and publish at extraction. It calls these correctness invariants. The
+[G5 exception](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md#contract-questions-recorded-reversible-option-taken),
+lines 182–192, permits an intermediate *source* state to become a presentation-only preview because the watcher
+cannot identify a completed external save. It does not establish that the representations of one already-cooked
+publication may switch independently. The module list's row-replacement ruling also does not change C05.
 
-The design retains the existing watcher and cooker, and [PLAN.md](../../plans/CONTENT-LOOP/PLAN.md), line 21,
-explicitly retains presentation-only previews and defers source admission. The retained
-[G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md), lines 182–192, expressly says that a glTF
-and its buffer saved separately can publish an intermediate state. The implementation agrees:
-[watch.rs](../../../crates/thrum-cook/src/watch.rs), lines 28–31 and 75–95, closes batches after a quiet
-interval; [cooker.rs](../../../crates/thrum-cook/src/cooker.rs), lines 267–284, preserves failed assets while
-publishing successful products. Neither mechanism knows the intended boundary of an external save.
+**Ordinary counterexample:** draw two instances of the same cooked mesh, one as a placement and one through an
+entity mesh row. Finish a valid source edit before cooking it, with no partial save. Make the replacement large
+enough that the row's bounded write takes additional frames. The revised design deliberately shows the placement
+with the new silhouette while the entity still has the old silhouette. A texture shared by a placement and a lease
+has the same issue for one frame. This outcome follows directly from the specified schedule; no runtime defect
+is claimed to have been reproduced.
 
-An ordinary counterexample is a valid glTF and an existing valid buffer: save a changed glTF first, leave
-the old buffer stable long enough for a cook, then save the intended new buffer. Choose changes whose
-intermediate combination remains structurally valid. Stable hashes and product validation accept that
-intermediate combination. This is different from M3.5's missing-buffer or concurrent-write cases. Keeping
-all readers in presentation does not prevent it.
+**Consequence:** implementing the design exactly would violate the existing presentation-publication invariant.
+The revision expressly restricts M3's four edit demonstrations to products read through one path, so all those
+demonstrations can pass without exposing the conflict. Acknowledging the limit as an assumption makes it visible,
+but does not resolve it with the shared contract's producers and consumers.
 
-**Consequence:** building the stated mechanisms cannot satisfy the promised source-change atomicity. A
-reviewer answering the specified question could accept the existing preview behaviour without proving the
-partial-set guarantee. Atomic manifest publication and whole resident lease sets do not supply a source
-transaction boundary.
+**Resolution:** reconcile the cross-reader publication rule before building dependent work. Under the existing
+contract, design a publication point at which every affected reader is ready and switches together, and require a
+coupled-reader proof at the milestone that provides those paths. Alternatively, settle and record a scoped
+interface exception with the affected producers and consumers. Merely postponing it to source admission leaves
+the conflict open: a completed cooked publication already has an identity even when its sources are previews.
+This finding does not require implementing T1 or rejecting incomplete external saves.
 
-**Resolution:** reconcile the promise with C05 and the recorded preview exception. If partial-source-set
-rejection is required here, identify the source completion/admission mechanism and include its proof. If
-the existing preview exception remains the intended scope, distinguish incomplete external saves from
-invalid/unresolvable cooked products explicitly in the design and item; retain the required last-good
-behaviour for the latter. Do not claim arbitrary partial-save rejection merely from presentation-only use.
+The previous S3 asked for the publication scope and its relationship to C05 to be explained. That explanation is
+now present; it establishes a deliberate contract deferral, rather than just ambiguous wording. This finding is
+about that newly explicit decision, not a request for an additional optional edge case.
 
-### MF2 — The required old-frame-after-switch proof contradicts the host protocol
+## Previous findings and suggestions
 
-**Must Fix · verified · M2.3.**
+- **MF1 — Partial-source-save guarantee has no mechanism: resolved.** C4 and the new publication section separate
+  detectable invalid inputs from incomplete saves that remain valid. M3.7 no longer promises to reject arbitrary
+  partial saves; it requires presentation-only readers and convergence to a fresh cook after the save finishes.
+  M3.8 and M3.9 carry the limitation into the ledger and public documentation. This follows the existing G5
+  exception. The watcher's quiet interval is not treated as a transaction boundary. The cooker includes the glTF
+  and buffer hashes in its action key, making the proposed final-product comparison a meaningful proof
+  ([watch.rs](../../../crates/thrum-cook/src/watch.rs), lines 28–31 and 75–95;
+  [cooker.rs](../../../crates/thrum-cook/src/cooker.rs), lines 326–355 and 517–540).
+- **MF2 — The required old-frame-after-switch proof contradicts the host protocol: resolved.** M2.3 now requires
+  the production host protocol, submission-time commitment, discarded-switch recovery and supersession before a
+  switch commits. The design routes writes, switching and retirement through the exclusive encoded-frame token.
+  That matches [tokens.rs](../../../crates/thrum-render/src/runtime/tokens.rs), lines 108–119, and
+  [EFFECT-GRAPH's tentative-recording rule](../../plans/EFFECT-GRAPH/DESIGN.md). Already-submitted frames remain
+  protected by queue order; the impossible overtaking test is removed without removing the old geometry's
+  lifetime obligation.
+- **S1 — State how lease invalidation survives an abandoned consumer frame: resolved.** The per-product serial
+  remains different from the consumer's committed serial until a frame using it calls `submitted(true)`. M1.3
+  distinguishes discarding the first *consumer* frame from discarding the upload, and covers capture frames.
+  M1.8 documents the obligation. This matches the existing contribution callback's history flag
+  ([contribution.rs](../../../crates/thrum-render/src/contribution.rs), lines 298–300).
+- **S2 — Make the Chrome stall question agree plainly with the quality bar: resolved.** M3.3 explicitly fails
+  content-induced stalls at the valley and twelve-volume fixture sizes. Larger-product measurements remain
+  measurements, not new numerical acceptance gates.
+- **S3 — Explain publication granularity across the three consumption paths: explanation supplied; the contract
+  consequence is MF3 above.** The coupled examples and the expected interval of disagreement are now explicit.
 
-[DONE.json](../../plans/CONTENT-LOOP/DONE.json), line 160, requires a test of “a frame encoded before the
-switch and submitted after it.” [DESIGN.md](../../plans/CONTENT-LOOP/DESIGN.md), lines 168–175, places the
-row switch at a frame boundary; lines 206–208 rely on the host allowing only one unsubmitted frame.
+## Changed items and proof assessment
 
-The prerequisite [EFFECT-GRAPH design](../../plans/EFFECT-GRAPH/DESIGN.md), lines 169–174, states that every
-earlier encoded frame has committed or been dropped before another is recorded. This is enforced by
-[runtime/tokens.rs](../../../crates/thrum-render/src/runtime/tokens.rs), lines 108–119: the encoded token
-holds an exclusive mutable borrow of the host until submission or discard. The host cannot perform the
-next frame-boundary row switch while an earlier encoded frame remains outstanding. A loader may make a
-replacement ready during that interval, but readiness is not the committed row switch.
+All 27 items and the milestone bars were read. Each of the eight changed items was compared with its earlier
+wording and the previous findings. These are judgments of planned proofs, not implementation passes.
 
-**Consequence:** the mandatory reviewer question cannot be answered affirmatively through the retained
-production protocol. A test that privately mutates the arena around the token would manufacture a different
-lifecycle and would not prove the supported path. Already-submitted frames still executing on the GPU are
-a real case, but are not the encode-before/submit-after ordering the item names.
-
-**Resolution:** make the proof match the chosen protocol: retain the discarded-switch and submitted-frame
-lifetime requirements, and allow the exclusive-token invariant to establish that an unsubmitted old frame
-cannot be overtaken by a row switch. If overtaking is actually intended, it needs an explicit change to the
-host contract and a designed lifetime mechanism, rather than an incidental test requirement.
-
-## Suggestions
-
-### S1 — State how lease invalidation survives an abandoned consumer frame
-
-**Suggestion · verified omission, not a demonstrated runtime fault · M1.2–M1.3, M1.8.**
-
-[DESIGN.md](../../plans/CONTENT-LOOP/DESIGN.md), lines 137–140, reports a change once in the first frame
-offering the new view. The upload may already be committed while that first consumer frame is discarded,
-or is a capture that does not advance history. The consumer must retain its invalidation until an appropriate
-submitted frame uses the new product. The contribution protocol already supplies the general rule
-([contribution.rs](../../../crates/thrum-render/src/contribution.rs), lines 19–23 and 298–300), so this need
-not introduce another residency state machine. State the consumer obligation in the public lease contract
-and cover it in the diagnostic. M1.2 currently exercises discard of the final upload frame, a different point.
-
-### S2 — Make the Chrome stall question agree plainly with the quality bar
-
-**Suggestion · verified wording mismatch · M3.3.**
-
-M3.3 asks whether edit intervals remain within the steady spread, then asks for a size and cause when they
-do not. In contrast, M3.1 expressly requires a slower frame's cause to be outside this module. The M3 bar,
-C2 and the design's worker fallback already require fixing content-induced stalls in the claimed range;
-merely explaining one does not pass that bar. Say this directly in the Chrome criterion, separating the
-required valley/twelve-volume range from exploratory larger-product measurements. No new numeric gate is
-needed, and I have not treated the current wording as permission to waive the existing bar.
-
-### S3 — Explain publication granularity across the three consumption paths
-
-**Suggestion · verified ambiguity · design's edit journey and M3.2/M3.4.**
-
-[DESIGN.md](../../plans/CONTENT-LOOP/DESIGN.md), lines 232–238, lets placements change in the last-copy
-frame, leases in the next frame, and mesh rows after their separate bounded write. Explicitly describe what
-a creator sees when one cooked mesh is both a placement and an entity row, or a texture serves both a
-placement and a lease. The design clearly promises whole individual sets, but its “one frame shows the old
-content and the next the new” cue can also read as one switch for all affected readers. Identify the intended
-scope and its relationship to C05's affected presentation closure; add a coupled example if needed.
-
-## Request and scope assessment
-
-I read the complete `briefs` entry in [ACCEPTED.json](../../plans/CONTENT-LOOP/ACCEPTED.json) and the
-[project brief](../../plans/BRIEF.md) before the design. The accepted task is the lead's wording, not a direct
-owner quotation. The owner-approved brief supplies the controlling G5 and V1 requirements: content-addressed
-cooking and runtime loading, visible live edits without GPU stalls, shipping isolation from authoring, and
-Mac/Chrome delivery. It also keeps performance figures as baselines and leaves sea/cloud completion outside
-the V1 exit.
-
-The resulting scope is appropriate:
-
-- M1 provides shared resident textures and volumes with product identity, change notification, bounded
-  uploads, failure handling and device lifetime. That addresses the SEA and CLOUDS consumers without starting
-  either port or importing their assets.
-- M2 supplies cooked geometry to entity mesh rows and replaces it live. The architecture's explicit seam
-  ruling assigns the necessary CULLING changes and protects its comparisons. This is supported by the
-  showcase requirement, rather than an unrelated extension.
-- M3 assembles visible edits under reconstruction and audits the G5 clauses, shipping boundary and maturity.
-  T2 realtime captures and separate capture-off records distinguish visible behaviour from timing claims.
-- Sprite-sheet/font metadata, array textures and pixel-art profile selection are acknowledged as later
-  RENDER-2D/GAME-UI asks. The task asks to account for these consumers; it does not require their products
-  before track 3. CAS collection, source admission and physical-iPhone encoding are explicit deferrals, not
-  hidden claims of completion. MF1 concerns the inconsistent acceptance promise, not a demand to build all
-  those deferred systems now.
-
-M1 remains buildable when APPLE-PRESENTATION M2 passes: its additional EFFECT-GRAPH M2 dependency is already
-`done` at this commit. M2 waits for CULLING M3; M3 waits for APPLE-PRESENTATION M3, which provides the required
-TAAU. The generated diagnostic lets M1 prove leases without an unbuilt SEA or CLOUDS renderer. The source
-already contains the fetched valley/browser cases needed as a starting point.
-
-## Done-when assessment
-
-All 27 items were read. “Judgeable” below assesses the planned obligation and proof, not implementation
-completion. New test commands are expected to be implemented in their milestone.
-
-| Item | Assessment at its milestone boundary |
+| Changed item | Assessment at its milestone boundary |
 |---|---|
-| M1.1 | Judgeable: public-lease consumer, all portable mips against mapped bytes, and compressed GPU samples reject dummy handles or a private loader. |
-| M1.2 | Judgeable: submission, last-copy discard and supersession cover upload publication; see S1 for the later consumer-history boundary. |
-| M1.3 | Judgeable: identity/resource reuse, changed bytes and creation counts distinguish incremental reload from full reconstruction. |
-| M1.4 | Judgeable: concurrent placement/lease loads test the common budget and ring; the bench supplies cost evidence. |
-| M1.5 | Judgeable: the reviewer checks fault placement in the production failure path, recovery and last-good sets. |
-| M1.6 | Judgeable: new-device emptiness and texel equivalence cover stale-generation views. |
-| M1.7 | Judgeable on Chrome: fetched data, edit traffic and actual device recovery are observable. |
-| M1.8 | Judgeable against the public lease surface and consumer briefs; S1 improves the handoff. |
-| M1.9 | Judgeable with the registered exact-baseline verifier. |
-| M2.1 | Judgeable: product-to-row equality and named admission failures have independent expected data. |
-| M2.2 | Judgeable after replacement commits: independent fresh host, matched tick/view, growth and shrinkage exercise ranges, bounds and shadows. |
-| M2.3 | Must change: its required overtaken encoded frame conflicts with the host, MF2. |
-| M2.4 | Judgeable: write bounds, changed-row traffic, repeated-edit storage reuse and creation counters expose full rebuild substitutes. |
-| M2.5 | Judgeable: last-good output, recovery, resize and new-device output compare with a fresh scene. |
-| M2.6 | Judgeable on Chrome: fetched rows, unchanged page and fresh-page image equality provide an observable endpoint. |
-| M2.7 | Judgeable with T2 realtime frames and native-size inspection; it adds visible switch/shadow evidence to the oracle. |
-| M2.8 | Judgeable with the exact-baseline verifier. |
-| M3.1 | Judgeable using ordinary-host capture-off records plus tripwires; the existing tripwire command alone is insufficient, as the question recognises. |
-| M3.2 | Judgeable with built TAAU and realtime captures of all four edit kinds. |
-| M3.3 | Judgeable against the M3 no-stall bar; see S2 to remove ambiguity about explained failures. |
-| M3.4 | Judgeable with Chrome T2 realtime output under TAAU. |
-| M3.5 | Judgeable for the enumerated invalid/unstable-source cases; it does not prove arbitrary partial-save rejection, MF1. |
-| M3.6 | Judgeable: dependency graphs, release-symbol scan and the cooker positive control provide distinct checks. |
-| M3.7 | Must change: the partial-set promise has no source-boundary mechanism and its question checks only readers, MF1. |
-| M3.8 | Judgeable clause by clause once MF1's scope is reconciled; ledger labels cannot substitute for running evidence. |
-| M3.9 | Judgeable from the public creator and engine-consumer documentation. |
-| M3.10 | Judgeable with the exact-baseline verifier. |
+| M1.3 | Judgeable. Retained identity and byte/creation counts remain; the new question catches a change notification consumed by a discarded or capture frame. A one-shot notification would fail. |
+| M1.7 | Judgeable. “One change” now describes one product revision rather than an event lost on first offer. Fetched texels, changed-product traffic and device recovery remain required. |
+| M1.8 | Judgeable. Public documentation must now cover the consumer's pending invalidation across discard and capture, without depending on SEA or CLOUDS being built. |
+| M2.3 | Judgeable under the retained host protocol. The revised proof includes the frame after a discarded switch and supersession of that replacement, and checks that tests do not bypass the token. MF2 is closed. |
+| M3.3 | Judgeable. Browser edit-window timing and causal attribution enforce the existing no-stall bar at the claimed sizes; an explained content-induced hitch cannot pass. |
+| M3.7 | Judgeable. The independent empty-store cook rejects stale final products, while the reader audit independently proves presentation-only use. MF1 is closed. |
+| M3.8 | The clause-by-clause G5 and maturity audit remains judgeable and honestly names source admission as parked. It cannot authorize MF3's interface deferral. |
+| M3.9 | Judgeable. A creator must be told both what a detected bad save does and what a valid intermediate save can show. |
 
-## Review evidence and limits
+The unchanged items retain their earlier proof assessment. In particular, invalid-input retention in M3.5 is
+separate from M3.7's valid intermediate save. M3.2 and M3.4 remain usable single-path visual proofs, but are not
+proof of C05's affected closure under the newly explicit restriction. No further Must Fix was found in the
+unchanged items.
 
-This was a document and boundary-code review, including the shared contracts, architecture seam ruling,
-prerequisite designs, SEA/CLOUDS briefs, contribution callbacks, exclusive frame token, mesh arena,
-resident-set submission, cooker/watch publication, browser valley cases and shipping scanner. The repository
-has no glossary and no owner-graded verdicts yet; the skill's starting examples and Thrum's standing review
-calibration were read. No agents were started.
+## Suggestion
 
-No runtime, visual-quality or device-performance result is claimed. No GPU run or capture was necessary to
-establish these design contradictions, and no milestone verdict or planner-owned file was changed.
-`./dev check-docs` passed (740 Markdown files, 4,504 local links, 30 module records, crate policy and current
-design hashes). The review's relative links also resolve; the only repository addition is this review.
+### S4 — Distinguish cooker publication from runtime last-good retention
 
-DESIGN CHANGES: 2 must_fix findings
+**Suggestion · verified wording overreach.** [DESIGN.md](../../plans/CONTENT-LOOP/DESIGN.md), lines 225–226,
+says every case in C4 leaves the previous product “published, drawn and lent.” C4 also includes device refusal,
+upload failure and a name missing from a new manifest. Those happen after cooker publication; the runtime can
+retain its last-good resident set without reverting the store's manifest. State the guarantee at the layer that
+owns it. M1.5 and M3.5 already require the useful runtime behavior, so this wording does not add a build blocker.
+
+## Request, prerequisites and review limits
+
+Both complete tasks under `briefs` in [ACCEPTED.json](../../plans/CONTENT-LOOP/ACCEPTED.json) and the
+[project brief](../../plans/BRIEF.md) were read before assessing the revision. The planning tasks are lead/script
+instructions, not new human quotations. The controlling brief still asks for content-addressed cooking and
+loading, visible edits without GPU stalls, authoring-free shipping, and Mac/Chrome delivery. The lease, live mesh
+rows and G5 integration remain appropriate to that request. Future SEA/CLOUDS consumption and the later 2D/font
+product asks remain accounted for without starting those modules or changing the V1 exit.
+
+M1 can still begin when APPLE-PRESENTATION M2 passes: its additional EFFECT-GRAPH M2 prerequisite is already
+`done`. M2 waits for CULLING M3, and M3 waits for APPLE-PRESENTATION M3's reconstruction. The diagnostic consumer
+allows M1 to prove leases independently of unfinished sea/cloud renderers. No new dependency cycle was found.
+
+This was a document and scoped boundary-code review. I read the full design, plan and done-when file, their
+changes from the previous reviewed commit, the shared contract and recorded exception, the relevant architecture
+rulings, and the watcher/cooker and frame/contribution boundaries cited above. The planner's log was read after
+forming the findings. The repository has no glossary or owner-graded verdicts; Thrum's review calibration and the
+skill's starting examples were read. No agents were started.
+
+No runtime, visual-quality or device-performance result is claimed. No GPU run or capture was needed for these
+design findings. No planner-owned file or milestone verdict was changed. `./dev check-docs` passed (740 Markdown
+files, 4,511 local links, 30 module records, crate policy and current design hashes). `git diff --check` and the
+review's relative-file links passed. Only this review file was changed.
+
+DESIGN CHANGES: 1 must_fix findings
