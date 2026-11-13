@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "9cba741733015cc6608322bc505a70a0b138ed0f",
-          "review": "docs/evidence/CULLING/M1-review.md",
+          "review": "docs/evidence/CULLING/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -61,6 +61,34 @@
             "turns": 1
           },
           "at": "2026-11-12T14:47:02Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "d4b5109f867d4b69fef1464c196e17ef6debf695",
+          "review": "docs/evidence/CULLING/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 103021,
+            "cached": 1417728,
+            "output": 7715,
+            "turns": 1
+          },
+          "at": "2026-11-13T00:59:08Z"
         }
       ],
       "authorised": {
@@ -98,6 +126,13 @@
           "output": 46645,
           "turns": 2
         }
+      },
+      "accepted": {
+        "by": "review",
+        "commit": "d4b5109f867d4b69fef1464c196e17ef6debf695",
+        "review": "docs/evidence/CULLING/M1-review.md",
+        "checked": "c6e50cf67956c8ac70dcef04041efc1772525ab8",
+        "at": "2026-11-13T00:59:08Z"
       }
     },
     "M2": {

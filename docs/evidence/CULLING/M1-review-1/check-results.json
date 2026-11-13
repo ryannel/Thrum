@@ -1,0 +1,49 @@
+{
+  "checkout": "9cba741733015cc6608322bc505a70a0b138ed0f",
+  "target": {
+    "adapter": "Apple M3 Max",
+    "backend": "Metal"
+  },
+  "checks": [
+    {
+      "items": [
+        "M1.1",
+        "M1.3",
+        "M1.4"
+      ],
+      "command": "cargo test --locked --offline -p thrum-render --test visibility_buckets -- --nocapture",
+      "exit": 0,
+      "tests_passed": 8,
+      "log": "visibility-buckets-metal.log"
+    },
+    {
+      "items": [
+        "M1.2"
+      ],
+      "command": "THRUM_FIELD_FULL_PATH=1 cargo test --locked --offline --release -p v1-game --test field_occlusion_gpu -- --nocapture",
+      "exit": 0,
+      "compared_ticks": 1930,
+      "seconds": 890.9,
+      "log": "field-occlusion.log",
+      "capture_note": "THRUM_FIELD_SEQUENCE and THRUM_FIELD_FAILURE_DIR also set for reviewer evidence; no comparison or route changes."
+    },
+    {
+      "items": [
+        "M1.5"
+      ],
+      "command_file": "run-exact-matrix.sh",
+      "exit": 0,
+      "native_comparisons": 38,
+      "surface_comparisons": 4,
+      "log": "exact-matrix.log"
+    },
+    {
+      "command": "./dev check",
+      "exit": 0,
+      "log": "dev-check.log"
+    }
+  ],
+  "gpu_serialization": "repository agent_loop.py lock gpu",
+  "review_finding": "mixed_mesh_host_lifecycle_not_exercised",
+  "source_modified": false
+}

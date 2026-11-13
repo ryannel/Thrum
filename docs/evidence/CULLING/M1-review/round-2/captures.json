@@ -1,0 +1,146 @@
+[
+  {
+    "file": "before-0-Direct.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "before-0-Frustum.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "before-0-Occlusion.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "before-3-Direct.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "before-3-Frustum.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "before-3-Occlusion.png",
+    "rgb_sha256": "98535160fd67959197a11cb5a02965b658ec0eacccdecc216c9254470b79002a",
+    "extent": [
+      320,
+      180
+    ]
+  },
+  {
+    "file": "replaced-0-Direct.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "replaced-0-Frustum.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "replaced-0-Occlusion.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "replaced-3-Direct.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "replaced-3-Frustum.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "replaced-3-Occlusion.png",
+    "rgb_sha256": "d8260b44e3ceb914b7de1273f1813a7e2d5d84e81a66afd90fe89f80e94fd514",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-0-Direct.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-0-Frustum.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-0-Occlusion.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-3-Direct.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-3-Frustum.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  },
+  {
+    "file": "resized-3-Occlusion.png",
+    "rgb_sha256": "93ea249d4a1702fc37d5a4cf27b304a36df69a0826194768e6566667086681a5",
+    "extent": [
+      481,
+      271
+    ]
+  }
+]

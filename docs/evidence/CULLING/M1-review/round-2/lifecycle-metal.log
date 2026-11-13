@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-80eb60d150a89052)
+
+running 1 test
+host before frame 0: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 21930, equal to fresh mixed-field Direct
+host before frame 1: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host before frame 2: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host before frame 3: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [320, 180], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 0: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 1: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 2: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host resized frame 3: device 71, source SourceTick { epoch: 47, tick: 1, timeline: 3 }, surface [481, 271], Frustum 21930, Occlusion 3186, equal to fresh mixed-field Direct
+host replaced frame 0: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 22215, equal to fresh mixed-field Direct
+host replaced frame 1: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+host replaced frame 2: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+host replaced frame 3: device 72, source SourceTick { epoch: 47, tick: 61, timeline: 3 }, surface [481, 271], Frustum 22215, Occlusion 1145, equal to fresh mixed-field Direct
+test mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 12.66s
+

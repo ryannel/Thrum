@@ -1,0 +1,12 @@
+{
+  "checkout": "9cba741733015cc6608322bc505a70a0b138ed0f",
+  "sha256": {
+    "crates/thrum-render/src/synthetic/mesh_route.rs": "6aba7c16633519d4d5e2974747382edbd921cdb5e17ed1a5007785a293ed588c",
+    "crates/thrum-render/src/synthetic/camera_culling.rs": "510df25e6c3b3cddf8362614c08bcb33562f2e437bd71c8950bfc1f5bfb6ce17",
+    "crates/thrum-render/src/visibility/occlusion.wgsl": "ae506c29a826a23611dea927f7f6ec1a75fdfaa5d5ed38ef6517a8a128bc6fa8",
+    "crates/thrum-render/src/synthetic/shadow.wgsl": "b3c148105eeb4ac5f8e44dd5c04e7597cddbbc8c96427e62ed7bd9c69dde61b0",
+    "examples/v1-game/tests/support/field_fly.rs": "25c7f625ea94c9c17de3a941bc6cdf0b987f371bfa7419d1ac1c12e43324bb4d"
+  },
+  "cargo": "cargo 1.99.1 (5f94df478 2026-08-27) (Homebrew)",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)"
+}

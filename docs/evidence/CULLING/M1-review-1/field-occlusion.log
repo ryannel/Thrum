@@ -1,0 +1,14 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 8.64s
+     Running tests/field_occlusion_gpu.rs (target/release/deps/field_occlusion_gpu-8c946c96fc500c53)
+
+running 1 test
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut has been running for over 60 seconds
+1930 frames compared; Frustum drew 21737 of 100513 at its fewest; 0 culled frames retired before their count; Occlusion drew at most half of Frustum on 1918 of 1930 paired ticks
+test mixed_mesh_occlusion_matches_bucket_direct_through_first_cut ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 890.90s
+

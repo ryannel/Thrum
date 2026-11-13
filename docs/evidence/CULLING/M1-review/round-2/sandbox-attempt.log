@@ -1,0 +1,18 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running tests/visibility_buckets.rs (target/debug/deps/visibility_buckets-80eb60d150a89052)
+
+running 1 test
+
+thread 'mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden' (181945205) panicked at crates/thrum-render/tests/visibility_buckets.rs:37:14:
+Metal adapter: NotFound { active_backends: Backends(METAL), requested_backends: Backends(NOOP | VULKAN | GL | METAL | DX12 | BROWSER_WEBGPU), supported_backends: Backends(METAL), no_fallback_backends: Backends(0x0), no_adapter_backends: Backends(METAL), incompatible_surface_backends: Backends(0x0) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden ... FAILED
+
+failures:
+
+failures:
+    mixed_field_host::mixed_field_host_surface_resize_and_device_publication_keep_occlusion_hidden
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.14s
+
+error: test failed, to rerun pass `-p thrum-render --test visibility_buckets`
