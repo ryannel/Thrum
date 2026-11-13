@@ -1,6 +1,28 @@
 {
   "module": "GAME-UI",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/GAME-UI/design-review.md",
+    "commit": "faa2d8433be9e7d9a6b83b7acc31b201308e0ff1",
+    "hash": "8f8e794c178d912575a2e7494ba70ad0af3302f9a45921bc90e2daf7ce36ba24",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 122536,
+      "cached": 1175808,
+      "output": 6196,
+      "turns": 1
+    },
+    "at": "2026-11-13T19:25:37Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "f5d83cd39c98a6ac504f8fa938d663d1cb91ba5e7c0d028228248a1e2b1704da",
