@@ -25,21 +25,21 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "047e7ada8c2079ea50475e7c8c1ffc568c0527eb40a7b5322de6abc194aa5bc7",
+      "definitions": "fca53ee85a40b75e8212c66beb15c61d4d3edf4262bd1cf4e1d746d96387cdc8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SIM-2D. It needs: SHOWCASE",
-        "at": "2026-11-13T15:24:39Z"
+        "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-13T15:38:44Z"
       }
     },
     "M2": {
-      "definitions": "f7fd78a7bdf66d43ff1d055dfc4f502e9ce68c3f3b69eb557c21bd169b4f06ad",
+      "definitions": "6b2e9896beb4912e56b8aff51a2ee1e4e97693e75c5b22832f6f0eff398662a0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SIM-2D. It needs: SHOWCASE",
-        "at": "2026-11-13T15:24:39Z"
+        "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-13T15:38:44Z"
       }
     },
     "M3": {
@@ -56,10 +56,14 @@
     {
       "task": "Plan module SIM-2D. It needs: SHOWCASE",
       "at": "2026-11-13T15:24:39Z"
+    },
+    {
+      "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T15:38:44Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T15:24:39Z"
+    "at": "2026-11-13T15:38:44Z"
   }
 }
