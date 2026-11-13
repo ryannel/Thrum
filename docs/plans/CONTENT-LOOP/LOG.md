@@ -1,5 +1,19 @@
 # CONTENT-LOOP log
 
+- 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed that `LentDiagnostic` has only
+  a public lease, that native comparisons map the lease's portable identity for every mip, and that
+  discard/capture cannot commit its observed serials. The coupled-reader test checks every submitted
+  image and sampled buffer against all-old/all-new references in both contribution orders. The staging
+  probe fails the mapped-write operation, reaching the production slot-release branch. The public
+  guide documents request names, readiness, serial commit, device rebuilding and consumer ownership.
+  These are source-inspection findings. The final item check at `4f47db28` completed successfully:
+  job `20261113-170643-440`, nine automated passes and M1.8's documentation inspection. Native,
+  fault and Chrome passes were reused by the script's source-file key from 15:55 UTC; the exact
+  verifier ran fresh for 928.12 seconds and passed both native matrices and all four Chrome sets.
+  Its covered-content proof key is `57788bc9592743b7f6c13f0e9dadaeccf8cf32e80baa89a6e6ea703b11ef3c83`.
+  The retained target logs in the compact evidence remain the underlying proof; this entry records
+  the final strengthened source's automatic verification. All ten items are now marked passed.
+
 - 2026-11-13 M1 built and target-proved. The native lease and coupled-reader tests pass, including both
   profiles, all portable mips, BC4 quality, discarded recordings, capture invalidation, device loss and shared
   switches. The fault test passes through the production error branch; Chrome verifies 28,766,400 bytes after
