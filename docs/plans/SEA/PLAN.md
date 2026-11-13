@@ -16,7 +16,8 @@ read and never changed, nothing is copied from it before the owner names the lic
 - Assumption: the craft, the floats and the foam pattern of the example scene are made in this repository, original or public domain, and no Broadsides asset is used.
 - Assumption: a finished sea excludes inland water, coasts, shoaling, surf and tides, and the three cues the 10 November spikes left open (spray release at chase distance, the attached sheet at the hull, a visibly rising gas cloud). They stay parked spikes.
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft, as the water decision sizes them. Wake waves shorter than about 12 m are carried to about 30 m behind the craft and longer ones to about 250 m; the foam trail reaches further. A wake that persists everywhere the craft has been needs water state that stays in the world, which is not planned.
-- Assumption: full refresh is claimed on the Mac, as the brief's cost sentence says. Chrome is held to the same look and behaviour, and its frame intervals are recorded, not gated.
+- Assumption: the full-refresh cost account is recorded on the Mac only, as the brief's cost sentence says. Chrome is held to the same look and behaviour, and its frame intervals are recorded. On neither does a timing figure decide an item or stop a milestone (brief decision 3).
+- Assumption: "screen-space reflection" means the sea reflects the bodies a scene registers, the craft and floats here, within a reach of 64 m and on water tilted up to 20°, fading to the sky beyond. Other opaque geometry is not reflected. A sea that mirrors everything in view needs the whole-scene copy this design removes, or ray query, and neither is planned.
 - Assumption: until the showcase's own extent exists, cost is recorded at 2560×1440, the extent Broadsides was measured at. M10 repeats it at the showcase's extent.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones (M7 and M8 in its drafts), which are not planned yet. Everything a visitor sees is finished by M9; M10 waits.
 
@@ -42,9 +43,9 @@ world never ticks. The surface draws in `after-opaque` and writes scene depth un
 [ruling 1](../ARCHITECTURE.md#seam-rulings-for-sea), which this builder adds in `EFFECT-GRAPH`'s files without
 changing that module's items or tests. Ruling 3 covers anything the shell or the capture tap still assumes of
 the V1 game; `CREATOR` M2 and M3 edit `thrum-app` too, so integrate on top of what has landed. Light comes only from `ATMOSPHERE`'s lent library. This milestone creates
-`scripts/sea_cost.py`, and its first record is the baseline later milestones are read against. If the frame does
-not hold the refresh after the three designed remedies in the design's first risk, end `BLOCKED` with the
-record: the design is re-planned before M5.
+`scripts/sea_cost.py`, and its first record is the baseline later milestones are read against. A frame over the
+refresh interval is investigated here with the remedies in the design's first risk and written up in the record.
+It does not stop this milestone or the next.
 
 ## M4 The same sea draws in Chrome from one command
 
@@ -63,7 +64,8 @@ side.
 ## M6 The craft leaves a wake that spreads behind it, outlives it, and lifts a float it crosses
 
 `docs/evidence/SEA/design-proof/wake_proof.py` is a working sketch of the two banded levels, the border and the
-Fourier-space source, and its output gives the figures M6.1 and M6.2 are bounded from. The engine tests use a
+Fourier-space source, and its output gives the figures M6.1 and M6.2 are bounded from. Part A of
+`revision_proof.py` beside it sketches the step of several ticks that M6.10 holds. The engine tests use a
 generic pressure patch, never the example's hull. The body's own dent is added back in the query; filtering the
 craft out of the wake is the wrong fix for a craft that bounces on its own waves.
 
@@ -77,7 +79,9 @@ fail the same cue, record them in the log and end `BLOCKED`.
 ## M8 The sea reflects the sky, the Sun and the craft, glitters, darkens with depth and dims under a cloud's shade, from dawn to night
 
 The gather pass reads scene colour and depth under [ruling 2](../ARCHITECTURE.md#seam-rulings-for-sea), added
-in `EFFECT-GRAPH`'s files as ruling 1 was. The cloud shade uses `ATMOSPHERE`'s provider registration with a
+in `EFFECT-GRAPH`'s files as ruling 1 was. Its conversion to radiance uses `ATMOSPHERE`'s lent aerial lookup and
+exposure scale as they are; nothing new is asked of that module. Parts C and E of
+`docs/evidence/SEA/design-proof/revision_proof.py` sketch the receiving rectangles and the conversion. The cloud shade uses `ATMOSPHERE`'s provider registration with a
 stand-in provider in the example, labelled as one; `examples/v1-game/src/environment.rs` has the diagnostic
 provider to read.
 
@@ -86,7 +90,7 @@ provider to read.
 TAAU is `APPLE-PRESENTATION`'s. A defect that is the reconstructor's and not the sea's inputs goes to that
 module's log as a proposal. The knobs are declared through `EFFECT-GRAPH`'s list; no governor is needed here.
 
-## M10 On the Mac's Apple recipe the sea runs with MetalFX and the governor at the display's full refresh, and the module is closed
+## M10 On the Mac's Apple recipe the sea runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed
 
 Run M10.1's check first. If it fails, end `BLOCKED` with `needs_dependency` and build nothing: the governor and
 MetalFX are `APPLE-PRESENTATION`'s to build. M10.6 needs the owner's attended sitting; do every other item

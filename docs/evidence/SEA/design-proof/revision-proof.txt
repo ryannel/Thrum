@@ -1,0 +1,69 @@
+E  a submerged body of radiance 10 toward the camera; exposure 0.25; camera-to-body air T 0.8, S 0.6 (as the
+   forward pass applied them); camera-to-surface air T 0.82, S 0.55; water T 0.5; Fresnel 0.02; water in-scatter 0
+   scene colour copied: 2.1500
+   stored sea colour, from the true radiance:              1.1420
+   from the gather (exposure divided out, camera air removed): 1.1420
+   from the copied colour used as radiance:                0.3535
+   from the copied colour with exposure divided out only:  1.0014
+   exposure 0.25: stored / exposure is 4.5680 converted, 1.4139 unconverted
+   exposure 4.00: stored / exposure is 4.5680 converted, 14.3719 unconverted
+   air left out between the water and a reflected body: over the 64 m reach, T >= 0.9974 at 429 nm in ATMOSPHERE's air (Rayleigh 3.668e-5 + Mie 4.4e-6 per metre at sea level)
+D  foam with no birth: air -> fresh film -> aged film -> gone, lifetimes 2, 6 and 20 s, yield 1
+   fresh film only: t= 0.6 s air 0.0000 fresh 0.9048 aged 0.0937 sum 0.9986 | t= 6.0 s air 0.0000 fresh 0.3679 aged 0.5328 sum 0.9006 | t=60.0 s air 0.0000 fresh 0.0000 aged 0.0711 sum 0.0711
+      inventory ever rose: False; one 3600-tick step against 3600 steps differs by 2.1e-14
+   submerged air only: t= 0.6 s air 0.7408 fresh 0.2460 aged 0.0130 sum 0.9999 | t= 6.0 s air 0.0498 fresh 0.4771 aged 0.4152 sum 0.9422 | t=60.0 s air 0.0000 fresh 0.0001 aged 0.0789 sum 0.0790
+      inventory ever rose: False; one 3600-tick step against 3600 steps differs by 2.9e-14
+B  largest error of the time-weighted blend of two endpoints s ticks apart, during the last tick of the
+   span, as a share of a wave's amplitude; the bound is (w dt)^2 / 8 for s = 1 and (w dt)^2 (s - 1) / 2 after
+   wavelength    0.4 m  s=1:  0.534% (bound  0.535%)  s=2:  2.132% (bound  2.139%)  s=4:  6.320% (bound  6.418%)  s=8: 13.988% (bound 14.976%)
+   wavelength    2.0 m  s=1:  0.107% (bound  0.107%)  s=2:  0.428% (bound  0.428%)  s=4:  1.280% (bound  1.284%)  s=8:  2.955% (bound  2.995%)
+   wavelength   20.0 m  s=1:  0.011% (bound  0.011%)  s=2:  0.043% (bound  0.043%)  s=4:  0.128% (bound  0.128%)  s=8:  0.299% (bound  0.300%)
+   wavelength  150.0 m  s=1:  0.001% (bound  0.001%)  s=2:  0.006% (bound  0.006%)  s=4:  0.017% (bound  0.017%)  s=8:  0.040% (bound  0.040%)
+C  sea points with random heights within the amplitude and random normals within the slope allowance;
+   each whose reflected or refracted ray meets the body's box must lie inside the receiving rectangle
+   camera  1.0 m, body  12.0 m, amplitude 0.0 m, allowance  0.0 deg:   3511 reflect,   1843 refract, 0 outside the receiving rectangle;    372 reflections outside the body's own rectangle; screen share: body  5.79%, receiving  14.81%
+   camera  1.0 m, body  12.0 m, amplitude 0.5 m, allowance 10.0 deg:   2853 reflect,   1401 refract, 0 outside the receiving rectangle;    433 reflections outside the body's own rectangle; screen share: body  5.79%, receiving  60.41%
+   camera  1.0 m, body  12.0 m, amplitude 3.0 m, allowance 20.0 deg:   1138 reflect,    343 refract, 0 outside the receiving rectangle;    553 reflections outside the body's own rectangle; screen share: body  5.79%, receiving 100.00%
+   camera  1.0 m, body  20.0 m, amplitude 0.0 m, allowance  0.0 deg:   3972 reflect,   1601 refract, 0 outside the receiving rectangle;    570 reflections outside the body's own rectangle; screen share: body  1.41%, receiving   3.66%
+   camera  1.0 m, body  20.0 m, amplitude 0.5 m, allowance 10.0 deg:   2830 reflect,   1155 refract, 0 outside the receiving rectangle;    498 reflections outside the body's own rectangle; screen share: body  1.41%, receiving  29.77%
+   camera  1.0 m, body  20.0 m, amplitude 3.0 m, allowance 20.0 deg:   1115 reflect,    306 refract, 0 outside the receiving rectangle;    618 reflections outside the body's own rectangle; screen share: body  1.41%, receiving 100.00%
+   camera  1.0 m, body 100.0 m, amplitude 0.0 m, allowance  0.0 deg:   6300 reflect,    813 refract, 0 outside the receiving rectangle;   1248 reflections outside the body's own rectangle; screen share: body  0.03%, receiving   0.09%
+   camera  1.0 m, body 100.0 m, amplitude 0.5 m, allowance 10.0 deg:   1848 reflect,    497 refract, 0 outside the receiving rectangle;    272 reflections outside the body's own rectangle; screen share: body  0.03%, receiving   1.75%
+   camera  1.0 m, body 100.0 m, amplitude 3.0 m, allowance 20.0 deg:    825 reflect,    124 refract, 0 outside the receiving rectangle;    521 reflections outside the body's own rectangle; screen share: body  0.03%, receiving  13.12%
+   camera  2.0 m, body  12.0 m, amplitude 0.0 m, allowance  0.0 deg:   3318 reflect,   1882 refract, 0 outside the receiving rectangle;    491 reflections outside the body's own rectangle; screen share: body  5.79%, receiving  14.81%
+   camera  2.0 m, body  12.0 m, amplitude 0.5 m, allowance 10.0 deg:   3212 reflect,   1776 refract, 0 outside the receiving rectangle;    578 reflections outside the body's own rectangle; screen share: body  5.79%, receiving  44.54%
+   camera  2.0 m, body  12.0 m, amplitude 3.0 m, allowance 20.0 deg:   1572 reflect,    684 refract, 0 outside the receiving rectangle;    611 reflections outside the body's own rectangle; screen share: body  5.79%, receiving 100.00%
+   camera  2.0 m, body  20.0 m, amplitude 0.0 m, allowance  0.0 deg:   3807 reflect,   1651 refract, 0 outside the receiving rectangle;    812 reflections outside the body's own rectangle; screen share: body  1.41%, receiving   3.66%
+   camera  2.0 m, body  20.0 m, amplitude 0.5 m, allowance 10.0 deg:   3160 reflect,   1371 refract, 0 outside the receiving rectangle;    793 reflections outside the body's own rectangle; screen share: body  1.41%, receiving  26.18%
+   camera  2.0 m, body  20.0 m, amplitude 3.0 m, allowance 20.0 deg:   1576 reflect,    583 refract, 0 outside the receiving rectangle;    717 reflections outside the body's own rectangle; screen share: body  1.41%, receiving 100.00%
+   camera  2.0 m, body 100.0 m, amplitude 0.0 m, allowance  0.0 deg:   5880 reflect,    837 refract, 0 outside the receiving rectangle;   2010 reflections outside the body's own rectangle; screen share: body  0.03%, receiving   0.09%
+   camera  2.0 m, body 100.0 m, amplitude 0.5 m, allowance 10.0 deg:   2066 reflect,    487 refract, 0 outside the receiving rectangle;    464 reflections outside the body's own rectangle; screen share: body  0.03%, receiving   1.75%
+   camera  2.0 m, body 100.0 m, amplitude 3.0 m, allowance 20.0 deg:   1016 reflect,    266 refract, 0 outside the receiving rectangle;    556 reflections outside the body's own rectangle; screen share: body  0.03%, receiving  12.87%
+   camera 10.0 m, body  12.0 m, amplitude 0.0 m, allowance  0.0 deg:   2312 reflect,   1655 refract, 0 outside the receiving rectangle;    287 reflections outside the body's own rectangle; screen share: body  0.99%, receiving   1.67%
+   camera 10.0 m, body  12.0 m, amplitude 0.5 m, allowance 10.0 deg:   2320 reflect,   1714 refract, 0 outside the receiving rectangle;    319 reflections outside the body's own rectangle; screen share: body  0.99%, receiving  12.08%
+   camera 10.0 m, body  12.0 m, amplitude 3.0 m, allowance 20.0 deg:   2038 reflect,   1283 refract, 0 outside the receiving rectangle;    564 reflections outside the body's own rectangle; screen share: body  0.99%, receiving 100.00%
+   camera 10.0 m, body  20.0 m, amplitude 0.0 m, allowance  0.0 deg:   2412 reflect,   1555 refract, 0 outside the receiving rectangle;    497 reflections outside the body's own rectangle; screen share: body  1.72%, receiving   2.94%
+   camera 10.0 m, body  20.0 m, amplitude 0.5 m, allowance 10.0 deg:   2446 reflect,   1554 refract, 0 outside the receiving rectangle;    560 reflections outside the body's own rectangle; screen share: body  1.72%, receiving  12.73%
+   camera 10.0 m, body  20.0 m, amplitude 3.0 m, allowance 20.0 deg:   2020 reflect,   1190 refract, 0 outside the receiving rectangle;    792 reflections outside the body's own rectangle; screen share: body  1.72%, receiving 100.00%
+   camera 10.0 m, body 100.0 m, amplitude 0.0 m, allowance  0.0 deg:   3004 reflect,    792 refract, 0 outside the receiving rectangle;   1364 reflections outside the body's own rectangle; screen share: body  0.04%, receiving   0.10%
+   camera 10.0 m, body 100.0 m, amplitude 0.5 m, allowance 10.0 deg:   2545 reflect,    722 refract, 0 outside the receiving rectangle;   1168 reflections outside the body's own rectangle; screen share: body  0.04%, receiving   1.81%
+   camera 10.0 m, body 100.0 m, amplitude 3.0 m, allowance 20.0 deg:   1312 reflect,    463 refract, 0 outside the receiving rectangle;    764 reflections outside the body's own rectangle; screen share: body  0.04%, receiving  11.23%
+   camera 40.0 m, body  12.0 m, amplitude 0.0 m, allowance  0.0 deg:   1720 reflect,   1536 refract, 0 outside the receiving rectangle;     92 reflections outside the body's own rectangle; screen share: body  0.00%, receiving   0.00%
+   camera 40.0 m, body  12.0 m, amplitude 0.5 m, allowance 10.0 deg:   1803 reflect,   1512 refract, 0 outside the receiving rectangle;    147 reflections outside the body's own rectangle; screen share: body  0.00%, receiving   0.00%
+   camera 40.0 m, body  12.0 m, amplitude 3.0 m, allowance 20.0 deg:   1891 reflect,   1029 refract, 0 outside the receiving rectangle;    388 reflections outside the body's own rectangle; screen share: body  0.00%, receiving 100.00%
+   camera 40.0 m, body  20.0 m, amplitude 0.0 m, allowance  0.0 deg:   1720 reflect,   1480 refract, 0 outside the receiving rectangle;    133 reflections outside the body's own rectangle; screen share: body  0.00%, receiving   0.00%
+   camera 40.0 m, body  20.0 m, amplitude 0.5 m, allowance 10.0 deg:   1837 reflect,   1459 refract, 0 outside the receiving rectangle;    222 reflections outside the body's own rectangle; screen share: body  0.00%, receiving   0.00%
+   camera 40.0 m, body  20.0 m, amplitude 3.0 m, allowance 20.0 deg:   1714 reflect,    948 refract, 0 outside the receiving rectangle;    495 reflections outside the body's own rectangle; screen share: body  0.00%, receiving 100.00%
+   camera 40.0 m, body 100.0 m, amplitude 0.0 m, allowance  0.0 deg:   1432 reflect,    816 refract, 0 outside the receiving rectangle;    450 reflections outside the body's own rectangle; screen share: body  0.06%, receiving   0.14%
+   camera 40.0 m, body 100.0 m, amplitude 0.5 m, allowance 10.0 deg:   1679 reflect,    849 refract, 0 outside the receiving rectangle;    659 reflections outside the body's own rectangle; screen share: body  0.06%, receiving   1.22%
+   camera 40.0 m, body 100.0 m, amplitude 3.0 m, allowance 20.0 deg:   1654 reflect,    665 refract, 0 outside the receiving rectangle;   1010 reflections outside the body's own rectangle; screen share: body  0.06%, receiving   5.70%
+   sea points outside their receiving rectangle, all cases: 0
+   the review's case (camera 2 m, body 2 m tall at 20 m, calm): body rows [-0.103, 0.000], receiving rows [-0.205, 0.000], which hold the mirror image's [-0.200, -0.100]
+A  hull at 6 m/s for 20 s on one 256 x 0.5 m level; error inside the window, clear of its border,
+   against the same run stepped one tick at a time
+   free propagation, one 8-tick step against eight: max difference 4.02e-01 mm away from the border 4.54e-03 mm
+   n= 2: one hitch at the end  0.00% of RMS (max   0.03 mm) | a hitch every second  0.01% | the same with the source held at its last place  0.12% | every step n ticks  0.19%
+   n= 4: one hitch at the end  0.02% of RMS (max   0.37 mm) | a hitch every second  0.08% | the same with the source held at its last place  0.73% | every step n ticks  0.97%
+   n= 8: one hitch at the end  0.16% of RMS (max   3.48 mm) | a hitch every second  0.63% | the same with the source held at its last place  3.35% | every step n ticks  4.00%
+   n=16: one hitch at the end  1.44% of RMS (max  30.68 mm) | a hitch every second  4.89% | the same with the source held at its last place 13.46% | every step n ticks 15.34%
+   reference RMS 32.9 mm

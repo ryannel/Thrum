@@ -144,9 +144,9 @@
         },
         {
           "id": "M2.4",
-          "statement": "Through a scripted run of repeated ticks, a pause, a hitch of many ticks, a discarded frame, a capture frame, a backward tick, a new timeline and a replaced device, the sea after every submitted frame is the model's sea for that frame's tick, and the two banks hold the committed tick and the one before it.",
+          "statement": "Through a scripted run of repeated ticks, a pause, a hitch of many ticks, a discarded frame, a capture frame at another tick, a backward tick, a new timeline and a replaced device, the sea's two banks after every submitted frame hold what the design's endpoint table gives: the newer the model's sea at the committed tick, the older the model's sea at the tick committed before it, or at the same tick after a full frame, each with its tick. A discarded frame and a capture frame change neither.",
           "check": "cargo test --locked --offline -p thrum-sea --test state_gpu",
-          "ask": "Are the expectations written from the model and the design's time table, and not from an earlier run of the GPU code? Does the run discard the frame that first writes a bank?",
+          "ask": "Are the expectations written from the model and the design's endpoint table, and not from an earlier run of the GPU code? Does the run discard the frame that first writes a bank, and hitch from one committed tick straight to one two or more later?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -222,7 +222,7 @@
         {
           "id": "M3.2",
           "statement": "At noon in a trade wind, from 2 m and from 40 m above the water, the sea reads as open water from the waterline to the horizon: wind waves ride a longer swell, crests are sharper than troughs, the horizon is one clean line with no gap or band under it, and no patch of waves repeats.",
-          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from 2 m and 40 m, looking along and across the wind. Judge each frame whole, and in native-size crops of the near water, the middle distance and the horizon.",
+          "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near water, the middle distance and the horizon.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -232,7 +232,7 @@
         {
           "id": "M3.3",
           "statement": "The sea is lit only by the engine's sky and Sun. At noon, at low Sun and at twilight a sky-lit grey float at the waterline and the water around it sit in one light, the Sun's reflection lies under the Sun, and the far sea takes the sky's haze.",
-          "inspect": "Capture `fixed` stills at the three times with the grey float in frame. Judge the float against the water beside it, the reflection's place, and the horizon.",
+          "inspect": "`fixed` stills at noon, low Sun and twilight with the grey float in frame: the float against the water beside it, the Sun's reflection and the horizon.",
           "ask": "Does the surface shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -255,7 +255,7 @@
         {
           "id": "M3.5",
           "statement": "At 1x, with the camera panning, the surface moves smoothly between ticks: waves do not step at the tick rate against the camera.",
-          "inspect": "Capture a `realtime` sequence with T2 engine capture, panning across the wind for ten seconds. Judge consecutive frames at 1x, whole and in native-size crops of near crests.",
+          "inspect": "A `realtime` sequence with the camera panning across the wind: near crests from frame to frame.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -264,9 +264,9 @@
         },
         {
           "id": "M3.6",
-          "statement": "On this Mac at 2560\u00d71440, capture off, the sea scene's whole frame stays within the 8.33 ms interval of the 120 Hz display on tick frames and on repeat frames. A paired record with the sea absent gives each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded.",
+          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the sea absent gives the whole frame on tick frames and on repeat frames, each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene first-frame",
-          "ask": "Is the record paired and from the claimed commit, with the load on the machine? Is each pass over the design's estimate named with a cause, and does the record become the baseline later milestones compare with?",
+          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -316,7 +316,7 @@
         },
         {
           "id": "M4.2",
-          "statement": "In Chrome, through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the sea after each submitted frame is the model's sea for that frame's tick.",
+          "statement": "In Chrome, through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the sea's two banks after each submitted frame hold what the design's endpoint table gives.",
           "check": "node scripts/check_sea_browser.mjs --case state",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -326,7 +326,7 @@
         {
           "id": "M4.3",
           "statement": "In Chrome at noon in a trade wind the sea passes M3.2's list, and any difference from the Mac's portable recipe at the same views is recorded.",
-          "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at M3.2's views. Judge them by M3.2's list, then compare native-size crops with the Mac's portable-recipe stills.",
+          "inspect": "`fixed` stills in Chrome at M3.2's views, judged by M3.2's list and against the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -336,7 +336,7 @@
         {
           "id": "M4.4",
           "statement": "In Chrome the surface moves smoothly between ticks, and the page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
-          "inspect": "Capture a `realtime` sequence in Chrome with the camera panning. Judge consecutive frames at 1x.",
+          "inspect": "A `realtime` sequence in Chrome with the camera panning.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -366,7 +366,7 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, the tick it was evaluated at, and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model within 2 mm and the cascade part within M2's bound, with each point's footprint choosing the cascade mip.",
+          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, valid at the point's use tick, with that tick, the state tick it was made from and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model at the use tick within 2 mm, and for a point whose use tick is the state tick the cascade part is within M2's bound, with each point's footprint choosing the cascade mip.",
           "check": "cargo test --locked --offline -p thrum-sea --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -375,7 +375,7 @@
         },
         {
           "id": "M5.2",
-          "statement": "At a 60 Hz tick and 120 Hz frames an answer reaches the game one to two ticks after it was asked for, through discarded frames and a stalled readback. A late answer is extrapolated and counted, an answer older than the declared maximum is unavailable and counted, and the blocking-read counter stays at zero.",
+          "statement": "At a 60 Hz tick and 120 Hz frames an answer reaches the game one to two ticks after it was asked for, through discarded frames and a stalled readback. An answer used at another tick than its use tick is moved once, by its time derivative, and counted. An answer older than the declared maximum is unavailable and counted, and the blocking-read counter stays at zero.",
           "check": "cargo test --locked --offline -p thrum-sea --test query_gpu",
           "ask": "Is there any map, poll or readback in `thrum-sea` or the example that waits for the GPU? Is the counter raised at every place that could?",
           "lock": "gpu",
@@ -409,7 +409,7 @@
         {
           "id": "M5.5",
           "statement": "A float and the craft rise, pitch and roll with the waves under them: a float lifts as a crest reaches it and tilts down its face, the craft pitches into a head sea and rolls in a beam sea, and nothing slides, jitters or lags the water. This holds at rest, at 5 m/s and at 15 m/s, in a trade wind and in a gale.",
-          "inspect": "Capture `realtime` sequences from a chase view at 12 m and a side view at 6 m for each speed and sea. Judge consecutive frames at 1x, watching the waterline on the hull and on one float.",
+          "inspect": "`realtime` sequences from a chase view and a side view, at each speed in each sea: the waterline on the hull and on one float.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -500,7 +500,7 @@
         {
           "id": "M6.5",
           "statement": "On a calm sea the wake reads as water. At 3 m/s two arms spread behind the craft with transverse crests between them; at 12 m/s the wake is narrower; through a turn the old wake stays where it was made and keeps spreading; after the craft stops the waves travel on and fade; a float on the track rocks as they cross.",
-          "inspect": "Capture `realtime` sequences of a straight run at each speed, a turn, and a stop and restart, from a chase view at 12 m and from 40 m above. Judge consecutive frames at 1x, and stills of the wake's shape from above.",
+          "inspect": "`realtime` sequences of a straight run at each speed, a turn, and a stop and restart, from a chase view and from 40 m above: the wake's shape and how it moves.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -510,7 +510,7 @@
         {
           "id": "M6.6",
           "statement": "In a trade wind the wake rides the waves: no window edge shows, no seam shows where the fine wake ends, and nothing pops as the windows move with the craft.",
-          "inspect": "Capture a `realtime` sequence of the craft at 6 m/s in a trade wind from 40 m above, following it for 30 seconds. Judge consecutive frames at 1x and native-size crops 30 m behind the craft.",
+          "inspect": "A `realtime` sequence following the craft at 6 m/s in a trade wind from 40 m above: the windows' edges, and the water about 30 m behind the craft, where the fine wake ends.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -528,9 +528,9 @@
         },
         {
           "id": "M6.8",
-          "statement": "With the wake running, the sea scene's whole frame at 2560\u00d71440 stays within the 8.33 ms interval on tick frames and on repeat frames.",
+          "statement": "With the wake running, the paired cost record is taken again for the wake scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene wake",
-          "ask": "Is each sea pass's time recorded beside the last milestone's record for the same view, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -546,6 +546,18 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
+        },
+        {
+          "id": "M6.10",
+          "statement": "A hitch of up to eight ticks is one wake step. With a hitch of eight ticks every second, the wake after 20 s differs from the same run stepped tick by tick by under 2% of the field's RMS height, where the design measured 0.6%. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the wake to calm and the scene's status says so. A discarded frame and a capture frame change nothing.",
+          "check": "cargo test --locked --offline -p thrum-sea --test wake_gpu",
+          "ask": "Does the test's hitch move the body's pressure along its path over the step, and does the bound fail when the pressure is held at the body's last place?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -563,11 +575,14 @@
       "items": [
         {
           "id": "M7.1",
-          "statement": "The foam reference in `thrum-sea-model` holds four stocks. With no cause every stock only falls; fresh film becomes aged film and aged film nothing, each on its lifetime; submerged air becomes fresh film once; and a birth never takes cover past one.",
+          "statement": "The foam reference in `thrum-sea-model` holds the four stocks and moves material only along the design's transfers. With no birth, aged film gains what fresh film loses, surfacing air becomes fresh film once, aged film rises out of fresh film and fresh film out of submerged air before they fall, the inventory of film and yield-weighted air never rises, and every stock ends at nothing. A birth never takes cover past one.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test foam",
+          "ask": "Are the expected values the closed form of the transfer chain, worked out without the reference? Would a model that only decays each stock fail the test?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.2",
@@ -599,7 +614,7 @@
         {
           "id": "M7.5",
           "statement": "In a gale, whitecaps form on breaking crests with a bright core and a feathered edge, stay behind the crest as streaks, and fade. A fresh breeze shows fewer and a glassy sea none. No stamp, grid or repeated shape shows from 2 m or from 40 m, and whitecaps thin toward the horizon with no line where the foam's windows end.",
-          "inspect": "Capture `fixed` stills and a `realtime` sequence at each wind, from 2 m and 40 m. Judge frames whole, native-size crops of single caps, and two crops a pattern length apart.",
+          "inspect": "`fixed` stills and a `realtime` sequence at each wind, from 2 m and 40 m: single caps, the water behind a breaking crest, two places a pattern length apart, and the far sea.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -609,7 +624,7 @@
         {
           "id": "M7.6",
           "statement": "The craft's trail is white where the hull meets the water and behind the stern, with pale turquoise water under and beside the foam; it turns to lace as it ages, widens, thins, and is gone in about a minute. At rest there is none.",
-          "inspect": "Capture a `realtime` sequence from a chase view at 12 m and from 40 m above, of the craft at 6 m/s and 12 m/s on a calm sea, then stopping. Judge consecutive frames at 1x and stills 10, 30 and 60 seconds after it passes.",
+          "inspect": "A `realtime` sequence from a chase view and from 40 m above, of the craft at 6 m/s and 12 m/s on a calm sea and then stopping: the hull's waterline, the stern, and the trail over the minute after the craft passes.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -636,9 +651,9 @@
         },
         {
           "id": "M7.9",
-          "statement": "With foam running in a gale, the sea scene's whole frame at 2560\u00d71440 stays within the 8.33 ms interval on tick frames and on repeat frames.",
+          "statement": "With foam running in a gale, the paired cost record is taken again for the foam scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene foam",
-          "ask": "Is each sea pass's time recorded beside the last milestone's record for the same view, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -650,6 +665,15 @@
           "id": "M7.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.11",
+          "statement": "A hitch of up to eight ticks is one foam step: after it the transfers and births match the reference stepped tick by tick as M7.2 holds them, and a drifting patch is where the drift carries it. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
+          "check": "cargo test --locked --offline -p thrum-sea --test foam_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -670,7 +694,7 @@
         {
           "id": "M8.1",
           "statement": "At dawn, noon, low Sun, twilight and night the sea reflects that hour's sky, the Sun's glitter lies under the Sun and widens as the wind rises, the night sea is dark under the sky's glow, and nothing clips to flat white or black.",
-          "inspect": "Capture `fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m. Judge frames whole and native-size crops of the glitter path, the swell's faces and the horizon.",
+          "inspect": "`fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m: the glitter path, the swell's faces and the horizon.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -680,7 +704,7 @@
         {
           "id": "M8.2",
           "statement": "The craft's hull below its waterline and a sunk float are seen through the water, tinted and fading with depth. The waterline on the hull is a soft edge. Thin crests between the camera and a low Sun glow.",
-          "inspect": "Capture `fixed` stills of the craft at rest and a float sunk 0.5 m and 2 m, at noon in a calm, from 2 m and 6 m; and crests against a low Sun in a trade wind. Judge native-size crops of the waterline, each float and the crests.",
+          "inspect": "`fixed` stills at noon in a calm, from 2 m and 6 m, of the craft at rest and of floats sunk 0.5 m and 2 m; and of crests against a low Sun in a trade wind.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -689,8 +713,8 @@
         },
         {
           "id": "M8.3",
-          "statement": "On calm water the craft and the floats reflect in the sea beside them. Where a reflection leaves the screen or meets the sky it falls back to the sky with no hole, streak or edge.",
-          "inspect": "Capture `fixed` stills and a `realtime` pan of the craft and floats on a glassy sea at low Sun. Judge native-size crops of each reflection and of the screen's edges during the pan.",
+          "statement": "On calm water the craft and the floats reflect in the sea beside them, each reflection whole from the waterline to the image of the body's top. Where a reflection leaves the screen, passes its reach or meets the sky it falls back to the sky with no hole, streak or edge.",
+          "inspect": "`fixed` stills and a `realtime` pan of the craft and floats on a glassy sea at low Sun, from 2 m and 10 m above: each reflection, and the screen's edges during the pan.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -701,7 +725,7 @@
           "id": "M8.4",
           "statement": "With a cloud optical-depth provider present, direct sunlight on the sea is dimmed once by the provider's factor: the glitter, the sunlit water colour and the foam's sunlit part. Sky-lit terms are not dimmed. With no provider the sea's shader and its pixels are unchanged.",
           "check": "cargo test --locked --offline -p sea-scene --test cloud_shade_gpu",
-          "inspect": "Capture `fixed` stills at noon with a labelled stand-in provider's shade crossing the sea and the grey float. Judge the shade's edge on the water and on the float in native-size crops.",
+          "inspect": "`fixed` stills at noon with a labelled stand-in provider's shade crossing the sea and the grey float: the shade's edge on the water and on the float.",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -711,9 +735,9 @@
         },
         {
           "id": "M8.5",
-          "statement": "The gather pass covers only the padded screen rectangles of registered bodies and does not run when no body is on screen. The sea requests no full-screen copy, and a scene with no sea compiles to the same passes and storage as before.",
+          "statement": "The gather copies opaque colour and depth only inside the source rectangles of bodies on screen, and body rays are tested only where a receiving rectangle marks the mask; with no body on screen neither runs. Every sea pixel whose reflected or refracted ray meets a body within the design's reach and slope allowance lies inside that body's receiving rectangle. The sea requests no full-screen copy, and a scene with no sea compiles to the same passes and storage as before.",
           "check": "cargo test --locked --offline -p sea-scene --features thrum-render/creation-counters --test gather_gpu",
-          "ask": "Does the compiled graph for the sea scene hold no whole-scene colour copy on either recipe? Is the gather's cost recorded with zero, one and nine bodies on screen?",
+          "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on a flat sea and with waves, including a body whose reflection lies wholly outside its own source rectangle?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -724,7 +748,7 @@
         {
           "id": "M8.6",
           "statement": "In Chrome the sea passes M8.1's and M8.2's lists at noon, low Sun and night.",
-          "inspect": "Capture `fixed` stills in Chrome at the three hours at M8.1's and M8.2's views. Judge them by those lists and compare native-size crops with the Mac's portable recipe.",
+          "inspect": "`fixed` stills in Chrome at noon, low Sun and night at M8.1's and M8.2's views, judged by those lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -733,9 +757,9 @@
         },
         {
           "id": "M8.7",
-          "statement": "With the optics running, the sea scene's whole frame at 2560\u00d71440 stays within the 8.33 ms interval on tick frames and on repeat frames.",
+          "statement": "With the optics running, the paired cost record is taken again for the optics scene at 2560\u00d71440, beside the last record for the same view, with the gather and the body rays recorded on a calm sea and in a gale with zero, one and nine bodies on screen. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene optics",
-          "ask": "Is each sea pass's time recorded beside the last milestone's record for the same view, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -751,6 +775,18 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
+        },
+        {
+          "id": "M8.9",
+          "statement": "A matte panel of known radiance, reflected in a flat sea and seen through it, gives the stored colour the design's optics equation gives, to within the half-float step and the design's declared approximations. This holds at exposure scales sixteen times apart, where the colour divided by the scale does not change, and with the panel 20 m and 3 km from the camera.",
+          "check": "cargo test --locked --offline -p sea-scene --test optics_units_gpu",
+          "ask": "Is the expected colour worked out on the CPU from the panel's radiance, the lent aerial values and the water table, without the sea's shader? Would reading the copied scene colour as radiance, or dividing out the exposure alone, fail it at 3 km?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -786,7 +822,7 @@
         {
           "id": "M9.3",
           "statement": "At each of the five presets, from 1 m, 10 m and 40 m above the water, at noon, low Sun and twilight, the sea reads as that sea: flat and reflective in a calm, wind waves over swell in a trade wind, steep and breaking in a gale, with crests that sharpen as the wind rises.",
-          "inspect": "Capture `fixed` stills on the Mac's portable recipe for each preset, height and hour. Judge contact sheets by preset, then native-size crops of the near water and the horizon in each.",
+          "inspect": "`fixed` stills on the Mac's portable recipe for each preset, height and hour: the near water and the horizon.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -796,7 +832,7 @@
         {
           "id": "M9.4",
           "statement": "From 40 m above, a vista of 1 km to 20 km holds: no tile or repeat, a clean horizon, whitecaps and haze that thin with distance, and no line where a level of detail ends.",
-          "inspect": "Capture `fixed` stills from 40 m in a trade wind and a gale at noon and low Sun, and a `realtime` slow pan. Judge the frames whole and native-size crops at about 1, 5 and 20 km.",
+          "inspect": "`fixed` stills from 40 m in a trade wind and a gale at noon and low Sun, and a `realtime` slow pan: the sea at about 1, 5 and 20 km.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -806,7 +842,7 @@
         {
           "id": "M9.5",
           "statement": "As the wind slider moves from calm to gale over 30 seconds in motion, the sea builds with no pop, step or restart, and whitecaps appear as the wind passes a fresh breeze.",
-          "inspect": "Capture a `realtime` sequence of the change from 10 m above. Judge consecutive frames at 1x across the whole change.",
+          "inspect": "A `realtime` sequence of the whole change from 10 m above.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -816,7 +852,7 @@
         {
           "id": "M9.6",
           "statement": "Under TAAU on the Mac's portable recipe the sea is stable in motion: no shimmer in the distance, no ghost behind the craft or its foam, no smear on the glitter. A camera cut and a sea rebuild each reset in one frame.",
-          "inspect": "Capture `realtime` sequences with temporal sampling selected: a pan across a gale at low Sun, the craft passing at 12 m/s, a cut, and a profile change. Judge consecutive frames at 1x, whole and in native-size crops of the far sea, the craft's edge and the glitter.",
+          "inspect": "`realtime` sequences with temporal sampling selected, of a pan across a gale at low Sun, the craft passing at 12 m/s, a cut, and a profile change: the far sea, the craft's edge and the glitter.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -826,7 +862,7 @@
         {
           "id": "M9.7",
           "statement": "In Chrome under TAAU the sea passes M9.6's list, and the five presets pass M9.3's list at noon.",
-          "inspect": "Capture the same `realtime` sequences and the noon stills in Chrome. Judge them by M9.6's and M9.3's lists.",
+          "inspect": "The same `realtime` sequences and the noon stills in Chrome, judged by M9.6's and M9.3's lists.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -836,7 +872,7 @@
         {
           "id": "M9.8",
           "statement": "The field overlay shows height, slope variance, the wake, each foam stock and the query points with their support, on the Mac and in Chrome, and turning it off restores the sea exactly.",
-          "inspect": "Capture `fixed` stills of each overlay over the craft in a trade wind on both targets. Judge that each shows the field it names, in the place the sea shows its effect.",
+          "inspect": "`fixed` stills of each overlay over the craft in a trade wind, on both targets: each shows the field it names, where the sea shows its effect.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -857,9 +893,9 @@
         },
         {
           "id": "M9.10",
-          "statement": "In a gale with the craft, wake, foam and optics all running, the sea scene's whole frame at 2560\u00d71440 stays within the 8.33 ms interval on tick frames and on repeat frames.",
+          "statement": "In a gale with the craft, wake, foam and optics all running, the paired cost record is taken again for the gale scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene gale",
-          "ask": "Is each sea pass's time recorded beside the last milestone's record for the same view, with the load on the machine, and is growth of a quarter or more explained by the work this milestone added?",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -880,7 +916,7 @@
     },
     {
       "id": "M10",
-      "name": "On the Mac's Apple recipe the sea runs with MetalFX and the governor at the display's full refresh, and the module is closed",
+      "name": "On the Mac's Apple recipe the sea runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -899,7 +935,7 @@
         {
           "id": "M10.2",
           "statement": "On the Apple recipe under MetalFX the sea passes M9.6's list, and the five presets pass M9.3's list at noon and low Sun.",
-          "inspect": "Capture M9.6's `realtime` sequences and the stills on the Apple recipe with MetalFX resolved. Judge them by those lists, then compare native-size crops with the portable recipe's.",
+          "inspect": "M9.6's `realtime` sequences and the stills on the Apple recipe with MetalFX resolved, judged by those lists and against the portable recipe's.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -927,9 +963,9 @@
         },
         {
           "id": "M10.5",
-          "statement": "At the showcase's extent on both of the Mac's recipes, capture off, in a gale with everything running, the sea scene's whole frame stays within the 8.33 ms interval on tick frames and on repeat frames, with each sea pass's time on record beside the sea-absent run.",
+          "statement": "At the showcase's extent on both of the Mac's recipes, capture off, in a gale with everything running, the paired cost record is taken for tick frames and for repeat frames, with each sea pass's time beside the sea-absent run. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene gale --extent showcase --recipes",
-          "ask": "Is the extent the one `SHOWCASE`'s Mac rows use? Are both recipes and both frame kinds in the record, with the load on the machine?",
+          "ask": "Is the extent the one `SHOWCASE`'s Mac rows use, and are both recipes and both frame kinds in the record, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -954,7 +990,7 @@
         {
           "id": "M10.7",
           "statement": "The whole scene on the Apple recipe reads as a finished sea: the craft at 12 m/s through a gale at low Sun, pitching on the swell, its wake spreading and its foam trailing, the Sun glittering, whitecaps to the horizon.",
-          "inspect": "Capture a 60-second `realtime` sequence from a chase view and from 40 m above on the Apple recipe. Judge consecutive frames at 1x, and stills whole and in native-size crops of the hull's waterline, the wake, the trail, the glitter and the horizon.",
+          "inspect": "A `realtime` sequence from a chase view and from 40 m above on the Apple recipe: the hull's waterline, the wake, the trail, the glitter and the horizon.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
