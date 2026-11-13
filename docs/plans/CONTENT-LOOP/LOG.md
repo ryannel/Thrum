@@ -1,5 +1,13 @@
 # CONTENT-LOOP log
 
+- 2026-11-13 M1 built and target-proved. The native lease and coupled-reader tests pass, including both
+  profiles, all portable mips, BC4 quality, discarded recordings, capture invalidation, device loss and shared
+  switches. The fault test passes through the production error branch; Chrome verifies 28,766,400 bytes after
+  load, edit and recovery with one product fetched. The unique-volume bench and existing tripwires pass;
+  cold first-load CPU costs remain visible. Both native exact matrices and four Chrome sets passed at
+  `eceb4c9a`. [Compact evidence and limits](../../evidence/CONTENT-LOOP/M1.md). Final script checks and merge follow;
+  the milestone state stays `in_progress` for the lead.
+
 - 2026-11-13 M1 implementation checkpoint: residency now offers configured sampled products through a public
   lease, with one shared switch after the last-copy submission, retained views and per-product serials. Added
   the opt-in game diagnostic, native lifecycle/coupled-reader/fault tests, generated Chrome fetched-feed case,

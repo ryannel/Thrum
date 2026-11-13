@@ -1,0 +1,13 @@
+{
+  "functional_revision": "3b4d7df455c12be11afb2b9a81fd568d4c644762",
+  "rebased_equivalent_revision": "eceb4c9a7e6fecf7f87c4adb467388b125233f6b",
+  "identical_target_objects": {
+    "crates/thrum-asset-gpu": "01cc982067c2823fcb7c1a4dc1798f0ca6cd2ca3",
+    "examples/v1-game": "079878dcc479ed04e87f968a678ef0420fb282d1",
+    "scripts/check_v1_browser.mjs": "bb755b7b32b1399fc46d70421e81403882d03443",
+    "scripts/check_lent_browser.mjs": "a88420263c0de4240fbad8deed26e2851a22913a",
+    "scripts/content_loop_fixture.py": "59c7326056061df13472f684d754c361de093268"
+  },
+  "benchmark_revision": "490dd9a85678ca04bdb2627e324234a04cdc4487",
+  "scope": "Metal and hardware Chrome WebGPU function; isolated upload benchmark; no panel cadence or physical residency claim"
+}
