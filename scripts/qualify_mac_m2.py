@@ -252,6 +252,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=ROOT / 'target/release/v1-game')
     parser.add_argument('--store', type=Path, default=ROOT / 'tmp/mac-m2/valley')
+    parser.add_argument('--identity', type=Path, help='identity.json from this build’s freshly qualified window arms; required for presented arms')
+    parser.add_argument('--window-only', action='store_true', help='collect only untraced window proofs without spending a trace recording')
     parser.add_argument('--diagnostic-with-os-logs', action='store_true',
                         help='use the remaining diagnostic attempt for OFF with OS logs after the empty-display probe')
     parser.add_argument('--presented-deferred', action='store_true', help='omit --window; installed Blank template has windowLimit=0')
@@ -263,7 +265,9 @@ def main():
     try:
         if args.presented_arm:
             panel_witness(output)()
-            retained = json.loads((ROOT / 'tmp/mac-m2/final-window-20261110/identity.json').read_text())
+            if args.identity is None:
+                raise RuntimeError('--identity from fresh same-build window qualification is required')
+            retained = json.loads(args.identity.read_text())
             if digest(args.binary) != retained['binary_sha256']:
                 raise RuntimeError('retained M2.1 binary changed')
             if digest(ROOT / 'examples/v1-game/params/showcase-noon.params.json') != retained['preset_sha256']:
@@ -301,6 +305,9 @@ def main():
                 collect(args, output, name, tap, replace, grid)
             elif not json.loads((arm / 'collection.json').read_text()).get('collected'):
                 raise RuntimeError(f'failed {name}; diagnose before any new run')
+        if args.window_only:
+            print('Untraced window arms collected; builder inspection remains required. No trace recording consumed.')
+            return 0
         # This is an evidence gate for the resumed builder, not an owner approval prompt.
         acceptance = output / 'window-acceptance.json'
         if not acceptance.exists():
