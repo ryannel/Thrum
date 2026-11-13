@@ -40,10 +40,10 @@
           "lock": "gpu",
           "ask": "Does the test discard the first frame that uses the new view, and in another run make that frame a capture, and then assert the diagnostic consumer still applies its invalidation in the next submitted frame that advances history, and in no frame after it?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair; docs/evidence/CONTENT-LOOP/M1/repair-native.log.gz; docs/plans/CONTENT-LOOP/LOG.md",
           "verdict": "fail",
           "review": "docs/evidence/CONTENT-LOOP/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",

@@ -102,3 +102,9 @@
   Checks: the done-when file passed the loop's validator, `./dev check-docs` passed, and the two test commands
   the new items use fail as written. No number was added to any item.
 - 2026-11-13 The changed design needs a third review; the planner could not start one.
+- 2026-11-13 Fixed M1.3's overlapping-edit reuse defect from the [M1 review](../../evidence/CONTENT-LOOP/M1-review.md)
+  in `f3099f6d`. Upload plans retain their resident HEAD; plans prepared behind a protected ready publication
+  are replanned after its switch, before recording copies. Native and fetched preparation share the rule.
+  Verified on this Mac's Metal device: all three lease tests passed, including both profiles, both contribution
+  orders and native/fetched overlapping edits; Clippy passed. The full exact verifier passed both native
+  matrices and all four Chrome sets (977.48 seconds). [Compact proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
