@@ -81,3 +81,7 @@
   separately GPU-locked `./dev check` pass. The [refreshed target proof](../../evidence/EFFECT-GRAPH/M2-proof.md)
   retains the native/Chrome oracle results, all exact comparisons, 964 reviewed realtime images and named costs.
   All eight items pass; M2 stays `in_progress` for scripted integration and the lead's review. No M3 work was built.
+- 2026-11-13 Resolved the integration rebase by retaining the upstream browser checker's default build alongside
+  both modules' cases. Chrome state/recovery and all exact baselines pass again on `c9ebc788`; the
+  [source diff and proof](../../evidence/EFFECT-GRAPH/M2-proof.md) identify the unaffected native/capture evidence.
+  Upstream production renderer and diagnostic code did not change. M2 remains `in_progress` for the scripted gate.
