@@ -1,0 +1,43 @@
+A. Coverage control, 40 km square at 200 m, weather time 5 h
+   c     cloudy columns   mean tau of cloudy   mean depth m
+   0.00       0.000             0.0               0
+   0.15       0.020            10.0             297
+   0.30       0.099            10.1             294
+   0.50       0.207            10.5             302
+   0.70       0.649            10.2             274
+   0.85       1.000            11.4             300
+   1.00       1.000            11.4             300
+
+B. Continuity. 400 air-frame points, 2 h at 1 s steps; largest change of column tau in one second
+   c=0.3: max |d tau| per second 0.378 of a largest tau 41.5; columns that were ever cloudy 0.74
+   c=0.7: max |d tau| per second 0.378 of a largest tau 41.5; columns that were ever cloudy 1.00
+   coverage ramped 0.3 to 0.7 in 60 s: max |d tau| per second 9.082
+   40 m/s wind for 10 min: the field at x equals the still field at x - travel exactly: True
+
+C. Births in a 48 km square of sites over 6 h at c=0.3, in one-minute bins
+   births per minute: mean 11.85, variance/mean 1.02 (1 is a Poisson process), max 23
+   spectrum of the counts over its mean: at the generation period 0.43, largest anywhere 6.64 (white noise of this length gives about 5.2)
+   mean move of a site's cloud from one generation to the next: 831 m (lattice pitch 1600 m)
+
+D. Density samples per sky ray, eye 2 m, pitch 15 deg, 90x58 deg view, 96x54 rays
+   fair      coarse   5.7  fine   8.4  in cloud   1.0  (p95   44 fine,    8 in cloud); texture reads per ray  17.2; rays stopped opaque 0.15
+      640x360 trace:    3.0 M reads a frame,   2.5 M map lookups,   0.2 M lit samples
+      320x180 trace:    0.8 M reads a frame,   0.6 M map lookups,   0.0 M lit samples
+   broken    coarse   0.9  fine  18.6  in cloud   7.4  (p95   66 fine,   13 in cloud); texture reads per ray  41.7; rays stopped opaque 0.80
+      640x360 trace:    7.3 M reads a frame,   3.4 M map lookups,   1.3 M lit samples
+      320x180 trace:    1.8 M reads a frame,   0.9 M map lookups,   0.3 M lit samples
+   overcast  coarse   0.0  fine   9.2  in cloud   8.4  (p95   11 fine,   11 in cloud); texture reads per ray  34.3; rays stopped opaque 1.00
+      640x360 trace:    6.0 M reads a frame,   1.6 M map lookups,   1.5 M lit samples
+      320x180 trace:    1.5 M reads a frame,   0.4 M map lookups,   0.4 M lit samples
+
+E. One Sun-path volume against a 5 m brute-force march, as error in transmittance exp(-tau)
+   c    Sun   columns  slices | in cloud: RMS  p95   mean signed | ground: RMS  p95 | fill, M evaluations
+   0.3  60.0  200x200 at 80 m   32  |  0.067  0.146  -0.025  |  0.022  0.011  |  1.28 |  +3 local over 120 m: RMS 0.022 p95 0.043  +3 local over 240 m: RMS 0.061 p95 0.144
+   0.3  60.0  200x200 at 80 m   64  |  0.065  0.143  -0.022  |  0.022  0.011  |  2.56 |  +3 local over 120 m: RMS 0.022 p95 0.043  +3 local over 240 m: RMS 0.061 p95 0.144
+   0.3  60.0  200x200 at 40 m   64  |  0.027  0.048  -0.009  |  0.011  0.006  |  2.56 |  +3 local over 120 m: RMS 0.016 p95 0.034  +3 local over 240 m: RMS 0.061 p95 0.144
+   0.3  20.0  200x200 at 80 m   32  |  0.082  0.202  -0.027  |  0.045  0.043  |  1.28 |  +3 local over 120 m: RMS 0.024 p95 0.054  +3 local over 240 m: RMS 0.048 p95 0.094
+   0.3  20.0  200x200 at 80 m   64  |  0.062  0.149  -0.021  |  0.042  0.027  |  2.56 |  +3 local over 120 m: RMS 0.023 p95 0.051  +3 local over 240 m: RMS 0.048 p95 0.094
+   0.3  20.0  200x200 at 40 m   64  |  0.033  0.075  -0.010  |  0.019  0.016  |  2.56 |  +3 local over 120 m: RMS 0.019 p95 0.043  +3 local over 240 m: RMS 0.048 p95 0.093
+   0.3   6.0  200x200 at 80 m   32  |  0.183  0.460  -0.033  |  0.091  0.123  |  1.28 |  +3 local over 120 m: RMS 0.081 p95 0.186  +3 local over 240 m: RMS 0.054 p95 0.110
+   0.3   6.0  200x200 at 80 m   64  |  0.104  0.251  -0.027  |  0.083  0.106  |  2.56 |  +3 local over 120 m: RMS 0.051 p95 0.114  +3 local over 240 m: RMS 0.050 p95 0.105
+   0.7  20.0  200x200 at 80 m   64  |  0.035  0.054  -0.007  |  0.039  0.029  |  2.56 |  +3 local over 120 m: RMS 0.018 p95 0.037  +3 local over 240 m: RMS 0.033 p95 0.050
