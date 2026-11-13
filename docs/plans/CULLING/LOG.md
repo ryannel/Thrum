@@ -1,5 +1,15 @@
 # CULLING log
 
+- 2026-11-13 M3 source `396132a1` passes all six automated target checks,
+  including both native recipes, Chrome, 32 temporal phases and every retained
+  exact baseline. Two current-source paired runs per recipe retain Frustum as
+  the valley default. The resumed builder inspected the fixed checkpoints and
+  consecutive native-size edge, ridge and cover sequences on Mac and Chrome,
+  plus mixed-field fixed-time entrance/exit frames, finding no culling discontinuity.
+  [M3 evidence](../../evidence/CULLING/M3.md) records the G3c clause audit and
+  updated ledger, while retaining the individually unattributed historical failures.
+  M3 remains `in_progress` for the final repository gate and checked merge.
+
 - 2026-11-13 The rebased candidate passes all five non-baseline M3 checks.
   A resource-reflection audit finds its non-shadowed entry still requires Sun
   bindings despite a false flag. Preparation now removes that call for the
