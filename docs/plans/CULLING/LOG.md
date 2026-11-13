@@ -133,3 +133,9 @@
   `83e9150e`, bringing only reviews/evidence and APPLE-PRESENTATION's new volume test,
   then refused the new covered-content key. Production and benchmark sources are
   unchanged; refresh the exact verifier rather than repeat unaffected timing runs.
+
+- 2026-11-13 The rebased exact verifier passes on clean `2f91255a` in 905.27 seconds:
+  native 38 + 4 comparisons and all four Chrome sets of 481 records, with retained
+  references unchanged. The current proof, complete verifier log and record are
+  retained in [M2 evidence](../../evidence/CULLING/M2.md). Retry the checked merge
+  with M2 still `in_progress`; no production source changed in this rebase.
