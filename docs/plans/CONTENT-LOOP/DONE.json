@@ -135,7 +135,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Residency that behaves like streaming in a shipped open-world game such as Marvel's Spider-Man 2: content arrives over several frames and none of them is late, a product is never seen half-loaded, and a failed load leaves the last good one in use."
     },
     {
