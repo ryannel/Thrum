@@ -45,13 +45,22 @@ A planner or the lead chose each of these where your words left it open. Each st
 - EFFECT-GRAPH assumes: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it. ([plan](EFFECT-GRAPH/PLAN.md))
 - EFFECT-GRAPH assumes: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones. ([plan](EFFECT-GRAPH/PLAN.md))
+- CONTENT-LOOP assumes: leases (M1) are built now, ahead of the owner's decision on when the sea and cloud port starts; the port decision says to keep the foundation converging on readiness, and no sea or cloud pass is built here. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: "edited meshes" includes meshes the instance field's entities draw, so an edit replaces them live (M2) instead of asking for a restart. The narrower reading drops M2's live replacement and keeps only cooked meshes as rows at launch. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: entities drawn from cooked mesh rows keep the scene's material table. Cooked textures reach placements and leases, not entity materials, so the exit scene's 10,000 entities are coloured by material as today. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: "without a stall" is judged by bounds asserted in the game, the existing tripwires against their load-class history and the game's own frame records, not by a frame-time budget (brief decision 3) and not by panel cadence, which the Mac qualification owns. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: in Chrome, "without a stall" is claimed for products of the size the valley and a twelve-volume cloud library use. The browser client verifies and stages on the page's one thread; M3 records the size at which a frame is first lost, and a client that works off that thread is built only if the record shows a need. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: gate G5 closes after TAAU (M3 waits for `APPLE-PRESENTATION:M3`), so an edit is judged once on the image the exit shows. The other choice closes G5 earlier and leaves the reconstructed look of an edit to `SHOWCASE`. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: G5 closes with CAS garbage collection, layered EAC volumes and parameter files as a product kind still parked, and with any iPhone volume encoding owed; the ledger names each. ([plan](CONTENT-LOOP/PLAN.md))
+- CONTENT-LOOP assumes: G5 closes with watcher publications as presentation-only previews. Build provenance in the manifest waits for source admission (T1), as the G5 decision recommends. ([plan](CONTENT-LOOP/PLAN.md))
 
 ### Now and next
 
 - PLATFORM-RUNTIME-MAC M2 The cooked valley presents smoothly on built-in ProMotion: Blocked: Needs Context: paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff. The lead finds the missing fact, or asks you for it
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../evidence/APPLE-PRESENTATION/M2-review.md)
-- The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): Not Started · [plan](CULLING/PLAN.md)
+- The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): In Progress · [plan](CULLING/PLAN.md)
+- CONTENT-LOOP's design: Design Ready for Review · [design](CONTENT-LOOP/DESIGN.md) · [plan](CONTENT-LOOP/PLAN.md)
 
 ### Recently done
 
@@ -68,6 +77,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - iOS simulator engine motion without desktop capture (T2-CAPTURE M2), 10 Nov · [review](../evidence/T2-CAPTURE/M2-review.md)
 - Cooked scene draws on adapters without indirect execution, selected from the capability record (COOKED-DRAW M1), 9 Nov · [review](../evidence/COOKED-DRAW/M1-review.md)
 - Scene and internal render size follow the oriented iOS surface (PLATFORM-RUNTIME-IOS M7), 9 Nov · [review](../evidence/PLATFORM-RUNTIME-IOS/M7-review.md)
+- The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
 
@@ -82,12 +92,12 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M2 of 3 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M2 of 3 · Not Started |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M2 of 3 · In Progress |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3, APPLE-PRESENTATION:M2 |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 | Not planned yet |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Design Ready for Review |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
-| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
-| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP; the owner's port timing | Not planned yet |
+| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
+| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE | Not planned yet |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Not planned yet |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
