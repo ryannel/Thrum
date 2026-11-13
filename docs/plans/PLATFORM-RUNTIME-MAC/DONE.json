@@ -55,7 +55,7 @@
     {
       "id": "M2",
       "name": "The cooked valley presents smoothly on built-in ProMotion",
-      "state": "blocked",
+      "state": "in_progress",
       "fails": 0,
       "replans": 4,
       "bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate.",
@@ -143,17 +143,7 @@
       "rounds": 1,
       "depends_on": [
         "T2-CAPTURE:M0"
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "paused for the orchestrate upgrade; the next lead runs unblock and then run to carry on from the handoff",
-        "work": {
-          "commit": "f832cf4610c571a3c31929a1ce77bbba0a2d591e",
-          "branch": "build/mac-m2",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/PLATFORM-RUNTIME-MAC/M2-handoff.md"
-      }
+      ]
     },
     {
       "id": "M3",
