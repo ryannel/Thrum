@@ -82,7 +82,7 @@ foam texture), `CLOUDS` (density volumes), `RENDER-2D` and `GAME-UI` after V1 (s
 |---|---|---|
 | **C1 An edit appears.** Saving a source changes the running game | glTF meshes with separate buffers, PNG and JPEG textures, `TVOL` volumes; drawn as a placement, as an entity's mesh row, or through a lease; a mapped store on the Mac and a fetched one in Chrome | A reload that restarts the scene or re-uploads everything. Rejected by uploaded bytes that equal the changed products, unchanged textures kept by identity, and no pipeline or graph creation |
 | **C2 Nothing stalls.** No frame is late because of a first load or an edit | On the Mac, any product the device admits (a 149 MiB 512³ volume is on record), several consumers loading at once, frames in flight. In Chrome, products of the size the exit scene and the cloud library use | An offscreen proof that hides a stall in the game. Rejected by per-frame copy bytes asserted in the game, staging held to its bound, and the game's own frame records across edit windows |
-| **C3 It appears whole.** For each reader of a product (a placement set, a lease, a mesh row), one frame shows the old content and the next the new | Every product kind; a discarded frame at the swap; reconstruction on. Readers on different paths switch in frames of their own | A half-uploaded texture, a mesh drawn with new indices over old vertices, or a ghost of the old content under TAAU. Rejected by frames compared with all-old and all-new references, and by an inspected sequence |
+| **C3 It appears whole.** One frame shows the old content and the next the new, through every reader at once | Every product kind; a product read through one path or through several (a mesh that is placed and is an entity's row, a texture on a placement and in a lease); a discarded frame at the switch; reconstruction on | A half-uploaded texture, a mesh drawn with new indices over old vertices, a mesh new where it is placed and old on the entities, or a ghost of the old content under TAAU. Rejected by frames compared with all-old and all-new references, and by an inspected sequence |
 | **C4 A bad save is harmless.** The last good content stays on screen and the reason is named | Every save the cooker or the runtime can tell is bad: a source that does not parse, a truncated file, a glTF whose buffer is missing or too short, a file changed while it cooks, a product the device cannot hold, a failed upload, a name the manifest lacks. An incomplete save that still validates is outside this range and is shown | An error that blanks the scene or repeats forever. Rejected by tests that inject each failure |
 | **C5 It survives the lifecycle.** Resize, capture frames and a replaced device | With an upload in flight | A view from the old device. Rejected by generation checks and equal output after restaging |
 | **C6 Other modules use products.** A sea or cloud pass samples a cooked texture or volume | Twelve 128³ volumes and a texture at once; an edit to one | A consumer with its own loader, or one that sees a product before its upload is committed. Rejected by the commit rule's test and a question on the code |
@@ -107,6 +107,13 @@ streaming in a shipped open-world game such as Marvel's Spider-Man 2. It is judg
   dependants which meshes moved when a slab grows
   ([`allocator.rs`](https://docs.rs/crate/bevy_render/0.17.3/source/src/mesh/allocator.rs)). Thrum's arena is one
   such slab, so row replacement follows it and adds the tentative-frame rule Bevy does not need.
+- **A changed asset is swapped for all its users at one point, after it is prepared.** Unreal's reimport tears
+  down and recreates the render state of every component that uses a mesh under one scope
+  ([`FStaticMeshComponentRecreateRenderStateContext`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/FStaticMeshComponentRecreateRend-)),
+  and pays a hitch for it. Bevy moves changed assets to the renderer at one extraction point per frame and holds
+  back what exceeds a byte budget until a later frame
+  ([`render_asset`](https://docs.rs/bevy_render/0.18.1/bevy_render/render_asset/index.html)). Thrum prepares
+  under its budgets first and then switches every reader in one frame, which is C05's rule for a preview.
 - **Compressed 3D textures are available in Chrome.** BC and ASTC sliced-3D features shipped in Chrome 139
   ([release notes](https://developer.chrome.com/blog/new-in-webgpu-139)), with the fallback order ASTC, BC,
   uncompressed. Residency already selects by the capability record, so Chrome draws BC4 volumes where the record
@@ -128,10 +135,11 @@ configured, as placements are.
    budget. A consumer never opens the store, starts a loader or records an upload.
 2. **Commit before lend.** A lease's set is offered only after the frame that recorded its last copy was
    submitted. Consumers bind it from the next frame. So no order is needed between contributions inside a frame,
-   and a discarded frame cannot expose a half-uploaded product. The cost is one frame of latency.
-3. **Whole sets.** A lease's products switch together, the newest publication wins, and a set superseded while
-   uploading is never offered. A generation in which a leased product is missing, invalid or refused for the
-   device keeps the previous set lent and records the product's name and the reason, as placements do.
+   and a discarded frame cannot expose a half-uploaded product. The cost is one frame of latency, which
+   placements share when a scene has a lease.
+3. **Whole sets, with every other reader.** A lease's products switch together, in the frame the scene's
+   placements and rows switch, under [one publication, one switch](#one-publication-one-switch-m1-m2). That
+   section also says what supersedes a publication and what refuses one.
 4. **Identity.** Each lent product carries its manifest name, content hash, profile, format, dimension, extent
    and mip count. A product whose hash did not change keeps its texture and view across generations and is not
    uploaded again.
@@ -155,8 +163,9 @@ configured, as placements are.
    consumer draws without it.
 9. **Placement is not in the product.** A product is texels or voxels. Transform, physical extent, extinction
    scale and every other meaning are the consumer's inputs, from the game.
-10. **CPU readers** map the portable product through `thrum-asset`. It is always cooked, and its level bytes are
-    the decoded data.
+10. **CPU readers** read the portable product through `thrum-asset`. It is always cooked, and its level bytes
+    are the decoded data. A CPU reader takes the product the lease names, by its content hash, and never
+    whatever `HEAD` names, so it changes in the frame the lease does.
 
 ### Cooked mesh rows (M2)
 
@@ -167,15 +176,18 @@ scene's mesh selection. Today those rows are authored in code and "changing a sl
   thread and gives the game the geometry for the scene's selection. Positions, UVs and indices are copied
   exactly; normals are the product's decoded normals. The conversion applies the arena's own admission (finite
   data, indices in range, the coordinate limit, capacity), so a product the arena would refuse never reaches it.
-- **The same rows either way.** Preparation takes rows from the store's current generation; later edits replace
-  them live. A live-edited scene draws exactly what a scene prepared fresh from the edited store draws. That
-  equality, byte for byte in Direct, Frustum and Occlusion, is the oracle.
+- **The same rows either way.** Preparation takes rows from the store's current generation; later publications
+  replace them live. A live-edited scene draws exactly what a scene prepared fresh from the edited store draws.
+  That equality, byte for byte in Direct, Frustum and Occlusion, is the oracle.
 - **A row keeps its identity.** The row's number, each slot's choice and bucket membership do not change. Only
   the row's geometry, index range, base vertex and bounds do.
 - **Write, then switch.** The new geometry is written into arena space no drawn row uses, at most a fixed number
-  of bytes per frame. Then one frame records the switch of every reader of the row: the forward draw ranges, the
-  compaction's mesh table (range and bounds), the depth prepass, and the Sun casters' draws and fits. No frame
-  mixes old and new.
+  of bytes per frame. The write is the row's part of preparing a publication, and the route reports it done once
+  the frame carrying its last bytes is submitted. The row does not switch then. It switches in the publication's
+  switch frame, with every other row, the placements and the leases
+  ([one publication, one switch](#one-publication-one-switch-m1-m2)). That frame records the switch of every
+  reader of the row: the forward draw ranges, the compaction's mesh table (range and bounds), the depth prepass,
+  and the Sun casters' draws and fits. No frame mixes old and new.
 - **The switch is tentative, like every recording.** It commits when its frame is submitted. A discarded switch
   frame commits nothing, and the next frame records the switch again. A buffer write queued by a discarded frame
   still reaches the device with the next submission, so a table written for a switch that did not commit must
@@ -188,12 +200,13 @@ scene's mesh selection. Today those rows are authored in code and "changing a sl
   occur, so nothing fences it and no test builds it. Allowing it would be a change to the host contract, made in
   `EFFECT-GRAPH`'s design first.
 - **Retired space.** The old geometry's arena space is retired when the switch frame is submitted and reused only
-  after that. Frames submitted earlier are safe by queue order. A replacement superseded before it switches gives
-  back its own space, never the space the drawn row still reads.
-- **History.** The switch frame carries the frame's history-reset flag. The instance path keys history by slot,
-  with no per-mesh marker, and an edit is an authoring event, so one reset of reconstruction is accepted.
+  after that. Frames submitted earlier are safe by queue order. A replacement whose publication is superseded or
+  refused gives back its own space, never the space the drawn row still reads.
+- **History.** The first frame that advances history, at the switch or after it, carries the frame's
+  history-reset flag; a capture frame that commits the switch does not use it up. The instance path keys history
+  by slot, with no per-mesh marker, and an edit is an authoring event, so one reset of reconstruction is accepted.
 - **Refusal.** A replacement the arena refuses, or a broken source, leaves the old row drawing with the reason
-  recorded.
+  recorded. An arena refusal refuses its whole publication, for every reader.
 - **The retained scene follows.** Resize and device replacement prepare from the newest committed rows.
 - **Nothing is compiled.** An edit may create buffers and bind groups, as placements do today. It never creates a
   pipeline or compiles a graph.
@@ -204,6 +217,57 @@ The arena, its rows and the route belong to `CULLING`. By
 buckets, three per selected mesh, so a scene selects at most 21 distinct meshes; `SHOWCASE` sizes its entity
 meshes inside that.
 
+### One publication, one switch (M1, M2)
+
+A **publication** is one generation of the store as residency resolves it for the scene: every product that
+differs from what a reader shows, for every reader the scene has. There are three kinds of reader: the placement
+set (the cooked meshes and the diagnostic volume residency draws, with their textures), each lease, and each
+cooked mesh row. This is the "entire affected presentation closure" of C05's qualified visual preview. The rules
+below are that clause as this module builds it: prepare the replacements, publish at extraction, change no
+gameplay. M1 builds them for placements and leases, and M2 adds rows as a third reader.
+
+1. **One owner.** Residency owns the publication: what it contains and whether it is preparing, ready or shown.
+   The route's row writes are part of its preparation and report to it. No reader decides alone when to show new
+   content. `thrum-render` gains no dependency on `thrum-asset-gpu`; the game connects the two, as it connects
+   residency's other handles.
+2. **Prepare without showing.** Each reader's replacement is made resident beside what is drawn, under the
+   bounds it already has: residency's copies under the upload budget, a row's geometry under the route's bound.
+   No frame reads prepared content.
+3. **Ready is the slowest reader.** A placement set can be shown in the frame that records its last copy, because
+   copies come before draws in a frame. A lease can be shown once that frame is submitted. A row can be switched
+   once the frame carrying its last write is submitted. A publication is ready when every reader the scene has
+   can show it. So in a scene with a lease or a cooked row it becomes ready at a submit, and the earlier readers
+   wait for the slowest: placements one frame for a lease, and every reader as many frames as the longest row
+   write takes. In a scene with only placements nothing changes from today.
+4. **One switch frame.** In a scene with a lease or a cooked row, from the submit that makes a publication
+   ready, every frame the host records shows it through every reader: placements draw the new set, leases offer
+   it, and each changed row's readers switch. Which generation a frame shows is fixed before the frame is
+   extracted, so every reader takes the same answer whatever the order of contributions in the frame.
+5. **Tentative, like every recording.** The switch commits for every reader when its frame is submitted, a
+   capture frame included, and the old content is retired then. A discarded switch frame commits nothing for any
+   reader, and the next frame records the same switch.
+6. **Newest wins until ready.** A publication superseded while it prepares is abandoned for every reader:
+   nothing of it is shown, and its staging and arena space are given back. A ready publication is not superseded.
+   It switches in the next submitted frame, and the newer one prepares after it. This is what lets rule 4 hold
+   without an order between contributions. With only placements, residency keeps today's rule: the newest wins
+   until the frame that draws the set is submitted.
+7. **Refused whole.** When the running game cannot take one reader's part (a product the manifest lacks, an
+   invalid one, one the device cannot hold, a failed upload, a row the arena refuses), the publication is refused
+   for every reader. All of them keep the last good generation, and the record names the product, the reader and
+   the reason. The store's manifest has still moved; what stays is residency's last good resident generation.
+   Each later publication is tried the same way, so once the cause is fixed everything saved since appears in one
+   switch. A fault the cooker detects never gets this far: the manifest keeps that asset's previous product and
+   the rest of the save publishes.
+8. **First load, resize and a new device.** A reader with nothing resident shows nothing: no placements, an
+   absent lease. That is loading, not two versions of a product. Rows are prepared with the scene, from one
+   generation; when the first publication on a device is of another generation, it carries the row replacements
+   and switches once. A resize or a device replacement that discards prepared content sends the publication back
+   to preparing.
+
+The cost is latency, never a frame's time: with a lease attached a texture edit shows one frame later than it
+does today, and a mesh that entities draw holds its publication for the frames its row write takes. The switch
+frame itself records no copy and no row write.
+
 ### Failure (M1)
 
 A staging chunk that cannot be filled frees its slot, records the error once, and the render thread drops the
@@ -213,8 +277,8 @@ chunk is mapped or written, so the production branch is the code that runs.
 
 ### What a publication promises (M3)
 
-G5 publications are **previews**: the watcher cooks working files, not an admitted source revision. Two promises
-hold for every publication and two do not. The items claim only the first two.
+G5 publications are **previews**: the watcher cooks working files, not an admitted source revision. Three
+promises hold for every publication and one does not. The items claim only the first three.
 
 **Held: presentation only.** Nothing in simulation, collision, navigation or region activation reads a cooked
 product, so no publication can activate a gameplay product. This is the reading of C05's "Filesystem watcher
@@ -222,8 +286,16 @@ events cannot activate a partly written external change set" that
 [the G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md#contract-questions-recorded-reversible-option-taken)
 put in force, and it stays in force.
 
-**Held: a product that is invalid or cannot be resolved keeps the last good one.** Every case in C4's range leaves
-the previous product published, drawn and lent, with the reason recorded.
+**Held: a bad save keeps the last good content.** Every case in C4's range leaves the last good content drawn
+and lent, with the reason recorded. Where the cooker finds the fault, the asset's previous product stays in the
+manifest. Where the running game finds it (a device refusal, a failed upload, a missing name, an arena refusal),
+the manifest has moved and residency keeps its last good resident generation
+([rule 7](#one-publication-one-switch-m1-m2)).
+
+**Held: one switch for every reader.** A publication's products change through placements, leases and mesh rows
+in the same submitted frame ([one publication, one switch](#one-publication-one-switch-m1-m2)). This is the
+reader half of C05's qualified visual preview, met as the contract words it, and C05 is not changed. It concerns
+cooked products only, so it holds whether or not their sources were admitted.
 
 **Not held: a save has no boundary.** The watcher closes a batch after 8 ms of quiet, 250 ms at most, and neither
 it nor the cooker knows where an external save ends. An incomplete save that still validates is cooked and shown:
@@ -234,24 +306,16 @@ the bytes of every input. Refusing such a save needs source admission, which is 
 and that is not built here. Readers confined to presentation, an atomic manifest and whole resident sets do not
 supply it, and no item claims it.
 
-**Not held: one switch for every reader.** C3 is a promise per reader: a placement set, a lease's set and a mesh
-row each switch whole, in a frame of their own. Placements switch in the frame that records the last copy, a
-lease in the frame after that one is submitted, and a row when its own bounded write is done. A product read
-through two paths (a mesh that is both placed and an entity's row, a texture on a placement and in a lease)
-shows new through one and old through the other in between: one frame for a placement and a lease, and as many
-frames as the row's write takes for a row. No reader is ever half switched. C05's qualified visual preview, which
-"computes the entire affected presentation closure" and "publishes at extraction", asks for one switch across
-readers. That means residency holding placements and leases back until the route's write is ready; it is
-designed with source admission, or sooner if a consumer shows a visible mismatch. M3's four edits each change a
-product read through one path.
-
-Both limits are assumptions in [the plan](PLAN.md#open-for-the-owner) for the owner to overturn.
+The limit is an assumption in [the plan](PLAN.md#open-for-the-owner) for the owner to overturn.
 
 ### Closing G5 (M3)
 
-The built evidence is offscreen with no present on the Mac and function-only in Chrome. M3 runs one edit of each
-kind (a placed mesh, an entity mesh row, a texture, a leased volume) in the running valley with reconstruction
-on, on the Mac and in Chrome, and proves C2 and C3 there. "Without a stall" is judged three ways, none of them a
+The built evidence is offscreen with no present on the Mac and function-only in Chrome. M3 runs three edits in
+the running valley with reconstruction on, on the Mac and in Chrome, and proves C2 and C3 there: a mesh that is
+both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume.
+Two of the three change a product read through two paths, so the cross-reader switch is judged where the exit
+shows it. The game's frame record names the generation each reader showed in that frame, and the edit windows
+must never show two. "Without a stall" is judged three ways, none of them a
 budget: deterministic bounds asserted in the game (copy bytes per frame, staging peak); the existing tripwires
 against their load-class history; and the game's own frame records, edit windows beside steady windows of the
 same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
@@ -270,8 +334,15 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
   a mesh lies inside its row's bounds, which admission recomputes. A grown mesh with stale bounds would lose
   pixels, which M2.2's oracle shows.
 - **Frames in flight.** A submitted frame executes before any later write, by queue order. An unsubmitted one
-  holds the host, so no write or switch can be recorded behind it. That leaves two orderings to prove, and M2.3
-  proves both: a discarded switch frame, and a newer edit that supersedes a replacement before it switches.
+  holds the host, so no write or switch can be recorded behind it. That leaves three orderings to prove, and M2.3
+  proves them: a discarded switch frame, a newer edit that arrives behind a discarded switch frame, and a newer
+  edit that supersedes a replacement still being written.
+- **One switch.** Each reader's switch only changes which resident data a frame reads: a bind group for
+  placements, a view for a lease, ranges and tables for a row. None needs a copy in the switch frame, so one
+  frame can make all of them once everything is resident. Readiness changes only in `submitted`, which the host
+  calls on every contribution after its own commit (`runtime.rs`), and the host holds one unsubmitted frame at a
+  time, so "ready before this frame" has one meaning for every reader. A reader that could show sooner only
+  waits; it holds prepared content, which the overlap account below already counts.
 - **An incomplete save converges.** The action key hashes every input's bytes, so the cook after the last file
   lands cannot reuse a product of the intermediate state. M3.7 checks it against a fresh cook.
 - **Chrome.** A fetched feed has no loader thread: verification, conversion and staging run on the page's thread
@@ -284,7 +355,8 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 |---|---|
 | Store, `HEAD`, manifest, product formats, the cooker, watcher and dev server | This module (`thrum-asset`, `thrum-cook`) |
 | Resident textures, volumes and placement meshes; the loader, staging ring and upload budget; leases; conversion of mesh products to row geometry | This module (`thrum-asset-gpu`) |
-| The mesh arena, rows, buckets and their culling; the bounded row write and the switch | `CULLING` (`thrum-render`), extended under the seam ruling |
+| The publication: which generation each frame shows, through every reader, and whether the next is preparing, ready or refused | This module (`thrum-asset-gpu`) |
+| The mesh arena, rows, buckets and their culling; the bounded row write, its report of done, and the row's switch in the frame the publication names | `CULLING` (`thrum-render`), extended under the seam ruling |
 | The contribution list and the tentative-frame protocol | `EFFECT-GRAPH` |
 | The view record, motion, reactive target and history acceptance | `APPLE-PRESENTATION` |
 | A lease's meaning: placement, extent, optics, the consumer's own history | The consumer (`SEA`, `CLOUDS`) and the game |
@@ -292,11 +364,11 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 **An edit, in order.** The watcher sees the save, the stat cache rehashes only that file, the cooker cooks only
 the changed asset for each profile, and `HEAD` moves. The loader's next poll maps the new manifest, resolves
 every placement, lease and row by name, keeps each product whose hash is unchanged, and plans copies for the
-rest. It fills staging chunks off the render thread. Each frame records at most a budget of copies. The frame
-that records the last copy draws the new placements; once it is submitted, leases offer the new set and consumers
-bind it in the next frame. A changed row's geometry goes to the host, which writes it under its own bound and
-records the row's switch in one frame; the switch commits when that frame is submitted. The three paths switch
-in frames of their own ([what a publication promises](#what-a-publication-promises-m3)).
+rest. It fills staging chunks off the render thread. Each frame records at most a budget of copies, and a changed
+row's geometry goes to the host, which writes it under its own bound. When a submitted frame has carried the
+last copy and the last row write, the publication is ready. The next frame draws the new placements, offers the
+new set to leases and switches the rows, and the switch commits for all of them when that frame is submitted
+([one publication, one switch](#one-publication-one-switch-m1-m2)).
 
 ## What later modules will ask
 
@@ -330,8 +402,12 @@ volume, belong to those modules and are not loosened.
   route's bound of row bytes, written on the render thread. An earlier render-thread write of 16 MiB cost 1.4 to
   1.9 ms on this Mac, so the row bound is set from that and recorded.
 - **Staging:** at most four chunks of one budget, whatever is loading.
-- **Memory:** live products, plus old and new for changed products during a swap, plus retired arena space until
-  it is reused. Reported from descriptors; physical residency is not measured.
+- **A switch frame:** bind groups for the changed placements and the row's table writes; no copy.
+- **Latency:** an edit shows when its slowest reader is ready. Recorded per publication as frames from first
+  copy to switch.
+- **Memory:** live products, plus old and new for a publication's changed products from its first copy until its
+  switch commits, plus retired arena space until it is reused. Reported from descriptors; physical residency is
+  not measured.
 
 Recorded as tripwires, never gates: the two G5 benches against their load-class history, with a leased scenario
 added; render-thread time on upload frames beside steady frames; and about 25% paired regression on the valley
@@ -349,7 +425,11 @@ route with nothing attached.
 5. **Tripwires on a shared machine flap.** They are judged per load class and catch doublings; a failure is
    investigated, never re-recorded to pass.
 6. **A cooked-draw change moves a retained image.** The proof gate refuses it at every landing.
-7. **A creator takes an intermediate preview for the result.** It lasts until the save finishes and is replaced
+7. **Saves arrive faster than a publication prepares, so each is superseded and nothing shows.** Residency has
+   this rule for placements today, and a row write lengthens the window. Early sign: superseded publications
+   counted in the game's record during M3's edits. The answer is to finish the one being prepared before taking
+   the next, decided here first.
+8. **A creator takes an intermediate preview for the result.** It lasts until the save finishes and is replaced
    without a restart. M3.9's documentation says so; source admission removes it.
 
 ## Proof and builder handoff

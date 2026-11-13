@@ -27,7 +27,7 @@
         },
         {
           "id": "M1.2",
-          "statement": "A consumer is offered a lease's products only after the frame that recorded their last copy was submitted, and always as a whole set: a discarded frame offers nothing new, the frame after a submitted swap offers the new set, and a publication superseded while it uploads is never offered.",
+          "statement": "A lease offers a publication's products only once every copy is in a submitted frame, and always as a whole set. The frame that records the last copy still offers the old set, and so does the next frame when that one is discarded. The first frame recorded after it is submitted offers the new set. A publication superseded while it uploads is never offered.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test lent_products_gpu",
           "lock": "gpu",
           "ask": "Does the test discard the frame that records the last copy before it asserts what the consumer was offered, and does it supersede a set that is still uploading?",
@@ -63,7 +63,7 @@
         },
         {
           "id": "M1.5",
-          "statement": "When a staging chunk cannot be filled, its slot is freed, the error is recorded once, the pending set is dropped, and the drawn and lent sets stay as they were; the next publication uploads within the staging bound. A generation in which a leased product is missing, invalid or refused for the device keeps the previous set lent and names the product.",
+          "statement": "When a staging chunk cannot be filled, its slot is freed, the error is recorded once, the pending set is dropped, and the drawn and lent sets stay as they were; the next publication uploads within the staging bound. A publication in which a leased product is missing, invalid or refused for the device is refused whole: placements and leases both keep the last good generation, and the record names the product and the reason.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-asset-gpu/fault-probe --test cooked_fault_gpu",
           "lock": "gpu",
           "ask": "Is the fault injected where a chunk is mapped or written, so that the production failure branch is the code that runs? Does an ordinary build compile without the probe?",
@@ -115,6 +115,18 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "A texture that a placement samples and a lease lends changes through both in the same submitted frame. Every submitted frame across the edit shows the old texture on the mesh and in the consumer's pass, or the new one in both; none shows one of each. This holds when the switch frame is discarded, and with the consumer before or after residency in the scene's contribution list.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test lent_products_gpu",
+          "lock": "gpu",
+          "ask": "Does the test compare the placement's pixels and the consumer's output in every submitted frame from the first copy to the frame after the switch, each against all-old and all-new references? Does it run with the consumer on each side of residency in the contribution list, and once with the switch frame discarded?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -155,10 +167,10 @@
         },
         {
           "id": "M2.3",
-          "statement": "While a replacement uploads, every frame draws the old mesh whole. Every reader of the row switches in one submitted frame. A discarded switch frame commits nothing, so the next submitted frame is all old or all new. The old geometry's arena space is reused only after the switch frame is submitted, also when a newer edit supersedes a replacement that has not switched.",
+          "statement": "While a replacement is written, every frame draws the old mesh whole. Every reader of the row switches in one submitted frame. A discarded switch frame commits nothing, and the next frame records the same switch, also when a newer edit has arrived behind it. A newer edit that supersedes a replacement still being written leaves the old mesh drawn. The old geometry's arena space is reused only after the switch frame is submitted.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test cooked_rows_gpu",
           "lock": "gpu",
-          "ask": "Does the test compare every submitted frame across the upload and the switch with the all-old or the all-new reference, including the frame after a discarded switch frame, and the frames after a newer edit supersedes a replacement whose switch frame was discarded? Do the arena write, the row switch and the retirement of old space all go through the frame host, so that its exclusive encoded-frame token is what keeps a switch from overtaking an unsubmitted frame, and does the test drive that protocol without reaching around the token?",
+          "ask": "Does the test compare every submitted frame across the write and the switch with the all-old or the all-new reference, including the frame after a discarded switch frame, the frames after a newer edit arrives behind a discarded switch frame, and the frames after a newer edit supersedes a replacement still being written? Do the arena write, the row switch and the retirement of old space all go through the frame host, so that its exclusive encoded-frame token is what keeps a switch from overtaking an unsubmitted frame, and does the test drive that protocol without reaching around the token?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -218,6 +230,18 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M2.9",
+          "statement": "A cooked mesh that is both placed and an entity's mesh row changes through both in the same submitted frame, however many frames the row's write takes. Every submitted frame across the edit shows the old mesh in both, with its shadows, or the new mesh in both. When the arena refuses the replacement, the placement keeps the old mesh too, and so does every other product of that publication.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test cooked_rows_gpu",
+          "lock": "gpu",
+          "ask": "Is the replacement large enough that the row's write is still going for several frames after residency's last copy was submitted, and does the test compare every submitted frame in that interval, whole, with all-old and all-new references? Does it discard the switch frame once? In the refusal case, does the publication also change a texture, and does the test show that texture unchanged?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -235,10 +259,10 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "In the running valley on the Mac with reconstruction on, edits to a placed mesh, an entity's mesh row, a texture and a leased volume each appear, and the game's own frame records, taken with capture off, show edit windows no slower than the steady windows of the same run. The G5 tripwires hold against their load-class history.",
+          "statement": "In the running valley on the Mac with reconstruction on, three edits each appear: a mesh that is both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume. In every submitted frame of an edit window the game's frame record shows one generation through every reader. The frame records, taken with capture off, show edit windows no slower than the steady windows of the same run. The G5 tripwires hold against their load-class history.",
           "check": "sh scripts/check_g5_tripwires.sh",
           "lock": "gpu",
-          "ask": "Do the frame records come from the game's frame host on its ordinary frame path, with the recipe and whether a drawable was presented recorded? Is any frame in an edit window longer than the longest steady frame of the same run, and if so is its cause named and outside this module?",
+          "ask": "Do the frame records come from the game's frame host on its ordinary frame path, with the recipe, whether a drawable was presented, and the generation each reader showed? Is any frame in an edit window longer than the longest steady frame of the same run, and if so is its cause named and outside this module?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -247,8 +271,8 @@
         },
         {
           "id": "M3.2",
-          "statement": "On the Mac each edit appears whole in one frame under reconstruction: no partly loaded texture or volume, no missing or mixed mesh, no flash, and no ghost or smear of the old content in the frames after.",
-          "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with TAAU and a moving camera: one edit of each kind (a placed mesh, an entity's mesh row, a texture, a leased volume). Judge the eight frames around each swap whole and in native-size crops, as consecutive frames at 1x.",
+          "statement": "On the Mac each edit appears whole in one frame under reconstruction, through every reader at once: no partly loaded texture or volume, no missing or mixed mesh, no frame with the new mesh where it is placed and the old one on the entities, no flash, and no ghost or smear of the old content in the frames after.",
+          "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with TAAU and a moving camera: a mesh that is both placed and an entity's mesh row, a texture that a placement samples and a lease lends, and a leased volume, with both readers of each shared product in view. Judge the eight frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -257,7 +281,7 @@
         },
         {
           "id": "M3.3",
-          "statement": "In Chrome the same four edits appear on the running page with one swap each and only the changed products fetched. At the product sizes the valley and the twelve-volume fixture use, no edit makes a frame late: the page's frame-callback intervals in edit windows are recorded beside steady windows of the same run.",
+          "statement": "In Chrome the same three edits appear on the running page with one switch each and only the changed products fetched, and every submitted frame of an edit window shows one generation through every reader. At the product sizes the valley and the twelve-volume fixture use, no edit makes a frame late: the page's frame-callback intervals in edit windows are recorded beside steady windows of the same run.",
           "check": "node scripts/check_v1_browser.mjs --case content-edits",
           "lock": "gpu",
           "ask": "At the product sizes the valley and the twelve-volume fixture use, is any interval in an edit window longer than the longest steady interval of the same run? If so, is its cause named and outside this module? A stall this module causes at those sizes fails the item and is fixed, not explained. Separately, does the evidence record the larger product size at which a frame is first lost? That figure is a measurement and gates nothing.",
@@ -269,8 +293,8 @@
         },
         {
           "id": "M3.4",
-          "statement": "In Chrome each edit appears whole in one frame under reconstruction, with no partly loaded product, missing mesh, flash or ghost.",
-          "inspect": "Capture with T2 engine capture in `realtime` mode in Chrome on the valley with TAAU: one edit of each kind. Judge the frames around each swap whole and in native-size crops, as consecutive frames at 1x.",
+          "statement": "In Chrome each edit appears whole in one frame under reconstruction, through every reader at once, with no partly loaded product, missing mesh, flash or ghost.",
+          "inspect": "Capture with T2 engine capture in `realtime` mode in Chrome on the valley with TAAU: the same three edits, with both readers of each shared product in view. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": "",
