@@ -8,13 +8,23 @@ use thrum_asset::Profile;
 use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedSource, VolumePlacement};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality};
 use thrum_render::capabilities::DeviceCapabilities;
+use thrum_render::present::SurfaceProfile;
 use thrum_render::runtime::SubmittedImage;
 use thrum_render::synthetic::{CaptureSource, DisplayOverlay};
-use v1_game::{FrameConfig, FrameHost, GameSetup, SceneCamera};
+use v1_game::{FrameConfig, FrameHost, GameSetup, SceneCamera, SurfaceOutput};
 
-fn submitted(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) -> SubmittedImage {
+fn submitted(
+    host: &mut FrameHost,
+    device: &wgpu::Device,
+    surface: &SurfaceOutput<'_>,
+    clock: &mut Duration,
+) -> SubmittedImage {
     *clock += Duration::from_millis(16);
-    assert!(host.drive(*clock, None).expect("ordinary frame").submitted);
+    assert!(
+        host.drive(*clock, Some(surface))
+            .expect("ordinary frame")
+            .submitted
+    );
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("frame completion");
@@ -103,7 +113,11 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
     })
     .expect("cooker");
     let report = cooker.cook_all().expect("cook volume");
-    assert!(report.failed.is_empty(), "cook failures: {:?}", report.failed);
+    assert!(
+        report.failed.is_empty(),
+        "cook failures: {:?}",
+        report.failed
+    );
 
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -125,13 +139,36 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
                 .clone()
                 .with_recipe_override(recipe)
                 .expect("Mac recipe");
+            let view = device
+                .create_texture(&wgpu::TextureDescriptor {
+                    label: Some("W3 offscreen presentation receiver, not physical output"),
+                    size: wgpu::Extent3d {
+                        width: 65,
+                        height: 65,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                    view_formats: &[],
+                })
+                .create_view(&wgpu::TextureViewDescriptor::default());
+            let surface = SurfaceOutput {
+                view: &view,
+                extent: [65, 65],
+            };
             let mut host = FrameHost::new_with_setup(
                 &device,
                 &queue,
                 &caps,
                 FrameConfig {
                     render_extent: [65, 65],
-                    ..FrameConfig::default()
+                    surface: Some(SurfaceProfile {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        extent: [65, 65],
+                    }),
                 },
                 GameSetup {
                     display_overlay: DisplayOverlay::TemporalInputs,
@@ -165,7 +202,7 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
             let mut clock = Duration::ZERO;
             let deadline = Instant::now() + Duration::from_secs(30);
             loop {
-                let image = submitted(&mut host, &device, &mut clock);
+                let image = submitted(&mut host, &device, &surface, &mut clock);
                 host.recycle_submitted_image(image);
                 let stats = stats.lock().expect("cooked status");
                 assert!(stats.errors.is_empty(), "{:?}", stats.errors);
@@ -185,9 +222,9 @@ fn metal_cooked_volume_w3_uses_production_forward_reactive_attachment() {
                 std::thread::yield_now();
             }
             // Two steady submitted frames eliminate initial scene/sky invalidation.
-            let warm = submitted(&mut host, &device, &mut clock);
+            let warm = submitted(&mut host, &device, &surface, &mut clock);
             host.recycle_submitted_image(warm);
-            let image = submitted(&mut host, &device, &mut clock);
+            let image = submitted(&mut host, &device, &surface, &mut clock);
             assert_eq!(image.extent, [65, 65]);
             let alpha = 1.0 - (-f64::from(placement.extinction) * f64::from(density) / 255.0).exp();
             assert_eq!(
