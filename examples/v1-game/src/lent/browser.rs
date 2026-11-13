@@ -119,7 +119,7 @@ fn references(generation: &RemoteGeneration) -> Result<Vec<Ktx2>, String> {
     (0..13)
         .map(|index| {
             let name = if index == 12 {
-                "foam.linear".into()
+                "foam".into()
             } else {
                 format!("cloud{index}")
             };
@@ -166,7 +166,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         })
         .collect();
     config.leased.push(LeaseRequest {
-        name: "foam.linear".into(),
+        name: "foam".into(),
         dimension: wgpu::TextureDimension::D2,
     });
     let assets = CookedAssets::new(config).map_err(|error| error.to_string())?;

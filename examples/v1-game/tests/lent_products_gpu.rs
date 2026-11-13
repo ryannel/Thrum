@@ -14,6 +14,16 @@ use v1_game::{
     lent::{LentDiagnostic, LentWitness},
 };
 
+fn presenting() -> FrameConfig {
+    FrameConfig {
+        surface: Some(thrum_render::present::SurfaceProfile {
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            extent: [640, 360],
+        }),
+        ..FrameConfig::default()
+    }
+}
+
 fn fixture(root: &std::path::Path) -> CookConfig {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("source");
@@ -44,7 +54,7 @@ fn config(cook: &CookConfig) -> CookedConfig {
         })
         .collect();
     config.leased.push(LeaseRequest {
-        name: "foam.linear".into(),
+        name: "foam".into(),
         dimension: wgpu::TextureDimension::D2,
     });
     config
@@ -81,7 +91,29 @@ fn finish(host: &mut FrameHost, device: &wgpu::Device) {
 
 fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
     *clock += Duration::from_millis(16);
-    host.drive(*clock, None).expect("frame");
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("lent test drawable"),
+        size: wgpu::Extent3d {
+            width: 640,
+            height: 360,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Bgra8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    host.drive(
+        *clock,
+        Some(&v1_game::SurfaceOutput {
+            view: &view,
+            extent: [640, 360],
+        }),
+    )
+    .expect("frame");
     finish(host, device);
 }
 
@@ -237,14 +269,10 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
             assert_eq!(cooker.cook_all().expect("cook").failed, []);
             pollster::block_on(async {
                 let (device, queue, capabilities) = gpu(1, compressed).await;
-                let mut host = FrameHost::new_with_capabilities(
-                    &device,
-                    &queue,
-                    &capabilities,
-                    FrameConfig::default(),
-                )
-                .await
-                .expect("host");
+                let mut host =
+                    FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
+                        .await
+                        .expect("host");
                 let (lease, stats, witness) = attach(&mut host, config(&cook), consumer_first);
                 let mut clock = Duration::ZERO;
                 assert!(lease.offered().is_none());
@@ -390,7 +418,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                 let mut candidate = host
                     .device_prepare_inputs()
                     .expect("inputs")
-                    .prepare(&new_capabilities, &new_queue, None)
+                    .prepare(&new_capabilities, &new_queue, presenting().surface)
                     .await
                     .expect("replacement");
                 host.publish_device(&mut candidate).expect("publish device");
@@ -445,20 +473,19 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
         let configured = || {
             let mut config = v1_game::cooked::cooked_config(cook.store.clone());
             config.volume = None;
-            config.meshes[0].texture = "textures/checker.linear".into();
+            config.meshes[0].texture = "textures/checker".into();
             config.upload_budget = COPY_UNIT;
             config.leased.push(LeaseRequest {
-                name: "textures/checker.linear".into(),
+                name: "textures/checker".into(),
                 dimension: wgpu::TextureDimension::D2,
             });
             config
         };
         pollster::block_on(async {
             let (device, queue, caps) = gpu(1, false).await;
-            let mut host =
-                FrameHost::new_with_capabilities(&device, &queue, &caps, FrameConfig::default())
-                    .await
-                    .expect("host");
+            let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+                .await
+                .expect("host");
             host.pause().expect("pause");
             let (lease, stats, witness) = attach(&mut host, configured(), consumer_first);
             let deadline = Instant::now() + Duration::from_secs(60);
@@ -517,10 +544,9 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
                 assert!(Instant::now() < deadline, "edit never switches");
             }
             assert!(discarded, "switch recording was discarded");
-            let mut fresh =
-                FrameHost::new_with_capabilities(&device, &queue, &caps, FrameConfig::default())
-                    .await
-                    .expect("fresh host");
+            let mut fresh = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
+                .await
+                .expect("fresh host");
             fresh.pause().expect("pause reference");
             let (_, fresh_stats, fresh_witness) = attach(&mut fresh, configured(), consumer_first);
             let deadline = Instant::now() + Duration::from_secs(60);
