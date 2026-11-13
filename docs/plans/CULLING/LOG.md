@@ -1,5 +1,18 @@
 # CULLING log
 
+- 2026-11-13 Resumed at `2fd5cf06`. Its literal M3 checker passes native cubes,
+  Chrome cubes/meshes and temporal sampling, but native meshes differ at six
+  SDR pixels at tick 255. Metal API/GPU shader validation separately reproduces
+  an 18-pixel scene-linear difference without a reported validation error.
+  The exact verifier rejects APPLE-TILE's `portable-sdr-approach` with 4,859
+  changed pixels. The explicit-gradient candidate is rejected and the shader
+  restored byte for byte to its `64c81cd2` blob; no reference changed. The
+  [retained evidence](../../evidence/CULLING/M3.md#explicit-gradient-candidate-rejected-at-2fd5cf06)
+  separates candidate results from the unqualified restored source. Under the
+  plan's exact-baseline stop rule, the [handoff](../../evidence/CULLING/M3-handoff.md)
+  proposes continuing diagnosis with existing sampling and retained references.
+  M3 stays `in_progress`, all builder items remain open, and no merge is claimed.
+
 - 2026-11-13 Clean `64c81cd2` passes Chrome cubes/meshes, the full temporal
   cycle and every exact baseline (native 38 + 4, four Chrome sets of 481).
   The native item checks reproduce sparse terrain differences: cube Occlusion
