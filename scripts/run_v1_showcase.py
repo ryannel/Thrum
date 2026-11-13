@@ -926,7 +926,8 @@ def culling(args):
                 output = run / recipe
                 env = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(run / 'store'),
                            THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE), THRUM_CULLING_OUTPUT=str(output),
-                           THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_RECIPE=recipe)
+                           THRUM_VALLEY_MESHES='on' if args.meshes else 'off', THRUM_RECIPE=recipe,
+                           THRUM_CULLING_SOURCE='sdr')
                 with open(run / f'{recipe}.log', 'w') as log:
                     if bounded(['cargo', 'test', '--locked', '--offline', '--release', '-p', 'v1-game',
                                 '--test', 'valley_culling_gpu', '--', '--ignored', '--nocapture'], log, 1200, env=env, cwd=REPO):

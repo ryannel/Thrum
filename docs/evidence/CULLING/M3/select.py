@@ -67,6 +67,9 @@ def main():
                       ('ridge', 285, '400:160:400:64'), ('cover', 378, '400:240:500:200')]
         if target.endswith('realtime'):
             crops(source, dest, rows, key, groups)
+            center = min(range(len(rows)), key=lambda i: abs(rows[i][key] - 285))
+            for index, row in enumerate(rows[center:center + 2]):
+                shutil.copyfile(source / 'png' / f'{row["submission_id"]:06}.png', dest / f'whole-consecutive-{index}.png')
     oracle = args.oracle.resolve() / 'default'
     fixed = OUT / 'chrome-fixed'
     receipt = json.loads((oracle / 'moving-route.record.json').read_text())

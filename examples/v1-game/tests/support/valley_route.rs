@@ -126,7 +126,7 @@ async fn prove() {
     let output = std::path::PathBuf::from(std::env::var("THRUM_CULLING_OUTPUT").expect("output"));
     std::fs::create_dir_all(&output).expect("output directory");
     let mut log = std::fs::File::create(output.join("rows.jsonl")).expect("rows");
-    writeln!(log, "{}", serde_json::json!({"adapter":adapter.get_info().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
+    writeln!(log, "{}", serde_json::json!({"adapter":adapter.get_info().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
     let mut hidden = [0_u64; 2];
     for tick in 1..=last {
         if tick == route.origin_tick {
