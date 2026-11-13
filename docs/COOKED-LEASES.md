@@ -7,7 +7,7 @@ either order. No game, sea, cloud or placement type appears in this interface.
 
 ```rust,ignore
 config.leased.push(LeaseRequest {
-    name: "foam.linear".into(),
+    name: "foam".into(),
     dimension: wgpu::TextureDimension::D2,
 });
 config.leased.push(LeaseRequest {
