@@ -10,13 +10,13 @@
       "depends_on": [
         "SHOWCASE:M8"
       ],
-      "bar": "As dependable as the link under a shipped co-op game. Valve's GameNetworkingSockets gives a game reliable and unreliable messages on one encrypted connection and keeps both moving through packet loss; Factorio's multiplayer notices a dropped peer and takes it back on a fresh connection. Here every reliable message arrives once and in order, no datagram waits behind a lost packet, and a dropped client returns on a new link, proved by one script on all three targets.",
+      "bar": "As dependable as the link under a shipped co-op game. Valve's GameNetworkingSockets gives a game reliable and unreliable messages on one encrypted connection and keeps both moving through packet loss; Factorio's multiplayer notices a dropped peer and takes it back on a fresh connection. Here a link that stays up delivers every reliable message once and in order, no datagram waits behind a lost packet, and a dropped client returns on a new link, proved by one script on all three targets.",
       "items": [
         {
           "id": "M1.1",
-          "statement": "The in-memory link passes every part of the link script in virtual time, under A0's profile and with a path cut. The same seed and the same calls give the same events, and with datagram duplication switched on the script's duplicate check fails.",
+          "statement": "The in-memory link passes every part of the link script in virtual time, under A0's profile, with a path cut and with a stall. The same seed and the same calls give the same events, and with datagram duplication switched on the script's duplicate check fails.",
           "check": "cargo test --locked --offline -p thrum-transport --test link_script",
-          "ask": "Read the test. Is the link script one piece of code written against the link's interface, which this test and the socket runs both execute? Does the in-memory link take its time from the caller, with no sleep and no wall clock? Under A0's profile does the run report datagrams lost and reordered, each above zero, and reliable messages delayed but never lost?",
+          "ask": "Read the test. Is the link script one piece of code written against the link's interface, which this test and the socket runs both execute? Does the in-memory link take its time from the caller, with no sleep and no wall clock? Under A0's profile does the run report datagrams lost and reordered, each above zero, and reliable messages delayed but never lost? Does the script open a link on which neither game sends and then take the host's reliable message as the first? In its expiry part, does sending stop while the path is still stalled, and is expiry asserted from the sender's counters before the stall ends?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -25,9 +25,9 @@
         },
         {
           "id": "M1.2",
-          "statement": "On the Mac, over real sockets, a client passes every part of the link script against the host, directly and through the relay under A0's profile. Through the relay the datagram lane loses some and reorders some, and at least 90% arrive in each direction.",
+          "statement": "On the Mac, over real sockets, a client passes every part of the link script against the host, directly and through the relay under A0's profile. Through the relay the datagram lane loses some and reorders some, and at least 90% of the datagrams sent in the script's lanes and load parts arrive in each direction.",
           "check": "python3 scripts/transport_link.py conformance --target mac-metal",
-          "ask": "Read the harness. Do the client and the host reach the network only through thrum-transport's public interface? Are host, relay and client separate processes, and does the record hold the relay's forwarded and dropped counts and a measured round trip that shows the profile? Is any part of the script skipped, or a failure in it tolerated?",
+          "ask": "Read the harness. Do the client and the host reach the network only through thrum-transport's public interface? Are host, relay and client separate processes, and does the record hold the relay's forwarded and dropped counts and a measured round trip that shows the profile? Is any part of the script skipped, or a failure in it tolerated? In the expiry part, does the record show datagrams expired in the sender's queue, above zero in each direction, apart from the packets the relay dropped?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -38,7 +38,7 @@
           "id": "M1.3",
           "statement": "As Wasm in Chrome, over real sockets, a page passes every part of the link script against the host, directly and through the relay under A0's profile, with the same datagram behaviour as the Mac row.",
           "check": "python3 scripts/transport_link.py conformance --target chrome-webgpu",
-          "ask": "Is the page's client thrum-transport's browser adapter running the same link script as Wasm, and not an exchange written in JavaScript? Is Chrome started with no flag that touches certificates, QUIC or origins? Does the record hold the browser's version?",
+          "ask": "Is the page's client thrum-transport's browser adapter running the same link script as Wasm, and not an exchange written in JavaScript? Is Chrome started with no flag that touches certificates, QUIC or origins? Does the record hold the browser's version? In the expiry part, does it say whether the page's queue backed up, and mark what Chrome discards itself as absent and not as zero?",
           "target": "chrome-webgpu",
           "status": "open",
           "evidence": "",
@@ -58,9 +58,9 @@
         },
         {
           "id": "M1.5",
-          "statement": "One host holds four clients through the relay under A0's profile for ten minutes: two on the Mac, one in Chrome, one in the iPhone simulator. In that time a client of each kind closes and reconnects, one is killed, and one path is cut for longer than the idle timeout and then healed. Every reliable message on every link arrives once and in order, every reconnect is a new link, and a link not involved in an event loses no reliable message.",
+          "statement": "One host holds four clients through the relay under A0's profile for ten minutes: two on the Mac, one in Chrome, one in the iPhone simulator. Every link carries the script's load until it closes. In that time a client of each kind closes and reconnects, one is killed, and one path is cut for longer than the idle timeout and then healed. A link still open at the end, once the script stops sending and waits, has delivered every reliable message it accepted, once and in order. A link that an event ended delivered an unbroken run from the first message sent, once and in order, and nothing after it on any link. Every reconnect is a new link.",
           "check": "python3 scripts/transport_link.py session",
-          "ask": "Does the record show each event with its time, the close reason both ends reported, and the old and new link identifiers? Does it name the three kinds of client by platform? Did the cut path carry no application traffic while it was cut, so that the timeout came from the link itself?",
+          "ask": "Does the record show each event with its time, the close reason each surviving end reported, and the old and new link identifiers? Is the harness's own note of the kill and the cut kept apart from what the links reported? Did every ended link carry load until its own end reported the close: is the count of reliable messages accepted and never delivered above zero for the cut, and did the host accept messages for the killed client after the kill, so that sends were interrupted and not drained first? Does it name the three kinds of client by platform?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -69,7 +69,7 @@
         },
         {
           "id": "M1.6",
-          "statement": "With a Mac client, these are on record from two separate runs under A0's profile, each with Cubic and with BBR on the Quinn ends: handshake time; datagram and reliable round trips at the median, 95th percentile and maximum, steady and during host-to-client transfers of 256 KiB and 1 MiB; each transfer's time; datagrams delivered; bytes on the wire for each application byte; and the allocations of a warmed send and drain. The record flags each tripwire the design names. The figures are baselines: none decides the result.",
+          "statement": "With a Mac client, these are on record from two separate runs under A0's profile, each with Cubic and with BBR on the Quinn ends: time from connect to open; datagram and reliable round trips at the median, 95th percentile and maximum, steady and during host-to-client transfers of 256 KiB and 1 MiB; each transfer's time; datagrams delivered; bytes on the wire for each application byte; and the allocations of a warmed send and drain. The record flags each tripwire the design names. The figures are baselines: none decides the result.",
           "check": "python3 scripts/transport_link.py costs --target mac-metal",
           "ask": "Were both runs release builds of the claimed commit, timed through thrum-transport and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
@@ -149,9 +149,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "The length prefix of a reliable message and a ticket's text survive any input: valid input cut at every byte, lengths of zero, the limit, one over and the largest a prefix can say, and random bytes. Each either decodes to exactly what was encoded or is refused, with nothing delivered and no allocation above the lane's cap.",
+          "statement": "The link hello, the length prefix of a reliable message and a ticket's text survive any input: valid input cut at every byte, lengths of zero, the limit, one over and the largest a prefix can say, and random bytes. Each either decodes to exactly what was encoded or is refused, with nothing delivered and no allocation above the lane's cap.",
           "check": "cargo test --locked --offline -p thrum-transport --test untrusted",
-          "ask": "Read the test. Does it drive the same decoder the adapters use, with each input kind in the statement generated? Is there a stdin target for both parsers, in the style of thrum-network's?",
+          "ask": "Read the test. Does it drive the same decoders the adapters use, with each input kind in the statement generated? Is there a stdin target for each parser, in the style of thrum-network's?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -160,7 +160,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "Beside three healthy links on real sockets, each of these leaves the host running and the healthy links without a lost or reordered reliable message: random UDP at the port; a wrong ALPN; a wrong WebTransport path; a prefix of zero and one over the limit; a second stream; a datagram over the limit; a stream stalled mid-message; a flood on each lane; more clients than the link cap; handshakes that never finish. A link that broke a rule is closed with that reason and delivers none of the offending bytes.",
+          "statement": "Beside three healthy links on real sockets, each of these leaves the host running and the healthy links without a lost or reordered reliable message: random UDP at the port; a wrong ALPN; a wrong WebTransport path; a prefix of zero and one over the limit; a first frame that is not the link hello; a second stream; a datagram over the limit; a stream stalled mid-message; a flood on each lane; more clients than the link cap; handshakes that never finish; clients that connect and never send the hello. A link that broke a rule is closed with that reason and delivers none of the offending bytes.",
           "check": "python3 scripts/transport_link.py hostile",
           "ask": "Does the run include every case the statement lists, one at a time? For each, does the record show what the host reported for the offender and the healthy links' reliable counts? Do the host's queued bytes stay within its caps throughout?",
           "target": "mac-metal",
@@ -207,7 +207,7 @@
         {
           "id": "M2.7",
           "statement": "The networking design says what is built, and a guide linked from it tells a game maker how to start a host, hand out a ticket, open a link, use each lane within its limits, read events and counters, rehearse on the in-memory link, and run the proof command on the three targets.",
-          "ask": "Do the commands the guide gives run as written at the claimed commit? Does it state both size limits, every close reason, and that a ticket dies with its host? Does the networking design's transport section still describe anything as selected that this module decided not to build, without saying so?",
+          "ask": "Do the commands the guide gives run as written at the claimed commit? Does it state both size limits, every close reason, that a ticket dies with its host, that a datagram can arrive long after it was sent, and that a close can cut off the last reliable messages? Does the networking design's transport section still describe anything as selected that this module decided not to build, without saying so?",
           "target": "mac-metal",
           "status": "open",
           "evidence": "",
@@ -226,7 +226,7 @@
         },
         {
           "id": "M2.9",
-          "statement": "At the closing commit one host again holds two Mac clients, a Chrome page and an iPhone-simulator client for ten minutes through the relay, with the same events and the same result as M1's session run.",
+          "statement": "At the closing commit one host again holds two Mac clients, a Chrome page and an iPhone-simulator client for ten minutes through the relay, with M1's events. Again a link still open at the end has delivered every reliable message it accepted, once and in order, and a link that an event ended delivered an unbroken run from the first message sent and nothing after it on any link.",
           "check": "python3 scripts/transport_link.py session",
           "target": "mac-metal",
           "status": "open",

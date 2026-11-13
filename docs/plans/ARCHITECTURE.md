@@ -549,7 +549,7 @@ review passes. Changes to a numbered contract are settled with its producers and
 | Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
 | **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
-| **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM` and `GAME-UI` | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
+| **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A reliable message arrives or the link closes, and a close can cut off the last ones sent. A datagram's wait is bounded in the link's own queue only, so one may arrive late and `SESSION` rejects old ones by content. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM` and `GAME-UI` | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
 | **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION`'s design; C13, A0 and the A5 decisions |
 | **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION`'s design |
 | Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged |
@@ -646,9 +646,10 @@ browser's `WebTransport`; one I/O thread that meets the world lane only at bound
 fallback. [A probe](../evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
 simulator with datagrams, so the fallback this brief named, input on the reliable stream for Chrome, is held in
 reserve and not built. Two milestones; `SESSION` needs M1, which delivers the in-memory conditioned link, the three
-socket adapters and a cost record under each congestion controller. Two findings bind `SESSION`: a join's baseline
-should flow from the host down, and a frozen browser page keeps its link open, so silent input is `SESSION`'s to
-time out.
+socket adapters and a cost record under each congestion controller. Four findings bind `SESSION`: a join's baseline
+should flow from the host down; a frozen browser page keeps its link open, so silent input is `SESSION`'s to time
+out; a datagram can arrive long after it was sent, so old input and state are rejected by content; and a close can
+cut off the last reliable messages, so one that must arrive is answered before the link is closed.
 
 #### SESSION
 
@@ -799,3 +800,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `SHOWCASE:M8`), and the hostile, stalled and frozen peers with the close. The message-link interface now links to
   its design and names its limits and the join ticket. Two assumptions moved to its plan. No contract, exact
   baseline or other module's done-when item changed.
+- 2026-11-13 `TRANSPORT`'s design review asked for changes, and the message-link row and `TRANSPORT`'s entry now
+  say two things the design had left unclear: a close can cut off the last reliable messages sent, and a
+  datagram's wait is bounded in the link's own queue only, so `SESSION` rejects old ones by content. No contract,
+  exact baseline or other module's done-when item changed.
