@@ -1,0 +1,45 @@
+diff --git a/crates/thrum-render/src/synthetic/readback.rs b/crates/thrum-render/src/synthetic/readback.rs
+index ecf1d445..7843f683 100644
+--- a/crates/thrum-render/src/synthetic/readback.rs
++++ b/crates/thrum-render/src/synthetic/readback.rs
+@@ -75,6 +75,19 @@ impl PixelReadback {
+         if let Some(timer) = &mut self.copy_timing {
+             timer.marker(self.generation, encoder, false)?;
+         }
++        let diagnostic_layer = std::env::var("THRUM_SHADOW_DIAGNOSTIC").ok().map(|v| v.parse::<u32>().expect("layer"));
++        if let Some(layer) = diagnostic_layer.filter(|_| self.source == CaptureSource::SceneLinear) {
++            encoder.copy_texture_to_buffer(
++                wgpu::TexelCopyTextureInfo {
++                    texture: target.textures.texture(target.ids.shadow.as_ref().expect("shadows")).expect("shadow texture"),
++                    mip_level: 0,
++                    origin: wgpu::Origin3d { x: 0, y: 0, z: layer },
++                    aspect: wgpu::TextureAspect::DepthOnly,
++                },
++                wgpu::TexelCopyBufferInfo { buffer: &self.buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(4096), rows_per_image: Some(1024) } },
++                wgpu::Extent3d { width: 1024, height: 1024, depth_or_array_layers: 1 },
++            );
++        } else {
+         encoder.copy_texture_to_buffer(
+             wgpu::TexelCopyTextureInfo {
+                 texture: target
+@@ -102,6 +115,7 @@ impl PixelReadback {
+                 depth_or_array_layers: 1,
+             },
+         );
++        }
+         let pixel_bytes = u64::from(self.row_bytes) * u64::from(self.extent[1]);
+         self.has_exposure = exposure.is_some();
+         if let Some(exposure) = exposure {
+diff --git a/crates/thrum-render/src/synthetic/scene_graph.rs b/crates/thrum-render/src/synthetic/scene_graph.rs
+index 86fa46bc..5f4c3dda 100644
+--- a/crates/thrum-render/src/synthetic/scene_graph.rs
++++ b/crates/thrum-render/src/synthetic/scene_graph.rs
+@@ -630,7 +630,7 @@ impl PreparedSynthetic {
+                 mips: 1,
+                 samples: 1,
+                 format: shadow::FORMAT,
+-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
++                usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT
+                     | wgpu::TextureUsages::TEXTURE_BINDING,
+             },
+             ResourceScope::Transient,

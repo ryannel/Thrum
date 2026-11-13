@@ -1,0 +1,19 @@
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/culling/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 3.03s
+     Running tests/valley_culling_gpu.rs (target/release/deps/valley_culling_gpu-3358ff9ee4447fb0)
+
+running 1 test
+
+thread 'every_submitted_valley_frame_equals_direct' (189950232) panicked at examples/v1-game/tests/support/valley_route.rs:211:21:
+Direct differs at submitted tick 413
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test every_submitted_valley_frame_equals_direct ... FAILED
+
+failures:
+
+failures:
+    every_submitted_valley_frame_equals_direct
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 26.30s
+
+error: test failed, to rerun pass `-p v1-game --test valley_culling_gpu`

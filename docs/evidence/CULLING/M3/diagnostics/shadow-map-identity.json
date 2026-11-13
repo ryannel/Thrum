@@ -1,0 +1,9 @@
+{
+  "base_source": "f8255e6b2920cd0a3f3f52a312314f121cb32ffb",
+  "patch": "shadow-map-diagnostic.patch",
+  "binary_sha256": "859dd2ba04dfcd0084e1503489196375a34edd17a39577dde079a6b02e1369bf",
+  "purpose": "Copy actual 1024x1024 Depth32Float Sun layer into the SceneLinear readback buffer; diagnostic bytes are not RGBA16Float colour. Only submitted scene-linear reads are redirected. Normal SDR residency reads are unchanged.",
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "layer0_compared_frames": 361,
+  "layer0_all_four_hosts_equal": true
+}

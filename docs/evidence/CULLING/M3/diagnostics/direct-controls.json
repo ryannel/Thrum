@@ -1,0 +1,556 @@
+{
+  "sdr": {
+    "source_commit": "8ce7110b0e2e8b726a9498b8839dd2854c772668",
+    "tick": 413,
+    "header": {
+      "adapter": "Apple M3 Max",
+      "capture_source": "Sdr",
+      "contended": true,
+      "default": "Frustum",
+      "extent": [
+        1280,
+        720
+      ],
+      "load": "{ 17.16 12.04 9.69 }\n",
+      "mode": "fixed",
+      "recipe": "Ok(AppleTile)",
+      "timing_only": false
+    },
+    "receipts": [
+      {
+        "capture": {
+          "alpha_bits": 1056964609,
+          "exposure_gpu_words": [
+            981467136,
+            1159023168,
+            1093621713,
+            1167819439,
+            0,
+            413,
+            0,
+            1
+          ],
+          "source_tick": 413,
+          "submission": 412
+        },
+        "counts": {
+          "active": 10000,
+          "drawn": 11,
+          "prepass": 0
+        },
+        "mode": "Frustum",
+        "tick": 413,
+        "whole_gpu_ns": 10576542.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964609,
+          "exposure_gpu_words": [
+            981467136,
+            1159023168,
+            1093621713,
+            1167819439,
+            0,
+            413,
+            0,
+            1
+          ],
+          "source_tick": 413,
+          "submission": 412
+        },
+        "counts": {
+          "active": 10000,
+          "drawn": 11,
+          "prepass": 11
+        },
+        "mode": "Occlusion",
+        "tick": 413,
+        "whole_gpu_ns": 10895709.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964609,
+          "exposure_gpu_words": [
+            981467136,
+            1159023168,
+            1093621713,
+            1167819439,
+            0,
+            413,
+            0,
+            1
+          ],
+          "source_tick": 413,
+          "submission": 412
+        },
+        "counts": null,
+        "mode": "DirectControl",
+        "tick": 413,
+        "whole_gpu_ns": 17850165.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964609,
+          "exposure_gpu_words": [
+            981467136,
+            1159023168,
+            1093621713,
+            1167819439,
+            0,
+            413,
+            0,
+            1
+          ],
+          "source_tick": 413,
+          "submission": 412
+        },
+        "counts": null,
+        "mode": "Direct",
+        "tick": 413,
+        "whole_gpu_ns": 15865167.0
+      }
+    ],
+    "comparison": {
+      "left_sha256": "28886ce35350b26a8fd371455b4127ed38e2a37deaa09b5a95aa1ab8cbf3caba",
+      "right_sha256": "7d68f12527b52b2e3cfe3f44be5d8929b9dd3772aa4ffad9f3696bbb429c43b9",
+      "bytes": 3686400,
+      "different_pixels": 4,
+      "different_bytes": 5,
+      "first_pixels": [
+        {
+          "xy": [
+            637,
+            264
+          ],
+          "left": "bdac98ff",
+          "right": "bdab98ff"
+        },
+        {
+          "xy": [
+            625,
+            268
+          ],
+          "left": "baaa97ff",
+          "right": "bbaa97ff"
+        },
+        {
+          "xy": [
+            740,
+            278
+          ],
+          "left": "cdb298ff",
+          "right": "ccb298ff"
+        },
+        {
+          "xy": [
+            751,
+            280
+          ],
+          "left": "cbb097ff",
+          "right": "cbb198ff"
+        }
+      ]
+    }
+  },
+  "linear": {
+    "source_commit": "8ce7110b0e2e8b726a9498b8839dd2854c772668",
+    "tick": 298,
+    "header": {
+      "adapter": "Apple M3 Max",
+      "capture_source": "SceneLinear",
+      "contended": true,
+      "default": "Frustum",
+      "extent": [
+        1280,
+        720
+      ],
+      "load": "{ 16.19 12.21 9.81 }\n",
+      "mode": "fixed",
+      "recipe": "Ok(AppleTile)",
+      "timing_only": false
+    },
+    "receipts": [
+      {
+        "capture": {
+          "alpha_bits": 1056964608,
+          "exposure_gpu_words": [
+            981467136,
+            1163879286,
+            1094231394,
+            1172877893,
+            0,
+            298,
+            0,
+            1
+          ],
+          "source_tick": 298,
+          "submission": 297
+        },
+        "counts": {
+          "active": 10000,
+          "drawn": 11,
+          "prepass": 11
+        },
+        "mode": "Occlusion",
+        "tick": 298,
+        "whole_gpu_ns": 9557666.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964608,
+          "exposure_gpu_words": [
+            981467136,
+            1163879286,
+            1094231394,
+            1172877893,
+            0,
+            298,
+            0,
+            1
+          ],
+          "source_tick": 298,
+          "submission": 297
+        },
+        "counts": null,
+        "mode": "DirectControl",
+        "tick": 298,
+        "whole_gpu_ns": 16622124.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964608,
+          "exposure_gpu_words": [
+            981467136,
+            1163879286,
+            1094231394,
+            1172877893,
+            0,
+            298,
+            0,
+            1
+          ],
+          "source_tick": 298,
+          "submission": 297
+        },
+        "counts": null,
+        "mode": "Direct",
+        "tick": 298,
+        "whole_gpu_ns": 16849956.0
+      },
+      {
+        "capture": {
+          "alpha_bits": 1056964608,
+          "exposure_gpu_words": [
+            981467136,
+            1163879286,
+            1094231394,
+            1172877893,
+            0,
+            298,
+            0,
+            1
+          ],
+          "source_tick": 298,
+          "submission": 297
+        },
+        "counts": {
+          "active": 10000,
+          "drawn": 11,
+          "prepass": 0
+        },
+        "mode": "Frustum",
+        "tick": 298,
+        "whole_gpu_ns": 8418084.0
+      }
+    ],
+    "comparison": {
+      "left_sha256": "f0addcf7e2cd875f05f138e50768236fb9098ee2dad528b532f5312219aac2ea",
+      "right_sha256": "9ab46ff77531e1a4a2d4375cac9c2b10b13587e38e629a8ecfc08d1cfd24a180",
+      "bytes": 7372800,
+      "different_pixels": 35,
+      "different_bytes": 76,
+      "first_pixels": [
+        {
+          "xy": [
+            165,
+            184
+          ],
+          "left": "9e37fb385639003c",
+          "right": "9f37fc385739003c"
+        },
+        {
+          "xy": [
+            166,
+            184
+          ],
+          "left": "ac37fc385a39003c",
+          "right": "ac37fc385b39003c"
+        },
+        {
+          "xy": [
+            167,
+            184
+          ],
+          "left": "7037d4382f39003c",
+          "right": "7037d4383039003c"
+        },
+        {
+          "xy": [
+            164,
+            185
+          ],
+          "left": "7837d9383339003c",
+          "right": "7637d8383239003c"
+        },
+        {
+          "xy": [
+            165,
+            185
+          ],
+          "left": "a43701395c39003c",
+          "right": "a13700395b39003c"
+        },
+        {
+          "xy": [
+            166,
+            185
+          ],
+          "left": "af37fb385439003c",
+          "right": "ac37fa385339003c"
+        },
+        {
+          "xy": [
+            167,
+            185
+          ],
+          "left": "9037f0384f39003c",
+          "right": "9337f2385139003c"
+        },
+        {
+          "xy": [
+            178,
+            186
+          ],
+          "left": "9237ee384a39003c",
+          "right": "9637f1384e39003c"
+        },
+        {
+          "xy": [
+            179,
+            186
+          ],
+          "left": "6537d4383439003c",
+          "right": "6937d7383739003c"
+        },
+        {
+          "xy": [
+            180,
+            186
+          ],
+          "left": "6937d6383639003c",
+          "right": "6837d6383639003c"
+        },
+        {
+          "xy": [
+            182,
+            186
+          ],
+          "left": "8f37ed384a39003c",
+          "right": "8e37ed384b39003c"
+        },
+        {
+          "xy": [
+            183,
+            186
+          ],
+          "left": "cc3716397339003c",
+          "right": "c83714397239003c"
+        },
+        {
+          "xy": [
+            184,
+            186
+          ],
+          "left": "c43712396e39003c",
+          "right": "c53713396f39003c"
+        },
+        {
+          "xy": [
+            185,
+            186
+          ],
+          "left": "b53709395f39003c",
+          "right": "b43709395f39003c"
+        },
+        {
+          "xy": [
+            187,
+            186
+          ],
+          "left": "2737ae381339003c",
+          "right": "2837ae381339003c"
+        },
+        {
+          "xy": [
+            180,
+            187
+          ],
+          "left": "7c37e2383a39003c",
+          "right": "7b37e1383a39003c"
+        },
+        {
+          "xy": [
+            182,
+            187
+          ],
+          "left": "9637f3384c39003c",
+          "right": "9737f4384c39003c"
+        },
+        {
+          "xy": [
+            184,
+            187
+          ],
+          "left": "8e37f2385139003c",
+          "right": "8f37f3385239003c"
+        },
+        {
+          "xy": [
+            186,
+            187
+          ],
+          "left": "7637df384139003c",
+          "right": "7537df384139003c"
+        },
+        {
+          "xy": [
+            73,
+            208
+          ],
+          "left": "803a953af239003c",
+          "right": "813a953af339003c"
+        },
+        {
+          "xy": [
+            75,
+            211
+          ],
+          "left": "2e3be13afa39003c",
+          "right": "2f3be23afa39003c"
+        },
+        {
+          "xy": [
+            77,
+            212
+          ],
+          "left": "633bf83af439003c",
+          "right": "633bf83af539003c"
+        },
+        {
+          "xy": [
+            76,
+            213
+          ],
+          "left": "bc3b2f3b0f3a003c",
+          "right": "bc3b2e3b0f3a003c"
+        },
+        {
+          "xy": [
+            40,
+            216
+          ],
+          "left": "8a3cfe3b5c3a003c",
+          "right": "8a3cfd3b5c3a003c"
+        },
+        {
+          "xy": [
+            42,
+            216
+          ],
+          "left": "953c0a3c6f3a003c",
+          "right": "943c0a3c6e3a003c"
+        },
+        {
+          "xy": [
+            43,
+            216
+          ],
+          "left": "983c063c623a003c",
+          "right": "983c063c633a003c"
+        },
+        {
+          "xy": [
+            44,
+            216
+          ],
+          "left": "8a3cfb3b593a003c",
+          "right": "8a3cfc3b5a3a003c"
+        },
+        {
+          "xy": [
+            40,
+            217
+          ],
+          "left": "cb3c293c823a003c",
+          "right": "cb3c2a3c853a003c"
+        },
+        {
+          "xy": [
+            41,
+            217
+          ],
+          "left": "d63c2c3c7e3a003c",
+          "right": "d73c2f3c873a003c"
+        },
+        {
+          "xy": [
+            42,
+            217
+          ],
+          "left": "c53c223c723a003c",
+          "right": "cb3c273c793a003c"
+        },
+        {
+          "xy": [
+            43,
+            217
+          ],
+          "left": "cc3c293c823a003c",
+          "right": "d53c313c8f3a003c"
+        },
+        {
+          "xy": [
+            44,
+            217
+          ],
+          "left": "ce3c293c7f3a003c",
+          "right": "d23c2e3c883a003c"
+        },
+        {
+          "xy": [
+            17,
+            218
+          ],
+          "left": "1d3d563c9d3a003c",
+          "right": "193d523c963a003c"
+        },
+        {
+          "xy": [
+            16,
+            219
+          ],
+          "left": "5d3d763ca83a003c",
+          "right": "5e3d773caf3a003c"
+        },
+        {
+          "xy": [
+            17,
+            219
+          ],
+          "left": "5d3d783cb23a003c",
+          "right": "5d3d773cb03a003c"
+        }
+      ]
+    }
+  }
+}

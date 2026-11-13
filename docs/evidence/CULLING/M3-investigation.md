@@ -48,6 +48,14 @@ the outlier. All four report alpha bits `1056964608` and exposure words
 This witness precedes tone mapping and does not come from different recorded
 exposure or phase. The original tick-208 failure remains individually unattributed.
 
+The two independent Direct images from each control are now retained losslessly
+under [M3/diagnostics](M3/diagnostics/direct-controls.json), with raw-byte hashes,
+the exact differing coordinates and same-tick receipts. The
+[comparer](M3/compare_diagnostic.py) reads the compressed raw bytes directly;
+use `--pixel-bytes 8` for the scene-linear control. SDR differs at four pixels;
+scene-linear differs at 35. These are witnesses of instability, not passing
+culling evidence.
+
 After rebasing onto CONTENT-LOOP M1, a clean Portable run at `7dbfb781` fails
 at tick 200: Frustum differs at five pixels; both Direct hosts and Occlusion
 agree. Its retained report is
@@ -58,3 +66,29 @@ The next bounded experiment temporarily disables Sun shadows in the grid
 scene, retaining the same meshes, route, four hosts and exact comparison.
 This asks whether the shared Sun-shadow path is needed for the mismatch. It is
 an ablation, not a shipping change, and its result is not yet known.
+
+## Continuation: Sun path ablations and direct depth readback
+
+Prior-session local ablations retained in `tmp/culling-m3/` passed one full
+Portable route with Sun shadows disabled, and one with the synthetic instance
+casters omitted. Omitting cooked casters, removing receiver derivatives or
+adding invariance to the cooked caster did not eliminate failures. None of
+those single passes establishes that the corresponding change fixes the fault.
+
+The continuation's initial working-tree ablation disabled shadowed air only
+(`visibility = 1.0` in `synthetic_aerial_shadowed.wgsl`). It still failed at tick
+180. [Its log](M3/diagnostics/no-air-shadows.log) is retained. The shipping shader
+was restored; no ablation is part of the implementation.
+
+A temporary [depth-readback patch](M3/diagnostics/shadow-map-diagnostic.patch)
+copies an actual 1024×1024 Depth32Float Sun layer into the submitted SceneLinear
+readback allocation, retaining all four hosts and every route frame. The copied
+bytes are diagnostic depth, not scene-linear colour. With that patch, the near
+map (layer 0) is identical across the four hosts for all 361 route frames.
+[Identity](M3/diagnostics/shadow-map-identity.json),
+[log](M3/diagnostics/shadow-map-0.log) and
+[rows](M3/diagnostics/shadow-map-0-rows.jsonl.gz) pin the run. This narrows the
+search; it proves neither the other layers nor downstream shading deterministic.
+The far and height layer runs are queued under the shared GPU lock. The
+temporary production edits have been reverted after building the diagnostic
+executable, and the queued helper uses that exact binary without rebuilding.
