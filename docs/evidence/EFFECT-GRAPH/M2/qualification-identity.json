@@ -1,11 +1,11 @@
 {
-  "engine_source": "ec9dd79cacdf20861a1f82b28c2c454435eb4ddd",
-  "checked_commit": "ec9dd79cacdf20861a1f82b28c2c454435eb4ddd",
-  "covered_content_key": "5214d4597203d19ed8c4b3192ae4a390dbdf9ba171d1a8159923584fc79f65fe",
-  "target_checks": "milestone-check.json",
-  "target_check_invocation": "agent_loop.py check --module EFFECT-GRAPH --milestone M2 --worktree . --items-only --timeout 3600 --json (2.1.0; Rust 1.99.1)",
-  "repository_gate": "separate ./dev check under the gpu lock; see dev-check.log",
-  "reason_for_separate_gate": "Item checks acquire their GPU locks individually; the repository gate is wrapped once to serialize its GPU tests.",
-  "browser_scratch": "tmp/v1-browser-1794533213483",
-  "baseline_scratch": "tmp/baseline-guard/verify-20261113T012654.423150Z"
+  "initial_checked_commit": "ec9dd79cacdf20861a1f82b28c2c454435eb4ddd",
+  "initial_six_item_checks": "milestone-check.json",
+  "initial_repository_gate": "dev-check.log",
+  "post_rebase_checked_commit": "c9ebc78890c74055fc0d93bbbf85d42056ef95a5",
+  "covered_content_key": "79b645812d1da285377bb1899a7ac85f94abad224f6b89075d603c2985b1cb86",
+  "post_rebase_checks": "rebase-qualification.json",
+  "capture_source": "ec9dd79cacdf20861a1f82b28c2c454435eb4ddd",
+  "unaffected_proofs": "Native state/cadence and realtime capture remain from ec9dd79c. Renderer runtime is unchanged; the game change is a cfg(test) module path. Other additions are lifecycle tests and the browser checker default build.",
+  "integration_gate": "The required merge command runs ./dev check on the rebased source before pushing."
 }

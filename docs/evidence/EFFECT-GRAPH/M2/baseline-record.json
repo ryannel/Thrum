@@ -1,7 +1,7 @@
 {
   "passed": true,
-  "revision": "ec9dd79cacdf20861a1f82b28c2c454435eb4ddd",
-  "content_key": "5214d4597203d19ed8c4b3192ae4a390dbdf9ba171d1a8159923584fc79f65fe",
+  "revision": "c9ebc78890c74055fc0d93bbbf85d42056ef95a5",
+  "content_key": "79b645812d1da285377bb1899a7ac85f94abad224f6b89075d603c2985b1cb86",
   "target": "mac-metal + chrome-webgpu",
   "commands": [
     {
@@ -21,8 +21,8 @@
         "draw-probe,thrum-render/creation-counters"
       ],
       "exit": 0,
-      "seconds": 1.8349172919988632,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/native-build.log"
+      "seconds": 8.939693375024945,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/native-build.log"
     },
     {
       "name": "cooker-build",
@@ -39,8 +39,8 @@
         "thrum-cook"
       ],
       "exit": 0,
-      "seconds": 0.17638008436188102,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/cooker-build.log"
+      "seconds": 0.16991420928388834,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/cooker-build.log"
     },
     {
       "name": "web-build",
@@ -49,8 +49,8 @@
         "examples/v1-game/web/build.sh"
       ],
       "exit": 0,
-      "seconds": 0.3413530830293894,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/web-build.log"
+      "seconds": 0.32874954119324684,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/web-build.log"
     },
     {
       "name": "cook",
@@ -58,11 +58,11 @@
         "target/release/thrum-cook",
         "cook",
         "examples/v1-game/assets/showcase",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/valley"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/valley"
       ],
       "exit": 0,
-      "seconds": 0.4264707500115037,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/cook.log"
+      "seconds": 0.368324208073318,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/cook.log"
     },
     {
       "name": "apple_tile_m1",
@@ -74,15 +74,15 @@
         "--binary",
         "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/v1-game",
         "--store",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/valley",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/valley",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/apple_tile_m1",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/apple_tile_m1",
         "--records",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z"
       ],
       "exit": 0,
-      "seconds": 404.094589790795,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/apple_tile_m1.log"
+      "seconds": 397.2250066669658,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/apple_tile_m1.log"
     },
     {
       "name": "apple_tile_m2",
@@ -94,15 +94,15 @@
         "--binary",
         "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/target/release/v1-game",
         "--store",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/valley",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/valley",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/apple_tile_m2",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/apple_tile_m2",
         "--records",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z"
       ],
       "exit": 0,
-      "seconds": 369.93857100000605,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/apple_tile_m2.log"
+      "seconds": 363.08364374982193,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/apple_tile_m2.log"
     },
     {
       "name": "chrome-day-sdr",
@@ -118,11 +118,11 @@
         "--cook",
         "target/release/thrum-cook",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-sdr"
       ],
       "exit": 0,
-      "seconds": 22.405466333031654,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr.log"
+      "seconds": 22.79705616692081,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-sdr.log"
     },
     {
       "name": "chrome-day-sdr-compare",
@@ -133,13 +133,13 @@
         "--reference",
         "docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz",
         "--candidate",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-sdr",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr-comparison.json"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-sdr-comparison.json"
       ],
       "exit": 0,
-      "seconds": 2.4642852498218417,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-sdr-compare.log"
+      "seconds": 2.4464433332905173,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-sdr-compare.log"
     },
     {
       "name": "chrome-day-scene-linear",
@@ -155,11 +155,11 @@
         "--cook",
         "target/release/thrum-cook",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear"
       ],
       "exit": 0,
-      "seconds": 39.6616950831376,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear.log"
+      "seconds": 40.39256220823154,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear.log"
     },
     {
       "name": "chrome-day-scene-linear-compare",
@@ -170,14 +170,14 @@
         "--reference",
         "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
         "--candidate",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear-comparison.json",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear-comparison.json",
         "--linear"
       ],
       "exit": 0,
-      "seconds": 6.536005625035614,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear-compare.log"
+      "seconds": 6.560399791225791,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear-compare.log"
     },
     {
       "name": "chrome-night-sdr",
@@ -193,11 +193,11 @@
         "--cook",
         "target/release/thrum-cook",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-sdr"
       ],
       "exit": 0,
-      "seconds": 17.18591266591102,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr.log"
+      "seconds": 17.302166291046888,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-sdr.log"
     },
     {
       "name": "chrome-night-sdr-compare",
@@ -208,13 +208,13 @@
         "--reference",
         "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz",
         "--candidate",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-sdr",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr-comparison.json"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-sdr-comparison.json"
       ],
       "exit": 0,
-      "seconds": 1.9909780831076205,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-sdr-compare.log"
+      "seconds": 1.991953790653497,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-sdr-compare.log"
     },
     {
       "name": "chrome-night-scene-linear",
@@ -230,11 +230,11 @@
         "--cook",
         "target/release/thrum-cook",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear"
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-scene-linear"
       ],
       "exit": 0,
-      "seconds": 34.64381941733882,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear.log"
+      "seconds": 35.569172583986074,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-scene-linear.log"
     },
     {
       "name": "chrome-night-scene-linear-compare",
@@ -245,14 +245,14 @@
         "--reference",
         "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz",
         "--candidate",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-scene-linear",
         "--output",
-        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear-comparison.json",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-scene-linear-comparison.json",
         "--linear"
       ],
       "exit": 0,
-      "seconds": 5.626818125136197,
-      "log": "tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-night-scene-linear-compare.log"
+      "seconds": 5.6616076664067805,
+      "log": "tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-night-scene-linear-compare.log"
     }
   ],
   "comparisons": {
@@ -283,11 +283,11 @@
   },
   "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "load": [
-    4.4638671875,
-    2.8466796875,
-    2.55419921875
+    3.14306640625,
+    4.671875,
+    8.0107421875
   ],
-  "disk_free_before_bytes": 48787324928,
+  "disk_free_before_bytes": 41970524160,
   "references": {
     "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/approach.identity.json": "ea824cc0f2c469aeedf4f362120d292de8b48199eca4ed57bfde09c9d7286326",
     "docs/evidence/render/apple-tile-m0/native-baseline/letterbox-bgra8-1/mirror-light-present.png": "731bddc83b641f701c455a0d6dc9bb86c3d3201fc02f4b8f65ef3229b4cf1460",
@@ -345,7 +345,7 @@
     "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz": "b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da",
     "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz": "b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a"
   },
-  "native_binary_sha256": "84efe7216bdaa4694aa9fe5e57a42b808061f99c3043923664712e3f1a10448e",
+  "native_binary_sha256": "ef2f485a96343a5d08edce45f1671ffb953a6455acf1076759022588f6519721",
   "wasm_artifact_hashes": {
     "capture.html": "476d43e17bcb1a1139981e099c023ede9b8e039313a4d23167f7e2c9bbf158af",
     "capture.mjs": "a11c3ccaa7b14909f78ed66cf4989b46a1a12f3677f4f62c0488937b38762ec4",
@@ -378,5 +378,5 @@
     "chrome-night-sdr",
     "chrome-night-scene-linear"
   ],
-  "seconds": 908.1789623326622
+  "seconds": 903.760282416828
 }

@@ -1,0 +1,24 @@
+c9ebc78890c74055fc0d93bbbf85d42056ef95a5
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-asset-gpu)
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 6.02s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+PASS 1 case(s); artifacts: /Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/v1-browser-1794536894480
+RUN native-build
+RUN cooker-build
+RUN web-build
+RUN cook
+RUN apple_tile_m1
+RUN apple_tile_m2
+RUN chrome-day-sdr
+RUN chrome-day-sdr-compare
+RUN chrome-day-scene-linear
+RUN chrome-day-scene-linear-compare
+RUN chrome-night-sdr
+RUN chrome-night-sdr-compare
+RUN chrome-night-scene-linear
+RUN chrome-night-scene-linear-compare
+PASS exact baselines; proof tmp/baseline-guard/proofs/79b645812d1da285377bb1899a7ac85f94abad224f6b89075d603c2985b1cb86.json; 903.76s
+TARGETS_READY

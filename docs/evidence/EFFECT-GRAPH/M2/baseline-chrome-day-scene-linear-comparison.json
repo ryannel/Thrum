@@ -1,9 +1,9 @@
 {
   "passed": true,
   "reference": "docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz",
-  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T012654.423150Z/chrome-day-scene-linear",
+  "candidate": "/Users/ryannel/Workspace/thrum/.claude/worktrees/effect-graph/tmp/baseline-guard/verify-20261113T022815.422655Z/chrome-day-scene-linear",
   "reference_manifest_sha256": "78d95bb28d09d0b4826dc7456a14ba936ef12bc8925bde914656857f4818bc42",
-  "candidate_manifest_sha256": "e1065a46716cbe7e5d66bf2864dfe62f38cfbec5065aa76832de429401800272",
+  "candidate_manifest_sha256": "4cab7d4ca999a25b111fc4db5af94dc252ffa6ddebfeaca175d5041c288d4a3d",
   "frames": 481,
   "identity_keys": [
     "session",

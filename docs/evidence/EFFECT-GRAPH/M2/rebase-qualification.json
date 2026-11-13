@@ -1,0 +1,19 @@
+{
+  "checked_commit": "c9ebc78890c74055fc0d93bbbf85d42056ef95a5",
+  "passed": true,
+  "commands": [
+    "node scripts/check_v1_browser.mjs --case effect-state",
+    "python3 scripts/exact_baselines.py verify"
+  ],
+  "content_key": "79b645812d1da285377bb1899a7ac85f94abad224f6b89075d603c2985b1cb86",
+  "browser_scratch": "tmp/v1-browser-1794536894480",
+  "baseline_scratch": "tmp/baseline-guard/verify-20261113T022815.422655Z",
+  "upstream_source_files": [
+    "crates/thrum-render/tests/support/mixed_field_host.rs",
+    "crates/thrum-render/tests/visibility_buckets.rs",
+    "examples/v1-game/src/field.rs",
+    "scripts/check_v1_browser.mjs"
+  ],
+  "unaffected_evidence": "Native state/cadence and realtime capture remain from ec9dd79c. Renderer runtime is unchanged; the game change is a cfg(test) module path. Other additions are lifecycle tests and the browser checker default build.",
+  "native_binary_matches_capture": false
+}
