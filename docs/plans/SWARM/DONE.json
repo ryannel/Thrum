@@ -451,9 +451,9 @@
         },
         {
           "id": "M3.17",
-          "statement": "A run ends at one tick, won or lost. It is won at the tick the boss dies, or at the tick the last wave's clock ends with a present hero standing, and no intermission follows the last wave. It is lost at the tick a slot is present and no present hero stands. On a shared tick the boss's death beats the loss, and the loss beats the clock. Waiting spends no wave's clock: a player alone who waits in an intermission for more than 36,000 ticks and then readies meets the next wave with its whole clock.",
+          "statement": "A run ends at one tick, won or lost, and the commit that carries the deciding event carries the outcome. It is won at the tick the boss dies, or at the tick the last wave's clock ends with a present hero standing, and no intermission follows the last wave. It is lost at the tick a slot is present and no present hero stands. On a shared tick the boss's death beats the loss, and the loss beats the clock of any wave. Waiting spends no wave's clock: a player alone who waits in an intermission for more than 36,000 ticks and then readies meets the next wave with its whole clock.",
           "check": "cargo test --locked --offline -p swarm-rules --test run_endings",
-          "ask": "Read the test. Does it reach the last wave's deadline with the boss alive, once with a hero standing and once with the last hero falling on that very tick, and a boss death on the tick the last hero falls, and read each outcome from committed state? Does the wait step the real rules for every one of its ticks?",
+          "ask": "Read the test. Does it reach the last wave's deadline with the boss alive, once with a hero standing and once with the last hero falling on that very tick, and a boss death on the tick the last hero falls, and read each outcome from the state that same tick committed? Does the wait step the real rules for every one of its ticks?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -704,9 +704,9 @@
         },
         {
           "id": "M5.6",
-          "statement": "The hero's movement is one function that the movement rule and the predicted controller both call, and it is given nothing of the crowd. Over a whole run at the cap in which the hero is in contact with enemies throughout and falls at least once, the prediction equals the confirmed hero tick for tick wherever the host admitted the player's frame. Every correction is for one of four causes on record: a tick the host held, a change of lead, an upgrade to the hero's speed, or a change in whether the hero is standing (a fall, standing again, leaving or entering the field). Each change in standing corrects once.",
+          "statement": "The hero's movement is one function that the movement rule and the predicted controller both call, given nothing of the crowd. Over a whole run at the cap in which the hero is in contact with enemies throughout, and falls and stands again while its player keeps steering: on every tick where the host admitted the player's frame and no rule changed the hero's speed or standing, the prediction the client saved before it committed that tick equals the confirmed controller bit for bit. Every correction is on record with its cause: one the session names (a tick the host held, a change of lead, a return from a stall or a repair), or a change the rules made to the hero's speed or standing (a fall, standing again, leaving or entering the field). Each fall and each standing again while the prediction runs corrects once, on its own tick, to the confirmed controller, and from the next tick that equality holds again.",
           "check": "cargo test --locked --offline -p swarm-proof --test prediction",
-          "ask": "Does the test's hero spend the run in the crowd and fall in it? Does the test count corrections by cause from the session's own report, telling a change in standing from the controller's state before and after?",
+          "ask": "Does the test's hero spend the run in the crowd, fall in it and stand again, with its player steering while it is down? Is equality judged on the prediction as it stood before the client committed the tick, and never after a restore? Are corrections counted by cause from the session's own report, with a change in speed or standing told from the confirmed controller before and after?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
