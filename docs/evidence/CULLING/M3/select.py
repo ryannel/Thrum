@@ -43,6 +43,8 @@ def crops(base, output, rows, tick_key, groups):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--capture', required=True, type=Path)
+    parser.add_argument('--oracle', required=True, type=Path, help='Chrome cube oracle with exact submitted PNGs')
+    parser.add_argument('--native-oracle', required=True, type=Path)
     args = parser.parse_args()
     capture = args.capture.resolve()
     for target in ('native-realtime', 'chrome-fixed', 'chrome-realtime'):
@@ -65,10 +67,18 @@ def main():
                       ('ridge', 285, '400:160:400:64'), ('cover', 378, '400:240:500:200')]
         if target.endswith('realtime'):
             crops(source, dest, rows, key, groups)
-        else:
-            for tick in (225, 350, 376, 386, 530):
-                row = min(rows, key=lambda row: abs(row[key] - tick))
-                shutil.copyfile(source / 'png' / f'{row["submission_id"]:06}.png', dest / f'checkpoint-{tick}.png')
+    oracle = args.oracle.resolve() / 'default'
+    fixed = OUT / 'chrome-fixed'
+    receipt = json.loads((oracle / 'moving-route.record.json').read_text())
+    (fixed / 'exact-checkpoints.json').write_text(json.dumps(receipt['checkpoints'], indent=2) + '\n')
+    for checkpoint in receipt['checkpoints']:
+        shutil.copyfile(oracle / 'moving-route-submitted' / f'{checkpoint["name"]}.png', fixed / f'{checkpoint["name"]}.png')
+    native = args.native_oracle.resolve() / 'portable'
+    fixed = OUT / 'native-fixed'
+    fixed.mkdir(exist_ok=True)
+    for tick in (225, 350, 376, 386, 530):
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(native / f'fixed-{tick}.ppm'),
+                        '-pix_fmt', 'rgba', str(fixed / f'checkpoint-{tick}.png')], check=True)
     field = capture / 'field-fixed'
     dest = OUT / 'field-fixed'
     dest.mkdir(exist_ok=True)
