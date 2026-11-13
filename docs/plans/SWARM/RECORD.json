@@ -43,12 +43,12 @@
       }
     },
     "M3": {
-      "definitions": "e1e9eca2577fd966162d4905e7366ec193bb18ab08c741a311e249b7d2db2813",
+      "definitions": "3e6850f5dd30f692e511c2f704b1571ec348371b05f5ca52a51f379b3452ab79",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
-        "at": "2026-11-13T20:28:50Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in",
+        "at": "2026-11-13T20:58:55Z"
       }
     },
     "M4": {
@@ -61,12 +61,12 @@
       }
     },
     "M5": {
-      "definitions": "cdaf51e321f9a55f8c37a31045821c05ac909d079f04b168791572a6d5769ff5",
+      "definitions": "0717dc9a3a385af2ac757148b37fd2ee075005e3d85af5ad04fd232328df6d53",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
-        "at": "2026-11-13T20:28:50Z"
+        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in",
+        "at": "2026-11-13T20:58:55Z"
       }
     },
     "M6": {
@@ -105,11 +105,15 @@
     {
       "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T20:28:50Z"
+    },
+    {
+      "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T20:58:55Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T20:28:50Z"
+    "at": "2026-11-13T20:58:55Z"
   },
   "design_history": [
     {
