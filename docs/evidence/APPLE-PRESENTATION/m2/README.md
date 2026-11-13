@@ -1,6 +1,31 @@
 # APPLE-PRESENTATION M2 builder evidence
 
-All seven item commands and the repository gate pass on this Mac. M2 is ready for independent review.
+Clean-checkout follow-up at `8224cda1961a0d04a308c689400fca575695be8d`: all seven item commands and
+the repository gate pass with the checker's `--timeout 3600`. Its default 600-second run timed out
+during the existing every-tick field oracle without an assertion failure.
+[Checker result](clean-checkout-check.json.gz), [repository output](clean-checkout-repository.stdout.log.gz)
+and [compiler output](clean-checkout-repository.stderr.log.gz).
+
+The default browser checker now builds the current web bundle before resolving its directory, with
+an explicit local Cargo target directory; explicit web roots remain caller-owned. This removes the
+clean verifier's dependency on ignored output left by an earlier session. Chrome passes W1–W7 and
+all 32 regression cases. The loaded Wasm hash, A=38, C=39, predecessor=38 and 54,687 motion pixels
+match the retained witness below. The submitted diagnostic was inspected and is byte-identical to
+the retained PNG (SHA-256 `6aa2e933fd4260650d422b4fc15b213327bdd9488ddc061f8745d68526c9e8a2`).
+[Temporal record](clean-checkout-temporal.json.gz), [temporal output](clean-checkout-temporal.stdout.log.gz),
+[regression run](clean-checkout-all-run.json.gz), [regression output](clean-checkout-all.stdout.log.gz)
+and [hardware](clean-checkout-all-gpu.json.gz).
+
+The reported watcher missed edit was not reproduced: 40 runs in four concurrent workers pass outside
+the sandbox on the unchanged cooker, as does a run with TMPDIR unset and the complete repository gate.
+An additional 30 preliminary sequential runs passed. No watcher code or assertions were changed;
+the original missed event's cause remains unconfirmed. [Concurrent stress output](clean-checkout-watcher.log.gz).
+
+Exact verification on the repair commit passes all 1,966 comparisons in 959.18 seconds under the
+GPU lock, with references unchanged. [Exact record](clean-checkout-exact.json) and
+[verifier output](clean-checkout-exact.log.gz). M2 remains `in_progress` for the lead's checks and review.
+
+The original implementation qualification follows.
 The checker started at `c506b2a6` and ended at `d35553c2`. The intervening changes contain evidence only,
 and the covered source objects are identical. [Required checker](milestone-check-current.json.gz) and
 [verification identity](verification-identity.json).
