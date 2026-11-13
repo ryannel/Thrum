@@ -57,7 +57,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): In Progress · [plan](PLATFORM-RUNTIME-MAC/PLAN.md) · [latest review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
+- The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md) · [latest review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - Depth, motion, reactive and exposure are stored for reconstruction, and history advances only with submitted frames (APPLE-PRESENTATION M2): In Progress · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../evidence/APPLE-PRESENTATION/M2-review.md)
 - The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): In Progress · [plan](CULLING/PLAN.md)
@@ -84,7 +84,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · In Progress |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M2 of 4 · Ready for Review |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
