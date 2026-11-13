@@ -20,7 +20,7 @@
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
-| 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT |
+| 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION |
 
@@ -473,9 +473,10 @@ digest of its committed state, and a peer whose digest differs is repaired with 
   `SIM-2D` owns that profile and its first milestone tries to break it on all three targets.
 - *What keeps a miss from spreading.* The digest catches a divergence within the interval `SESSION` sets, and
   repair is the reliable full image A5 already selects. A client that changes its rules only desyncs itself.
-- *Range.* 2 to 4 peers and the brief's thousands. If a full-world replay does not fit a frame at that size, the
+- *Range.* 2 to 4 peers and the brief's thousands. A full-world replay does not fit a frame at that size, so the
   crowd is shown at the confirmed tick and only the player's own character is predicted, which needs no crowd
-  replay. `SESSION`'s planner chooses between the two from `SIM-2D`'s measured costs.
+  replay. [`SESSION`'s planner chose this](SESSION/DESIGN.md#11-the-predicted-controller) from `SIM-2D`'s probe;
+  its M4 sets `SIM-2D`'s measured replay beside it.
 - *If the profile cannot be held.* The fallback is Vampire Survivors' own method: local simulation with corrections
   through the acknowledged deltas of A5, at a rate the byte budget allows.
 - *Precedent in Thrum.* C13 already shares water by causes, and [NETWORKING](../design/modules/NETWORKING.md) leaves room for a game
@@ -507,7 +508,7 @@ registers any new crate in `.config/architecture.toml`. Each module is built by 
 | `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its pass; the 2D view record (a centre and a scale in output pixels per world unit); sprite rows extracted from the tick page and given each frame; draw order; sprite sampling and blending; sheet slots and frame tables on the GPU; the crowd view | `thrum-render`, and `examples/crowd-2d-view` for the crowd view ([design](RENDER-2D/DESIGN.md)) |
 | `GAME-UI` | U1 | Text and interface drawn in the frame: the glyph cache, the interface tree and its layout, focus, the paint list; routing of key, pointer and touch events to the interface before the game | A new crate |
 | `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity and its join ticket. It holds no game state and gives no meaning to a message | A new crate `thrum-transport`, so a game that is not networked links no sockets, and `examples/link-proof` for the proof programs and the relay ([design](TRANSPORT/DESIGN.md)) |
-| `SESSION` | N1 | The match and each connection's epoch; the handshake and its manifests; clock sync and input lead; input staging and relay; baseline and join; digest exchange and repair; the prediction branch; retained results | `thrum-network` |
+| `SESSION` | N1 | The match, its roster and each connection's epoch; the handshake and the rule-set identity; the input lead and the playout clock; input staging, commands and the set stream; the baseline and join; digest exchange and repair; the predicted controller; retained results | `thrum-network`, and `examples/match-proof` for the proof programs and the scripted players ([design](SESSION/DESIGN.md)) |
 | `SWARM` | Game policy and content | The game: its name, premise, characters, art, rules, waves, upgrades and screens; the schemas and rule set it declares to `SESSION`; its sprite and font sources; the record that closes track 3 | A new folder in `examples/`, never an engine crate |
 
 State no module above owns stays where it is: the tick, committed world state, rewind and the tick page in
@@ -529,6 +530,9 @@ it to the asking module's builder. None is added now, so no V1 plan changes.
 | `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:M1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
 | `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game | `SWARM` |
 | Repository guard | `.config/architecture.toml` names one external game; it must admit a second | `SWARM` |
+| Core (W1) and `SIM-2D` | A world image: the bytes the digest covers, with a way back into a fresh runtime in another process. Built in `SESSION:M1` under [ruling 1](#seam-rulings-for-session) | `SESSION` |
+| `SIM-2D` | The reference crowd's player movement as one function its own rule calls, so a predictor can call it too. Built in `SESSION:M4` under [ruling 2](#seam-rulings-for-session) | `SESSION` |
+| Core (F1 and W1), with `CREATOR` | A world lane that commits ticks when the session says, in place of its own clock, for a client's copy of a match. Open for `SWARM`'s planner | `SWARM` |
 
 `RENDER-2D`'s own sprite pass is declared in the one graph by `thrum-render`, as the 3D scene's forward pass is.
 An engine module outside `thrum-render` attaches to a 2D scene through `EFFECT-GRAPH`'s seam, at the upload and
@@ -567,6 +571,25 @@ design says each ask becomes a milestone there, and ruling 2 replaces that for t
    `sprites` scene selection, off by default, as the other modules' diagnostics are. It is never part of the
    showcase.
 
+<a id="seam-rulings-for-session"></a>
+
+**Seam rulings for `SESSION`.** `SESSION` needs two changes inside state other modules own, which no interface
+offered. Each is built by the `SESSION` builder of the milestone named, after `SIM-2D`'s last milestone is Done,
+with the behaviour [SESSION](SESSION/DESIGN.md#mechanisms) defines. No item of `SIM-2D` changes, and its two
+retained traces keep their retained digests: neither ruling refreshes an exact baseline, and a builder who finds
+it cannot hold them stops and ends `BLOCKED`. Once built, each belongs to its owner: later work there keeps its
+tests passing.
+
+1. **The world image, in `SESSION:M1`** (core and `SIM-2D`; `thrum-core`'s `sim` module and the component types
+   of `examples/crowd-2d`). The state encoding gains its decoding half, and a registered runtime gains a way to
+   write [a world image](SESSION/DESIGN.md#7-the-world-image-and-the-baseline) and to be built from one in
+   another process. The image carries exactly what the digest covers. A type that supplies one half of the
+   encoding without the other does not compile into a rule set, so every later rule package supplies both.
+2. **The reference crowd in a match, in `SESSION:M4`** (`SIM-2D`; `examples/crowd-2d`). The player's movement
+   becomes one function in the rule package, called by the crowd's own rule and by
+   [the predicted controller](SESSION/DESIGN.md#11-the-predicted-controller). It is a change of shape only: the
+   rule package still passes `SIM-2D`'s guard with nothing suppressed.
+
 <a id="interfaces-track-3"></a>
 
 ### Interfaces (track 3)
@@ -588,8 +611,10 @@ review passes. Changes to a numbered contract are settled with its producers and
 | **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
 | **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A reliable message arrives or the link closes, and a close can cut off the last ones sent. A datagram's wait is bounded in the link's own queue only, so one may arrive late and `SESSION` rejects old ones by content. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM` and `GAME-UI` | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
-| **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION`'s design; C13, A0 and the A5 decisions |
-| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION`'s design |
+| **World image**: a world's whole authority state as bytes, the same bytes the digest is taken over, restored into a fresh runtime on any target | core and `SIM-2D` → `SESSION`, by [ruling 1](#seam-rulings-for-session) | [SESSION](SESSION/DESIGN.md#7-the-world-image-and-the-baseline); C02 |
+| **Session**: a host and a client driven by time: join and leave, roster events for each player slot, the host's admitted set for each tick, how many ticks to commit now, the predicted controller and its corrections, and commands that happen once in order. A game says which of its actions are commands | `SESSION` → `SWARM` | [SESSION](SESSION/DESIGN.md#interfaces); C13, A0 and the A5 decisions |
+| **Connection state**: what a screen can show for this peer and for each slot, with the reason for a refusal or a close | `SESSION` → `SWARM`, `GAME-UI` | [SESSION](SESSION/DESIGN.md#9-negotiation-and-leaving) |
+| **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, by an identity derived from their sources, and refuses a peer that differs. A proposed addition to C13, written into the contract by `SESSION:M6` | `SESSION`, with `SIM-2D`, core and the game | [SESSION](SESSION/DESIGN.md#interfaces) |
 | Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged. `RENDER-2D` registers none: a 2D scene has no scale, cadence or step budget to lower |
 | The app runner and typed controls | `CREATOR` → `SWARM` | C11, [CREATOR](CREATOR/DESIGN.md) |
 | Engine capture, one for each peer process | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md); unchanged |
@@ -607,8 +632,9 @@ builder starts it. The modules are planned in the order below.
 2. **Sprites.** `RENDER-2D`, which builds its asks of `APPLE-TILE` and `CONTENT-LOOP` itself under
    [the seam rulings](#seam-rulings-for-render-2d). Its first four milestones can run beside step 1; its last
    draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first milestone.
-3. **A match without pictures.** `SESSION` on the in-memory conditioned link, after `SIM-2D`'s first milestone.
-   Its socket milestones follow `TRANSPORT`'s first milestone.
+3. **A match without pictures.** `SESSION`, after `SIM-2D`'s last milestone, since its first milestone works in
+   the same files. Its matches on the in-memory conditioned link follow `TRANSPORT`'s first milestone, which
+   delivers that link, and its socket milestones follow `TRANSPORT`'s second.
 4. **Interface.** `GAME-UI`, after `RENDER-2D`'s first milestone and the interface-stage ask.
 5. **The game.** `SWARM` opens with the owner's choice of concept, which only `SWARM` waits on. Then a
    single-player slice after `SIM-2D` and `RENDER-2D`, the full run after `GAME-UI`, co-op after `SESSION` on
@@ -620,8 +646,9 @@ A lone builder takes them in that order: `SIM-2D`, `TRANSPORT`, `RENDER-2D`, `SE
 **Reaching the targets.** `TRANSPORT`, `SESSION` and `SWARM` open local sockets and drive Chrome, which Codex's
 `workspace-write` sandbox does not allow without a request for each run. Their planners settle how a builder and a
 reviewer reach those targets; [the choice](#owner-decisions) is the owner's. `TRANSPORT` puts every socket proof
-behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps sockets out of `./dev check`;
-`SESSION` and `SWARM` run their matches through the same command and relay.
+behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps sockets out of `./dev check`.
+`SESSION` does the same with [one match command](SESSION/DESIGN.md#proof-and-builder-handoff), through
+`TRANSPORT`'s relay, and `SWARM` runs its matches through that command.
 
 ### What finished means (track 3)
 
@@ -639,8 +666,8 @@ no budget below is a gate. The quality bar is a shipped game, named for each mil
 
 Planned on 13 November 2026: [design](SIM-2D/DESIGN.md), [plan](SIM-2D/PLAN.md). Its planner settled the two
 choices this brief carried: rules compute in `f32` held to exactly rounded operations, not fixed point, and the
-queries sit beside `thrum-core` in a new crate. Three milestones; `SESSION` needs M1, whose record holds the tick,
-rewind and replay costs it chooses from, and `SWARM` needs M3. If M1's three targets cannot be made equal, the
+queries sit beside `thrum-core` in a new crate. Three milestones; `SESSION` needs M3, because its first milestone works in
+the same files, and quotes M1's record of tick, rewind and replay costs; `SWARM` needs M3. If M1's three targets cannot be made equal, the
 builder stops and [mechanism 1](#mechanisms-settled-here) is replanned.
 
 #### RENDER-2D
@@ -680,32 +707,26 @@ three choices this brief carried: Quinn with `web-transport-quinn` on the host a
 browser's `WebTransport`; one I/O thread that meets the world lane only at bounded queues; and no WebSocket
 fallback. [A probe](../evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
 simulator with datagrams, so the fallback this brief named, input on the reliable stream for Chrome, is held in
-reserve and not built. Two milestones; `SESSION` needs M1, which delivers the in-memory conditioned link, the three
-socket adapters and a cost record under each congestion controller. Four findings bind `SESSION`: a join's baseline
+reserve and not built. Two milestones; `SESSION` needs M1 for the in-memory conditioned link and M2 before its socket
+milestones. M1 also delivers the three socket adapters and a cost record under each congestion controller. Four findings bind `SESSION`: a join's baseline
 should flow from the host down; a frozen browser page keeps its link open, so silent input is `SESSION`'s to time
 out; a datagram can arrive long after it was sent, so old input and state are rejected by content; and a close can
 cut off the last reliable messages, so one that must arrive is answered before the link is closed.
 
 #### SESSION
 
-- **For.** Two to four players share one run and keep seeing the same crowd.
-- **Built already.** Envelopes, input batches, future-input staging, state deltas and acknowledgements in
-  `thrum-network`; a four-peer, 600-tick run with no sockets; controller replay; core rewind.
-- **To build.** The handshake with protocol, gameplay and rule-set identity. Clock sync and an input lead sized
-  from measured round trip and jitter. Relay of admitted frames. The baseline for join and reconnect. Digest
-  exchange and repair. Retained results, which A5 left open. The session loop a headless host runs.
-- **Contracts.** C02, C03, C13, A0 and the A5 decisions. `needs`: `SIM-2D`'s first milestone; `TRANSPORT`'s first
-  milestone for the socket milestones.
-- **Open for its planner.** Whole-world rollback or a confirmed-tick crowd with a predicted player, from
-  `SIM-2D`'s costs and how each feels. How often digests travel. How a modal choice in co-op reaches every peer in
-  order: Vampire Survivors saw level-up screens arrive out of order after dropped packets and moved them to ordered
-  commands.
-- **Proof order.** Four peers on the conditioned in-memory link with the reference crowd: equal digests under
-  loss, reorder and duplication; a forced divergence repaired; a join in progress; a reconnect; a slow peer that
-  does not stall the host. Then the same on sockets across the three targets.
-- **Costs to record.** Bytes for each peer, replay steps, correction distance, baseline size and join time. A0's
-  proposed 64 kbit/s is a tripwire.
-- **Done.** The proof order passes on sockets, and a game that is not networked pays nothing for it.
+Planned on 13 November 2026: [design](SESSION/DESIGN.md), [plan](SESSION/PLAN.md). Its planner settled the three
+choices this brief carried: the crowd is drawn at the confirmed tick and only a player's own character is
+predicted; digests are compared twice a second to start, a setting of the match; and a modal choice is a command
+on the reliable lane, admitted at one tick and sent to every peer in that tick's set.
+[A timing model](../evidence/SESSION/planning-probe.md) settled two more: the host's admitted input travels as
+datagrams that repeat what a client has not acknowledged, and a client sizes its input lead from what the host
+reports. Six milestones. `SWARM` needs M5 for co-op and can rehearse on the in-memory link from M4. The world
+image and one function of the reference crowd are built in M1 and M4 under
+[the seam rulings](#seam-rulings-for-session). Four findings bind `SWARM`'s planner: a client's world must step
+when the session says, which the app runner's world lane does not yet allow; a hero the crowd can push is
+corrected every tick it is pushed; the crowd is drawn behind the hero by the lead plus the confirmed delay; and
+a peer too slow for the match is dropped, since one match has one crowd.
 
 #### SWARM
 
@@ -756,7 +777,7 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
     publishing.
 11. **Sockets and Chrome under the Codex sandbox.** `TRANSPORT`, `SESSION` and `SWARM` need both for most checks.
     The choices are a request for each run as today, `Codex sandbox: danger-full-access`, or a Claude builder for
-    those modules. `TRANSPORT`'s plan assumes a request for each run.
+    those modules. `TRANSPORT`'s and `SESSION`'s plans assume a request for each run.
 12. **Sound.** The brief does not ask for it and no audio module is planned. A1 stays a design.
 13. **The purpose line.** The brief still says "3D engine" and requirement E08 of the architecture brief
     still puts pure 2D outside scope. The 10 November goal overrides both; rewording them is the owner's page.
@@ -775,11 +796,6 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - Assumption: "2D support in the engine" includes text and interface drawn in the frame, for `GAME-UI`. The
   sprite path's part of this reading moved to [RENDER-2D's plan](RENDER-2D/PLAN.md) and the rigid-body part to
   [SIM-2D's](SIM-2D/PLAN.md).
-- Assumption: a native process hosts; Chrome and the iOS simulator only join. Players join with
-  [`TRANSPORT`'s join ticket](TRANSPORT/DESIGN.md#3-the-hosts-identity-and-the-join-ticket). Matchmaking, accounts,
-  relays and host migration are not built.
-- Assumption: every peer simulates the one arena, so the interest management the build plan lists as "relevance"
-  is not built for this game.
 - Assumption: no sound, and no gamepad: keys, pointer and touch only.
 - Assumption: the iOS simulator proves function for the game, never speed, as in V1.
 
@@ -854,3 +870,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   changed, so no V1 module's design, plan or done-when item changed. The sprite-rows interface now says the order
   is kept from tick to tick with a band between near rows, replacing a band on each row's own value that the
   review showed could not hold.
+- 2026-11-13 `SESSION` planned, with a design, plan and done-when file, from the lead's task quoted in its design.
+  Six milestones: the world image (after `SIM-2D:M3`), the steady match and its faults on the in-memory link
+  (after `TRANSPORT:M1`), the predicted controller, the match on sockets (after `TRANSPORT:M2`) and the close,
+  which writes the rule-set addition into C13. The seam rulings for `SESSION`, the world-image and
+  connection-state interfaces and three asks were added above, one of them open for `SWARM`'s planner. Two
+  assumptions moved to [SESSION's plan](SESSION/PLAN.md). No other module's done-when item changed.
