@@ -2,6 +2,7 @@
 //! presentation on one resident thread behind the engine's bounded handoff.
 
 use std::{
+    fmt::Write as _,
     sync::{
         Arc, Mutex, PoisonError,
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -770,7 +771,6 @@ impl Owner {
             });
         reply.pending_frames = gpu.host.pending_frames();
         let culling = gpu.host.culling_selection();
-        use std::fmt::Write as _;
         let _ = write!(
             reply.cooked,
             "\nculling_requested={:?}\nculling_resolved={:?}\nculling_reason={:?}\n",
