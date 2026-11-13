@@ -1,165 +1,154 @@
 # SESSION design review
 
-Reviewed 13 November 2026 at `8f038dec20027bd7c8c70809943556e536197718`.
+Reviewed 13 November 2026 at `00949955de5a5610d25cc5ce3a7fd55c50eaa9b6`, against the previous review at
+`8f038dec20027bd7c8c70809943556e536197718`.
 
-**Design changes requested: four Must Fix findings.** The design covers the intended module: several players
-share the swarm game over the network, with one authority, late joins, reconnects, commands and local prediction.
-Its broad scope fits the human's request. The protocol has two unresolved correctness mechanisms, its digest
-guarantee is stronger than its mechanism, and one acceptance item requires more slots than the match permits.
+**Design approved. All four previous Must Fix findings are resolved; no new Must Fix findings.** The design
+provides the match layer needed for several players to share the swarm game over the network. Its authority,
+join, recovery and prediction mechanisms fit that request and the module boundaries. This approves the design
+and its planned proofs, not an implementation or the eventual game's visual responsiveness.
 
-This is the first design review; no previous `design-review.md` was present. Findings below are verified against
-the written design and interfaces, not observations of a built SESSION implementation.
+## Previous Must Fix findings
 
-## Must Fix findings
+### 1. A set reports commitment before the authority commits — resolved
 
-### 1. Must Fix — A set reports commitment before the authority commits
+**Verified against the revised design and runtime interface.** [DESIGN.md](../../plans/SESSION/DESIGN.md),
+lines 88–114, now sends a set only after the host commits its tick. The host walk at lines 488–495 follows that
+order, including taking the digest before transmission. This agrees with C13's separation of receipt and execution
+and the [A5 timing decision](../../design/decisions/A5-INPUT-TIMING-RECONCILIATION.md).
 
-**Verified by design and existing runtime inspection.** This breaks the result semantics preserved by C13 and
-leaves M2.5 unable to distinguish admission from successful execution.
+The failed-step path is now explicit: no set for the failed tick, no retry, and a reliable match-ended message
+after the outstanding committed sets, naming the last committed tick. Clients resolve the remaining inputs as
+not committed on that orderly end; a vanished host leaves unanswered inputs uncertain. Mechanism 9 retains the
+answer-before-close timeout, consistent with TRANSPORT's delivery-or-closure contract.
 
-[DESIGN.md](../../plans/SESSION/DESIGN.md), lines 86–99, sends an admitted set before the host steps. Lines
-157–160 make that set the committed/rejected result; the host walk at lines 411–416 confirms the ordering.
-Clients use the set to advance their confirmed world. But [C13](../../design/CONTRACTS.md), lines 655–666,
-separates receipt from execution, and the [A5 timing decision](../../design/decisions/A5-INPUT-TIMING-RECONCILIATION.md)
-explicitly reports committed origins only after a successful step. The proposed addition to C13 does not change
-those semantics.
+M2.5 checks the send/commit ordering. New M2.11 requires an actual runtime refusal, a successful control with
+the same inputs, no client advancement into the refused tick, final digest equality, and truthful results for
+unanswered inputs. Withholding a packet in the harness would not satisfy its question. I checked
+`crates/thrum-core/src/sim/runtime.rs`, lines 285–296 and 1557–1573: the refusal and rollback boundary needed
+for this proof exists. M2.8 accounts for the added host-step latency rather than retaining the old cost claim.
 
-The underlying [runtime](../../../crates/thrum-core/src/sim/runtime.rs), lines 282–296 and 1256–1276, permits a
-tick to fail without advancing the world. Its precommit failure path at lines 1557–1563 returns an error after
-aborting tentative changes. Consider a host that sends set `n` and then fails that preflight, or stops before
-committing. The client already has what SESSION calls the committed result for `n`, although the authority is
-still at `n - 1`. No later success signal, cancellation or failure rule is specified. A decoder receipt or
-identical deterministic rules cannot establish that the host actually committed.
+### 2. Receipt acknowledgements cannot detect a slow simulation — resolved
 
-**Required outcome:** define when a set becomes authoritative confirmation, how successful host commitment is
-communicated, and what clients and input results do when the host step fails. If sets still travel before the
-step, their early arrival must not by itself confirm execution. M2's result proof needs to distinguish this
-case from an ordinary successful tick. This finding does not require changing the shared-input approach.
+**Verified against the revised queue and progress rules.** DESIGN.md, lines 155–161 and 180–189, separates
+`held` from `stepped`, retains sets by receipt, and caps the client's buffer. Mechanism 10, lines 403–420,
+uses their difference to detect a client that receives promptly but cannot step fast enough. Sustained lag
+closes a playing client; synchronising and repairing clients instead have the join deadline. A baseline is no
+longer proposed as the cure for a persistently slow simulation.
 
-### 2. Must Fix — Receipt acknowledgements cannot detect a slow simulation
+The old counterexample now triggers the new mechanism. In an abstract ideal-link walkthrough starting with
+zero backlog, one received set per host tick and one client step every two ticks, backlog first exceeds 30 at
+host tick 61. With the specified “longer than 600” deadline, closure is due at tick 662 with backlog 331, while
+the host's unacknowledged ring is empty. This is queue arithmetic, not a device measurement; it assumes a buffer
+large enough to reach that deadline. Smaller buffers have the separately specified refusal-to-acknowledge path.
 
-**Verified by a counterexample to the specified acknowledgement rule.** N7 and M3.5 require a client stepping
-at half speed to be closed as unable to keep up. The specified mechanism does not observe that condition.
+New M3.11 requires precisely the formerly invisible case: full-rate reads, acknowledgements and input with
+half-rate stepping. It also requires a recovering client to remain connected and a joiner to use the join
+deadline. M3.7 checks the client's cap and overflow outcome; M3.8 records backlog and time above the threshold.
+M3.5 retains the distinct stalled-link and silent-client cases. Together these proofs distinguish receipt lag,
+stepping lag and temporary catch-up without replacing one with another.
 
-[DESIGN.md](../../plans/SESSION/DESIGN.md), lines 132–155, acknowledges the highest contiguous tick whose sets
-the client **holds**, and retains only unacknowledged sets on the host. Lines 222–225 separately buffer those
-sets before stepping them. Yet mechanism 10, line 339, says a client that steps too slowly fills its host-side
-ring and thereby triggers repair and eventual closure.
+### 3. The promised divergence detection assumes differences cannot disappear — resolved
 
-A client can continue polling its link, authoring input and acknowledging every received set at 60 Hz while
-committing only 30 ticks a second. With a three-tick delay each way, an abstract 600-tick walkthrough of those
-rules leaves the host retaining at most six sets, while the client has received through tick 597, committed
-through tick 299, and accumulated 298 unstepped sets. The host's ring never approaches overflow; the client's
-backlog keeps growing. This is an ordinary slow simulation, not a malicious acknowledgement. Correct digests
-for older ticks also do not communicate current progress under the specified protocol.
+**Verified against the revised guarantee and SIM-2D's endpoint digest.** N6 and mechanism 8, DESIGN.md lines
+330–347, explicitly limit detection to differences present at a compared committed endpoint. They acknowledge
+that a difference overwritten before comparison is not reported, including the possible incorrect presentation
+between comparisons. This matches [SIM-2D's digest](../../plans/SIM-2D/DESIGN.md#4-the-world-digest).
 
-**Required outcome:** define a bounded client backlog and a way to observe and handle simulation lag separately
-from receipt of sets. State which progress measure triggers repair or closure and how that interacts with
-join catch-up. M3.5 must exercise a client that keeps receiving and acknowledging normally while stepping too
-slowly; stopping its reads would test a different case. The walkthrough above models only the written queue
-rules and makes no engine performance claim.
+M3.4 now injects state the rules carry forward and requires the differing digest at the comparison tick. It
+retains component, free-list and resource coverage, repair on the same link/slot/epoch, repeated-fault closure,
+and intervals 30 and 1. M5.2, M5.3 and M5.4 carry the same persistence condition into their target-specific socket
+proofs. M6.1 makes the limitation part of the guide. The earlier overwrite counterexample is now an expressly
+excluded guarantee, not a promised result this mechanism cannot produce. The human did not request detection
+of a difference that has already disappeared, so this narrowing does not remove requested functionality.
 
-### 3. Must Fix — The promised divergence detection assumes differences cannot disappear
+### 4. The concurrent-join item requires five reserved slots — resolved
 
-**Verified by a deterministic state transition counterexample.** N6 and the unconditional next-digest promise
-need a detection guarantee the chosen mechanism can actually provide.
+**Verified by the revised scenarios and reservation rule.** M3.2 keeps the late fourth-player proof with three
+existing players. New M3.12 starts with two players and two free slots, then requires overlapping joins into
+those slots. It separately requires a further hello to be refused while both reservations are occupied, and
+an expired reservation to become available. DESIGN.md, lines 321–326, defines the matching capacity and
+catch-up rules. Two held slots plus two reserved slots fit the four-slot limit and agree with M2.6's full-match
+refusal. The proof no longer requires a fifth slot.
 
-[DESIGN.md](../../plans/SESSION/DESIGN.md), line 75, covers any one value in the digest; lines 283–286 assert
-that a difference, once made, stays because the digest covers everything a later tick reads. That conclusion
-does not follow. [SIM-2D's digest](../../plans/SIM-2D/DESIGN.md#4-the-world-digest) hashes the committed endpoint,
-not the history of endpoints.
+## Previous Suggestions
 
-For example, a registered authority resource can be assigned the current tick by a deterministic rule every
-tick. Change its value on one client immediately after tick 11. Tick 12 overwrites it identically on both peers;
-at the next scheduled digest, tick 30, the complete worlds agree. The same issue occurs when a held control is
-replaced by the next admitted input. There was a real covered-state difference, but the sampled digest cannot
-report it. A simple integer walkthrough of the resource example confirms equality at ticks 30 and 60 despite
-the mutation after tick 11. No hash collision is involved.
+Both were taken and are resolved in the design and planned proofs.
 
-**Required outcome:** make N6, mechanism 8 and M3.4 agree on the guarantee. Either explicitly scope detection to
-differences that remain at a compared endpoint, with repair tests that preserve the injected difference until
-comparison, or provide a mechanism that supports the stronger intervening-state guarantee. The human's request
-does not itself require reporting a difference that has already disappeared, so narrowing this claim need not
-expand the module.
+- **Independent client clock origins:** mechanism 5, lines 242–256, now places the authoring tick from recently
+  received sets and handshake timing, rather than a shared clock or a stale welcome tick. M2.3 requires distinct
+  clock origins, a different clock rate, the admission floor, and reported lead beside true lead. It excludes
+  passing host time or the conditioning profile into the client. This supplies the missing mapping; the
+  implementation must still demonstrate that its feedback converges.
+- **Expired reassociation versus slot-number reuse:** mechanism 9, lines 381–385, and M3.3 now distinguish a new
+  player association from reuse of a free numeric slot. An expired token grants no claim on the old character.
 
-### 4. Must Fix — The concurrent-join item requires five reserved slots
+No additional Suggestions are raised.
 
-**Verified by the acceptance item's arithmetic.** [DONE.json](../../plans/SESSION/DONE.json), M3.2, starts with
-three players, has a fourth join, and requires a second join started while the first is in transit to complete.
-[DESIGN.md](../../plans/SESSION/DESIGN.md), lines 45–46, caps a match at four slots; lines 272–273 reserve a slot
-at welcome. Three present players plus two simultaneous joining players require five slots. M2.6 also requires
-a full match to refuse a hello.
+## Every changed acceptance item
 
-**Required outcome:** give the concurrent-join proof enough free slots, or explicitly make the additional join
-a full-match refusal. Keep the late fourth-player proof. As written, a builder cannot satisfy both M3.2 and
-the capacity contract in the same scenario. A separate concurrent-join scenario is sufficient; no larger match
-is requested.
+I compared the done-when file with `8f038dec2002`. The following are all 16 changed or added items; none was
+removed. Each revised statement and its check/question is judgeable with its milestone and preceding work.
 
-## Suggestions
-
-### 5. Suggestion — Exercise independent client clock origins
-
-**Verified limitation of the planning evidence; implementation risk remains unproven.** Mechanisms 5–6 refer
-to authoring ahead of the present and to a separate playout clock. The
-[planning probe](planning-probe.md) authors at `now + lead` in one virtual-time model. It does not establish how
-a late-starting process maps its local monotonic clock to the host's current tick, especially after a long
-baseline transfer. The older networking design explicitly calls for estimating server time.
-
-Clarify that mapping and include independent clock origins in the lead proof. This strengthens the existing
-mechanism rather than requiring clocks to share wall time. I did not establish that the proposed feedback loop
-must fail once a suitable mapping is supplied.
-
-### 6. Suggestion — Distinguish expired reassociation from slot-number reuse
-
-**Verified wording conflict.** M3.3 says a return after grace expiry, or without a token, “never gets the old
-slot.” Mechanism 9 frees an expired slot, and a new player may take any free slot. Clarify that the former
-player cannot reclaim its old association or character through an expired token; a new association may
-legitimately reuse that numeric slot. This is consistent with N4's intended slot reuse.
-
-## Request, coverage and proof assessment
-
-I read the [project brief](../../plans/BRIEF.md), the task in
-[RECORD.json](../../plans/SESSION/RECORD.json) and the
-[owner's swarm-game request](../../design/NEXT-GOAL-SWARM-GAME.md) before the design. The sole recorded planner
-task is “Plan module SESSION. It needs: SIM-2D, TRANSPORT.” It supplies no replacement for the human's request.
-The resulting requirements are a reusable networked match for several players, the same crowd and ordered
-gameplay consequences, and compatibility with the engine's authority and target contracts.
-
-The default two-to-four-player scope, native host, confirmed crowd and predicted local character are explicit
-assumptions in PLAN.md. Host migration, public hosting and matchmaking were not requested. The absence of
-drawing here is an explicit module boundary: SWARM owns the playable game and the app-runner clock integration.
-I found no reason to block those scope choices. The headless proof must not be reported as qualification of the
-eventual game's visual responsiveness or of an internet path; the design and closing ledger item already say so.
-
-I read DESIGN.md, PLAN.md and all 55 DONE.json items, along with the relevant module-list seams, SIM-2D's state
-and rule contracts, TRANSPORT's link limits, C02/C03/C13, the networking design and A5 timing/controller records.
-I also read the planning probe and inspected the existing runtime's step/refusal boundary. This is a design
-reconciliation review with that code context, not a blind technique study. No delegation was used.
-
-| Milestone | Can its proof be judged at that stage? |
+| Item | Assessment against the previous review |
 |---|---|
-| M1, 10 items | Yes. SIM-2D M3 supplies the retained traces; the seam ruling authorizes image encoding/restore. Cross-process continuation and unchanged retained digests reject a same-process capture substitute. |
-| M2, 10 items | Initial baseline transfer, separate worlds and the second rule set make the proofs feasible after M1 and TRANSPORT M1. Finding 1 must resolve commitment before M2.5 can establish truthful results. |
-| M3, 10 items | Its prerequisites are available. Findings 2–4 affect slow simulation, divergence detection and concurrent joining. The other lifecycle, malformed-input and roster proofs are judgeable. |
-| M4, 7 items | The shared movement seam and SIM-2D cost record are available. Isolation, exact stored-state comparison and ring-exhaustion fallback reject a predictor that merely returns confirmed state. Visible feel remains SWARM's work. |
-| M5, 10 items | TRANSPORT M2 supplies the sockets and relay. Separate target processes and peer-owned records reject in-process and substituted-target proofs. These establish loopback function; no physical-phone speed or internet qualification follows. |
-| M6, 8 items | The guide, closure checks, second rule set and final reruns are available after M5. The ledger explicitly separates measured results from unrun targets and paths. |
+| M2.3 | Strengthens Suggestion 5 with independent origins and clock drift; keeps adaptive-lead and pinned-lead controls. |
+| M2.5 | Resolves finding 1's result-ordering gap by inspecting the actual send after commitment. |
+| M2.8 | Records the cost of finding 1's fix as a baseline, without adding a performance gate. |
+| M2.11, added | Exercises the runtime failure boundary behind finding 1, with a successful control and observable client results. |
+| M3.2 | Resolves finding 4's impossible capacity arithmetic while preserving late fourth-player coverage. |
+| M3.3 | Resolves Suggestion 6 without weakening new-epoch, uncertain-command or returning-player checks. |
+| M3.4 | Aligns finding 3's injection with the endpoint guarantee and retains real repair and repeated-failure coverage; adds client-step refusal inspection. |
+| M3.5 | Preserves receipt stalls, non-reading clients and silence; the half-speed case moves to M3.11 rather than disappearing. |
+| M3.7 | Extends bounded-storage inspection to the client buffer required by finding 2. |
+| M3.8 | Adds backlog and catch-up-duration evidence for finding 2's thresholds, with figures remaining baselines. |
+| M3.11, added | Rejects the exact receipt-only substitute in finding 2 and distinguishes permanent lag from recoverable backlog. |
+| M3.12, added | Proves concurrent reservations, full refusal and reservation expiry within finding 4's four-slot constraint. |
+| M5.2 | Mac socket repair now injects a persistent difference, consistent with finding 3. Its lifecycle proof remains. |
+| M5.3 | Chrome socket repair receives the same correction; it still requires the Chrome client and reload/reconnect path. |
+| M5.4 | Simulator socket repair receives the same correction; it still requires that target's process restart and recovery. |
+| M6.1 | Exposes both the host-failure policy and sampled-digest limitation to game makers. |
 
-The cost account separates estimates from future measurements and treats performance figures as tripwires.
-The 95% admitted-input floor is a functional control against a broken lead, not a frame-time performance gate.
-No additional performance gate is requested by this review.
+The whole file has 58 items across six milestones. I read the unchanged items as context as well. M1 can prove
+portable images against SIM-2D M3's retained traces. M2 can use M1's image and TRANSPORT M1's conditioned link;
+its small second rule set supplies commands and runtime refusals that the reference crowd lacks. M3 builds on
+those mechanisms. M4's controller isolation and stored-state comparisons remain intact. M5 explicitly waits
+for TRANSPORT M2 and keeps separate processes, target-owned digests and real socket paths. M6 checks the guide,
+contracts, dependency closures and final reruns. The revision introduces no proof that depends on a later
+SESSION milestone.
 
-## Verification limits
+## Fit to the human's request
 
-No SESSION product, sockets, browser, simulator or visual output was run. Its dependencies and implementation
-are planned work. The two small abstract walkthroughs above test consequences of the written rules, not a
-replacement implementation. Existing runtime code was read to confirm the failed-step interface. External
-case-study claims were not independently requalified; none is needed to establish the four findings.
+The [project brief](../../plans/BRIEF.md) and [swarm-game request](../../design/NEXT-GOAL-SWARM-GAME.md) require
+several players playing together over the network, reusable engine capabilities, and shared authoritative
+rules. I read both tasks in [RECORD.json](../../plans/SESSION/RECORD.json), oldest first: the original module
+planning task and the request to resolve four findings. Neither is a new human requirement or permission to
+narrow the original goal.
 
-`./dev check-docs` was run and failed on existing links to removed `ACCEPTED.json` files in other evidence
-documents, the same problem SESSION's planning log records. It reported no error in this review. All review
-link targets exist; the four finding headings match the result count. No code or device checks were run.
+The design covers a shared crowd, ordered player choices, joining and returning to the run, correction of a
+wrong copy, and local responsiveness through a predicted controller. It preserves one authority and leaves
+game rules in the game. The native host, two-to-four-player default, confirmed crowd, lack of host migration,
+and loopback-only qualification remain explicit assumptions. SWARM still owns the playable game, drawing and
+app-runner integration; headless SESSION proofs do not establish how the eventual game feels. These boundaries
+were accepted in the previous review and the revision does not expand or silently narrow them.
 
-Only this review file was changed. DONE.json and the design remain untouched.
+The performance account remains appropriate to the brief: it identifies repeated work and bounded storage,
+accounts for the added host-step wait, and requests measurements with tripwires. The unchanged 95% input
+admission floor checks a functioning lead; it is not a device-speed gate.
 
-DESIGN CHANGES: 4 must_fix findings
+## Verification and limits
+
+This was an independent design reconciliation review, with no delegation. I read the full revised design,
+plan and done-when file, the prior review, the task history and planner's response; checked the relevant module
+boundaries, C13, A5 timing, SIM-2D state/digest contract, TRANSPORT lane/closure/bounds contract, and the runtime's
+refusal boundary. The abstract lag walkthrough above checks the new rule's consequence only.
+
+No SESSION implementation, socket match, browser, simulator, GPU or visual output was run. The proposed checks
+remain future implementation obligations. Unchanged external case-study claims were not independently
+requalified; this verdict rests on the local contracts and the specified mechanisms and proofs.
+
+`./dev check-docs` passed: 785 Markdown files, 5,155 local links, 30 module records, crate policy and current
+design hashes. It emitted existing file-size notes, with no errors. Only this review file is changed; the
+design, DONE.json and all other repository files are untouched. No captures were needed.
+
+DESIGN OK
