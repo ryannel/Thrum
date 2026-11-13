@@ -36,10 +36,10 @@ Criteria: M1.1–M1.5 in the done-when file.
 
 Criteria: M2.1–M2.5 in the done-when file.
 
-- [ ] Resolve the requested mode from the capability record, report requested and resolved modes with the reason, and make every equality witness assert the resolved mode.
-- [ ] Run the simulator with a culled mode requested and record the Direct fallback.
-- [ ] Give Chrome the mixed-mesh field and its oracle case.
-- [ ] Record paired Direct, Frustum and Occlusion rows on the mixed-mesh field at 1920×1080 from two runs, and set the field's default by the design's rule.
+- [x] Resolve the requested mode from the capability record, report requested and resolved modes with the reason, and make every equality witness assert the resolved mode.
+- [x] Run the simulator with a culled mode requested and record the Direct fallback.
+- [x] Give Chrome the mixed-mesh field and its oracle case.
+- [x] Record paired Direct, Frustum and Occlusion rows on the mixed-mesh field at 1920×1080 from two runs, and set the field's default by the design's rule.
 
 ## M3 The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome
 
