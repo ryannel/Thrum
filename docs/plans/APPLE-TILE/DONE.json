@@ -214,73 +214,51 @@
           "id": "D3.1",
           "statement": "One graph-bound pre-tone scene-linear colour/exposure input can be replaced by a prepared G4 reconstruction output. The default identity binding retains the existing SDR tone pass, Rgba8Unorm intermediate and present shader.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/render/apple-tile-m3/README.md",
+          "evidence": "",
           "ask": "Trace colour, exposure, extent, sample/history and generation identity from forward composition through the replaceable pre-tone input to tone and late-bound surface. Bind groups/variants are prepared before readiness; graph hazards include every optional input. Rebinding the identical source must retain exact scene-linear and submitted SDR bytes. No tone fusion, shader arithmetic change, dropped intermediate, raw drawable capture or claimed traffic saving is allowed. G4 owns later EDR arithmetic and reconstruction.",
-          "verdict": "pass",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
-          "builder_result": "pass"
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.2",
           "statement": "The G4 input seam preserves exact same-target scene-linear and submitted SDR bytes against the M0 two-pass SDR/sRGB/letterbox oracle on both native recipes.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/render/apple-tile-m3/README.md",
+          "evidence": "",
           "inspect": "Use T2 still/fixed exact full-resolution checkpoints and separate realtime host-time sequences; inspect cuts, exposure identity, source coordinates, both surface-format branches and non-1:1 letterboxing.",
-          "verdict": "pass",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
+          "verdict": "",
+          "review": "",
           "ask": "Verify synthetic_display.wgsl and present.wgsl arithmetic, source-coordinate dither, implicit Rgba8Unorm store quantization and nearest-source mapping are unchanged. Run an identity-input rebind against the retained full-frame M0 controls. Do not synthesize the old quantization in a new shader or widen tolerance. Failure requires diagnosis and independent re-plan before further build.",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.3",
           "statement": "Pass timings are keyed by graph pass name, cover complete executed GPU work and explicitly represent unavailable counters; all native, iOS, browser and capture consumers use the schema.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/render/apple-tile-m3/README.md",
+          "evidence": "",
           "ask": "Run timing tests with optional passes absent/present. Trace all FrameSample consumers; fixed positional arrays cannot silently relabel passes. CPU, GPU and callback clocks remain separate.",
-          "verdict": "pass",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
-          "builder_result": "pass"
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "D3.4",
           "statement": "Chrome portable preserves exact same-target scene-linear and submitted SDR bytes, route content and execution behavior after the input seam and timing changes.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/render/apple-tile-m3/README.md",
+          "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
           "lock": "gpu",
           "ask": "Use accepted T2 M1 fixed plus the scene-linear extension against the retained Chrome pre-change baseline with exact deterministic sample identity; use realtime separately for host-time engine motion. Trace browser pass-name consumers and optional-pass timing tests. Keep the existing moving command as endpoint smoke only.",
           "inspect": "Review full-resolution day/night images, letterbox/surface-format witnesses and normal-speed Chrome motion against its own pre-change baseline for missing scene content and exposure/cut errors.",
-          "verdict": "pass",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
-          "builder_result": "pass"
-        },
-        {
-          "id": "D3.5",
-          "statement": "ATTENDED SETUP: the changed surface path functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence.",
-          "target": "mac-metal",
-          "evidence": "docs/evidence/render/apple-tile-m3/window-rerun/README.md",
-          "inspect": "ATTENDED SETUP: record OS window capture tool/version and permission preflight, PID/window ID, content bounds, backing scale, clock and build/recipe. Under both recipes compare settled OS-captured game-window frames against T2 still/fixed references at the same paused-world controls, camera/content and scene extent. Inspect intact Sun, sky/stars, geometry, local lights, mirrors and post-resize letterbox geometry in content-pixel coordinates. Record settled-state identity; references are matched states, not the same submission. Use host-time OS window video for ordinary control response and surface/device replacement recovery with lifecycle logs. Engine images/logs alone cannot prove window presentation; the final compositor observation is judged for function, not exact renderer-byte equality or panel swaps. Mac M2.3 owns separate windowed-tap integration/submission correspondence; this observer neither depends on nor qualifies it. Missing session/grant keeps this item open.",
-          "ask": "Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and APPLE-TILE M3 (T2 M0/M1 then G3t M0-M3, including these attended window proofs); it reruns full motion/capture-OFF cadence plus windowed-tap/tooling preflight. T2 M0/M1 are done; neither T2 simulator M2 nor COOKED-DRAW is on this chain. No reverse Mac dependency or panel claim is added here.",
-          "verdict": "could_not_judge",
-          "review": "docs/evidence/APPLE-TILE/M3-review.md",
-          "needs": {
-            "type": "access",
-            "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
-          },
-          "builder_result": "pass"
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
-      "findings": [
-        {
-          "name": "Attended Mac window verification unavailable",
-          "item": "D3.5",
-          "repeat": false
-        }
-      ],
-      "failed_reviews": 1,
+      "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "diagnoses": 1,
-      "status": "ready_for_review",
+      "diagnoses": 0,
+      "status": "not_started",
       "quality_bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work."
     },
     {
@@ -326,11 +304,26 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "D10.5",
+          "statement": "ATTENDED SETUP: the APPLE-TILE M3 surface path (moved here from M3 D3.5 by the owner, 14 Nov 2026) functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence.",
+          "target": "mac-metal",
+          "evidence": "",
+          "inspect": "ATTENDED SETUP: record OS window capture tool/version and permission preflight, PID/window ID, content bounds, backing scale, clock and build/recipe. Under both recipes compare settled OS-captured game-window frames against T2 still/fixed references at the same paused-world controls, camera/content and scene extent. Inspect intact Sun, sky/stars, geometry, local lights, mirrors and post-resize letterbox geometry in content-pixel coordinates. Record settled-state identity; references are matched states, not the same submission. Use host-time OS window video for ordinary control response and surface/device replacement recovery with lifecycle logs. Engine images/logs alone cannot prove window presentation; the final compositor observation is judged for function, not exact renderer-byte equality or panel swaps. Mac M2.3 owns separate windowed-tap integration/submission correspondence; this observer neither depends on nor qualifies it. Missing session/grant keeps this item open.",
+          "ask": "Mac M2 qualifies the current path after T2 M0 independently. Mac M3 needs Mac M2 by module order and APPLE-TILE M3 (T2 M0/M1 then G3t M0-M3); the owner moved this attended window proof out of M3 to here on 14 Nov 2026; it reruns full motion/capture-OFF cadence plus windowed-tap/tooling preflight. T2 M0/M1 are done; neither T2 simulator M2 nor COOKED-DRAW is on this chain. No reverse Mac dependency or panel claim is added here.",
+          "needs": {
+            "type": "access",
+            "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
+          },
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "diagnoses": 1,
+      "diagnoses": 0,
       "status": "not_started",
       "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model."
     },
