@@ -108,12 +108,29 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GAME-UI assumes: on the Mac, proofs feed key and pointer events to the game's window in code, since posting real ones needs a permission and an unlocked screen. Chrome and the simulator get real events. Real Mac input, and how the menus feel under the hand, are judged when someone plays `SWARM`. ([plan](GAME-UI/PLAN.md))
 - GAME-UI assumes: test panels and menus are plain and made by the builder. The game's look is `SWARM`'s, and your judgement of it is not an item here. ([plan](GAME-UI/PLAN.md))
 - GAME-UI assumes: the four changes GAME-UI needs inside other modules (a stage for the interface in the frame runtime, a second use of the sprite pass, a font product in the content loop, input and an interface scene in the shells and the V1 game) are built by GAME-UI's own builder under rulings in the module list. No milestone is added to those modules. ([plan](GAME-UI/PLAN.md))
+- SWARM assumes: SWARM waits for the V1 exit, as all of track 3 does. Its first milestone, your pick of a concept, could be made earlier if you want the choice in before the engine work ends. ([plan](SWARM/PLAN.md))
+- SWARM assumes: "upgrades between waves" means upgrades are chosen only in the break between two waves, as in Brotato. Nothing pauses in the middle of a wave, and there is no Vampire Survivors style level-up during play. ([plan](SWARM/PLAN.md))
+- SWARM assumes: "thousands on screen at once" means at least 2,000 enemies and projectiles inside one player's view at the run's peak. That makes a common enemy small: about a fiftieth of the screen's height, 22 pixels at 1080p. The concepts in M1 show this at real size, and you can trade count for size there. ([plan](SWARM/PLAN.md))
+- SWARM assumes: the game is one arena and one run of about ten minutes, with four heroes, six kinds of enemy and a boss, six weapons and about twenty upgrades. Nothing is kept between runs: no unlocks, no currency, no saved progress. ([plan](SWARM/PLAN.md))
+- SWARM assumes: in co-op, pick-ups raise one level the whole team shares, every player chooses their own upgrades at the same time between waves, and a clock makes the choices for anyone who is slow. A fallen hero stands again at the next wave with half its health, and the run is lost when nobody is standing. The crowd grows with the number of players. ([plan](SWARM/PLAN.md))
+- SWARM assumes: every player gets the crowd size that Chrome can hold, since one match has one crowd. A larger crowd for Mac-only play is not built. ([plan](SWARM/PLAN.md))
+- SWARM assumes: a Mac hosts, and Chrome and the iPhone simulator only join, by a link. "Online" is proved between separate processes on this Mac with delay and loss added. No second machine, internet path or public host is run (owner decision 10). ([plan](SWARM/PLAN.md))
+- SWARM assumes: no sound or music, no gamepad, and English only. ([plan](SWARM/PLAN.md))
+- SWARM assumes: the art is made in this repository by the agents, original, with no paid generation service. M1's concepts are made the same way, so they show what that can deliver. Fonts are the builder's own, public domain, CC0 or Apache-2.0. ([plan](SWARM/PLAN.md))
+- SWARM assumes: the code is named `swarm` whatever you call the game; your name for it appears on the title screen. ([plan](SWARM/PLAN.md))
+- SWARM assumes: enemies hurt a hero and never push it, so that your own character can answer at once in co-op without being corrected all the time. ([plan](SWARM/PLAN.md))
+- SWARM assumes: the iPhone simulator proves that the game works, never its speed. A simulator player dropped from a four-player match for being too slow is recorded and is not a failure. ([plan](SWARM/PLAN.md))
+- SWARM assumes: "smooth" is judged from frame records and real-time engine capture, with no frame time as a pass mark (brief decision 3). A measurement on the built-in panel itself needs someone at the Mac and is named as not run. ([plan](SWARM/PLAN.md))
+- SWARM assumes: four changes the game needs inside other modules are built by SWARM's own builder under rulings in the module list: a repository guard that admits a second game, a window and page for a game with no sky kit, an iOS shell moved into `thrum-app` so both games share it, and a world that steps when a match says. No milestone is added to those modules. ([plan](SWARM/PLAN.md))
+- SWARM assumes: builders and reviewers ask to run Chrome, the simulator and sockets outside the Codex sandbox, one request for each run. The other choices are owner decision 11 in the module list. ([plan](SWARM/PLAN.md))
+- SWARM assumes: you are asked twice: to pick the concept in M1, and to play the finished game in M8. ([plan](SWARM/PLAN.md))
 
 ### Now and next
 
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): In Progress · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../evidence/CONTENT-LOOP/M1-review.md)
+- SWARM's design: Design Ready for Review · [design](SWARM/DESIGN.md) · [plan](SWARM/PLAN.md)
 
 ### Recently done
 
@@ -159,4 +176,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Waiting: On Dependency, SHOWCASE:M8, APPLE-TILE:M12, EFFECT-GRAPH:M3 |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones | Waiting: On Dependency, SIM-2D:M3 |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 | Waiting: On Dependency, RENDER-2D:M5 |
-| 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
+| 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-UI M5 for the game alone; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets | Design Ready for Review |
