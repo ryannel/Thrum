@@ -1,7 +1,7 @@
 // W1-W7 read the game's submitted diagnostic, never an endpoint side render.
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {createHash} from 'node:crypto';
+import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 export async function qualifyTemporal(cdp, origin, output, timeout, assetsOrigin, waitFor, files, directory) {
   for (const [url,file,type] of [
@@ -32,6 +32,7 @@ export async function qualifyTemporal(cdp, origin, output, timeout, assetsOrigin
     await cdp.call('Runtime.enable',{},sessionId);await cdp.call('Page.enable',{},sessionId);
     await cdp.call('Network.enable',{maxResourceBufferSize:files.get('/v1_game_bg.wasm').bytes.length*2,maxTotalBufferSize:256<<20},sessionId);
     await cdp.call('Network.setCacheDisabled',{cacheDisabled:true},sessionId);
+    await installWasmReceipt(cdp,sessionId);
     await cdp.call('Target.activateTarget',{targetId});
     await cdp.call('Page.navigate',{url:`${origin}/temporal.html?assets=${encodeURIComponent(assetsOrigin)}`},sessionId);
     const record=await waitFor(async()=>{
@@ -43,8 +44,8 @@ export async function qualifyTemporal(cdp, origin, output, timeout, assetsOrigin
     const shot=await cdp.call('Page.captureScreenshot',{format:'png',clip},sessionId);
     await fs.writeFile(path.join(output,'temporal-C.png'),Buffer.from(shot.data,'base64'));
     if(!wasmResponse || wasmResponse.response.status!==200)throw Error('missing loaded Wasm response');
-    const body=await cdp.call('Network.getResponseBody',{requestId:wasmResponse.requestId},sessionId);
-    const loadedWasm=createHash('sha256').update(Buffer.from(body.body,body.base64Encoded?'base64':'utf8')).digest('hex');
+    const wasm=files.get('/v1_game_bg.wasm');
+    const loadedWasm=await readWasmReceipt(cdp,sessionId,`${origin}/v1_game_bg.wasm`,wasm.sha256,wasm.bytes.length);
     if(loadedWasm!==files.get('/v1_game_bg.wasm').sha256)throw Error('loaded Wasm differs from built artifact');
     record.actualWasmSha256=loadedWasm;
     const r=record.rows;
