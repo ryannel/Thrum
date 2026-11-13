@@ -19,16 +19,16 @@ cloud selection off each game is what it was.
 - Assumption: finished clouds excludes the ten-genera, squall and warm-front scope of the Broadsides game, and the consolidation the owner asked for is the port decision's hybrid of weather layers and placed volumes.
 - Assumption: a finished sky keeps the camera and all solid geometry below the lowest cloud base, as the brief's 2–40 m cameras do. Mountains that rise into cloud, light shafts in haze and a camera in cloud are not planned.
 - Assumption: the time-lapse control runs from 1× to 60×, and "continuous to the horizon" means to the geometric horizon of the cloud tops, about 200 km.
-- Assumption: full refresh is claimed on the Mac, as the brief's cost sentence says, and as a comparison: the frame holds the refresh with clouds on wherever it does with clouds off. Chrome is held to the same look and behaviour, and its frame intervals are recorded, not gated.
+- Assumption: the full-refresh cost account is recorded on the Mac only, as the brief's cost sentence says. Chrome is held to the same look and behaviour, and its frame intervals are recorded. On neither does a timing figure decide an item or stop a milestone (brief decision 3).
 - Assumption: until the showcase's own extent exists, cost is recorded at 2560×1440, the extent Broadsides was measured at. M12 repeats it at the showcase's extent.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones (M7 and M8 in its drafts), which are not planned yet, and its sea milestone waits for `SEA` M8. Everything a visitor sees over the valley, except the accepted library shapes, is finished by M9.
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly
 
 Nothing exists yet. This milestone creates `thrum-cloud-model`, with no dependency on the renderer, and registers
-it in `.config/architecture.toml`. `docs/evidence/CLOUDS/design-proof/cloud_field_proof.py` is a working sketch
-of the cell process, the deck and the Sun-path reference; its constants are a first profile and its shapes are
-not the look. The optics oracle is `scripts/reference/cloud/`, which needs NumPy.
+it in `.config/architecture.toml`. In `docs/evidence/CLOUDS/design-proof/`, `cloud_field_proof.py` is a working
+sketch of the cell process, the deck and the Sun-path reference, and `revision_proof.py` of a placed shape's
+footprint and the coarse density; their constants are a first profile and their shapes are not the look. The optics oracle is `scripts/reference/cloud/`, which needs NumPy.
 
 ## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn
 
@@ -39,7 +39,7 @@ built here. The shade path is `ATMOSPHERE`'s: `SunOpticalDepth` in `crates/thrum
 Ruling 1 extends that path in those files; `ATMOSPHERE` M6 edits the same module, so integrate on top of what
 has landed. `examples/v1-game` is `SHOWCASE`'s: add the selection and leave its generator, routes and exit
 configuration alone. M2.2's and M2.3's bounds are measured first and then asserted. This milestone creates
-`scripts/cloud_cost.py`. If the seam cannot declare the Sun-path product's time-sliced levels as built, write
+`scripts/cloud_cost.py`, whose `check` the design's cost account defines. If the seam cannot declare the Sun-path product's time-sliced levels as built, write
 the proposal in the log and end `BLOCKED`.
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
@@ -47,8 +47,8 @@ the proposal in the log and end `BLOCKED`.
 The trace, the resolve and the compose are `after-opaque` passes; `examples/v1-game/src/effect` has a working
 after-opaque effect once `EFFECT-GRAPH` M3 is Done. Ruling 2 is built in `ATMOSPHERE`'s aerial lookup. The look
 is tuned against M3.1's to M3.3's lists with a fresh opinion before review; after three looks that fail the same
-cue, record them in the log and end `BLOCKED`. If the frame does not hold the refresh after the three designed
-remedies in the design's first risk, end `BLOCKED` with the record: the design is re-planned before M5.
+cue, record them in the log and end `BLOCKED`. A whole frame over the refresh interval is investigated here
+with the remedies in the design's first risk and written up in the record; it does not stop the milestone.
 
 ## M4 The same sky and the same shade draw in Chrome
 
@@ -92,7 +92,7 @@ track's keys are described under `factory/clouds/heaped-fair/review/m2-authored-
 
 `examples/sea` is `SEA`'s: add the selection and change nothing else of that module's.
 
-## M12 On the Mac's Apple recipe the sky runs with MetalFX and the governor at the display's full refresh, and the module is closed
+## M12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 
 Run M12.1's check first. If it fails, end `BLOCKED` with `needs_dependency` and build nothing: the governor and
 MetalFX are `APPLE-PRESENTATION`'s to build. M12.6 needs the owner's attended sitting; do every other item first.

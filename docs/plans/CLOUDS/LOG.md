@@ -38,3 +38,34 @@
 - 2026-11-13 Not read for the design: the Red Dead Redemption 2 course notes (Bauer 2019), the 2015 and 2017
   Nubis talks, and the Broadsides cloud shaders. The Nubis decks were read as slide text; they carry no speaker
   notes.
+- 2026-11-14 [Design review](../../evidence/CLOUDS/design-review.md): changes requested, four Must Fix findings
+  and three suggestions. The lead's task: "Resolve its 4 Must Fix findings in the design and the plan. Its
+  Suggestions are yours to take or leave; say which you took and why." The design, the plan, the done-when file
+  and seam ruling 1 were revised. Reproduction:
+  [revision_proof.py](../../evidence/CLOUDS/design-proof/revision_proof.py) with its output beside it.
+- 2026-11-14 MF1, numeric gates. No timing figure decides an item, a milestone or the next one's start (brief
+  decision 3). The ten cost items (M2.9, M3.9, M5.7, M6.8, M7.8, M8.8, M9.8, M10.7, M11.6, M12.5) were written
+  again as paired records whose tripped wires each carry an investigation; `cloud_cost.py check` fails only on a
+  scene that cannot be measured, an incomplete record or a tripped wire with no investigation. The stop in M3's
+  note and the re-plan rule in the design are gone, and M12 was renamed.
+- 2026-11-14 MF2, placed volumes. A placed cell's column in the field is its shape's own footprint, derived
+  from the voxels by the model and given to the field like the type table; the dome of equal mean is gone. The
+  volume form and a column form built from the same footprint are each bounded by the query at every point
+  (proof part B). The design says which quantities are bounds and which averages. M1.6 was written again, M1.7
+  is new (M1's later items moved down one), and M6.2, M6.3 and M7.6 were written again; GPU columns are held to
+  the query at texel centres within a bound measured first.
+- 2026-11-14 MF3, low Sun and the field's edge. The Sun-path product's columns follow the true Sun with their
+  elevation floored at the profile's lowest (2 degrees), so the product is filled at every Sun elevation and
+  nothing switches. Outside the field a receiver fades across a border to a far value, the mean transmittance
+  of the outermost level's ground slice (proof part A). Ruling 1 carries the path direction, the border and
+  the far value. M2.3, M2.5 and M5.5 were written again, and M2.4 is new (M2's later items moved down one), on a
+  broken sky.
+- 2026-11-14 MF4, shadow-only. The Sun's path and the overlay integrate a coarse density, the one function with
+  the detail noise at its mean, in both profiles; the view march and its local light samples use the full
+  density (proof part C: 0.001 RMS in transmittance over an 80 m column). M3.8 was written again on a sky the
+  detail noise erodes, and records the difference between the two densities' Sun paths.
+- 2026-11-14 Suggestions, all three taken. S1: the march reads a stacked volume no coarser than one texel a
+  slab and holds its coordinate inside the slab (proof part D); M6.1 tests contrasting slabs at every level
+  read; nothing is asked of the cooker. S2: cadences bound age in weather time, each part of the map is held to
+  the model at the tick it was written (M2.2, M4.2), and a knob changes no query answer and no column the map
+  holds (M9.7, M12.3). S3: M7.5's recordings run as long as whole lives need.

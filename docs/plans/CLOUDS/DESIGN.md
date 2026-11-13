@@ -1,6 +1,6 @@
 # Clouds: a weather-driven sky that shades and lights the world
 
-13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
+13 November 2026, revised 14 November. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
 [module list](../ARCHITECTURE.md). C02, C04, C06, C07, C08, C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md), [ENVIRONMENT](../../design/modules/ENVIRONMENT.md)
 and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern. This design replaces
@@ -115,9 +115,9 @@ What each source was read for, and how far.
 - **Not read:** the Red Dead Redemption 2 course notes (Bauer 2019; not found to fetch), the 2015 and 2017 Nubis
   talks, and the Broadsides shaders. Nothing below rests on them.
 
-One reproduction was run for this design and is kept with its output in
+Two reproductions were run for this design, the second for its revision, and are kept with their output in
 [the evidence folder](../../evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
-reports it.
+reports them.
 
 **How a march reaches the look at this frame rate, decided against the cost.**
 
@@ -129,10 +129,11 @@ reports it.
 | A per-cloud cached volume (the earlier cohort lab) | 13 ms for one cloud on this Mac |
 | **2D weather fields with a vertical profile, noise for detail, light from one summed Sun-path product, traced at part of the render extent and reconstructed over frames** | **Selected.** Every part is shipped practice; the work a ray does is bounded by a few texture reads a sample |
 
-**What would change these selections.** If M3's record shows the trace cannot hold the refresh after the designed
-remedies in [risk 1](#risks), the layer's extent and the light model are re-planned before M5. If M5 shows the
-summed Sun-path product cannot carry low-Sun relief, its near level is refined or the local samples grow, here
-first.
+**What would change these selections.** M3's record shows what the trace costs. If the frame is over the refresh
+interval there, M3 tries the remedies in [risk 1](#risks) that its record points at and records what each did,
+and building goes on; whether the layer's extent or the light model should then change is a planner's decision
+from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
+relief, its near level is refined or the local samples grow, here first.
 
 ## Mechanisms
 
@@ -158,8 +159,9 @@ with no GPU:
   size, its depth and a shape seed. A cell's **envelope** rises smoothly from zero at birth and returns to zero
   at death, and scales its radius, depth and density together: the cell forms, grows and thins. Coverage sets
   how many cells exist, through a smooth threshold on a per-cell hash, so raising coverage swells cells in and
-  never switches one on. A cell's column is a dome over a flat base at the type's condensation level; bases are
-  shared, sizes vary.
+  never switches one on. A cell's column is a dome over a flat base at the type's condensation level, or the
+  footprint of an authored shape where the cell is a [placed](#placed-volumes) one; bases are shared, sizes
+  vary.
 - **The deck.** Layered cloud is a sheet whose thickness follows a smooth evolving noise against a threshold set
   by coverage and type: gaps at a broken deck, none at overcast.
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
@@ -173,9 +175,18 @@ with no GPU:
   count and a fraction, and positions as integer texel coordinates plus a snapped anchor, so the GPU names the
   same cells as the CPU after any travel.
 
-**Outputs.** Coverage is the column's profile, 0 in clear air. Age is the dominant cell's life phase. Column
-optical depth is the vertical integral of the density below, before detail erosion: it bounds what is drawn. A
-query outside nothing is invalid; valid clear weather returns zero.
+**Outputs.** Coverage is the column's profile, 0 in clear air. Age is the dominant cell's life phase. A query
+outside nothing is invalid; valid clear weather returns zero.
+
+**What a query promises.** Column optical depth is the vertical integral of the density below with nothing
+eroded: every noise term at its uneroded value. In the model that is exact at every point, for cells, the deck
+and [placed shapes](#placed-volumes) alike. It is an upper **bound** on the column that is drawn there, because
+noise only removes extinction, and it is zero exactly where the sky is clear. The field holds no average: a
+query never answers for a neighbourhood, and no form of a cloud is fitted to another's mean. The averages in
+this design are named where they are made: the GPU reads the field through filtered textures, so what it draws
+over a point is a local average of the model's density over a texel, held to the model at stated points within
+a bound that is measured first; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
+the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean transmittance.
 
 ### One density, in m⁻¹
 
@@ -190,47 +201,76 @@ dissolve as structure and nothing slides. Noise is read at a mip chosen from the
 ray reads an average, not aliased detail. Both noise volumes are generated on the GPU at preparation from the
 same integer hash on every target.
 
-Coefficients from different condensate add before attenuation. Two forms of the same condensate (a cell and the
-placed volume that stands for it) are blended with weights that sum to one. Nothing is darkened twice and no
-density is divided by a count.
+**Full and coarse.** The function is evaluated two ways, which differ only in the detail term. The **full
+density** reads the detail noise; the view march and its local light samples use it. The **coarse density**
+takes the detail noise at its mean, a constant of the profile, so it erodes an edge by the average amount and
+reads no detail texture; the Sun's path and the sky overlay use it. It is what the full density tends to as a
+sample's footprint grows past the detail noise, and the Sun path's columns are wider than that. The model
+evaluates both in f64, and each consumer is held to the reference for the density it uses.
+
+Coefficients from different condensate add before attenuation. Two forms of the same condensate (the volume form
+and the column form of one [placed cell](#placed-volumes)) are blended with weights that sum to one. Nothing is
+darkened twice and no density is divided by a count.
 
 ### The weather map
 
 The GPU reads the field through a **weather map**: a few world-anchored wrapping levels in the air frame, whose
-texel doubles or quadruples outward to the horizon. A texel holds the column: base, top, profile, type, and the
-slot and weight of at most one placed volume. Compute passes in `simulate` evaluate the same cell and deck rules
-as the CPU. Because the map lives in the air frame, wind costs nothing: only evolution and the camera's movement
-through the air need new texels, so the map is refreshed in parts at a cadence of about 2 Hz. A coarse level of
-the tallest top in each region lets a ray step across empty air.
+texel doubles or quadruples outward to the horizon. A texel holds the field's column (base, top, profile, type)
+and, apart from it, two presentation values: the slot of at most one placed shape and the weight of its volume
+form. Compute passes in `simulate` evaluate the same cell and deck rules as the CPU. Because the map lives in
+the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
+the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
+air.
 
-The GPU map matches the CPU evaluator at texel centres within a tolerance that M2 measures first and then
-asserts.
+**Age.** Each part of the map holds the field at the tick it was last written, and the map keeps that tick for
+each part. The cadence is a bound on a part's age in **weather time** and in the camera's travel through the
+air, never in frames: half a second of weather in the first profile, which is 2 Hz at 1× and the whole map
+every frame at 60×. The Sun's path is bounded the same way, level by level. So a time-lapse refreshes more each
+frame and replaces no texel with one further on in the weather than real time would.
+
+The GPU column matches the CPU evaluator at texel centres, at the tick each part was written, within a tolerance
+that M2 measures first and then asserts; that no part is older than its bound is asserted apart from it.
 
 ### The Sun's path: one optical-depth product
 
-One product holds optical depth along the **true Sun's** ray, from the top of the cloud layer down:
-`tau(column, height)`, in levels of camera-following windows whose columns are Sun rays. A column is indexed by
-where its ray crosses the bottom of the layer. It is filled by marching the density function along each ray,
-time-sliced by tiles of columns, and stored in place.
+One product holds optical depth along the Sun's ray, from the top of the cloud layer down: `tau(column,
+height)`, in levels of camera-following windows whose columns are Sun rays. A column is indexed by where its ray
+crosses the bottom of the layer. It is filled by marching the **coarse density** along each ray, time-sliced by
+tiles of columns, and stored in place. It integrates the same density in both profiles and never reads the
+detail noise, so its bytes do not depend on whether clouds are drawn.
+
+**The path direction.** The columns follow the environment identity's true Sun, never the apparent surface
+light, with one floor: their elevation is `max(Sun elevation, lowest elevation)`, a profile constant (2° in the
+first profile), at the Sun's azimuth. The path direction is a continuous function of the Sun, the product is
+filled at every Sun elevation, and no reader switches to anything as the Sun sinks. Below the floor the path is
+a stated approximation: the optical depth of the 2° path stands for the flatter one, while the Sun's light at a
+point, the phase angle and the air's own transmittance still use the true Sun. When the Sun moves, the columns
+shear with it; the refresh cadence bounds the lag, and a jump larger than a bound refills the product in that
+frame.
 
 It has three readers and one meaning:
 
 - **Ground shade.** A level's last slice is `tau` through the whole layer for a receiver below it. The slices of
   the levels are composed into one 2D field, which is registered with `ATMOSPHERE` as the Sun-path optical depth
-  ([ruling 1](#what-clouds-asks-of-other-modules)). `ATMOSPHERE` applies `exp(−tau)` once on every direct-Sun
-  receiver: terrain, instances, cooked meshes, the cooked volume and the sea. `CLOUDS` never darkens a receiver.
+  with its path direction ([ruling 1](#what-clouds-asks-of-other-modules)). `ATMOSPHERE` projects each receiver
+  along the path direction and applies the factor once on every direct-Sun receiver: terrain, instances, cooked
+  meshes, the cooked volume and the sea. `CLOUDS` never darkens a receiver.
 - **Self-shadow.** A cloud sample's light is `exp(−tau)` with `tau` in two disjoint parts that add: a short local
-  march of a few samples of the full density toward the Sun, then the product read at the far end of that
-  segment. The local part resolves lobes smaller than a column; the product carries everything beyond, to any
-  distance. The sample count is a knob.
+  march of a few samples of the full density along the path direction, then the product read at the far end of
+  that segment. The local part resolves lobes smaller than a column, and the detail the coarse density
+  averages; the product carries everything beyond, to any distance. The sample count is a knob.
 - **The sky overlay** below reads it the same way.
 
-The Sun's direction is the environment identity's true Sun, never the apparent surface light. When it moves, the
-columns shear with it; the refresh cadence bounds the lag, and a jump larger than a bound refills the product in
-that frame. The product is valid down to a lowest Sun elevation the profile declares (2° in the first profile).
-Below it, and outside the field's region, a receiver gets `exp(−tau_far)`, where `tau_far` is one number a frame:
-the mean slant optical depth of the far level. So an overcast sunset stays dark, and a clear one is exactly
-unshaded.
+**The edge of the field.** The outermost level reaches the horizon of the cloud tops, so every cloud sample the
+trace can reach lies inside the product; only a ground receiver can lie outside it. For those the field has a
+**far value**, one number a frame: `T_far`, the mean transmittance of the outermost level's ground slice as it
+stands that frame, given to `ATMOSPHERE` as `tau_far = −ln T_far`. A receiver's factor is
+`mix(T_far, exp(−tau), w)`, where `w` is 1 inside the field, falls smoothly to 0 across a border inside the
+field's edge, and is 0 outside. So the factor is continuous across the edge whatever lies on either side of it,
+and the far value needs nothing that can become invalid. It is a mean of transmittance, not of optical depth,
+because a broken sky far off lets through the light of its gaps; under a clear sky it is exactly 1 and under a
+closed deck it is no brighter than the deck's thinnest column. It moves by at most one refreshed tile's share a
+frame.
 
 ### Cloud light
 
@@ -310,29 +350,55 @@ A sky with clouds must light the world as one. Three small products do it, each 
 
 A placed volume is a cooked density volume that stands for one cell.
 
-- **Content.** The game cooks its library as one stacked volume product: each shape is a slab of the same size
-  along one axis, so every mip stays inside its slab and one texture serves all shapes. A growth track is a
-  second stack whose slabs are keys in time. `CONTENT-LOOP` lends both through a lease, unchanged. With each
-  shape the game gives its physical extent, base height, downwind axis and mean column sum.
-- **Placement.** A share of cells, set by the type table, are hero cells, chosen by hash. Within a placed range
-  of the camera a hero cell is drawn from a volume the hash picks: centred on the cell, its base on the shared
-  condensation level, turned to the wind by yaw, scaled uniformly. Its extinction scale is set so its mean
-  column optical depth equals the cell's, so the CPU query stays true on average.
-- **One march.** The weather map texel names the slot. The density function reads the volume there in place of
-  that cell's own column, with a weight that ramps across the edge of the placed range; the two forms' weights
-  sum to one. Other cells' cloud at that texel adds. The same function feeds the Sun's path and the overlay, so
-  a placed cloud is lit, shades the ground and is reflected like any other.
-- **Life.** The cell's envelope drives the volume's opacity and edge erosion, so it forms and thins with its
-  cell. A growth-track instance blends the two keys around its age.
-- **Capacity.** The number of placed instances is a profile limit checked against the capability record. Cells
-  beyond it stay procedural, nearest first, and the refusal is counted and reported.
+A placed cell is a cell of the weather field whose cloud is an authored shape and not a dome. The field knows
+the shape, so the query, the picture and the shade agree on its outline at any distance and with no camera.
+
+- **Content.** The game cooks its library as one stacked volume product: each shape is a slab of the same
+  power-of-two size along one axis, and one texture serves all shapes. A growth track is a second stack whose
+  slabs are keys in time. `CONTENT-LOOP` lends both through a lease, unchanged. With each shape the game gives
+  its physical extent, base height, downwind axis and **footprint**.
+- **The footprint** is the shape's own column: for each vertical column of its voxels, their sum and the lowest
+  and highest occupied height. `thrum-cloud-model` derives it from the voxels with one function, the game keeps
+  it with its placement data, and the library's footprints are an input of the field like the type table. A
+  headless server needs the footprints and never the volumes.
+- **Placement.** A share of cells, set by the type table, are placed cells, chosen by hash, each with a shape the
+  hash picks: centred in its cell, its base on the shared condensation level, turned to the wind by yaw, scaled
+  uniformly. A voxel value of 1 is the type's extinction. At most one placed cell is chosen in each block of
+  lattice sites, a profile constant, and its footprint is held inside the block, so no point has two placed
+  shapes over it. None of this depends on the camera.
+- **The query.** Over a placed cell the field's column is the footprint read at that point, scaled by the cell's
+  envelope, and it adds to whatever other cloud is there. That is the bound of
+  [what a query promises](#one-weather-field-in-the-air-frame), with the shape's true outline: zero outside
+  the silhouette, the shape's own depth inside it.
+- **Two forms, one march.** A placed cell is drawn in two forms of the same condensate. The **volume form** reads
+  the lent slab; its uneroded column is the footprint, exactly, because a column of voxels sums to its footprint
+  texel. The **column form** spreads the footprint's column over the type's vertical profile between the
+  footprint's lowest and highest heights, like any weather-layer column. The weather map texel names the slot
+  and the volume form's weight, which is 1 near the camera and ramps to 0 across the edge of the placed range;
+  the two weights sum to one. Each form is bounded by the footprint at every point, so their blend is at every
+  weight, and what is drawn over a point never depends on the camera by more than the bound allows. The same
+  function feeds the Sun's path and the overlay, so a placed cloud is lit, shades the ground with its own
+  outline and is reflected like any other.
+- **Reading a slab.** The march samples no level coarser than the one that holds one texel a slab, and holds its
+  coordinate along the stacking axis half a texel of the coarser level it reads inside the slab. Up to that
+  level every texel is an average of one slab alone; the next level averages neighbouring shapes, and is never
+  read. A cloud too far for that level is past the placed range and drawn in its column form. Growth keys are
+  read the same way, and two keys are blended by weight, never filtered along the stack.
+- **Life.** The cell's envelope drives both forms' opacity and edge erosion, so the cloud forms and thins with
+  its cell. A growth-track instance blends its two keys around its age, and its footprint is the same blend of
+  theirs.
+- **Capacity.** The number of volume-form instances is a profile limit checked against the capability record.
+  Placed cells beyond it, and every placed cell while no lease is resident, are drawn in their column form,
+  nearest first, and the refusal is counted and reported. The query is the same either way.
 
 ### Shadow-only and headless
 
 - **Headless.** `thrum-cloud-model` answers point queries with no graphics device and allocates nothing.
-- **Shadow-only** is a profile: the weather map, the shape noise and the Sun's path are built, and the trace,
-  the layer history, the detail noise, the overlay and the far-aerial use are not declared. Its ground field is
-  the same bytes as with visible clouds on. Changing between the two rebuilds the effect and starts a new epoch.
+- **Shadow-only** is a profile: the weather map, the shape noise, the footprints and the Sun's path are built,
+  and the trace, the layer history, the detail noise, the overlay and the far-aerial use are not declared. The
+  Sun's path integrates the coarse density in both profiles, so its ground field is the same bytes as with
+  visible clouds on, under a sky whose full density the detail noise does erode. Changing between the two
+  rebuilds the effect and starts a new epoch.
 
 ### Recipes, limits and knobs
 
@@ -347,8 +413,9 @@ A placed volume is a cooked density volume that stands for one cell.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: the trace's
   refresh fraction, the layer's scale, step length and sample cap, local light samples, the Sun's path cadence
   per level, weather map cadence, overlay cadence, and placed range. Extent knobs select a sub-rectangle of a
-  fixed allocation, so no knob creates a resource or pipeline. None changes the weather field or what a query
-  returns.
+  fixed allocation, so no knob creates a resource or pipeline. None changes the weather field, the columns the
+  weather map holds or what a query returns; the placed range changes only the map's presentation values, the
+  slot and the volume form's weight.
 
 ### Check that it can work
 
@@ -368,9 +435,30 @@ From `cloud_field_proof.py`, a CPU sketch with first-profile constants:
   samples over 120 m it is 0.02. At 6° it is 0.05 to 0.08, which M5 judges by eye.
 - **Cost.** A sky ray needs 17, 42 and 34 texture reads for fair, broken and overcast skies, against Broadsides'
   142 density evaluations. That is 3 to 7 million reads a frame for a 640×360 trace before local light samples.
-- **K5.** Unrun here. Broadsides' hybrid stills and the growth track's blind review show the content reads; that
-  one density function serves both is first proved in M6.
+- **K5.** Broadsides' hybrid stills and the growth track's blind review show the content reads; that one density
+  function serves both on the GPU is first proved in M6.
 - **K6.** Unrun. The layer's reconstruction and its look under TAAU are first seen in M3 and M9.
+
+From `revision_proof.py`, run for the revision of 14 November against
+[the design review](../../evidence/CLOUDS/design-review.md)'s counterexamples:
+
+- **The Sun's path as the Sun sinks.** Beside a broken cloud bank, with the Sun going from 8° to 1°, the factor
+  under open sky, in a gap and where the ray enters the bank changes by an amount that halves when the Sun's
+  step halves. The rule this replaces jumped by 1.0 at 2° under open sky and in the gap, at any step.
+- **The edge of the field.** A receiver leaving the field at a 60° Sun changes by an amount that halves with
+  its step; the replaced rule jumped by 0.999. The far value there is a mean transmittance of 0.50, where the
+  mean optical depth would have given 0.0006. Under a closed deck the factor and the far value stay below the
+  thinnest column's transmittance from a 20° Sun to below the horizon.
+- **Placed shapes.** For an L-shaped tower with an overhang and a hollow, the volume form's uneroded column
+  equals the query to 10⁻¹⁴ at 1,500 points; the eroded volume form, the column form and their blends never
+  exceed it and are zero wherever it is zero. A dome of the same mean column, the replaced rule, is exceeded at
+  26% of points, by up to six times the mean. A read one mip coarser exceeds the point query at an edge, which
+  is the GPU's measured bound and not the model's.
+- **The coarse density.** Along 150 m edge paths, detail erosion takes the optical depth from 3.75 to between
+  3.13 and 3.41; the coarse density gives 3.27 with no noise read. Over an 80 m column its transmittance is
+  within 0.001 RMS of the mean of the full density's paths, against 0.014 with erosion left out.
+- **Slabs.** Twelve slabs alternately empty and full, read at levels 0 to 7 with the stated hold, return their
+  own value exactly; without the hold the error is half the range, and level 8 mixes every pair.
 
 ## The system as it runs
 
@@ -397,8 +485,8 @@ phase and the history side.
 state in its world, adds the cloud contribution after any sea, and shows cloud controls. With it off the game,
 its world, its page and every frame are what they were. The selection replaces the diagnostic shade provider.
 
-**Creator journey.** A scene adds the cloud contribution with a profile and a type table, steps a weather state
-in its world, and puts it in its page. Changing coverage, type, wind or time scale needs no rebuild. Changing the
+**Creator journey.** A scene adds the cloud contribution with a profile, a type table and, if it places shapes,
+their footprints; it steps a weather state in its world, and puts it in its page. Changing coverage, type, wind or time scale needs no rebuild. Changing the
 profile or the library rebuilds the effect and resets its histories.
 
 ## What CLOUDS asks of other modules
@@ -408,9 +496,12 @@ in the owning module's files, with that module's items unchanged and its tests k
 from a scene with no cloud provider: the same shader text, passes, storage and bytes as today.
 
 1. **A provider may write the Sun-path optical depth on the GPU** (`ATMOSPHERE`, M2). Today's field is CPU bytes
-   with a rigid drift. A provider may instead register a texture its own `simulate` pass writes, with its mapping
-   updated each frame, and one `tau_far` used below the lowest valid elevation and outside the region. The
-   CPU-fed form keeps `tau_far` at zero and behaves exactly as now.
+   with a rigid drift, read along the true Sun, with a factor of exactly 1 below a lowest elevation and outside
+   the region. A provider may instead register a texture its own `simulate` pass writes, with, each frame, its
+   mapping, the path direction its columns follow, a border width and one `tau_far`. Such a field is read
+   along its path direction at every Sun elevation, and a receiver's factor is `mix(exp(−tau_far), exp(−tau),
+   w)` with the border weight `w` above, so it is continuous in the Sun's elevation and across the region's
+   edge. The CPU-fed form states none of these and behaves exactly as now.
 2. **Aerial transport to a far sky point** (`ATMOSPHERE`, M3): the lent operation beyond 32 km, as above.
 3. **A sky overlay in the reflection and diffuse products** (`ATMOSPHERE`, M8). If the incident-light meter has a
    Sun term without the cloud factor, it gains it at its metering point.
@@ -429,34 +520,47 @@ there, not here.
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | Weather step | Tick, CPU | One record | Microseconds | |
-| Weather map | About 2 Hz, in parts | 4 levels × 256², two textures | Under 0.1 ms a frame | 2 ms an update |
+| Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
-| Sun's path | Near level over 8 frames, mid 32, far 128 | 3 × 256² columns, 48, 32 and 16 slices: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
-| Ground field | With the Sun's path | 1024² | Under 0.05 ms | |
+| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
+| Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
+| Time-lapse | Ages are held in weather time | At 60×, the whole map (262 k texels) and up to the Sun path's whole fill each frame | Unestimated beyond those counts; M2 records 1×, 8× and 60× | |
 | Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples | The largest term; M3 measures it | 268 ms; 33 M density evaluations |
 | Resolve | Frame | 1280×720 texels | 0.1–0.2 ms | 0.9 ms |
 | Compose | Frame | Sky pixels at render extent; a pass that loads scene colour | 0.2–0.4 ms and a tile pass break | |
 | Sky overlay | An eighth a frame | 6 × 48² rays, coarse density | Under 0.05 ms | 15 ms capture |
-| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, library 27 MiB as R8 or 14 as BC4, growth track the same again | About 46 MiB plus the library | 62 MiB plus history |
+| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again | About 47 MiB plus the library | 62 MiB plus history |
 
-**Tripwires, never gates:** each pass's GPU time by name, bytes per resource, and a paired record with clouds
-absent. The owner's figure is the display's full refresh. An automated check fails when the valley's whole frame
-exceeds the refresh interval with clouds on where it holds with clouds off, or when a cloud pass grows about 25%
-over its recorded baseline. Presented cadence on the built-in panel is measured once, attended, in M12.
+**Records and tripwires, never gates** ([brief](../BRIEF.md), decision 3). `scripts/cloud_cost.py`, created in
+M2, takes a paired record of one scene at one view, capture off: the scene with clouds and with them absent,
+giving the whole frame, each cloud pass's GPU time by name, the bytes of each resource and the load on the
+machine. A record trips a wire when the whole frame with clouds is over the display's refresh interval, when a
+pass is about 25% or more over its last comparable record, or when a cost grows faster than the work that was
+added. A tripped wire is investigated in the milestone that tripped it, and the record says what was measured
+to find the cause and what was fixed or left as a follow-up in the log. Visible stutter is judged in the
+`realtime` inspections.
+
+The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
+figure decides whether an item passes, whether a milestone is Done or whether the next one starts.**
+`cloud_cost.py check` measures the scene again and fails only when the scene cannot be measured, when the
+committed record lacks part of what a paired record holds, or when a wire the record trips has no investigation
+beside it. Presented cadence on the built-in panel is measured once, attended, in M12.
 
 ## Risks
 
 1. **The trace costs too much.** Early sign: M3's record. The wrong fix is dropping the local light samples or
-   the detail noise below what the look needs without saying so. The designed ones, in order: a sparser refresh
-   (one texel in sixteen), a coarser far step, fewer local samples with a finer near level. If those do not hold
-   the refresh, the design is re-planned before M5.
+   the detail noise below what the look needs without saying so. The designed ones: a sparser refresh (one texel
+   in sixteen), a coarser far step, fewer local samples with a finer near level. M3 tries the ones its record
+   points at and records what each did to the cost and to the look. Building goes on either way; what remains
+   over the refresh interval is written up as a follow-up for the performance phase.
 2. **Procedural cumulus reads as soft shelves**, as Broadsides' did. Early sign: M3's first stills. The mechanism
    (profile thresholding shape noise, flat shared bases, domes) is the shipped one; the look is tuned against
    M3's list with a fresh opinion. Three failed looks on one cue go to the log and end `BLOCKED`.
 3. **The reconstructed layer ghosts or crawls.** Early sign: M3's pan. Fallback: refresh every texel every
    frame at a lower layer scale, which removes the layer's history from the picture.
-4. **Low-Sun relief is lost in the summed product.** Early sign: M5's low-Sun stills against the oracle.
-   Fallback: more local samples at low Sun, or a finer near level.
+4. **Low-Sun relief is lost in the summed product**, or its coarse density shades an eroded edge visibly
+   differently from the cloud that is drawn. Early sign: M3's record of the two densities' Sun paths, and M5's
+   low-Sun stills against the oracle. Fallback: more local samples at low Sun, or a finer near level.
 5. **`ATMOSPHERE`'s products resist the overlay**, because their storage is relative to the Sun. Early sign:
    M8's first test. The ruling states behaviour, not storage; if the producers cannot compose it, the proposal
    goes to that module's log.
@@ -493,7 +597,9 @@ over its recorded baseline. Presented cadence on the built-in panel is measured 
 
 | Question | Settled by |
 |---|---|
-| Does the trace hold the refresh at 2560×1440, and at which refresh fraction and local sample count? | M3 measures; M12 confirms at the showcase's extent on both recipes |
+| What does the trace cost at 2560×1440 against the refresh interval, and at which refresh fraction and local sample count? | M3 records; M12 records again at the showcase's extent on both recipes |
+| How far is the coarse density's Sun path from the full density's at an eroded edge, on the GPU? | M3 records it beside the design proof's 0.001 RMS |
+| What do the weather map and the Sun's path cost at 8× and at 60×, where their ages are held in weather time? | M2 records |
 | What tolerance does the GPU weather map meet against the CPU field on Metal and in Chrome? | M2 and M4 measure first, then assert the recorded bound |
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
