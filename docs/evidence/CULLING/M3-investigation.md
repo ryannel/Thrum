@@ -25,9 +25,36 @@ control, so it does not establish a cause. The current oracle adds a second
 independently prepared Direct host, retains exposure/submission/alpha receipts,
 and can inspect the scene-linear stage. These controls preserve every route
 frame and the original Direct comparison. They have not yet explained this
-failure. No tolerance, retained baseline or oracle draw order has changed.
+failure's root cause. No tolerance, retained baseline or oracle draw order has changed.
 
 Two initial diagnostic invocations failed before rendering because their
 fixture paths were relative to the workspace while Cargo starts tests in the
 package directory. Corrected invocations use absolute paths; their logs are
 `tmp/culling-m3/diagnostic-{sdr,linear}-fixed.log`.
+
+## Independent Direct controls
+
+On clean `8ce7110b0e2e8b726a9498b8839dd2854c772668`, the SDR control run reached
+tick 413. Frustum, Occlusion and the first Direct host are byte-equal there;
+the second Direct host differs at four pixels, by at most one SDR channel step.
+Both Direct hosts report alpha bits `1056964609` and exposure words
+`[981467136,1159023168,1093621713,1167819439,0,413,0,1]`.
+Removing instances is therefore not necessary for an observed failure.
+
+The separate scene-linear control reaches tick 298 and differs at 35 pixels.
+Frustum, Occlusion and the second Direct host agree; the first Direct host is
+the outlier. All four report alpha bits `1056964608` and exposure words
+`[981467136,1163879286,1094231394,1172877893,0,298,0,1]`.
+This witness precedes tone mapping and does not come from different recorded
+exposure or phase. The original tick-208 failure remains individually unattributed.
+
+After rebasing onto CONTENT-LOOP M1, a clean Portable run at `7dbfb781` fails
+at tick 200: Frustum differs at five pixels; both Direct hosts and Occlusion
+agree. Its retained report is
+`tmp/g7-showcase/runs/culling-mac-metal-meshes-20261113-183637/run.json`.
+The newer lease implementation alone does not remove the fault.
+
+The next bounded experiment temporarily disables Sun shadows in the grid
+scene, retaining the same meshes, route, four hosts and exact comparison.
+This asks whether the shared Sun-shadow path is needed for the mismatch. It is
+an ablation, not a shipping change, and its result is not yet known.
