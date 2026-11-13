@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel",
-      "state": "in_progress",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 0,
       "bar": "Culling as in a shipped GPU-driven renderer, where nothing visible ever disappears or pops; held here to byte equality with drawing everything, on meshes of a few hundred to a few thousand triangles.",
