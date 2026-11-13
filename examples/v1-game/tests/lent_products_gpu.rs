@@ -86,6 +86,7 @@ fn frame(host: &mut FrameHost, device: &wgpu::Device, clock: &mut Duration) {
 }
 
 fn until(
+    lease: &ProductLease,
     host: &mut FrameHost,
     device: &wgpu::Device,
     clock: &mut Duration,
@@ -96,12 +97,22 @@ fn until(
         assert!(Instant::now() < deadline, "publication timed out");
         // Discard every upload recording, including the one carrying the last copy. None
         // may offer an unsubmitted set; the following ordinary frame re-records its copies.
+        let before = lease.offered();
         *clock += Duration::from_millis(16);
         host.advance(*clock)
             .expect("advance discard")
             .encode_scene()
             .expect("encode discard")
             .skip();
+        let after = lease.offered();
+        assert!(
+            match (&before, &after) {
+                (None, None) => true,
+                (Some(before), Some(after)) => Arc::ptr_eq(before, after),
+                _ => false,
+            },
+            "discarded last-copy recording must keep the previous offer"
+        );
         frame(host, device, clock);
     }
 }
@@ -237,7 +248,9 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                 let (lease, stats, witness) = attach(&mut host, config(&cook), consumer_first);
                 let mut clock = Duration::ZERO;
                 assert!(lease.offered().is_none());
-                until(&mut host, &device, &mut clock, || lease.offered().is_some());
+                until(&lease, &mut host, &device, &mut clock, || {
+                    lease.offered().is_some()
+                });
                 assert_eq!(
                     stats.lock().expect("stats").drawn,
                     None,
@@ -284,12 +297,11 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                         .all(|changed| !changed)
                 );
                 let old = lease.offered().expect("old");
-                let pipelines = host
-                    .pipeline_creation_count()
-                    .expect("creation counters enabled");
+                let pipelines = host.pipeline_creation_count();
+                let bind_groups = witness.lock().expect("witness").bind_groups_created;
                 demo::write_cloud_volume(&cook.source.join("cloud0.tvol"), 128, 98).expect("edit");
                 assert_eq!(cooker.cook_all().expect("recook").failed, []);
-                until(&mut host, &device, &mut clock, || {
+                until(&lease, &mut host, &device, &mut clock, || {
                     lease.offered().is_some_and(|set| set.generation == 2)
                 });
                 clock += Duration::from_millis(16);
@@ -310,8 +322,12 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                 );
                 let edited = lease.offered().expect("edited");
                 assert_eq!(
+                    witness.lock().expect("witness").bind_groups_created,
+                    bind_groups + u64::from(edited.products[0].texture.mip_level_count())
+                );
+                assert_eq!(
                     host.pipeline_creation_count(),
-                    Some(pipelines),
+                    pipelines,
                     "an edit creates no pipeline"
                 );
                 for (a, b) in old.products.iter().zip(&edited.products).skip(1) {
@@ -352,7 +368,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                         std::thread::park_timeout(Duration::from_millis(1));
                     }
                 }
-                until(&mut host, &device, &mut clock, || {
+                until(&lease, &mut host, &device, &mut clock, || {
                     stats.lock().expect("stats").drawn == Some(4)
                 });
                 assert!(
@@ -380,7 +396,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                 host.publish_device(&mut candidate).expect("publish device");
                 assert!(lease.offered().is_none());
                 assert!(witness.lock().expect("witness").offered.is_none());
-                until(&mut host, &new_device, &mut clock, || {
+                until(&lease, &mut host, &new_device, &mut clock, || {
                     stats.lock().expect("stats").drawn_device_generation == Some(2)
                 });
                 frame(&mut host, &new_device, &mut clock);
