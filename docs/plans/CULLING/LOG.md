@@ -1,5 +1,12 @@
 # CULLING log
 
+- 2026-11-13 The rebased candidate passes all five non-baseline M3 checks.
+  A resource-reflection audit finds its non-shadowed entry still requires Sun
+  bindings despite a false flag. Preparation now removes that call for the
+  unshadowed profile; CPU reflection controls and the actual Metal material-table
+  compute test pass. [Evidence](../../evidence/CULLING/M3-investigation.md#preserve-the-unshadowed-profiles-resource-boundary)
+  separates this compatibility repair from the earlier pixel investigation.
+
 - 2026-11-13 The implicit-sampling-order candidate on `c98b6578` passes all
   38 native retained comparisons and eight complete 361-frame mesh routes
   (four per recipe), including independent Direct controls. The

@@ -3,8 +3,20 @@
 
 use super::air_shadow;
 
-pub(super) fn compose_with_cloud(atmosphere: bool, air_shadow: bool, cloud: bool) -> String {
+pub(super) fn compose_with_cloud(
+    atmosphere: bool,
+    air_shadow: bool,
+    cloud: bool,
+    shadowed: bool,
+) -> String {
     let source = compose(atmosphere, air_shadow);
+    // Resource reflection precedes backend constant folding. A false argument
+    // to shade() must not make an unshadowed entry require absent Sun bindings.
+    let source = if shadowed {
+        source
+    } else {
+        source.replace("sun_factor = sun_visibility(input,receiver);", "")
+    };
     if !cloud {
         return source;
     }
@@ -45,8 +57,46 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::compose;
+    use super::{compose, compose_with_cloud};
     use crate::contribution::{HookPointError, material_hook_point};
+
+    #[test]
+    fn unshadowed_entry_requires_no_sun_bindings() {
+        use wgpu::naga;
+        for atmosphere in [false, true] {
+            for shadowed in [false, true] {
+                let source =
+                    compose_with_cloud(atmosphere, atmosphere && shadowed, false, shadowed);
+                let module = naga::front::wgsl::parse_str(&source).expect("WGSL");
+                let info = naga::valid::Validator::new(
+                    naga::valid::ValidationFlags::all(),
+                    naga::valid::Capabilities::all(),
+                )
+                .validate(&module)
+                .expect("valid shader");
+                let entry = if shadowed {
+                    "shadowed_fragment"
+                } else {
+                    "fragment"
+                };
+                let entry = module
+                    .entry_points
+                    .iter()
+                    .position(|point| point.name == entry)
+                    .expect("entry");
+                let mut checked = 0;
+                for (handle, global) in module.global_variables.iter() {
+                    if global.binding.as_ref().is_some_and(|binding| {
+                        binding.group == 0 && matches!(binding.binding, 2 | 3)
+                    }) {
+                        assert_eq!(!info.get_entry_point(entry)[handle].is_empty(), shadowed);
+                        checked += 1;
+                    }
+                }
+                assert_eq!(checked, 2, "positive control includes both Sun resources");
+            }
+        }
+    }
 
     /// The body of `struct name { .. }` in `source`.
     fn struct_body<'a>(source: &'a str, name: &str) -> &'a str {
