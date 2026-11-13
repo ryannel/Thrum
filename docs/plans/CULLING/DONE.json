@@ -76,7 +76,7 @@
     {
       "id": "M2",
       "name": "The game picks its culling mode from the device and the measurements, and says which mode ran",
-      "state": "in_progress",
+      "state": "ready_for_review",
       "fails": 0,
       "replans": 0,
       "bar": "A renderer that picks its path from device facts and says which one ran, as Unreal's mobile path and Unity's fallback do: a device that cannot run a culled mode still draws the whole scene, and a default is never set on a guess.",
