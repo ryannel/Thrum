@@ -1,0 +1,83 @@
+diff --git a/crates/thrum-render/src/synthetic.wgsl b/crates/thrum-render/src/synthetic.wgsl
+index a8d8926f..2b7ce2a3 100644
+--- a/crates/thrum-render/src/synthetic.wgsl
++++ b/crates/thrum-render/src/synthetic.wgsl
+@@ -518,6 +518,22 @@ fn ambient_irradiance(n: vec3<f32>) -> vec3<f32> {
+ }
+ 
+ fn shade(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> {
++    var value = sun_factor;
++    switch view_aux.flags.y {
++        case 1u: { value = sun_visibility(input, ShadowReceiver(input.world_position, vec3(0.0), vec3(0.0), normalize(input.normal))); }
++        case 2u: { value = horizon_visibility(ShadowReceiver(input.world_position, vec3(0.0), vec3(0.0), normalize(input.normal))); }
++        case 3u: { value = cascade_visibility(1u, ShadowReceiver(input.world_position, dpdx(input.world_position), dpdy(input.world_position), normalize(input.normal))); }
++        case 4u: { value = input.world_position.x; }
++        case 5u: { value = input.normal.x; }
++        case 6u: { value = light.ambient_irradiance.x; }
++        case 7u: { value = shade_original(input, sun_factor, front_facing).r; }
++        case 8u: { value = textureSample(base_textures, material_sampler, input.uv, i32(materials[input.material].texture_layers.x)).r; }
++        default: {}
++    }
++    let bits = bitcast<u32>(value);
++    return vec4(f32(bits & 255u), f32((bits >> 8u) & 255u), f32((bits >> 16u) & 255u), f32(bits >> 24u));
++}
++fn shade_original(input: VertexOutput, sun_factor: f32, front_facing: bool) -> vec4<f32> {
+     let material=materials[input.material];
+     let base=textureSample(base_textures,material_sampler,input.uv,i32(material.texture_layers.x));
+     let orm=textureSample(orm_textures,material_sampler,input.uv,i32(material.texture_layers.z));
+diff --git a/crates/thrum-render/src/synthetic/air_shadow.rs b/crates/thrum-render/src/synthetic/air_shadow.rs
+index 08cfe9f0..fb45f245 100644
+--- a/crates/thrum-render/src/synthetic/air_shadow.rs
++++ b/crates/thrum-render/src/synthetic/air_shadow.rs
+@@ -86,7 +86,7 @@ pub(super) fn append_graph(
+             mips: 1,
+             samples: 1,
+             format: FORMAT,
+-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
++            usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+         },
+         ResourceScope::Transient,
+     )?;
+diff --git a/crates/thrum-render/src/synthetic/readback.rs b/crates/thrum-render/src/synthetic/readback.rs
+index ecf1d445..f4c56f65 100644
+--- a/crates/thrum-render/src/synthetic/readback.rs
++++ b/crates/thrum-render/src/synthetic/readback.rs
+@@ -75,6 +75,16 @@ impl PixelReadback {
+         if let Some(timer) = &mut self.copy_timing {
+             timer.marker(self.generation, encoder, false)?;
+         }
++        if std::env::var_os("THRUM_AIR_MAP_DIAGNOSTIC").is_some() && self.source == CaptureSource::SceneLinear {
++            encoder.copy_texture_to_buffer(
++                wgpu::TexelCopyTextureInfo {
++                    texture: target.textures.texture(target.ids.air_shadow.as_ref().expect("air shadows")).expect("air shadow texture"),
++                    mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
++                },
++                wgpu::TexelCopyBufferInfo { buffer: &self.buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(4096), rows_per_image: Some(512) } },
++                wgpu::Extent3d { width: 512, height: 512, depth_or_array_layers: 1 },
++            );
++        } else {
+         encoder.copy_texture_to_buffer(
+             wgpu::TexelCopyTextureInfo {
+                 texture: target
+@@ -102,6 +112,7 @@ impl PixelReadback {
+                 depth_or_array_layers: 1,
+             },
+         );
++        }
+         let pixel_bytes = u64::from(self.row_bytes) * u64::from(self.extent[1]);
+         self.has_exposure = exposure.is_some();
+         if let Some(exposure) = exposure {
+diff --git a/crates/thrum-render/src/synthetic/view.rs b/crates/thrum-render/src/synthetic/view.rs
+index 74d238ce..41d5b457 100644
+--- a/crates/thrum-render/src/synthetic/view.rs
++++ b/crates/thrum-render/src/synthetic/view.rs
+@@ -484,6 +484,9 @@ impl SyntheticView {
+         bytes[80..84].copy_from_slice(&near.to_le_bytes());
+         bytes[84..88].copy_from_slice(&far.to_le_bytes());
+         bytes[112..116].copy_from_slice(&flag.to_le_bytes());
++        if let Ok(value) = std::env::var("THRUM_SHADE_DIAGNOSTIC") {
++            bytes[116..120].copy_from_slice(&value.parse::<u32>().expect("diagnostic selector").to_le_bytes());
++        }
+         bytes[136..140].copy_from_slice(&(width as f32).to_le_bytes());
+         bytes[140..144].copy_from_slice(&(height as f32).to_le_bytes());
+         bytes

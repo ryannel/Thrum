@@ -1,0 +1,291 @@
+{
+  "commit": "25ac378dfb0416b384533dd2f3d6d8cf40b19108",
+  "contended": true,
+  "capture": "off",
+  "extent": [
+    1920,
+    1080
+  ],
+  "order": "rotating each tick",
+  "warmup_ticks": 179,
+  "runs": {
+    "portable-1": {
+      "header": {
+        "adapter": "Apple M3 Max",
+        "contended": true,
+        "default": "Frustum",
+        "extent": [
+          1920,
+          1080
+        ],
+        "load": "{ 3.14 3.78 4.17 }\n",
+        "recipe": "Ok(Portable)"
+      },
+      "summary": {
+        "entire_route": {
+          "ticks": 361,
+          "Direct": {
+            "p50_ms": 7.143543,
+            "p95_ms": 8.884375
+          },
+          "Frustum": {
+            "p50_ms": 4.73729,
+            "p95_ms": 5.385747
+          },
+          "Occlusion": {
+            "p50_ms": 4.854747,
+            "p95_ms": 5.369792
+          },
+          "paired_O_minus_F_ms": 0.04983000000000004,
+          "paired_F_minus_D_ms": -2.5532519999999996
+        },
+        "occlusion_hides_slots": {
+          "ticks": 53,
+          "Direct": {
+            "p50_ms": 8.161748,
+            "p95_ms": 9.33729
+          },
+          "Frustum": {
+            "p50_ms": 4.865544,
+            "p95_ms": 5.387331
+          },
+          "Occlusion": {
+            "p50_ms": 4.947624,
+            "p95_ms": 5.531831
+          },
+          "paired_O_minus_F_ms": 0.08883200000000002,
+          "paired_F_minus_D_ms": -3.247496
+        },
+        "open_no_occlusion_saving": {
+          "ticks": 308,
+          "Direct": {
+            "p50_ms": 6.0914795,
+            "p95_ms": 8.791002
+          },
+          "Frustum": {
+            "p50_ms": 4.696521000000001,
+            "p95_ms": 5.341832
+          },
+          "Occlusion": {
+            "p50_ms": 4.799936,
+            "p95_ms": 5.322376
+          },
+          "paired_O_minus_F_ms": 0.035063500000000136,
+          "paired_F_minus_D_ms": -2.3676250000000003
+        },
+        "nonempty_prepasses": 361
+      }
+    },
+    "apple-tile-1": {
+      "header": {
+        "adapter": "Apple M3 Max",
+        "contended": true,
+        "default": "Frustum",
+        "extent": [
+          1920,
+          1080
+        ],
+        "load": "{ 3.18 3.77 4.16 }\n",
+        "recipe": "Ok(AppleTile)"
+      },
+      "summary": {
+        "entire_route": {
+          "ticks": 361,
+          "Direct": {
+            "p50_ms": 7.678751,
+            "p95_ms": 8.964792
+          },
+          "Frustum": {
+            "p50_ms": 4.793292,
+            "p95_ms": 5.455209
+          },
+          "Occlusion": {
+            "p50_ms": 4.858168,
+            "p95_ms": 5.40717
+          },
+          "paired_O_minus_F_ms": -0.0889609999999994,
+          "paired_F_minus_D_ms": -2.7872500000000002
+        },
+        "occlusion_hides_slots": {
+          "ticks": 53,
+          "Direct": {
+            "p50_ms": 8.211499,
+            "p95_ms": 9.235915
+          },
+          "Frustum": {
+            "p50_ms": 4.905336,
+            "p95_ms": 5.535376
+          },
+          "Occlusion": {
+            "p50_ms": 4.970541,
+            "p95_ms": 5.66675
+          },
+          "paired_O_minus_F_ms": 0.03092000000000006,
+          "paired_F_minus_D_ms": -3.1976320000000005
+        },
+        "open_no_occlusion_saving": {
+          "ticks": 308,
+          "Direct": {
+            "p50_ms": 7.394645499999999,
+            "p95_ms": 8.807043
+          },
+          "Frustum": {
+            "p50_ms": 4.7512075,
+            "p95_ms": 5.406837
+          },
+          "Occlusion": {
+            "p50_ms": 4.805248499999999,
+            "p95_ms": 5.324957
+          },
+          "paired_O_minus_F_ms": -0.12160450000000012,
+          "paired_F_minus_D_ms": -2.5984135
+        },
+        "nonempty_prepasses": 361
+      }
+    },
+    "portable-2": {
+      "header": {
+        "adapter": "Apple M3 Max",
+        "contended": true,
+        "default": "Frustum",
+        "extent": [
+          1920,
+          1080
+        ],
+        "load": "{ 3.17 3.76 4.15 }\n",
+        "recipe": "Ok(Portable)"
+      },
+      "summary": {
+        "entire_route": {
+          "ticks": 361,
+          "Direct": {
+            "p50_ms": 7.595834,
+            "p95_ms": 9.034875
+          },
+          "Frustum": {
+            "p50_ms": 4.778498,
+            "p95_ms": 5.68879
+          },
+          "Occlusion": {
+            "p50_ms": 4.834624,
+            "p95_ms": 5.39054
+          },
+          "paired_O_minus_F_ms": -0.019378000000000117,
+          "paired_F_minus_D_ms": -2.662083
+        },
+        "occlusion_hides_slots": {
+          "ticks": 53,
+          "Direct": {
+            "p50_ms": 8.080627,
+            "p95_ms": 9.352248
+          },
+          "Frustum": {
+            "p50_ms": 4.87979,
+            "p95_ms": 5.833541
+          },
+          "Occlusion": {
+            "p50_ms": 4.974585,
+            "p95_ms": 5.48554
+          },
+          "paired_O_minus_F_ms": 0.04487599999999947,
+          "paired_F_minus_D_ms": -3.056712
+        },
+        "open_no_occlusion_saving": {
+          "ticks": 308,
+          "Direct": {
+            "p50_ms": 6.8938305,
+            "p95_ms": 9.011377
+          },
+          "Frustum": {
+            "p50_ms": 4.7586245,
+            "p95_ms": 5.670043
+          },
+          "Occlusion": {
+            "p50_ms": 4.790687,
+            "p95_ms": 5.344085
+          },
+          "paired_O_minus_F_ms": -0.06354450000000034,
+          "paired_F_minus_D_ms": -2.5794010000000003
+        },
+        "nonempty_prepasses": 361
+      }
+    },
+    "apple-tile-2": {
+      "header": {
+        "adapter": "Apple M3 Max",
+        "contended": true,
+        "default": "Frustum",
+        "extent": [
+          1920,
+          1080
+        ],
+        "load": "{ 2.76 3.65 4.11 }\n",
+        "recipe": "Ok(AppleTile)"
+      },
+      "summary": {
+        "entire_route": {
+          "ticks": 361,
+          "Direct": {
+            "p50_ms": 7.96171,
+            "p95_ms": 9.052706
+          },
+          "Frustum": {
+            "p50_ms": 5.085831,
+            "p95_ms": 5.66329
+          },
+          "Occlusion": {
+            "p50_ms": 4.86675,
+            "p95_ms": 5.400833
+          },
+          "paired_O_minus_F_ms": -0.2661220000000002,
+          "paired_F_minus_D_ms": -2.8997900000000003
+        },
+        "occlusion_hides_slots": {
+          "ticks": 53,
+          "Direct": {
+            "p50_ms": 8.538459,
+            "p95_ms": 9.601914
+          },
+          "Frustum": {
+            "p50_ms": 5.340708,
+            "p95_ms": 6.053504
+          },
+          "Occlusion": {
+            "p50_ms": 5.014627,
+            "p95_ms": 5.628627
+          },
+          "paired_O_minus_F_ms": -0.3557100000000002,
+          "paired_F_minus_D_ms": -3.243042
+        },
+        "open_no_occlusion_saving": {
+          "ticks": 308,
+          "Direct": {
+            "p50_ms": 7.7326250000000005,
+            "p95_ms": 8.904666
+          },
+          "Frustum": {
+            "p50_ms": 4.9092895,
+            "p95_ms": 5.582168
+          },
+          "Occlusion": {
+            "p50_ms": 4.7987935,
+            "p95_ms": 5.347249
+          },
+          "paired_O_minus_F_ms": -0.24260349999999997,
+          "paired_F_minus_D_ms": -2.6940005
+        },
+        "nonempty_prepasses": 361
+      }
+    }
+  },
+  "builds": {
+    "commit": "25ac378dfb0416b384533dd2f3d6d8cf40b19108",
+    "main_base": "7f154caa266cafd070c72b1259146a3a0c66e56a",
+    "origin_main_at_run": "7f154caa266cafd070c72b1259146a3a0c66e56a",
+    "dirty": false,
+    "built_by_this_run": false,
+    "thrum_cook_sha256": "e73db6360192ad0ab885228524fe8a13a7c675d34840d7593e9b1a7db9f2fb64",
+    "v1_game_sha256": "6d8c00be67a4f08505d4f645b3b22c9ced35aad4a4f9e66527161d610f10b095"
+  },
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d"
+}

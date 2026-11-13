@@ -88,7 +88,27 @@ map (layer 0) is identical across the four hosts for all 361 route frames.
 [Identity](M3/diagnostics/shadow-map-identity.json),
 [log](M3/diagnostics/shadow-map-0.log) and
 [rows](M3/diagnostics/shadow-map-0-rows.jsonl.gz) pin the run. This narrows the
-search; it proves neither the other layers nor downstream shading deterministic.
-The far and height layer runs are queued under the shared GPU lock. The
+search; it does not prove downstream shading deterministic. The subsequent far
+map (layer 1) and height map (layer 2) runs also match all four hosts over all
+361 route frames. Their logs and compressed rows are retained beside layer 0's.
+All three maps were tested separately with the same diagnostic executable.
+The
 temporary production edits have been reverted after building the diagnostic
 executable, and the queued helper uses that exact binary without rebuilding.
+
+The subsequent [bounded shading diagnostic](M3/diagnostics/shading-summary.json)
+compares the air-shadow output directly, and then the full 32 bits of selected
+fragment values by packing each byte into an exact fp16 integer channel. All
+seven runs pass all 361 route frames across all four hosts: air-shadow map,
+Sun visibility, complete shaded red, world X, normal X, ambient X and sampled
+base-texture red. Its patch, runner, build log and compressed raw receipts are
+retained alongside the summary. These diagnostic pixels are not colour or a
+shipping change. Instrumentation changes shader compilation, so these passes
+do not explain or repair the original failure.
+
+The original oracle now retains three additional same-time submissions from
+each host only after its unchanged first comparison has failed. Each recapture
+records requested time, tick progress, alpha and exposure and keeps its raw
+bytes. That distinguishes a stable difference between prepared hosts from
+variation on the same host without weakening the first oracle. Final original-
+shader execution with those recaptures is next.
