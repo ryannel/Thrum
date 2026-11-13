@@ -89,6 +89,32 @@ fn report_passes(modes: &[CullMode], passes: &mut [[Vec<f64>; 6]]) {
     }
 }
 
+#[expect(clippy::print_stdout, reason = "paired cover/open benchmark report")]
+fn report_cover(rows: &mut [[Vec<f64>; 3]; 2]) {
+    for (label, modes) in ["behind cover", "open"].into_iter().zip(rows) {
+        assert!(
+            !modes[0].is_empty(),
+            "both cover and open need measured rows"
+        );
+        for (mode, samples) in ["Direct", "Frustum", "Occlusion"].into_iter().zip(modes) {
+            println!(
+                "{label} {mode}: {} ticks, whole GPU p50 {:.3} ms, p95 {:.3} ms",
+                samples.len(),
+                quantile(samples, 0.5),
+                quantile(samples, 0.95)
+            );
+        }
+    }
+}
+
+fn open_view(hosts: &mut [FrameHost], tick: u64) {
+    if tick == WARMUP_TICKS + TICKS / 2 {
+        for host in hosts {
+            host.set_camera_pitch(0.6).expect("open view above cover");
+        }
+    }
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "the explicit device benchmark reports paired GPU rows"
@@ -150,6 +176,7 @@ fn main() {
         let mut deltas: [Vec<f64>; 2] = Default::default();
         // Occlusion − Frustum whole-frame ms: [behind cover, open].
         let mut against_frustum: [Vec<f64>; 2] = Default::default();
+        let mut cover_rows: [[Vec<f64>; 3]; 2] = Default::default();
         let mut share = 0.0;
         // Per segment: (F−D, O−F) whole-frame ms, and the load at its end.
         let mut segment: [Vec<f64>; 2] = Default::default();
@@ -157,6 +184,7 @@ fn main() {
         let mut nonempty_prepasses = 0;
         let mut hiding_ticks = 0;
         for tick in 1..=WARMUP_TICKS + TICKS {
+            open_view(&mut hosts, tick);
             let now = Duration::from_nanos(tick * TICK_NS + 1);
             // Rotate the order each tick, so no mode always runs first.
             let count = modes.len();
@@ -222,6 +250,9 @@ fn main() {
                     let open = usize::from(drawn[2] * 2 > drawn[1]);
                     hiding_ticks += u64::from(drawn[2] < drawn[1]);
                     against_frustum[open].push(whole[2] - whole[1]);
+                    for (rows, value) in cover_rows[open].iter_mut().zip(whole) {
+                        rows.push(value);
+                    }
                 }
                 if tick % 30 == 0 {
                     share += field_in_view_share(tick, EXTENT).expect("view");
@@ -249,6 +280,7 @@ fn main() {
             "contended=true; nonempty_prepasses={nonempty_prepasses}; hiding_ticks={hiding_ticks}; whole includes every timed scene pass"
         );
         report_passes(modes, &mut per_pass);
+        report_cover(&mut cover_rows);
         let [direct, culled @ ..] = rows.as_mut_slice() else {
             unreachable!("Direct always runs")
         };
