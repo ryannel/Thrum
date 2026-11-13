@@ -59,7 +59,7 @@
         // ?field draws the dense flythrough field; ?culling=direct|frustum|occlusion picks camera culling.
         const cooked = probe.has("assets");
         const game = probe.has("field")
-          ? await create_field_game(canvas, probe.get("culling") ?? "frustum")
+          ? await create_field_game(canvas, probe.get("culling") ?? "frustum", probe.has("field-meshes"))
           : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"));
         if (probe.has("diagnostic-clouds")) {
           const label = document.createElement("p");

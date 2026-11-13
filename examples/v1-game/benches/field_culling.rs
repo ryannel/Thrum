@@ -8,9 +8,7 @@
 //! 1920x1080. On a shared machine, each 300-tick segment also reports its
 //! paired medians beside the system load at its end, and the run asserts
 //! Occlusion hid work on some ticks so an inert history cannot pass.
-//! `THRUM_FIELD_MESHES=on` runs the mixed field (rock, column and spruce
-//! props) for Direct and Frustum only: Occlusion refuses meshes until its
-//! history follows slot identity.
+//! `THRUM_FIELD_MESHES=on` runs all three modes on rock, column and spruce props.
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::time::Duration;
@@ -61,6 +59,36 @@ fn quantile(values: &mut [f64], q: f64) -> f64 {
     values[index]
 }
 
+fn assert_live_history(prepasses: u64, hiding: u64) {
+    assert!(
+        prepasses > 0 && hiding > 0,
+        "history prepass must run and hide slots"
+    );
+}
+
+#[expect(clippy::print_stdout, reason = "benchmark segment report")]
+fn report_segments(segments: &[(u64, f64, f64, String)]) {
+    for (tick, frustum, occlusion, load) in segments {
+        println!(
+            "segment to tick {tick}: paired F−D median {frustum:+.3} ms, O−F median {occlusion:+.3} ms, load {load}"
+        );
+    }
+}
+
+#[expect(clippy::print_stdout, reason = "benchmark pass report")]
+fn report_passes(modes: &[CullMode], passes: &mut [[Vec<f64>; 6]]) {
+    for (mode, passes) in modes.iter().zip(passes) {
+        let medians: Vec<String> = passes
+            .iter_mut()
+            .map(|values| format!("{:.3}", quantile(values, 0.5)))
+            .collect();
+        println!(
+            "{mode:?} pass p50 ms (near, far+heights, clusters, forward, history, tone): {}",
+            medians.join(", ")
+        );
+    }
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "the explicit device benchmark reports paired GPU rows"
@@ -82,11 +110,7 @@ fn main() {
         let capabilities =
             DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         let field_meshes = std::env::var("THRUM_FIELD_MESHES").is_ok_and(|value| value == "on");
-        let modes: &[CullMode] = if field_meshes {
-            &[CullMode::Direct, CullMode::Frustum]
-        } else {
-            &[CullMode::Direct, CullMode::Frustum, CullMode::Occlusion]
-        };
+        let modes: &[CullMode] = &[CullMode::Direct, CullMode::Frustum, CullMode::Occlusion];
         let occlusion = modes.len() == 3;
         let mut hosts = Vec::new();
         for &camera_culling in modes {
@@ -112,6 +136,11 @@ fn main() {
                 .await
                 .expect("prepared field"),
             );
+            assert_eq!(
+                hosts.last().expect("host").camera_culling(),
+                camera_culling,
+                "resolved benchmark mode"
+            );
         }
         // [mode][metric]: whole, forward. Deltas: Frustum − Direct, Occlusion − Direct.
         let mut rows: Vec<[Vec<f64>; 2]> = modes.iter().map(|_| Default::default()).collect();
@@ -125,6 +154,8 @@ fn main() {
         // Per segment: (F−D, O−F) whole-frame ms, and the load at its end.
         let mut segment: [Vec<f64>; 2] = Default::default();
         let mut segments = Vec::new();
+        let mut nonempty_prepasses = 0;
+        let mut hiding_ticks = 0;
         for tick in 1..=WARMUP_TICKS + TICKS {
             let now = Duration::from_nanos(tick * TICK_NS + 1);
             // Rotate the order each tick, so no mode always runs first.
@@ -141,7 +172,14 @@ fn main() {
                 let sample = complete(&mut hosts[index], &device);
                 let passes = sample.gpu_pass_ns.as_ref().expect("timed passes");
                 drawn[index] = sample.camera_culling.map_or(0, |counts| counts.drawn);
-                whole[index] = (passes.sum() - passes.tone()) / 1e6;
+                if index == 2 && tick > WARMUP_TICKS {
+                    nonempty_prepasses += u64::from(
+                        sample
+                            .camera_culling
+                            .is_some_and(|counts| counts.prepass > 0),
+                    );
+                }
+                whole[index] = passes.sum() / 1e6;
                 if tick > WARMUP_TICKS {
                     rows[index][0].push(whole[index]);
                     rows[index][1].push(passes.forward() / 1e6);
@@ -182,6 +220,7 @@ fn main() {
                 // A count can retire after its frame; such ticks are left out.
                 if occlusion && drawn[1] > 0 && drawn[2] > 0 {
                     let open = usize::from(drawn[2] * 2 > drawn[1]);
+                    hiding_ticks += u64::from(drawn[2] < drawn[1]);
                     against_frustum[open].push(whole[2] - whole[1]);
                 }
                 if tick % 30 == 0 {
@@ -200,25 +239,16 @@ fn main() {
             EXTENT[1],
             share * 100.0
         );
-        for (tick, frustum, occlusion, load) in &segments {
-            println!(
-                "segment to tick {tick}: paired F−D median {frustum:+.3} ms, O−F median {occlusion:+.3} ms, load {load}"
-            );
-        }
+        report_segments(&segments);
         assert!(
             !occlusion || !against_frustum[0].is_empty(),
             "Occlusion hid at least half of Frustum's list on some counted tick"
         );
-        for (mode, passes) in modes.iter().zip(&mut per_pass) {
-            let medians: Vec<String> = passes
-                .iter_mut()
-                .map(|values| format!("{:.3}", quantile(values, 0.5)))
-                .collect();
-            println!(
-                "{mode:?} pass p50 ms (near, far+heights, clusters, forward, history, tone): {}",
-                medians.join(", ")
-            );
-        }
+        assert_live_history(nonempty_prepasses, hiding_ticks);
+        println!(
+            "contended=true; nonempty_prepasses={nonempty_prepasses}; hiding_ticks={hiding_ticks}; whole includes every timed scene pass"
+        );
+        report_passes(modes, &mut per_pass);
         let [direct, culled @ ..] = rows.as_mut_slice() else {
             unreachable!("Direct always runs")
         };

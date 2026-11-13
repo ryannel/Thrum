@@ -23,6 +23,65 @@ use crate::graph::{
     ResourceId, ResourceScope,
 };
 pub use crate::visibility::CullMode;
+
+/// A preparation-time decision from the immutable device capability record.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CullingSelection {
+    /// Mode supplied by the scene owner.
+    pub requested: CullMode,
+    /// Mode for which pipelines and graph resources were prepared.
+    pub resolved: CullMode,
+    /// Capability explanation, including conservative unknown-fact fallback.
+    pub reason: CullingReason,
+}
+
+/// Why a requested camera mode was selected or replaced.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CullingReason {
+    /// Direct was explicitly requested.
+    RequestedDirect,
+    /// Adapter-read facts permit compute and indirect execution.
+    Supported,
+    /// Adapter-read execution facts were not retained.
+    UnknownCapabilities,
+    /// The adapter lacks indirect execution.
+    MissingIndirectExecution,
+    /// The adapter lacks compute shaders.
+    MissingCompute,
+}
+
+impl CullingSelection {
+    /// Resolve once before resource creation; recording passes never probe a device.
+    #[must_use]
+    pub fn resolve(
+        requested: CullMode,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+    ) -> Self {
+        let reason = if requested == CullMode::Direct {
+            CullingReason::RequestedDirect
+        } else if let Some(flags) = capabilities.downlevel() {
+            if !flags.contains(wgpu::DownlevelFlags::INDIRECT_EXECUTION) {
+                CullingReason::MissingIndirectExecution
+            } else if !flags.contains(wgpu::DownlevelFlags::COMPUTE_SHADERS) {
+                CullingReason::MissingCompute
+            } else {
+                CullingReason::Supported
+            }
+        } else {
+            CullingReason::UnknownCapabilities
+        };
+        let resolved = if reason == CullingReason::Supported {
+            requested
+        } else {
+            CullMode::Direct
+        };
+        Self {
+            requested,
+            resolved,
+            reason,
+        }
+    }
+}
 use crate::visibility::{
     self, MeshRecord, OcclusionTarget, VisibilityIds, VisibilityPrepared, VisibilityTarget,
 };

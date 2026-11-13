@@ -139,6 +139,7 @@ pub async fn create_browser_game(
 pub async fn create_field_game(
     canvas: HtmlCanvasElement,
     culling: String,
+    field_meshes: bool,
 ) -> Result<BrowserGame, JsValue> {
     let camera_culling = match culling.as_str() {
         "direct" => thrum_render::synthetic::CullMode::Direct,
@@ -159,7 +160,7 @@ pub async fn create_field_game(
             camera_culling,
             valley_stars: false,
             route_overlay: crate::RouteOverlay::Off,
-            field_meshes: false,
+            field_meshes,
         },
     )
     .await
@@ -809,7 +810,11 @@ impl BrowserGame {
             tick.1,
             encode.0,
             encode.1,
-            game::camera_culling(&self.shell),
+            game::camera_culling(&self.shell).resolved,
+        ) + &format!(
+            "; culling_requested={:?} culling_reason={:?}",
+            game::camera_culling(&self.shell).requested,
+            game::camera_culling(&self.shell).reason
         )
     }
 }

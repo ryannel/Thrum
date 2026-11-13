@@ -16,6 +16,7 @@ const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
+let mixedOracle = false;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { interrupted = new Error(signal); });
 
 function options(args) {
@@ -26,6 +27,7 @@ function options(args) {
     if (!args[i].startsWith('--') || !['case', 'web-root', 'chrome', 'output', 'timeout-ms', 'cook', 'assets-source'].includes(key) || !args[i + 1]) throw new Error(`Unknown or incomplete argument: ${args[i]}`);
     result[key] = args[++i];
   }
+  if (result.case === 'field-mixed-oracle') result.mixedOracle = true, result.case = 'field-oracle';
   if (result.case !== 'all' && !cases.includes(result.case) && !Object.hasOwn(movingControls, result.case.replace(/^moving-route-/, ''))) throw new Error(`Unknown case: ${result.case}`);
   result['timeout-ms'] = Number(result['timeout-ms']);
   if (!Number.isSafeInteger(result['timeout-ms']) || result['timeout-ms'] < 10000 || result['timeout-ms'] > 600000) throw new Error('--timeout-ms must be 10000..600000 per case');
@@ -1214,7 +1216,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
-    await cdp.call('Page.navigate', { url }, sessionId);
+    await cdp.call('Page.navigate', { url: url + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
       if (interrupted) throw interrupted;
@@ -1852,6 +1854,7 @@ async function main() {
   }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
+  mixedOracle = args.mixedOracle === true;
   if (args.case.startsWith('environment-')) await routeStops(files, directory);
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
   const caseParams = Buffer.from('{"world.paused": true, "sky.solar_time": 17.9, "camera.yw": 10}');

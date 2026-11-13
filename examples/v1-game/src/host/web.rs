@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use thrum_render::synthetic::{CullMode, DisplayOverlay};
+use thrum_render::synthetic::{CullingSelection, DisplayOverlay};
 
 use super::{
     GameScene, GameSetup, Runtime, WorldPort, camera_pitch_edit, camera_yaw_edit, day_phase_edit,
@@ -117,8 +117,8 @@ pub(crate) fn tick(shell: &Shell) -> u64 {
 }
 
 /// The camera culling mode the prepared renderer runs.
-pub(crate) fn camera_culling(shell: &Shell) -> CullMode {
-    shell.host().camera_culling()
+pub(crate) fn camera_culling(shell: &Shell) -> CullingSelection {
+    shell.host().culling_selection()
 }
 
 /// Optional scene views shed and undrained profiler rows discarded by the engine.

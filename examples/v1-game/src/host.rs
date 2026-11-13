@@ -179,6 +179,10 @@ pub struct ThreadedFrameHost {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ThreadedFrameHost {
+    /// Culling decision of the published render generation.
+    pub fn culling_selection(&self) -> thrum_render::synthetic::CullingSelection {
+        self.inner.culling_selection()
+    }
     /// Snapshot GPU reconstruction inputs without moving the resident world.
     /// # Errors
     /// Returns a failure while sampling the current camera or lighting policy.
@@ -676,6 +680,10 @@ impl FrameHost {
     /// The camera culling mode the prepared renderer runs.
     pub fn camera_culling(&self) -> CullMode {
         self.inner.camera_culling()
+    }
+    /// Requested/resolved camera mode and capability reason for this generation.
+    pub fn culling_selection(&self) -> thrum_render::synthetic::CullingSelection {
+        self.inner.culling_selection()
     }
     /// Optional scene views shed by the engine.
     pub fn dropped_views(&self) -> u64 {

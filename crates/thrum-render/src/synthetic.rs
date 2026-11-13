@@ -20,7 +20,7 @@ use crate::graph_record::{ExecutableGraph, RecordFamily};
 use crate::timing::{GpuTimings, TimingError};
 use crate::visibility::casters::{CasterCulling, CasterInputs};
 use crate::visibility::{VisibilityPrepared, VisibilityTarget};
-pub use camera_culling::{CountedFrame, CullMode, CullingCounts};
+pub use camera_culling::{CountedFrame, CullMode, CullingCounts, CullingReason, CullingSelection};
 use glam::Vec3;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
@@ -550,6 +550,7 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
+    culling_selection: CullingSelection,
     temporal_inputs: bool,
     temporal: temporal::TemporalInputs,
     cloud: Option<CloudPrepared>,
@@ -988,6 +989,10 @@ impl PreparedSynthetic {
         internal: Option<MeshSelection>,
     ) -> Result<Self, RenderError> {
         capabilities.recipe().map_err(RenderError::Recipe)?;
+        let culling_selection = CullingSelection::resolve(scene.camera_culling, capabilities);
+        let mut resolved_scene = scene.clone();
+        resolved_scene.camera_culling = culling_selection.resolved;
+        let scene = &resolved_scene;
         let device = capabilities.device();
         // Admit the whole selection before GPU work.
         let (mut mesh_arena, admitted) = admit_meshes(
@@ -1723,6 +1728,7 @@ impl PreparedSynthetic {
             temporal_inputs: scene.view.temporal_inputs(),
             temporal,
             capabilities: capabilities.clone(),
+            culling_selection,
             classes,
             owner: Arc::new(()),
             key: PipelineKey {
@@ -1838,6 +1844,10 @@ impl PreparedSynthetic {
         self.visibility
             .as_ref()
             .map_or(CullMode::Direct, VisibilityPrepared::mode)
+    }
+    /// Requested and resolved camera modes and the preparation-time reason.
+    pub fn culling_selection(&self) -> CullingSelection {
+        self.culling_selection
     }
     /// Whether this prepared scene builds selective local-light lists on GPU.
     pub fn gpu_clustered(&self) -> bool {

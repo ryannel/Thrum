@@ -777,6 +777,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn camera_culling(&self) -> CullMode {
         self.prepared.camera_culling()
     }
+    /// Capability decision belonging to the currently published generation.
+    pub fn culling_selection(&self) -> crate::synthetic::CullingSelection {
+        self.prepared.culling_selection()
+    }
 
     /// Number of optional views skipped because all GPU packet slots were held.
     pub fn dropped_views(&self) -> u64 {
