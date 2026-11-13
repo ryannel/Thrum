@@ -1,5 +1,13 @@
 # CULLING log
 
+- 2026-11-13 Continued M3 from `fa3cc02a` with the original forward shader.
+  A diagnostic copies colour, all three Sun depth layers and the air-shadow map
+  from each same submission. After two passing full routes, tick 430 differs
+  at 23 Frustum colour pixels while every stored shadow map is byte-identical
+  across four hosts. [Evidence](../../evidence/CULLING/M3-investigation.md#simultaneous-colour-and-shadow-resources-on-the-original-shader)
+  narrows this failure to other inputs or forward evaluation; it is not a repair.
+  Diagnostic production edits are restored, and M3 items remain open.
+
 - 2026-11-13 Resumed at `2fd5cf06`. Its literal M3 checker passes native cubes,
   Chrome cubes/meshes and temporal sampling, but native meshes differ at six
   SDR pixels at tick 255. Metal API/GPU shader validation separately reproduces
