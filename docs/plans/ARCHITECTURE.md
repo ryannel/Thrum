@@ -14,7 +14,7 @@
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE |
@@ -97,7 +97,7 @@ the road to the exit.
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
-| `SHOWCASE` | G7 | The exit scene and route in `examples/v1-game`, the V1 exit record | [Brief](#showcase-g7) |
+| `SHOWCASE` | G7 | The exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
 | `SEA` | track 2 | Sea state on the GPU (spectral cascades, wake fields, foam material), the body-query ring, sea optics | [Brief](SEA/BRIEF.md) |
 | `CLOUDS` | track 2 | The weather field, cloud density and lighting caches, the cloud optical-depth product, placed cloud volumes | [Brief](CLOUDS/BRIEF.md) |
@@ -113,7 +113,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 
 | Exit clause | Closed by |
 |---|---|
-| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE`; `PLATFORM-RUNTIME-MAC` M2 and M3 |
+| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` M7 and M8; `PLATFORM-RUNTIME-MAC` M2 and M3 |
 | Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` M6 |
 | Cooked meshes and textures; hot reload | `CONTENT-LOOP` M3; `CREATOR` |
 | Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` M6 |
@@ -121,10 +121,10 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 | MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` M10–M12; `APPLE-PRESENTATION` M4–M11 |
 | Display-link interpolation | G3b's function rows, closed before the loop; Mac cadence in `PLATFORM-RUNTIME-MAC` |
 | Profiler and native/browser demo UI | `CREATOR` M1 and M2 |
-| 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE`, with `CULLING` and `CONTENT-LOOP` |
+| 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE` M5 and M6, with `CULLING` and `CONTENT-LOOP` |
 | Headless corrected-run replay | G2S, closed before the loop |
 | A fresh agent builds a small scene from public docs alone | `CREATOR` M3 |
-| Outstanding physical-device runs reported | `SHOWCASE` |
+| Outstanding physical-device runs reported | `SHOWCASE` M8 |
 
 ## Build order
 
@@ -149,14 +149,16 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    `APPLE-PRESENTATION` M4–M7 (extent, scale, EDR, governor). `APPLE-TILE` M10–M11, then `APPLE-PRESENTATION` M8
    (MetalFX), M9 and M10. `CONTENT-LOOP` M3 and `CREATOR` M3 close at any point here. `CONTENT-LOOP` M1
    (leases) starts earlier, after `APPLE-PRESENTATION:M2`, and its M2 (cooked mesh rows) after `CULLING:M3`.
-7. **The exit.** `APPLE-TILE` M12 and `APPLE-PRESENTATION` M11 (paired proof), then `SHOWCASE`.
+7. **The exit.** `SHOWCASE` M5 and M6 (the populated valley and its culling) start once `CONTENT-LOOP:M2` is
+   Done, beside the work of step 6. `APPLE-TILE` M12 and `APPLE-PRESENTATION` M11 (paired proof) come next, then
+   `SHOWCASE` M7 and M8.
 8. **Track 2.** `SEA` and `CLOUDS` each start with a CPU authority and oracle milestone that needs nothing from the
    renderer. Their GPU milestones start where [the readiness conditions](#where-the-ports-readiness-conditions-are-met)
    are met. Their closing milestones need the governor.
 
 **The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
 `APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)),
-`CONTENT-LOOP`, `SEA`, `CLOUDS`, `SHOWCASE`. Each waits on `APPLE-TILE`, on a milestone
+`SEA`, `CLOUDS`. `CONTENT-LOOP` and `SHOWCASE` are planned. Each waits on `APPLE-TILE`, on a milestone
 that itself waits on `APPLE-TILE`, or on the owner's port timing, so each is planned before a builder could reach it.
 
 ## Where the port's readiness conditions are met
@@ -206,6 +208,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
+| **Resolved selections**: each selectable path tells the game what it resolved to on this device (recipe, reconstructor, display mode, governor state, culling mode), so a run can report what it ran and a fallback cannot pass as the feature | `APPLE-TILE`, `APPLE-PRESENTATION`, `CULLING` → `SHOWCASE`'s exit report | C04, [SHOWCASE](SHOWCASE/DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) |
 | **Exact baselines**: retained references, their owner, the one-command verifier, and the proof gate in `./dev check` that `land` runs before it pushes | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, gate) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
 
 **Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
@@ -289,6 +292,7 @@ an exact test changed by a module that does not own it, with no ruling here, rec
 | `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files |
 | Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
 | `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
+| The exit baselines under `docs/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
 
 The verifier, `python3 scripts/exact_baselines.py verify`, runs the first two rows; it exists once
 `BASELINE-GUARD` M1 is Done.
@@ -308,7 +312,9 @@ reference, paused frames against each other) come under rule 1: they belong to t
 rule-3 item, and its builder reruns that item after every rebase and before `land`; Chrome is first rechecked
 when `BASELINE-GUARD`'s builder runs the verifier on main. Their later milestones wait for `BASELINE-GUARD` M1 and
 carry the verifier. Milestones planned before this rule (`APPLE-PRESENTATION` M2 and M3, `ATMOSPHERE` M6, `CREATOR`
-M2, `APPLE-TILE` M3) need no new item: the gate covers their landings once it exists. `APPLE-PRESENTATION` M3 puts
+M2, `APPLE-TILE` M3) need no new item: the gate covers their landings once it exists. `SHOWCASE` moves no exact
+baseline: its exit scene is new content beside the grid and the field, and the valley's source folder and cooked
+root stay as they are ([design](SHOWCASE/DESIGN.md#exact-baselines)). `APPLE-PRESENTATION` M3 puts
 TAAU in the game: if that changes the default output, its planner settles the refresh under rule 1 before it is
 built.
 
@@ -364,7 +370,10 @@ and generation transitions, dynamic scale, EDR, the governor, MetalFX, launch-to
 paired proof. Settle seams 5–9 here with the frame-runtime, platform and asset owners. `needs`: M4 and M6 on
 `APPLE-TILE:M3`, M8 on `APPLE-TILE:M11`, M11 on `APPLE-TILE:M12`. The governor (M7) must accept the quality-knob
 interface above, so `SEA` and `CLOUDS` can register knobs without a second governor. Research depth: none new;
-restate the sizing after M3's first measurements.
+restate the sizing after M3's first measurements. The same run adds `APPLE-PRESENTATION:M11` to the `depends_on`
+of `SHOWCASE` M7, which until then lists `APPLE-PRESENTATION:M3` and carries a check of the record files that fails
+while M11 is missing. M4 to M11 also give the game the resolved reconstructor, display mode and governor state, for the
+resolved-selections interface above.
 
 ### CULLING (G3c)
 
@@ -381,14 +390,11 @@ staying parked: CAS garbage collection and leases on the store, layered EAC, par
 
 ### SHOWCASE (G7)
 
-Assemble the exit scene and close V1. The local launch and the six-stop review route are built under [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md), which lists what final G7 still owes; [the route slice's record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md) holds its four finished milestones and their log. Remaining: the
-valley holding 10,000 entities with 1,000–2,000 movers drawn as cooked meshes through GPU culling; the route on
-Mac Apple tile and portable and on Chrome portable, sharing scene and controls; `CULLING`'s equivalence and
-paired-cost commands rerun on the assembled scene, with its default mode set by the same rule; correctness and a
-clean-context
-visual review; whole-frame records with visible stutter, startup and hitches investigated; the visual digest,
-platform status and the list of physical-device runs owed. `needs`: the last milestone of every other track 1
-module. Its attended items (the owner's walk of the route on the built-in display) go in its last milestone.
+Planned on 13 November 2026: [design](SHOWCASE/DESIGN.md), [plan](SHOWCASE/PLAN.md). Its milestones are M5 to M8;
+M1 to M4 were the route slice, built before the loop under
+[the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md) and kept in
+[its record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7 and
+M8 need the last milestone of every other track 1 module. Track 3 starts when M8 is Done.
 
 ### EFFECT-GRAPH (track 2 foundation)
 
@@ -800,3 +806,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   added: placements, leases and cooked mesh rows switch in one frame, as C05's qualified visual preview asks.
   The leases and entity-visibility lines and the M2 seam ruling name that frame. C05 is unchanged, and no other
   module's done-when item changed.
+- 2026-11-13 `SHOWCASE` planned, with a design, plan and done-when file, from the lead's task. Four milestones, M5
+  to M8: the populated valley (after `CONTENT-LOOP:M2` and `CULLING:M3`), its culling, the three rows from one
+  exit configuration, and the review with the V1 exit record (after every other track 1 module's last milestone).
+  The resolved-selections interface and the exit baselines' row were added above. No exact baseline moves and no
+  other module's done-when item changed. `APPLE-PRESENTATION` M4 to M11 are still to be planned, and the exit
+  waits on them.

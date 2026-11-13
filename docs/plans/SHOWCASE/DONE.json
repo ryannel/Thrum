@@ -1,0 +1,452 @@
+{
+  "module": "SHOWCASE",
+  "milestones": [
+    {
+      "id": "M5",
+      "name": "The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "rounds": 0,
+      "depends_on": [
+        "CONTENT-LOOP:M2",
+        "CULLING:M3"
+      ],
+      "bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content; the finished image is judged in M8.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The prop meshes were sized from a sweep recorded before they were made: whole-frame GPU time for the exit scene's 10,000 entities at 1920x1080 with Sun shadows, at the stop with the most entities in view, for at least three triangle counts per prop, on both Mac recipes and in Chrome, in two separate runs. The shipped set follows the design's sizing rule, and its rows are kept as this module's cost baseline.",
+          "ask": "Do the two retained runs support the shipped mesh set by the design's sizing rule? Was the heaviest stop chosen from the scene's own in-view counts, and is every row labelled with its build, recipe and load?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "The checked-in layout holds exactly 10,000 entities, between 1,000 and 2,000 of them movers. Every still prop rests on the shipped terrain's surface, and none stands inside the lookout or the camera's swept path on the exit flythrough. Every mover's whole loop stays inside the valley and clear of the ground. The generator reproduces the layout byte for byte.",
+          "check": "python3 scripts/run_v1_showcase.py layout",
+          "ask": "Does the command take heights from the terrain mesh as shipped, not from heights stored in the layout, and does it sample each mover's whole loop?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "In the exit scene the simulation steps 10,000 entities with the movers under one registered rule. A corrected-run replay equals the straight run in complete authority state, and after one simulated hour every mover is still on its authored loop.",
+          "check": "cargo test --locked --offline -p v1-game --test exit_scene",
+          "ask": "Read the test. Is the equality over complete authority state, as gate G2S requires, and not a partial hash? Is the hour stepped tick by tick through the game's own rules?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "On the Mac every entity of the exit scene draws a cooked mesh row on the bucket route, with Sun shadows. At each of the six stops the instance counts the GPU wrote equal a CPU reference of the entities in view, and the resolved culling mode is asserted.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test exit_scene_gpu",
+          "lock": "gpu",
+          "ask": "Does the CPU reference test each entity's bounds against the view by itself, without reading the GPU's lists? Would the test fail if the scene fell back to cubes or to Direct?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "At the six stops the exit scene drawn natively and in Chrome agree under the route check's metric, with thresholds set once by the route decision's fixed rule. Three controls fail as they must: the diagnostic scene, a retinted texture, and the same store drawn with no entities. The stop frames are kept as this module's exit baseline.",
+          "check": "python3 scripts/run_v1_showcase.py check --exit",
+          "lock": "gpu",
+          "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.6",
+          "statement": "In Chrome the exit scene loads from a fetched store: the page reports 10,000 entities on cooked mesh rows, the movers advance with the world's ticks, and pausing holds them.",
+          "check": "node scripts/check_v1_browser.mjs --case exit-scene",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.7",
+          "statement": "On the Mac, at each of the six stops and the flythrough's checkpoints, props sit in the ground: none floats, sinks to its middle or stands inside the lookout, and the scatter shows no grid, row or repeated stamp and no hard edge where it ends.",
+          "inspect": "Capture the six stops and the exit flythrough's checkpoints with T2 engine capture in `fixed` mode. Judge each frame whole and in native-size crops of the near ground, the middle distance and the far slopes.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.8",
+          "statement": "On the Mac, in real time, the movers drift continuously: none pops in or out, jumps, stalls between ticks or passes through terrain, and their shadows move with them.",
+          "inspect": "Capture the exit flythrough and a held view of the densest group of movers with T2 engine capture in `realtime` mode, at least twenty seconds each. Judge consecutive frames at 1x, whole and in native-size crops of single movers and their shadows.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.9",
+          "statement": "In Chrome the six stops and the flythrough show the same props and movers as the Mac, with none missing, and the movers drift without popping or stalling.",
+          "inspect": "Capture the six stops in `fixed` mode and the exit flythrough in `realtime` mode with T2 engine capture in Chrome. Judge whole frames and native-size crops beside the Mac's at the same stop, and consecutive frames at 1x.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "rounds": 0,
+      "bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the populated valley, nothing pops at a screen edge or at a ridge or boulder silhouette, with the movers moving.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "In the exit scene on the Mac, Frustum and Occlusion with Sun-caster culling equal bucket-ordered Direct at every submitted frame of the exit flythrough, on both native recipes, with the movers moving.",
+          "check": "python3 scripts/run_v1_showcase.py culling --exit --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "In the exit scene in Chrome, Frustum and Occlusion equal bucket-ordered Direct at the exit flythrough's checkpoints, with the movers moving.",
+          "check": "python3 scripts/run_v1_showcase.py culling --exit --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.3",
+          "statement": "The exit scene's default culling mode is set by CULLING's rule from paired whole-GPU rows on the exit flythrough at 1920x1080, from two separate runs recorded with their load. The game reports that mode on the Mac and in Chrome.",
+          "ask": "Do the two retained runs support the default the code sets, by the rule in CULLING's design? Do the rows show Occlusion's prepass non-empty and slots hidden, so that a row cannot repeat Frustum? Did this milestone change any culling code or comparison?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.4",
+          "statement": "In real time on the Mac with the default mode, nothing pops, flickers or goes missing at the frame edges in a fast yaw, or at ridge and boulder silhouettes as props and movers come out from behind them.",
+          "inspect": "Capture the exit flythrough and a fast yaw across the densest scatter with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and at occluder silhouettes.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.5",
+          "statement": "In real time in Chrome with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the exit flythrough.",
+          "inspect": "Capture the exit flythrough in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops at the frame edges and the ridge line.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.6",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "rounds": 0,
+      "depends_on": [
+        "PLATFORM-RUNTIME-MAC:M3",
+        "APPLE-TILE:M12",
+        "CREATOR:M3",
+        "APPLE-PRESENTATION:M3",
+        "ATMOSPHERE:M6",
+        "CONTENT-LOOP:M3"
+      ],
+      "bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch.",
+      "items": [
+        {
+          "id": "M7.1",
+          "statement": "Every module the exit rests on has finished: the record files show each milestone of modules 1 to 10 and 12 Done, and APPLE-PRESENTATION's include M11, its paired proof with MetalFX, EDR and the governor.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); mods=[\"PLATFORM-RUNTIME-IOS\",\"PLATFORM-RUNTIME-MAC\",\"T2-CAPTURE\",\"COOKED-DRAW\",\"APPLE-TILE\",\"CREATOR\",\"APPLE-PRESENTATION\",\"ATMOSPHERE\",\"BASELINE-GUARD\",\"CULLING\",\"CONTENT-LOOP\"]; bad=[m+\":\"+x[\"id\"] for m in mods for x in L(m,\"DONE.json\")[\"milestones\"] if not (L(m,\"ACCEPTED.json\")[\"milestones\"].get(x[\"id\"]) or {}).get(\"accepted\")]; bad+=[] if any(x[\"id\"]==\"M11\" for x in L(\"APPLE-PRESENTATION\",\"DONE.json\")[\"milestones\"]) else [\"APPLE-PRESENTATION:M11 is not planned\"]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.2",
+          "statement": "Launched from a clean checkout with the exit configuration, the Mac's Apple recipe row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
+          "check": "python3 scripts/run_v1_showcase.py exit --row mac-apple",
+          "lock": "gpu",
+          "ask": "Is every reported value read from the game's resolved state, and none echoed from the request? Does the command fail when one selection is removed from the exit configuration, and when a feature falls back?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.3",
+          "statement": "Launched from a clean checkout with the exit configuration, the Mac's portable recipe row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
+          "check": "python3 scripts/run_v1_showcase.py exit --row mac-portable",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.4",
+          "statement": "Launched from a clean checkout with the exit configuration, the Chrome row runs the six stops and the exit flythrough to the end. The game's own report gives the cooked root, recipe, reconstructor, display mode, governor state and culling mode it resolved, and each equals the exit configuration's entry for the row.",
+          "check": "python3 scripts/run_v1_showcase.py exit --row chrome",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.5",
+          "statement": "At each stop the three rows show the same scene: every pair of rows agrees under the route check's metric with thresholds set by the fixed rule, the three controls fail as they must, and each row's stop frames are kept as its baseline.",
+          "check": "python3 scripts/run_v1_showcase.py exit --compare",
+          "lock": "gpu",
+          "ask": "Are the rows compared in an encoding all three produce, and does the record say which? Were the thresholds set once by the fixed rule and left alone?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.6",
+          "statement": "The Mac panel and the Chrome page declare the same controls for the exit scene, with the same keys, labels, units and ranges, and each of the six presets applies on every row with nothing refused.",
+          "check": "python3 scripts/run_v1_showcase.py exit --controls",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.7",
+          "statement": "In the exit scene on the Mac, on both recipes: the time controls scrub from dawn through night, a saved edit to a prop mesh and to the ground texture appears without a restart, the profiler's rows show current numbers, and no pipeline is created once the scene is ready.",
+          "check": "python3 scripts/run_v1_showcase.py exit --clauses --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does each clause run in the exit scene itself, through the control, watcher and profiler paths a person uses, and does the pipeline count come from the engine's creation counters?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.8",
+          "statement": "In the exit scene in Chrome: the time controls scrub from dawn through night, a saved edit to a prop mesh and to the ground texture appears without a page reload, and the profiler's rows show a number or their reason.",
+          "check": "python3 scripts/run_v1_showcase.py exit --clauses --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.9",
+          "statement": "On the Mac, for both recipes, a whole-frame record covers the exit flythrough and one full day cycle with capture off: each frame's CPU stages, named GPU passes and callback interval from the frame host, with build, recipe and load. Every frame that missed its opportunity is listed with its cause, and startup to the first exit-scene frame is recorded as a labelled proxy.",
+          "check": "python3 scripts/run_v1_showcase.py frames --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is each late frame's cause named, and either fixed, proposed to its owning module in the log, or shown by the recorded load to lie outside the game? Is any row about a quarter slower than M5's baseline at the same stop, and if so is it explained?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.10",
+          "statement": "In Chrome a whole-frame record covers the exit flythrough and one full day cycle: the page's frame-callback intervals and the GPU pass times the browser allows, with build and load. Every long interval is listed with its cause, and startup to the first exit-scene frame is recorded as a labelled proxy.",
+          "check": "python3 scripts/run_v1_showcase.py frames --target chrome-webgpu",
+          "lock": "gpu",
+          "ask": "Is each long interval's cause named, and either fixed, proposed to its owning module in the log, or shown to lie outside the page?",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "name": "The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written",
+      "state": "not_started",
+      "fails": 0,
+      "replans": 0,
+      "rounds": 0,
+      "bar": "Would pass as a vista in a shipped high-end game: scatter and light as in Red Dead Redemption 2 or Horizon Forbidden West from dawn through night, balloons adrift as over Forza Horizon 5's Mexico, smooth at the display's full refresh. Judged in words from the running game on each row, never against a target image.",
+      "items": [
+        {
+          "id": "M8.1",
+          "statement": "On the Mac's Apple recipe, at each of the six stops the showcase reads as one place under one light: props and movers are lit, shadowed and hazed like the terrain around them, nothing looks pasted on, floats or glows, and no stop shows banding, a highlight clipped flat or a hard edge in the scatter.",
+          "inspect": "Capture the six stops on the Apple recipe row with T2 engine capture in `fixed` mode, from the exit configuration. Judge each frame whole and in native-size crops of the near props, a mover, the middle distance, the far slopes and the horizon.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.2",
+          "statement": "On the Mac's Apple recipe, along the exit flythrough and through one full day cycle the image is stable: no shimmer on distant props, no trail or smear behind a mover, no pop, no flash at a change of hour, and no stutter visible at 1x.",
+          "inspect": "Capture the exit flythrough and a held view through one full day cycle on the Apple recipe row with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops of distant props, single movers and shadow edges.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.3",
+          "statement": "The Mac's portable recipe passes the same stills and motion lists, and any difference from the Apple recipe beyond its named features is recorded.",
+          "inspect": "Capture the same stops, flythrough and day cycle on the portable recipe row, in `fixed` and `realtime` mode. Judge the lists of M8.1 and M8.2, then compare crops with the Apple row's at the same stop.",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.4",
+          "statement": "In Chrome, at each of the six stops the showcase reads as one place under one light: props and movers are lit, shadowed and hazed like the terrain around them, nothing looks pasted on, floats or glows, and no stop shows banding, a highlight clipped flat or a hard edge in the scatter.",
+          "inspect": "Capture the six stops in Chrome with T2 engine capture in `fixed` mode, from the exit configuration. Judge each frame whole and in native-size crops of the near props, a mover, the middle distance, the far slopes and the horizon.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.5",
+          "statement": "In Chrome, along the exit flythrough and through one full day cycle the image is stable: no shimmer on distant props, no trail or smear behind a mover, no pop, no flash at a change of hour, and no stutter visible at 1x.",
+          "inspect": "Capture the exit flythrough and a held view through one full day cycle in Chrome with T2 engine capture in `realtime` mode. Judge consecutive frames at 1x, whole and in native-size crops of distant props, single movers and shadow edges.",
+          "target": "chrome-webgpu",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.6",
+          "statement": "ATTENDED SETUP: on the built-in display the capture-off release game runs the exit flythrough on both recipes with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated, and windowed startup to the first exit-scene frame is recorded.",
+          "ask": "Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover the whole flythrough on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game?",
+          "target": "mac-metal",
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac, wake the built-in display and keep it awake for one sitting. The agent launches, records and reviews; nothing else is needed. Batch it with any other module's attended items."
+          },
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.7",
+          "statement": "ATTENDED SETUP: in a visible Chrome window on the built-in display, the page's frame-callback intervals are recorded over startup and the exit flythrough, with each long interval listed and investigated. The record says this is the page's own clock and not presented time.",
+          "ask": "Was Chrome's window visible and unoccluded on the built-in display for the whole record? Is each long interval listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the page?",
+          "target": "chrome-webgpu",
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac, wake the built-in display and keep it awake for one sitting. The agent launches, records and reviews; nothing else is needed. Batch it with any other module's attended items."
+          },
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.8",
+          "statement": "The V1 exit record names, for each clause of the V1 exit and of gate G7 in the brief, the evidence at the claimed commit, the rows it ran on, and its status as implementation, correctness, visuals and device, kept apart.",
+          "ask": "Take the clauses one at a time. Does each have evidence at the claimed commit on the rows it names? Is any clause claimed on a row it did not run on, or from a stand-in not labelled `proxy:iphone`?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.9",
+          "statement": "The visual digest shows the six stops on all three rows and frames from the flythrough as contact sheets, small enough to read inside the owner's report.",
+          "ask": "Were the digest's images cut from the captures this review judged, at the claimed commit, and does each name its row and stop?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.10",
+          "statement": "The record lists the physical-device runs owed and every known defect, and the maturity ledger and the README say what V1 delivered and what it did not.",
+          "ask": "Does the list name a physical iPhone, a display other than the built-in panel, a sustained thermal run and hardware that is not Apple's, each with the claim it leaves unqualified? Do the ledger's G7 rows and the README match the record, with nothing claimed for a device that was not run?",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "status": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}
