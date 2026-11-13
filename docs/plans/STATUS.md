@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-4 of 21 modules done · 7 in progress · 10 to come
+4 of 21 modules done · 8 in progress · 9 to come
 
 ### Needs you now
 
@@ -75,13 +75,25 @@ A planner or the lead chose each of these where your words left it open. Each st
 - TRANSPORT assumes: a host holds up to four players, and "hold a session" is proved for ten minutes with four clients (two on the Mac, one in Chrome, one in the iPhone simulator). ([plan](TRANSPORT/PLAN.md))
 - TRANSPORT assumes: the iPhone simulator proves that the link works there, never its speed. A physical iPhone, where the local-network permission applies, is not run. ([plan](TRANSPORT/PLAN.md))
 - TRANSPORT assumes: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as they do today for the GPU. Every socket proof is behind one command to keep that to one kind of request. The other choices, full access for the sandbox or a Claude builder for this module, are owner decision 11 in the module list. ([plan](TRANSPORT/PLAN.md))
+- RENDER-2D assumes: RENDER-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game") and this module changes the frame runtime every V1 module builds on. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: the three changes RENDER-2D needs inside other modules (choosing a 2D scene in the frame runtime, a sprite-sheet product in the content loop, a sprite scene in the V1 game and its shells) are built by RENDER-2D's own builder after V1, under rulings in the module list. No milestone is added to `APPLE-TILE`, `CONTENT-LOOP` or `APPLE-PRESENTATION`, so no V1 plan changes while V1 is being built. The other choice adds a milestone to each of those modules. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: "2D support in the engine" means a sprite path for top-down and side-on games: sprites in layers, a view that pans and zooms, frame animation, tint, hit flash, transparency and additive glow. 2D lights, tile-map tools, skeletal animation, a particle system, a rotating view, sprites inside a 3D scene and a game that switches between 2D and 3D are not built. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: "thousands" is proved at 2,000, 5,000 and 10,000 moving sprites, and 10,000 is the largest crowd claimed, as in `SIM-2D`. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: both pixel art and smooth painted art are supported, because the game's look is not chosen yet. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: the sprite path is proved on the Mac and in Chrome, and on the iPhone simulator for function only, inside the V1 game's iOS shell. The reference crowd is drawn on the Mac and in Chrome; no iOS app exists yet for a second game, which is `CREATOR`'s work for `SWARM`. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: "at full refresh" is judged from the engine's frame records and real-time engine capture at the built-in display's pixel size, with no frame time as a pass mark (brief decision 3). A measurement on the panel itself needs someone at the Mac and is left to `SWARM`'s close. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: sprites blend in linear light, as the rest of the engine does. Half-transparent art looks lighter over dark than in Aseprite or Photoshop (white at half alpha over black is 188, not 128); hard-edged pixel art is unaffected. The other choice blends in display space, matches paint tools, and gives up the shared output path. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: bright effects clip at white on an SDR display. The frame keeps values above white for an EDR display, and how they look on the XDR panel is not judged in this module. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: a scene shows at most eight sprite sheets at once. ([plan](RENDER-2D/PLAN.md))
+- RENDER-2D assumes: test art is made by the builder (generated test cards and a few simple original sprites), and the owner's judgement of a look is not an item here. The game's art is `SWARM`'s. ([plan](RENDER-2D/PLAN.md))
 
 ### Now and next
 
 - The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md) · [latest review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
-- A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): Not Started · [plan](CONTENT-LOOP/PLAN.md)
+- A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): In Progress · [plan](CONTENT-LOOP/PLAN.md)
+- RENDER-2D's design: Design Ready for Review · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
 
 ### Recently done
 
@@ -117,13 +129,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M1 of 3 · Not Started |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M1 of 3 · In Progress |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
-| 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
+| 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Design Ready for Review |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
