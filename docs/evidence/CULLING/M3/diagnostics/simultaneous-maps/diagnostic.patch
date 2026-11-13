@@ -1,0 +1,103 @@
+diff --git a/crates/thrum-render/src/runtime/submitted_capture.rs b/crates/thrum-render/src/runtime/submitted_capture.rs
+index 7da3adb3..0a2565c2 100644
+--- a/crates/thrum-render/src/runtime/submitted_capture.rs
++++ b/crates/thrum-render/src/runtime/submitted_capture.rs
+@@ -402,6 +402,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+                 <= self.render_extent[0] as usize
+                     * self.render_extent[1] as usize
+                     * tap.source.bytes_per_pixel() as usize
++                    + 14_680_064
+         {
+             tap.free_cpu.push(image.rgba);
+         }
+diff --git a/crates/thrum-render/src/synthetic.rs b/crates/thrum-render/src/synthetic.rs
+index e4c2a9f4..00e8d6aa 100644
+--- a/crates/thrum-render/src/synthetic.rs
++++ b/crates/thrum-render/src/synthetic.rs
+@@ -2782,7 +2782,7 @@ impl OffscreenTarget {
+             has_exposure: false,
+             buffer: device.create_buffer(&wgpu::BufferDescriptor {
+                 label: Some("synthetic pixel readback"),
+-                size: self.readback_bytes() + exposure::SAMPLE_BYTES,
++                size: self.readback_bytes() + 256 + 14_680_064,
+                 usage: wgpu::BufferUsages::COPY_DST
+                     | wgpu::BufferUsages::MAP_READ
+                     | if device
+diff --git a/crates/thrum-render/src/synthetic/air_shadow.rs b/crates/thrum-render/src/synthetic/air_shadow.rs
+index 08cfe9f0..fb45f245 100644
+--- a/crates/thrum-render/src/synthetic/air_shadow.rs
++++ b/crates/thrum-render/src/synthetic/air_shadow.rs
+@@ -86,7 +86,7 @@ pub(super) fn append_graph(
+             mips: 1,
+             samples: 1,
+             format: FORMAT,
+-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
++            usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+         },
+         ResourceScope::Transient,
+     )?;
+diff --git a/crates/thrum-render/src/synthetic/readback.rs b/crates/thrum-render/src/synthetic/readback.rs
+index ecf1d445..95a67ac3 100644
+--- a/crates/thrum-render/src/synthetic/readback.rs
++++ b/crates/thrum-render/src/synthetic/readback.rs
+@@ -103,6 +103,25 @@ impl PixelReadback {
+             },
+         );
+         let pixel_bytes = u64::from(self.row_bytes) * u64::from(self.extent[1]);
++        if self.source == CaptureSource::SceneLinear {
++            let shadow = target.textures.texture(target.ids.shadow.as_ref().expect("shadows")).expect("shadow texture");
++            for layer in 0..3 {
++                encoder.copy_texture_to_buffer(
++                    wgpu::TexelCopyTextureInfo { texture: shadow, mip_level: 0,
++                        origin: wgpu::Origin3d { x: 0, y: 0, z: layer }, aspect: wgpu::TextureAspect::DepthOnly },
++                    wgpu::TexelCopyBufferInfo { buffer: &self.buffer,
++                        layout: wgpu::TexelCopyBufferLayout { offset: pixel_bytes + 256 + u64::from(layer) * 4_194_304,
++                            bytes_per_row: Some(4096), rows_per_image: Some(1024) } },
++                    wgpu::Extent3d { width: 1024, height: 1024, depth_or_array_layers: 1 });
++            }
++            encoder.copy_texture_to_buffer(
++                wgpu::TexelCopyTextureInfo { texture: target.textures.texture(target.ids.air_shadow.as_ref().expect("air shadows")).expect("air texture"),
++                    mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
++                wgpu::TexelCopyBufferInfo { buffer: &self.buffer,
++                    layout: wgpu::TexelCopyBufferLayout { offset: pixel_bytes + 256 + 12_582_912,
++                        bytes_per_row: Some(4096), rows_per_image: Some(512) } },
++                wgpu::Extent3d { width: 512, height: 512, depth_or_array_layers: 1 });
++        }
+         self.has_exposure = exposure.is_some();
+         if let Some(exposure) = exposure {
+             encoder.copy_buffer_to_buffer(
+@@ -230,6 +249,9 @@ impl PixelReadback {
+                 &row[..self.extent[0] as usize * self.source.bytes_per_pixel() as usize],
+             );
+         }
++        if self.source == CaptureSource::SceneLinear {
++            pixels.extend_from_slice(&mapped[pixel_bytes + 256..pixel_bytes + 256 + 14_680_064]);
++        }
+         drop(mapped);
+         self.buffer.unmap();
+         Ok(true)
+diff --git a/crates/thrum-render/src/synthetic/scene_graph.rs b/crates/thrum-render/src/synthetic/scene_graph.rs
+index 86fa46bc..5f4c3dda 100644
+--- a/crates/thrum-render/src/synthetic/scene_graph.rs
++++ b/crates/thrum-render/src/synthetic/scene_graph.rs
+@@ -630,7 +630,7 @@ impl PreparedSynthetic {
+                 mips: 1,
+                 samples: 1,
+                 format: shadow::FORMAT,
+-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
++                usage: wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT
+                     | wgpu::TextureUsages::TEXTURE_BINDING,
+             },
+             ResourceScope::Transient,
+diff --git a/examples/v1-game/tests/support/valley_route.rs b/examples/v1-game/tests/support/valley_route.rs
+index 8008bd0f..085e9998 100644
+--- a/examples/v1-game/tests/support/valley_route.rs
++++ b/examples/v1-game/tests/support/valley_route.rs
+@@ -247,6 +247,7 @@ async fn prove() {
+                 images[0].len(),
+                 (extent[0] * extent[1]) as usize
+                     * usize::try_from(capture_source.bytes_per_pixel()).expect("pixel size")
++                    + if capture_source == CaptureSource::SceneLinear { 14_680_064 } else { 0 }
+             );
+             for index in 1..count {
+                 if images[0] != images[index] {

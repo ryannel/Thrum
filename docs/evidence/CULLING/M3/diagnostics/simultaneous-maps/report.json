@@ -1,0 +1,42 @@
+{
+  "source": "fa3cc02a plus simultaneous-maps.patch",
+  "binary_sha256": "7cdb1039e1bf5d1321601527bb9b2f246fdb205265482fa68f7e4a7a0022a2c4",
+  "runs": [
+    {
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "run": 3,
+      "exit": 101,
+      "tick": 430,
+      "differences": {
+        "1": {
+          "colour": 23,
+          "near": 0,
+          "far": 0,
+          "height": 0,
+          "air": 0
+        },
+        "2": {
+          "colour": 0,
+          "near": 0,
+          "far": 0,
+          "height": 0,
+          "air": 0
+        },
+        "3": {
+          "colour": 0,
+          "near": 0,
+          "far": 0,
+          "height": 0,
+          "air": 0
+        }
+      }
+    }
+  ]
+}

@@ -132,3 +132,30 @@ anisotropic filtering, content, capture sources and every oracle comparison.
 The proposed mechanism is a hypothesis to test, not an attribution of the old
 failures. Four extra gradient scalars remain live across the Sun search; actual
 GPU cost and unchanged baseline output must be measured before accepting it.
+
+## Simultaneous colour and shadow resources on the original shader
+
+After rejecting the gradient candidate, the resumed experiment uses the original
+`fa3cc02a` forward shader unchanged. Its temporary diagnostic patch enlarges the
+readback and CPU leases and copies the original scene-linear colour, all three
+Sun depth layers and the air-shadow map from the same submission. The whole
+combined payload is compared exactly. This is diagnostic output, not a new
+milestone oracle or a production change.
+
+The first harness version exhausted its CPU leases because its enlarged images
+exceeded the normal recycling bound. It stopped at tick 187 and timed out; that
+run provides no renderer result. The corrected diagnostic recycles the enlarged
+leases. Two full routes pass, and its third run fails at tick 430: 23 scene-linear
+colour pixels in Frustum differ from the first Direct host. Occlusion and the
+second Direct host equal the first Direct. All three Sun depth layers and the
+air-shadow map are byte-identical across all four hosts in that same submission.
+
+The [report, stage hashes, diagnostic patch and original differing colour bytes](M3/diagnostics/simultaneous-maps/identity.json)
+are retained with the [runner and outcomes](M3/diagnostics/simultaneous-maps/report.json).
+The executable SHA-256 is
+`7cdb1039e1bf5d1321601527bb9b2f246fdb205265482fa68f7e4a7a0022a2c4`.
+The production files were restored after building that separate executable.
+These results rule out differences in the stored Sun and air maps for this
+particular failure. Receiver-side shadow evaluation and the other forward
+inputs remain unproved. The next diagnostic preserves colour and records the
+Sun visibility result into a separate attachment on the same submission.
