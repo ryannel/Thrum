@@ -78,7 +78,7 @@ async fn verify(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     witness: &Mutex<LentWitness>,
-    generation: &RemoteGeneration,
+    references: &[Ktx2],
 ) -> Result<u64, String> {
     let (set, outputs) = {
         let witness = witness.lock().map_err(|error| error.to_string())?;
@@ -88,13 +88,7 @@ async fn verify(
         )
     };
     let mut checked = 0;
-    for (product, output) in set.products.iter().zip(&outputs) {
-        let reference = Ktx2::open(
-            generation
-                .product(&product.hash)
-                .ok_or("missing reference")?,
-        )
-        .map_err(|error| error.to_string())?;
+    for ((product, output), reference) in set.products.iter().zip(&outputs).zip(references) {
         let actual = read(device, queue, output).await?;
         let mut offset = 0;
         for level in reference.levels() {
@@ -121,6 +115,27 @@ async fn verify(
     Ok(checked)
 }
 
+fn references(generation: &RemoteGeneration) -> Result<Vec<Ktx2>, String> {
+    (0..13)
+        .map(|index| {
+            let name = if index == 12 {
+                "foam.linear".into()
+            } else {
+                format!("cloud{index}")
+            };
+            let entry = generation
+                .resolve(&name, &[thrum_asset::Profile::Portable])
+                .ok_or("reference name missing")?;
+            Ktx2::open(
+                generation
+                    .product(&entry.product)
+                    .ok_or("reference bytes missing")?,
+            )
+            .map_err(|error| error.to_string())
+        })
+        .collect()
+}
+
 /// Run first load, one-volume edit and device replacement against a generated fetched store.
 pub(crate) async fn run(origin: String) -> Result<String, String> {
     let mut client = DevClient::new(BrowserFetch, &origin).map_err(|error| error.to_string())?;
@@ -129,6 +144,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         .await
         .map_err(|error| error.to_string())?
         .ok_or("no first generation")?;
+    let first_references = references(&first)?;
     let feed = RemoteFeed::new(first);
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
@@ -172,14 +188,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         }
     }
     let initial = lease.offered().ok_or("first load never offered")?;
-    // Fetch the same publication for independent CPU comparison, outside the consumer.
-    let mut reference = DevClient::new(BrowserFetch, &origin).map_err(|error| error.to_string())?;
-    let first = reference
-        .poll()
-        .await
-        .map_err(|error| error.to_string())?
-        .ok_or("reference")?;
-    let checked_first = verify(&device, &queue, &witness, &first).await?;
+    let checked_first = verify(&device, &queue, &witness, &first_references).await?;
     BrowserFetch
         .get(&format!("{origin}/advance"))
         .await
@@ -189,6 +198,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
         .await
         .map_err(|error| error.to_string())?
         .ok_or("no edit")?;
+    let edited_references = references(&edited)?;
     feed.publish(edited);
     for _ in 0..1000 {
         clock += Duration::from_millis(16);
@@ -209,12 +219,7 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
     if count != 1 {
         return Err(format!("edit changed {count} products"));
     }
-    let edited = reference
-        .poll()
-        .await
-        .map_err(|error| error.to_string())?
-        .ok_or("edited reference")?;
-    let checked_edit = verify(&device, &queue, &witness, &edited).await?;
+    let checked_edit = verify(&device, &queue, &witness, &edited_references).await?;
     let (replacement, replacement_queue) = adapter
         .request_device(&wgpu::DeviceDescriptor::default())
         .await
@@ -246,7 +251,13 @@ pub(crate) async fn run(origin: String) -> Result<String, String> {
             break;
         }
     }
-    let checked_recovery = verify(&replacement, &replacement_queue, &witness, &edited).await?;
+    let checked_recovery = verify(
+        &replacement,
+        &replacement_queue,
+        &witness,
+        &edited_references,
+    )
+    .await?;
     Ok(format!(
         "{{\"products\":13,\"changed\":1,\"device_generation\":2,\"checked_bytes\":[{checked_first},{checked_edit},{checked_recovery}]}}"
     ))
