@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/target/release/v1-game"
+  ],
+  "record_limit_s": null,
+  "finalization_limit_s": null,
+  "collector_sha256": "c496ecca93aa1e1c7c90da06561704c4ee2b576736555bc9abab5279d48d2f10",
+  "panel_observation_period_s": 0.5
+}

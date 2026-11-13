@@ -1,0 +1,53 @@
+{
+  "qualified": false,
+  "coverage": false,
+  "conversion_validated": true,
+  "timebase": {
+    "numer": 125,
+    "denom": 3
+  },
+  "reported_refresh_hz": 120.0,
+  "refresh_period_ns": "8333333.333333333333333333333",
+  "offset_ns": [
+    "2903093440695793.000000000",
+    "2903093440696459.000000000"
+  ],
+  "conversion_validation": "same-process marker brackets anchor trace origin; every converted time is between its game opportunity and OS handler, within clock error",
+  "conversion": "presented_media_ns = (raw_at_time + marker_clock_offset_ns) * denom / numer",
+  "marker_offset_bound_ns": "666.000000000",
+  "presented_media_error_bound_ns": "8.992000000000",
+  "markers_trace_ns": [
+    4461663625,
+    5461666625,
+    7462238083,
+    8562038000
+  ],
+  "retained_handler_span_ns": [
+    5727991125,
+    8586341750
+  ],
+  "handler_lag_ms_range": [
+    0.1635078,
+    5.912965856
+  ],
+  "whole_submission_count": 491,
+  "joined_rows": 343,
+  "missed_refreshes": [
+    {
+      "from": 558,
+      "to": 559,
+      "interval_ns": 16665415.68,
+      "refresh_periods": 1.9998498816,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.772792,
+      "presented_trace_ns": 6186134865.824,
+      "yaw": "12.349992752",
+      "overlaps_whole": true
+    }
+  ],
+  "limits": "OS-reported presented time; kernel display swaps, scan-out, photons and input-to-photon unmeasured",
+  "pid": 49285,
+  "input": "docs/evidence/PLATFORM-RUNTIME-MAC/m2-presented-on-traced.tsv.gz",
+  "arm": "docs/evidence/render/mac-m2-20261111"
+}

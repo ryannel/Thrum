@@ -1,0 +1,8 @@
+pid=6885
+window_number=49770
+adapter=Apple M3 Max
+format=Bgra8Unorm
+extent=1920x1080
+monitor=Some((Some("Monitor #41041"), PhysicalSize { width: 3456, height: 2234 }, Some(120000)))
+position=Ok(PhysicalPosition { x: 768, y: 292 })
+scale=2

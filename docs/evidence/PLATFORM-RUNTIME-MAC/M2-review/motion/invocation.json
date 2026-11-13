@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/usr/bin/open",
+    "-n",
+    "-W",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/motion/ThrumMacM2.app",
+    "--args",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/motion",
+    "/opt/homebrew/opt/python@3.15/bin/python3.15",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/scripts/capture_v1_runtime.py",
+    "--binary",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/target/release/v1-game",
+    "--store",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/valley",
+    "--output",
+    "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/motion/session",
+    "--case",
+    "pan",
+    "--mode",
+    "realtime",
+    "--defer"
+  ],
+  "launcher_sha256": "010aae9c7c0e0b91ea6b804b5944154cae799e59e60cc477c6a68a1089a56f59",
+  "launcher_source_sha256": "19e42347a9a4df1bbdc3e22333e587a9d7bd25635c8162be0ed56bcc2c934b99"
+}

@@ -1,0 +1,10 @@
+{
+  "bundle_identifier" : "org.thrum.mac-m2.capture.0fae9aad86d445dc9fcb6612cb9def1d",
+  "capture_driver_pid" : 5791,
+  "capture_exit_code" : 0,
+  "launcher_executable" : "\/Users\/ryannel\/Workspace\/thrum\/.git\/orchestrate\/verify\/PLATFORM-RUNTIME-MAC\/docs\/evidence\/PLATFORM-RUNTIME-MAC\/M2-review\/motion\/ThrumMacM2.app\/Contents\/MacOS\/Launcher",
+  "launcher_pid" : 5790,
+  "preflight_api" : "CGPreflightScreenCaptureAccess",
+  "screen_recording_after" : false,
+  "screen_recording_before" : false
+}

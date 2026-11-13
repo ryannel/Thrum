@@ -1,0 +1,225 @@
+{
+  "motion": {
+    "binary_sha256": "688f378f96d33c61f5f21b70582610ff9673c63e7f3c5af6b5eb859e6b4f8422",
+    "revision": "7a791b20dcd2c70b2537661b123c0d13978bd9f9",
+    "build_source_digest": "10a54059dbb16b68a0ed536d344f0e713ade787677ad61c7293540909409a507",
+    "resolved_recipe_digest": "08671e5eda1f73065de36343df703111d70942688d564febec3c0d8e1fae283b",
+    "complete": true,
+    "originals": 480,
+    "initial_hold_seconds": 1.003471917,
+    "first_final_yaw_seconds": 3.002766083,
+    "interval_end_seconds": 4.010938583,
+    "final_hold_seconds": 1.0081725,
+    "maximum_image_gap_ms": 22.935667,
+    "gaps_over_two_requested_periods": [
+      {
+        "from": 222,
+        "to": 223,
+        "start_ns": 0,
+        "end_ns": 22935667,
+        "gap_ms": 22.935667,
+        "yaw": 0.0
+      }
+    ],
+    "exact_repeats_inside_sweep": [],
+    "skipped_requested_opportunities": 1,
+    "ring_omissions": 0,
+    "writer_omissions": 0,
+    "ticks": [
+      0
+    ],
+    "desktop_capture_independence_qualified": true,
+    "console_before": {
+      "locked": false
+    },
+    "console_after": {
+      "locked": false
+    },
+    "preview_pts_max_error_seconds": 5.00000000069889e-07
+  },
+  "window": {
+    "grid-replacement": {
+      "presentations": 847,
+      "images": 844,
+      "all_presented": true,
+      "tap_enabled": [
+        "true"
+      ],
+      "lease_generations": [
+        2,
+        3
+      ],
+      "presenter_generations": [
+        1,
+        2
+      ],
+      "retirements": [
+        {
+          "session": "1",
+          "pending_staging": "3",
+          "outstanding_cpu": "1",
+          "origin_ns": "3169387750"
+        }
+      ],
+      "missing_submissions": [
+        357,
+        358,
+        359
+      ],
+      "pattern_rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+      "stale_recycle": "Some((1, 1))",
+      "replacement_boundary": {
+        "before": {
+          "submission_id": 356,
+          "submit_ns": 2992508417,
+          "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+          "sequence": 361,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 3,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "after": {
+          "submission_id": 360,
+          "submit_ns": 3044622667,
+          "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15",
+          "sequence": 367,
+          "lease_generation": 3,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 3,
+          "device_generation": 1,
+          "presenter_generation": 2
+        },
+        "identical_rgba": true,
+        "gap_ms": 52.11425
+      }
+    },
+    "valley-replacement": {
+      "presentations": 836,
+      "images": 833,
+      "all_presented": true,
+      "tap_enabled": [
+        "true"
+      ],
+      "lease_generations": [
+        2,
+        3
+      ],
+      "presenter_generations": [
+        1,
+        2
+      ],
+      "retirements": [
+        {
+          "session": "1",
+          "pending_staging": "3",
+          "outstanding_cpu": "1",
+          "origin_ns": "3148571042"
+        }
+      ],
+      "missing_submissions": [
+        357,
+        358,
+        359
+      ],
+      "pattern_rgba_sha256": null,
+      "stale_recycle": "Some((1, 1))",
+      "replacement_boundary": {
+        "before": {
+          "submission_id": 356,
+          "submit_ns": 2983746417,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 360,
+          "lease_generation": 2,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 1
+        },
+        "after": {
+          "submission_id": 360,
+          "submit_ns": 3036400292,
+          "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+          "sequence": 366,
+          "lease_generation": 3,
+          "accepted_yaw_degrees": 0.0,
+          "tick": 2,
+          "device_generation": 1,
+          "presenter_generation": 2
+        },
+        "identical_rgba": true,
+        "gap_ms": 52.653875
+      }
+    },
+    "off-probe": {
+      "presentations": 851,
+      "images": 0,
+      "all_presented": true,
+      "tap_enabled": [
+        "false"
+      ],
+      "lease_generations": [
+        2
+      ],
+      "presenter_generations": [],
+      "retirements": []
+    }
+  },
+  "on": {
+    "on-untraced": {
+      "originals": 851,
+      "continuous": true,
+      "missing_submissions": [],
+      "initial_hold_seconds": 1.0015183547511697,
+      "pan_marker_seconds": 2.0004092077724636,
+      "final_hold_seconds": 1.0983384363353252,
+      "first_final_accepted_yaw": 35.999988556,
+      "maximum_image_gap_ms": 17.022875,
+      "gaps_over_two_requested_periods": [
+        {
+          "from": 1,
+          "to": 2,
+          "start_ns": 6751583,
+          "end_ns": 23774458,
+          "gap_ms": 17.022875,
+          "yaw": 0.0
+        }
+      ],
+      "exact_repeats_inside_sweep": [],
+      "yaw_monotonic": true,
+      "scope": "host-time submitted engine images; media conversion uses the retained same-process clock bracket"
+    },
+    "on-traced": {
+      "originals": 846,
+      "continuous": true,
+      "missing_submissions": [],
+      "initial_hold_seconds": 1.0019542719237506,
+      "pan_marker_seconds": 1.9962859163060784,
+      "final_hold_seconds": 1.0978575609624386,
+      "first_final_accepted_yaw": 35.999988556,
+      "maximum_image_gap_ms": 23.815875,
+      "gaps_over_two_requested_periods": [
+        {
+          "from": 1,
+          "to": 2,
+          "start_ns": 7912833,
+          "end_ns": 30590541,
+          "gap_ms": 22.677708,
+          "yaw": 0.0
+        },
+        {
+          "from": 569,
+          "to": 570,
+          "start_ns": 4756255708,
+          "end_ns": 4780071583,
+          "gap_ms": 23.815875,
+          "yaw": 13.799987793
+        }
+      ],
+      "exact_repeats_inside_sweep": [],
+      "yaw_monotonic": true,
+      "scope": "host-time submitted engine images; media conversion uses the retained same-process clock bracket"
+    }
+  }
+}

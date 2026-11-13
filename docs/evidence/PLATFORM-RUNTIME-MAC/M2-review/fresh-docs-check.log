@@ -1,0 +1,36 @@
+note: crates/thrum-app/src/app.rs: 1323 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/publication.rs: 1378 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/registered_world.rs: 1814 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/runtime.rs: 1730 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/graph.rs: 1314 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime/tests/device.rs: 1307 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime.rs: 1495 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/synthetic.rs: 2500 code lines; check it still holds one responsibility
+missing/outside local link: docs/evidence/APPLE-PRESENTATION/design-review-1.md: ../../plans/APPLE-PRESENTATION/ACCEPTED.json
+missing/outside local link: docs/evidence/APPLE-PRESENTATION/design-review-2.md: ../../plans/APPLE-PRESENTATION/ACCEPTED.json
+missing/outside local link: docs/evidence/APPLE-PRESENTATION/design-review.md: ../../plans/APPLE-PRESENTATION/ACCEPTED.json
+missing/outside local link: docs/evidence/ATMOSPHERE/design-review-1.md: ../../plans/ATMOSPHERE/ACCEPTED.json
+missing/outside local link: docs/evidence/ATMOSPHERE/design-review-2.md: ../../plans/ATMOSPHERE/ACCEPTED.json
+missing/outside local link: docs/evidence/ATMOSPHERE/design-review-3.md: ../../plans/ATMOSPHERE/ACCEPTED.json
+missing/outside local link: docs/evidence/ATMOSPHERE/design-review.md: ../../plans/ATMOSPHERE/ACCEPTED.json
+missing/outside local link: docs/evidence/BASELINE-GUARD/design-review-1.md: ../../plans/BASELINE-GUARD/ACCEPTED.json
+missing/outside local link: docs/evidence/BASELINE-GUARD/design-review.md: ../../plans/BASELINE-GUARD/ACCEPTED.json
+missing/outside local link: docs/evidence/CONTENT-LOOP/design-review-1.md: ../../plans/CONTENT-LOOP/ACCEPTED.json
+missing/outside local link: docs/evidence/CONTENT-LOOP/design-review-2.md: ../../plans/CONTENT-LOOP/ACCEPTED.json
+missing/outside local link: docs/evidence/CONTENT-LOOP/design-review.md: ../../plans/CONTENT-LOOP/ACCEPTED.json
+missing/outside local link: docs/evidence/CULLING/design-review-1.md: ../../plans/CULLING/ACCEPTED.json
+missing/outside local link: docs/evidence/CULLING/design-review.md: ../../plans/CULLING/ACCEPTED.json
+missing/outside local link: docs/evidence/EFFECT-GRAPH/design-review.md: ../../plans/EFFECT-GRAPH/ACCEPTED.json
+missing/outside local link: docs/evidence/PLATFORM-RUNTIME-MAC/M2-handoff.md: ../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json
+missing/outside local link: docs/evidence/PLATFORM-RUNTIME-MAC/design-review-2.md: ../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json
+missing/outside local link: docs/evidence/PLATFORM-RUNTIME-MAC/design-review.md: ../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json
+missing/outside local link: docs/evidence/RENDER-2D/design-review.md: ../../plans/RENDER-2D/ACCEPTED.json
+missing/outside local link: docs/evidence/SHOWCASE/design-review.md: ../../plans/SHOWCASE/ACCEPTED.json
+missing/outside local link: docs/evidence/SIM-2D/design-review.md: ../../plans/SIM-2D/ACCEPTED.json
+missing/outside local link: docs/evidence/TRANSPORT/design-review-1.md: ../../plans/TRANSPORT/ACCEPTED.json
+missing/outside local link: docs/evidence/TRANSPORT/design-review.md: ../../plans/TRANSPORT/ACCEPTED.json
+missing/outside local link: docs/evidence/render/apple-tile-m2/MF1-recheck.md: ../../../plans/APPLE-TILE/ACCEPTED.json
+missing/outside local link: docs/evidence/render/apple-tile-m2/README.md: ../../../plans/APPLE-TILE/ACCEPTED.json
+missing/outside local link: docs/evidence/render/mac-m2-20261113/README.md: ../../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json
+missing/outside local link: docs/evidence/render/mac-m2-presented-20261111/README.md: ../../../plans/PLATFORM-RUNTIME-MAC/ACCEPTED.json
+Error: "python3 scripts/repo_check.py failed (exit status: 1)"

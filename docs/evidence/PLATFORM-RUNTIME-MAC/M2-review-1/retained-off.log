@@ -1,0 +1,77 @@
+{
+  "qualified": true,
+  "coverage": true,
+  "conversion_validated": true,
+  "timebase": {
+    "numer": 125,
+    "denom": 3
+  },
+  "reported_refresh_hz": 120.0,
+  "refresh_period_ns": "8333333.333333333333333333333",
+  "offset_ns": [
+    "2944923616640626.000000000",
+    "2944923616641251.000000000"
+  ],
+  "conversion_validation": "same-process marker brackets anchor trace origin; every converted time is between its game opportunity and OS handler, within clock error",
+  "conversion": "presented_media_ns = (raw_at_time + marker_clock_offset_ns) * denom / numer",
+  "marker_offset_bound_ns": "625.000000000",
+  "presented_media_error_bound_ns": "8.500000000000",
+  "markers_trace_ns": [
+    4219185083,
+    5219196166,
+    7219634875,
+    8319542125
+  ],
+  "retained_handler_span_ns": [
+    1255476750,
+    8330502166
+  ],
+  "handler_lag_ms_range": [
+    0.150653776,
+    10.950694696
+  ],
+  "whole_submission_count": 491,
+  "joined_rows": 846,
+  "missed_refreshes": [
+    {
+      "from": 1,
+      "to": 2,
+      "interval_ns": 25003875.456,
+      "refresh_periods": 3.00046505472,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 29.092333,
+      "presented_trace_ns": 1280290804.344,
+      "yaw": "0.000000000",
+      "overlaps_whole": false
+    },
+    {
+      "from": 547,
+      "to": 548,
+      "interval_ns": 16665249.792,
+      "refresh_periods": 1.99982997504,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.315917,
+      "presented_trace_ns": 5838619263.096,
+      "yaw": "10.649999619",
+      "overlaps_whole": true
+    },
+    {
+      "from": 548,
+      "to": 549,
+      "interval_ns": 16666666.752,
+      "refresh_periods": 2.00000001024,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 12.193708,
+      "presented_trace_ns": 5855285929.848,
+      "yaw": "10.799990654",
+      "overlaps_whole": true
+    }
+  ],
+  "limits": "OS-reported presented time; kernel display swaps, scan-out, photons and input-to-photon unmeasured",
+  "pid": 14537,
+  "input": "docs/evidence/render/mac-m2-presented-20261111/attempt-3-off/presented.xml",
+  "arm": "docs/evidence/render/mac-m2-presented-20261111/attempt-3-off"
+}

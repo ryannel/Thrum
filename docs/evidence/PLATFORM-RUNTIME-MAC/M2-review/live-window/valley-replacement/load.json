@@ -1,0 +1,35 @@
+{
+  "before_load_1_5_15": [
+    5.63916015625,
+    8.3525390625,
+    7.30322265625
+  ],
+  "after_load_1_5_15": [
+    14.4765625,
+    10.1396484375,
+    7.93994140625
+  ],
+  "sample_duration_ns": 7473223791,
+  "disk_samples": "system-iostat.txt",
+  "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+  "background_process_snapshot": [
+    "  PID  %CPU COMM",
+    "  333 103.4 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd",
+    " 6700  97.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    " 4608  45.9 /opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python",
+    "  402  45.7 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+    "16635  19.4 /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd",
+    "92267  18.6 /usr/libexec/duetexpertd",
+    " 7107  12.2 /System/Library/PrivateFrameworks/TrialServer.framework/Versions/A/XPCServices/TrialArchivingService.xpc/Contents/MacOS/TrialArchivingService",
+    "23795  11.8 /System/Library/PrivateFrameworks/CacheDelete.framework/deleted",
+    "    1   9.6 /sbin/launchd",
+    "92263   8.4 /usr/libexec/mobileassetd",
+    " 7109   6.9 /System/Applications/Mail.app/Contents/PlugIns/MailCacheDelete.appex/Contents/MacOS/MailCacheDelete",
+    " 7101   6.7 /System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/PlugIns/CacheDeleteExtension.appex/Contents/MacOS/CacheDeleteExtension",
+    "92275   6.1 /System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd",
+    " 7108   5.8 /System/Applications/Music.app/Contents/PlugIns/MusicCacheExtension.appex/Contents/MacOS/MusicCacheExtension",
+    "39112   5.8 /System/Library/CoreServices/TimeMachine/backupd-helper"
+  ],
+  "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+  "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+}

@@ -1,0 +1,22 @@
+{
+  "motion": {
+    "originals_verified": 480,
+    "source": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/motion/session/frames.zst"
+  },
+  "window/grid-replacement": {
+    "originals_verified": 844,
+    "source": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/window/grid-replacement/frames.zst"
+  },
+  "window/valley-replacement": {
+    "originals_verified": 833,
+    "source": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/window/valley-replacement/frames.zst"
+  },
+  "presented/on-untraced": {
+    "originals_verified": 851,
+    "source": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/presented/on-untraced/frames.zst"
+  },
+  "presented/on-traced": {
+    "originals_verified": 846,
+    "source": "/Users/ryannel/Workspace/thrum/.claude/worktrees/mac-m2/tmp/mac-m2/current-20261113/presented/on-traced/frames.zst"
+  }
+}

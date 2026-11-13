@@ -1,0 +1,29 @@
+{
+  "binary_sha256": "4e62fe113996617b1eae5edf1bc6ff2546ac969b7b33c8eac786fb980f7ca135",
+  "revision": "e119993ac1c087014571ad0862668d33b912841a",
+  "build_source_digest": "09e07411893893c7d5d2e92ed0663aacedaf61ff9a9b931a0ce0861b7a150c4c",
+  "resolved_recipe_digest": "08671e5eda1f73065de36343df703111d70942688d564febec3c0d8e1fae283b",
+  "complete": true,
+  "originals": 481,
+  "initial_hold_seconds": 1.003008166,
+  "first_final_yaw_seconds": 3.003660375,
+  "interval_end_seconds": 4.010926791,
+  "final_hold_seconds": 1.007266416,
+  "maximum_image_gap_ms": 12.102625,
+  "gaps_over_two_requested_periods": [],
+  "exact_repeats_inside_sweep": [],
+  "skipped_requested_opportunities": 0,
+  "ring_omissions": 0,
+  "writer_omissions": 0,
+  "ticks": [
+    0
+  ],
+  "desktop_capture_independence_qualified": true,
+  "console_before": {
+    "locked": false
+  },
+  "console_after": {
+    "locked": false
+  },
+  "preview_pts_max_error_seconds": 5.00000000069889e-07
+}

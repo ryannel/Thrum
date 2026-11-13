@@ -1,0 +1,113 @@
+{
+  "qualified": true,
+  "coverage": true,
+  "conversion_validated": true,
+  "timebase": {
+    "numer": 125,
+    "denom": 3
+  },
+  "reported_refresh_hz": 120.0,
+  "refresh_period_ns": "8333333.333333333333333333333",
+  "offset_ns": [
+    "2986668728114626.000000000",
+    "2986668728115334.000000000"
+  ],
+  "conversion_validation": "same-process marker brackets anchor trace origin; every converted time is between its game opportunity and OS handler, within clock error",
+  "conversion": "presented_media_ns = (raw_at_time + marker_clock_offset_ns) * denom / numer",
+  "marker_offset_bound_ns": "708.000000000",
+  "presented_media_error_bound_ns": "9.496000000000",
+  "markers_trace_ns": [
+    6209750666,
+    7209738833,
+    9210136166,
+    10309945125
+  ],
+  "retained_handler_span_ns": [
+    3267747291,
+    10334414708
+  ],
+  "handler_lag_ms_range": [
+    0.1532784,
+    1.024486584
+  ],
+  "whole_submission_count": 488,
+  "joined_rows": 843,
+  "missed_refreshes": [
+    {
+      "from": 279,
+      "to": 280,
+      "interval_ns": 16666708.224,
+      "refresh_periods": 2.00000498688,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.70575,
+      "presented_trace_ns": 5592553012.544,
+      "yaw": "0.000000000",
+      "overlaps_whole": false
+    },
+    {
+      "from": 314,
+      "to": 315,
+      "interval_ns": 16666667.136,
+      "refresh_periods": 2.00000005632,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.256875,
+      "presented_trace_ns": 5892553138.496,
+      "yaw": "0.000000000",
+      "overlaps_whole": false
+    },
+    {
+      "from": 451,
+      "to": 452,
+      "interval_ns": 16666750.08,
+      "refresh_periods": 2.0000100096,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.275917,
+      "presented_trace_ns": 7042553887.424,
+      "yaw": "0.000000000",
+      "overlaps_whole": true
+    },
+    {
+      "from": 455,
+      "to": 456,
+      "interval_ns": 16666665.984,
+      "refresh_periods": 1.99999991808,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.397875,
+      "presented_trace_ns": 7084220554.304,
+      "yaw": "0.000000000",
+      "overlaps_whole": true
+    },
+    {
+      "from": 494,
+      "to": 495,
+      "interval_ns": 16666667.136,
+      "refresh_periods": 2.00000005632,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.28,
+      "presented_trace_ns": 7417554054.464,
+      "yaw": "3.099990606",
+      "overlaps_whole": true
+    },
+    {
+      "from": 634,
+      "to": 635,
+      "interval_ns": 16666624.896,
+      "refresh_periods": 1.99999498752,
+      "over_one_period": true,
+      "missed_refresh": true,
+      "present_call_gap_ms": 8.299584,
+      "presented_trace_ns": 8592554804.288,
+      "yaw": "24.250000000",
+      "overlaps_whole": true
+    }
+  ],
+  "limits": "OS-reported presented time; kernel display swaps, scan-out, photons and input-to-photon unmeasured",
+  "pid": 38360,
+  "input": "docs/evidence/render/mac-m2-presented-20261111/resumed-on-traced/presented.xml",
+  "arm": "docs/evidence/render/mac-m2-presented-20261111/resumed-on-traced"
+}

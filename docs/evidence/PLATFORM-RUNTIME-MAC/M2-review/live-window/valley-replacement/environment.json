@@ -1,0 +1,9 @@
+{
+  "THRUM_MAC_QUALIFY": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/live-window/valley-replacement",
+  "THRUM_MAC_TAP": "on",
+  "THRUM_V1_FRAMES": "10000",
+  "THRUM_PARAMS": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/examples/v1-game/params/showcase-noon.params.json",
+  "THRUM_SCENE": "valley",
+  "THRUM_ASSET_STORE": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/docs/evidence/PLATFORM-RUNTIME-MAC/M2-review/valley",
+  "THRUM_MAC_REPLACE": "1"
+}

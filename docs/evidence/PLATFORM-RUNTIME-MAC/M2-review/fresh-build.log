@@ -1,0 +1,10 @@
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/crates/thrum-asset-gpu)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/crates/thrum-app)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/examples/v1-game)
+    Finished `release` profile [optimized] target(s) in 12.28s

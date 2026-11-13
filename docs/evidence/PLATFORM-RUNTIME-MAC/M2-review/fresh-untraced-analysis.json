@@ -1,0 +1,31 @@
+{
+  "originals": 843,
+  "continuous": true,
+  "missing_submissions": [],
+  "initial_hold_seconds": 1.004215333610773,
+  "pan_marker_seconds": 2.0005908752791584,
+  "final_hold_seconds": 1.1045140828937292,
+  "first_final_accepted_yaw": 35.999988556,
+  "maximum_image_gap_ms": 44.641167,
+  "gaps_over_two_requested_periods": [
+    {
+      "from": 1,
+      "to": 2,
+      "start_ns": 14107375,
+      "end_ns": 58748542,
+      "gap_ms": 44.641167,
+      "yaw": 0.0
+    },
+    {
+      "from": 773,
+      "to": 774,
+      "start_ns": 6502192292,
+      "end_ns": 6518864959,
+      "gap_ms": 16.672667,
+      "yaw": 35.999988556
+    }
+  ],
+  "exact_repeats_inside_sweep": [],
+  "yaw_monotonic": true,
+  "scope": "host-time submitted engine images; media conversion uses the retained same-process clock bracket"
+}

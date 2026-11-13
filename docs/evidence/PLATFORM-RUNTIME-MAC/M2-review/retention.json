@@ -1,0 +1,35 @@
+{
+  "owner": "PLATFORM-RUNTIME-MAC M2 independent reviewer",
+  "source_checkout": "e119993ac1c087014571ad0862668d33b912841a",
+  "local_master_root": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021",
+  "durable_backup": false,
+  "policy": "Preserve source masters through review integration. PNG expansions are reconstructible from verified zstd originals; no builder outputs touched.",
+  "masters": [
+    {
+      "path": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021/motion/session/frames.zst",
+      "bytes": 580367004,
+      "sha256": "b839f4ea3817873fd9d975bbdd5a62ef45aab40ff2244a398f514514b2bf5e92"
+    },
+    {
+      "path": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021/live-window/grid-replacement/frames.zst",
+      "bytes": 6021103,
+      "sha256": "1552f1dfc8bb4ab3e8e504f4e4b0a9ef88353e0fb4ff957f704067964bdb1417"
+    },
+    {
+      "path": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021/live-window/on-untraced/frames.zst",
+      "bytes": 579204154,
+      "sha256": "8b290625fa10eb2634b52aa0780c5e0efc257b45f0bb8789be842c822ed28a6e"
+    },
+    {
+      "path": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021/live-window/on-untraced-current/frames.zst",
+      "bytes": 581298246,
+      "sha256": "5fc56621a56630e09b69068b4eb184a352d48ef14950a1e4de7b0b5bf06dded0"
+    },
+    {
+      "path": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/PLATFORM-RUNTIME-MAC/tmp/mac-m2-review-20261113-2021/live-window/valley-replacement/frames.zst",
+      "bytes": 574332097,
+      "sha256": "0a3d927be3e6a5e5395b12059f9ed255f63ee0ba5acfcdb62d0a1fd5b046f0fe"
+    }
+  ],
+  "executable_sha256": "4e62fe113996617b1eae5edf1bc6ff2546ac969b7b33c8eac786fb980f7ca135"
+}

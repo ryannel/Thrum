@@ -1,0 +1,1653 @@
+{
+  "known-off": {
+    "pid": 74068,
+    "qualified": false,
+    "coverage": false,
+    "conversion_validated": true,
+    "whole_submission_count": 491,
+    "joined_rows": 349,
+    "markers_trace_ns": [
+      4465231875,
+      5465224500,
+      7465599291,
+      8565567291
+    ],
+    "retained_handler_span_ns": [
+      5664892583,
+      8581554833
+    ],
+    "marker_offset_bound_ns": "333.000000000",
+    "presented_media_error_bound_ns": "4.996000000000",
+    "unmatched_affecting_marked_interval": [
+      {
+        "drawable": 355,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 356,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 357,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 358,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 359,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 360,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 361,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 362,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 363,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 364,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 365,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 366,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 367,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 368,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 369,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 370,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 371,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 372,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 373,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 374,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 375,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 376,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 377,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 378,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 379,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 380,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 381,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 382,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 383,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 384,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 385,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 386,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 387,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 388,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 389,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 390,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 391,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 392,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 393,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 394,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 395,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 396,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 397,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 398,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 399,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 400,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 401,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 402,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 403,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 404,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 405,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 406,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 407,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 408,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 409,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 410,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 411,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 412,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 413,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 414,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 415,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 416,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 417,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 418,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 419,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 420,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 421,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 422,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 423,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 424,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 425,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 426,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 427,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 428,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 429,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 430,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 431,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 432,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 433,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 434,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 435,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 436,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 437,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 438,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 439,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 440,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 441,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 442,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 443,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 444,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 445,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 446,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 447,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 448,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 449,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 450,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 451,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 452,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 453,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 454,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 455,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 456,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 457,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 458,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 459,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 460,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 461,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 462,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 463,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 464,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 465,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 466,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 467,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 468,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 469,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 470,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 471,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 472,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 473,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 474,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 475,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 476,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 477,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 478,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 479,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 480,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 481,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 482,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 483,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 484,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 485,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 486,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 487,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 488,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 489,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 490,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 491,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 492,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 493,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 494,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 495,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      }
+    ],
+    "marked_missed_refreshes": [
+      {
+        "from": 526,
+        "to": 527,
+        "interval_ns": 16665250.176,
+        "refresh_periods": 1.99983002112,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.303958,
+        "presented_trace_ns": 5931368996.488,
+        "yaw": "7.849991322",
+        "overlaps_whole": true
+      },
+      {
+        "from": 544,
+        "to": 545,
+        "interval_ns": 16666624.896,
+        "refresh_periods": 1.99999498752,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 15.470792,
+        "presented_trace_ns": 6089702037.64,
+        "yaw": "10.549992561",
+        "overlaps_whole": true
+      }
+    ],
+    "marked_strict_over_period_count": 151
+  },
+  "known-on": {
+    "pid": 49285,
+    "qualified": false,
+    "coverage": false,
+    "conversion_validated": true,
+    "whole_submission_count": 491,
+    "joined_rows": 343,
+    "markers_trace_ns": [
+      4461663625,
+      5461666625,
+      7462238083,
+      8562038000
+    ],
+    "retained_handler_span_ns": [
+      5727991125,
+      8586341750
+    ],
+    "marker_offset_bound_ns": "666.000000000",
+    "presented_media_error_bound_ns": "8.992000000000",
+    "unmatched_affecting_marked_interval": [
+      {
+        "drawable": 357,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 358,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 359,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 360,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 361,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 362,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 363,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 364,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 365,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 366,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 367,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 368,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 369,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 370,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 371,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 372,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 373,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 374,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 375,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 376,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 377,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 378,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 379,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 380,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 381,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 382,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 383,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 384,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 385,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 386,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 387,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 388,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 389,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 390,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 391,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 392,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 393,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 394,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 395,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 396,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 397,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 398,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 399,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 400,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 401,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 402,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 403,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 404,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 405,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 406,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 407,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 408,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 409,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 410,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 411,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 412,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 413,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 414,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 415,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 416,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 417,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 418,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 419,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 420,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 421,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 422,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 423,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 424,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 425,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 426,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 427,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 428,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 429,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 430,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 431,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 432,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 433,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 434,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 435,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 436,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 437,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 438,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 439,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 440,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 441,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 442,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 443,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 444,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 445,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 446,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 447,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 448,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 449,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 450,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 451,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 452,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 453,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 454,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 455,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 456,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 457,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 458,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 459,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 460,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 461,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 462,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 463,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 464,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 465,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 466,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 467,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 468,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 469,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 470,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 471,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 472,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 473,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 474,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 475,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 476,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 477,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 478,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 479,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 480,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 481,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 482,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 483,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 484,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 485,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 486,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 487,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 488,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 489,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 490,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 491,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 492,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 493,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 494,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 495,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 496,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 497,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 498,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 499,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 500,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 501,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 502,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 503,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      },
+      {
+        "drawable": 504,
+        "reason": "whole-interval submission has no presented row",
+        "outside_marked_presented_interval": false
+      }
+    ],
+    "marked_missed_refreshes": [
+      {
+        "from": 558,
+        "to": 559,
+        "interval_ns": 16665415.68,
+        "refresh_periods": 1.9998498816,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.772792,
+        "presented_trace_ns": 6186134865.824,
+        "yaw": "12.349992752",
+        "overlaps_whole": true
+      }
+    ],
+    "marked_strict_over_period_count": 168
+  },
+  "retained-off": {
+    "pid": 14537,
+    "qualified": true,
+    "coverage": true,
+    "conversion_validated": true,
+    "whole_submission_count": 491,
+    "joined_rows": 846,
+    "markers_trace_ns": [
+      4219185083,
+      5219196166,
+      7219634875,
+      8319542125
+    ],
+    "retained_handler_span_ns": [
+      1255476750,
+      8330502166
+    ],
+    "marker_offset_bound_ns": "625.000000000",
+    "presented_media_error_bound_ns": "8.500000000000",
+    "unmatched_affecting_marked_interval": [],
+    "marked_missed_refreshes": [
+      {
+        "from": 547,
+        "to": 548,
+        "interval_ns": 16665249.792,
+        "refresh_periods": 1.99982997504,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.315917,
+        "presented_trace_ns": 5838619263.096,
+        "yaw": "10.649999619",
+        "overlaps_whole": true
+      },
+      {
+        "from": 548,
+        "to": 549,
+        "interval_ns": 16666666.752,
+        "refresh_periods": 2.00000001024,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 12.193708,
+        "presented_trace_ns": 5855285929.848,
+        "yaw": "10.799990654",
+        "overlaps_whole": true
+      }
+    ],
+    "marked_strict_over_period_count": 236
+  },
+  "retained-on": {
+    "pid": 38360,
+    "qualified": true,
+    "coverage": true,
+    "conversion_validated": true,
+    "whole_submission_count": 488,
+    "joined_rows": 843,
+    "markers_trace_ns": [
+      6209750666,
+      7209738833,
+      9210136166,
+      10309945125
+    ],
+    "retained_handler_span_ns": [
+      3267747291,
+      10334414708
+    ],
+    "marker_offset_bound_ns": "708.000000000",
+    "presented_media_error_bound_ns": "9.496000000000",
+    "unmatched_affecting_marked_interval": [],
+    "marked_missed_refreshes": [
+      {
+        "from": 451,
+        "to": 452,
+        "interval_ns": 16666750.08,
+        "refresh_periods": 2.0000100096,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.275917,
+        "presented_trace_ns": 7042553887.424,
+        "yaw": "0.000000000",
+        "overlaps_whole": true
+      },
+      {
+        "from": 455,
+        "to": 456,
+        "interval_ns": 16666665.984,
+        "refresh_periods": 1.99999991808,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.397875,
+        "presented_trace_ns": 7084220554.304,
+        "yaw": "0.000000000",
+        "overlaps_whole": true
+      },
+      {
+        "from": 494,
+        "to": 495,
+        "interval_ns": 16666667.136,
+        "refresh_periods": 2.00000005632,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.28,
+        "presented_trace_ns": 7417554054.464,
+        "yaw": "3.099990606",
+        "overlaps_whole": true
+      },
+      {
+        "from": 634,
+        "to": 635,
+        "interval_ns": 16666624.896,
+        "refresh_periods": 1.99999498752,
+        "over_one_period": true,
+        "missed_refresh": true,
+        "present_call_gap_ms": 8.299584,
+        "presented_trace_ns": 8592554804.288,
+        "yaw": "24.250000000",
+        "overlaps_whole": true
+      }
+    ],
+    "marked_strict_over_period_count": 246
+  }
+}
