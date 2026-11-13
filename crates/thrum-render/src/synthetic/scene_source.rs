@@ -3,16 +3,53 @@
 
 use super::air_shadow;
 
-pub(super) fn compose_with_cloud(
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SunShadows {
+    Disabled,
+    Enabled,
+}
+
+impl From<bool> for SunShadows {
+    fn from(enabled: bool) -> Self {
+        if enabled {
+            Self::Enabled
+        } else {
+            Self::Disabled
+        }
+    }
+}
+
+/// Prepare one coherent forward source, shader module and entry selection.
+pub(super) fn prepare(
+    device: &crate::runtime::DeviceSite,
     atmosphere: bool,
     air_shadow: bool,
     cloud: bool,
-    shadowed: bool,
+    shadowed: SunShadows,
+) -> (String, wgpu::ShaderModule, &'static str) {
+    let source = compose_with_cloud(atmosphere, air_shadow, cloud, shadowed);
+    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("prepared synthetic shader ABI2"),
+        source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
+    });
+    let entry = if shadowed == SunShadows::Enabled {
+        "shadowed_fragment"
+    } else {
+        "fragment"
+    };
+    (source, module, entry)
+}
+
+fn compose_with_cloud(
+    atmosphere: bool,
+    air_shadow: bool,
+    cloud: bool,
+    shadowed: SunShadows,
 ) -> String {
     let source = compose(atmosphere, air_shadow);
     // Resource reflection precedes backend constant folding. A false argument
     // to shade() must not make an unshadowed entry require absent Sun bindings.
-    let source = if shadowed {
+    let source = if shadowed == SunShadows::Enabled {
         source
     } else {
         source.replace("sun_factor = sun_visibility(input,receiver);", "")
@@ -57,7 +94,7 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{compose, compose_with_cloud};
+    use super::{SunShadows, compose, compose_with_cloud};
     use crate::contribution::{HookPointError, material_hook_point};
 
     #[test]
@@ -65,8 +102,12 @@ mod tests {
         use wgpu::naga;
         for atmosphere in [false, true] {
             for shadowed in [false, true] {
-                let source =
-                    compose_with_cloud(atmosphere, atmosphere && shadowed, false, shadowed);
+                let source = compose_with_cloud(
+                    atmosphere,
+                    atmosphere && shadowed,
+                    false,
+                    SunShadows::from(shadowed),
+                );
                 let module = naga::front::wgsl::parse_str(&source).expect("WGSL");
                 let info = naga::valid::Validator::new(
                     naga::valid::ValidationFlags::all(),
