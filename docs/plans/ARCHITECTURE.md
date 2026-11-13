@@ -506,7 +506,7 @@ registers any new crate in `.config/architecture.toml`. Each module is built by 
 | `SIM-2D` | W1 and P3, for crowds | The deterministic rules profile and the check that enforces it; the digest of committed state; the 2D spatial index and its overlap, nearest and neighbour queries; the reference crowd and its retained traces | `thrum-core` for the profile and the digest, a new crate `thrum-sim2d` for the queries, `examples/crowd-2d` for the reference crowd ([design](SIM-2D/DESIGN.md)) |
 | `RENDER-2D` | V2 and V3, for 2D | The 2D scene half and its passes; the 2D view record (orthographic camera, world units to pixels); sprite rows extracted from the tick page; draw order; sprite materials and blending; GPU residency of sprite sheets | `thrum-render` |
 | `GAME-UI` | U1 | Text and interface drawn in the frame: the glyph cache, the interface tree and its layout, focus, the paint list; routing of key, pointer and touch events to the interface before the game | A new crate |
-| `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity. It holds no game state and gives no meaning to a message | A new crate, so a game that is not networked links no sockets |
+| `TRANSPORT` | N1 adapters, F1 network I/O | Connections and their state: native QUIC, the browser's WebTransport, the in-memory conditioned link, a host's TLS identity and its join ticket. It holds no game state and gives no meaning to a message | A new crate `thrum-transport`, so a game that is not networked links no sockets, and `examples/link-proof` for the proof programs and the relay ([design](TRANSPORT/DESIGN.md)) |
 | `SESSION` | N1 | The match and each connection's epoch; the handshake and its manifests; clock sync and input lead; input staging and relay; baseline and join; digest exchange and repair; the prediction branch; retained results | `thrum-network` |
 | `SWARM` | Game policy and content | The game: its name, premise, characters, art, rules, waves, upgrades and screens; the schemas and rule set it declares to `SESSION`; its sprite and font sources; the record that closes track 3 | A new folder in `examples/`, never an engine crate |
 
@@ -549,7 +549,7 @@ review passes. Changes to a numbered contract are settled with its producers and
 | Sprite-sheet and font products | `CONTENT-LOOP` → `RENDER-2D`, `GAME-UI`, games | C05 |
 | **Interface stage**: a paint list drawn at output extent after reconstruction | `APPLE-TILE` and `APPLE-PRESENTATION` → `GAME-UI` | C06, C07; `GAME-UI`'s design |
 | **Event routing**: the interface consumes an event or passes it on as a game action | shells → `GAME-UI` → the game | C11 |
-| **Message link**: a reliable ordered stream, datagrams with a stated size limit, backpressure and lifecycle events, the same on every adapter | `TRANSPORT` → `SESSION` | `TRANSPORT`'s design; [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
+| **Message link**: whole messages on a reliable ordered lane (up to 65,536 bytes) and a datagram lane (up to 1,000 bytes), backpressure, lifecycle events with a reason, and counters, the same on every adapter and on the in-memory conditioned link. A host's **join ticket** is its address and its certificate's hash | `TRANSPORT` → `SESSION`; the ticket also to `SWARM` and `GAME-UI` | [TRANSPORT](TRANSPORT/DESIGN.md#1-the-link); [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload), A0 |
 | **Session**: join and leave, the admitted input frames of every player for each tick, the baseline, the confirmed tick, the prediction branch, and connection state a screen can show | `SESSION` → `SWARM` | `SESSION`'s design; C13, A0 and the A5 decisions |
 | **Rule set in the gameplay manifest**: a match names its deterministic rule set and build, and refuses a peer that differs. A proposed addition to C13 | `SESSION`, with `SIM-2D`, core and the game | `SESSION`'s design |
 | Quality knobs | `RENDER-2D` → the governor | C04; the interface above, unchanged |
@@ -579,7 +579,9 @@ A lone builder takes them in that order: `SIM-2D`, `TRANSPORT`, `RENDER-2D`, `SE
 
 **Reaching the targets.** `TRANSPORT`, `SESSION` and `SWARM` open local sockets and drive Chrome, which Codex's
 `workspace-write` sandbox does not allow without a request for each run. Their planners settle how a builder and a
-reviewer reach those targets; [the choice](#owner-decisions) is the owner's.
+reviewer reach those targets; [the choice](#owner-decisions) is the owner's. `TRANSPORT` puts every socket proof
+behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps sockets out of `./dev check`;
+`SESSION` and `SWARM` run their matches through the same command and relay.
 
 ### What finished means (track 3)
 
@@ -638,23 +640,15 @@ builder stops and [mechanism 1](#mechanisms-settled-here) is replanned.
 
 #### TRANSPORT
 
-- **For.** Two processes exchange messages over the internet's real protocols, and one of them may be a browser.
-- **Requirement.** "Several players play together over the network", on the brief's three targets.
-- **Selected already.** Native QUIC through Quinn and WebTransport in the browser, datagrams and one reliable
-  ordered stream (A0). WebTransport became Baseline in March 2026
-  ([web features](https://web-platform-dx.github.io/web-features-explorer/features/webtransport/)); only Chrome
-  is a target here.
-- **To build.** The message link on three adapters: Quinn (Mac, the host and the iOS simulator), WebTransport in
-  Wasm, and the in-memory conditioned link the A5 fixtures use. A host identity that Chrome accepts on a local
-  machine. Counters for bytes, loss and queue age.
-- **Contracts.** C11 (a suspended app has lost its socket), C12, C13, [NETWORKING](../design/modules/NETWORKING.md#transport-and-overload).
-- **Open for its planner.** The WebTransport crate, after an audit of licence, datagram support, the Wasm client
-  and upkeep (`wtransport`, `web-transport-quinn`, `webtrans`). The async runtime Quinn brings and where its
-  thread sits beside the world lane. Whether the WebSocket fallback of A0 is built; the default is no.
-- **First proof and what rejects it.** The three clients hold a session with one host at 100 ms round trip, 20 ms
-  jitter and 2% loss, through disconnect and reconnect. If Chrome cannot hold datagrams to a local host, input
-  moves to the reliable stream for that adapter and the cost is recorded.
-- **Done.** The proof above; malformed input fuzzed; a game without networking links no transport code.
+Planned on 13 November 2026: [design](TRANSPORT/DESIGN.md), [plan](TRANSPORT/PLAN.md). Its planner settled the
+three choices this brief carried: Quinn with `web-transport-quinn` on the host and a hand-written binding of the
+browser's `WebTransport`; one I/O thread that meets the world lane only at bounded queues; and no WebSocket
+fallback. [A probe](../evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
+simulator with datagrams, so the fallback this brief named, input on the reliable stream for Chrome, is held in
+reserve and not built. Two milestones; `SESSION` needs M1, which delivers the in-memory conditioned link, the three
+socket adapters and a cost record under each congestion controller. Two findings bind `SESSION`: a join's baseline
+should flow from the host down, and a frozen browser page keeps its link open, so silent input is `SESSION`'s to
+time out.
 
 #### SESSION
 
@@ -726,7 +720,7 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
     publishing.
 11. **Sockets and Chrome under the Codex sandbox.** `TRANSPORT`, `SESSION` and `SWARM` need both for most checks.
     The choices are a request for each run as today, `Codex sandbox: danger-full-access`, or a Claude builder for
-    those modules.
+    those modules. `TRANSPORT`'s plan assumes a request for each run.
 12. **Sound.** The brief does not ask for it and no audio module is planned. A1 stays a design.
 13. **The purpose line.** The brief still says "3D engine" and requirement E08 of the architecture brief
     still puts pure 2D outside scope. The 10 November goal overrides both; rewording them is the owner's page.
@@ -745,11 +739,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - Assumption: "2D support in the engine" means a reusable sprite path (sprites, layers, a 2D camera, text and
   interface) that a second 2D game can build on. 2D lights, tile-map tools, skeletal 2D animation and 2D rigid
   bodies are not built.
-- Assumption: "over the network" is proved by separate processes on this Mac over real QUIC and WebTransport under
-  the A0 conditioner. A public host is the owner's to order.
-- Assumption: a native process hosts; Chrome and the iOS simulator only join. Players join by address or code.
-  Matchmaking, accounts, relays and host migration are not built.
-- Assumption: Chrome is the only browser, so the WebSocket fallback of A0 is not built.
+- Assumption: a native process hosts; Chrome and the iOS simulator only join. Players join with
+  [`TRANSPORT`'s join ticket](TRANSPORT/DESIGN.md#3-the-hosts-identity-and-the-join-ticket). Matchmaking, accounts,
+  relays and host migration are not built.
 - Assumption: every peer simulates the one arena, so the interest management the build plan lists as "relevance"
   is not built for this game.
 - Assumption: no sound, and no gamepad: keys, pointer and touch only.
@@ -802,3 +794,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   lead's task. Three milestones: the three-target proof at 10,000 bodies (after `SHOWCASE:M8`), the queries
   against a brute-force search, and the check that refuses a rule which breaks the profile. Its three interfaces
   now link to its design. No contract, exact baseline or other module's done-when item changed.
+- 2026-11-13 `TRANSPORT` planned, the second module of track 3, with a design, plan and done-when file, from the
+  lead's task. Two milestones: one host holding Mac, Chrome and simulator clients through A0's conditioner (after
+  `SHOWCASE:M8`), and the hostile, stalled and frozen peers with the close. The message-link interface now links to
+  its design and names its limits and the join ticket. Two assumptions moved to its plan. No contract, exact
+  baseline or other module's done-when item changed.
