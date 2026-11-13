@@ -1,5 +1,13 @@
 # CULLING log
 
+- 2026-11-13 The implicit-sampling-order candidate on `c98b6578` passes all
+  38 native retained comparisons and eight complete 361-frame mesh routes
+  (four per recipe), including independent Direct controls. The
+  [retained rows and identities](../../evidence/CULLING/M3/pre-sample-c98b6578/report.json)
+  are bounded positive evidence; the original failure remains individually
+  unattributed. Integrate the upstream cooked-product lease repair before final
+  target, cost and capture qualification. M3 stays `in_progress`, with items open.
+
 - 2026-11-13 Continued M3 from `fa3cc02a` with the original forward shader.
   A diagnostic copies colour, all three Sun depth layers and the air-shadow map
   from each same submission. After two passing full routes, tick 430 differs
