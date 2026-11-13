@@ -1,6 +1,10 @@
 {
-  "commit": "f0bd38511cfd0a2afc983668287a1f41352984e9",
-  "benchmark_sha256": "cd8199d8fb00a8abb625b9cbba2116b8b43f4bc48cd657d13aa3e57a7462853d",
+  "commit": "7dca0b33146452ef1cc14c85065c77d71af76344",
+  "benchmark_sha256": "9a0f501ca4e84b4d07af398d37aba8a2f8d69293852037f63b1ff225c472958c",
   "benchmark_source_sha256": "73d3049acd7ea2626cd48a2fe47894bd2b1521fcc2632e86b4994dfc7d4af745",
-  "scope": "Same compiled benchmark and production sources for both queued GPU runs; f0bd3851 only makes the selection integration test Metal assertion conditional on macOS."
+  "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "jobs": [
+    "20261113-035832-74046",
+    "20261113-035835-74054"
+  ]
 }

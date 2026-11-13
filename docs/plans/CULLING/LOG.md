@@ -117,3 +117,12 @@
   The milestone checker passes all four automated items. Clean `3cf04848` passes native 38+4 exact
   comparisons and four Chrome sets of 481 records. The checked merge runs the full repository gate;
   M2 stays `in_progress` for the script's merged-work checks and the lead's independent review.
+
+- 2026-11-13 Resumed M2 at `7dca0b33`: the preceding merge had rebased successfully but
+  refused the missing exact-baseline proof. Two rebased timing runs again favour Occlusion
+  behind cover and in the open. Fresh Chrome qualification exposed a DevTools disconnect
+  when reading the whole Wasm response; `84403f5a` hashes the actual instantiation input
+  inside Chrome instead. All four automated M2 items now pass, including 16 exact Chrome
+  views and all registered baselines (38 + 4 native, four Chrome sets of 481 records).
+  [Current evidence](../../evidence/CULLING/M2.md) retains identities, reports and the
+  failed transport trace. M2 remains `in_progress`; integration and lead review follow.
