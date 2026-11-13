@@ -54,6 +54,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 - CONTENT-LOOP assumes: G5 closes with CAS garbage collection, layered EAC volumes and parameter files as a product kind still parked, and with any iPhone volume encoding owed; the ledger names each. ([plan](CONTENT-LOOP/PLAN.md))
 - CONTENT-LOOP assumes: G5 closes with watcher publications as presentation-only previews, which the G5 decision put in force as the reading of C05. A save the cooker can tell is bad keeps the last good content, but an incomplete save that still validates (a changed glTF saved before its buffer) is shown until the save finishes, then replaced by the intended content. Refusing it needs source admission (T1), which also brings build provenance and is not built here. ([plan](CONTENT-LOOP/PLAN.md))
 - CONTENT-LOOP assumes: when the running game cannot take one product of a save (a mesh too large for the entity arena, a volume the device cannot hold), nothing from that save or a later one appears until it is fixed, and the reason is named. The other choice shows the rest of the save and holds back only that product. ([plan](CONTENT-LOOP/PLAN.md))
+- SHOWCASE assumes: the exit closes on the agents' reviews and the records taken on the built-in display, as brief decisions 2 and 4 say, and the owner's own acceptance of the showcase's look is not an item. The other choice adds one item to M8 that waits for the owner to walk the route and say yes. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: the 8,500 still entities are desert props (boulders, scrub, cacti and standing rocks) and the 1,500 movers are hot-air balloons adrift over the valley. No entity is a character or an animal, because an entity cannot turn or animate in V1. The layout is generated data, so another concept that only translates swaps in by regenerating. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: the exit scene holds exactly 10,000 entities and 1,500 movers, the counts the game already steps, inside the brief's "1,000–2,000 movers". ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: "MetalFX, EDR and a quality governor" stay in the exit, so M7 and M8 wait for `APPLE-PRESENTATION` M4 to M11, which are drafted but have no done-when entries yet. Closing V1 without them would change the exit, which is the owner's call. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: M5 and M6 start as soon as cooked mesh rows (`CONTENT-LOOP:M2`) and culling (`CULLING:M3`) are Done, so the scene is built while the other modules finish. Only M7 and M8 wait for every module's last milestone. The other choice holds all four until then. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing. ([plan](SHOWCASE/PLAN.md))
+- SHOWCASE assumes: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it. ([plan](SHOWCASE/PLAN.md))
 
 ### Now and next
 
@@ -61,6 +69,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M2-review.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): Not Started · [plan](CONTENT-LOOP/PLAN.md)
+- SHOWCASE's design: Design Ready for Review · [design](SHOWCASE/DESIGN.md) · [plan](SHOWCASE/PLAN.md)
 
 ### Recently done
 
@@ -96,7 +105,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M2 of 3 · In Progress |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M1 of 3 · Not Started |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | The last milestone of modules 1 to 10 and 12 | Not planned yet |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Design Ready for Review |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE | Not planned yet |
