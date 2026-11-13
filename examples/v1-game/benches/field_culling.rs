@@ -14,7 +14,7 @@
 use std::time::Duration;
 
 use thrum_render::{capabilities::DeviceCapabilities, synthetic::CullMode};
-use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, GameSetup, field_in_view_share};
+use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, GameSetup};
 
 const TICK_NS: u64 = 16_666_667;
 const EXTENT: [u32; 2] = [1920, 1080];
@@ -177,7 +177,6 @@ fn main() {
         // Occlusion − Frustum whole-frame ms: [behind cover, open].
         let mut against_frustum: [Vec<f64>; 2] = Default::default();
         let mut cover_rows: [[Vec<f64>; 3]; 2] = Default::default();
-        let mut share = 0.0;
         // Per segment: (F−D, O−F) whole-frame ms, and the load at its end.
         let mut segment: [Vec<f64>; 2] = Default::default();
         let mut segments = Vec::new();
@@ -254,21 +253,15 @@ fn main() {
                         rows.push(value);
                     }
                 }
-                if tick % 30 == 0 {
-                    share += field_in_view_share(tick, EXTENT).expect("view");
-                }
             }
         }
-        #[expect(clippy::cast_precision_loss, reason = "small count")]
-        let share = share / (TICKS / 30) as f64;
         println!(
             "adapter={}; field {} instances, meshes {field_meshes}; {}x{}; shadows on; {TICKS} ticks after {WARMUP_TICKS} warm-up; \
-             rotating order, shared machine; mean in-view centres {:.1}%",
+             rotating order, shared machine; pitch 0 then 0.6 rad after 900 measured ticks",
             adapter.get_info().name,
             GameContent::Field.entity_count(),
             EXTENT[0],
-            EXTENT[1],
-            share * 100.0
+            EXTENT[1]
         );
         report_segments(&segments);
         assert!(
