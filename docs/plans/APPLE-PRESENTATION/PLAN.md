@@ -42,6 +42,7 @@ review (D1.5). The first G4 witnesses that need G3t M3 are TAAU (M3) and the ext
 - [x] The frame host's per-frame history identity in the game page's report; a reactive view or attachment
       readback that reaches Chrome's submitted frames; the `temporal` case with its unsubmitted view (→D2.5).
 - [x] The existing browser cases rerun (→D2.7).
+- [ ] Must Fix `mac-volume-witness-bypasses-forward-pass`: drive W3's shared cooked-volume fixture through the production Mac contribution and forward graph, read its reactive value and uncovered zero, and prove the check detects a disabled production reactive write (→D2.6). Retain the fragment-only test as supplementary evidence.
 
 ## M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome
 
