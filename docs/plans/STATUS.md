@@ -68,6 +68,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SIM-2D assumes: bodies are circles. Boxes and capsules are shapes a game can ask about, and no rigid-body physics (stacking, joints, spinning) is built. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: a world is finite. Positions keep millimetre resolution within 16 km of the origin at one unit per metre, queries are refused beyond 16,777,216 units, and an endless map is not built. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: devices agree for one build of one rule set. A recording made on one engine version is not promised to replay on a later one. ([plan](SIM-2D/PLAN.md))
+- TRANSPORT assumes: TRANSPORT waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it adds a crate and lockfile entries. ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: "over the network" is proved between separate processes on this Mac, over real QUIC and WebTransport on loopback, through a relay that adds 100 ms of round trip, ±20 ms of jitter and 2% loss. No second machine, Wi-Fi, home router or internet path is run, and a public host stays the owner's to order. ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: Chrome is the only browser run, and A0's WebSocket fallback is not built. Safari and Firefox now have WebTransport and are designed for, not tried. ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: a player joins with a join ticket, which is the host's address and its certificate's fingerprint, about a hundred characters to put in a link or paste. A ticket stops working when its host stops. A short code a player could type needs a directory service, which is not built. ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: a host holds up to four players, and "hold a session" is proved for ten minutes with four clients (two on the Mac, one in Chrome, one in the iPhone simulator). ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: the iPhone simulator proves that the link works there, never its speed. A physical iPhone, where the local-network permission applies, is not run. ([plan](TRANSPORT/PLAN.md))
+- TRANSPORT assumes: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as they do today for the GPU. Every socket proof is behind one command to keep that to one kind of request. The other choices, full access for the sandbox or a Claude builder for this module, are owner decision 11 in the module list. ([plan](TRANSPORT/PLAN.md))
 
 ### Now and next
 
@@ -75,6 +82,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): Not Started · [plan](CONTENT-LOOP/PLAN.md)
+- TRANSPORT's design: Design Ready for Review · [design](TRANSPORT/DESIGN.md) · [plan](TRANSPORT/PLAN.md)
 
 ### Recently done
 
@@ -115,7 +123,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
-| 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Not planned yet |
+| 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Design Ready for Review |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE, APPLE-TILE, CONTENT-LOOP | Not planned yet |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
