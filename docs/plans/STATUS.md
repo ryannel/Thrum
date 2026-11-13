@@ -62,6 +62,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SHOWCASE assumes: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how. ([plan](SHOWCASE/PLAN.md))
 - SHOWCASE assumes: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing. ([plan](SHOWCASE/PLAN.md))
 - SHOWCASE assumes: the exit scene is not run on the iPhone simulator, which gate G7 does not name. The exit record reports the simulator's status from the modules that proved it. ([plan](SHOWCASE/PLAN.md))
+- SEA assumes: the owner's words of 13 November, "use the fable planner like normal but you can bring that across when it makes sense", mean planning starts now and this plan decides when the Broadsides sea is brought across. M1 and M2 can start as soon as the design is approved, and later milestones start when the milestones they depend on are Done, which can be before G7. This sets aside the water decision's line that implementation follows G7. ([plan](SEA/PLAN.md))
+- SEA assumes: those words do not name a licence. Broadsides code is marked `UNLICENSED`, so nothing is copied or translated from it until the owner says under what licence it enters this repository. Until then builders write from published sources and the design, and read Broadsides as a record of what was tried. The other choice lets them lift its maths and kernels through review, which is faster. ([plan](SEA/PLAN.md))
+- SEA assumes: the craft, the floats and the foam pattern of the example scene are made in this repository, original or public domain, and no Broadsides asset is used. ([plan](SEA/PLAN.md))
+- SEA assumes: a finished sea excludes inland water, coasts, shoaling, surf and tides, and the three cues the 10 November spikes left open (spray release at chase distance, the attached sheet at the hull, a visibly rising gas cloud). They stay parked spikes. ([plan](SEA/PLAN.md))
+- SEA assumes: "persists after the hull stops or turns" is met inside windows that follow the craft, as the water decision sizes them. Wake waves shorter than about 12 m are carried to about 30 m behind the craft and longer ones to about 250 m; the foam trail reaches further. A wake that persists everywhere the craft has been needs water state that stays in the world, which is not planned. ([plan](SEA/PLAN.md))
+- SEA assumes: full refresh is claimed on the Mac, as the brief's cost sentence says. Chrome is held to the same look and behaviour, and its frame intervals are recorded, not gated. ([plan](SEA/PLAN.md))
+- SEA assumes: until the showcase's own extent exists, cost is recorded at 2560×1440, the extent Broadsides was measured at. M10 repeats it at the showcase's extent. ([plan](SEA/PLAN.md))
+- SEA assumes: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones (M7 and M8 in its drafts), which are not planned yet. Everything a visitor sees is finished by M9; M10 waits. ([plan](SEA/PLAN.md))
 - SIM-2D assumes: SIM-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it edits `crates/`. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: "thousands" is proved at 2,000, 5,000 and 10,000 bodies, and 10,000 is the largest crowd claimed. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: the devices are the Mac, Chrome and the iPhone simulator. The simulator shares the Mac's processor, so it proves only that the rules build and run there. A physical iPhone, an x86 PC, Android and other browsers are designed for and not run. ([plan](SIM-2D/PLAN.md))
@@ -129,6 +137,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
+- SEA's design: Design Ready for Review · [design](SEA/DESIGN.md) · [plan](SEA/PLAN.md)
 
 ### Recently done
 
@@ -168,7 +177,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
-| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
+| 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | Nothing to start; EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion, and its governor and MetalFX milestones to close | Design Ready for Review |
 | 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes that shade the world | ATMOSPHERE M5, EFFECT-GRAPH, APPLE-TILE M3, APPLE-PRESENTATION M3 and M7, CONTENT-LOOP M1; the owner's port timing | Not planned yet |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
