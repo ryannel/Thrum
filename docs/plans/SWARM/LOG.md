@@ -35,4 +35,30 @@
   marked so in the design.
 - 2026-11-13 Not measured while planning, because no engine module is built: the game's tick, its cap in
   Chrome, its world image and every byte count. M2, M5 and M7 record them.
-- 2026-11-13 The design still needs its review.
+- 2026-11-13 Design review: changes requested, five Must Fix
+  ([review](../../evidence/SWARM/design-review.md)). The entries below are the planner's answers.
+- 2026-11-13 `spawn-depends-on-local-view`. The spawn rule no longer names a view. Constants of the rule set
+  (the sight spans, the view slack, the spawn margin) give each hero a sight square; the budget spawns outside
+  every present hero's, and the view is held inside it. The view fits the sight spans, so a window that is not
+  16:9 shows less and never more; the claim that the count in view is the same in every window is withdrawn.
+  New M2.17, M2.18 and M4.16; M2.9, M2.10, M5.4, M6.2, M7.2 and M8.1 written again to prove it across window
+  shapes, a resize, a rotation and each peer's own view.
+- 2026-11-13 `final-wave-timeout-has-no-outcome`. The last wave has no intermission. The run is won when its
+  boss dies or when its clock ends with a present hero standing, read from the owner's "hold out" and Brotato's
+  rule; on a shared tick the boss's death beats the loss and the loss beats the clock. New M3.17, split from
+  M3.1. It is an assumption in the plan.
+- 2026-11-13 `whole-run-tick-bound-conflicts-with-waiting`. Waiting alone in an intermission stays as it was.
+  The 36,000-tick bound on a run is withdrawn: combat time is bounded by the waves' clocks, waiting and a
+  session's world ticks are not, and 36,000 ticks is the length of the retained scripted traces (M3.5, M4.4).
+  M3.17 steps a wait longer than that.
+- 2026-11-13 `cap-measurement-reintroduces-timing-gate`. M2.1 is a baseline record again, under brief decision
+  3. The builder picks the cap with it in hand; the cap is bounded by the count in view, smoothness to the eye
+  and peers in step, and no time sets it, stops the build or fails an item.
+- 2026-11-13 `owner-requested-fixes-can-remain-at-close`. M8.12 passes only on the owner's acceptance; a change
+  they ask for is made first unless they say in their own words that it may wait. M8.10's record says track 3
+  is closed only by quoting that acceptance. M8 is renamed to say so.
+- 2026-11-13 Suggestion `prediction-correction-causes-omit-defeat`: taken. Whether the hero is standing is part
+  of the controller, so a fall, a standing again, a leaving and an entering each correct the prediction once;
+  M5.6's run now includes a fall and allows those causes, and a speed upgrade the rules make when a clock runs
+  out. Left as written, M5.6 could not be met by a hero that spends a run in the crowd.
+- 2026-11-13 The revised design still needs its review.

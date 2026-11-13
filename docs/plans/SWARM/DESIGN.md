@@ -60,17 +60,20 @@ a pick-up. The **cap** is the most bodies the world may hold. A **hero** is a pl
 to a [player slot](../SESSION/DESIGN.md#purpose-and-scope). A slot is **present** when its player is connected
 and has a hero. The **team level** is the one level every hero shares. An **owed choice** is an upgrade a hero
 has earned and not yet chosen. A **driver** is whatever decides which input frames a tick is stepped with. The
-**view** is what one player sees: a rectangle of the arena around their own hero.
+**view** is what one player sees: a rectangle of the arena around their own hero. A hero is **standing** when it
+is on the field and not down. A hero's **sight square** is the square around its committed place that holds
+every view its player can have ([mechanism 3](#3-waves-and-the-crowd)). **Combat time** is ticks spent in a wave
+with its clock running; **waiting** is every other tick of a session.
 
 ## What a player must see and feel
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
-| **G1 A crowd that grows into the thousands.** Each wave is larger than the last, and late in a run thousands of enemies and projectiles are in view at once | From the first wave to the last; one to four heroes; a 16:9 view | A large count that is mostly off screen, or reached only in a test scene. Rejected by counting bodies inside the view rectangle of a scripted player's own run |
+| **G1 A crowd that grows into the thousands.** Each wave is larger than the last, and late in a run thousands of enemies and projectiles are in view at once. Enemies arrive from out of sight: none the budget spawns appears inside anyone's view | From the first wave to the last; one to four heroes; the count in a 16:9 view; arrival out of sight in a window of any shape, through a resize and a rotation | A large count that is mostly off screen, or reached only in a test scene. Rejected by counting bodies inside the view rectangle of a scripted player's own run. Enemies placed around one player's window. Rejected by equal digests across window shapes, and by each enemy's first row against every peer's own recorded view |
 | **G2 Attacks that fire on their own and visibly land.** Every weapon finds its targets without aim, and a hit, a death and a pick-up each read at a glance | Every weapon, alone and all at once; a packed crowd; the boss | Damage applied to whatever is nearest in a list. Rejected by each weapon's hits compared with a brute-force search |
 | **G3 A hero that answers at once.** The hero moves in the frame after the input | Alone, and in a match at A0's profile and the harsh one; keys and a touch stick | Drawing the hero at the confirmed tick in a match. Rejected by comparing input-to-motion frames in a match with those alone |
 | **G4 Upgrades between waves that change how the run plays.** | Every upgrade; one to four players choosing at once | A menu that changes a number nothing reads. Rejected by a test for each upgrade that a later tick's outcome differs |
-| **G5 A run that can be won and lost.** | Many seeds; each hero | A crowd that cannot kill, or one nobody survives. Rejected by a hero who stands still losing every seed and a scripted player winning some |
+| **G5 A run that can be won and lost.** It always ends in one or the other, however the last wave goes | Many seeds; each hero; the last wave's clock ending with the boss alive | A crowd that cannot kill, or one nobody survives. Rejected by a hero who stands still losing every seed and a scripted player winning some. A last wave that runs out into nothing. Rejected by a rule test at its deadline |
 | **G6 Readable at a glance.** The player always finds their own hero; enemy kinds, projectiles and pick-ups tell apart at game size; the status display reads over the crowd | The run's peak; 1920×1080 and 3456×2234; Chrome; a phone in both orientations | Sprites judged enlarged on a sheet. Rejected by inspection in the running game at the size shown |
 | **G7 Together.** Every player sees the same crowd and the same run. A friend joins mid-run, one drops and comes back, a fallen hero returns, and nobody waits on anybody | Two to four players on any mix of the three targets; A0's profile; a join in any wave | Players who share one process, or who each fight their own crowd. Rejected by each peer's own digests |
 | **G8 The same game on three targets.** | Keys and pointer on the Mac and in Chrome; touch on the simulator; a phone's safe area | A phone build that draws and cannot be played. Rejected by real touches that move the hero and make a choice |
@@ -89,6 +92,11 @@ concept the owner picks in M1. It is judged in words, in the running game.
   "upgrades between waves", ask for this and not for Vampire Survivors' level-up in the middle of play. So the
   run has no pause inside a wave, which is also what a match needs:
   [the session's ticks never pause](../SESSION/DESIGN.md#4-timed-frames-and-ordered-commands).
+- **Holding out to the end wins.** In Brotato a player wins "when all bosses on the wave have been killed or
+  the wave that the boss is on ends due to time"
+  ([Brotato wiki, Predator](https://brotato.wiki.spellsandguns.com/Predator), from the search summary; the
+  wiki's Waves page names only the kill). The owner's words are "hold out", so
+  [the run ends the same way](#2-the-run-is-a-state-machine-in-the-world).
 - **Online co-op batches choices so that one player never stops the others.** Vampire Survivors' online co-op,
   shipped in October 2025, shows a level-up only "after everyone has leveled up", and its pause menu gives the
   pausing player a moment of invincibility "rather than pausing the game for everyone"
@@ -109,8 +117,9 @@ concept the owner picks in M1. It is judged in words, in the running game.
   the selected behaviour, and the arena is open so that nothing needs a path.
 - **What would change the selection.** If the owner would rather have level-ups in the middle of a wave, the
   intermission's choice becomes a per-player overlay while play goes on, which is a change to mechanisms 5 and 8
-  and not to the engine. If M2 finds the cap in Chrome below the brief's thousands, the builder stops and a
-  planner chooses between a smaller crowd for every peer and a lighter neighbour pass.
+  and not to the engine. If no cap gives G1's count while Chrome stays smooth to the eye and in step
+  ([the cap](#3-waves-and-the-crowd)), a planner chooses between a lighter neighbour pass and, with the owner, a
+  smaller crowd for every peer.
 
 ## Mechanisms
 
@@ -152,9 +161,19 @@ Movement is the frame's two axes. There is no aim and no fire button.
 **Gathering.** Each slot picks one of four heroes; two slots may pick the same one. The run starts at the tick
 every present slot is ready. No slot has a privilege, so a run needs no host player and a headless host works.
 
-**Won and lost.** The run is won at the tick the last wave's boss dies, and lost at the tick no present hero is
-standing. Both show the run's figures and return to gathering when every present slot is ready. The next run's
-random streams are keyed by the match seed and a run counter, so each run differs and every peer agrees.
+**How a run ends.** A run ends at one tick, in one of two states.
+
+- **Won** at the tick the last wave's boss dies, or at the tick the last wave's clock ends with a present hero
+  standing. Holding out to the end is winning, as the owner's "hold out" says; killing the boss wins sooner. No
+  intermission follows the last wave: the end of its clock is the end of the run.
+- **Lost** at the tick a slot is present and no present hero is standing, in any wave.
+
+A rule decides the end from one committed state, in a fixed order: the boss's death, then the loss, then the
+clock. So a boss that dies on the tick the last hero falls is a win, and a last hero who falls on the tick the
+clock ends is a loss. Either end clears the field as an intermission does, the boss included.
+
+Both show the run's figures and return to gathering when every present slot is ready. The next run's random
+streams are keyed by the match seed and a run counter, so each run differs and every peer agrees.
 
 **Why in the world.** A match shares causes, not state, so anything a peer must agree on has to be a function
 of the admitted sets. A wave timer kept by a screen would differ on every peer. With the run in the world, a
@@ -162,36 +181,73 @@ player who joins mid-run receives it with the baseline, a replay reproduces it, 
 
 ### 3. Waves and the crowd
 
-A run has a fixed number of waves, between eight and twelve, each longer and larger than the one before, and a
-whole run is at most 36,000 ticks: ten minutes at the engine's 60 ticks a second, the length `SIM-2D` and
-`SESSION` prove. The count and lengths are tuning.
+A run has a fixed number of waves, between eight and twelve, each longer and larger than the one before. Each
+wave's clock is a constant of the rule set, and the clocks sum to **the combat length**, about ten minutes at
+the engine's 60 ticks a second. The count and lengths are tuning.
+
+**Combat time, waiting and world ticks are three things.** A run never has more combat time than the combat
+length. Waiting has no bound: gathering, the won and lost screens and a player alone in an intermission
+([mechanism 5](#5-pick-ups-the-team-level-and-the-intermission)) have no clock, and a wave's clock stands still
+while every slot is away. World ticks are both together, and they go on through a wait: the local driver keeps
+its fixed clock and a match's session keeps committing ticks. So a session has no longest length, and no rule
+assumes one. Every clock in the world is an integer countdown, and the game keeps no count of ticks in a
+profile number, so a wait of any length changes no rule's arithmetic. `SIM-2D` and `SESSION` prove traces of
+36,000 ticks, which is the range they tested and no limit on a session. The retained traces stay inside it: a
+scripted player readies at once, and the combat length is tuned so that a whole scripted run is at most 36,000
+ticks.
 
 **The budget.** Each kind of enemy has a cost. A rule holds a spawn budget that grows along a curve through the
 wave and from wave to wave, and is multiplied by the number of present heroes. While the living enemies' cost is
-under the budget, the rule spawns more on a ring outside every present hero's view, choosing kinds and places
-with [the profile's random function](../SIM-2D/DESIGN.md#3-random-numbers-keyed-by-seed-tick-stream-and-entity).
-The last wave adds one boss.
+under the budget, the rule spawns more, choosing kinds and places with
+[the profile's random function](../SIM-2D/DESIGN.md#3-random-numbers-keyed-by-seed-tick-stream-and-entity).
+The last wave adds one boss, which spawns as any enemy does.
+
+**Out of sight, in the rules' own terms.** A rule cannot read a window. The view is presentation, a headless
+host has none, and two players' windows differ in shape. So where an enemy may appear is fixed by constants of
+the rule set, and the view is held to them ([mechanism 9](#9-what-is-drawn)):
+
+- the **sight spans**: the most world any view shows along its longer side and along its shorter, in the ratio
+  16:9;
+- the **view slack**: how far a view's centre may stand from its hero's committed place;
+- the **spawn margin**: at least half the largest enemy as drawn, the boss included, and a tick of the fastest
+  hero's travel.
+
+A hero's sight square is centred on its committed place, and its side is the long sight span and twice the
+view slack. Every view of that hero lies inside it, whatever the window's shape, and a phone turned in the
+middle of a wave changes nothing. An enemy spawns in a band just outside the sight square of a present hero the
+random function picks, at a place inside the arena and outside the sight square, grown by the spawn margin, of
+every present hero, standing or down. A place that fails is not used, and the budget it would have spent
+carries to the next tick. The same admitted inputs therefore spawn the same enemies at the same places on every
+peer, in any window, and nobody sees one appear. The promise is for what the budget spawns: the pieces of an
+enemy that splits appear where it died, in view.
+
+A square was chosen over the exact outline of the landscape and portrait views because it is one constant and
+one test. Its price is that an enemy above or below a landscape player starts further off than one beside
+them.
 
 **The cap.** The world never holds more bodies than the cap, whatever the budget asks. The cap is a constant
-of the rule set, the same for every peer, and at most 10,000, the size the engine modules are proved at. M2
-measures it first: it is the largest size at which, in Chrome, a tick and a frame's CPU work together take
-less than the tick period. Chrome runs both on the page's one thread, and
-[a peer that cannot step at the pace of play is dropped](../SESSION/DESIGN.md#10-slow-silent-and-hostile-peers),
-so that is the size every peer can hold. M2 measures at each thousand bodies from 2,000 to 10,000 and stops if
-no size from 3,000 up qualifies, because 2,000 enemies and projectiles in view need room beside them for
-heroes, pick-ups and what is off screen. When the cap is reached spawning waits; pick-ups merge
+of the rule set, the same for every peer, and at most 10,000, the size the engine modules are proved at. Three
+requirements bound it, and none is a time. It leaves room for G1's 2,000 enemies and projectiles in a 16:9
+view, beside heroes, pick-ups and what is off screen. Play at it is smooth to the eye on the Mac and in Chrome
+(G10). And peers at it stay in step, since
+[a peer that cannot step at the pace of play is dropped](../SESSION/DESIGN.md#10-slow-silent-and-hostile-peers).
+Chrome is the tight target, because it steps and draws on the page's one thread. So M2 first records Chrome's
+tick and frame CPU work at each thousand bodies from 2,000 to 10,000, and the builder picks the cap with that
+record in hand. The record informs the pick, and explains a failure of one of the three requirements. It
+decides nothing: no time in it sets the cap or stops the build, and a time over the tick period is a tripwire
+([cost](#cost)). When the cap is reached spawning waits; pick-ups merge
 ([mechanism 5](#5-pick-ups-the-team-level-and-the-intermission)) and projectiles have short lives, so the crowd
 keeps most of it.
 
-**Enemies** seek the nearest present hero and push apart from their neighbours, through
+**Enemies** seek the nearest standing hero and push apart from their neighbours, through
 [`SIM-2D`'s index and queries](../SIM-2D/DESIGN.md#5-the-index-and-its-queries), read at the start of the tick.
 Kinds differ in speed, health, size, cost and one behaviour each: a walker, a fast one, a heavy one, one that
 shoots, one that splits when it dies, one that charges in a line. The boss is an oversize body, which the index
 carries on its oversize list. An enemy that touches a hero damages it at a fixed rate. Health and damage are
 integers.
 
-**The arena** is a bounded open field several views wide, with a wall no body crosses. Nothing in it blocks a
-path.
+**The arena** is a bounded open field at least four sight squares on a side, with a wall no body crosses, so
+with four heroes there is always field outside every sight square. Nothing in it blocks a path.
 
 ### 4. Automatic attacks
 
@@ -222,14 +278,16 @@ pick-ups are many, those close together merge into one of their summed worth, so
 Each level gained gives every hero one owed choice. Nobody races a friend for a drop, and a hero who joined
 late or was down is never behind.
 
-**The intermission** begins the tick a wave's clock ends: enemies and their shots are cleared, and pick-ups
+**The intermission** begins the tick a wave's clock ends, for every wave but the last, whose end is
+[the run's](#2-the-run-is-a-state-machine-in-the-world): enemies and their shots are cleared, and pick-ups
 left on the field fly to the pool. For each owed choice a rule makes that hero an **offer** of three upgrades,
 drawn with the random function from what that hero can still take. The offer is world state, so every peer
 shows the same one. A player's answer is the *choose an upgrade* action, and the rule applies it once.
 
 The intermission ends at the tick every present slot is ready. While more than one slot is present it also ends
 when its clock runs out, and every owed choice left is then made by the rule with the random function, so no
-upgrade is lost and nobody waits. A player alone has no clock.
+upgrade is lost and nobody waits. A player alone has no clock and may wait as long as they like: the wait
+spends no wave's clock, and the next wave starts whole.
 
 **Upgrades** raise a hero's figures (speed, health, reach, damage, rate), add a weapon or strengthen one. Each
 must change what a later tick does; one that only changes a displayed number is a defect.
@@ -243,9 +301,16 @@ length, scaled by the hero's speed, and the position is kept inside the arena. T
 prediction and authority are one piece of code.
 
 **Enemies never move a hero.** They damage it. A crowd that pushed the hero would correct the prediction on
-every tick of contact, which is most of a run. Health is not part of the controller, so damage never corrects
-it. The controller changes for three causes only: the player's input, an upgrade to speed, and the hero
-leaving or entering the field.
+every tick of contact, which is most of a run. Health is not part of the controller, so a hit does not correct
+it.
+
+**The controller** is the hero's place, its speed, and whether it is standing. A hero that is down or off the
+field ignores the axes. The controller changes for these causes only: the player's input, which the prediction
+already has; an upgrade to speed, which is a command; the hero falling, and standing again; and the hero
+leaving or entering the field. A fall is the one thing the crowd does to the controller, and no command
+announces it. The client learns of it when it commits that tick, so the prediction is corrected once, to a hero
+that no longer moves, and once more when the hero stands. Leaving and entering correct once each in the same
+way.
 
 The four heroes differ in their first weapon and their starting figures.
 
@@ -291,14 +356,16 @@ What a screen needs of the connection comes back as a small value beside the pag
 - **Away.** When [the roster](../SESSION/DESIGN.md#2-the-world-knows-slots-the-session-knows-peers) says a slot
   is away, its hero leaves the field at that tick and keeps everything it has. *Back* returns it, as a join
   does. *Left* removes it.
-- **Fallen.** A hero whose health is spent is down for the rest of the wave and stands again at the next wave
-  with half its health. The run is lost when no present hero is standing.
+- **Fallen.** A hero whose health is spent is down for the rest of the wave: it stays where it fell, neither
+  moves nor fires, and is neither sought nor hurt. It stands again at the next wave with half its health. The
+  run is lost when a slot is present and no present hero is standing.
 - **Nobody present.** If every slot is away, the wave's clock and the budget hold until one is back. If every
   slot has left, the run ends and the world returns to gathering.
 - **The crowd's size** follows the number of present heroes through the budget, from the tick of each roster
   event.
-- **What each player sees.** Their own view, centred on their own hero. The other heroes are marked, and one off
-  screen has a pointer at the view's edge.
+- **What each player sees.** Their own view, on their own hero, standing or down. A player who has no hero on
+  the field yet is shown the field around the present hero of the lowest slot, so that view lies inside a
+  sight square too. The other heroes are marked, and one off screen has a pointer at the view's edge.
 
 ### 9. What is drawn
 
@@ -308,9 +375,20 @@ blasts. Layers from the back: ground tiles, pick-ups, bodies ordered by height o
 numbers, the pointers to other heroes and other marks are frame rows. Everything drawn is a function of the
 committed page, the frame's alpha and presentation memory; nothing drawn is ever written to the world.
 
-**The view** shows a fixed span of the arena across the window's shorter side, so every player sees the same
-amount of world whatever their window, and the count in view does not depend on it. A common enemy's body is
-about a fiftieth of that span ([check](#check-that-it-can-work)).
+**The view** is the largest rectangle of the window's shape that fits the sight spans of
+[mechanism 3](#3-waves-and-the-crowd): the long span by the short in a landscape window, the short by the long
+in a portrait one. A 16:9 window, either way up, shows exactly the sight spans. Any other shape shows less
+along one side and no more along the other, so no shape of window buys a wider look at the field. How much
+world is in view does depend on the window: G1's count is for a 16:9 view, and a squarer or a longer window
+shows part of it. A common enemy's body is a fiftieth of a 16:9 view's shorter side, and in no window is it
+drawn smaller than a fiftieth of the window's shorter side ([check](#check-that-it-can-work)).
+
+The view's centre follows the hero as drawn, which in a match runs ahead of the committed hero, and is held
+within the view slack of the committed hero's place; past that the hero is drawn off centre. A view is not held
+at the arena's wall. With the slack, every view lies inside its hero's sight square, which is how the spawn
+rule promises that nothing appears in view without reading one. The slack is tuning: at least the fastest
+hero's travel over the lead and confirmed delay of `SESSION`'s harsh profile, about 20 ticks, so the hero stays
+centred in the profiles played.
 
 **Hiding the lead in a match.** A client draws its own hero from the prediction, ahead of the crowd by
 [the lead plus the confirmed delay](../SESSION/DESIGN.md#11-the-predicted-controller), nine or ten ticks at A0.
@@ -323,7 +401,7 @@ Its weapons fire in the confirmed world, from where the hero was. So:
 - a correction is eased over a few frames, and a large one snaps.
 
 All three are presentation memory. Hits are decided by the confirmed world alone. How this feels is the
-owner's to judge in M8.
+owner's to judge in M8, which does not close until the owner accepts it.
 
 **The game's sheets** are at most eight in the scene and eight in the interface, `RENDER-2D`'s limits.
 
@@ -386,9 +464,21 @@ It makes runs that reach the last wave, so that the late game can be measured an
   side: 22 px at 1080p and 45 px on the built-in display's 2234. A sprite may be drawn taller than its body,
   since rows overlap in height order. `RENDER-2D`'s pixel sampling is exact from one output pixel a texel, so
   an enemy of 12 to 16 texels stays crisp down to a short side of about 700 px, and is drawn softer below.
+- **Out of sight in every window.** With long span `L` and short span `S = 9L/16`, a 1920×1080 window shows
+  `L × S`, a 1080×1920 window `S × L` and a 1080×1080 window `S × S`. All three lie inside the square of side
+  `L` on the hero, and so does any other shape, since neither side of a view exceeds `L`. A place `0.75 S`
+  beside the hero is inside the landscape view and outside the portrait one; it is `0.42 L` from the hero,
+  inside the sight square, so nothing spawns there for either player. A wide window of shape `a` above 16:9
+  shows `L × L/a`, and a body of `S/50` is then `a × 9/800` of its shorter side, which is a fiftieth at 16:9
+  and more beyond it. A headless host needs no view: the test reads committed places and constants.
+- **A place to spawn always exists.** Four sight squares cover at most a quarter of an arena four squares on a
+  side, and little more when each is grown by the spawn margin.
+- **A long wait.** A player alone who sits in an intermission for an hour commits 216,000 world ticks. Nothing
+  in the rules counts them: the wave's clock is not running, and the countdowns that are (weapons, a brief
+  safety) reach zero and stop.
 - **The tick.** `SIM-2D`'s probe stepped 10,000 seeking, separating bodies in 5.0 ms on the Mac and 5.6 ms in
   Chrome. The game adds weapons, pick-ups and the budget, each a few queries a hero, against a 16.7 ms tick
-  period. Chrome is the tight target, which is why the cap is measured there before anything is built on it.
+  period. Chrome is the tight target, which is why its cost is on record before the cap is chosen.
 - **Rows and order.** `RENDER-2D` is designed and costed for 10,000 rows in one draw with a kept order.
 - **A join.** `SESSION` estimates a 10,000-body image at 1.3 MiB; the game's bodies carry more than the
   reference crowd's, so M5 measures its own.
@@ -406,6 +496,7 @@ It makes runs that reach the last wave, so that the late game can be measured an
 | The spatial indexes | `thrum-sim2d`, rebuilt each tick | Derived |
 | The match, roster, lead, playout clock, prediction ring | `thrum-network`'s session | Session |
 | A link and the host's ticket | `thrum-transport` | Runtime |
+| The sight spans, the view slack, the spawn margin, the cap, the waves' clocks | `swarm-rules` | Constants of the rule set, read by rules and by presentation |
 | Which screen is open, focus, the stick, the view, flashes, eased positions, damage numbers | `swarm` | Presentation memory |
 | Sheets, the font, their cooked products | `examples/swarm/assets/`, cooked by `CONTENT-LOOP` | Content |
 | The concept | `examples/swarm/CONCEPT.md` | The owner's pick |
@@ -463,26 +554,32 @@ No budget is set (brief, decision 3). The account, at the cap and four players:
 | A match, each way | One datagram a tick | `SESSION`'s account: 6.5 to 19 KB/s down, 7.6 to 11.3 KB/s up |
 | A join | One world image, then a catch-up | Not measured for the game's bodies; M5 records it |
 
-The cost that matters is Chrome's one thread, which steps and draws. The design meets it by measuring the cap
-there first, by keeping enemies' behaviour to one neighbour pass, and by merging pick-ups.
+The cost that matters is Chrome's one thread, which steps and draws. The design meets it by putting Chrome's
+cost at each size on record before the cap is chosen, by keeping enemies' behaviour to one neighbour pass, and
+by merging pick-ups.
 
 **Baselines and tripwires.** Every time and byte count recorded is a baseline, and a cost command succeeds
 when its record is complete and made at the claimed commit. Flagged in the record and investigated while
-building goes on: a median tick longer than the tick period on any target at the cap; a frame whose CPU and GPU
-time together exceed the display's refresh interval on the Mac at the run's peak; a row about a quarter worse
-than the last comparable one; a join that takes longer than an intermission.
+building goes on: a median tick longer than the tick period on any target at the cap; in Chrome, a tick and a
+frame's CPU work together longer than the tick period at the cap; a frame whose CPU and GPU time together
+exceed the display's refresh interval on the Mac at the run's peak; a row about a quarter worse than the last
+comparable one; a join that takes longer than an intermission.
 
-**Two figures decide a result.** The cap, which M2 sets from its own measurement and which must be at least
-the size G1 needs. And [`SESSION`'s floor](../SESSION/DESIGN.md#cost): in a match, at least 95% of ticks admit
-each player's own frame.
+**One figure decides a result,** and it is `SESSION`'s, not a time:
+[its floor](../SESSION/DESIGN.md#cost), that in a match at least 95% of ticks admit each player's own frame.
+The cap is bounded by a count in view, smoothness to the eye and peers in step
+([mechanism 3](#3-waves-and-the-crowd)), and by no measured time.
 
 Whether motion is smooth on the built-in panel itself is not measured: it needs an attended run, and is named
 in the closing record as not run.
 
 ## Risks
 
-1. **The cap in Chrome is below the brief's thousands.** Early sign: M2.1. The builder stops; the choices are
-   under [research](#research-and-selection).
+1. **Chrome cannot hold a crowd of thousands smoothly.** Early sign: M2.1's record, taken before anything is
+   built on the cap. No figure in it stops the build. The builder works on the cost and picks the cap that
+   meets [the three requirements](#3-waves-and-the-crowd). If no cap meets them, the items that observe them
+   stay open (the count in view, the inspection in Chrome, peers in step), and the builder ends `BLOCKED` with
+   the record; the choices are under [research](#research-and-selection).
 2. **Small enemies do not read.** Early sign: M1's mock arenas, which show them at game size before any game
    exists. If no concept reads at a fiftieth of the short side, the owner is told with the options, and trades
    count for size.
@@ -503,7 +600,9 @@ in the closing record as not run.
 11. **The simulator cannot keep the pace of a match at the cap.** It proves function only, and a peer too slow
     is dropped by design. M8 records what happened; a slow simulator is no defect.
 12. **Balance is tuned for the scripted player and not for a person.** Only the owner's play in M8 settles
-    it.
+    it, and M8 closes on the owner's acceptance alone.
+13. **A view escapes its sight square,** through a wall clamp, a zoom or a new window shape, and enemies appear
+    in view. Early sign: M2.18 over every shape, and each peer's recorded view in M7.2.
 
 ## Proof and builder handoff
 
@@ -535,7 +634,13 @@ in the closing record as not run.
 - **GPU.** Every check that draws holds the `gpu` lock. Scratch goes in `tmp/swarm-<milestone>/`; selected
   evidence in `docs/evidence/SWARM/`.
 - **The closing record,** `docs/evidence/SWARM/TRACK-3-RECORD.md`, written in M8: what each of the five engine
-  modules proved in the game and on which targets, and what was not run.
+  modules proved in the game and on which targets, and what was not run. It says track 3 is closed only once
+  the owner has accepted the game, and quotes the acceptance.
+- **The owner's play.** M8.12 passes on the owner's acceptance and on nothing else. If the owner asks for
+  changes instead, the item stays open: the builder writes each change in the log, makes it, and asks the owner
+  again. A change the design and the items do not cover is a planner's, so the builder ends `BLOCKED`. A change
+  may wait until after the close only when the owner says so in their own words. A line in the plan, the log
+  or the record is not that.
 - **Stopping.** If peers cannot be held equal with the game's rules, the builder keeps the first differing
   tick, the component and both digests, and ends `BLOCKED`.
 
@@ -557,8 +662,11 @@ Each has its reason beside it.
 - Every name, sprite and rule is original. Art and fonts are your own, public domain, CC0 or Apache-2.0, with
   the licence text beside them and each file's source listed. Take nothing from another game or from
   Broadsides.
-- No time or byte count stops the build (brief, decision 3). Record a row that trips a tripwire as measured,
-  note what you found in the log, and keep building.
+- No time or byte count stops the build, sets the cap or fails an item (brief, decision 3). Record a row that
+  trips a tripwire as measured, note what you found in the log, and keep building.
+- The view is made by one function of the hero's drawn and committed places, the window's extent and the rule
+  set's constants. Do not add a zoom, a wall clamp or a second camera beside it, because the spawn rule's
+  promise rests on every view lying inside its sight square.
 - Record only runs of the commit being claimed, with the load on the machine.
 - If a launch outside the sandbox is refused, leave the item open and say so; a Mac result does not stand in
   for Chrome or the simulator.
@@ -570,7 +678,7 @@ Each has its reason beside it.
 
 | Question | Settled by |
 |---|---|
-| What is the cap in Chrome? | M2.1 |
+| What cap meets the three requirements, and what does Chrome cost at it? | M2: the builder's pick, with M2.1's record |
 | Do enemies a fiftieth of the short side read, in each concept? | M1's mock arenas, then M4's inspection |
 | How large is the game's world image, and how long is a join at the cap? | M5's cost record |
 | Does the hero's lead over the crowd feel right with the three easings? | M7's captures; the owner in M8 |

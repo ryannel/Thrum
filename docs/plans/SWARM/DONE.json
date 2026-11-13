@@ -77,9 +77,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "The cap is measured before anything is built on it. In Chrome at 1920\u00d71080, with this milestone's rules and drawing and a crowd packed as the slice's late crowd packs, the median of a tick and a frame's CPU work together is on record at each thousand bodies from 2,000 to 10,000. The cap is the largest of those sizes at which that median is under the tick period, and it is a constant of the rule set. The run fails if no size from 3,000 up qualifies, since 2,000 enemies and projectiles in view need room beside them for heroes, pick-ups and what is off screen.",
+          "statement": "Chrome's cost at each crowd size is on record before the cap is chosen. In Chrome at 1920\u00d71080, with this milestone's rules and drawing and a crowd packed as the slice's late crowd packs, the record holds the median tick, the median frame's CPU work and their sum at each thousand bodies from 2,000 to 10,000, the cap the rule set uses, and each tripwire the design names that a row trips. The figures are baselines: none sets the cap and none decides the result.",
           "check": "python3 scripts/swarm.py cap",
-          "ask": "Were the figures taken in the game itself (its rules, row extraction, ordering and draw submission) as release Wasm on the page's one thread in Chrome, at the claimed commit, with the load on the machine recorded? Does the rule set's constant equal the size the record selects?",
+          "ask": "Were the figures taken in the game itself (its rules, row extraction, ordering and draw submission) as release Wasm on the page's one thread in Chrome, at the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete and made at the claimed commit, and never on a figure?",
           "lock": "gpu",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -89,7 +89,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "The slice's rules hold. A hero moves by the frame's axes, clamped to unit length, and stays inside the arena. Enemies seek the nearest hero and push apart, and never move a hero. A weapon fires on its own clock at the nearest enemies, a projectile hits the first enemy its path overlaps, health and damage are integers, a dead enemy despawns, and a hero whose health is spent ends the run. The spawn budget rises with time and the world never holds more bodies than the cap.",
+          "statement": "The slice's rules hold. A hero moves by the frame's axes, clamped to unit length, and stays inside the arena. Enemies seek the nearest hero and push apart, and never move a hero. A weapon fires on its own clock at the nearest enemies, a projectile hits the first enemy its path overlaps, health and damage are integers, a dead enemy despawns, and a hero whose health is spent ends the run. The spawn budget rises with time and the world never holds more bodies than the cap, a constant of the rule set of at most 10,000.",
           "check": "cargo test --locked --offline -p swarm-rules --test slice",
           "ask": "Read the test. Does it step the registered runtime with the real rules, and check each clause from committed state: a hero's position unchanged by any number of enemies in contact, a weapon's hit against a brute-force search over the bodies, and the body count against the cap on every tick of a run that reaches it?",
           "target": "mac-metal",
@@ -152,7 +152,7 @@
         },
         {
           "id": "M2.8",
-          "statement": "In a 16:9 view, during the last quarter of the trace, at least 2,000 enemies and projectiles are inside the player's view at one tick, counted from committed positions against the view's rectangle.",
+          "statement": "In a 16:9 view, during the last quarter of the trace, at least 2,000 enemies and projectiles are inside the player's view at one tick, counted from committed positions against the rectangle the view gives a 16:9 window.",
           "check": "cargo test --locked --offline -p swarm-proof --test in_view",
           "target": "mac-metal",
           "builder_result": "open",
@@ -162,7 +162,7 @@
         },
         {
           "id": "M2.9",
-          "statement": "On the Mac the game runs the trace in its own window through the 2D scene. The world's digests at the trace's checkpoints equal the run with no window, every living body has a row in the frame's record, the compiled passes are the sprite pass and the output half's and nothing else, and the run carries on by digest through a resize and a replaced device.",
+          "statement": "On the Mac the game runs the trace in its own window through the 2D scene, in a landscape, a portrait and a square window. In each, the world's digests at the trace's checkpoints equal the run with no window, every living body has a row in the frame's record, no enemy the budget spawned has a first row that touches the view of its frame, and the compiled passes are the sprite pass and the output half's and nothing else. The run carries on by digest through a resize from landscape to portrait during a wave and through a replaced device.",
           "check": "python3 scripts/swarm.py slice --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
@@ -173,7 +173,7 @@
         },
         {
           "id": "M2.10",
-          "statement": "In Chrome the game runs the trace on its page through the 2D scene, with the same digests at the checkpoints, a row for every living body, and the run carrying on through a resize and a replaced device.",
+          "statement": "In Chrome the game runs the trace on its page through the 2D scene, in a landscape and a portrait page, with the same digests at the checkpoints, a row for every living body, and no enemy the budget spawned having a first row that touches the view of its frame. The run carries on by digest through a resize between the two shapes during a wave and through a replaced device.",
           "check": "python3 scripts/swarm.py slice --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -245,6 +245,28 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M2.17",
+          "statement": "Enemies appear only out of sight, by the rules' own figures. On every tick of a run that reaches the cap, with the hero in the open, at a wall and in a corner, every enemy the budget spawns is placed inside the arena and outside the hero's sight square grown by the spawn margin. The spawn rule is given committed state, admitted frames and the rule set's constants, and nothing of any window.",
+          "check": "cargo test --locked --offline -p swarm-rules --test spawn",
+          "ask": "Read the test and the spawn rule. Is each enemy's place read from committed state at its first tick and compared with the hero's committed place that the rule read? Is there any path by which a window's extent, a scale or a view could reach `swarm-rules`?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.18",
+          "statement": "Every view lies inside its hero's sight square. For window shapes from 32:9 to 9:32, the view the game gives shows exactly the sight spans at 16:9 and at 9:16, less along one side and no more along the other at every other shape, and stays inside the committed hero's sight square however far ahead the drawn hero is and wherever in the arena it stands, at a wall included.",
+          "check": "cargo test --locked --offline -p swarm --test view_policy",
+          "ask": "Is the view the game hands the renderer, in the Mac window and on the page, made by the one function this test calls, with the sight spans and the view slack read from `swarm-rules`?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -259,7 +281,7 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "The run is a state machine in the world: gathering, wave, intermission, won and lost. A state changes only at a tick or for an admitted action. Each wave's budget is larger than the last, the last wave has a boss, the run is won at the tick the boss dies and lost at the tick no present hero stands, and a whole run is at most 36,000 ticks. An action that makes no sense in the state it meets changes nothing. A new run after a win or a loss differs from the last and is the same on any replay of the same inputs.",
+          "statement": "The run is a state machine in the world: gathering, wave, intermission, won and lost. A state changes only at a tick or for an admitted action. Each wave's budget is larger than the last, and the last wave has a boss. An action that makes no sense in the state it meets changes nothing. A new run after a win or a loss differs from the last and is the same on any replay of the same inputs.",
           "check": "cargo test --locked --offline -p swarm-rules --test run_states",
           "ask": "Read the test. Is every transition driven through admitted frames and ticks alone, and is each kind of senseless action (a choice not offered, a hero picked twice, ready during a wave) tried in every state with the digest required unchanged?",
           "target": "mac-metal",
@@ -291,7 +313,7 @@
         },
         {
           "id": "M3.4",
-          "statement": "Over twenty seeds, a hero who never moves or chooses loses every run, and the scripted player wins at least one. How far each got in every seed is on record.",
+          "statement": "Over twenty seeds, a hero who never moves or chooses loses every run, and the scripted player wins at least one. How far each got in every seed, and how each run ended, is on record.",
           "check": "python3 scripts/swarm.py balance",
           "ask": "Is the scripted player a fixed policy that reads only the committed page, with no knowledge of a seed? Are the twenty seeds listed in the record and not chosen after the runs?",
           "target": "mac-metal",
@@ -302,7 +324,7 @@
         },
         {
           "id": "M3.5",
-          "statement": "On the Mac a retained trace of a whole winning run steps to its retained digests by the local and the wire route.",
+          "statement": "On the Mac a retained trace of a whole winning run, at most 36,000 ticks long, steps to its retained digests by the local and the wire route.",
           "check": "python3 scripts/swarm.py conformance --target mac-metal --trace run",
           "target": "mac-metal",
           "builder_result": "open",
@@ -426,6 +448,17 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M3.17",
+          "statement": "A run ends at one tick, won or lost. It is won at the tick the boss dies, or at the tick the last wave's clock ends with a present hero standing, and no intermission follows the last wave. It is lost at the tick a slot is present and no present hero stands. On a shared tick the boss's death beats the loss, and the loss beats the clock. Waiting spends no wave's clock: a player alone who waits in an intermission for more than 36,000 ticks and then readies meets the next wave with its whole clock.",
+          "check": "cargo test --locked --offline -p swarm-rules --test run_endings",
+          "ask": "Read the test. Does it reach the last wave's deadline with the boss alive, once with a hero standing and once with the last hero falling on that very tick, and a boss death on the tick the last hero falls, and read each outcome from committed state? Does the wait step the real rules for every one of its ticks?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -471,7 +504,7 @@
         },
         {
           "id": "M4.4",
-          "statement": "On the Mac a retained trace of a whole winning run of the finished game, in which every kind of enemy and every weapon appears, steps to its retained digests by both routes.",
+          "statement": "On the Mac a retained trace of a whole winning run of the finished game, at most 36,000 ticks long, in which every kind of enemy and every weapon appears, steps to its retained digests by both routes.",
           "check": "python3 scripts/swarm.py conformance --target mac-metal --trace full",
           "target": "mac-metal",
           "builder_result": "open",
@@ -591,6 +624,17 @@
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M4.16",
+          "statement": "With the finished content the spawn margin covers what the design says it must: it is at least half the largest enemy sprite as drawn, the boss included, and a tick's travel of the fastest hero with every speed upgrade taken, added together.",
+          "check": "cargo test --locked --offline -p swarm-proof --test spawn_margin",
+          "ask": "Does the test take the sprite sizes from the cooked frame table and the speed from the content tables, and not from figures written into the test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -640,7 +684,7 @@
         },
         {
           "id": "M5.4",
-          "statement": "The co-op rules hold. A fallen hero is down until the wave ends and stands at the next wave with half its health. The run is lost at the tick no present hero stands. An intermission ends at the tick every present slot is ready, or when its clock runs out while more than one slot is present, and each owed choice then left is made by the rules. With every slot away the wave's clock and the budget hold, and with every slot left the world returns to gathering.",
+          "statement": "The co-op rules hold. A fallen hero stays where it fell, neither moving nor firing, until the wave ends, and stands at the next wave with half its health. The run is lost at the tick a slot is present and no present hero stands. An intermission ends at the tick every present slot is ready, or when its clock runs out while more than one slot is present, and each owed choice then left is made by the rules. With every slot away the wave's clock and the budget hold, and with every slot left the world returns to gathering. With four heroes spread across the arena, every enemy the budget spawns is placed outside the sight square, grown by the spawn margin, of every present hero, standing or down.",
           "check": "cargo test --locked --offline -p swarm-rules --test coop",
           "target": "mac-metal",
           "builder_result": "open",
@@ -660,9 +704,9 @@
         },
         {
           "id": "M5.6",
-          "statement": "The hero's movement is one function that the movement rule and the predicted controller both call, and it is given nothing of the crowd. Over a whole run at the cap in which the hero is in contact with enemies throughout, the prediction equals the confirmed hero tick for tick wherever the host admitted the player's frame, and every correction is for one of three causes on record: a tick the host held, a change of lead, or a command that changed the controller.",
+          "statement": "The hero's movement is one function that the movement rule and the predicted controller both call, and it is given nothing of the crowd. Over a whole run at the cap in which the hero is in contact with enemies throughout and falls at least once, the prediction equals the confirmed hero tick for tick wherever the host admitted the player's frame. Every correction is for one of four causes on record: a tick the host held, a change of lead, an upgrade to the hero's speed, or a change in whether the hero is standing (a fall, standing again, leaving or entering the field). Each change in standing corrects once.",
           "check": "cargo test --locked --offline -p swarm-proof --test prediction",
-          "ask": "Does the test's hero spend the run in the crowd, and does it count corrections by cause from the session's own report?",
+          "ask": "Does the test's hero spend the run in the crowd and fall in it? Does the test count corrections by cause from the session's own report, telling a change in standing from the controller's state before and after?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -725,7 +769,7 @@
         },
         {
           "id": "M6.2",
-          "statement": "On the simulator the run carries on by digest, with the same screen open, through a rotation during a wave and during an intermission and through background and foreground. After each rotation every status node lies inside the safe area the shell reports.",
+          "statement": "On the simulator the run carries on by digest, with the same screen open, through a rotation during a wave and during an intermission and through background and foreground. After each rotation every status node lies inside the safe area the shell reports, and in neither orientation does an enemy the budget spawned have a first row that touches the view of its frame.",
           "check": "python3 scripts/swarm_sim.py lifecycle",
           "lock": "gpu",
           "target": "ios-sim",
@@ -804,7 +848,7 @@
         },
         {
           "id": "M7.2",
-          "statement": "Over real sockets, a Mac process that hosts and plays in its window and a Chrome page that joined by opening the host's link play a scripted whole run, directly and through the relay under A0's profile. Each peer's digest equals the other's at every digest tick and both reach the run's end at the same tick.",
+          "statement": "Over real sockets, a Mac process that hosts and plays in its window and a Chrome page that joined by opening the host's link play a scripted whole run, directly and through the relay under A0's profile. Each peer's digest equals the other's at every digest tick and both reach the run's end at the same tick. The two windows differ in shape, one landscape and one portrait, and no enemy the budget spawned first appears inside either peer's view, by each peer's own record of its view.",
           "check": "python3 scripts/swarm.py match sockets pair",
           "ask": "Are the two peers separate processes on `thrum-transport`'s sockets, with the relay's forwarded and dropped counts in the record? Is Chrome started with no flag that touches certificates, QUIC or origins? Does each peer write its own digests?",
           "lock": "gpu",
@@ -915,7 +959,7 @@
     },
     {
       "id": "M8",
-      "name": "Two to four players on a Mac, in Chrome and on the iPhone simulator play a whole run together through delay and loss, the owner has played it, and track 3 is closed",
+      "name": "Two to four players on a Mac, in Chrome and on the iPhone simulator play a whole run together through delay and loss, the owner has played and accepted it, and track 3 is closed",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -924,7 +968,7 @@
       "items": [
         {
           "id": "M8.1",
-          "statement": "Over real sockets through the relay under A0's profile, a headless host on the Mac and four players of the game (a Mac window, a second Mac process, a Chrome page and the app in the iPhone simulator) play a whole run. Every peer's digest equals the host's at every digest tick it reached, and every peer still in step sees the run end at the same tick. A peer the host closed as unable to keep up is on record with the reason and counts as no failure for the simulator.",
+          "statement": "Over real sockets through the relay under A0's profile, a headless host on the Mac and four players of the game (a Mac window, a second Mac process, a Chrome page and the app in the iPhone simulator) play a whole run. Every peer's digest equals the host's at every digest tick it reached, and every peer still in step sees the run end at the same tick. A peer the host closed as unable to keep up is on record with the reason and counts as no failure for the simulator. No enemy the budget spawned first appears inside any windowed peer's view, by each peer's own record of its view.",
           "check": "python3 scripts/swarm.py match sockets four",
           "ask": "Is each of the four the game itself built for its target, in its own process, with its platform and runtime version in the record? Did the Mac window and the Chrome page stay in step for the whole run?",
           "lock": "gpu",
@@ -1021,8 +1065,8 @@
         },
         {
           "id": "M8.10",
-          "statement": "`docs/evidence/SWARM/TRACK-3-RECORD.md` closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, and it lists what was not run.",
-          "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the milestone that recorded it?",
+          "statement": "`docs/evidence/SWARM/TRACK-3-RECORD.md` closes track 3: for each of `SIM-2D`, `RENDER-2D`, `GAME-UI`, `TRANSPORT` and `SESSION` it says what the game proved of it and on which targets, with links to the evidence, it lists what was not run, and it says track 3 is closed by quoting the owner's acceptance.",
+          "ask": "Does the record name as not run: a second machine or an internet path, a public host, a physical iPhone, motion on the built-in panel itself, the game's look on an EDR panel, Safari and Firefox, key and pointer events delivered by the system to the Mac window, sound and a gamepad? Does each claim it makes link to evidence from the claimed commit or name the milestone that recorded it? Is the acceptance it quotes in the script's record of the owner's words?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1041,11 +1085,11 @@
         },
         {
           "id": "M8.12",
-          "statement": "The owner has played a run alone and a run with a second player, and has said whether the game plays well enough to close track 3, or what to change.",
-          "inspect": "Read the recorded Human Feedback. Is every change the owner asked for either made, with its evidence, or written in the plan as work still to do?",
+          "statement": "The owner has played a run alone and a run with a second player, and has accepted the game as playing well enough to close track 3. Every change the owner asked for is made, or the owner has said in their own words that it may wait until after the close.",
+          "inspect": "Read every Human Feedback the script recorded for this item, in order. Is the latest the owner's acceptance, in their words? For each change the owner asked for in any of them: is it made, with evidence from the claimed commit, or did the owner say it may wait? A change only written down as work to do, by a builder or a planner, fails this item, and so does feedback that asks for changes with no acceptance after it.",
           "needs": {
             "type": "human_feedback",
-            "what": "Play one run alone (`./dev swarm`) and one with a second player joined from Chrome. Say whether it plays well enough to close track 3: the difficulty, how your own hero feels beside the slightly late crowd in co-op, and the menus under the hand. No sound is built."
+            "what": "Play one run alone (`./dev swarm`) and one with a second player joined from Chrome. Say whether you accept it as playing well enough to close track 3, or what must change first: the difficulty, how your own hero feels beside the slightly late crowd in co-op, and the menus under the hand. What you ask for is done before the close unless you say it can wait. No sound is built."
           },
           "target": "mac-metal",
           "builder_result": "open",
