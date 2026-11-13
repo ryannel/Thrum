@@ -116,3 +116,9 @@
   `011521f8` centralizes that validation for both cached and newly mapped textures. The stronger Metal fault
   test passed: a manifest assertion proves the invalid volume request reuses the placement's resident 2D
   product, and the whole publication is refused. Clippy passed. [Proof](../../evidence/CONTENT-LOOP/M1.md#overlapping-edit-repair).
+- 2026-11-13 Complete candidate `fa1077748324f157223291c3c0ae7f1e7db07796`: the script's M1 items-only
+  check passed all nine automated items on Metal and hardware Chrome WebGPU. Native lease, cached-product
+  refusal, device replacement, coupled-reader and fetched-store checks passed. Both native baseline matrices
+  and all four Chrome sets passed in 908.23 seconds, with covered-content key
+  `044f2d2a852963ef343c302e9e1087434b43755e7e829186c861390f13affbc3`.
+  The public guide and generic lease surface still satisfy M1.8; no interface or retained image changed.
