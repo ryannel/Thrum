@@ -1,0 +1,124 @@
+{
+  "module": "CLOUDS",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "5a57696698632959cab3364191d9be5c81de022c9bf42eb1c557fae363a85d6b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M2": {
+      "definitions": "e596be8764161aec094e75b186398e116bf7ec74c06d2ab784fb10aee84ffbe1",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M3": {
+      "definitions": "37127c581f0aaecb6290ced90893aaa3d9c2750d13ff5ee7f9abaec4c35bba8f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M4": {
+      "definitions": "2799a12a6511bf312c0a4a7b7b11bff0610cbc734c889e87b5be68a3e54b383d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M5": {
+      "definitions": "69ceb65c5216f604ec6e96585e004d53c5ae6ab2cef02df2a595f820a3083078",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M6": {
+      "definitions": "259085f46f41f4b1401a19e04c92805792f1820ebd9403f3ea4aa9bb8e739f4d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M7": {
+      "definitions": "2fa598f7eb6281598e1a91efa534db2eb9ea15a7087fdc54c801aab80f10b16d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M8": {
+      "definitions": "9778bcede7199b6e672a537e722b066203b1d759e5fd1fab2bce8cedf4aac03a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M9": {
+      "definitions": "808215eb364808ad982d324c3598f217273ba0e1270a33bcd1e416c2865b9d07",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M10": {
+      "definitions": "076ef2a7c789062f49399a107e46dba3f2c3cedd608348cc9475bb089c55958c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M11": {
+      "definitions": "1a1336066907bacf7c4de0a1f00108b0450dd175f81a4caf68295b154c5e5cc4",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    },
+    "M12": {
+      "definitions": "35fc3d62ea95feaf1878b7afd85a22fcb849e8060a3df9329144808f7acb096a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now ra",
+        "at": "2026-11-13T22:37:36Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan the CLOUDS module (docs/plans/CLOUDS/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather than waiting on their port timing, said (13 Nov 2026): \"On 2 use the fable planner like normal but you can bring that across when it makes sense.\" Lead's reading, to record as an assumption: planning starts now, and the owner leaves to this plan when the Broadsides Rust work is brought across, within docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched). Milestones that depend on unfinished modules wait on them as usual.",
+      "at": "2026-11-13T22:37:36Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T22:37:36Z"
+  }
+}
