@@ -25,48 +25,48 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "f5d83cd39c98a6ac504f8fa938d663d1cb91ba5e7c0d028228248a1e2b1704da",
+      "definitions": "72a7552bf789944a6308d7de030f1b82606a888a7ecd9e79b2873a7f076c2e0d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module GAME-UI. It needs: RENDER-2D",
-        "at": "2026-11-13T19:21:23Z"
+        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
+        "at": "2026-11-13T19:40:18Z"
       }
     },
     "M2": {
-      "definitions": "fa78a36d764eac6076c375d071a8b60f9115aa0b23fb128382d18f491d8a0357",
+      "definitions": "94f23d81ce52936ad9e3f2052076382f698b3bf6e144558647456d9ea86988a4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module GAME-UI. It needs: RENDER-2D",
-        "at": "2026-11-13T19:21:23Z"
+        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
+        "at": "2026-11-13T19:40:18Z"
       }
     },
     "M3": {
-      "definitions": "0c6cd4fdee5c50695bef9648de5f8ef98016008729293a527fb1e922f3d68144",
+      "definitions": "2a5b1e6da8ec5dfaafe1b29a6d32f7ca79331823bf5e9e6631f010dae43b6e90",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module GAME-UI. It needs: RENDER-2D",
-        "at": "2026-11-13T19:21:23Z"
+        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
+        "at": "2026-11-13T19:40:18Z"
       }
     },
     "M4": {
-      "definitions": "cb597e3e445e6c12e9c3572816e06821f29706a59e709144d558788f5a37bd1d",
+      "definitions": "e39b78538b3c23be20ac7cb52dac6f13051ab9a58cf358c32e7496267da0a189",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module GAME-UI. It needs: RENDER-2D",
-        "at": "2026-11-13T19:21:23Z"
+        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
+        "at": "2026-11-13T19:40:18Z"
       }
     },
     "M5": {
-      "definitions": "49a1f03c25386a0e510bf239b40c885ec4cefce5d724b479b4b818f247e7232f",
+      "definitions": "254499e6fb70f9fdb052dae01e7eef5b013ec89573b64dcdd69f9489cf43aefd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module GAME-UI. It needs: RENDER-2D",
-        "at": "2026-11-13T19:21:23Z"
+        "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix finding",
+        "at": "2026-11-13T19:40:18Z"
       }
     }
   },
@@ -74,10 +74,14 @@
     {
       "task": "Plan module GAME-UI. It needs: RENDER-2D",
       "at": "2026-11-13T19:21:23Z"
+    },
+    {
+      "task": "The design review of GAME-UI at docs/evidence/GAME-UI/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T19:40:18Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T19:21:23Z"
+    "at": "2026-11-13T19:40:18Z"
   }
 }
