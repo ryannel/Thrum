@@ -1,5 +1,19 @@
 # CULLING log
 
+- 2026-11-14 Clean `e90704cb` passes all six literal M3 checks and the full
+  workspace tests. The exact verifier again passes native 38 + 4 comparisons
+  and four Chrome sets of 481 records. A subsequent repository gate hits the
+  pre-existing watcher deadline at generation 2. Twenty isolated repetitions
+  pass, and the native watcher registers its stream before the initial cook;
+  that inspection does not explain the intermittent failure. The full gate
+  retry and the checked merge supply the remaining integration verification.
+  M3 remains `in_progress`, with all ten builder items pass and target evidence
+  linked from [M3 evidence](../../evidence/CULLING/M3.md).
+  Retain `tmp/culling-m3/capture-20261113-231534/` (7.2 GiB) through independent
+  motion review. The complete M3 scratch root (22 GiB including that recording)
+  remains available for review and the historical pixel investigation; release
+  redundant recordings after review and decisive failure-input retention checks.
+
 - 2026-11-13 The complete current-source field capture passes all 1,930 ticks,
   with Occlusion halving Frustum on 1,918 ticks. The repository gate exposed
   the cloud test observer's obsolete `shade` signature. Its test-only adapter
