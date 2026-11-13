@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "cbaacdc6eec4a2d4cdbf9e78ccb208754deb352c9afcc08822690378420743ea",
+      "definitions": "b2354dbedd7ab48013228aa14d38f3c681b93d173e36ce813756aefa68ec819c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
-        "at": "2026-11-13T06:24:04Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
+        "at": "2026-11-13T06:37:21Z"
       }
     },
     "M2": {
-      "definitions": "a6a5223d5c70a16a9a62afc61f9a849c0deb23bcf13aef828b1b6a314e3f73c6",
+      "definitions": "c366c243a64af2cc17828dfe4710bcbd76321bc7b2f051352aa67a6b5053f3cc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
-        "at": "2026-11-13T06:24:04Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
+        "at": "2026-11-13T06:37:21Z"
       }
     },
     "M3": {
-      "definitions": "884677ca98ccd51562fa8b6bfdbe64ce892a261503c111020ff0b1763ce4f5a9",
+      "definitions": "848ce6a8b53201972e403ccfc61248999ade07469ef71aa7028912928cdf738a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the ru",
-        "at": "2026-11-13T06:24:04Z"
+        "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must F",
+        "at": "2026-11-13T06:37:21Z"
       }
     }
   },
@@ -56,10 +56,14 @@
     {
       "task": "Plan the CONTENT-LOOP module (row 12 in docs/plans/ARCHITECTURE.md: edited meshes, textures and volumes appear in the running game without a stall; needs APPLE-PRESENTATION M2). Write its design, milestones and done-when file so M1 is buildable as soon as APPLE-PRESENTATION M2 passes review. SEA, CLOUDS and RENDER-2D depend on it; account for what they will need from it.",
       "at": "2026-11-13T06:24:04Z"
+    },
+    {
+      "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-13T06:37:21Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T06:24:04Z"
+    "at": "2026-11-13T06:37:21Z"
   }
 }
