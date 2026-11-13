@@ -1,5 +1,8 @@
 # APPLE-PRESENTATION M2 builder evidence
 
+D2.6's review repair now has [production cooked-volume W3 evidence](../m2-volume/README.md), including
+an exact alpha-byte assertion through the real forward graph and a production-write negative control.
+
 Clean-checkout follow-up at `8224cda1961a0d04a308c689400fca575695be8d`: all seven item commands and
 the repository gate pass with the checker's `--timeout 3600`. Its default 600-second run timed out
 during the existing every-tick field oracle without an assertion failure.
@@ -37,7 +40,7 @@ and the covered source objects are identical. [Required checker](milestone-check
 | D2.3 | Each frame resolves a real 1×1 R16Float exposure texture. Submitted history retains its GPU storage scale. Changing p from 0.0043963287 to 0.008792657 gives 0.017578125 in the radiance-2 conversion control, against the old stored value 0.008792657. [Focused exposure proof](metal-exposure.log.gz). |
 | D2.4 | The real frame host separately asserts two in-flight submissions, held submission, submitted previous matrices, failed-acquisition cancellation, forced submission refusal and background reset. The cancellation and background cases each count one event. Output-grid keys remain tentative until submission. The healthy presentation-drop path retains its existing outcome. [Focused history proof](metal-history.log.gz). |
 | D2.5 | Chrome passes W1–W7 through the game's submitted frame path. After one injected acquisition refusal, A=38, C=39, and C's predecessor=38. C writes nonzero motion on 54,687 valid geometry pixels. Values come from T2's submitted diagnostic and the history cursor used for matrix packing. An unwritten reactive target fails W1, and advancing history on the abandoned view fails W6. [Current temporal witness](chrome-temporal-temporal.json.gz). |
-| D2.6 | Metal directly reads the reactive attachment. Invalid geometry writes 255, valid geometry 0, cooked volume alpha 0.63212055 becomes byte 161, and Sun and independently edited stars mark then clear. Uncovered pixels are 0. Both targets read one fixture. [Attachment proof](metal-inputs.log.gz) and [cooked volume proof](metal-volume.log.gz). |
+| D2.6 | Metal's real forward/star tests prove W1, W2, W4 and W5. The [fresh production cooked-volume proof](../m2-volume/README.md) proves W3 alpha byte 161 and uncovered zero through CookedAssets and the normal forward graph, on portable and Apple-tile. Both targets read one fixture. [Attachment proof](metal-inputs.log.gz); the [isolated fragment proof](metal-volume.log.gz) is supplementary. |
 | D2.7 | All 32 hardware Chrome regression cases pass, including controls, recovery, valley, field, route and the 16-view exact field oracle. [Current run](chrome-all-run.json.gz) and [hardware](chrome-all-browser-gpu.json.gz). |
 
 The focused Metal logs retain the original numerical witnesses. The current required checker reruns their

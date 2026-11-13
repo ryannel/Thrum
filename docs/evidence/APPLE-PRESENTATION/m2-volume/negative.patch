@@ -1,0 +1,13 @@
+diff --git a/crates/thrum-asset-gpu/src/draw.rs b/crates/thrum-asset-gpu/src/draw.rs
+index 72b51e5e..3c20ff75 100644
+--- a/crates/thrum-asset-gpu/src/draw.rs
++++ b/crates/thrum-asset-gpu/src/draw.rs
+@@ -311,7 +311,7 @@ impl Pipelines {
+                     Some(wgpu::ColorTargetState {
+                         format: surface.color_formats[2],
+                         blend: None,
+-                        write_mask: wgpu::ColorWrites::ALL,
++                        write_mask: wgpu::ColorWrites::empty(),
+                     }),
+                 ],
+             }),

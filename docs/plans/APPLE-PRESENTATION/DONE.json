@@ -146,8 +146,8 @@
           "lock": "gpu",
           "ask": "Do GPU tests drive the witness fixture through the real forward and star passes, read the reactive target back, and assert each of W1-W5 against the expected values in the fixture definition that the Chrome case also reads?",
           "target": "mac-metal",
-          "status": "open",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m2-volume/README.md",
           "verdict": "fail",
           "review": "docs/evidence/APPLE-PRESENTATION/M2-review.md"
         },

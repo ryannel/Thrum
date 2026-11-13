@@ -1,0 +1,6 @@
+{
+  "base_revision": "56469803aa6d16cc00c4bebfd7bca7ebcad70010",
+  "mutation": "Disable only the production volume pipeline third attachment write mask",
+  "production_draw_sha256": "b7d5b78ce1a251389b36fa16bf49d9b048ac976f089e8b4618d8fcd2a7315c2b",
+  "patch_sha256": "b8a1fe0ee6f20401fa4e654f9bb41cd56d3ffdbb56ff6f223ab16089764fee81"
+}

@@ -1,0 +1,33 @@
+{
+  "revision": "56469803aa6d16cc00c4bebfd7bca7ebcad70010",
+  "target": "mac-metal",
+  "recipes": [
+    "portable",
+    "apple-tile"
+  ],
+  "test_binary_sha256": "dd7334cfe7aeecdf38aa1adbd4781bab880264803492f4d474182bf2a04ab652",
+  "fixture": "crates/thrum-render/src/synthetic/temporal/witness.json",
+  "fixture_sha256": "8db43603531387ccd157839be52e68eb977174ff118f6bf44670231f65d5fe7b",
+  "production_draw_sha256": "642e4735e00fac40423a92535921f42d8005f117585753298f48c5ce0f136704",
+  "production_restored": true,
+  "test": "metal_cooked_volume_w3_uses_production_forward_reactive_attachment",
+  "command": "RUST_TEST_NOCAPTURE=1 rustup run 1.99.1 cargo test --locked --offline -p v1-game --test temporal_volume_gpu",
+  "phase_exit_codes": {
+    "positive": 0,
+    "production_write_disabled": 101,
+    "restored": 0
+  },
+  "frames": {
+    "portable": {
+      "raw_sha256": "3a379bfb368026c8d33c25e5f4db9fb8b64b8507ae5cd3733841678a4c2db141",
+      "png_sha256": "b8e339bb8c0df4898f3b9152a0ee62f0c5f5c07461fc51ea22caa298455f0385",
+      "before_after_identical": true
+    },
+    "apple-tile": {
+      "raw_sha256": "3a379bfb368026c8d33c25e5f4db9fb8b64b8507ae5cd3733841678a4c2db141",
+      "png_sha256": "b8e339bb8c0df4898f3b9152a0ee62f0c5f5c07461fc51ea22caa298455f0385",
+      "before_after_identical": true
+    }
+  },
+  "gpu_lock": true
+}

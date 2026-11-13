@@ -1,0 +1,21 @@
+{
+  "analytic_alpha": 0.6321205588285577,
+  "central_reactive": 161,
+  "device_generation": 1,
+  "expected_central_byte": 161,
+  "extent": [
+    65,
+    65
+  ],
+  "path": "Cooker -> CookedAssets -> Pipelines::draw -> production forward R8Unorm -> graph witness textureLoad -> submitted T2 copy",
+  "pixel_source": "Sdr/RGBA8 exact temporal diagnostic",
+  "recipe": "portable",
+  "session": 1,
+  "source_tick": 0,
+  "uncovered_reactive": [
+    0,
+    0,
+    0,
+    0
+  ]
+}
