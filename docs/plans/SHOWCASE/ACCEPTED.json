@@ -1,0 +1,52 @@
+{
+  "module": "SHOWCASE",
+  "design": null,
+  "milestones": {
+    "M5": {
+      "definitions": "488d35b3ffee5874a4e139b2e1bafc0e2d5da62800c99445e5fb747b23ba6150",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
+        "at": "2026-11-13T14:21:37Z"
+      }
+    },
+    "M6": {
+      "definitions": "1aa4be0b8298893240ca44dc6699836bca29df54327b43ddb31c0b4fe6eb8790",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
+        "at": "2026-11-13T14:21:37Z"
+      }
+    },
+    "M7": {
+      "definitions": "6126c50ca0af22e5746891b4c822d5038e4961ebc3a6872556004a80b7cd0f15",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
+        "at": "2026-11-13T14:21:37Z"
+      }
+    },
+    "M8": {
+      "definitions": "713af1e05791f8d6aadf9a63c537609b0c28820ff7cec1ec5555037665f24d71",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
+        "at": "2026-11-13T14:21:37Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, reviewed, with its closing record). It needs: The last milestone of modules 1 to 10 and 12.",
+      "at": "2026-11-13T14:21:37Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-13T14:21:37Z"
+  }
+}
