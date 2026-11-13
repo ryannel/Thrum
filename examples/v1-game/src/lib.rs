@@ -14,6 +14,7 @@ mod environment;
 mod field;
 mod field_meshes;
 mod host;
+pub mod lent;
 mod projection;
 mod scene;
 mod showcase;
@@ -24,7 +25,7 @@ mod window;
 #[cfg(target_arch = "wasm32")]
 pub use browser::{
     BrowserGame, CookedValley, create_browser_game, create_field_game, create_route_game,
-    fetch_cooked_valley, qualify_effect_state,
+    fetch_cooked_valley, qualify_effect_state, qualify_lent_products,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(feature = "draw-probe")]

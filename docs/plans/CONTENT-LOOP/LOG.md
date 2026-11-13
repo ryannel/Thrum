@@ -1,5 +1,12 @@
 # CONTENT-LOOP log
 
+- 2026-11-13 M1 implementation checkpoint: residency now offers configured sampled products through a public
+  lease, with one shared switch after the last-copy submission, retained views and per-product serials. Added
+  the opt-in game diagnostic, native lifecycle/coupled-reader/fault tests, generated Chrome fetched-feed case,
+  leased upload benchmark scenario and [consumer documentation](../../COOKED-LEASES.md). Native and Wasm lint
+  checks and documentation checks pass. Target proofs are still running or queued under the shared GPU lock;
+  no item is marked passed from compilation alone.
+
 - 2026-11-06 Before the loop: the content-addressed loop was built and run in the V1 game (`thrum-asset`,
   `thrum-cook`, `thrum-asset-gpu`), with bounded staging, tripwires and the Chrome client added by 8 November.
   [G5 decision](../../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md);

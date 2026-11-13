@@ -83,10 +83,12 @@ pub(crate) const REST_VERTEX_LIMIT: usize = 65_536;
 /// A sampled 2D texture or 3D volume.
 pub(crate) struct GpuTexture {
     pub(crate) texture: wgpu::Texture,
+    pub(crate) view: wgpu::TextureView,
 }
 
 /// Every product one publication draws.
 pub(crate) struct ResidentSet {
+    pub(crate) leased: Vec<(ContentHash, Profile, Arc<GpuTexture>)>,
     pub(crate) generation: u64,
     pub(crate) meshes: Vec<(Arc<GpuMesh>, Arc<GpuTexture>)>,
     pub(crate) volume: Option<Arc<GpuTexture>>,
@@ -123,13 +125,14 @@ pub(crate) struct Loader {
 
 /// Products a set needs, before upload.
 struct Opened {
+    leased: Vec<(ContentHash, Profile, Option<Ktx2>)>,
     meshes: Vec<(ContentHash, Option<MeshProduct>, ContentHash, Option<Ktx2>)>,
     volume: Option<(ContentHash, Option<Ktx2>)>,
 }
 
 /// Newest-value hand-over from the loader to the render thread.
 #[derive(Default)]
-pub(crate) struct Mailbox(Mutex<Option<PendingSet>>);
+pub(crate) struct Mailbox(Mutex<Option<Result<PendingSet, ()>>>);
 
 impl Mailbox {
     /// Replace any untaken set; the superseded one (staging and destinations) drops here, on the
@@ -138,14 +141,20 @@ impl Mailbox {
         let superseded = self
             .0
             .lock()
-            .map(|mut slot| slot.replace(set))
+            .map(|mut slot| slot.replace(Ok(set)))
             .unwrap_or_default();
         drop(superseded);
     }
 
     /// Take the newest set without blocking; a contended slot is tried again next frame.
-    pub(crate) fn take(&self) -> Option<PendingSet> {
+    pub(crate) fn take(&self) -> Option<Result<PendingSet, ()>> {
         self.0.try_lock().ok().and_then(|mut slot| slot.take())
+    }
+
+    fn refuse(&self) {
+        if let Ok(mut slot) = self.0.lock() {
+            *slot = Some(Err(()));
+        }
     }
 }
 
@@ -208,6 +217,8 @@ impl Loader {
                             filling = Some(filler);
                         }
                         Err(error) => {
+                            mailbox.refuse();
+                            filling = None;
                             self.fail(stop, &format!("generation {}: {error}", head.generation));
                         }
                     }
@@ -258,6 +269,7 @@ impl Loader {
                 Some(filler)
             }
             Err(error) => {
+                mailbox.refuse();
                 self.fail(stop, &format!("generation {}: {error}", head.generation));
                 None
             }
@@ -293,6 +305,9 @@ impl Loader {
         }
         if let (Some(volume), Some(hash)) = (&set.volume, products.next()) {
             next.textures.insert(*hash, Arc::clone(volume));
+        }
+        for (hash, _, texture) in &set.leased {
+            next.textures.insert(*hash, Arc::clone(texture));
         }
         next
     }
@@ -340,6 +355,7 @@ impl Loader {
     ) -> Result<(Opened, Option<Profile>, Option<Profile>), AssetError> {
         let missing = || AssetError::Malformed("asset unavailable in the requested profiles");
         let mut opened = Opened {
+            leased: Vec::new(),
             meshes: Vec::new(),
             volume: None,
         };
@@ -382,6 +398,40 @@ impl Loader {
             };
             opened.volume = Some((entry.product, product));
         }
+        for request in &self.config.leased {
+            let volume = match request.dimension {
+                wgpu::TextureDimension::D2 => false,
+                wgpu::TextureDimension::D3 => true,
+                wgpu::TextureDimension::D1 => {
+                    return Err(AssetError::UnsupportedTexture("leases require D2 or D3"));
+                }
+            };
+            let profiles = if volume {
+                &self.volume_profiles
+            } else {
+                &self.texture_profiles
+            };
+            let entry = source.resolve(&request.name, profiles).ok_or_else(|| {
+                AssetError::Io(std::io::Error::other(format!(
+                    "lease {}: unavailable in requested profiles",
+                    request.name
+                )))
+            })?;
+            let product = if confirmed.textures.contains_key(&entry.product) {
+                None
+            } else {
+                Some(
+                    self.open_texture(source, &entry.product, volume)
+                        .map_err(|error| {
+                            AssetError::Io(std::io::Error::other(format!(
+                                "lease {}: {error}",
+                                request.name
+                            )))
+                        })?,
+                )
+            };
+            opened.leased.push((entry.product, entry.profile, product));
+        }
         Ok((opened, texture_profile, volume_profile))
     }
 
@@ -396,6 +446,7 @@ impl Loader {
             .map_err(|error| error.to_string())?;
         let mut plan = StagingPlan::default();
         let mut set = ResidentSet {
+            leased: Vec::new(),
             generation: head.generation,
             meshes: Vec::new(),
             volume: None,
@@ -426,6 +477,30 @@ impl Loader {
                 None => Arc::clone(confirmed.textures.get(&hash).ok_or("lost volume")?),
             });
             set.products.push(hash);
+        }
+        // Reuse placement textures and repeated lease names within this publication too.
+        let mut textures = Self::confirm(&set).textures;
+        for ((hash, profile, product), request) in
+            opened.leased.into_iter().zip(&self.config.leased)
+        {
+            let texture = if let Some(texture) = textures
+                .get(&hash)
+                .or_else(|| confirmed.textures.get(&hash))
+            {
+                Arc::clone(texture)
+            } else {
+                Arc::new(
+                    self.stage_texture(&mut plan, Arc::new(product.ok_or("lost leased texture")?)),
+                )
+            };
+            if texture.texture.dimension() != request.dimension {
+                return Err(format!(
+                    "lease {}: texture dimension does not match its use",
+                    request.name
+                ));
+            }
+            textures.insert(hash, Arc::clone(&texture));
+            set.leased.push((hash, profile, texture));
         }
         let (upload, filler) = plan.finish(&self.ring)?;
         Ok((set, upload, filler))
@@ -526,7 +601,8 @@ impl Loader {
             view_formats: &[],
         });
         plan.texture(product, texture.clone());
-        GpuTexture { texture }
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        GpuTexture { texture, view }
     }
 }
 

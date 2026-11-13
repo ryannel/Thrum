@@ -405,6 +405,10 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Pipeline creations on this device generation, when creation counters are enabled.
+    pub fn pipeline_creation_count(&self) -> Option<u64> {
+        self.inner.pipeline_creation_count()
+    }
     /// Inspect the renderer's prepared variant storage and resident texture bytes.
     #[must_use]
     pub fn storage_report(&self) -> String {

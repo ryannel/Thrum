@@ -879,3 +879,13 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
     .await
     .map_err(js_error)
 }
+
+/// Qualify cooked leases on the browser's real fetched feed and replacement device.
+/// # Errors
+/// Returns a fetch, GPU, texel or publication mismatch.
+#[wasm_bindgen]
+pub async fn qualify_lent_products(origin: String) -> Result<String, JsValue> {
+    Box::pin(crate::lent::browser::run(origin))
+        .await
+        .map_err(js_error)
+}

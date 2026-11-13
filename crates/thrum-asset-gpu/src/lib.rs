@@ -29,6 +29,11 @@
 )]
 
 mod draw;
+#[cfg(feature = "fault-probe")]
+mod fault;
+mod lease;
+#[cfg(feature = "fault-probe")]
+pub use fault::FaultProbe;
 mod load;
 mod material;
 mod placement;
@@ -50,6 +55,7 @@ use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
 
+pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
 pub use material::{
     MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReload, ReloadTiming,
 };
@@ -171,6 +177,11 @@ impl From<PathBuf> for CookedSource {
 /// What to load and how fast to upload it. [`CookedConfig::new`] fills in the defaults.
 #[derive(Clone, Debug)]
 pub struct CookedConfig {
+    /// Opt-in one-shot staging fill fault, absent from ordinary builds.
+    #[cfg(feature = "fault-probe")]
+    pub fault: Option<FaultProbe>,
+    /// Additional sampled products, resident under the same publication and upload budget.
+    pub leased: Vec<LeaseRequest>,
     /// Where the cooked products come from: a store folder written by `thrum-cook` (a
     /// `PathBuf` converts), or a fetched remote feed.
     pub source: CookedSource,
@@ -199,6 +210,9 @@ impl CookedConfig {
     /// interval and texture profiles.
     pub fn new(source: impl Into<CookedSource>, meshes: Vec<MeshPlacement>) -> Self {
         Self {
+            #[cfg(feature = "fault-probe")]
+            fault: None,
+            leased: Vec::new(),
             source: source.into(),
             meshes,
             volume: None,
@@ -368,6 +382,8 @@ struct Live {
 
 /// A publication being uploaded. Its committed copy progress lives in `set.upload`.
 struct Pending {
+    /// Last copy committed in an earlier submission. Immutable until the switch submits.
+    ready: bool,
     set: load::PendingSet,
     first_copy: Option<Instant>,
     frames: u32,
@@ -503,6 +519,7 @@ pub mod draw_probe;
 /// Cooked products drawn in the scene. Attach with
 /// `FrameHost::set_scene_contribution(Box::new(assets))`.
 pub struct CookedAssets {
+    lease: ProductLease,
     #[cfg(feature = "draw-probe")]
     draw_probe: Option<draw_probe::Probe>,
     config: CookedConfig,
@@ -525,6 +542,7 @@ impl CookedAssets {
             placement.check(index)?;
         }
         Ok(Self {
+            lease: ProductLease::default(),
             config,
             #[cfg(feature = "draw-probe")]
             draw_probe: None,
@@ -559,6 +577,11 @@ impl CookedAssets {
         Arc::clone(&self.stats)
     }
 
+    /// Read-only products named by `CookedConfig::leased`, for other contributions.
+    pub fn lease(&self) -> ProductLease {
+        self.lease.clone()
+    }
+
     fn start(&self, surface: &SceneSurface<'_>, pipelines: draw::Pipelines) -> Live {
         // One newest staged set waits for the render thread; a newer one replaces it and the
         // superseded staging retires at once, even while no frame encodes.
@@ -573,6 +596,8 @@ impl CookedAssets {
                 surface.device,
                 self.config.upload_budget,
                 Arc::clone(&self.stats),
+                #[cfg(feature = "fault-probe")]
+                self.config.fault.clone(),
             ),
             config: self.config.clone(),
             texture_profiles: self.config.texture_preference.clone().map_or_else(
@@ -686,6 +711,7 @@ impl CookedAssets {
             }
             // New device generation: products are mapped and staged again for it.
             _ => {
+                self.lease.clear();
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.drawn = None;
                     stats.drawn_device_generation = None;
@@ -757,8 +783,11 @@ impl SceneContribution for CookedAssets {
         self.material
             .frame_boundary(&mut live.material, (live.generation, self.epoch));
         // Newest publication wins; a superseded pending set is dropped with its staging.
-        if let Some(set) = live.mailbox.take() {
-            live.pending = Some(Pending {
+        if !live.pending.as_ref().is_some_and(|pending| pending.ready)
+            && let Some(set) = live.mailbox.take()
+        {
+            live.pending = set.ok().map(|set| Pending {
+                ready: false,
                 set,
                 first_copy: None,
                 frames: 0,
@@ -778,9 +807,14 @@ impl SceneContribution for CookedAssets {
             ..Tentative::default()
         };
         if let Some(pending) = live.pending.as_mut() {
-            let recorded = pending.set.upload.encode(encoder, budget);
-            tentative.swap = pending.set.upload.completes(recorded);
-            tentative.recorded = Some(recorded);
+            if pending.ready {
+                tentative.swap = true;
+            } else {
+                let recorded = pending.set.upload.encode(encoder, budget);
+                tentative.swap =
+                    self.config.leased.is_empty() && pending.set.upload.completes(recorded);
+                tentative.recorded = Some(recorded);
+            }
             if tentative.swap && pending.bound.is_none() {
                 pending.bound = Some(live.pipelines.bind(&pending.set.set, meshes, volume));
             }
@@ -890,6 +924,28 @@ impl SceneContribution for CookedAssets {
         let now = Instant::now();
         if let (Some(recorded), Some(pending)) = (tentative.recorded, live.pending.as_mut()) {
             pending.set.upload.commit(recorded);
+            if !self.config.leased.is_empty() && pending.set.upload.completes(recorded) {
+                pending.ready = true;
+                let products = pending
+                    .set
+                    .set
+                    .leased
+                    .iter()
+                    .zip(&self.config.leased)
+                    .map(|((hash, profile, texture), request)| {
+                        LentProduct {
+                            name: request.name.clone(),
+                            hash: *hash,
+                            profile: *profile,
+                            device_generation: live.generation,
+                            serial: 0, // Assigned by the lease's lifetime counter at offer.
+                            view: texture.view.clone(),
+                            texture: texture.texture.clone(),
+                        }
+                    })
+                    .collect();
+                self.lease.offer(pending.set.set.generation, products);
+            }
             pending.first_copy.get_or_insert(now);
             pending.frames += 1;
             if let Ok(mut stats) = self.stats.lock() {
