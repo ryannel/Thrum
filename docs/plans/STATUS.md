@@ -96,6 +96,18 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SESSION assumes: a player who loses their connection gets their place back if they return within a grace period the game sets; their character stands idle meanwhile. ([plan](SESSION/PLAN.md))
 - SESSION assumes: a match is proved with a host and four players for ten minutes at 10,000 bodies, between separate processes on this Mac, through `TRANSPORT`'s relay. No second machine or internet path is run. ([plan](SESSION/PLAN.md))
 - SESSION assumes: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as `TRANSPORT`'s do. The other choices are owner decision 11 in the module list. ([plan](SESSION/PLAN.md))
+- GAME-UI assumes: GAME-UI waits for all of `RENDER-2D`, and so for the V1 exit, because it draws with the sprite path and changes files `RENDER-2D`'s builder works in. The module list said its first milestone would do; starting then would put two builders in the same files. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: "2D support in the engine" includes text and interface drawn in the frame, and this module builds the smallest part of that the game uses: text in Latin letters with accents (the languages of Western and Central Europe), bars, panels, buttons, one level of modal, and a join screen. Other scripts (Arabic, Hebrew, Chinese, Japanese, Korean, Indic), right-to-left text, translation tools, typed text, screen readers, scrolling lists and animated transitions are not built. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: keys, pointer and touch only. No gamepad. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: nobody types a join ticket, because it is about a hundred characters. It is pasted, or it arrives in a link that opens the game. There is no text field and no on-screen keyboard. On an iPhone it arrives by link only. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: text is made crisp by rasterising each font ahead of time at the sizes the game names, for displays of 1×, 2× and 3×. On a display in between (Windows at 125% or 150%, a zoomed browser) the interface takes the nearest of those, so it stays crisp and is a little larger or smaller than the system's own. The other choice rasterises text while the game runs, at any size, which puts font code in the shipped game and changes `RENDER-2D`'s approved design. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: the interface blends in linear light, as sprites do. A half-transparent black panel is lighter than in Photoshop or Figma (black at half alpha over white is 188, not 128), and light text over a dark scene is slightly heavier. If you overturn `RENDER-2D`'s assumption on this, both change together. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: on an EDR display the interface's white is ordinary white, not the display's peak. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: test fonts are public domain, CC0 or Apache-2.0. Most free fonts are under the Open Font License, which requires changed versions of the font to keep that licence, and the project's rule is no share-alike data. Whether the game may ship such a font is your call, with `SWARM`'s art. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: the interface is proved from 320×320 to 3456×2234 points, at 1×, 2× and 3×, with safe-area insets up to 64 points, and on the iPhone simulator for function only. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: on the Mac, proofs feed key and pointer events to the game's window in code, since posting real ones needs a permission and an unlocked screen. Chrome and the simulator get real events. Real Mac input, and how the menus feel under the hand, are judged when someone plays `SWARM`. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: test panels and menus are plain and made by the builder. The game's look is `SWARM`'s, and your judgement of it is not an item here. ([plan](GAME-UI/PLAN.md))
+- GAME-UI assumes: the four changes GAME-UI needs inside other modules (a stage for the interface in the frame runtime, a second use of the sprite pass, a font product in the content loop, input and an interface scene in the shells and the V1 game) are built by GAME-UI's own builder under rulings in the module list. No milestone is added to those modules. ([plan](GAME-UI/PLAN.md))
 
 ### Now and next
 
@@ -104,6 +116,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): In Progress · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../evidence/CONTENT-LOOP/M1-review.md)
 - SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
+- GAME-UI's design: Design Ready for Review · [design](GAME-UI/DESIGN.md) · [plan](GAME-UI/PLAN.md)
 
 ### Recently done
 
@@ -147,5 +160,5 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Waiting: On Dependency, SHOWCASE:M8, APPLE-TILE:M12, EFFECT-GRAPH:M3 |
 | 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones | Design Changes Requested |
-| 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
+| 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 | Design Ready for Review |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
