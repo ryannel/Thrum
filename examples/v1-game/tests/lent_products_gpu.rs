@@ -60,8 +60,11 @@ fn config(cook: &CookConfig) -> CookedConfig {
     config
 }
 
-async fn gpu(generation: u64, compressed: bool) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+async fn gpu(
+    instance: &wgpu::Instance,
+    generation: u64,
+    compressed: bool,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
@@ -269,7 +272,9 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
             let mut cooker = Cooker::open(cook.clone()).expect("cooker");
             assert_eq!(cooker.cook_all().expect("cook").failed, []);
             pollster::block_on(async {
-                let (device, queue, capabilities) = gpu(1, compressed).await;
+                let instance =
+                    wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+                let (device, queue, capabilities) = gpu(&instance, 1, compressed).await;
                 let mut host =
                     FrameHost::new_with_capabilities(&device, &queue, &capabilities, presenting())
                         .await
@@ -415,7 +420,7 @@ fn leased_texels_commit_edit_capture_discard_and_recovery() {
                     assert!(stats.max_frame_copy_bytes <= COPY_UNIT);
                     assert!(stats.staging_peak_bytes <= COPY_UNIT * STAGING_CHUNKS);
                 }
-                let (new_device, new_queue, new_capabilities) = gpu(2, compressed).await;
+                let (new_device, new_queue, new_capabilities) = gpu(&instance, 2, compressed).await;
                 let mut candidate = host
                     .device_prepare_inputs()
                     .expect("inputs")
@@ -484,7 +489,9 @@ fn placement_and_lease_switch_together_in_both_contribution_orders() {
             config
         };
         pollster::block_on(async {
-            let (device, queue, caps) = gpu(1, false).await;
+            let instance =
+                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+            let (device, queue, caps) = gpu(&instance, 1, false).await;
             let mut host = FrameHost::new_with_capabilities(&device, &queue, &caps, presenting())
                 .await
                 .expect("host");
