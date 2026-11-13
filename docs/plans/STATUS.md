@@ -87,6 +87,15 @@ A planner or the lead chose each of these where your words left it open. Each st
 - RENDER-2D assumes: a scene shows at most eight sprite sheets at once. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: where sprites overlap in a crowd, an order that holds still matters more than one sorted exactly by height. A sprite can therefore be drawn behind a neighbour that is very slightly higher on the screen (by a few times the jitter the engine is hiding), so that packed sprites do not flicker. The other choice sorts exactly and lets neighbours that push each other swap every few ticks. ([plan](RENDER-2D/PLAN.md))
 - RENDER-2D assumes: test art is made by the builder (generated test cards and a few simple original sprites), and the owner's judgement of a look is not an item here. The game's art is `SWARM`'s. ([plan](RENDER-2D/PLAN.md))
+- SESSION assumes: SESSION waits for the V1 exit, because the modules it stands on do: `SIM-2D` and `TRANSPORT` both wait for `SHOWCASE` M8, since the owner's page puts the game after V1. ([plan](SESSION/PLAN.md))
+- SESSION assumes: each player sees their own character answer at once, and sees the crowd and the other players a little late: about 80 ms behind the host on a 100 ms connection. Rewinding and re-stepping the whole crowd to hide that delay is not built, because at 10,000 enemies one correction costs about six frames. How the delay feels is yours to judge in the game. ([plan](SESSION/PLAN.md))
+- SESSION assumes: a native process hosts, and the match ends when it stops. Chrome and the iPhone simulator only join. Host migration, matchmaking and accounts are not built. ([plan](SESSION/PLAN.md))
+- SESSION assumes: anyone who has the host's join ticket and the same build can take a free place. There are no passwords, and no way to remove a player. ([plan](SESSION/PLAN.md))
+- SESSION assumes: every player's machine holds the whole arena. A modified client cannot change what the others see, but it can read everything; nothing is hidden and no anti-cheat is built. ([plan](SESSION/PLAN.md))
+- SESSION assumes: a player whose machine or browser tab cannot keep up with the match is dropped from it. The match never slows down for one player. ([plan](SESSION/PLAN.md))
+- SESSION assumes: a player who loses their connection gets their place back if they return within a grace period the game sets; their character stands idle meanwhile. ([plan](SESSION/PLAN.md))
+- SESSION assumes: a match is proved with a host and four players for ten minutes at 10,000 bodies, between separate processes on this Mac, through `TRANSPORT`'s relay. No second machine or internet path is run. ([plan](SESSION/PLAN.md))
+- SESSION assumes: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as `TRANSPORT`'s do. The other choices are owner decision 11 in the module list. ([plan](SESSION/PLAN.md))
 
 ### Now and next
 
@@ -94,6 +103,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1): In Progress · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../evidence/CONTENT-LOOP/M1-review.md)
+- SESSION's design: Design Ready for Review · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
 
 ### Recently done
 
@@ -136,6 +146,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Waiting: On Dependency, SHOWCASE:M8, APPLE-TILE:M12, EFFECT-GRAPH:M3 |
-| 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D, TRANSPORT | Not planned yet |
+| 19 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones | Design Ready for Review |
 | 20 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D | Not planned yet |
 | 21 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SIM-2D, RENDER-2D, GAME-UI, TRANSPORT, SESSION | Not planned yet |
