@@ -25,21 +25,21 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "5c02e435eb2d2f385a2cd28a608e5a4819f5f43d3dbbe13459e2706f81c83dc7",
+      "definitions": "72e0e4b39d302c2fe015c94282d74f9a7d98cc11293975cd821f6f229a7ed31b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module TRANSPORT. It needs: SHOWCASE",
-        "at": "2026-11-13T16:38:51Z"
+        "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 3 Must Fix fin",
+        "at": "2026-11-13T17:08:46Z"
       }
     },
     "M2": {
-      "definitions": "619b2d181a47ab1d0f1efd06f3b1e299fe42fe55532db549e990adae890bd315",
+      "definitions": "6e6b999e3f86fc405f98e4dbb7fdc0c17600a88c6d5aa3abfcb79f5a9c6835fa",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module TRANSPORT. It needs: SHOWCASE",
-        "at": "2026-11-13T16:38:51Z"
+        "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 3 Must Fix fin",
+        "at": "2026-11-13T17:08:46Z"
       }
     }
   },
@@ -47,10 +47,14 @@
     {
       "task": "Plan module TRANSPORT. It needs: SHOWCASE",
       "at": "2026-11-13T16:38:51Z"
+    },
+    {
+      "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 3 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nYour last turn on this was refused, for: docs/plans/TRANSPORT/LOG.md has 1 entry longer than 8 lines (the first starts \"- 2026-11-13 Must Fix, datagram expiry after handoff. The pr\"). Keep each entry to a few lines, and put the detail in the evidence folder with a link to it. Its files are in the latest stash, 'planner: The design review of TRANSPORT at docs/evidence/TRANSPORT/de' (`git stash list`, then `git stash show -p --include-untracked <stash>`); reuse what holds up.",
+      "at": "2026-11-13T17:08:46Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T16:38:51Z"
+    "at": "2026-11-13T17:08:46Z"
   }
 }

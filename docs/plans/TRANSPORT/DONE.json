@@ -84,7 +84,9 @@
           "check": "python3 scripts/transport_link.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M1.8",
@@ -134,7 +136,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
@@ -186,7 +190,9 @@
           "check": "python3 scripts/transport_link.py suspend --target mac-metal",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.5",
@@ -194,7 +200,9 @@
           "check": "python3 scripts/transport_link.py suspend --target ios-sim",
           "target": "ios-sim",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.6",
@@ -202,7 +210,9 @@
           "check": "python3 scripts/transport_link.py suspend --target chrome-webgpu",
           "target": "chrome-webgpu",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.7",
@@ -230,7 +240,9 @@
           "check": "python3 scripts/transport_link.py session",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.10",
@@ -238,7 +250,9 @@
           "check": "python3 scripts/transport_link.py closure",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.11",
@@ -247,7 +261,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "status": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "rounds": 0
