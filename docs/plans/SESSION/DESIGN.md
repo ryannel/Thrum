@@ -51,7 +51,9 @@ that holds the authority world. A **peer** is any process in the match. A **play
 player can hold; a match has up to four. The **roster** says which peer holds which slot. An **admitted set** is
 everything the host admitted for one tick. The **world image** is a world's whole authority state as bytes. A
 client's **progress report** is two ticks: **held**, up to which it holds every set, and **stepped**, which its
-world has committed. Their difference is its **backlog**.
+world has committed. Their difference is its **backlog**. A client's **playout position** is where its picture
+stands on the tick line; a **stall** holds it still and a **skip** moves it on at once
+([mechanism 6](#6-the-playout-clock)).
 
 **Consumers.** `SWARM` declares its rule set and actions to a match, starts a host, and reads the confirmed world
 and its own predicted character. `GAME-UI` shows what the session reports about each connection.
@@ -60,15 +62,17 @@ and its own predicted character. `GAME-UI` shows what the session reports about 
 future input frames; a runtime that can capture and restore a world inside one process. Nothing negotiates,
 relays, joins or repairs, and no test puts two worlds in step.
 
-**Commissioned.** The eleven mechanisms below, proved first by four players and a host on the in-memory link with
-[the reference crowd](../SIM-2D/DESIGN.md#7-the-reference-crowd), then on real sockets across `mac-metal`,
-`chrome-webgpu` and `ios-sim`.
+**Commissioned.** The twelve mechanisms below. M1 to M6 prove the first eleven with no window: by four players
+and a host on the in-memory link with [the reference crowd](../SIM-2D/DESIGN.md#7-the-reference-crowd), then on
+real sockets across `mac-metal`, `chrome-webgpu` and `ios-sim`. M7 proves the twelfth, and what a player sees of
+the sixth, in a window on the Mac and on a Chrome page.
 
 **Not built.** Host migration: when the host stops, the match ends. Matchmaking, accounts, passwords and a public
 host. Interest management: every peer holds the whole world. Whole-world rollback. Spectators. A replay file. Any
 protection against a player who reads the world from a modified client. More than four players. Travelling state
 for a game without deterministic rules: A5's acknowledged deltas stay in `thrum-network`, unused and unqualified
-by this module. Drawing: this module's proofs have no window.
+by this module. Drawing a game: M1 to M6's proofs have no window, and M7 draws only the reference crowd, through
+`RENDER-2D`'s crowd view. Extrapolating a picture past the newest confirmed tick: in a stall the picture holds.
 
 ## What a consumer must be able to do
 
@@ -85,6 +89,7 @@ by this module. Drawing: this module's proofs have no window.
 | **N9 Be refused when your copy would disagree** | Another protocol, another rule set, another build of the same rule set, a full match | A version number someone has to remember to raise. Rejected by a changed rule constant that must change the identity with no other edit |
 | **N10 Know what the match is doing** | Each state a connection passes through, with the reason for a refusal or a close; round trip, lead, bytes, corrections | Counters on the host only. The record names each peer's own |
 | **N11 Pay nothing when the game is not networked** | The V1 game, the starter, the creator scenes; and a match rehearsed with no socket | A feature flag in a crate every game links. Rejected by a check of each package's dependency closure |
+| **N12 See the crowd move evenly while the sets arrive unevenly** | Sets that arrive together inside the playout buffer; a buffer that runs out; a client behind by up to the behind threshold, and by more; a display faster or slower than the tick rate; a browser tab hidden and shown | Committing every set held and drawing between the last two ticks. Digests and interpolation values all pass while the picture jumps (the design review of 14 November, in [the log](LOG.md)). Rejected by a bound on how far the position moves between two frames, with that policy as the control that must fail |
 
 ## Mechanisms
 
@@ -271,19 +276,61 @@ records the held ticks at each depth.
 
 ### 6. The playout clock
 
-**Decision.** A client steps its confirmed world on a clock of its own, a little behind the sets' arrival, so
-that it steps at an even pace however unevenly datagrams land. The delay is a buffer sized from how late sets
-have recently been. When the next set is not there the client waits, and counts a stall. When it is behind it
-steps more than one tick in a frame, up to a cap, until it is back on its clock. The clock is the client's own
-monotonic clock, placed by when sets arrive and never by a time the host sent. What it has not yet stepped waits
-in the client's buffer of sets, whose length is [the backlog](#3-the-set-stream).
+**Decision.** A client's playout is one **position** on the tick line: a tick and a fraction, moved forward by
+the client's own monotonic clock and never back. The world commits tick `n + 1` when the position reaches tick
+`n`. The two newest committed ticks therefore always bracket the position, and a frame draws between them at the
+fraction, the **playout interpolation** (C02). Commitment follows the position and not arrival: a set that
+arrives early waits in the client's buffer of sets, whose length is [the backlog](#3-the-set-stream).
 
-**What the game gets.** Each time it polls the session with the time, it is told how many ticks to commit now and
-where between the last two confirmed ticks the playout clock stands, which is the interpolation the frame draws
-with (C02).
+**The target.** The position aims at a target that stands a buffer behind the sets' arrival, so that the world
+steps at an even pace however unevenly datagrams land. The buffer is sized from how late sets have recently
+been. The target is placed by when sets arrive and never by a time the host sent.
 
-**The host** steps by the wall clock, with a bounded catch-up after a hitch and no dropped tick (C02). The
-session holds the pacing for a headless host, so `SWARM`'s host and the proof's are the same loop.
+**The rate.** On its target the position moves one tick in each tick period. Behind its target it moves faster,
+up to the **catch-up rate**. Ahead of it, as when the buffer has just grown, it moves slower, down to the
+**slow-down rate**. Both are match settings. They start at 1.1 and 0.85, the defaults Unity's Netcode for
+Entities ships for the same job
+([`ClientTickRate`](https://docs.unity3d.com/Packages/com.unity.netcode@1.5/api/Unity.NetCode.ClientTickRate.html)),
+which likewise "slowly adjusts both prediction tick and interpolation delay in small increments" and never
+lets either go "back in time"
+([time synchronisation](https://docs.unity3d.com/Packages/com.unity.netcode@1.5/manual/time-synchronization.html)).
+
+**A stall.** The position never passes the newest committed tick. When the next set is not held, or an advance
+would need more commits than the cap on catch-up, the position holds there and the picture holds still. That is
+a **stall**, counted with its length and its cause. When the set comes the position goes on from where it held.
+
+**A skip.** At a tenth over pace a client regains one tick in ten, which is too slow for one far behind. A
+playing client whose backlog is above the behind threshold
+([mechanism 10](#10-slow-silent-and-hostile-peers)) therefore **skips**: at each advance it commits as many
+ticks as the cap on catch-up allows and its position is placed at the newest of them, until it is back on its
+target. A repair or a return ends with the position placed on its target, at a tick never behind the one it
+left, and is a skip by that cause. A skip is the one jump this design accepts in a client's picture. It is
+recorded with its first and last tick and its cause, and the client is shown as behind while it lasts, so a game
+can say so on screen. This is C02's "explicit pause/catch-up policy with a work cap". Factorio's client does the same after a
+join: it must "fast-forward to catch up" ([Friday Facts 147](https://factorio.com/blog/post/fff-147)).
+
+**What is promised.** Outside a skip, from one frame to the next the position never moves back, and never moves
+on by more than the catch-up rate times the time between the two frames. A client's picture therefore moves at
+most a tenth faster than the same world would alone, and holds still only in a stall the record names. Sets
+that arrive together inside the buffer change nothing a player can see: the position is still behind them and
+takes them one tick at a time.
+
+**Checked against the design review's case.** A client has drawn up to tick 100 and stalled; sets 101 to 103
+then arrive together, and its target is three ticks on. Committing all three and drawing between 102 and 103
+would move a body at least two ticks' travel in one frame, where a steady frame at 120 Hz moves half a tick's.
+Here the client commits 101 alone and its next frame is at 100.55. It commits 102 when the position reaches 101
+and 103 when it reaches 102, and regains the three ticks in thirty, half a second, at 0.55 ticks a frame. Had
+its backlog been above the behind threshold it would have skipped, and said so.
+
+**What the game gets.** Each time it polls the session with the time, it is told how many ticks to commit now,
+the position with its rate, and whether a stall or a skip is under way.
+
+**Synchronising and repairing have no playout.** The client steps as fast as it can and nothing is promised of
+its picture. Its position is placed on its target when it starts to play.
+
+**The host** steps by the wall clock, with a bounded catch-up after a hitch and no dropped tick (C02), and its
+position is the wall clock's, as a world's alone is. The session holds the pacing for a headless host, so
+`SWARM`'s host and the proof's are the same loop.
 
 ### 7. The world image and the baseline
 
@@ -390,9 +437,9 @@ holder, like a client with no token, joins as a new player, with a join event an
 It may be given the same slot number, as any free slot may be.
 
 **States a screen can show.** For this peer: connecting, negotiating, refused (with the reason), synchronising
-(with how much of the baseline has arrived and how many ticks remain), playing, behind (with its backlog),
-repairing, link too slow, and closed (with the reason, a match that ended among them). For every slot: free, present or away. With them, the round trip the lead implies,
-the lead and the confirmed delay.
+(with how much of the baseline has arrived and how many ticks remain), playing, behind (with its backlog, while
+its picture [skips](#6-the-playout-clock)), repairing, link too slow, and closed (with the reason, a match that ended among them). For every slot: free, present or away. With them, the round trip the lead implies,
+the lead, the confirmed delay, and the playout's stalls and skips.
 
 **Answers before closes.** A close can cut off the last reliable messages
 ([TRANSPORT](../TRANSPORT/DESIGN.md#1-the-link)). So a host that refuses sends the refusal and waits, up to a
@@ -417,7 +464,8 @@ and each cap has one outcome.
 **Lag, measured.** The host's tick less `held` is how far a client's link is behind, and the ring measures it.
 `held` less `stepped` is how far its stepping is behind, and only the progress report shows it. The behind
 threshold starts at 30 ticks: the probe's playout buffer was about three ticks on the harsh profile, and a stall
-or a join leaves a backlog of hundreds. The catch-up deadline starts at 600 ticks, counted in host ticks from the
+or a join leaves a backlog of hundreds. The same threshold is where a playing client stops gliding back to its
+target and [skips](#6-the-playout-clock). The catch-up deadline starts at 600 ticks, counted in host ticks from the
 first report above the threshold. Both are match settings, and M3 records the backlogs they are set against. The
 deadline judges a playing client. One that is synchronising or repairing is judged by the join deadline alone,
 and the catch-up deadline first applies when it is in step. A client closed as unable to keep up leaves its slot
@@ -481,24 +529,32 @@ ticks the session names, and draw at its [playout](#6-the-playout-clock) positio
 
 - its **driver**, which the game supplies, says at each advance how many ticks to commit (none, one, or several
   up to the cap on catch-up) and where the presentation stands between the last two committed ticks;
-- a driven world raises no overload for ticks nobody asked for, and the frame host draws at the driver's
-  position in place of the lane clock's;
+- the driver states that place as the lane's clock sample does, a position with its rate at a time, so the
+  frame host evaluates it at each frame's own display time, in place of the lane clock's, and holds it at the
+  newest committed tick;
+- a driven world raises no overload for ticks nobody asked for;
 - a world on the fixed clock behaves as it did, and its tests pass unchanged.
 
 The engine side names no session and no link. A game's driver asks its session how many ticks to commit now and
-passes the answer on, which is three lines of game code and is in the guide. The session stays driven by time
+passes the answer on, which is three lines of game code and is in the guide. A driven world draws what it is
+told and adds no smoothing of its own. Whether the picture moves evenly is the driver's doing: a session's
+driver keeps [the playout's promise](#6-the-playout-clock), and a driver that names three ticks at once moves
+the picture three ticks. The session stays driven by time
 from the world's task, which drains the link at the barrier as
 [`TRANSPORT`'s design](../TRANSPORT/DESIGN.md#4-the-world-lane-never-waits-on-the-network) expects.
 
 This is new work in core's and the app runner's state, built in M7 under
 [seam ruling 3](../ARCHITECTURE.md#seam-rulings-for-session). It is proved with the reference crowd drawn by
 `RENDER-2D`'s crowd view, on a Mac host, a Mac client and a Chrome page, so no game is needed to prove it. It
-is M7 and not part of M5 because M1 to M6 need no window and no GPU, and this needs both.
+is M7 and not part of M5 because M1 to M6 need no window and no GPU, and this needs both. The playout position
+itself is session logic and is proved in M2 in virtual time. M7 proves that a frame is drawn where the position
+says, and that the result looks as promised.
 
 *Range.* A driver may name no tick for as long as it likes; the world holds its last pair and the picture holds
 still. The cap on catch-up is the session's, already bounded by [mechanism 10](#10-slow-silent-and-hostile-peers).
-A hidden browser tab stops its driver; when it returns it is the session that decides between catching up and a
-repair, and the world only does what it is told.
+A hidden browser tab stops its driver; when it returns it is the session that decides between a skip and a
+repair, and the world only does what it is told. A frame that falls between two advances draws the same pair
+of ticks again, further on; no tick is committed twice.
 
 ## The system as it runs
 
@@ -506,7 +562,7 @@ repair, and the world only does what it is told.
 |---|---|---|
 | The match identity, the roster, each link's epoch and token, the match settings | `thrum-network` (this module) | Session |
 | Staged future frames, pending commands, each client's ring of unacknowledged sets, baselines in flight | `thrum-network`, on the host | Session, capped |
-| The lead and the authoring tick, the playout clock, the buffer of sets, the predicted controller's ring | `thrum-network`, on a client | Session, local, capped |
+| The lead and the authoring tick, the playout position and its target, the buffer of sets, the predicted controller's ring | `thrum-network`, on a client | Session, local, capped |
 | The world image's encoding and restore | `thrum-core`, by [seam ruling](../ARCHITECTURE.md#seam-rulings-for-session) | Engine code; no stored state |
 | A driven world: which ticks the lane commits and where the frame stands between them | `thrum-core` and `thrum-app`, by seam ruling 3; the driver is the game's | Engine code; the driver holds no state of its own here |
 | The tick, committed state, pages, the digest | `thrum-core`, as G2S and `SIM-2D` leave them | Authority |
@@ -529,8 +585,9 @@ peer.
 
 **A client tick, walked.** (1) It drains its link: sets go to its buffer, margins to the lead. (2) It authors
 this tick's frame at its authoring tick, steps the predicted controller, and sends its datagram with recent frames
-and its progress report. (3) While the playout clock says a tick is due and its set is here: admit the set, step,
-commit, compare the digest if that tick has one, then check the prediction against the new confirmed state.
+and its progress report. (3) It moves the playout position on by the time that has passed. For each tick the position
+now calls for whose set is here: admit the set, step, commit, compare the digest if that tick has one, then check
+the prediction against the new confirmed state.
 
 **A join.** Link open; hello; welcome with a slot and a token; the host writes an image at `b`; pieces arrive;
 the client restores and steps from `b + 1` until its progress report shows it in step; the host puts the join in
@@ -550,7 +607,7 @@ Provided to other modules, as [the module list](../ARCHITECTURE.md#interfaces-tr
 
 | Interface | To | What it is |
 |---|---|---|
-| **Session** | `SWARM` | A host and a client driven by time: join and leave, roster events, the admitted set for each tick, how many ticks to commit now and the playout interpolation, the predicted controller's two states and its corrections, commands with their results, and the match settings |
+| **Session** | `SWARM` | A host and a client driven by time: join and leave, roster events, the admitted set for each tick, how many ticks to commit now and the playout interpolation, with each stall and skip, the predicted controller's two states and its corrections, commands with their results, and the match settings |
 | **Connection state** | `SWARM`, `GAME-UI` | Mechanism 9's states and reasons for this peer and for each slot, with the lead, the confirmed delay and the counters |
 | **Match proof** | `SWARM` | The scripted-player harness and the command that runs a match on the in-memory link and across the three targets through `TRANSPORT`'s relay |
 
@@ -579,7 +636,9 @@ envelope.
 
 **For `SWARM`'s planner.**
 - The engine's world lane steps by its own clock. A client's world has to step when the session says, which
-  [a driven world](#12-a-driven-world) allows from M7. The game supplies only the driver.
+  [a driven world](#12-a-driven-world) allows from M7. The game supplies only the driver. After a stall the
+  crowd runs up to a tenth fast until it is back on its clock, and a client that fell behind skips; the
+  connection state says which, for a screen to show.
 - A hero the crowd can push is corrected every tick it is pushed. Keep the hero's movement a function of its own
   state and input where the game allows.
 - The crowd is drawn at the confirmed tick and the hero ahead of it, by the lead plus the confirmed delay. M4 and
@@ -643,6 +702,11 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **A hidden browser tab** is throttled and falls behind. It is closed as unable to keep up or as absent, or
   repaired when it returns, by whichever rule its reports meet first, and it can come back with its token. M5
   records what the host sees.
+- **A convincing fake of smooth play:** equal digests and correct interpolation values over a picture that
+  jumps, or a frame record written from the session's own log. M2 fails the policy that commits every set held,
+  and M7's record is of the position each frame was drawn at.
+- **Running a tenth fast shows.** Early sign: M7's inspection after the underrun. The two rates are settings.
+- **The rate hunts** on a steady link. Early sign: M7's frame record, which carries the rate of each frame.
 - **The lag rule closes a client that would have caught up.** Early sign: M3's record of how long a backlog
   stays above the threshold after a stall and a join, set beside the catch-up deadline. Both are settings.
 - **The host's tick in every client's wait.** Early sign: M2's time from a tick's barrier to its set leaving the
@@ -660,13 +724,20 @@ adapt holds all of them. The floor catches a collapse and is no target.
 - **Two tiers.** A short match on the in-memory link runs inside `./dev check`, in virtual time. The full sizes,
   10,000 bodies for 36,000 ticks, run in release through **the match command**, one script with the scenario as
   its argument.
-- **Targets.** The host is always native on the Mac. Clients run natively on the Mac, as a plain executable in
-  the iPhone 18 Pro simulator through `simctl spawn`, and as Wasm in headless Chrome with no flag that touches
-  certificates, QUIC or origins. None needs the GPU. The simulator proves function, never speed.
-- **The sandbox.** Sockets, Chrome and the simulator do not work inside Codex's `workspace-write` sandbox. Every
-  such proof is behind the match command, which a builder or a reviewer asks to run outside the sandbox, and
-  nothing in `./dev check` opens a socket. A reviewer whose request is refused cannot judge those items, and the
-  review goes to Claude. [Whether to keep asking for each run is the owner's](../ARCHITECTURE.md#owner-decisions).
+- **Targets.** The host is always native on the Mac. In M1 to M6 clients run natively on the Mac, as a plain
+  executable in the iPhone 18 Pro simulator through `simctl spawn`, and as Wasm in headless Chrome with no flag
+  that touches certificates, QUIC or origins; none of them opens a window or needs the GPU. M7 alone opens
+  windows on the Mac and a visible Chrome page, takes the GPU lock, and shows a reviewer motion through T2
+  engine capture in `realtime` mode. The simulator proves function, never speed.
+- **The sandbox.** Nothing in `./dev check` opens a socket, starts Chrome or calls the simulator: every such
+  proof is behind the match command. [The project settings](../../../ORCHESTRATE.md) give Codex full access
+  ([owner decision 11](../ARCHITECTURE.md#owner-decisions)), so a builder or a reviewer runs the match command
+  as it is, with no request.
+- **Smooth play is proved twice.** In M2 the playout position is driven in virtual time through a burst inside
+  the buffer, an underrun and a fall behind, beside the policy that commits every set held, which must fail.
+  In M7 the same three are made on a real link by cutting the path at the relay for a time, so that the sets
+  lost in the cut arrive together in the next datagram. The frame record is checked against
+  [the promise](#6-the-playout-clock), and a reviewer watches the three places.
 - **Equal digests** are read from each peer's own record of the digests it took, never from one process on
   another's behalf.
 - **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
@@ -682,5 +753,7 @@ adapt holds all of them. The floor catches a collapse and is no target.
   join times.
 - Whether the envelope should be shortened for datagrams. Settled when M5's bytes are on record; a planner
   decides then.
+- Whether a tenth over pace, and a skip beyond the behind threshold, look right. Recorded by M7's inspection;
+  both are match settings, and the owner judges them in `SWARM`.
 - Whether the confirmed crowd's delay behind the hero feels right. Recorded here; judged by the owner in
   `SWARM`.

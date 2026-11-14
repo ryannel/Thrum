@@ -248,6 +248,17 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "M2.12",
+          "statement": "A client's playout position keeps the design's promise. In virtual time on the in-memory link a client is given sets that arrive together inside its playout buffer, sets that arrive together after the buffer has run out, and a stall that leaves its backlog above the behind threshold. The first causes no stall and no change of rate. After the second the position goes on from where it held, never faster than the catch-up rate, and the world commits each tick only when the position reaches the tick before it. Only the third ends in a skip, recorded with its first and last tick. Throughout, the position never moves back and never passes the newest committed tick. The policy that commits every set held and draws between the last two fails the same test.",
+          "check": "cargo test --locked --offline -p thrum-network --test playout_position",
+          "ask": "Read the test. Does it read the position at times between advances, as a frame would, and not only when a tick commits? Is the control that must fail the policy of committing every held set at once, run through the same assertions?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 0,
@@ -713,7 +724,7 @@
         },
         {
           "id": "M7.2",
-          "statement": "A frame host that observes a driven world draws each frame at the driver's position between the last two committed ticks: over a scripted run of advances the frames' interpolation values are the driver's, and a frame with no new tick draws the same pair again.",
+          "statement": "A frame host that observes a driven world draws each frame between the last two committed ticks, at the driver's position for that frame's display time and never past the newest committed tick. Over a scripted run of advances the frames' interpolation values are the driver's, and frames that fall between two advances draw the same pair again, further on.",
           "check": "cargo test --locked --offline -p thrum-render --test driven_world_observer",
           "lock": "gpu",
           "target": "mac-metal",
@@ -736,7 +747,7 @@
         },
         {
           "id": "M7.4",
-          "statement": "A Chrome page that joins the same host draws the crowd with equal digests. A tab hidden for less than the absence limit and shown again catches up, or is repaired, without an overload and without drawing a tick twice.",
+          "statement": "A Chrome page that joins the same host draws the crowd with equal digests. A tab hidden for less than the absence limit and shown again comes back by a skip or a repair, which the page's record names, with no overload and no tick committed twice. No frame of the page is drawn at a position behind an earlier frame's, and outside the skips its record names none is further on than the catch-up rate allows for the time between them.",
           "check": "python3 scripts/session_match.py windowed --target chrome-webgpu",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -747,8 +758,10 @@
         },
         {
           "id": "M7.5",
-          "statement": "In real time on a Mac client under A0's profile the crowd moves as smoothly as the crowd view does alone: no stutter at the tick rate, no jump when several ticks arrive together, and no freeze beyond the playout stalls the run's record names.",
-          "inspect": "Capture the client's window and the crowd view alone with T2 engine capture in `realtime` mode, the same trace and size. Watch both at 1x, then step through the frames around each burst and each stall the record names. Say that you watched motion.",
+          "statement": "Over sockets through the relay under A0's profile, a Mac client's path is cut at the relay for less than its playout buffer, for long enough to empty it, and for long enough to leave its backlog above the behind threshold. Its frame record shows each of the three at least once, and apart: sets that arrived together with no stall and no change of rate; a stall after which the position went on from where it held; and a skip, named with its first and last tick. Across the run no frame's position is behind the frame before, and outside the named skips none is further on than the catch-up rate allows for the time between them.",
+          "check": "python3 scripts/session_match.py windowed playout --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is each frame's position in the record the one the frame host drew that frame with, at its display time, and not a value from the session's own log?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -757,9 +770,9 @@
         },
         {
           "id": "M7.6",
-          "statement": "In real time in Chrome the joined page's crowd moves as smoothly as the crowd view's page does alone.",
-          "inspect": "Capture both pages with T2 engine capture in `realtime` mode and judge them as on the Mac. Note where Chrome differs.",
-          "target": "chrome-webgpu",
+          "statement": "In real time on the Mac client in M7.5's run, the crowd moves as smoothly as the crowd view does alone wherever the record names no stall and no skip: there is no stutter at the tick rate, and nothing shows where sets arrived together inside the buffer. At the stall the picture holds, then moves on from where it held with no jump. The only jump is at the skip the record names.",
+          "inspect": "Capture the client's window in M7.5's run and the crowd view alone with T2 engine capture in `realtime` mode, at the same size. Watch both at 1x, then step through the frames around the buffered burst, the stall and the skip the record names. Say that you watched motion, and whether the faster pace after the stall shows.",
+          "target": "mac-metal",
           "evidence": "",
           "verdict": "",
           "review": "",
@@ -767,6 +780,16 @@
         },
         {
           "id": "M7.7",
+          "statement": "In real time in Chrome the joined page's crowd moves as smoothly as the crowd view's page does alone, holding still only at a stall and jumping only at a skip that the page's record names.",
+          "inspect": "Capture both pages with T2 engine capture in `realtime` mode and judge them as on the Mac, stepping through the frames around each stall and skip the page's record names; the hidden tab's return is one. Note where Chrome differs.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.8",
           "statement": "The guide tells a game maker how to drive a world from a session in a windowed game and on a page, the networking design and the maturity ledger say what was proved, and the crowd view built without a match still links neither `thrum-network` nor `thrum-transport`.",
           "check": "python3 scripts/session_match.py closure --windowed",
           "ask": "Could a game maker wire a driver from the guide alone? Does the ledger keep the windowed match's function apart from any claim about speed?",
@@ -777,7 +800,7 @@
           "builder_result": "open"
         },
         {
-          "id": "M7.8",
+          "id": "M7.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -795,7 +818,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "not_started",
-      "quality_bar": "A networked game that draws as smoothly as it does alone, as Factorio's multiplayer does: the client's world advances only when the match says, the picture glides between confirmed ticks at the display's refresh, a burst of late ticks does not jump and a short stall does not stutter. The engine side names no session: any game can drive a world."
+      "quality_bar": "A networked game that draws as smoothly as it does alone wherever its link allows, as Factorio's multiplayer does: the client's world advances only when the match says, and the picture glides between confirmed ticks at the display's refresh. Late sets that land inside the playout buffer show nothing. When the buffer runs out the picture holds, then carries on from where it held, never more than a tenth fast. Only a client that fell behind jumps, and it says so. The engine side names no session: any game can drive a world."
     }
   ]
 }

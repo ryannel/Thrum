@@ -12,6 +12,7 @@ was thrown away on purpose, so build from the design.
 ## Open for the human
 
 - Assumption: a world that steps when a match says is engine work, so it is built here (M7) with the reference crowd in a window, and not later inside the game. It is the one milestone of this module that needs the GPU, and it waits for `RENDER-2D` M5.
+- Assumption: when a connection hiccups, the crowd on that player's screen holds still, then carries on from where it stopped, up to a tenth faster than normal until it has caught up. A player more than about half a second behind sees the crowd skip forward once instead, with a notice the game can show. Nothing is drawn ahead of what the host has confirmed.
 - Assumption: each player sees their own character answer at once, and sees the crowd and the other players a little late: about 80 ms behind the host on a 100 ms connection. Rewinding and re-stepping the whole crowd to hide that delay is not built, because at 10,000 enemies one correction costs about six frames. How the delay feels is yours to judge in the game.
 - Assumption: a native process hosts, and the match ends when it stops. Chrome and the iPhone simulator only join. Host migration, matchmaking and accounts are not built.
 - Assumption: anyone who has the host's join ticket and the same build can take a free place. There are no passwords, and no way to remove a player.
@@ -34,7 +35,7 @@ files of its own. New packages are registered in `.config/architecture.toml`.
 
 ## M2 Four players on a simulated bad connection steer one crowd of 10,000, and every player's copy stays identical
 
-Criteria: M2.1–M2.11 in the done-when file.
+Criteria: M2.1–M2.12 in the done-when file.
 
 `thrum-network` holds the envelope, A5's input batch (`input_batch.rs`, used byte for byte), the staging window
 (`future_input.rs`) and the state-delta codec, which this module leaves alone. `TRANSPORT` left the link's
@@ -43,7 +44,8 @@ headless host's loop go in `thrum-network`; the four-player proofs and the scrip
 `examples/match-proof`; the tests' second rule set stays with `thrum-network`'s tests. The reference crowd's
 rules take no actions, which is why commands and refusals are proved on the second rule set. The runtime's
 refusal of a step is `TickError` in `crates/thrum-core/src/sim/runtime.rs`; M2.11's failure is that refusal,
-raised on the host by the second rule set.
+raised on the host by the second rule set. [The playout position](DESIGN.md#6-the-playout-clock) is session
+logic with no window, so it is built whole here and M2.12 proves it; M7 only draws at it.
 
 ## M3 A player joins mid-game, another drops and returns, a copy that has gone wrong is repaired, and a stuck player never holds the others up
 
@@ -81,11 +83,14 @@ decision records are the A0 and A5 files in `docs/design/decisions/`, and the ma
 
 ## M7 The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match
 
-Criteria: M7.1–M7.8 in the done-when file.
+Criteria: M7.1–M7.9 in the done-when file.
 
 The world lane is `crates/thrum-core/src/sim/world_lane.rs` with `clocked_world.rs`, and the frame host reads a
 world through `FrameWorld` in `crates/thrum-render/src/runtime.rs`; the lane's task already owns its clock, so
-read how far that carries a driven world before changing anything under seam ruling 3. `RENDER-2D` left the
+read how far that carries a driven world before changing anything under seam ruling 3. The observer already
+evaluates a clock sample at each frame's display time (`presentation_alpha_at`), which is the route a driver's
+position takes. `TRANSPORT`'s relay can cut a path for a time, and the sets lost in a cut arrive together in
+the next datagram: that is how M7.5's three cases are made. `RENDER-2D` left the
 crowd view in `examples/crowd-2d-view`, a program on `thrum-app`'s window and page; the windowed match is that
 view with a session attached, in a package of its own so the view still links no network crate.
 
@@ -94,7 +99,7 @@ Stop rules, for every milestone:
 - `SIM-2D`'s retained digests do not move. If an image or the predictor's function cannot be built without changing one, write the proposal in the log and end `BLOCKED needs_dependency`.
 - Leave `thrum-transport`, `thrum-sim2d` and A5's input-batch bytes as they are. A change one of them needs is a proposal in the log and `BLOCKED needs_dependency`.
 - The V1 game stays outside all of this. Leave its rules, tests and exact comparisons as they are.
-- Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the match command, outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
+- Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the match command. If a launch fails, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
 - No time, byte count or allocation count stops the build (brief, decision 3). Record a row that trips a tripwire as measured, note what you found in the log, and keep building. The one figure that fails a run is the design's 95% floor on ticks that admit a player's own frame.
 - Record only runs of the commit being claimed, with the load on the machine.
 - Run the exact-baseline verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.

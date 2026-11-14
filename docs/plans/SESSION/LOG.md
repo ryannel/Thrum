@@ -67,3 +67,24 @@
   with the reference crowd in a window on the Mac and in Chrome; it waits for `RENDER-2D:M5`. M1 to M6 are
   unchanged. The sandbox assumption is deleted: the owner gave Codex full access. The revised design needs a
   design review.
+- 2026-11-14 Third design review, of commit `5ea9bc40` ([the latest review file](../../evidence/SESSION/design-review.md)
+  until a later one replaces it): changes requested, one Must Fix and two suggestions. The four earlier
+  findings stay resolved.
+- 2026-11-15 The Must Fix: catch-up after an underrun jumped at least two ticks, whatever the alpha. Mechanism 6 now
+  uses one playout position that never moves back: it commits a tick only on reaching the one before, catches up at
+  up to 1.1 (slow-down 0.85, Unity Netcode defaults), stalls on a missing set, and skips only above the behind
+  threshold, recorded and shown. Host commitment unchanged. New need N12; new items M2.12 (old policy as failing
+  control) and M7.5 (burst, underrun and skip told apart); old M7.5 to M7.8 renumber to M7.6 to M7.9.
+- 2026-11-15 Planner's choice in that fix, both halves: continuity inside a bound, and a named jump beyond it. A
+  glide alone would take ten ticks to regain one, too slow after a long stall or a hidden tab; extrapolating past
+  the newest confirmed tick was left out, since C02 allows interpolation only. The bound reuses the behind
+  threshold, so no new setting decides it. Mechanism 12 now has the driver state its position as the lane's
+  clock sample does, so a frame is placed at its own display time and not at the last advance.
+- 2026-11-15 Suggestions, both taken. 2: M7.4 says no tick is committed twice and no frame is drawn behind an
+  earlier one; drawing the same pair again is legal, and M7.2 says so. 3: the no-window and no-GPU statements
+  are scoped to M1 to M6, and the sandbox paragraph and the plan's stop rule follow the project settings (Codex
+  has full access). No interface, seam ruling, contract or other module's file changed.
+- 2026-11-15 Checks after the revision: every item check parses; the two new ones (M2.12, M7.5) fail, as they
+  should before the work exists. The verifier items were not dry-run, so as not to take the GPU.
+  `./dev check-docs` fails on ten older links in `CREATOR`, `CULLING` and `CLOUDS` files and on nothing here.
+  The revised design needs a design review.
