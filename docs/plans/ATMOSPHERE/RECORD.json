@@ -110,6 +110,24 @@
         "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
         "at": "2026-11-10T22:38:33Z"
       }
+    },
+    "M7": {
+      "definitions": "ff012e617a272c12a5d4386f9550286aae4e0f12fd09badc1b02318f9ea0ee65",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
+      }
+    },
+    "M8": {
+      "definitions": "b42602a01f5da2fb697286608c869a6e89638aa3ae8af163054d6c04e40bf412",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
+      }
     }
   },
   "briefs": [
@@ -128,11 +146,15 @@
     {
       "task": "Unblock ATMOSPHERE M5: H2 fails its Metal precision bound. Current main retains the design instruction requiring a planner decision on this measured miss. Evidence: docs/evidence/ATMOSPHERE/m5-h2-blocker.md",
       "at": "2026-11-11T06:03:17Z"
+    },
+    {
+      "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able to deliver on top quality atmosphere.\" Revise the plans so Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky, clouds, haze, and mist and fog (ground fog, valley mist, fog banks over water, low cloud the camera can enter), lit consistently and changing with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE and any other affected module, keep one authority for each kind of state, and revise their designs, plans and done-when files. Broadsides is evidence, not a constraint. CLOUDS M1 is being built now; if your changes alter what it builds, say so plainly. Say which assumptions these choices replace.",
+      "at": "2026-11-14T09:13:54Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-11T06:03:17Z"
+    "at": "2026-11-14T09:13:54Z"
   },
   "design_history": [
     {
