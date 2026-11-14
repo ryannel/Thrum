@@ -167,7 +167,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md)
 - A stateful native segment composes inside one submission (APPLE-TILE M10): Not Started · [plan](APPLE-TILE/PLAN.md)
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2): Not Started · [plan](CREATOR/PLAN.md)
-- TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- APPLE-PRESENTATION M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome: Blocked: Needs Context: Does D3.3 permit native frame-sequence inspection plus measurements, given that the available tools cannot perceive continuous 1× video? The lead finds the missing fact, or asks you for it
 - ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
 - A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
@@ -208,7 +208,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M2 of 3 · Not Started |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 3 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 3 · Blocked: Needs Context |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 | Design Changes Requested |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
