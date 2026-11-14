@@ -1,0 +1,11 @@
+DRY SUPPORT: disconnected hollow should be dry at the low sample.
+  bed=[0.0, 1.1, 0.2, 1.5], low level=1.0, high level=1.2
+  expected wet=[True, False, False, False]; chart wet=[True, False, True, False]
+  invented depth in hollow=0.80 m
+RING CARRIAGE: two equal-energy packets in one connected region.
+  common current=0.85 m/s; pool/riffle=0.2/1.5 m/s
+  after 5 s, pool and riffle centres each err by 3.25 m
+  desired translations differ by 6.50 m; two 1.5 m tolerances span 3 m
+JOIN: a wet cell inside the existing WATERS join.
+  solver current=0.50 m/s; joined map current=0.25 m/s
+  M1.6's equality at every wet cell cannot coexist with this nonzero join.
