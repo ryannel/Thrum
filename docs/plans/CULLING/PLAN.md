@@ -44,6 +44,12 @@ may, push nothing and end `BLOCKED` with the payloads. Every other proof of M3 h
 shader, so M3.3's rows and the captures follow the landing. `APPLE-TILE` M10 and `ATMOSPHERE` M9 also land
 covered changes; integrate on top of what has landed, and the design says which proofs a rebase repeats.
 
+A campaign proves the build and workload it ran, not a shader text
+([what a campaign stands for](DESIGN.md#what-a-campaign-stands-for)). Rebase onto main before you start it. If
+`land`'s rebase then brings in a change to its inputs, run it again before pushing. The claimed commit needs a
+campaign that stands for it too, so put M3's remaining changes to rendering code in the candidate where you can,
+and leave only rows, captures and records for after the landing; otherwise a second campaign precedes the claim.
+
 M3.13's rows never stop the milestone or the landing. If they cross a tripwire, investigate the cause and record
 a disposition, as the design's Cost paragraph says, and keep building.
 

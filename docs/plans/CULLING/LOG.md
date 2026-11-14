@@ -257,3 +257,10 @@
   rewritten). MF3: M3.13 keeps its paired rows and ledger record, but a crossed tripwire needs a recorded
   investigation, never ends the milestone. S3: Khronos reports attributed to Bill Hollings and Steven Noonan.
   [Design](DESIGN.md#qualified-before-it-lands). M3.1 to M3.9 unchanged; no GPU check run for this revision.
+
+- 2026-11-15 Design review fix, MF4: a campaign proves one build on one workload, so equal shader sources no
+  longer carry it across a rebase. Its record names its commit and inputs (the registry's code and build paths,
+  the runner, control, route and valley). It stands for the landed commit and the claimed commit only when every
+  path that differs is outside those inputs or shown, by checkable evidence, not to be built, loaded or run;
+  otherwise it is run again before the push or the claim. M3.11 rewritten; M3.10's question gains one clause.
+  [Design](DESIGN.md#what-a-campaign-stands-for). The review raised no new Suggestions. No GPU check run.

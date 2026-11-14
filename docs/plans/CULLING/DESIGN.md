@@ -333,22 +333,50 @@ qualification: once references are regenerated, a wrong image that repeats passe
    candidate. M3.12's difference images, between the starting commit's references and captures and the
    candidate's, show only what that item allows; the builder judges them by the item's own list, and the
    reviewer judges them again at review. The verifier passes on the candidate.
-4. **Promotion.** `land` pushes the candidate, with those records.
+4. **Promotion.** `land` pushes the candidate, with those records. If a rebase has changed it, what is pushed
+   is a commit the campaign [stands for](#what-a-campaign-stands-for), or the campaign is run again first.
 
 If the campaign fails, or a reference moved where M3.12 allows none, nothing is pushed: main keeps its shader
 and its references, the candidate and its payloads stay on the branch, and the builder ends `BLOCKED`.
 
-`land` rebases first, and other builders land covered changes, so the design says what a rebase repeats. The
-gate already refuses changed covered content without a new verifier pass. If the verifier passes on the rebased
-candidate with its references untouched, the references pushed are the ones qualified and M3.12's images stand.
-If it fails, an incoming change moved an image: the builder takes main's new tip as the starting commit, runs
-the verifier there, regenerates, and makes M3.12's images again, as
-[the module list](../ARCHITECTURE.md#exact-baselines) orders for `ATMOSPHERE` M9. The campaign compares hosts
-with each other and a control, so it depends on neither the references nor code outside the shader. It stands
-for any commit whose opaque forward fragment entries are built from the same shader sources, byte for byte, as
-its claimed binary; its record lists their hashes. If a rebase or a later change of this module alters those
-sources, the campaign is run again before that content is pushed. After the landing, the refreshed references
-hold the output in place and the verifier is M3.10's check at the claim.
+`land` rebases first, and other builders land covered changes, so the design says what a rebase repeats.
+
+**The references and M3.12's images.** The gate already refuses changed covered content without a new verifier
+pass. If the verifier passes on the rebased candidate with its references untouched, the references pushed are
+the ones qualified and M3.12's images stand. If it fails, an incoming change moved an image: the builder takes
+main's new tip as the starting commit, runs the verifier there, regenerates, and makes M3.12's images again, as
+[the module list](../ARCHITECTURE.md#exact-baselines) orders for `ATMOSPHERE` M9.
+
+<a id="what-a-campaign-stands-for"></a>
+
+**What a campaign stands for.** The campaign is an experiment on one build running one workload, and it proves
+that build on that workload and no other. Comparing hosts with each other and with a control frees it from the
+retained references. It does not free it from how those hosts are compiled and run: the pipeline descriptors,
+the dependencies and the toolchain all sit outside the shader text, and a change to any of them can stop the
+output working while the shader stays the same. So equal shader sources are required and are never enough, and
+a verifier pass cannot fill the gap, for the reason the campaign exists. The campaign's record names the commit
+its claimed binary was built from, and the experiment's inputs at that commit:
+
+- **The build.** The code and build paths the exact-baseline registry covers: `crates/`, `examples/v1-game/`,
+  `scripts/`, `tools/`, `.cargo/`, the workspace manifest, the lockfile and the toolchain file, with the
+  binary's profile and features. The registered references are not inputs.
+- **The workload.** The campaign's runner and its control patch, the route, the cooked valley, and the recipes,
+  sources, hosts and workers it ran.
+
+The campaign stands for another commit when the record lists every path that differs between the two commits
+and none of them reaches those inputs. Documents, plans, evidence and the ledger do not reach them. A path
+among the inputs is set aside only by evidence a reviewer can check that the campaign neither builds, loads
+nor runs it: a crate outside the binary's dependency tree, a script the campaign never starts, code compiled
+only for tests or for another target. An argument that a changed line of code the binary links should not
+matter is not such evidence. Any other difference means the campaign is run again on the updated commit:
+rendering code or a pipeline descriptor, a dependency, the toolchain, the build configuration, the runner, the
+route or the valley's content.
+
+Two commits must have a campaign that stands for them: the one that puts the coverage output on main, before
+it is pushed, and the one the milestone claims, before the claim. So the builder integrates main before a
+campaign and not after it, and a campaign overtaken by another module's landing in those inputs is repeated,
+not carried. After the landing, the refreshed references also hold the output in place, and the verifier is
+M3.10's check at the claim.
 
 **Cost.** A coverage write can cost fragment time: merged triangles shaded fewer helper fragments at shared
 edges, and the driver may test depth later. Nobody has measured it here. M3.13 records it under
@@ -427,9 +455,11 @@ is caught. For this module:
 5. **wgpu's indirect-call validation adds untimed GPU work.** It stays on in shipped builds and is bounded once
    with a bench-only comparison.
 7. **The coverage output is not the whole cause, or stops working.** The evidence for it is bounded: four quads
-   and eight loaded routes. A later compiler could also fold the output away. Early sign: the claimed shader
-   differs in M3.11's campaign, or the verifier draws the old bytes. Outcome: the builder ends `BLOCKED` with the
-   payloads. The campaign runs [before the push](#qualified-before-it-lands), so nothing on main is refreshed.
+   and eight loaded routes. A later compiler could also fold the output away, which is why a campaign does not
+   [stand through](#what-a-campaign-stands-for) a change of toolchain, dependency or pipeline. Early sign: the
+   claimed shader differs in M3.11's campaign, or the verifier draws the old bytes. Outcome: the builder ends
+   `BLOCKED` with the payloads. The campaign runs [before the push](#qualified-before-it-lands), so nothing on
+   main is refreshed.
 8. **The coverage output costs more than expected.** Early sign: M3.13's paired rows cross a tripwire. Outcome:
    the cause is investigated and given a disposition within M3, as the Cost paragraph of
    [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the milestone.
