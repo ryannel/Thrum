@@ -8,6 +8,13 @@ fn life(dt: f64) -> f64 {
     let field = field(7, 0.0);
     let mut state = State::new(parameters(0.0, 0.0), 10.0, 16).expect("state");
     state.add(directed(&shape, 1, [0.0; 2])).expect("shape");
+    let outside = field.query([1000.0, 0.0, 1000.0], &state);
+    assert_eq!(
+        [outside.coverage, outside.age, outside.optical_depth],
+        [0.0; 3]
+    );
+    assert_eq!(outside.base, 700.0);
+    assert_eq!(outside.top, outside.base);
     let mut largest = 0.0_f64;
     let mut previous = 0.0;
     let mut tick = 0;

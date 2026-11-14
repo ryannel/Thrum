@@ -55,7 +55,8 @@ pub struct Cell {
     depth: f64,
 }
 
-/// Pointwise uneroded column; all fields are exactly zero in clear air.
+/// Pointwise uneroded column. Clear air retains the weather's type and base,
+/// with top equal to base and zero coverage, age and optical depth.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Column {
     /// Dimensional coverage/profile.
@@ -219,7 +220,13 @@ impl Field {
         coverage = coverage.max(deck);
         depth = depth.max(t.depth[0] * deck.powf(0.7) * (0.6 + 0.4 * n));
         if coverage == 0.0 || depth == 0.0 {
-            return Column::default();
+            return Column {
+                kind: parameters.kind,
+                base: t.base,
+                top: t.base,
+                profile: t.profile,
+                ..Column::default()
+            };
         }
         Column {
             coverage,
