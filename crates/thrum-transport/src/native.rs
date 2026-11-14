@@ -466,25 +466,35 @@ async fn drive(
         result = datagrams_in => result.err().unwrap_or(CloseReason::Transport),
         result = datagrams_out => result.err().unwrap_or(CloseReason::Transport),
         result = monitor => result.err().unwrap_or(CloseReason::Transport),
-        _ = session.accept_bi() => CloseReason::Protocol,
-        _ = session.accept_uni() => CloseReason::Protocol,
+        result = session.accept_bi() => if result.is_ok() { CloseReason::Protocol } else { CloseReason::Transport },
+        result = session.accept_uni() => if result.is_ok() { CloseReason::Protocol } else { CloseReason::Transport },
         error = connection.closed() => match error {
             quinn::ConnectionError::TimedOut => CloseReason::TimedOut,
             quinn::ConnectionError::ApplicationClosed(close) => CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX)),
             _ => CloseReason::Transport,
         },
     };
-    let reason = match session.close_reason() {
-        Some(web_transport_quinn::SessionError::WebTransportError(
-            web_transport_quinn::WebTransportError::Closed(code, _),
-        )) => CloseReason::Peer(code),
-        Some(web_transport_quinn::SessionError::ConnectionError(
-            quinn::ConnectionError::TimedOut,
-        )) => CloseReason::TimedOut,
-        Some(web_transport_quinn::SessionError::ConnectionError(
-            quinn::ConnectionError::ApplicationClosed(close),
-        )) => CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX)),
-        _ => reason,
+    let reason = if matches!(
+        connection.close_reason(),
+        Some(quinn::ConnectionError::TimedOut)
+    ) {
+        // H3's capsule reader may wrap this as a read error. The QUIC endpoint owns idle timeouts.
+        CloseReason::TimedOut
+    } else {
+        match session.close_reason() {
+            Some(web_transport_quinn::SessionError::WebTransportError(
+                web_transport_quinn::WebTransportError::Closed(code, _),
+            )) => CloseReason::Peer(code),
+            Some(web_transport_quinn::SessionError::ConnectionError(
+                quinn::ConnectionError::TimedOut,
+            )) => CloseReason::TimedOut,
+            Some(web_transport_quinn::SessionError::ConnectionError(
+                quinn::ConnectionError::ApplicationClosed(close),
+            )) => {
+                CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX))
+            }
+            _ => reason,
+        }
     };
     let code = if let CloseReason::Local(code) = reason {
         code
