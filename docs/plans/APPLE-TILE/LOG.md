@@ -227,3 +227,9 @@
   Fresh baseline/check/merge job `20261114-131328-10588` queues behind an apparent SEA nested GPU lock.
   D10.1–D10.4 retain their passing proofs. No merge or window pass is claimed.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
+- **2026-11-14 — M10 disk admission and expired M3 storage.** The queued verifier reached Metal but stopped
+  at the unchanged 16 GiB guard before night-linear capture, with no image mismatch. The native binary is unchanged.
+  Verified 172 committed M3 artifacts and 157 source matches before releasing 6.27 GB of expired bulk spools;
+  selected originals and M10 diagnostic sources remain intact. The failure and scoped receipt are retained.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md).
