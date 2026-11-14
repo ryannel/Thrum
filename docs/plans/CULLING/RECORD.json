@@ -242,7 +242,7 @@
       }
     },
     "M3": {
-      "definitions": "4d8cc4e46e33b52bc4c90aa18cbdaf78142a7b64d65a81b87aeee3a7055c39e7",
+      "definitions": "54c86ae9dae39ae33f4e3e6b4c98b1e263ff9e5b5779555152a7393ec8f64d14",
       "reviews": [
         {
           "verdict": "fail",
@@ -291,34 +291,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
-        "at": "2026-11-11T15:55:43Z"
-      },
-      "ready_for_review": {
-        "commit": "0a20e02aa3ca91b7d238e1b581699fe5a15f5f59",
-        "checked": "f2418fb348cd19faf73df292cee640ee83d97dfe",
-        "at": "2026-11-14T02:03:58Z",
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.167.0-alpha.4.1",
-        "path": "headless",
-        "usage": {
-          "input": 1194312,
-          "cached": 210836352,
-          "output": 616101,
-          "turns": 7
-        },
-        "session_usage": {
-          "input": 1194312,
-          "cached": 210836352,
-          "output": 616101,
-          "turns": 7
-        }
+        "task": "CULLING M3 needs something no plan provides yet. The builder wrote: The planner and APPLE-TILE owner must resolve the he",
+        "at": "2026-11-14T22:52:55Z"
       }
     }
   },
@@ -330,11 +304,15 @@
     {
       "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELINE-GUARD/design-review.md, docs/evidence/CULLING/design-review.md and docs/evidence/EFFECT-GRAPH/design-review.md. Address every finding or record why not. APPLE-TILE M2 has now passed, so CULLING and EFFECT-GRAPH can start as soon as their designs pass.",
       "at": "2026-11-11T15:55:43Z"
+    },
+    {
+      "task": "CULLING M3 needs something no plan provides yet. The builder wrote: The planner and APPLE-TILE owner must resolve the helper correction and its baseline qualification before M3 resumes. The builder's handoff, docs/evidence/CULLING/M3-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/culling at fb6afe7d9b3b, which isn't merged; read it with `git show`. Decide ownership of the helper-derivative (Metal triangle-merging) correction and the APPLE-TILE baseline qualification so CULLING M3 can finish; prefer the smallest change that keeps one authority for each baseline. Do not split modules.",
+      "at": "2026-11-14T22:52:55Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-11T15:55:43Z"
+    "at": "2026-11-14T22:52:55Z"
   },
   "design_history": [
     {
