@@ -377,6 +377,10 @@ fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
     );
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "The device fixture records its actual Metal adapter in the retained test log"
+)]
 fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
     pollster::block_on(async {
         let graph = fixture_graph();
