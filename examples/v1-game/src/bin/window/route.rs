@@ -176,6 +176,7 @@ pub(super) fn record(
                 "eye": pose.eye, "yaw": pose.yaw, "pitch": pose.pitch, "epoch": pose.epoch,
                 "submission": sample.submission_order, "visual_revision": sample.visual_revision,
                 "dropped_light_references":sample.dropped_light_references,
+                "gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
                 "checkpoint": checkpoint,
             }),
         )?;
