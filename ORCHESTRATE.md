@@ -24,7 +24,7 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Codex design reviewer:** gpt-6-astra high  *(loop: owner, 10 Nov 2026)*
 - **Codex reviewer:** gpt-6-astra medium  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium")*
 - **Claude reviewer:** high  *(loop: owner, 10 Nov 2026; Opus 5.5; used only when a review is sent to Claude by hand)*
-- **Codex sandbox:** workspace-write  *(loop: GPU and Instruments runs go through Codex's auto-reviewed approvals)*
+- **Codex sandbox:** danger-full-access  *(owner, 14 Nov 2026: agents get full access; the Mac stays unlocked)*
 - **Writable roots:** ~/.cargo  *(loop)*
 
 ## Starting from a clean clone
