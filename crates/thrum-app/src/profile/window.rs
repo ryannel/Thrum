@@ -232,7 +232,7 @@ impl ProfileWindow {
                 } else if s.timing_fault {
                     Some("timing batch faulted")
                 } else if s.gpu_pass_ns.is_none() {
-                    Some("adapter has no timestamp queries")
+                    Some("device has no timestamp queries")
                 } else {
                     None
                 }

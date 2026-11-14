@@ -63,7 +63,7 @@ fn late_completions_roll_the_bounded_window_and_every_unavailable_reason_replace
     );
     assert!(
         rows.iter()
-            .any(|(_, text)| text == "adapter has no timestamp queries")
+            .any(|(_, text)| text == "device has no timestamp queries")
     );
     let mut fault = sample(901);
     fault.timing_fault = true;
