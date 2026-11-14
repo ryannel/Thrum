@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "aa1f8ff469a343f4db93507d81172ade15431709365eb2f0753365f903201e35",
+      "definitions": "b49194933fd7682c9e31ebce69ac2ed052671c0598dc0289cfa614499be52a73",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T04:10:30Z"
       }
     },
     "M2": {
@@ -52,12 +52,12 @@
       }
     },
     "M4": {
-      "definitions": "ac68fe1f795dd3f4fc458ab7a3765f3b5b4d28de08fdb87a3ead12ca36536aa4",
+      "definitions": "160bd5ddd6fad8f8f5f59434490d0893e13b68e31db6168efb5bc3c80d7ba1fd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T04:10:30Z"
       }
     },
     "M5": {
@@ -79,12 +79,12 @@
       }
     },
     "M7": {
-      "definitions": "215058854bc24bded7f91b0947c19bc3c5281fea10327b747188ba67396e1ea5",
+      "definitions": "3620032230e02629f73608f778afae23b604332fb790ecd506c09842d0419bc2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T04:10:30Z"
       }
     },
     "M8": {
@@ -97,12 +97,12 @@
       }
     },
     "M9": {
-      "definitions": "b3f373eb5b2b3d217d56b251089c9eccec64f5c6b5673158aa0f7415b7a627e3",
+      "definitions": "df6620d006bbf339e8d2b55b8118d45817406579346f105ac175e88e1e8d5108",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
+        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T04:10:30Z"
       }
     },
     "M10": {
@@ -132,11 +132,15 @@
     {
       "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T03:29:28Z"
+    },
+    {
+      "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T04:10:30Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T03:29:28Z"
+    "at": "2026-11-14T04:10:30Z"
   },
   "design_history": [
     {
