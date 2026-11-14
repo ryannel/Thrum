@@ -361,6 +361,7 @@ impl DeviceSite {
         pipeline
     }
 
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(crate) fn native_prepared(&self) {
         if let Some(ledger) = &self.0.ledger {
             ledger.lock().report.native = NativeSites::Uninstrumented;
