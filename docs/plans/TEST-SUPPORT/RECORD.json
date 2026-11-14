@@ -1,6 +1,28 @@
 {
   "module": "TEST-SUPPORT",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/TEST-SUPPORT/design-review.md",
+    "commit": "6f262e4fa78d3660db457cdaa058e43a9e2339de",
+    "hash": "6d9b266ed87bb34ba6768c7a04aca3565ed06fe1750038df2ec40e558ee99f2c",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 81001,
+      "cached": 900736,
+      "output": 7729,
+      "turns": 1
+    },
+    "at": "2026-11-14T22:41:04Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "c14524a23548640207bbf5ba23745e4a5ee36adf9de2a83969d47b024b9ca4c1",
