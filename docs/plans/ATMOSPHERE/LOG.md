@@ -485,3 +485,16 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
     old `b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da`; new `c116bd12245d58623a169fd6cca98dcd6b07ea8e162e44a75fd4da5d3bf96c89`.
   - `docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz`
     old `b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a`; new `b3d2fd039f22fe8a1ada579a18c55445155a26f02be79835392042d682df84ff`.
+## M9 continuation, 14 November
+
+- Reviewed native and Chrome changed-byte evidence and promoted 18 references in all
+  five registered sets; the full old/new hash lists follow below. M9.1, M9.2, M9.4,
+  M9.6–M9.9 have builder proofs. M9.3 and M9.5 await the rebased full checks.
+- Rebased through the canonical merge workflow, retaining both APPLE-TILE log entries.
+  Upstream renderer/capture changes require fresh target checks; no atmosphere producer
+  or preserved numerical referee changed upstream. Documentation checks pass on `51b01406`.
+- Durable verifier job `20261114-230918-12573` waits for GPU exclusivity. Dependent job
+  `20261114-231215-14011` requires that verifier to pass, copies its rebuilt native
+  binary, repeats ABBA costs, then runs official M9 item checks with the 198-row output.
+  No merge or final repository pass is claimed by this checkpoint.
+
