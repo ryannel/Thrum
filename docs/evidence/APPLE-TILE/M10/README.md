@@ -1,7 +1,41 @@
 # APPLE-TILE M10 builder record
 
 14 November 2026. Initial boundary checkpoint: `1d21de31` (on top of `d9ca8c13`).
-This is an incomplete builder record, not milestone acceptance. All five items remain open.
+This is an incomplete builder record, not milestone acceptance. D10.1 and D10.3 pass;
+D10.2, D10.4 and attended D10.5 remain open.
+
+## Resumed verification on 07282556
+
+The official `agent_loop.py check --module APPLE-TILE --milestone M10 --worktree . --timeout 3600 --json`
+and its full `./dev check` pass on clean source `07282556025cc4fbeb3293b5b106a87c79b37d22`,
+outside the sandbox under the repository GPU lock. Retained complete
+[stdout](check-07282556.stdout.gz) and [stderr](check-07282556.stderr.gz) include the two graph-native tests,
+all four integrated native lifecycle tests, fixture API-separation tests and required Web compilation.
+The corrected coordinator test passes exact SDR/scene/output/history comparisons, five rejected
+omission/stale/reset controls, cuts, healthy discard, background cancellation and acquire refusal.
+The other lifecycle tests pass two held slots, failure/loss/extent replacement and old-generation
+retention through completion delivery. These results support D10.1 and D10.3, together with the
+earlier small fixture and source inspection; they do not replace T2 or simulator proof.
+
+The [exact baseline proof](baseline-07282556.json.gz) passes 38 native ordinary-scene comparisons,
+four native surface/letterbox comparisons and 1,924 Chrome day/night SDR/linear frame records in
+951.34 seconds. No reference or tolerance changed. Native release executable SHA-256:
+`94718c6c972b55634b89e02e9d3863ed6a0190b9a95cbd955cabe5be32b3dc0f`.
+The automatic verifier retained provenance/manifests and released successful bulk sources;
+these comparisons establish exact regression results, not a fresh visual inspection.
+
+D10.1 source inspection: the independent scoped design review approved the boundary before implementation
+([review](../design-review-1.md)); `native_pass` rejects transient/uninitialized native writers,
+attachment access and late-bound surface access and retains the ordinary graph hazards. The
+provider initializes distinct output/history textures through wgpu. `NativeFrame::encode` ends
+the producer encoder, records a dedicated whole raw encoder and resumes public wgpu recording;
+`FrameHost::finish_encoded_with` submits that ordered list once on its existing queue. The native
+backend owns no surface, queue or completion. `NativeCompletion` retains its binding/provider and
+textures until completion; dropping an uncommitted candidate invalidates provider history. Healthy
+refusal flushes uploads, while background cancellation and observed loss avoid old-queue work.
+Tests above exercise those distinctions rather than infer target behavior from compilation.
+
+## Earlier implementation checkpoints
 
 The resumed implementation checkpoint is `fe809c7f`. Three integrated Metal lifecycle tests pass at
 `d29d2667`: exact two-slot submitted history, retention until old-generation completion delivery, and

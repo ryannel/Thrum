@@ -269,11 +269,11 @@
           "id": "D10.1",
           "statement": "After independent review of C06/the boundary, graph-declared native work uses a dedicated whole raw encoder between wgpu encoders in one ordered coordinator submit, with no surface import or mixed recording.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Inspect graph hazards and refusal tests, locked-wgpu encoder API separation, one queue and error paths. Native-written resources are initialized through wgpu, never aliased/discarded and retained by the generation. The first implementation step is a small same-submit native copy/select fixture versus its prepared WGSL twin, with exact readbacks; do not broaden route integration until this passes. A failure returns to boundary design review, never a wider tolerance.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D10.2",
@@ -289,11 +289,11 @@
           "id": "D10.3",
           "statement": "Held submission and generation replacement retain native textures/provider until completion; encoded-but-discarded or failed frames reset internal history before reuse, with outcome counters.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Run same-submit, held-slot, acquire-refusal, cut, extent replacement, loss and submission-failure witnesses. Preserve healthy flush vs lost-device abandon. Do not add submit-without-present to avoid a reset.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D10.4",
