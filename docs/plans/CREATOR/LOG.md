@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Passed both native exact-image matrices and all four Chrome sets at `1e0d687b`
+  in 973.39 seconds. Rebase comparison found no changes to M2's measured producers or consumers.
+  The next gate found two upstream M10 handoff links into unmerged evidence; their worktree scope
+  is now explicit. [M2 evidence](../../evidence/CREATOR/M2.md) retains the verifier record and the
+  runner for the unchanged final M2 checks under one GPU reservation.
+
 - 2026-11-14 Completed M2.2 and M2.4's hardware Chrome proofs. Added geometry after frame 656
   raised forward GPU time from 0.393 to 13.369 ms; unsupported, hidden and lost-device rows
   showed reasons. The off arm stopped timestamp work while a new presented submission completed,
