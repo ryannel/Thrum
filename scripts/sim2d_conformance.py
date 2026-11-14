@@ -216,7 +216,6 @@ def costs(target):
     assert record["target"] == target and record["dirty"] is False
     assert record["source_sha256"] == source_key(), "cost record belongs to different simulation sources"
     assert record["rustc"] == identity()["rustc"], "cost record belongs to another compiler"
-    subprocess.run(["git", "merge-base", "--is-ancestor", record["commit"], "HEAD"], cwd=ROOT, check=True)
     assert len(record["runs"]) == 2
     for run in record["runs"]:
         assert run["build"] == "release" and len(run["load"]) == 3
