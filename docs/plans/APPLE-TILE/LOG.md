@@ -205,3 +205,11 @@
   lifecycle tests now pass, including the corrected exact coordinator comparison and five negative controls.
   D10.1 boundary and D10.3 lifetime/reset pass; diagnostic T2 and simulator function remain pending, and D10.5
   still needs attended access. No speed, MetalFX or panel claim. [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+
+- **2026-11-14 — M10 diagnostic and simulator proof.** Clean source `8078205c` / native executable `94718c6c`
+  passes all sixteen still/fixed native-twin comparisons (3,856 paired frames) and both complete realtime routes.
+  Every half texel passes finite/nonnegative validation; builder inspected full-size endpoints and cut-adjacent
+  frames on both recipes. The actual simulator race refuses encoded native work while suspended, preserves
+  submission/present/empty-submit counters, resets on same-world resume and passes endpoint inspection.
+  D10.1–D10.4 pass; D10.5 remains open for attended OS-window setup. Integration still uses the official gate.
+  No speed, MetalFX, panel or physical-device claim. [Evidence](../../evidence/APPLE-TILE/M10/README.md).
