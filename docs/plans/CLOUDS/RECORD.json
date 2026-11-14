@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "6b69c2dc757c4410a2387c6e6cb7391b4523fdfc7421b0c56e9862d16ae9caef",
+      "definitions": "e363c5e8a4a3b78ea1cf971809c953a9f111cd93b426ec20963e0aec6f0f4398",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T02:31:18Z"
       }
     },
     "M2": {
@@ -61,21 +61,21 @@
       }
     },
     "M5": {
-      "definitions": "5b48352a2aa326d89c11632ee31affcf612914a5a03d689591305645d928560f",
+      "definitions": "c7e23df912710ce983522f9b98b30af6b3e64405dd9ffe3d9d37ea9d8e99ab45",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T02:31:18Z"
       }
     },
     "M6": {
-      "definitions": "9c7ad6271415af788c17f06ed9cb1a20ed77aad36428a30ca3528d3909dd702c",
+      "definitions": "b21f4d2547adbaa4d728e53a4eee71b8287949173e25adfc3d93246245dd4ba8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T02:31:18Z"
       }
     },
     "M7": {
@@ -88,12 +88,12 @@
       }
     },
     "M8": {
-      "definitions": "3b764ffdc2538589d1cd6523b3875920115e18aaf13f38f168188e48bf4073fc",
+      "definitions": "a83c99cd7ac06455caf3424c94b2b2e2261637f32f3b08125f45893b71723239",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
+        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
+        "at": "2026-11-14T02:31:18Z"
       }
     },
     "M9": {
@@ -149,11 +149,15 @@
     {
       "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.\" Earlier the same day: \"The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine.\" SEA today plans only an open sea; inland water lives in older designs (docs/design/modules/WATER*.md, docs/design/decisions/E1-GPU-WATER.md) with no module planned. From first principles, design Thrum's water as one cohesive system covering every body of water a game needs, and settle how the modules, plan and build order carry it (renaming or splitting SEA if that is right). Treat the existing designs and Broadsides as evidence, not constraints. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
       "at": "2026-11-14T01:49:07Z"
+    },
+    {
+      "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T02:31:18Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T01:49:07Z"
+    "at": "2026-11-14T02:31:18Z"
   },
   "design_history": [
     {
