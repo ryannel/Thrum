@@ -81,6 +81,21 @@ try {
   }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
+  if (witness !== 'off') {
+    // Match the native witness's held setup before recording elapsed motion.
+    // Residency and the phase edit above must not become an AA startup transient.
+    for (let frame = 0; frame < 128; frame++) {
+      const deadline = performance.now()+15000;
+      while (!game.route_slot_ready()) {
+        if (performance.now()>deadline) fail('reconstruction witness warmup deadline');
+        await wait(1);
+      }
+      game.frame(base);
+      await wait(1);
+    }
+    if (game.committed_tick() !== 0) fail('reconstruction witness advanced during warmup');
+    record.held_warmup_submissions = 128;
+  }
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();
   record.start_before_ms = performance.now();
