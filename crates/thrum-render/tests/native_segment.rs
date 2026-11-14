@@ -5,7 +5,7 @@ use objc2::{rc::Retained, runtime::ProtocolObject};
 use objc2_foundation::NSString;
 use objc2_metal::{
     MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLComputeCommandEncoder,
-    MTLComputePipelineState, MTLDevice, MTLLibrary, MTLOrigin, MTLSize,
+    MTLComputePipelineState, MTLDevice, MTLLibrary, MTLOrigin, MTLSize, MTLTexture,
 };
 use thrum_render::graph::{
     Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope, TextureKind,
@@ -159,6 +159,18 @@ struct Textures {
     next: wgpu::Texture,
 }
 
+#[expect(
+    unsafe_code,
+    reason = "Retain one native texture while its wgpu owner stays live, then release the non-reentrant HAL guard before taking another"
+)]
+fn native_texture(texture: &wgpu::Texture) -> Retained<ProtocolObject<dyn MTLTexture>> {
+    // SAFETY: the caller retains the live wgpu texture through GPU completion.
+    // Only a balanced native retain escapes; no mutation, destruction or wgpu
+    // operation occurs while the device's non-reentrant snatch guard is held.
+    let guard = unsafe { texture.as_hal::<wgpu::hal::api::Metal>() }.expect("Metal texture");
+    guard.raw_handle().into()
+}
+
 impl Textures {
     fn new(device: &wgpu::Device) -> Self {
         Self {
@@ -223,29 +235,26 @@ impl Textures {
         skip_tile: bool,
         select_history: bool,
     ) {
-        // SAFETY: all guards and their wgpu owners outlive recording and submission.
+        // The wgpu owners stay live through GPU completion. Balanced native
+        // retains hold the handles during recording without retaining HAL guards.
         // All textures were initialized via wgpu; extents/formats/usages match. Metal
         // tracked resources order blit/compute and subsequent same-queue consumers.
         // Only native encoders are ended here; wgpu owns the command buffer itself.
-        let scene = unsafe { self.scene.as_hal::<wgpu::hal::api::Metal>() }.expect("scene");
-        // SAFETY: retains the initialized previous texture, as above.
-        let previous =
-            unsafe { self.previous.as_hal::<wgpu::hal::api::Metal>() }.expect("previous");
-        // SAFETY: retains the initialized output texture, as above.
-        let output = unsafe { self.output.as_hal::<wgpu::hal::api::Metal>() }.expect("output");
-        // SAFETY: retains the initialized next texture, distinct from previous.
-        let next = unsafe { self.next.as_hal::<wgpu::hal::api::Metal>() }.expect("next");
+        let scene = native_texture(&self.scene);
+        let previous = native_texture(&self.previous);
+        let output = native_texture(&self.output);
+        let next = native_texture(&self.next);
         let record = |raw: Option<&mut wgpu::hal::metal::CommandEncoder>| {
             let buffer = raw
                 .expect("Metal encoder")
                 .raw_command_buffer()
                 .expect("raw command buffer");
             let blit = buffer.blitCommandEncoder().expect("blit");
-            for target in [output.raw_handle(), next.raw_handle()] {
+            for target in [&*output, &*next] {
                 // SAFETY: both textures have the same checked extent/format and stay retained.
                 unsafe {
                     blit.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin(
-                        scene.raw_handle(), 0, 0, MTLOrigin { x: 0, y: 0, z: 0 }, MTLSize { width: 32, height: 4, depth: 1 }, target, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 });
+                        &scene, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 }, MTLSize { width: 32, height: 4, depth: 1 }, target, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 });
                 }
                 if !select_history {
                     continue;
@@ -253,7 +262,7 @@ impl Textures {
                 // SAFETY: the 8x2 crop lies inside both retained 32x4 textures.
                 unsafe {
                     blit.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin(
-                        previous.raw_handle(), 0, 0, MTLOrigin { x: 4, y: 1, z: 0 }, MTLSize { width: 8, height: 2, depth: 1 }, target, 0, 0, MTLOrigin { x: 4, y: 1, z: 0 });
+                        &previous, 0, 0, MTLOrigin { x: 4, y: 1, z: 0 }, MTLSize { width: 8, height: 2, depth: 1 }, target, 0, 0, MTLOrigin { x: 4, y: 1, z: 0 });
                 }
             }
             blit.endEncoding();
@@ -264,15 +273,15 @@ impl Textures {
             compute.setComputePipelineState(pipeline);
             // SAFETY: pipeline texture 0 is a retained read-only previous texture.
             unsafe {
-                compute.setTexture_atIndex(Some(previous.raw_handle()), 0);
+                compute.setTexture_atIndex(Some(&previous), 0);
             }
             // SAFETY: pipeline texture 1 is a retained storage-writable output texture.
             unsafe {
-                compute.setTexture_atIndex(Some(output.raw_handle()), 1);
+                compute.setTexture_atIndex(Some(&output), 1);
             }
             // SAFETY: pipeline texture 2 is retained and does not alias previous or output.
             unsafe {
-                compute.setTexture_atIndex(Some(next.raw_handle()), 2);
+                compute.setTexture_atIndex(Some(&next), 2);
             }
             compute.dispatchThreads_threadsPerThreadgroup(
                 MTLSize {
