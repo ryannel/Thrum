@@ -279,18 +279,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here.",
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The compile fix is committed. The strict verifier passed on the preceding source; the new job will qualify the SEA-compatible checkpoint, then run the full gate and native visual/cost campaign.",
-        "work": {
-          "commit": "86d0c1a356d7ce3426e89f6832899213efc7f388",
-          "branch": "build/effect-graph-m3",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/EFFECT-GRAPH/M3-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here."
     }
   ]
 }
