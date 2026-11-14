@@ -180,14 +180,14 @@ target_cost = "Target-specific platform glue and transitive closure; macOS surfa
 [external_dependencies.objc2]
 requirement = "=0.6.5"
 license = "MIT OR Apache-2.0"
-purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the thrum-app window shell; the thrum-controls panel's target/action class"
-target_cost = "macOS-only; already transitive in the locked Metal closure; callback sends one event without frame work"
+purpose = "Narrow macOS AppKit display-link callback and per-view Objective-C bridge in the thrum-app window shell; the thrum-controls panel's target/action class; retained Metal protocol handles in the APPLE-TILE boundary fixture"
+target_cost = "Apple-only; already transitive in the locked Metal closure; callback sends one event without frame work; renderer boundary fixture retains preparation-time pipeline handles"
 
 [external_dependencies.objc2-foundation]
 requirement = "=0.3.2"
 license = "MIT OR Apache-2.0"
-purpose = "Main-thread NSObject target and run-loop ownership for the thrum-app macOS view display link; NSString and geometry for the controls panel"
-target_cost = "macOS-only framework binding; no engine or iPhone runtime edge"
+purpose = "Main-thread NSObject target and run-loop ownership for the thrum-app macOS view display link; NSString and geometry for the controls panel; Metal fixture shader source and preparation errors"
+target_cost = "Apple-only framework binding; renderer use is pipeline preparation in the native boundary fixture, no per-frame string construction"
 
 [external_dependencies.objc2-app-kit]
 requirement = "=0.3.2"
@@ -294,8 +294,8 @@ target_cost = "Build dependency of thrum-app. One small C object on macOS only, 
 [external_dependencies.objc2-metal]
 requirement = "=0.3.2"
 license = "MIT OR Apache-2.0 OR Zlib"
-purpose = "Read generation Metal unified-memory facts and inspect prepared texture storage modes for APPLE-TILE"
-target_cost = "Apple-only binding already in locked wgpu Metal closure; read-only preparation queries, no frame work"
+purpose = "Read generation Metal unified-memory facts and prepared texture storage modes, and prove the APPLE-TILE whole raw encoder boundary with native blits and a storage-writing kernel"
+target_cost = "Apple-only binding already in locked wgpu Metal closure; preparation queries and an isolated native copy/select fixture with one blit and compute encoder, no rival queue"
 [external_dependencies.half]
 requirement = "=2.7.1"
 license = "MIT OR Apache-2.0"

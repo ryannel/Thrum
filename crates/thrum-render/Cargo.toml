@@ -21,7 +21,9 @@ half = { version = "=2.7.1", default-features = false }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-objc2-metal = { version = "=0.3.2", default-features = false, features = ["std", "MTLDevice", "MTLResource", "MTLTexture"] }
+objc2-metal = { version = "=0.3.2", default-features = false, features = ["std", "MTLDevice", "MTLResource", "MTLTexture", "MTLCommandBuffer", "MTLCommandEncoder", "MTLBlitCommandEncoder", "MTLComputeCommandEncoder", "MTLComputePipeline", "MTLLibrary", "MTLTypes"] }
+objc2 = { version = "=0.6.5", default-features = false, features = ["std"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSString", "NSError"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }
 
 [target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "android"))'.dependencies]
