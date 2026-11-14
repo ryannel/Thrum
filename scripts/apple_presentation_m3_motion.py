@@ -84,8 +84,9 @@ def main():
                 runtime = json.loads((session/'runtime.json').read_text())
                 if args.target == 'mac-metal':
                     timed = [sample['gpu_pass_ns'] for sample in runtime['gpu'] if sample['gpu_pass_ns'] is not None]
-                    resolved = sum('portable TAAU' in sample for sample in timed)
-                    if not timed or resolved != (len(timed) if mode == 'taau' else 0) or runtime['recipe'] != 'Ok(Portable)':
+                    resolved = sum(sample.get('portable TAAU') is not None for sample in timed)
+                    declared = any('portable TAAU' in sample for sample in timed)
+                    if not timed or resolved != (len(timed) if mode == 'taau' else 0) or declared != (mode == 'taau') or runtime['recipe'] != 'Ok(Portable)':
                         raise ValueError(f'{case}-{mode}: executed native recipe/resolve did not match the arm')
                     row.update(gpu_timed_frames=len(timed),portable_resolve_timed_frames=resolved,recipe=runtime['recipe'])
                 else:
