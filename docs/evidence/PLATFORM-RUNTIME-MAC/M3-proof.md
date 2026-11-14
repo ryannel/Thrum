@@ -26,6 +26,8 @@ These are viewer observations, not capture omissions or panel cadence. All sourc
 [Playback reports and samples](M3/review/playback-motion-clean/playback.json.gz),
 [ON/untraced](M3/review/playback-on-untraced/sample-strip.png),
 [ON/traced](M3/review/playback-on-traced/sample-strip.png).
+Complete window movies: [ON/untraced](M3/presented/on-untraced/preview-1x.mp4),
+[ON/traced](M3/presented/on-traced/preview-1x.mp4).
 
 **M3.2.** The real-window channel/row oracle verifies 843 pattern originals; 834 valley originals also verify.
 Both replacements retire submissions 357–359 with three readbacks pending, change surface lease 2→3 and

@@ -179,7 +179,7 @@ try:
         raise RuntimeError('final evidence commit is missing or checkout changed')
     source_match()
     run('final-check', ['python3', loop, 'check', '--module', 'PLATFORM-RUNTIME-MAC',
-                        '--milestone', 'M3', '--worktree', '.'], 3600)
+                        '--milestone', 'M3', '--worktree', '.', '--timeout', '3600'], 3660)
     run('final-merge', ['python3', loop, 'merge', '--worktree', '.'], 3600)
     source_match()
     save('complete.json', {'commit': git('rev-parse', 'HEAD'), 'source_unchanged': True})
