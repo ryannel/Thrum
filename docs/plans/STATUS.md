@@ -164,6 +164,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory (SEA M1), 14 Nov · [review](../evidence/SEA/M1-review.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1), 13 Nov · [review](../evidence/CONTENT-LOOP/M1-review.md)
 - The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2), 13 Nov · [review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
 - The game picks its culling mode from the device and the measurements, and says which mode ran (CULLING M2), 13 Nov · [review](../evidence/CULLING/M2-review.md)
