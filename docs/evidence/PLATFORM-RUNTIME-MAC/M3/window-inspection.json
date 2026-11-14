@@ -1,0 +1,35 @@
+{
+  "item": "M3.2 windowed-tap prerequisite",
+  "target": "mac-metal, Apple M3 Max, active built-in 3456x2234 panel at 120 Hz",
+  "merged_source": "145cadb2cc4d491853bb29711ab449c651c0919b",
+  "binary_sha256": "5ee819346927e2e48def9c0e4ddf701a6d9617cfc873640242ca40033b48f1ea",
+  "source_audit": "All 538 build source files agree with the merged assembly; covered paths agree with origin/main.",
+  "surface_format": "Bgra8Unorm; submitted capture exposes RGBA bytes",
+  "pattern": {
+    "presentations": 846,
+    "verified_originals": 843,
+    "all_match_independent_channel_row_oracle": true,
+    "rgba_sha256": "8eabe66441bcbce1d3a92072454250853ce6ad99a2c1eec46d682f677e5fff15"
+  },
+  "valley": {"presentations": 837, "verified_originals": 834},
+  "replacement": {
+    "both_retired_submissions": [357, 358, 359],
+    "pending_readbacks": 3,
+    "surface_lease": [2, 3],
+    "presenter_generation": [1, 2],
+    "boundary_submissions": [356, 360],
+    "both_boundary_pixels_identical": true,
+    "stale_cpu_recycle_outstanding_before_after": [1, 1],
+    "intentional_gap_ms": {"pattern": 51.452333, "valley": 52.120792}
+  },
+  "capture_off": {"presentations": 850, "images": 0, "spool_exists": false, "tap_enabled": false},
+  "panel_witness": {"samples": 72, "all_unlocked_active_awake_builtin": true},
+  "inspection": [
+    "Actual OS-window screenshots show the known pattern before and after replacement, and intact cooked scene composition with normal yaw response.",
+    "Native valley images 356 and 360 retain the same rock, sphere, ridge, ground and shadow pixels across replacement.",
+    "The complete 7.093043-second preliminary normal-window pan played at 1x; sampled native-size observations preserve relative placement and the sphere's authored exit. Its browser reports two decoder drops, separate from source omissions.",
+    "The render actor consumes its one drawable in queue.present(frame) before observer.frame receives only host/request/lease identities. Capture cannot acquire or extend that lease.",
+    "Capture OFF constructs no tap or ImageWriter. The merged full ./dev check passed disabled-hook zero-allocation, correspondence, stale-generation and abandoned/lost-work regressions. Ordinary qualification markers are preallocated."
+  ],
+  "limits": "Retired readbacks are explicit capture gaps. Engine pixels and real surface submission binding do not establish compositor pixels, scan-out or photons. Cadence qualification still requires the fresh OFF trace and matched observer arms."
+}
