@@ -200,7 +200,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2): Not Started · [plan](CREATOR/PLAN.md)
 - APPLE-PRESENTATION M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome: Blocked: Needs Dependency: The lead must arrange release of SEA’s nested GPU lock (parent PID 99959, checker PID 4501) so queued M3 job `20261114-131328-10597` can proceed. A planner adds it to the module that owns it
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
-- A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
+- EFFECT-GRAPH M3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome: Blocked: Needs Context: Reclaim shared storage so at least 16 GiB stays free throughout exact capture; both refreshed campaigns refused admission. The lead finds the missing fact, or asks you for it
 - The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device (SEA M2): In Progress · [plan](SEA/PLAN.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - CLOUDS's design: Design Ready for Review · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
@@ -242,7 +242,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Blocked: Needs Context |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish (for ATMOSPHERE its M6, which closes G3s) | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | M2 of 2 · In Progress |
