@@ -143,7 +143,9 @@ fn transitions_clear_samples_and_refresh_immediately_then_at_four_hz() {
             .iter()
             .any(|(_, value)| value == "profiler off")
     );
+    window.names.push("retired device pass".into());
     window.configure(true, 2, 10);
+    assert!(window.names.is_empty());
     assert!(window.samples.is_empty());
     assert!(window.newest.is_none());
 }

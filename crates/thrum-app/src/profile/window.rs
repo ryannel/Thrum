@@ -48,6 +48,10 @@ impl ProfileWindow {
     }
 
     pub(crate) fn configure(&mut self, enabled: bool, generation: u64, minimum: u64) {
+        if generation != self.generation {
+            self.names.clear();
+            self.untimed.clear();
+        }
         if enabled != self.enabled || generation != self.generation {
             self.samples.clear();
             self.intervals.clear();
