@@ -1,5 +1,12 @@
 # EFFECT-GRAPH log
 
+- 2026-11-14 Resumed at implementation checkpoint `9096b368`. The submitted slab command passes on both
+  Metal recipes; four fixed native noon/night images and twelve paired cost arms completed. The builder
+  inspected every whole frame and native-size crossing strip. [Partial target proof](../../evidence/EFFECT-GRAPH/M3-proof.md)
+  separates those verified results from queued metadata/cadence, Chrome and exact checks. Cost brackets are
+  descriptive, with load retained; no isolated transfer cost or speedup is claimed. The
+  [continuation](../../evidence/EFFECT-GRAPH/M3-handoff.md) names live jobs. Integration remains pending.
+
 - 2026-11-14 The first native slab and cadence/quality runs pass on both recipes. Chrome's functional slab
   script completed before its fixed capture refused a checkpoint within four ticks of the route origin;
   the route is corrected. A preliminary native noon/night campaign recorded images, then refused its next
