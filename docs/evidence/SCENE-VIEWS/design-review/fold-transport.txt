@@ -1,0 +1,12 @@
+Camera (0,40); mirror camera (0,-40); water (40,0); receiver (41,1)
+Sun direction (1,1)/sqrt(2); fold height 0; distances in metres
+HG phase, physical first segment mu=0: 0.013640392
+HG phase, altitude-only mu=1:         3.580986220
+First-segment phase ratio: 262.528094
+Both models total transmission: 0.999714792
+Physical folded-path in-scatter: 0.000023278
+Altitude-only in-scatter:        0.000817061
+True surface-to-body in-scatter: 0.000020249
+Recovered by WATERS from altitude-only colour: 0.000814252
+Recovered / true in-scatter: 40.212750
+Verified: equal folded density does not imply equal transport.

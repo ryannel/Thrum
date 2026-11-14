@@ -1,6 +1,28 @@
 {
   "module": "SCENE-VIEWS",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/SCENE-VIEWS/design-review.md",
+    "commit": "96a17fc44abe67030dcf31bd16badcdf1419ca44",
+    "hash": "f94005c910db47598ae062ab0db96c09682f076f7254bc9b88823845181f27df",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 106041,
+      "cached": 1028608,
+      "output": 8780,
+      "turns": 1
+    },
+    "at": "2026-11-14T10:16:51Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "6570cf0af39111dd8012001dabd6cbdfac9228603c44e8b5e4325a8d56f5fb86",
