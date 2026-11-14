@@ -171,14 +171,14 @@ impl ProfileWindow {
         };
         let mut rows = vec![(
             "Window".into(),
-            if !self.enabled {
-                "profiler off; window cleared".into()
-            } else {
+            if self.enabled {
                 format!(
                     "median of latest {} / {CAPACITY} frames; newest #{}; 250 ms refresh",
                     self.samples.len(),
                     self.samples.back().map_or(0, |s| s.submission_order)
                 )
+            } else {
+                "profiler off; window cleared".into()
             },
         )];
         rows.push((

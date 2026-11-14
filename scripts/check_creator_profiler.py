@@ -64,13 +64,17 @@ class Scene:
         try:
             wait_for(lambda: latest(directory) if self.process.poll() is None else self.fail(), "native completed samples")
         except BaseException:
-            status = directory / "samples.jsonl"
-            if status.exists():
-                lines = status.read_text().splitlines()
-                if lines:
-                    record = json.loads(lines[-1])
-                    print(json.dumps({"native_startup":{key:record.get(key) for key in ["elapsed","display_link_callbacks","render_callbacks","present_calls"]}}, flush=True))
-            self.close()
+            try:
+                status = directory / "samples.jsonl"
+                if status.exists():
+                    lines = status.read_text().splitlines()
+                    if lines:
+                        record = json.loads(lines[-1])
+                        print(json.dumps({"native_startup":{key:record.get(key) for key in ["elapsed","display_link_callbacks","render_callbacks","present_calls"]}}), flush=True)
+            except (OSError, json.JSONDecodeError):
+                pass
+            finally:
+                self.close()
             raise
 
     def fail(self):
