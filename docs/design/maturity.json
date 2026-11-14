@@ -655,6 +655,18 @@
         },
         "evidence": "../evidence/APPLE-PRESENTATION/m2/README.md",
         "scope": "M2 temporal inputs and history are ready for independent review. Reconstruction remains in M3."
+      },
+      "M3": {
+        "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
+        "functional_validation": "Native and Wasm Clippy, shader validation and real Metal alternating-slot/reset execution pass. The first 640x360 game reference run repeats its SDR reference images exactly and passes independent cut/reset controls, but fails improvement over no AA at all six checkpoints. Corrected kernel and submitted-linear f32 cycle comparison target reruns are pending.",
+        "experienced_quality": "First candidate inspected against its reference and rejected by the required colour metric. No M3 motion qualification or independent review yet.",
+        "platform_performance": {
+          "mac": "First-candidate GPU timestamps exist at 640x360; changed-kernel paired timing and the 1080p estimate remain unqualified.",
+          "browser": "Wasm Clippy passes; target reconstruction and motion proof pending.",
+          "ios": "not_run"
+        },
+        "evidence": "../evidence/APPLE-PRESENTATION/m3/README.md",
+        "scope": "Native-scale portable reconstruction only. No MetalFX, dynamic scale, EDR, governor, cadence qualification or G4 closure."
       }
     }
   },

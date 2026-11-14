@@ -42,6 +42,119 @@ fn ppm(path: &Path, bytes: &[u8]) {
     std::fs::write(path, output).unwrap();
 }
 
+fn submitted_sdr(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    surface: &SurfaceOutput<'_>,
+) -> Vec<u8> {
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("M3 submitted identity-present copy"),
+        size: 640 * 360 * 4,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_texture_to_buffer(
+        surface.view.texture().as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(640 * 4),
+                rows_per_image: Some(360),
+            },
+        },
+        surface.view.texture().size(),
+    );
+    let (send, receive) = std::sync::mpsc::channel();
+    encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
+        send.send(result).unwrap();
+    });
+    queue.submit([encoder.finish()]);
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    receive.recv().unwrap().unwrap();
+    let mut bytes = buffer.slice(..).get_mapped_range().unwrap().to_vec();
+    for pixel in bytes.as_chunks_mut::<4>().0 {
+        pixel.swap(0, 2);
+    }
+    bytes
+}
+
+fn half(bits: u16) -> f32 {
+    let sign = u32::from(bits & 0x8000) << 16;
+    let exponent = u32::from((bits >> 10) & 31);
+    let fraction = u32::from(bits & 1023);
+    if exponent == 0 {
+        let value = f32::from(bits & 1023) * 2.0_f32.powi(-24);
+        return if sign == 0 { value } else { -value };
+    }
+    f32::from_bits(
+        sign | if exponent == 31 {
+            0x7f80_0000 | (fraction << 13)
+        } else {
+            ((exponent + 112) << 23) | (fraction << 13)
+        },
+    )
+}
+
+fn linear_cycle(
+    sum: &mut [[f32; 3]],
+    first: &mut Option<Vec<[f32; 3]>>,
+    bytes: &[u8],
+    frame: usize,
+    directory: &Path,
+) {
+    assert_eq!(bytes.len(), 640 * 360 * 8);
+    for (sum, pixel) in sum.iter_mut().zip(bytes.as_chunks::<8>().0) {
+        for (channel, value) in sum.iter_mut().enumerate() {
+            let sample = half(u16::from_le_bytes([
+                pixel[channel * 2],
+                pixel[channel * 2 + 1],
+            ]));
+            assert!(sample.is_finite(), "nonfinite submitted linear sample");
+            *value += sample;
+        }
+    }
+    if frame % 32 != 31 {
+        return;
+    }
+    let average: Vec<_> = sum.iter().map(|pixel| pixel.map(|v| v / 32.0)).collect();
+    let raw: Vec<_> = average
+        .iter()
+        .flatten()
+        .flat_map(|value| value.to_le_bytes())
+        .collect();
+    std::fs::write(
+        directory.join(format!("reference-linear-{}.f32le", frame + 1)),
+        raw,
+    )
+    .unwrap();
+    if let Some(previous) = first {
+        let mut maximum_absolute = 0.0_f32;
+        let mut maximum_rounding_units = 0.0_f32;
+        for (a, b) in previous.iter().flatten().zip(average.iter().flatten()) {
+            let difference = (a - b).abs();
+            // Two 32-term f32 means: a conservative combined summation bound.
+            let bound = 64.0 * f32::EPSILON * a.abs().max(b.abs()).max(f32::MIN_POSITIVE);
+            maximum_absolute = maximum_absolute.max(difference);
+            maximum_rounding_units = maximum_rounding_units.max(difference / bound);
+        }
+        let report = serde_json::json!({"pixels":sum.len(),"phases_per_cycle":32,"cycles":2,"maximum_absolute_difference":maximum_absolute,"maximum_rounding_units":maximum_rounding_units,"within_float_rounding":maximum_rounding_units<=1.0,"source":"T2 submitted SceneLinear RGB16F; independent ordered f32 means"});
+        std::fs::write(
+            directory.join("linear-cycles.json"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+        assert!(
+            maximum_rounding_units <= 1.0,
+            "linear cycle means differ: {report}"
+        );
+    } else {
+        *first = Some(average);
+    }
+    sum.fill([0.0; 3]);
+}
+
 async fn host(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -103,7 +216,15 @@ async fn host(
             .to_radians(),
     )
     .unwrap();
-    host.enable_submitted_capture(1).unwrap();
+    host.enable_submitted_capture_from(
+        1,
+        if mode == "reference" {
+            thrum_render::synthetic::CaptureSource::SceneLinear
+        } else {
+            thrum_render::synthetic::CaptureSource::Sdr
+        },
+    )
+    .unwrap();
     (host, stats)
 }
 
@@ -131,11 +252,23 @@ async fn checkpoint(
             host.scene_camera().unwrap().eye().map(f32::to_bits),
         );
         let mut held_exposure = None;
+        let mut held_celestial = None;
+        let mut reference_sum = vec![[0.0; 3]; 640 * 360];
+        let mut first_reference = None;
         for frame in 0..64 {
             if mode == "broken" {
                 host.inner.invalidate_history();
             }
             let (bytes, sample, exposure) = submitted(&mut host, device, surface);
+            if mode == "reference" {
+                linear_cycle(
+                    &mut reference_sum,
+                    &mut first_reference,
+                    &bytes,
+                    frame,
+                    &directory,
+                );
+            }
             let state = (
                 host.tick(),
                 host.time_of_day().to_bits(),
@@ -147,14 +280,43 @@ async fn checkpoint(
             assert_eq!(content.drawn, Some(1), "held cooked generation");
             assert!(content.errors.is_empty(), "{:?}", content.errors);
             let metering = exposure[..4].to_vec();
+            let celestial = DayCycle::sample(
+                host.tick(),
+                sample.presentation_alpha,
+                host.inner.source().day_phase_offset,
+            );
+            let celestial_state = (
+                celestial.simulation_time_seconds.to_bits(),
+                celestial
+                    .equatorial_to_world
+                    .map(|column| column.map(f32::to_bits)),
+                sample.presentation_alpha.to_bits(),
+            );
+            assert_eq!(
+                *held_celestial.get_or_insert(celestial_state),
+                celestial_state,
+                "held celestial phase and sampling alpha"
+            );
             assert_eq!(
                 *held_exposure.get_or_insert_with(|| metering.clone()),
                 metering,
                 "held exposure and storage p"
             );
-            writeln!(log,"{}",serde_json::json!({"mode":mode,"frame":frame,"state":format!("{state:?}"),"cooked_generation":content.drawn,"exposure":exposure,"history":sample.history_identity,"passes":sample.gpu_pass_ns.as_ref().map(|t|t.passes().iter().map(|p|serde_json::json!({"name":p.name.as_ref(),"ns":p.nanoseconds})).collect::<Vec<_>>())})).unwrap();
+            let record = serde_json::json!({
+                "mode":mode,"frame":frame,"state":format!("{state:?}"),
+                "celestial":celestial_state,"cooked_generation":content.drawn,
+                "exposure":exposure,"history":sample.history_identity,
+                "passes":sample.gpu_pass_ns.as_ref().map(|t|t.passes().iter().map(|p|
+                    serde_json::json!({"name":p.name.as_ref(),"ns":p.nanoseconds})).collect::<Vec<_>>()),
+            });
+            writeln!(log, "{record}").unwrap();
             if frame == 31 || frame == 63 {
-                ppm(&directory.join(format!("{mode}-{}.ppm", frame + 1)), &bytes);
+                let sdr = if mode == "reference" {
+                    submitted_sdr(device, queue, surface)
+                } else {
+                    bytes
+                };
+                ppm(&directory.join(format!("{mode}-{}.ppm", frame + 1)), &sdr);
             }
         }
     }
@@ -208,7 +370,7 @@ fn reconstruction_reference_on_submitted_game_frames() {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Bgra8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
