@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 M3.3's initial command passed, but inspection found missing recovery advice for
+  refused asset/material edits and lost multiline compiler evidence. Added advice in the kit's
+  error-report path and strengthened the real native check to require all three diagnostic
+  parts and retain full stdout. The old full gate was deliberately stopped; final native,
+  exact-image and repository verification are pending. [M3 evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-14 Updated M3's public creator path: shared source shape, exact web prerequisites,
   parameter-copy behavior, material-hook scope and profiler use. G6 now records Mac/Chrome
   dimensions separately and names the held features. Documentation checks pass; native mistake

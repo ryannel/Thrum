@@ -470,7 +470,9 @@ impl SkyGame {
                 .map(|stats| {
                     kept_errors(&stats, &mut shown)
                         .into_iter()
-                        .map(|(generation, error)| (generation, format!("{names}: {error}")))
+                        .map(|(generation, error)| {
+                            (generation, format!("{names}: {error}; restore the named asset under assets/ and save again"))
+                        })
                         .collect()
                 })
                 .unwrap_or_default()
@@ -805,6 +807,9 @@ fn cooked_store(variable: Option<std::ffi::OsString>) -> Result<PathBuf, String>
 fn material_drawn(outcome: &MaterialOutcome) -> Result<String, String> {
     match outcome {
         MaterialOutcome::Promoted { .. } => Ok(outcome.to_string()),
+        MaterialOutcome::Rejected { .. } => Err(format!(
+            "{outcome}; fix the reported material hook and save it again"
+        )),
         _ => Err(outcome.to_string()),
     }
 }

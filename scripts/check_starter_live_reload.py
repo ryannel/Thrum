@@ -11,6 +11,7 @@ window's event path, and needs Metal.
 Usage: python3 scripts/check_starter_live_reload.py <output folder>
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -86,16 +87,21 @@ class Scene:
         )
         self.lines = []
         self.ready = threading.Condition()
-        threading.Thread(target=self.read, daemon=True).start()
+        self.capture_log = out / "capture.log"
+        self.reader = threading.Thread(target=self.read, daemon=True)
+        self.reader.start()
 
     def read(self):
-        # The cooker shares standard output; only the capture's report lines count.
-        for line in self.process.stdout:
-            if not line.startswith("live "):
-                continue
-            with self.ready:
-                self.lines.append((time.monotonic(), line.rstrip("\n")))
-                self.ready.notify_all()
+        # Retain multiline compiler diagnostics as well as the numbered report headers.
+        # The cooker shares standard output; only capture headers advance the save sequence.
+        with self.capture_log.open("w") as log:
+            for line in self.process.stdout:
+                log.write(line)
+                if not line.startswith("live "):
+                    continue
+                with self.ready:
+                    self.lines.append((time.monotonic(), line.rstrip("\n")))
+                    self.ready.notify_all()
 
     def next_line(self, count, wait):
         """The report line numbered `count`, or None if none arrives within `wait`."""
@@ -117,6 +123,19 @@ def save_by_rename(path, text):
     temporary = path.with_name("." + path.name + ".saving")
     temporary.write_text(text)
     os.replace(temporary, path)
+
+
+def diagnostic_checks(capture, stderr):
+    """Require the creator's object, cause and recovery action, beyond a kept-scene flag."""
+    return {
+        "misspelt control": all(text in stderr for text in (
+            'no control is named "sun.elevaton"', 'did you mean "sun.elevation"?')),
+        "renamed asset": all(text in capture for text in (
+            "mesh meshes/rock with texture textures/white", "asset unavailable",
+            "restore the named asset under assets/ and save again")),
+        "material compile": all(text in capture for text in (
+            "material.wgsl:", "expected", "fix the reported material hook and save it again")),
+    }
 
 
 def main():
@@ -205,8 +224,21 @@ def main():
             failures.append(f"{name}: {text} (changed {fraction:.5f}, expected {'change' if changes else 'none'})")
         previous, index = png, index + 1
     scene.process.wait(timeout=LIVE_SECONDS + 60)
+    scene.reader.join(timeout=5)
     scene.log.close()
-    report = {"results": results, "failures": failures}
+    if scene.reader.is_alive():
+        failures.append("capture log did not finish after the starter exited")
+    diagnostics = diagnostic_checks(scene.capture_log.read_text(), (out / "starter.log").read_text())
+    failures.extend(f"{name}: missing object, cause or next step" for name, ok in diagnostics.items() if not ok)
+    target = Path(os.environ.get("CARGO_TARGET_DIR", REPO / "target"))
+    report = {
+        "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
+        "binary_sha256": hashlib.sha256((target / "release/thrum-starter").read_bytes()).hexdigest(),
+        "target": "mac-metal",
+        "diagnostics": diagnostics,
+        "results": results,
+        "failures": failures,
+    }
     (out / "live-reload.json").write_text(json.dumps(report, indent=2))
     for result in results:
         print(("PASS " if result["ok"] else "FAIL ") + json.dumps(result))
