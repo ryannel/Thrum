@@ -30,6 +30,14 @@
     "interpretation": "Functional gates govern; quiet figures remain history. Investigate visible hitches, >~25% comparable regression or unexpected growth; no iPhone result."
   },
   "v1_slices": {
+    "CLOUDS_M1": {
+      "implementation": "renderer_free_cpu_weather_density_directed_shapes_and_optical_references",
+      "functional_validation": "Numerical authority and boundary tests on mac-metal; final check and source identities are in CLOUDS LOG.md and M1 evidence.",
+      "experienced_quality": "not_qualified_cpu_milestone_no_rendered_cloud_claim",
+      "platform_performance": "not_measured_no_gpu_or_display_speed_claim",
+      "scope": "Weather ticks and integrated drift, continuous procedural columns with clear top=base, bounded eroded full/coarse density, placed footprint/volume paths, conformance and point/disc optical references. Ground condensate and GPU consumers remain later milestones.",
+      "evidence": ["../evidence/CLOUDS/M1.md"]
+    },
     "G0_boundary": {
       "implementation": "complete_boundary_and_integrity_cleanup",
       "functional_validation": "Mac_dev_check_no_SKIP_negative_Metal_and_verified_baseline_inventory_passed",
