@@ -16,8 +16,9 @@ Use the latest live job for [the qualification helper](qualify_m2_baselines.py),
 listed by `agent_loop.py jobs --worktree .`, rather than launch another duplicate.
 The helper runs under `lock gpu`, updates only this branch to current main, and
 uses the repository's own baseline gate. It verifies when a valid proof is
-missing. If space is below 16 GiB, it inspects and cleans only this worktree's
-private target directory, refusing a linked target. Leave the worktree unchanged
+missing. Below 18 GiB it inspects and cleans only this worktree's private target
+directory, refusing a linked target. That leaves build headroom above the native
+observer's unchanged 16 GiB requirement. Leave the worktree unchanged
 while it rebases or verifies. At `AWAIT_EVIDENCE`, make and commit the evidence
 changes described below; the helper no longer changes the branch in that phase.
 
@@ -42,6 +43,12 @@ These earlier jobs are terminal:
   Space recovered to 21 GiB afterward. It produced no baseline pass.
 - `20261114-094322-25542` safely aborted on the registration conflicts above.
   Those conflicts are resolved; rerun the helper from the current clean source.
+- `20261114-101644-42314` rebased and built successfully, then the first native
+  capture refused its disk preflight. It began with 16.0136 GiB free and fell
+  below 16 GiB after the builds. No images were captured. The
+  [diagnostic metadata](M2-disk-attempt.json.gz) is retained; its cooked scratch
+  and this worktree's 2.3 GiB of build output were removed. Space recovered to
+  about 20 GiB. The helper now reserves build headroom before qualification.
 
 The [M2 record](M2.md), selected Metal records, [cost record](M2-cost.md) and
 [CPU loop record](M2-loop.txt) retain the passed proofs. All three Metal targets

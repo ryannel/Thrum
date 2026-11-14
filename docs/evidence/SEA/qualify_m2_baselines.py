@@ -93,7 +93,10 @@ def main():
     if gate.returncode == 0:
         print("REUSED: the exact-baseline gate accepts this integration source", flush=True)
     else:
-        if shutil.disk_usage(ROOT).free < 16 * 1024**3:
+        # The native observer requires 16 GiB after the release and Wasm builds.
+        # Those builds consumed the initial guard's small margin in the recorded
+        # failed attempt; reclaim private caches with 2 GiB of build headroom.
+        if shutil.disk_usage(ROOT).free < 18 * 1024**3:
             target = ROOT / "target"
             if target.resolve() != target:
                 raise RuntimeError("Refusing to clean a linked or shared target directory")
