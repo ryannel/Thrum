@@ -245,18 +245,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
-      "blocked": {
-        "reason": "needs_context",
-        "what": "Does D3.3 permit native frame-sequence inspection plus measurements, given that the available tools cannot perceive continuous 1\u00d7 video?",
-        "work": {
-          "commit": "18a20549afd8f095fbee224c8f4f55a5083eefed",
-          "branch": "build/apple-presentation",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/APPLE-PRESENTATION/M3-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
     }
   ]
 }
