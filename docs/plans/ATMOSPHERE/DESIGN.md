@@ -640,6 +640,17 @@ transport, which stays [unqualified](#numerical-acceptance).
 M9.2 pins what does not move: every texel of a line that never meets the ground, and every layer that ends
 before its line meets the ground, holds the bytes the commit before M9 stored, for the same frames.
 
+Past the ground M9.2 holds the stored values to what half-float storage can show. Every value is finite. A
+layer's stored transmittance lies between 0 and 1 and is never higher than the layer's before it. It may be
+equal: a steep line's transmittance falls below the smallest half-float within some 20 km, and two layers
+that are both still falling round to the same step, zero included, so a strict fall from layer to layer
+would refuse a correct column. That the air does go on is shown where storage can show it: on a line with two
+or more layers past the ground, the last layer stores less than the first one past the ground. Over every
+texel of the volume, from 3 m and 245 m, level and pitched down to straight down, at 60° and 90° fields of
+view, that fall is 40 stored steps or more, and a column held at its value at the ground fails it
+([the arithmetic](../../evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt)). M9.1 is what proves the
+continuation is the right one.
+
 P10's fixture, a camera at 245 m with rows 1.1° below the level, already holds lines that meet the ground
 inside 32 km. It compares storage with a float32 run of the same integrator, so it passes unchanged and now
 covers the air under the ground. No preserved referee's reference, case or bound changes.
@@ -884,9 +895,10 @@ history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
   to 3 km, on level, climbing and descending rays to 31 km: 64 slices with 48 inside 500 m are within 0.0043
   in transmittance and 3.4% in in-scatter, at most 0.62 of [the ceiling below](#numerical-acceptance-for-the-view-volume).
   32 slices with 24 inside 500 m pass in clear air and miss the ceiling in haze of 20 km and thicker, because
-  a linear blend of transmittance across a far cell is too coarse there; with 16 of the 32 beyond 500 m, or
-  with optical depth blended in place of transmittance, they pass. A slab of fog of 30 m to 10 km visual
-  range is within 1.1% a cell from its faces.
+  a linear blend of transmittance across a far cell is too coarse there; with 16 of the 32 beyond 500 m they
+  pass. Blending optical depth in place of transmittance brings the transmittance inside the ceiling and
+  leaves the in-scatter read as it was, 2.6 times its ceiling in haze of 3 km, so by itself it is not a
+  remedy. A slab of fog of 30 m to 10 km visual range is within 1.1% a cell from its faces.
 
 `CLOUDS`' design proof ([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
 medium split by a near weight composes with the far part to the exact transmittance. Its in-scatter is an

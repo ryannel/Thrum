@@ -192,9 +192,7 @@
       "id": "M7",
       "name": "One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran",
       "depends_on": [
-        "PLATFORM-RUNTIME-MAC:M3",
         "APPLE-TILE:M12",
-        "CREATOR:M3",
         "APPLE-PRESENTATION:M3",
         "ATMOSPHERE:M6",
         "CONTENT-LOOP:M3"
@@ -202,8 +200,8 @@
       "items": [
         {
           "id": "M7.1",
-          "statement": "Every module the exit rests on has finished: the record files show each milestone of modules 1 to 10 and 12 Done, and APPLE-PRESENTATION's include M11, its paired proof with MetalFX, EDR and the governor.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); mods=[\"PLATFORM-RUNTIME-IOS\",\"PLATFORM-RUNTIME-MAC\",\"T2-CAPTURE\",\"COOKED-DRAW\",\"APPLE-TILE\",\"CREATOR\",\"APPLE-PRESENTATION\",\"ATMOSPHERE\",\"BASELINE-GUARD\",\"CULLING\",\"CONTENT-LOOP\"]; bad=[m+\":\"+x[\"id\"] for m in mods for x in L(m,\"DONE.json\")[\"milestones\"] if not (L(m,\"ACCEPTED.json\")[\"milestones\"].get(x[\"id\"]) or {}).get(\"accepted\")]; bad+=[] if any(x[\"id\"]==\"M11\" for x in L(\"APPLE-PRESENTATION\",\"DONE.json\")[\"milestones\"]) else [\"APPLE-PRESENTATION:M11 is not planned\"]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "statement": "The milestones this one builds on are Done in the record files: `APPLE-TILE` M12, `APPLE-PRESENTATION` M11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` M6, `CULLING` M3 and `CONTENT-LOOP` M3.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open"
@@ -323,6 +321,10 @@
     {
       "id": "M8",
       "name": "The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written",
+      "depends_on": [
+        "PLATFORM-RUNTIME-MAC:M3",
+        "CREATOR:M3"
+      ],
       "items": [
         {
           "id": "M8.1",
@@ -437,6 +439,14 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.12",
+          "statement": "Every milestone the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` M7, `PLATFORM-RUNTIME-MAC` M3, `T2-CAPTURE` M2, `COOKED-DRAW` M1, `APPLE-TILE` M12, `CREATOR` M3, `APPLE-PRESENTATION` M11, `ATMOSPHERE` M6, which closes G3s, `BASELINE-GUARD` M1, `CULLING` M3 and `CONTENT-LOOP` M3. `ATMOSPHERE`'s later milestones are track 2 and are not among them.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"M7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open"

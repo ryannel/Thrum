@@ -14,19 +14,19 @@
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish (for ATMOSPHERE its M6, which closes G3s) |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
-| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
+| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M6 for the valley; WATERS M10, M14 and M16 to close |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-UI M5 for the game alone; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1 and RENDER-2D M5 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M5 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, and 20 to 25 are
 the goal after V1. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -173,7 +173,8 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    [water as one system](#water-as-one-system) gives: the wave field, then still water with the shared system,
    then running water, then rain. `RIVERS`' flow solver is CPU work in files of its own and can run beside
    `WATERS` once `WATERS:M1` is Done, and so can `PUDDLES`' two CPU milestones. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, on its M3, so it
-   can be built at any point after `CULLING:M3`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`.
+   can be built at any point after `CULLING:M1`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`. It builds beside
+   `CULLING` M3 in that module's files and integrates on top of what has landed.
 9. **The atmosphere as a whole** ([below](#the-atmosphere-as-a-whole)). `CLOUDS` M13 (mist, fog and low cloud
    on the CPU) follows its M1 and needs nothing. `ATMOSPHERE` M7 (the view volume, haze and shafts) and M8 (a
    test fog) follow its M6, so they wait for TAAU and for G3s to close, in `thrum-render`'s atmosphere files.
@@ -841,8 +842,8 @@ staying parked: CAS garbage collection and leases on the store, layered EAC, par
 Planned on 13 November 2026: [design](SHOWCASE/DESIGN.md), [plan](SHOWCASE/PLAN.md). Its milestones are M5 to M8;
 M1 to M4 were the route slice, built before the loop under
 [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md) and kept in
-[its record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7 and
-M8 need the last milestone of every other track 1 module. Track 3 starts when M8 is Done.
+[its record](../evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). M5 and M6 need `CONTENT-LOOP:M2` and `CULLING:M3`; M7
+needs the closing milestones it builds on and M8 the last milestone of every other track 1 module. Track 3 starts when M8 is Done.
 
 ### EFFECT-GRAPH (track 2 foundation)
 
@@ -883,7 +884,7 @@ planner settled the brief's open mechanisms, and [seven rulings](#seam-rulings-f
 **`PUDDLES`** was planned on 14 November 2026: [design](PUDDLES/DESIGN.md), [plan](PUDDLES/PLAN.md). Eight
 milestones: puddles, then wet ground and a drop's rings, on the CPU after `WATERS:M1`; the yard's puddles, the
 rain's rings, a footfall's rings and the wet ground on the island after `WATERS:M8`; the V1 valley after
-`SHOWCASE:M6`; and the close,
+`SHOWCASE:M5`; and the close,
 after `WATERS:M10`, `M14` and `M16`. Its brief asked for rain that wets the ground it can reach and leaves
 shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under
 drops and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have
@@ -1199,7 +1200,8 @@ builder starts it. The modules are planned in the order below.
    same files. It builds the interface-stage and font-product asks itself under
    [the seam rulings](#seam-rulings-for-game-ui).
 5. **The game.** `SWARM` opens with the owner's choice of concept, which only `SWARM` waits on. Then a
-   single-player slice and the full run after `SIM-2D`, `RENDER-2D` and `GAME-UI`, a rehearsed match after
+   single-player slice after `SIM-2D`, `SESSION`'s first milestone and `RENDER-2D`, the full run after
+   `GAME-UI`'s fourth milestone, the iPhone simulator after its last, a rehearsed match after
    `SESSION`'s fourth milestone, co-op on sockets after its last, and the close. It builds its asks of the
    guard, the shells and the world lane itself under [the seam rulings](#seam-rulings-for-swarm).
 
@@ -1637,3 +1639,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   them in its own landing. `WATERS` M2 now waits for `ATMOSPHERE:M9`. `ATMOSPHERE` M7.3 gains probes near
   the ground. No design or item of `SCENE-VIEWS`, `CLOUDS` or `APPLE-TILE` changed, no other item of
   `WATERS`, and no contract text.
+- 2026-11-14 Dependency audit, on the lead's task from the owner's word that too few milestones can start at
+  once: [the record](../evidence/dependency-audit-2026-11-14/README.md) gives a verdict for each of the 82
+  edges. Five only set an order: `SCENE-VIEWS` M1 now waits for `CULLING:M1`, `PUDDLES` M6 for `SHOWCASE:M5`,
+  `SHOWCASE` M8 and not M7 for `PLATFORM-RUNTIME-MAC:M3` and `CREATOR:M3`, and `SWARM` M3 and M6, not M2, for
+  `GAME-UI`. `SHOWCASE` M7.1 no longer asks for `ATMOSPHERE`'s track-2 milestones. The swarm gate stays, by the
+  owner's decision. Nine milestones can start once the running ones finish, as before: the limit is one
+  milestone a module, two designs not approved and `APPLE-PRESENTATION` M4 to M11 not planned.

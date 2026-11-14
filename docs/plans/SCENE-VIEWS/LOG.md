@@ -103,3 +103,8 @@
   the horizon, its risk 7 and its last open question describe the pass before M9 and already say a view takes
   whatever the pass becomes; they stand as approved. M1.5 and M1.12 take their references from the pass as it
   runs, so they hold before M9 and after it. No design text or item changed; one assumption was reworded.
+- 2026-11-14 Dependency audit, on the lead's task from the owner's word that too few milestones can start at
+  once ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M1 now waits for `CULLING:M1` in place of `CULLING:M3`: a view needs the three culling modes
+  on both routes, which M1 completed, and nothing of the valley's default mode. M1 may be built beside
+  `CULLING` M3 in that module's files; the design's sixth risk already covers another builder there. No
+  design text or item changed.

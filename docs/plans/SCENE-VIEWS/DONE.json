@@ -9,7 +9,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "CULLING:M3",
+        "CULLING:M1",
         "ATMOSPHERE:M5",
         "EFFECT-GRAPH:M3"
       ],

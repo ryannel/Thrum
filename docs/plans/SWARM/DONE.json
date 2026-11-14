@@ -70,8 +70,7 @@
       "depends_on": [
         "SIM-2D:M3",
         "SESSION:M1",
-        "RENDER-2D:M5",
-        "GAME-UI:M5"
+        "RENDER-2D:M5"
       ],
       "quality_bar": "A crowd as dense and as legible as Vampire Survivors' or Halls of Torment's late game, at several times their count: the hero is found at a glance, every hit shows, and nothing stutters. The look is the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
@@ -277,6 +276,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
+      "depends_on": [
+        "GAME-UI:M4"
+      ],
       "quality_bar": "A run with the shape and clarity of Brotato's: a player always knows which wave they are in, how long it has left and what they just chose. Screens as plain and quick as Vampire Survivors' and Brotato's, in the look of the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [
         {
@@ -753,6 +755,9 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
+      "depends_on": [
+        "GAME-UI:M5"
+      ],
       "quality_bar": "A game that sits on a phone as a native one does: steered by a thumb, with cards big enough to tap and nothing under the Dynamic Island, the rounded corners or the home indicator. Function only on the simulator, never speed.",
       "items": [
         {

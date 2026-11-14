@@ -149,10 +149,10 @@
         },
         {
           "id": "M9.2",
-          "statement": "Nothing above the ground moved. For frames recorded at the commit this milestone started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's transmittance is lower than the layer's before it.",
+          "statement": "Nothing above the ground moved. For frames recorded at the commit this milestone started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's stored transmittance lies between 0 and 1 and is no higher than the layer's before it. Two layers may store the same transmittance, zero included, because half-float storage rounds a value that is still falling to the same step. On a line with two or more layers past the ground, the last layer's stored transmittance is lower than that of the first layer past the ground.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::above_ground_bytes 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
           "lock": "gpu",
-          "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on?",
+          "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

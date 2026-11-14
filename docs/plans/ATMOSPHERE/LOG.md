@@ -380,3 +380,19 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   `geometry.wgsl`, `transport.wgsl`, the aerial decoders and `gpu/tests/aerial.rs`. No GPU run by the planner.
 - 2026-11-14 The design has not been reviewed since this change. No builder starts M9 until a design review
   returns Design Approved.
+- 2026-11-14 Design review of the M9 revision ([review](../../evidence/ATMOSPHERE/design-review.md)): one Must
+  Fix, `ground-continuation-strict-storage-decrease`. M9.2 asked each layer past the ground to store a lower
+  transmittance than the one before, which half-float storage cannot show once a falling value rounds to the
+  same step. M9.2 now asks for finite values, transmittance inside 0 to 1 and never higher than the layer
+  before, with equal neighbours allowed, and for the last layer past the ground to store less than the first.
+  [The arithmetic](../../evidence/ATMOSPHERE/design-proof/m9-storage-rule.txt) holds that on every texel, by 40
+  stored steps or more. The design's M9 acceptance says the same. No other item changed.
+- 2026-11-14 The review's Suggestions. Taken: the design no longer says blending optical depth alone passes
+  the coarse view-volume grid, since the in-scatter read stays 2.6 times its ceiling. Left: naming a scale and
+  a case for the exposure control. M5 built it with a scale of two and is Done, and M9.3 and M6.3 require that
+  no case of that table changes.
+- 2026-11-14 Consumers checked for this change. `SCENE-VIEWS` M1.5 and M1.12 take their references from the
+  pass as it runs, `WATERS` M2 still waits for M9, and `CLOUDS` reads the lent operation, whose arguments and
+  units are as they were. None of the three restates M9.2's rule, so no text or item of theirs changed.
+- 2026-11-14 The design has not been reviewed since this change. No builder starts M9 until a design review
+  returns Design Approved.

@@ -18,7 +18,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "ripple under feet" is met by rings from a footfall the game reports. No game here has a character, so the island shows a marker that walks and a dropped stone.
 - Assumption: shelter is at most two things over any spot, such as a tree under a roof; a third is refused when the scene is prepared.
 - Assumption: every surface the forward pass draws gets wet by one rule, props and rocks included, with how much each darkens read from its roughness and metalness unless its material says.
-- Assumption: in the V1 valley rain sits behind a selection that is off by default, so the exit scene is unchanged, and it waits for the populated valley (`SHOWCASE` M6).
+- Assumption: in the V1 valley rain sits behind a selection that is off by default, so the exit scene is unchanged, and it waits for the populated valley (`SHOWCASE` M5).
 - Assumption: this module builds inside `WATERS`' crates and the forward shader under eight rulings, and four of them replace what `WATERS`' design expected: a puddle is not a lake with a seed point, a raindrop is not an impulse record, the shore's film is also drawn on wet paving, and a yard of puddles is mirrored at several heights.
 - Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (M14, M10 and M16), because a puddle that mirrors only what is on screen is below the bar.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).

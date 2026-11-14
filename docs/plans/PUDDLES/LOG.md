@@ -65,3 +65,6 @@
   the covering transfers in a full fill step. Part 1's account was run without stores.
 - 2026-11-14 `SCENE-VIEWS`' third design review: a view's air may start only at a level plane. A band's
   plane is its lowest water, which is level, so ruling 8 and M7 stand. No text, item or bound here changed.
+- 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M6 now waits for `SHOWCASE:M5` in place of `SHOWCASE:M6`: it needs
+  the exit scene and its props, which M5 delivers, and `SHOWCASE` M6 changes no pixel of it. No design text or
+  item changed; one assumption names the new milestone.

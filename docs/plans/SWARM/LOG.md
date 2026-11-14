@@ -77,3 +77,8 @@
   equality from the next tick. The causes on record now include the session's own return from a stall or a
   repair, which `SESSION:M4.2` names. No engine capability is added.
 - 2026-11-13 The revised design still needs its review.
+- 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M2 no longer waits for `GAME-UI:M5`: the slice draws no interface,
+  and the edge only kept two builders out of the shells at once. M3 now waits for `GAME-UI:M4` and M6 for
+  `GAME-UI:M5`, the milestones that deliver what each uses. The design's "Order between modules" says so. No
+  item changed. The swarm gate on `SHOWCASE:M8` stays, by the owner's decision of 14 November. The revised
+  design needs its review.

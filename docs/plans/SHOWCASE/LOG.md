@@ -23,3 +23,9 @@
   every check parses as shell; the launcher, browser-case, cargo and record-file checks were run and fail as they
   should before the work exists. The verifier and the GPU checks were not dry-run, because the GPU is shared.
 - 2026-11-13 The design has not been reviewed. No builder starts until a design review returns Design Approved.
+- 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M7 no longer waits for `PLATFORM-RUNTIME-MAC:M3` and `CREATOR:M3`,
+  which it builds nothing on; M8 waits for them. M7.1 asked for every milestone of modules 1 to 10 and 12,
+  which had come to include `ATMOSPHERE`'s track-2 M7 and M8, and its check read `ACCEPTED.json`, which the
+  script no longer writes. M7.1 now names the five milestones M7 builds on, a new M8.12 names the eleven the
+  exit rests on, and both read `RECORD.json`. Both checks were run and fail, as they should until those
+  milestones are Done. The design is unchanged.

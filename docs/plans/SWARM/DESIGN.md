@@ -663,8 +663,11 @@ in the closing record as not run.
   native on the Mac.
 - **Order between modules.** M1 waits for `SHOWCASE:M8`, as all of track 3 does. M2 waits for `SIM-2D:M3`;
   for `SESSION:M1`, after which every rule package supplies both halves of the state encoding, so the game's
-  components are written once; and for `RENDER-2D:M5` and `GAME-UI:M5`, whose builders work in the shells and
-  the sprite files until then. M5 waits for `SESSION:M4`, which delivers the predicted controller on the
+  components are written once; and for `RENDER-2D:M5`, which leaves the crowd view and the sprite scene in the
+  shells. M2 draws no interface, so it does not wait for `GAME-UI`, whose builder may be in the shells at the
+  same time: integrate on top of what has landed. M3 waits for `GAME-UI:M4`, which delivers the status
+  display, the modal choice and event routing on the Mac and in Chrome, and M6 for `GAME-UI:M5`, which
+  delivers them on the iPhone simulator. M5 waits for `SESSION:M4`, which delivers the predicted controller on the
   in-memory link. M7 waits for `SESSION:M6`, its last, which implies `TRANSPORT:M2`.
 - **One command.** `scripts/swarm.py`, with the scenario as its argument, runs every proof that needs a window,
   Chrome or a socket, and `scripts/swarm_sim.py` those that need the simulator's screen. It reuses `SIM-2D`'s conformance command and `SESSION`'s match harness and
