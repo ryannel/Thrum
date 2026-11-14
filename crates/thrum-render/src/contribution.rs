@@ -1,4 +1,4 @@
-//! Seam for engine modules that draw into the prepared scene's forward pass.
+//! Seam for engine modules that simulate and draw inside the prepared scene.
 //!
 //! A contribution (for example cooked meshes and volumes from `thrum-asset-gpu`) never owns a
 //! device, queue, submission, lighting mode or frame clock. It runs inside the scene's own frame
@@ -14,10 +14,12 @@
 //!    calls [`SceneContribution::encode_compute`] (for example GPU culling).
 //! 4. The forward pass calls [`SceneContribution::draw`] after the scene's own geometry, with the
 //!    scene's view (group 0), light (group 1) and instance (group 3) bind groups still set.
-//! 5. [`SceneContribution::submitted`] after the frame's encoder is submitted.
+//! 5. Declared [`AfterOpaquePass`] callbacks draw after sky and stars, before temporal inputs
+//!    and tone. Depth and the shared refraction source are independent requests.
+//! 6. [`SceneContribution::submitted`] after the frame's encoder is submitted.
 //!
 //! **Recording is not publication.** A frame may be encoded and then discarded (no drawable, a
-//! timing or encode failure). Everything recorded in steps 2–4 is tentative: a contribution must
+//! timing or encode failure). Everything recorded in steps 2–5 is tentative: a contribution must
 //! commit upload progress, residency, history validity and readback state only in
 //! [`SceneContribution::submitted`], and restart from its last committed state at the next
 //! upload. Hosts call `submitted` exactly once per submitted encoder and never for a discarded one.
