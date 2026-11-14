@@ -134,6 +134,7 @@ try {
     return r.result.value ? JSON.parse(r.result.value) : undefined;
   }, 180000, 'submitted-output route');
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
+  if (args.witness !== 'off' && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
   if (!record.complete) {
     if (args.control === 'loss' && record.control_pass) {
