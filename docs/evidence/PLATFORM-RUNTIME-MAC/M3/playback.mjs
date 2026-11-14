@@ -5,26 +5,28 @@ import path from 'node:path';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { createHash } from 'node:crypto';
 
 const [movie, destination] = process.argv.slice(2);
 if (!movie || !destination) throw new Error('Usage: node playback.mjs MOVIE OUTPUT');
 const output = path.resolve(destination);
 await fs.mkdir(output, { recursive: true });
 const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
-const bytes = await fs.readFile(movie);
+let bytes = await fs.readFile(movie);
 const page = `<!doctype html><style>body{margin:0;background:black}video{width:1920px;height:1080px}</style>
 <video src="/movie.mp4" muted preload="auto"></video><script>
-const video=document.querySelector('video'); let started;
-window.begin=async()=>{video.playbackRate=1;started=performance.now();await video.play()};
+const video=document.querySelector('video'); let started,baseline={totalVideoFrames:0,droppedVideoFrames:0};
+window.begin=async()=>{const q=video.getVideoPlaybackQuality();baseline={totalVideoFrames:q.totalVideoFrames,droppedVideoFrames:q.droppedVideoFrames};video.playbackRate=1;started=performance.now();await video.play()};
 window.result=()=>({ended:video.ended,current:video.currentTime,rate:video.playbackRate,
 duration_s:video.duration,wall_ms:performance.now()-started,width:video.videoWidth,height:video.videoHeight,
-quality:{totalVideoFrames:video.getVideoPlaybackQuality().totalVideoFrames,
-droppedVideoFrames:video.getVideoPlaybackQuality().droppedVideoFrames}});
+quality:{totalVideoFrames:video.getVideoPlaybackQuality().totalVideoFrames-baseline.totalVideoFrames,
+droppedVideoFrames:video.getVideoPlaybackQuality().droppedVideoFrames-baseline.droppedVideoFrames},baseline});
 </script>`;
 const server = createServer((request, response) => {
-  const data = request.url === '/movie.mp4' ? bytes : Buffer.from(page);
-  response.writeHead(200, { 'Content-Type': request.url === '/movie.mp4' ? 'video/mp4' : 'text/html',
-                            'Content-Length': data.length });
+  const isMovie = request.url.startsWith('/movie.mp4');
+  const data = isMovie ? bytes : Buffer.from(page);
+  response.writeHead(200, { 'Content-Type': isMovie ? 'video/mp4' : 'text/html',
+                            'Content-Length': data.length, 'Cache-Control': 'no-store' });
   response.end(data);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -71,27 +73,49 @@ try {
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
     return result.result.value;
   };
-  for (let attempt = 0; attempt < 100; attempt++) {
-    if (await evaluate('!!window.begin && document.querySelector("video").readyState>=2')) break;
-    if (attempt === 99) throw new Error('Movie did not become ready');
-    await sleep(100);
+  const clips = [{ movie: path.resolve(movie), output }];
+  // The fixed M3 sitting replays its offscreen source after the window movie,
+  // on the same warmed observer. This changes no game run or trace allowance.
+  const sourceMovie = path.resolve('tmp/mac-m3/motion/session/preview-1x.mp4');
+  if (path.resolve(movie) !== sourceMovie)
+    clips.push({ movie: sourceMovie, output: path.join(path.dirname(output), 'playback-motion-clean') });
+  for (const [index, clip] of clips.entries()) {
+    await fs.mkdir(clip.output, { recursive: true });
+    bytes = await fs.readFile(clip.movie);
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (await evaluate('!!window.begin')) break;
+      if (attempt === 99) throw new Error('Review page did not become ready');
+      await sleep(100);
+    }
+    await evaluate(`video.pause();video.src='/movie.mp4?clip=${index}';video.load()`);
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (await evaluate('video.readyState>=2')) break;
+      if (attempt === 99) throw new Error('Movie did not become ready');
+      await sleep(100);
+    }
+    await evaluate('window.begin()');
+    const warmupDeadline = Date.now() + 30000;
+    while (!(await evaluate('window.result().ended')) && Date.now() < warmupDeadline) await sleep(100);
+    const warmup = await evaluate('window.result()');
+    if (!warmup.ended) throw new Error('Warmup replay did not finish');
+    await evaluate('window.begin()');
+    const samples = [];
+    const playbackDeadline = Date.now() + 30000;
+    while (Date.now() < playbackDeadline) {
+      const state = await evaluate('window.result()');
+      const filename = `sample-${String(samples.length).padStart(3, '0')}.png`;
+      const shot = await call('Page.captureScreenshot', { format: 'png' }, sessionId);
+      await fs.writeFile(path.join(clip.output, filename), Buffer.from(shot.data, 'base64'));
+      samples.push({ ...state, image: filename });
+      if (state.ended) break;
+      await sleep(200);
+    }
+    const result = await evaluate('window.result()');
+    if (!result.ended || result.rate !== 1 || result.width !== 1920 || result.height !== 1080)
+      throw new Error('Incomplete or rescaled playback');
+    await fs.writeFile(path.join(clip.output, 'playback.json'), JSON.stringify({ movie: clip.movie,
+      movie_sha256: createHash('sha256').update(bytes).digest('hex'), warmup, ...result, samples }, null, 2) + '\n');
   }
-  await evaluate('window.begin()');
-  const samples = [];
-  const playbackDeadline = Date.now() + 30000;
-  while (Date.now() < playbackDeadline) {
-    const state = await evaluate('window.result()');
-    const filename = `sample-${String(samples.length).padStart(3, '0')}.png`;
-    const shot = await call('Page.captureScreenshot', { format: 'png' }, sessionId);
-    await fs.writeFile(path.join(output, filename), Buffer.from(shot.data, 'base64'));
-    samples.push({ ...state, image: filename });
-    if (state.ended) break;
-    await sleep(200);
-  }
-  const result = await evaluate('window.result()');
-  if (!result.ended || result.rate !== 1 || result.width !== 1920 || result.height !== 1080)
-    throw new Error('Incomplete or rescaled playback');
-  await fs.writeFile(path.join(output, 'playback.json'), JSON.stringify({ movie, ...result, samples }, null, 2) + '\n');
   await call('Browser.close');
 } finally {
   socket?.close();
