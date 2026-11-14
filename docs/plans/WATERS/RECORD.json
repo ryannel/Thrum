@@ -106,21 +106,21 @@
       }
     },
     "M10": {
-      "definitions": "415d4fefba63b79cd7aab2f1095e0ebd9fb93429aa3317c65562a3006160382b",
+      "definitions": "5122398a76f8c2b3d5a91b41461187b4ca167dbfec102d1e46ce621ad273bb80",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
+        "at": "2026-11-14T10:11:12Z"
       }
     },
     "M11": {
-      "definitions": "30cc4df5de58c9d3551526d6295ea172ce2f45065e6097d17a33fcc4fbbb79f8",
+      "definitions": "60306f66170d97f327601724088e61367fb64c3960f6c98631057789d61bf6b2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
+        "at": "2026-11-14T10:11:12Z"
       }
     },
     "M12": {
@@ -142,21 +142,30 @@
       }
     },
     "M15": {
-      "definitions": "07b94ef7363882492a50ccdf29369a77f7dfd79fe29e90b77afc51bc07b9ad82",
+      "definitions": "88d7bf3a14489a4f5407bc1fdf2c29881092b16c65e4db2f35f7097562d78554",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
+        "at": "2026-11-14T10:11:12Z"
       }
     },
     "M14": {
-      "definitions": "42f7727442755d9ff46835a1dccf25b23505a6e73ca34e1d7c7efe9e03e0fefe",
+      "definitions": "4ba9f1db4b9a916730d1c6c503479b96a406078bdcae335b613ce8ec788b53cd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
+        "at": "2026-11-14T10:11:12Z"
+      }
+    },
+    "M16": {
+      "definitions": "c3dbc599d5c2c4bda7ebade831c484ae2e9e86fde4fc0702da66a0cc13e63418",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
+        "at": "2026-11-14T10:11:12Z"
       }
     }
   },
@@ -176,11 +185,15 @@
     {
       "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well. Breaking waves is something we'd like to have as well.\" Revise the WATERS design, plan and done-when file (and SEA or other modules where it is right) so water reflects scenery that is off screen at the quality of shipped high-end games, the camera can go below the surface and see the underwater view and the surface from beneath, and waves shoal and break at a shore. Choose the methods from first principles and current practice; Broadsides is evidence, not a constraint. WATERS M1 is being built now; if your changes alter what it builds, say so plainly. Say which existing assumptions these choices replace, and which new modules or dependencies (such as a scene probe owner) they need.",
       "at": "2026-11-14T08:35:24Z"
+    },
+    {
+      "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well.\" The WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under water, which are standard in high-end underwater views; bring the underwater view up to that bar in WATERS (or the owning module), and plan the new module SCENE-VIEWS that WATERS M14 depends on. Choose methods from first principles and current practice. Do not change WATERS M1, which is being built.",
+      "at": "2026-11-14T10:11:12Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T08:35:24Z"
+    "at": "2026-11-14T10:11:12Z"
   },
   "design_history": [
     {
