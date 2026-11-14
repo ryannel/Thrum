@@ -14,6 +14,10 @@ The long-wave inversion is prepared for contraction below 0.5; the default chopp
 The query kernel and cache kernel call the same evaluator. Unresolved components are excluded
 per level, with cutoff pi / texel width. The consumer can obtain their slope covariance by
 summing `0.5 * amplitude² * outer(k,k)` over the excluded CPU-model components.
+`LONG_WAVE_EVALUATOR` lends that same WGSL function to WATERS' body-query pipeline. Its
+`Long` layout is `(kx, kz, amplitude, anchored phase)` followed by `(omega, 0, 0, 0)`;
+`Field` is the three vec4 layout below. Query pipelines supply their own f64-reduced
+phases at the force query's time and anchor, independently of the display cache's time.
 
 GPU outputs use storage buffers, requiring no storage texture format or texture binding.
 There are eight storage bindings, at most 256 invocations per workgroup and 2 KiB of

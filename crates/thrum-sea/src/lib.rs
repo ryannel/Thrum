@@ -4,6 +4,18 @@
 mod prepare;
 mod upload;
 
+/// Versioned WGSL evaluator shared by field-cache and body-query pipelines.
+/// Declares `sample_long(point: vec2<f32>, max_k: f32) -> Field`. The consumer
+/// supplies `components: array<Long>` in read-only storage, `p.time.y` (count)
+/// and `p.physical.x` (choppiness), plus the `Long` and `Field` layouts from the
+/// crate README. Phases must be reduced in f64 at the query's own time/anchor.
+pub const LONG_WAVE_EVALUATOR: &str = include_str!("long_waves.wgsl");
+const SHADER: &str = concat!(
+    include_str!("ambient.wgsl"),
+    "\n",
+    include_str!("long_waves.wgsl")
+);
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -43,7 +55,7 @@ mod tests {
     }
     #[test]
     fn portable_shader_validates_without_a_device() {
-        let source = include_str!("ambient.wgsl");
+        let source = super::SHADER;
         let module = wgpu::naga::front::wgsl::parse_str(source)
             .unwrap_or_else(|e| panic!("{}", e.emit_to_string(source)));
         wgpu::naga::valid::Validator::new(
