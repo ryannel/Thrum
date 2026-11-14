@@ -81,6 +81,15 @@ def main():
                 manifest = json.loads((session/'manifest.json').read_text())
                 if not manifest['complete']:
                     raise ValueError(f'{case}-{mode}: incomplete target capture')
+                runtime = json.loads((session/'runtime.json').read_text())
+                if args.target == 'mac-metal':
+                    timed = [sample['gpu_pass_ns'] for sample in runtime['gpu'] if sample['gpu_pass_ns'] is not None]
+                    resolved = sum('portable TAAU' in sample for sample in timed)
+                    if not timed or resolved != (len(timed) if mode == 'taau' else 0) or runtime['recipe'] != 'Ok(Portable)':
+                        raise ValueError(f'{case}-{mode}: executed native recipe/resolve did not match the arm')
+                    row.update(gpu_timed_frames=len(timed),portable_resolve_timed_frames=resolved,recipe=runtime['recipe'])
+                else:
+                    row['prepared_reconstruction'] = runtime['initial_report']['reconstruction']
                 compact_pngs(session)
                 shutil.rmtree(directory/'swift-cache')
                 row.update(complete=True,manifest_sha256=sha(session/'manifest.json'),records=len(manifest['records']))
