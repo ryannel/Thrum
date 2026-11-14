@@ -193,8 +193,8 @@
           "statement": "The GPU time of each sea simulate pass per frame, by pass name, and the bytes of every sea resource are on record for this Mac with the load on the machine, beside the design's estimates.",
           "ask": "Does `docs/evidence/SEA/M2-cost.md` hold those rows at the claimed commit, and name a cause for any pass over its estimate?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M2-cost.md",
           "verdict": "",
           "review": ""
         },
