@@ -1,0 +1,745 @@
+{
+  "module": "RIVERS",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M1"
+      ],
+      "quality_bar": "A steady river a hydraulics text would accept, held to closed forms as SWASHES' reference cases hold a flood code: discharge kept, pools level, a jump where momentum puts it. Nothing in it needs a graphics device.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`thrum-river-model` takes a bed grid, declared sources, the bodies water may reach and Manning's `n`, and gives the steady depth and current in every cell. On a valley the test makes, with a spring, a pool behind a sill, a narrows and a basin at its foot: discharge through every cross-section is within 1% of the spring's; away from where the stream enters it the pool's level is flat within 3 cm, and it stands between 1.3 and 1.9 critical depths over its sill; the speed in the narrows over the speed above it is at least the ratio of the wet widths less a fifth; a hollow beside the channel, lower than the water and cut off from it by ground, stays dry.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test valley",
+          "ask": "Read the test. Are the expected figures worked out there from continuity and the weir relation, without the solver? Would a solver that routes water down the steepest slope and takes its depth from Manning cell by cell fail the pool?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "In section the solver meets closed forms the tests work out. Water at rest over a rough bed with dry ground stays at rest to 1e-12 m. A steady flow over a bump has its hydraulic jump within two cells of the closed form's place and a mean depth error under 3% of the critical depth at 0.25 m cells, smaller at 0.125 m. Over a bed made for a known depth with friction, a slow flow is within 1% in depth, and a fast one within 8% at 0.25 m cells and under two thirds of that error at 0.125 m. A sheet on a slope of 0.3 whose bed falls three times its depth across a cell stands within 8% of Manning's normal depth.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test closed_forms",
+          "ask": "Are the closed forms in the test its own arithmetic (Bernoulli's branches and the jump condition, a bed integrated for a chosen depth, Manning's normal depth), as in part 1 of `docs/evidence/RIVERS/design-proof/river_proof.py`? Would Audusse's reconstruction, 23% over on the steep sheet there, fail it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "Depth is never negative and no value is ever not a number, over 200 seeded beds with dry patches, steps and sources. Below a spring, over ground the start leaves dry, the water wets its way down to the mouth. A solve is refused, by name and place, when water reaches its rectangle's edge, when a source has no way down to a declared body, and when a source body's level anywhere in its range lies below the outlet's sill. Each stretch of channel narrower than four cells is reported by place.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test fronts",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "The solve keeps an energy account. The head lost cell by cell, times discharge, sums to the discharge times the head between the source and the mouth within 2%. The chart's loss is the power that breaks the surface, as the design defines it: head lost beyond bed friction, and friction's power beyond the chop's cap. In the section of part 2 the loss at the ledge is at least five times the chute's and fifty times the glide's, and the pool's is under 2% of the ledge's. In the valley of M1.1 at least 60% of the head lost beyond friction lies round its rock and below its narrows and ledge, in under 40% of the wet cells. A straight uniform channel has none: under 1% of its friction power.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test energy",
+          "ask": "Does the test compute friction's power from Manning's relation itself and compare, or does it read both sides from the solver's own account?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "A solve stops when the level's rate and the imbalance of discharge between sections are under the profile's tolerances, and reports its steps, cell updates, seconds and residual. One that does not get there inside its step budget is refused by name and writes nothing. It works on wet cells and their neighbours: doubling the rectangle round the same valley changes its cell updates by under 5%. Two solves of one input give the same bytes, on one thread and on eight.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test report",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.6",
+          "statement": "The solve writes each reach as a chart `thrum-water-model` declares: level over the whole footprint, lying under the bed where the water does not reach, current, loss, footprint, ends and join lengths. With a basin at its mouth and a spring at its head, `thrum-water-model` prepares it with no refusal; the map's level and current at every wet cell's centre are the solver's; the waterline is where the level meets the bed; and the row meets the basin's across the mouth with no step, with the basin's stage at both ends of its range.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test chart",
+          "ask": "Is the chart declared only through `thrum-water-model`'s public interface, with no change to that crate in this milestone?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.7",
+          "statement": "A river file holds a solve's output and decodes to the same bytes. Its key is a hash of the bed inside the rectangle, the declaration, the profile and the solver's version; changing a bed cell, a discharge, `n` or the version changes the key, and a file whose key does not match is refused by name. The reader is in `thrum-water-model`, which gains no dependency on the solver.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test store",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.8",
+          "statement": "`scripts/river_cost.py` records a solve of the M1.1 valley at 0.25 m cells on this Mac: wet cells, steps, cell updates and seconds, with the commit, the load on the machine and a release build. `check` fails only when the solve cannot be measured or the committed record lacks one of those. No figure in the record decides this item.",
+          "check": "python3 scripts/river_cost.py check",
+          "ask": "Was the record taken on this milestone's solver, in a release build, and does it say how its cell updates compare with part 5's count?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.9",
+          "statement": "`thrum-river-model` builds and its tests run with no graphics device and no dependency on `thrum-render` or `wgpu`, it is registered in `.config/architecture.toml`, and it holds no island, preset or water table.",
+          "check": "cargo tree --locked --offline -p thrum-river-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
+          "ask": "Does any file in the crate or its tests name a place, a preset or a water type that belongs to a game?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "Every file in this milestone that is copied or translated from elsewhere is listed in `docs/evidence/RIVERS/PROVENANCE.md` with its source and licence. None is GPL or share-alike.",
+          "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "A fall whose every number follows from the flow at its lip and the height it drops, as a hydraulics text gives a free overfall: nothing placed or tuned by hand, and no water made or lost between the lip and the pool.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "Brinks are found from the bed alone: runs of faces where the ground, followed downhill, drops at least the profile's least fall (0.75 m) at a slope steeper than the profile's steepest chart slope (1.5). On beds the test makes, a 3 m cliff is a brink along its whole lip; a 0.4 m ledge and a slope of 1 are not, and stay in the chart. The brinks are the same at every discharge.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test brinks",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "Water leaves a brink freely and enters the solve again where its path lands. The discharge of the reach below a fall is within 1% of the reach above. The last cell above a lip stands between 0.95 and 1.25 of the critical depth where the flow above is slow, and within 10% of the flow's own depth where it is fast; the fall's launch depth is 0.715 of the critical depth in the first case and the flow's own in the second. The river is cut into reaches at its falls, and the cliff's face is in no chart. A path that lands in a declared basin ends there; one that lands on ground gentler than the steepest chart slope starts a reach there.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test falls",
+          "ask": "Does the test show a lower dry cell in place of the lip's face failing the lip's depth, as part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py` does?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "Ruling 1 is built: a chart may declare a brink end, where the ground drops away below its level. `thrum-water-model` prepares such a chart, gives its own row up to the brink with no mix, and names no body on the ground below; the same chart without the end declared is refused as before. A chart below a fall has no source body. Every existing test of `thrum-water-model` passes unchanged.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test brink_end && cargo test --locked --offline -p thrum-water-model",
+          "ask": "Is the change to the map's preparation confined to a declared brink end, so that no chart an existing test or the example declares is prepared differently? Was any existing test of `thrum-water-model` edited?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "A fall record gives, for each place along the lip, the water's path with the time it takes, its discharge for each metre of lip and its launch speed, with stable IDs for its segments. The f64 reference in `thrum-water-model` gives at any point of the path the speed, `sqrt(v0^2 + 2 g z)`; the thickness, discharge over speed; the white share, 0 at the lip and 1 at `6 q^0.32` m of path; and the presence, thickness over the tear thickness and at most 1. Clear of the rock the path is the free path within 1% in throw; where the rock stands in its way it follows the rock's face and never passes through the bed.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test sheet",
+          "ask": "Are the expected paths, speeds and thicknesses the closed forms of part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py`, worked out in the test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "For a body below at any level in its stage's range, the plunge is where each path meets that level, and it moves as the level moves. Each segment's births follow the fall's power, `rho g q z` for each metre of lip, split between foam and submerged air by the profile's share. Each segment's impulse a tick is the wave share times its momentum flux into the surface times the sheet's pattern arriving there, with its mean over the pattern's loop removed: over that loop its mean is under 1% of its rms, its rms is the design's figure within 5%, and the same tick gives the same impulse on every run. A path that lands on bare ground gives no births and no impulses.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test plunge",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "`thrum-water-model` still builds with no graphics device and no dependency on the solver, and neither crate's new files or tests hold a place, a preset or a water type that belongs to a game.",
+          "check": "cargo tree --locked --offline -p thrum-water-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or \"thrum-river-model\" in t or not t.strip()) else 0)'",
+          "ask": "Does any new file or test name a place, a preset or a water type that belongs to a game?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "A river whose state follows its lake as a rating curve does, and whose roughness follows its bed as a riffle and a pool do in Red Dead Redemption 2: read between solved flows by the same function a GPU and a game are held to.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "A river with a source body is solved at levels across that body's stage range no more than 0.3 m apart, and a spring-fed one at the discharges declared. Each sample records its gauge level, and the river reports the range of its gauge. Below a basin with a sill the discharge rises with the level at every sample, and between the lowest and highest sample it grows as the head over the sill to a power between 1.3 and 2.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test samples",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "Ruling 2 is built: in `thrum-water-model` a chart's row is the mix, linear in the gauge, of the two samples that bracket it; the gauge is the source body's level where the river has one and the river's stage where it has none; and every chart of a river takes the same gauge. Between samples 0.3 m apart the mixed row is within 1 cm in depth and 25% in speed of a solve at that level. As the gauge moves 1 cm the waterline on a bank of 1 in 10 or steeper moves by at most one cell. A chart with one sample answers to the bit as before, and its stage adds to its level. Every existing test of `thrum-water-model` passes unchanged.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test gauge && cargo test --locked --offline -p thrum-water-model",
+          "ask": "Does the test compare the mixed row with a fresh solve at the level between, as part 3 of `docs/evidence/RIVERS/design-proof/river_proof.py` does, and would a chart left at one sample with its level raised fail it? Was any existing test of `thrum-water-model` edited?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "A fall follows the gauge: its record's discharge, launch speed and path are the mix of its samples', so the sheet's thickness and the plunge's power and impulses grow with the river. A lip the lowest sample leaves dry gives no sheet, no births and no impulses there.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test fall_gauge",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "The flow's chop is written as two flow gains in each sample. Its rms height is `c d min(S, S_cap)` from the depth and the friction slope: none at rest; in the valley of M1.1 at least 20 times larger in the riffle than in the pool; never more than 0.15 of the depth. It is all in the short band at 0.15 m of depth and all in the long band at 1 m.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test chop",
+          "ask": "Does the test work the expected heights out from Manning's relation at the solver's depths and speeds, with its own arithmetic?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "Ruling 3 is built on the CPU: `thrum-water-model` holds the two flow bands' spectrum and an f64 evaluator on the cascades' loop, and its surface model adds them at a chart's flow gains through the same sum, depth limit and moments as a cascade. With no wind, the model's surface over a riffle has the chop's rms height within 10%, and over a sea and a basin it is the level. With the bands not named in the profile every answer of the model is what it was to the bit.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test flow_bands && cargo test --locked --offline -p thrum-water-model",
+          "ask": "Do the flow bands hold any power that depends on the wind, the fetch or a swell? Is a body that is not a river given a flow gain anywhere?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "`WATERS`' conformance harness, run over a river with three samples, a fall and both flow bands, reports nothing for the model against itself, and reports a provider that reads only the middle sample, by the points and the difference.",
+          "check": "cargo test --locked --offline -p thrum-river-model --test conformance",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.7",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M9"
+      ],
+      "quality_bar": "A stream in its valley as in Red Dead Redemption 2: water that lies where the ground holds it, level in its pools, drawn down over its sills, with a clean waterline against banks and rocks and no seam where it meets the lake or the sea.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "Ruling 6 is built: `examples/water` has a river selection, off by default. With it off the island's ground, bodies and tick page are what they were and the hand-made channel is as `WATERS` built it. With it on the island has a valley above the lake with a spring, a riffle, a pool behind a sill, a narrows with rocks and a cliff of about 4 m over a plunge pool, and both its rivers are declared and solved. The game loads each river file by its key; a native game with none solves and writes it and says so, and its next preparation solves nothing.",
+          "check": "cargo test --locked --offline -p water-scene --test river_store",
+          "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this milestone? Is the valley's ground reached only with the selection on?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "`WATERS`' own channel tests pass unchanged with the selection off.",
+          "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "Ruling 2 is built on the GPU. With the gauge at a sample, between two and at each end of its range, the depth the water writes over each river differs from `thrum-water-model`'s surface by no more than the bound `WATERS` M4.1 recorded. Either side of each end's edge (the lake's outlet, the stream's mouth in the lake, the river's mouth in the sea) there is no step, with the lake's stage and the tide each at both ends of its range and a swell running.",
+          "check": "cargo test --locked --offline -p water-scene --test river_gpu",
+          "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one sample for every gauge?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "The rivers read as water lying in the ground: level in the pool, drawn down over the sill, narrower and quicker between the rocks, with a clean waterline against banks and rocks and no stair of cells. Where the stream enters the lake, where the river leaves it and where it meets the sea there is no seam, step or change of look. The fall's sheet is not drawn until M6, and its lip and foot are not judged here.",
+          "inspect": "`fixed` stills and `realtime` sequences of each river from the bank at 2 m, along and across, at the pool, the sill, the narrows and each join, and one from 40 m above each river's whole length, in a calm and in a trade wind with a swell at the mouth.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "As the lake is raised and lowered through its range the river below it runs deeper, wider and faster and thins again, its waterline moving up and down its banks, with no pop, step or flicker, and the stream's flow follows its own control the same way.",
+          "inspect": "`realtime` sequences from the bank at 2 m at the lake's outlet and halfway down the river while the lake's level moves through its whole range in 20 s, and at the stream's narrows while the stream's stage moves through its range.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.6",
+          "statement": "A float released at the spring is carried down the stream: it slows in the pool and quickens in the narrows, and the query's current at the float is the map's. Between the lip and the plunge pool the query answers dry, and below it wet. Its answers pass from the stream to the lake and from the river to the sea with no step in level or current. A float released at the lake's outlet reaches the sea.",
+          "check": "cargo test --locked --offline -p water-scene --test river_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.7",
+          "statement": "In Chrome both rivers draw, the float reaches the lake, and the page loaded its river files from its package and solved nothing.",
+          "check": "node scripts/check_water_browser.mjs --case river",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.8",
+          "statement": "With the rivers in view the paired cost record is taken at 2560\u00d71440, beside the channel's record, with the bytes of each river file and the island's solve time for each sample. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene river",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.9",
+          "statement": "The maturity ledger has a row for `E1.rivers` with implementation, correctness, visuals and device apart, and it claims no more than this milestone proved.",
+          "ask": "Does the row keep the four apart, and does any entry claim visuals or device results that no item here judged?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "Running water as in Red Dead Redemption 2: fast shallows that are rough and bright, slow pools that mirror, detail that travels at the water's own speed and faster in the narrows, and foam in streaks from every rock and ledge, with no sliding sheet, pulse or stamped pattern.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "Ruling 3 is built on the GPU. With the wind at nothing, the drawn surface over the riffle has the chop's rms height within the bound this milestone first measures and records against `thrum-water-model`; over the pool it is under a tenth of that; on the lake and the sea it is flat. A scene whose profile does not name the flow bands compiles to the shader text, passes and storage it had before this milestone.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Is the comparison of shader text, passes and storage made against the commit before this milestone?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "The flow bands are carried by the current. Tracked across submitted frames in a calm where the current is 0.5 m/s and 1.5 m/s, the detail's mean speed downstream is within a fifth of the current; in the pool's still corner it does not drift.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "Ruling 4 is built for a chart's loss. Foam is born below the ledge, behind the rocks and down the chute, at a rate that follows the chart's loss, and is carried downstream. With the loss births switched off the foam ages out and none is born. The glide and the pool gain no foam but what the current brings. Lowering the gauge to its lowest sample lowers the cover below the ledge. The record gives the cover each station of the valley reaches and the birth constant used.",
+          "check": "cargo test --locked --offline -p water-scene --test river_foam_gpu",
+          "ask": "Is the birth constant the shallows' own, or a recorded constant of the water type with its reason in the log?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "In a dead calm the stream reads as running water: the riffle and the narrows are rough and glitter, the pool lies glassy and mirrors its banks, ripples travel downstream and faster through the narrows, and the water piled in front of a rock stays put while ripples pass over it. There is no sheet sliding at one speed, no pulse at the carriage's period, and no look of a small sea.",
+          "inspect": "`realtime` sequences in a dead calm from the bank at 2 m, across and along the riffle, the pool and the narrows, and one from 40 m above the stream, at noon and with the Sun at 15\u00b0; the same views in a trade wind.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "Foam reads as made by the flow: white below the ledge and behind each rock, drawn out into streaks that thin, break into lace and vanish downstream, gathering in the pool's slack water; none on the glide or the pool but what drifts in; no stamped or tiled pattern.",
+          "inspect": "`realtime` sequences from the bank at 2 m of the ledge, a rock in the narrows and the pool below them, and one from 40 m above, in a calm; then the same rock's reach after the gauge is taken to its lowest and highest.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.6",
+          "statement": "The flow bands' cadence is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation. Lowering it changes no query answer.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test flow_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.7",
+          "statement": "In Chrome, in a calm, the riffle is rough, the pool is flat and foam trails from the ledge.",
+          "check": "node scripts/check_water_browser.mjs --case river-calm",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.8",
+          "statement": "With the flow bands and the river's foam in view the paired cost record is taken again at 2560\u00d71440, beside M4's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene river-calm",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.9",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "A waterfall as in Horizon Forbidden West, without its mist: falling water that speeds up and stretches as it drops, glassy at the lip and white below, a trickle as strands and a flood as a sheet, and a pool that answers it with foam, pale water and rings.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "Ruling 7's sheet is built. Each fall is drawn along its record's paths from the lip to the level of the body below, and the depth it writes is within the bound this milestone first measures and records against the f64 reference, with the gauge at each end of its range and the pool's stage at each end of its own. The sheet never shows through the rock it falls past. A scene whose profile does not name falls compiles to the shader text, passes and storage it had before this milestone.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Is the sheet's pass before the water's gather, so that the pool's surface reads it as it reads the land?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "The sheet writes the frame contract. Tracked across submitted frames, its streaks at half the fall's height move at the reference's speed there within 15%, and faster at the foot than at the lip. Its motion output is that movement, from unjittered positions. It writes depth where its presence passes one half and reactive coverage where it is white. A pause holds it, and a capture shows it at the capture's time.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.3",
+          "statement": "Ruling 4 is built for a plunge and ruling 5 for the mean current. With the interaction windows on the plunge pool, foam and submerged air are born along the plunge line and carried downstream, and rings leave it. The power the rings carry, measured in the model and recorded, is under the fall's. With the gauge at a sample that leaves the lip dry there are no births and no rings. Five seconds after a stone is dropped in the pool, the centre of its rings is within 1.5 m of where the pool's own current carries it, in a window that also holds the riffle. Every existing interaction test of `WATERS` passes unchanged.",
+          "check": "cargo test --locked --offline -p water-scene --test plunge_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu && cargo test --locked --offline -p thrum-water-model --test interaction",
+          "ask": "Does the test show the plain mean current failing the ring's centre in the same window, as part 7 of `docs/evidence/RIVERS/design-proof/river_proof.py` predicts? Is the wave share in the record, with the ring height it gives 2 m from the plunge?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.4",
+          "statement": "The fall reads as falling water. At the lip it is a smooth tongue that shows the rock behind it; it whitens down its length and breaks into strands that stretch as they gather speed, with gaps where it is thin; at the lowest gauge it is a few strands and at the highest a heavy sheet. No pattern slides at one speed, nothing tiles or repeats, and it does not read as a card.",
+          "inspect": "`realtime` sequences of the fall from 5 m in front, from beside it, from behind it and from 60 m off, at the gauge's lowest, middle and highest, at noon; stills cropped at native size of the lip, the middle and the foot.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.5",
+          "statement": "The pool answers the fall: a white boil at the foot, pale water spreading from it, foam drawn off downstream in streaks, and rings that cross the pool and die at its banks. The fall on screen shows in the pool's calmer water. There is no hard line where the sheet meets the pool.",
+          "inspect": "`realtime` sequences of the plunge pool from its bank at 2 m and from 15 m above, with the interaction windows on the pool, at the gauge's middle and highest; one as the gauge falls to a dry lip and the pool calms.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.6",
+          "statement": "The sheet's spacing along its path is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation, and changing it changes no query answer, birth or impulse.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test falls_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.7",
+          "statement": "In Chrome the fall draws from lip to pool, its streaks move faster at the foot than at the lip, and the pool below it foams.",
+          "check": "node scripts/check_water_browser.mjs --case fall",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.8",
+          "statement": "With the fall filling a third of the view the paired cost record is taken again at 2560\u00d71440, beside M5's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene fall",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.9",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M10",
+        "WATERS:M16"
+      ],
+      "quality_bar": "Rivers and a waterfall that pass in a shipped high-end game: Red Dead Redemption 2's streams and Horizon Forbidden West's falls, stable under reconstruction, lit only by the engine's sky, and of one piece with the lake and the sea they join.",
+      "items": [
+        {
+          "id": "M7.1",
+          "statement": "The river selection, the stream's flow and the flow bands are typed controls in the example on the Mac and in Chrome, saved in its parameter file. Moving the stream's flow or the lake's level rebuilds nothing and resets no wake or foam.",
+          "check": "cargo test --locked --offline -p water-scene --test river_controls_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.2",
+          "statement": "Under reconstruction the running water, its foam and the fall hold up in motion: no shimmer on the riffle, no ghost behind a streak of foam or a falling strand, no smear as the camera pans, and a clean reset on a cut and on a change of the selection.",
+          "inspect": "`realtime` sequences under TAAU on the Mac and in Chrome: a pan along the stream at 2 m, a still camera on the riffle and on the fall, a walk past the fall at 5 m, and a cut between two of them.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.3",
+          "statement": "Ruling 7's shadow is built. On a sheet, on foam and in the surface's Sun lobe, the direct Sun is multiplied by the scene's lent Sun visibility at the surface point: with half a fall in a wall's shadow, the shadowed half's direct Sun is under 2% of the lit half's, and its sky light is unchanged. A scene with no shadows draws as before.",
+          "check": "cargo test --locked --offline -p water-scene --test river_shade_gpu",
+          "ask": "Is the visibility read through the lent operation `WATERS` M16 built, once for each direct-Sun term, with no shadow map sampled by the water itself?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.4",
+          "statement": "In a gorge's shadow at a low Sun the fall, its foam and the stream are lit by the sky alone and sit in the scene's light, and where the Sun reaches them they brighten along the shadow's own edge.",
+          "inspect": "`fixed` stills of the fall and the stream below it with the Sun at 10\u00b0 and 25\u00b0, the valley wall's shadow lying across them, from 5 m and from 60 m.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.5",
+          "statement": "In a calm, with the Sun up, the caustic field over the riffle is made from the flow bands: a net moves on the riffle's bed and none lies under the pool, and the net's contrast over the riffle is within the bound `WATERS` M16 recorded for its field against the model.",
+          "check": "cargo test --locked --offline -p water-scene --test river_caustics_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.6",
+          "statement": "From dawn to night the rivers and the fall are lit only by the engine's sky: at the waterline their light joins the ground's, the white of foam and sheet follows the Sun's colour down to dusk, and at night nothing glows.",
+          "inspect": "`fixed` stills of the stream, the fall and the river's mouth at dawn, noon, sunset and night, each whole and cropped at native size at a waterline and at the fall's foot.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.7",
+          "statement": "The camera goes under the plunge pool and the stream as under any water: the waterline crosses the lens, the bed and the bank show through the water, and the surface overhead is whole where the sheet meets it.",
+          "inspect": "`realtime` sequences crossing the surface in the plunge pool 2 m from the fall and in the pool behind the sill, looking up, level and down.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.8",
+          "statement": "In Chrome the rivers, the flow bands, the foam, the fall and the controls all run together from one command.",
+          "check": "node scripts/check_water_browser.mjs --case river-all",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.9",
+          "statement": "With everything this module adds in view the paired cost record is taken at 2560\u00d71440 on tick frames and repeat frames, beside M6's, and the island's solve is recorded again with `scripts/river_cost.py`. Each tripwire tripped has its investigation beside it. No figure decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene river-all && python3 scripts/river_cost.py check --scene island",
+          "ask": "Are both records taken on this milestone's work with the load on the machine, and does each tripped wire's investigation say what was measured and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.10",
+          "statement": "The creator docs say how a game declares a river (its rectangle, sources, bodies, `n` and flow samples), solves and stores it, names the flow bands and falls in its profile, and sets its stage, with what is refused and why.",
+          "ask": "Could an agent that has read only the public docs add a spring-fed stream with a fall to a scene that already has water? Do the docs say that a page never solves?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.11",
+          "statement": "The ledger's `E1.rivers` row, the provenance file and the log are current, and the log lists what this module does not build: mist and spray, a rise that travels, rain as a source, standing waves that overturn.",
+          "ask": "Does the ledger claim no more than the items proved, with visuals and device apart? Does the log name each thing not built?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}

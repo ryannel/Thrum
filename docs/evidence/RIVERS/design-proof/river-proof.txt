@@ -1,0 +1,73 @@
+PART 1  the scheme
+  1a at rest, 15 of 100 cells dry, after 2000 steps: largest level change 5.55e-17 m, largest speed 4.03e-16 m/s
+  1b bump with a jump, cells of 0.250 m: mean depth error 0.0030 m (2.0% of the critical depth), largest away from the jump 0.0099 m; jump at 11.75 m against 11.67 m; 7398 steps
+  1b bump with a jump, cells of 0.125 m: mean depth error 0.0016 m (1.1% of the critical depth), largest away from the jump 0.0052 m; jump at 11.62 m against 11.67 m; 15476 steps
+  1c friction, slow (Froude 0.27), cells of 0.500 m: largest depth error 0.0008 m, 0.2% of the depth; 8183 steps
+  1c friction, fast (Froude 2.30), cells of 0.500 m: largest depth error 0.0153 m, 12.8% of the depth; 667 steps
+  1c friction, fast (Froude 2.30), cells of 0.250 m: largest depth error 0.0071 m, 5.9% of the depth; 1261 steps
+  1c friction, fast (Froude 2.30), cells of 0.125 m: largest depth error 0.0034 m, 2.8% of the depth; 2416 steps
+  1d slope 0.3, cells of 0.25 m (bed falls 0.075 m a cell), normal depth 0.0227 m: Audusse 0.0280 m (+23%), Chen and Noelle 0.0240 m (+5%)
+  1d slope 0.3, cells of 0.50 m (bed falls 0.150 m a cell), normal depth 0.0227 m: Audusse 0.0280 m (+23%), Chen and Noelle 0.0233 m (+2%)
+  1d slope 1.0, cells of 0.25 m (bed falls 0.250 m a cell), normal depth 0.0158 m: Audusse 0.0195 m (+23%), Chen and Noelle 0.0160 m (+1%)
+PART 2  a stream in section
+  240 cells of 0.50 m, 0.15 m2/s, Manning 0.04: steady after 4160 steps
+  discharge through every face within 0.001% of the inflow
+  the pool's level is flat to 15.3 mm and stands 0.216 m over its sill (critical depth there 0.132 m)
+  energy account: head lost cell by cell sums to 0.4654 m3/s.m, discharge times the head between the ends is 0.4640 (0.3% apart)
+  station              depth  speed  Froude  fr.slope  chop rms  white W/m2
+  riffle, 3%           0.135   1.11   0.96    0.0283     7.7 mm       2.4
+  pool                 1.018   0.15   0.05    0.0000     0.1 mm       0.0
+  chute, 12%           0.098   1.53   1.56    0.0832    14.7 mm      66.2
+  below the ledge      0.157   1.02   0.82    0.0198     6.2 mm       0.0
+  run, 1%              0.229   0.65   0.44    0.0049     2.2 mm       0.0
+  glide, 0.5%          0.364   0.41   0.22    0.0010     0.8 mm       0.0
+  the ledge and the jump below it: up to 529 W/m2 of head lost beyond friction; elsewhere under 7 W/m2 outside the chute
+PART 3  a reach that answers its source
+  head over the sill and discharge: 0.050 m 0.0052 m2/s, 0.200 m 0.0616 m2/s, 0.350 m 0.1575 m2/s, 0.500 m 0.2819 m2/s, 0.650 m 0.4294 m2/s
+  discharge over head to the power 1.5: 0.47, 0.69, 0.76, 0.80, 0.82
+  samples 0.15 m apart: the row between two solutions is within 2.6 mm of a solve at that level in depth and 10.0% in speed
+  samples 0.30 m apart: the row between two solutions is within 5.6 mm of a solve at that level in depth and 19.0% in speed
+  left as prepared at the middle level while the lake moves over its range: the reach is wrong by 2908% to -63% in discharge
+PART 4  a fall
+  unit discharge, height: brink speed, time, throw, speed at the foot, thickness there, breakup length, share of the height past it, power a metre of lip
+  0.005 m2/s    1 m: 0.51 m/s  0.45 s  0.23 m   4.46 m/s    1.1 mm  1.10 m    0%       49 W
+  0.005 m2/s    3 m: 0.51 m/s  0.78 s  0.40 m   7.69 m/s    0.7 mm  1.10 m   63%      147 W
+  0.005 m2/s    8 m: 0.51 m/s  1.28 s  0.65 m  12.54 m/s    0.4 mm  1.10 m   86%      392 W
+  0.005 m2/s   12 m: 0.51 m/s  1.56 s  0.80 m  15.35 m/s    0.3 mm  1.10 m   91%      589 W
+  0.050 m2/s    1 m: 1.10 m/s  0.45 s  0.50 m   4.56 m/s   11.0 mm  2.30 m    0%      490 W
+  0.050 m2/s    3 m: 1.10 m/s  0.78 s  0.86 m   7.75 m/s    6.5 mm  2.30 m   23%     1472 W
+  0.050 m2/s    8 m: 1.10 m/s  1.28 s  1.41 m  12.58 m/s    4.0 mm  2.30 m   71%     3924 W
+  0.050 m2/s   12 m: 1.10 m/s  1.56 s  1.73 m  15.38 m/s    3.3 mm  2.30 m   81%     5886 W
+  0.200 m2/s    1 m: 1.75 m/s  0.45 s  0.79 m   4.76 m/s   42.0 mm  3.58 m    0%     1962 W
+  0.200 m2/s    3 m: 1.75 m/s  0.78 s  1.37 m   7.87 m/s   25.4 mm  3.58 m    0%     5886 W
+  0.200 m2/s    8 m: 1.75 m/s  1.28 s  2.24 m  12.65 m/s   15.8 mm  3.58 m   55%    15696 W
+  0.200 m2/s   12 m: 1.75 m/s  1.56 s  2.74 m  15.44 m/s   13.0 mm  3.58 m   70%    23544 W
+  1.000 m2/s    1 m: 2.99 m/s  0.45 s  1.35 m   5.35 m/s  187.0 mm  6.00 m    0%     9810 W
+  1.000 m2/s    3 m: 2.99 m/s  0.78 s  2.34 m   8.24 m/s  121.4 mm  6.00 m    0%    29430 W
+  1.000 m2/s    8 m: 2.99 m/s  1.28 s  3.82 m  12.88 m/s   77.6 mm  6.00 m   25%    78480 W
+  1.000 m2/s   12 m: 2.99 m/s  1.56 s  4.68 m  15.63 m/s   64.0 mm  6.00 m   50%   117720 W
+  the last cell above a lip, slope 0.005, 0.15 m2/s, Froude 0.44 upstream: depth over the critical depth 1.15 at 0.50 m cells, 1.11 at 0.25 m cells
+  the last cell above a lip, slope 0.005, 0.60 m2/s, Froude 0.51 upstream: depth over the critical depth 1.09 at 0.50 m cells, 1.06 at 0.25 m cells
+  the last cell above a lip, slope 0.050, 0.15 m2/s, Froude 1.24 upstream: depth over the critical depth 0.89 at 0.50 m cells, 0.88 at 0.25 m cells
+  with a dry cell 3 m lower in place of the lip's face, the last cell above stands at 0.22 of the critical depth, and a sheet launched from it would be thrown 3.2 times too far
+  if all the momentum of 0.2 m2/s falling 8 m pressed on 0.4 m of surface, the dent would be 0.6 m deep: the plunge goes under, and only a share of its unsteady part makes waves
+PART 5  reaching the steady state
+  dry start, one time step                6370 steps,   1.5 million cell updates
+  dry start, each cell's own step         4419 steps,   1.1 million cell updates
+  filled start, one time step             6053 steps,   1.5 million cell updates
+  filled start, each cell's own step      4160 steps,   1.0 million cell updates
+  a grid twice as coarse first            2099 steps coarse and 2328 fine,   0.8 million cell updates
+  a 350 m stream 4 m wide at 0.25 m cells has 22400 wet cells; at 4160 steps for this section's 240 cells, and so about 24267 for its 1,400, that is 544 million cell updates for each flow sample
+PART 6  a stream in plan: a narrows and a rock
+  64 by 16 cells of 0.5 m, 0.60 m3/s from a spring: stopped after 3000 steps, largest level rate 1.3e-05 m/s
+  discharge through six sections: 0.600, 0.600, 0.600, 0.599, 0.599, 0.599 m3/s (within 0.2% of the spring)
+  above the narrows  wet width 5.0 m, depth 0.40 m, speed 0.58 m/s, Froude 0.30
+  in the narrows     wet width 2.0 m, depth 0.34 m, speed 1.46 m/s, Froude 0.79
+  below it           wet width 4.0 m, depth 0.31 m, speed 1.32 m/s, Froude 0.76
+  in front of the rock the water stands 0.120 m above the level the slope alone would give; the speed's head there is 0.065 m
+  head lost beyond friction: 55% of it in the 6 m round and behind the rock (22% of the wet cells), 25% in the 6 m below the narrows (12% of them)
+  largest by the rock: 144 W/m2
+PART 7  one mean current for a window
+  a 64 m window over the riffle, the pool and the chute: the mean current of its wet cells is 0.94 m/s; in the pool the water moves at 0.18 m/s
+  rings from a stone in the pool, carried by the plain mean, slide 4.7 m downstream in 5 s; carried by a mean weighted by the waves' own energy, which is all in the pool, 0.90 m; they should slide 0.90 m
+  a ring's own speed on the pool's 0.6 m of water is at most 2.4 m/s, so the plain mean's drift is 31% of it
