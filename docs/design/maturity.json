@@ -692,11 +692,11 @@
       },
       "M3": {
         "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
-        "functional_validation": "Unconditional source-filter candidate 9b5e5ef4 passes five still checkpoints but ties no AA at night in two Metal runs, failing strict improvement. Reference-cycle, held-state, negative and cut controls pass. All ten Mac capture arms complete; Chrome, timing, moving route and exact phases are stopped. Current adaptive-source/variance kernel has no device qualification. The historical no-trace reference failure is localized but unexplained. Historical proofs do not qualify the new kernel; integration remains open.",
-        "experienced_quality": "Builder and a fresh explicitly configured GPT-6.1 Sol medium reader inspect unconditional-source-filter native ordinals 252–311 and find speckled revealed-block boundaries and a narrow prop fringe. Surface-tap and earlier range-based candidates also fail reveal inspection. Current adaptive-source/variance output is unqualified. No independent milestone review yet.",
+        "functional_validation": "Graded depth-footprint candidate e8ff99af passes the three Metal taau_ tests, all six canonical still comparisons, held-state/reference-cycle checks, history-disabled controls and both cut controls. Exact current images, independent f32 means and frame records are retained. D3.2 and D3.4 have builder passes. The preceding variance candidate fails four checkpoints. The historical no-trace reference failure is localized but unexplained. Current Chrome, route timing, moving-route regression, exact baselines and integration remain open.",
+        "experienced_quality": "Builder and a fresh explicitly configured GPT-6.1 Sol medium reader inspect current graded-support native reveal ordinals 252–311. No persistent prop ghost is identified, but trailing-edge stipple and softer thin details remain. The builder has not qualified the shipped-game motion bar. The next separately pinned diagnostic holds spatial filtering fixed and disables feedback in one arm. No independent milestone review or direct continuous playback claim.",
         "platform_performance": {
-          "mac": "Historical range-based kernel at 3f896417: paired 640x360 Metal moving-route resolve p50/p95 0.046709/0.049792 ms over 361 samples, scene p50 2.994001 ms on and 2.778083 ms off. New adaptive-source/variance cost is pending. No measured 1080p, cadence or speed promotion.",
-          "browser": "Chrome 157 real-time capture and packaging pass for all ten on/off arms, with all 2696 source frames verified; reveal fringe is visible. New reciprocal-depth execution and motion qualification are pending. No browser performance claim.",
+          "mac": "Historical range-based kernel at 3f896417: paired 640x360 Metal moving-route resolve p50/p95 0.046709/0.049792 ms over 361 samples, scene p50 2.994001 ms on and 2.778083 ms off. Current graded-support moving-route cost is pending. No measured 1080p, cadence or speed promotion.",
+          "browser": "Historical Chrome 157 real-time capture and packaging pass for all ten on/off arms, with all 2696 source frames verified; reveal fringe is visible. Current graded-support execution and motion qualification are pending. No browser performance claim.",
           "ios": "not_run"
         },
         "evidence": "../evidence/APPLE-PRESENTATION/m3/README.md",
@@ -4664,8 +4664,8 @@
       "technique": "Portable temporal accumulation with jitter-aware current-source reconstruction",
       "source": "https://alextardif.com/TAA.html",
       "owner": "APPLE-PRESENTATION, thrum-render portable on Metal and Chrome WebGPU",
-      "status": "Bounded M3 candidate. Adaptive current-source reconstruction and YCoCg variance clipping reuse the 3x3 source loads with no new allocation or dispatch. Device correctness, visuals and cost are pending. The unconditional filter failed night strict improvement and retained a reveal fringe; no speedup or paper-reproduction claim.",
-      "evidence": "../evidence/APPLE-PRESENTATION/m3/depth-reprojection/variance-candidate.md"
+      "status": "Bounded M3 candidate with adaptive current-source reconstruction, min/max YCoCg clipping and graded matching depth-footprint support. The same 3x3 source and four history-depth loads remain, with no new allocation or dispatch. Metal stills, cuts and helper correctness pass at e8ff99af; motion and cost remain unqualified. Global variance clipping failed four still checkpoints and was removed. No speedup or paper-reproduction claim.",
+      "evidence": "../evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md"
     },
     {
       "technique": "Flux-normalized catalogue star footprints with a daylight pass selector",
