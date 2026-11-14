@@ -5,7 +5,9 @@ unlocked active Mac session and existing Screen Recording grant for the OS-windo
 observer. M10 stays `in_progress`. Complete that actual-window item on the final
 merged build under both recipes; do not automate grants or substitute engine images.
 
-Resume this worktree and read the [builder record](M10/README.md). The native
+Resume the APPLE-TILE builder's worktree and read
+`docs/evidence/APPLE-TILE/M10/README.md` there. The M10 evidence files have not
+been included in this handoff-only merge. The native
 implementation is complete for M10. The small same-submit fixture passed before
 route integration at `cdede389`. Clean source `07282556` passes exact ordinary
 native/Chrome baselines and the official M10 check with full `./dev check`.
@@ -31,7 +33,8 @@ the corrected target test now passes. No tolerance or reference was changed.
 Integration job `20261114-092134-14283` rebased the work to `012668c2`, then
 stopped at the exact-baseline guard because upstream Mac proof-script changes
 invalidate the earlier content key. All 500 captured build-source files still
-match after rebase ([identity check](M10/rebase-source-identity.json)); no M10 item
+match after rebase (builder-worktree record
+`docs/evidence/APPLE-TILE/M10/rebase-source-identity.json`); no M10 item
 proof is invalidated by those upstream changes. Background job
 `20261114-092239-14812` finished with exit 1: its fresh exact baselines passed on
 `ca8b41f5` in 920.36 seconds, then the full gate stopped at
