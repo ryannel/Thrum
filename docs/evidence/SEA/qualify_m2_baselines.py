@@ -6,6 +6,7 @@ repository's own gate accepts it for the rebased covered source.
 """
 
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -36,6 +37,18 @@ def main():
     if gate.returncode == 0:
         print("REUSED: the exact-baseline gate accepts this integration source", flush=True)
     else:
+        if shutil.disk_usage(ROOT).free < 16 * 1024**3:
+            target = ROOT / "target"
+            if target.resolve() != target:
+                raise RuntimeError("Refusing to clean a linked or shared target directory")
+            clean = (
+                "rustup", "run", "1.99.1", "cargo", "clean", "--locked", "--offline",
+                "--target-dir", str(target),
+            )
+            print("Low disk space: inspecting this worktree's rebuildable output", flush=True)
+            run(*clean, "--dry-run")
+            run(*clean)
+            print(f"Free bytes after private target cleanup: {shutil.disk_usage(ROOT).free}", flush=True)
         run(sys.executable, "scripts/exact_baselines.py", "verify")
 
 
