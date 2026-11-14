@@ -1,0 +1,8 @@
+pure swell wavelength=0.1 Hs=1.999994174975
+pure swell wavelength=19.99 Hs=1.999999990329
+pure swell wavelength=20 Hs=2.000000000000
+pure swell wavelength=20.01 Hs=2.000000009666
+pure swell wavelength=120 Hs=2.000000000000
+pure swell wavelength=10000 Hs=2.000000000000
+192-component gale Hs=8.538028803608, far/day dt error=1.048e-7
+gale-to-flat: pre-start, exact boundary on all bands, asymptotic decay PASS

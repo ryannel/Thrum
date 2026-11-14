@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -19,8 +19,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SEA/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -28,7 +28,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md"
+          "evidence": "docs/evidence/SEA/M1.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -38,8 +40,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SEA/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -47,7 +49,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascades",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md"
+          "evidence": "docs/evidence/SEA/M1.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -55,7 +59,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test transition",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md"
+          "evidence": "docs/evidence/SEA/M1.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -63,7 +69,9 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md"
+          "evidence": "docs/evidence/SEA/M1.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -73,8 +81,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SEA/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -83,8 +91,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/SEA/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -93,7 +101,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/SEA/M1.md"
+          "evidence": "docs/evidence/SEA/M1.md",
+          "verdict": "pass",
+          "review": "docs/evidence/SEA/M1-review.md"
         }
       ]
     },

@@ -26,7 +26,40 @@
   "milestones": {
     "M1": {
       "definitions": "0e5a30c3bcaed6580c3b8f38fc50221c1a3f6cac4a15659b97d473ed56363d40",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "8e29020eacff49ce9be8b22c66eb6d8adb58596b",
+          "review": "docs/evidence/SEA/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 96383,
+            "cached": 832512,
+            "output": 5048,
+            "turns": 1
+          },
+          "at": "2026-11-14T01:52:10Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
@@ -61,6 +94,13 @@
           "output": 124827,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8e29020eacff49ce9be8b22c66eb6d8adb58596b",
+        "review": "docs/evidence/SEA/M1-review.md",
+        "checked": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
+        "at": "2026-11-14T01:52:10Z"
       }
     },
     "M2": {

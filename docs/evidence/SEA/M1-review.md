@@ -1,0 +1,38 @@
+# SEA M1 review — PASS
+
+Reviewed 14 November 2026 at `8e29020eacff49ce9be8b22c66eb6d8adb58596b`.
+Builder endpoint: `d0b8c06ef11e41f615bdad9c43c55a30603f06f4`. All nine items pass.
+No Must Fix findings or Suggestions. M1 meets its CPU-oracle quality bar; this verdict makes no claim about rendered water or GPU performance.
+
+I read the implementation and tests before the builder's evidence and log. Scope included every source/test line of the new crate, its README and manifest, the workspace/lockfile/architecture registration, and the SEA builder's record changes in `d3dde557`, `5c2544d9` and `d0b8c06e`. The model source is unchanged between the builder endpoint and this checkout. I also read the current SEA design/plan, relevant contracts, project review guidance and graded examples. The current plan explicitly assigns cascade loop frequencies and cascade time derivatives to M2; their absence does not fail M1.
+
+The review uses the orchestrator's supplied clean-checkout success for `./dev check` and the checks of M1.1–M1.7 and M1.9 on the builder's files. I inspected what those checks assert rather than rerunning them without cause. The older builder [check record](M1-checks.json), [rebased CPU output](M1-rebased-tests.txt) and [baseline record](M1-baselines.json) corroborate the supplied result; their earlier revision IDs are not represented as fresh reviewer runs.
+
+There are no `inspect` proofs or human-feedback requirements in M1, so no visual inspection list, screenshots or motion judgement applies. Of the target edge conditions, storm and distance are exercised as CPU gale/far-point cases. Low sun, fast camera and full-refresh presentation do not apply to this crate, which has no light, camera, frame host or graphics device. Chrome baseline preservation is judged through its automated check, not a new visual session.
+
+| Item | Verdict | Judgement of every named proof |
+| --- | --- | --- |
+| M1.1 | pass | `tests/spectrum.rs` checks 192 long components and three disjoint half-open radial cascade bands, and compares their summed variance with independent global log-k quadrature. The tolerance comes from midpoint quadrature's second-order Richardson estimate, with a factor of 16 and roundoff allowance. It is explicitly required to be below 1% of the smallest nonzero layer, hence below that layer's share. The zero-energy case has zero error. Wind 0, 8 and 20 m/s each run with and without swell. Production integrates the same directional density and normalizes each lattice to its band's integral. |
+| M1.2 | pass | The same check asserts increasing significant height at 0, 0.5, 0.99, 8 and 20 m/s, the 5 cm and 5 m bounds, fetch response, and dispersion for every long component. The source computes frequency as sqrt(g times magnitude of k), with no preset lookup. The reviewer probe independently obtained Hs 8.538028803608 m at fully developed 20 m/s. |
+| M1.3 | pass | The one-component test derives the displaced world coordinate and all answers algebraically at a known label, without calling the evaluator for expectations. Its steepness is 0.36, so inversion matters. World-space finite differences check slopes and Eulerian height derivative. The far/day fixture uses independent 70-digit Decimal trigonometry and inversion with exact binary64 inputs; I regenerated it byte-for-byte. All seven outputs are compared within 1e-6. The constructor rejects noncontractive sums and evaluation returns `NonConvergent` after 4096 unsuccessful iterations; the test covers refusal at steepness one. Material velocity and Eulerian height derivative are correctly distinguished by advection. |
+| M1.4 | pass | `tests/cascades.rs` uses the first populated band with more than 40,000 modes and compares all 65,536 texel centres, including displacement, parametric slopes, horizontal derivatives and the nonlinear Jacobian, against 1e-9 times band RMS height. Its direct series is grouped by z harmonic, not implemented using FFT butterflies or production complex arithmetic. Ungrouped point checks verify that rearrangement; a separate full-grid case covers signed conjugate modes, axes and near-Nyquist indices. The production positive-sign transform and half-cell phase match that convention. |
+| M1.5 | pass | `tests/transition.rs` checks every long component and cascade mode at five elapsed times against the declared exponential power response, retaining vectors and phases exactly. It checks a repeated change and fixed-point continuity for inverted long waves and all cascade bands. Source rejects incompatible identities and blends squared amplitude, not phase. The reviewer additionally checked reverse decay to flat water and exact onset in all bands. |
+| M1.6 | pass | `compare` calls both providers at every point/tick in the Cartesian set, rejects errors and nonfinite answers, and accumulates independent absolute maxima for height, each slope/velocity axis and height derivative. The test proves identical-provider zero and the independently calculated effect of a pi/2 phase shift, including far points and a day of ticks. Empty input and NaN output cannot silently pass. |
+| M1.7 | pass | The dependency check matches the claim. The manifest has no dependencies, and all crate code and tests use CPU arithmetic only. I found no game-owned sea preset, hull or water-type table. The fixed physical spectrum profile and numeric test forcing are not game presets. The reviewer compiled and ran this crate directly with rustc without a graphics device. |
+| M1.8 | pass | [PROVENANCE.md](PROVENANCE.md) explicitly states that nothing was copied or translated from Broadsides and identifies the mathematical sources used. The log agrees. No copied-file licence record is therefore needed for M1; the later general permission to reuse Broadsides does not substitute for a provenance claim. No contrary copying evidence was found. |
+| M1.9 | pass | The supplied orchestrator result establishes the claim-time verifier pass. The verifier builds native and browser products, visits the registry's native matrices and four Chrome sets, checks comparison success and refuses a changing checkout. The builder's retained record reports 38+4 native comparisons and four sets of 481 browser records. SEA's builder changes include neither retained-image updates nor weakened comparator code. |
+
+Additional reviewer execution used the actual crate in this checkout. The retained [probe source](M1-review/edge_probe.rs) and [output](M1-review/edge-probe.txt) cover exact flat water; pure 2 m swells at wavelengths 0.1, 19.99, 20, 20.01, 120 and 10,000 m; a full 192-component gale at `[20000,-17000]` after 86,400 seconds; and gale-to-flat transition onset, pre-start behaviour and late decay. All passed. The gale's independently finite-differenced height derivative differed by 1.048e-7 m/s. This probe supplements, rather than replaces, the extended-precision and full-grid automated proofs.
+
+Reproduce from the repository root:
+
+```sh
+rustc --edition 2024 --crate-name thrum_sea_model --crate-type rlib crates/thrum-sea-model/src/lib.rs -O -o docs/evidence/SEA/M1-review/libthrum_sea_model.rlib
+rustc --edition 2024 docs/evidence/SEA/M1-review/edge_probe.rs --extern thrum_sea_model=docs/evidence/SEA/M1-review/libthrum_sea_model.rlib -O -o docs/evidence/SEA/M1-review/edge_probe
+./docs/evidence/SEA/M1-review/edge_probe
+python3 crates/thrum-sea-model/tests/fixtures/extended_reference.py
+```
+
+The temporary reviewer binary and rlib were removed after execution. No implementation was changed, no GPU run was repeated, and no physical-device speed or visual quality is inferred from these CPU results.
+
+PASS M1
