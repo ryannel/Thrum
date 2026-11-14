@@ -13,6 +13,11 @@ manifest = "crates/thrum-sea-model/Cargo.toml"
 # CPU spectrum and conformance oracle; no graphics or game dependencies.
 allowed_workspace_dependencies = []
 
+[packages.thrum-cloud-model]
+manifest = "crates/thrum-cloud-model/Cargo.toml"
+# Deterministic CPU weather authority and optics oracle, independent of graphics.
+allowed_workspace_dependencies = []
+
 [packages.thrum-content-runtime]
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []
