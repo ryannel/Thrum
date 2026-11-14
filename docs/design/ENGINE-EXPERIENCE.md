@@ -1,6 +1,6 @@
 # Building a game with this engine
 
-Creator guide, updated 7 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
+Creator guide, updated 14 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
 first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
 working SDK or settled syntax. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)
@@ -47,8 +47,11 @@ budgets above:
   - a window the display never drew.
 - **Hot reload.**
   - Asset edits are re-cooked and drawn live.
-  - Parameter files and the material hook reload explicitly: `L` on the Mac; on the page, a button and `?params`.
-    The material is on the development page only.
+  - On the Mac, saved parameter files and the material hook reload automatically after writes settle;
+    `L` explicitly reloads both. A bad edit keeps the last good state and reports its cause.
+  - The kit page applies `?params=<name>.params.json` at startup. The web command copies parameter files
+    when it starts, so restart it after a saved parameter edit and reopen the URL. Its asset watcher is live.
+    The kit page has no material hook. The separate V1 development page supports a material hook and reload button.
   - Code changes rebuild and restart.
   - The material hook changes surface factors only and runs on every placement. It cannot yet read controls or
     know which placement it shades.
@@ -62,8 +65,22 @@ budgets above:
   - a lighthouse with its own generated mesh and material in 74.
 
   The last two used only the sky kit and `Config`. Their friction was fixed or recorded; the evidence lists which.
-  Live reload still needs a key press in a visible window, so an agent on a locked screen reviews through the
-  offscreen capture.
+  These historical exercises were Mac-only. CREATOR M3's new two-target exercise still needs its fresh reviewer.
+  Saved-file reload is proved offscreen; visible-window slider and reload qualification remains open.
+  An agent on a locked screen reviews through the offscreen capture, which does not prove the window event path.
+
+- **Profiler.** Every sky-kit scene includes a Frame profiler toggle and read-only table on Mac and Chrome.
+  It shows recent completed CPU stages and named GPU passes, callback interval and present-call counts.
+  Numbers are medians over up to 120 frames, refreshed every 250 ms; unavailable rows state why.
+  Callback interval is not physical display cadence. See the
+  [starter's keys and interpretation](../../examples/starter/README.md#see-where-frame-time-goes).
+  [CREATOR M2 evidence](../evidence/CREATOR/M2.md) records the switch, load changes and paired cost observations.
+
+For a working scene, follow the [starter README](../../examples/starter/README.md) from **Run it** through
+**Make your own scene**, **Write your scene**, **Place meshes** and **Bring your own mesh**. It gives the
+commands, workspace registration, public kit types, metre/+Y convention, glTF requirements and parameter
+and material files without requiring engine source. Run `./dev scene <folder>` for Mac or
+`./dev scene <folder> --web` for Chrome. The sections below describe the wider SDK ambition.
 
 ## Four things to understand
 

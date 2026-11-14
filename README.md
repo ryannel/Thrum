@@ -14,7 +14,11 @@ the diagnostic scene. The showcase and creator experience remain unfinished. See
 under a physically based sky, with Sun sliders and asset hot reload, in about 40 lines of game code. The
 [starter README](examples/starter/README.md) shows how to copy it into your own scene and run that with
 `./dev scene <folder>`. Use `./dev starter --web` or `./dev scene <folder> --web` to build, cook and serve the
-same scene in Chrome on hardware WebGPU.
+same scene in Chrome on hardware WebGPU. The starter README includes the web tool installation,
+copy-and-register steps, mesh format, parameter keys and material hook. Turn on **Frame profiler**
+in the Mac panel or Chrome page to see recent CPU stages and named GPU passes. The
+[creator guide](docs/design/ENGINE-EXPERIENCE.md#what-g6-built) separates the working creator path
+from the longer-term SDK design.
 
 To run the native authored scene on this Mac after setup:
 

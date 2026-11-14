@@ -93,9 +93,9 @@ rustup run 1.99.1 cargo clippy --locked -p thrum-<name> --all-targets -- -D warn
 
 Count your lines after formatting, since rustfmt can add some.
 
-Keep the shape of [src/main.rs](src/main.rs): one `main` behind `#[cfg(target_os = "macos")]`, an empty `main`
-for other targets, and everything else in one module behind one `#[cfg(target_os = "macos")]`. The window runs
-only on the Mac, and one `cfg` on the module is cheaper than one on every item.
+Keep the shape of [src/main.rs](src/main.rs): one ordinary `main` calling `thrum_app::sky::run`
+and a `scene` module containing `build`. The kit selects the Mac window or the Chrome runner;
+do not guard your scene with `#[cfg(target_os = "macos")]`, since that removes it from the Wasm build.
 
 ## Write your scene
 
@@ -219,8 +219,40 @@ content. They are covered by the repository's own terms; Thrum has no distributi
 Run `./dev starter --web`, then open the printed `SCENE_URL` in Chrome with hardware WebGPU.
 For a copied scene use `./dev scene <folder> --web`. The command builds the same game file for
 Wasm, cooks and watches `assets/`, and serves the page and asset store on loopback until Ctrl-C.
-Install the matching `wasm-bindgen-cli` (0.2.129) and the Rust `wasm32-unknown-unknown` target first.
+Install the matching tools first, from the repository root:
+
+```sh
+rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
+rustup run 1.99.1 cargo install wasm-bindgen-cli --version 0.2.129 --locked
+```
+
+Keep the scene command running while the page is open; Ctrl-C stops both servers and the watcher.
 The Sun controls come from the same model as the Mac panel. Save a mesh or texture to see it
 re-cooked without reloading the page. A refused edit keeps the last drawn generation and reports
 the asset to fix. Append `?params=starter.params.json` to apply a parameter file. Each refused
 key is reported, while valid keys apply. The web form adds zero game lines.
+
+The command copies every `<folder>/*.params.json` into the served page folder at startup.
+For a copied scene, use `?params=<name>.params.json`. After editing that file, restart the web
+command and reopen the URL to apply the new copy. Page control edits are temporary and do not
+write the source parameter file. The kit page has no material hook or material reload button;
+`material.wgsl` is used by the Mac runner. The V1 game's separate development page supports a
+material hook, but `./dev scene --web` does not.
+
+## See where frame time goes
+
+Every kit scene automatically includes **Frame profiler** in both the Mac panel and the Chrome
+page. Switch it on to see the median of up to 120 recent completed frames, refreshed every
+250 ms. No scene code is needed. Its stable keys are `profiler.enabled` (toggle) and
+`profiler.rows` (read-only table); reserve these names when declaring your own controls.
+For example, add `"profiler.enabled": true` to the parameter JSON beside `"sun.elevation"`,
+`"sun.azimuth"` and the optional `"display.exposure_zones": true`.
+
+The table shows callback interval, total present calls and missed callbacks, CPU World tick,
+Extract, Upload and Encode + submit, followed by named GPU passes. A static kit scene has no
+world tick. Callback interval measures when the shell was asked to render; it does not measure
+display cadence. A GPU value shows its observed browser step in Chrome, or a reason such as
+no timestamp queries. Off, waiting, stale and faulted rows show reasons instead of old numbers.
+Turning the profiler on after an edit lets you compare the affected pass; turning it off clears
+the window and stops timestamp work once in-flight frames drain. `THRUM_REPORT=1` keeps timing
+enabled even with the table off, so that a requested frames report remains complete.

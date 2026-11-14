@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-14 Updated M3's public creator path: shared source shape, exact web prerequisites,
+  parameter-copy behavior, material-hook scope and profiler use. G6 now records Mac/Chrome
+  dimensions separately and names the held features. Documentation checks pass; native mistake
+  captures await the shared GPU reservation. The builder was not fresh for M3.1, which the design
+  assigns to the reviewer. M3.4 remains access-blocked in this background session.
+  [M3 evidence](../../evidence/CREATOR/M3.md) records verified work and limits.
+
 - 2026-11-14 Passed both native exact-image matrices and all four Chrome sets on `898c6da1`
   in 935.50 seconds; [the receipt](../../evidence/CREATOR/m2/exact-baselines.json) is retained.
   A prior single night-frame mismatch did not reproduce in a strict 481-frame repeat or the
