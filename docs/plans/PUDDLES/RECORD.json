@@ -1,6 +1,28 @@
 {
   "module": "PUDDLES",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/PUDDLES/design-review.md",
+    "commit": "783c3b1acbf1154dc97e3d533169cd4c719221b4",
+    "hash": "53949efaff67b1afe1a3875c560c15d3a28bf746a63ca13db31507de4cb81948",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 100806,
+      "cached": 1178752,
+      "output": 8085,
+      "turns": 1
+    },
+    "at": "2026-11-14T12:13:00Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "3eb0803be8378ab20b2b4db442c7a05b8e10cb5adc68bbbb520200dc8cef5dea",
