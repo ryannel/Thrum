@@ -37,6 +37,10 @@ simultaneous texture HAL guards recursively acquired wgpu's device snatch lock. 
 `4577f13d0ed77e2db1b8470d240118e91cb3c0921f7645d69b235f597d5ccf6a`.
 The fix retains each native texture handle separately and drops its HAL guard before taking another
 or entering the raw encoder callback. This is a handle-access correction, not an exact-copy/order result.
+The native MSL library/compute pipeline and the WGSL twin pipeline were prepared before that failing call;
+the runtime compiler therefore worked on this target despite the absent optional offline compiler.
+Two additional device tests require locked-wgpu to refuse mixed APIs in both directions, including a no-op
+raw callback. They compile and pass scoped Clippy; their device result remains pending.
 
 The corrected Metal fixture is queued outside the sandbox under the shared `gpu` lock. No passing device result,
 route/T2 capture, simulator native background race, full repository gate, baseline guard or merge is claimed.
