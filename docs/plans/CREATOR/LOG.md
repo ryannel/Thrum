@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Passed both native exact-image matrices and all four Chrome sets on `898c6da1`
+  in 935.50 seconds; [the receipt](../../evidence/CREATOR/m2/exact-baselines.json) is retained.
+  A prior single night-frame mismatch did not reproduce in a strict 481-frame repeat or the
+  complete verifier; its cause remains unconfirmed. Fixed upstream handoff links to unmerged
+  evidence. Documentation checks pass; the normal merge and final M2 checks are queued.
+
 - 2026-11-14 Corrected World tick's coarse-timer reason: committed work rounded to zero no
   longer says no tick occurred. The regression fails before the change; five window tests and
   workspace Clippy pass at `3519a535`. All 3,000 retained native frames in 25 windows select the
