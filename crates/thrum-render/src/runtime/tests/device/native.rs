@@ -254,6 +254,9 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
         owner.publish_device(&mut candidate).unwrap();
         assert_eq!(owner.world.source().epoch, 5);
         assert_eq!(owner.native_witness_report().unwrap().submitted, 0);
+        owner
+            .enable_submitted_capture_from(2, CaptureLimits::default(), CaptureSource::NativeOutput)
+            .unwrap();
         let view = output(second.device(), [96, 48]);
         owner
             .advance(Duration::ZERO)
@@ -265,8 +268,38 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
                 extent: [96, 48],
             }))
             .unwrap();
-        drain(owner);
+        let replaced = image(owner);
         assert_eq!(owner.native_witness_report().unwrap().resets, 1);
+        let mut twin = super::host(
+            &second,
+            &queue2,
+            Policy {
+                native: NativeWitness::Wgsl,
+                ..Policy::default()
+            },
+        )
+        .await;
+        twin.resize_scene_surface([96, 48]).unwrap();
+        twin.enable_submitted_capture_from(
+            2,
+            CaptureLimits::default(),
+            CaptureSource::NativeOutput,
+        )
+        .unwrap();
+        twin.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&SurfaceOutput {
+                view: &view,
+                extent: [96, 48],
+            }))
+            .unwrap();
+        assert_eq!(
+            replaced,
+            image(&mut twin),
+            "replacement resets to the exact prepared twin"
+        );
         println!(
             "M10 native failure/loss/extent: submission refusal and loss abandon discarded=2, no loss flush; new generation/extent reset before reuse"
         );
