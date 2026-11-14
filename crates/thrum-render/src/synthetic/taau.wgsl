@@ -2,7 +2,7 @@ struct Params {
     inverse: mat4x4<f32>,
     previous_view: mat4x4<f32>,
     view: mat4x4<f32>,
-    state: vec4<f32>, // valid, storage p, width, height
+    state: vec4<f32>, // valid, reserved, width, height
     jitter: vec4<f32>,
 }
 @group(0) @binding(0) var colour: texture_2d<f32>;

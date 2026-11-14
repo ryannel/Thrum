@@ -96,6 +96,7 @@
           user_agent: navigator.userAgent,
           cooked_admission: "generation only; the served root is checked outside the page, by the checker",
           culling: game.report(),
+          reconstruction: JSON.parse(game.route_report(0)).reconstruction,
         };
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
