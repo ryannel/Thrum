@@ -1,5 +1,17 @@
 # CLOUDS log
 
+- 2026-11-14 Baseline attempt on `d360fbcf` passed 38/4 native comparisons and all 481
+  records in Chrome day SDR, day linear and night SDR. Night linear failed identity at
+  ordinal 170: tick/source_tick 289 and alpha 1 rather than 290 and alpha 0. Its 481
+  manifest pixel hashes all match the retained reference. No baseline or comparator was
+  changed. The browser world's configured 2 ms elapsed work slice can defer the second of
+  two due ticks, which is consistent with this equivalent endpoint; no tick-cost witness
+  was exported, so that cause is an inference, not a measured attribution. Chrome was
+  157.0.8103.51 (reference .40). The complete failed record is retained at
+  `tmp/baseline-guard/verify-20261114T213410.775605Z/record.json` and in shared check stderr
+  under key `212e9f1f636916305ff19efa`. M1.13 remains open while the unchanged verifier is
+  retried; the CPU model is not a renderer input and no rendered cloud is qualified here.
+
 - 2026-11-14 M1 resumed against the planner's revised clear-column convention. Source
   `f188edfc` retains the weather's type/base and sets clear top=base; `0b097fab` explicitly
   checks every coverage-zero column. Temporal and spatial tests measure top, thickness,
