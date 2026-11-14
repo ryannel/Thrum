@@ -96,3 +96,10 @@
 - 2026-11-14 The review made no suggestion. Not run by the planner: any GPU check. Read for this revision:
   `aerial.wgsl`, the three decoders, the sampler in `atmosphere/gpu.rs`, `atmosphere.rs`' altitude range,
   and the camera volume of Hillaire's reference implementation.
+- 2026-11-14 `ATMOSPHERE` planned its M9 on this module's proposal
+  ([the air at the ground](../ATMOSPHERE/DESIGN.md#the-air-at-the-ground)): the aerial pass carries a line of
+  sight on under the model's ground, with the air's density by its own law and the Sun's light dimmed by that
+  air. A view's volume is that pass's own, so it follows. The design's passages on what the product loses at
+  the horizon, its risk 7 and its last open question describe the pass before M9 and already say a view takes
+  whatever the pass becomes; they stand as approved. M1.5 and M1.12 take their references from the pass as it
+  runs, so they hold before M9 and after it. No design text or item changed; one assumption was reworded.

@@ -183,3 +183,9 @@
   body's level, so no text, item or bound here changed. For M14's builder: near sea level `ATMOSPHERE`'s
   product thins haze just above the horizon, in the main view and in a mirror alike
   ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md)), so M14.2's panel wants a line well above it.
+- 2026-11-14 `ATMOSPHERE` planned its M9, [the air at the ground](../ATMOSPHERE/DESIGN.md#the-air-at-the-ground):
+  the aerial pass carries a line of sight on under the model's ground, so the sea and whatever stands just
+  above its horizon take the haze of their own lines. M2 now waits for `ATMOSPHERE:M9`, because M2.2 and M2.3
+  judge the horizon and the far sea's haze from 2 m and 40 m, where the old stop took up to 72% of the sea's
+  in-scatter, in bands that moved with the camera. No text, item or bound here changed. The note above for
+  M14's builder holds only until M9 is Done.

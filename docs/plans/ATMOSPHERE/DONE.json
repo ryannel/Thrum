@@ -127,6 +127,117 @@
       "quality_bar": "Cloud shade crossing a landscape as in Red Dead Redemption 2 or Horizon Forbidden West: the patch dims direct sunlight only, moves in world space, agrees on every lit surface and leaves the shaded ground sky-lit, never black. The diagnostic pattern is a stand-in, so its shape and softness are not judged here. With no cloud source the scene and its cost are exactly what they were."
     },
     {
+      "id": "M9",
+      "name": "Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS M2, which waits for it.",
+      "items": [
+        {
+          "id": "M9.1",
+          "statement": "Near the ground a read of the lent aerial `(T,S)` is what the point's own line holds. In the cases of the design's `Numerical acceptance for the air at the ground`, at all eight camera pitches, the read at a point between two rows of the volume matches the product's own column along that point's line: transmittance within 0.01 \u00d7 expected + 0.001, solar in-scatter within 0.025 \u00d7 expected + 0.0025 \u00d7 that column's in-scatter at 32 km, each plus one stored step, and the night term within 10%. The same reads with every column held at its value where it met the ground miss that allowance by more than five times, at one pitch or more, for the points 30 km away above the horizon and the ground points 10 km away. The worst share of the allowance by Sun and channel is on record, with the same reads at a Sun 0.5\u00b0 up dead ahead and at a 90\u00b0 field of view beside it; the record decides nothing.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::near_ground_reads 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
+          "lock": "gpu",
+          "ask": "Is the reference a column stored by the production pass for a camera turned so that a texel's centre lies on the point's line, and is the read an f64 evaluation of the lent operation's blend on the volume read back, so that no expected value comes from the test's own model of the air? Are the cases, the four Suns and the allowance the design's, unchanged? Under the ground, does the pass follow the density law below zero altitude and dim the Sun's light with depth, and not hold the surface's air or its light?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.2",
+          "statement": "Nothing above the ground moved. For frames recorded at the commit this milestone started from, every texel of a line that never meets the ground, and every layer that ends before its line meets the ground, holds the bytes that commit stored. Past the ground every stored value is finite, and each layer's transmittance is lower than the layer's before it.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib aerial_ground::above_ground_bytes 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
+          "lock": "gpu",
+          "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.3",
+          "statement": "On Metal the preserved referees P1-P11 and the handoff rows H1-H5 of the design's numerical acceptance table pass against the production producers with no reference, case or bound changed, and the all-orders solar grid still reports all 198 rows.",
+          "check": "./dev check",
+          "lock": "gpu",
+          "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.4",
+          "statement": "In Chrome on hardware WebGPU the handoff rows H1-H5 pass at their declared bounds on the changed pass.",
+          "check": "node scripts/check_v1_browser.mjs --case environment",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.5",
+          "statement": "The registered exact baselines are refreshed in the landing that changes the pass, as the module list's ruling on this milestone allows. Each retained reference that moved is regenerated from captures of that commit by `APPLE-TILE`'s own scripts, with the registry, the comparisons, their sampling and every script as they were, and the verifier passes at the claimed commit. The verifier passed at the commit this milestone started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Did the landing leave `.config/exact-baselines.json`, the comparison scripts and their sampling as they were?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.6",
+          "statement": "Only the air moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel is low terrain kilometres away, which the volume's descending lines reach. The sky, the stars, the near ground, the props and the letterbox bars hold their old bytes. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one.",
+          "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: differences on distant low terrain only, none in the sky, on the near ground, on a prop or in the bars. Then read the builder's Chrome difference images for the day and night checkpoints the same way, and the count of differing pixels and the largest difference for each reference.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.7",
+          "statement": "The valley's six route stops pass `SHOWCASE`'s comparison with its baseline and thresholds as they were.",
+          "check": "python3 scripts/run_v1_showcase.py check",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.8",
+          "statement": "The aerial pass's GPU time on the valley is on record before and after, on the Mac and in Chrome: paired in one session between the starting commit and the claimed one, with load and order. A pass about 25% over its time before has its investigation beside it. No figure in the record decides this item.",
+          "ask": "Is the record in `docs/evidence/ATMOSPHERE/M9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M9.9",
+          "statement": "The maturity ledger's atmosphere rows say what this milestone proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
+          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ]
+    },
+    {
       "id": "M6",
       "name": "The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes",
       "items": [
@@ -233,7 +344,7 @@
         },
         {
           "id": "M7.3",
-          "statement": "With the view volume and no medium, the lent aerial transport to a point, read from the settled volume, is within the design's ceiling of an f64 quadrature of the air along that ray, in each channel: transmittance within 0.05 \u00d7 expected + 0.005, and solar in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray, each plus one stored step. It holds at the default haze and at visual ranges of 20 km and 3 km, at P10's Sun elevations, at points from 5 m to beyond 32 km on level, climbing and descending rays. Its night part still meets P5. The worst error at each haze is on record beside the 32-layer product's against the same reference; the record decides nothing.",
+          "statement": "With the view volume and no medium, the lent aerial transport to a point, read from the settled volume, is within the design's ceiling of an f64 quadrature of the air along that ray, in each channel: transmittance within 0.05 \u00d7 expected + 0.005, and solar in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray, each plus one stored step. It holds at the default haze and at visual ranges of 20 km and 3 km, at P10's Sun elevations, at points from 5 m to beyond 32 km on level, climbing and descending rays, and, from observers 3 m, 40 m and 245 m above the model's ground, at points on the ground itself and on lines 0.05\u00b0 and 0.2\u00b0 above the horizon. Its night part still meets P5. The worst error at each haze is on record beside the 32-layer product's against the same reference; the record decides nothing.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test view_volume_air_gpu",
           "lock": "gpu",
           "ask": "Is the reference an f64 quadrature written apart from the shader, with the Sun's light from the existing direct-light quadrature and not from the volume's own cells? Does the test show a volume whose in-scatter is scaled by 1.1 failing? Is the ceiling the design's, unchanged?",

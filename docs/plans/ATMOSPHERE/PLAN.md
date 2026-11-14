@@ -1,11 +1,14 @@
 # ATMOSPHERE plan
 
-Closes gate G3s at M6; M7 and M8 are track 2. [Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M8 · [log](LOG.md) ·
+Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9, M6, M7, M8.
+[Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M9 · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
 ## Open for the owner
 
-- Assumption: readiness work for the sea and cloud port (M5) proceeds now, ahead of the owner's decision on when the port itself starts; the port decision says to keep the foundation converging on readiness.
+- Assumption: "the modern technique" (the lead's task, 14 November) is the camera-aligned aerial volume current engines ship, corrected so that the air goes on under the model's ground. Marching the air for every pixel, Unreal's costlier option, is not built.
+- Assumption: the corrected air is the aerial product of every scene, with no switch. The showcase valley's far low ground gains a little haze, so M9 refreshes `APPLE-TILE`'s five exact reference sets once, in its own landing. The other choice keeps today's output as the default behind a selection, and leaves the defect in every scene that does not ask.
+- Assumption: M9 is built now, ahead of M6 and TAAU, and is held by numbers and by where the retained images moved. Its look on a real sea is judged in `WATERS` M2, which now waits for it.
 - Assumption: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6.
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
 - Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan.
@@ -28,45 +31,41 @@ Closes gate G3s at M6; M7 and M8 are track 2. [Design](DESIGN.md) · [done-when 
 
 A parked spike, outside the done-when file: the stock graph ships and M6 does not judge the moving spur edge.
 [The record](../../evidence/ATMOSPHERE/M1-M4-records.md#m3-the-west-lookouts-shadow-crosses-the-ground-without-a-flash-parked-spike)
-holds the proposed reference clip, the diagnosis handoff and the finished work. It re-enters only as a new
-commission against these criteria:
-
-- [ ] **D1.** At the west lookout on the cooked valley, the near ground and middle distance read as continuous terrain during the 17.40–17.80 h crossing and a slow ±20° pan on Metal and Chrome. Independent side-by-side motion review matches the reference’s continuous moving edge. The timed 1× replay shows no newly introduced flecks, ribbing or detached bright bands. The fixed 1080p spur witness removes the known row-665 in-cascade flash at frames 226–227, and the six-stop route and both controls pass.
-- [ ] **D2.** Compare against current main at the same receiver, source and Sun. The open Sun and full occlusion controls retain their expected result. The broad edge, close terrain, distant crest, represented compact-caster control and overlap exhibit no new visible false light or shadow across near/last/far range, camera and azimuth sweeps, or a cooked asset swap. Review full-resolution visibility and shaded images, with signed difference masks registered by receiver and time. Report new lit/umbra regions separately from the existing errors and compare asset replacement with a fresh run of the replacement. Record signed disk-reference error on the fixed witnesses as a measured open item. The original sub-texel caster stays in M4.
-- [ ] **D3.** The regular graph preserves aerial and surface ownership, recovery and strict discarded-frame image equality. Record paired whole-frame and shadow costs, and pass workspace and independent code and visual reviews on the integrated result.
-
-Work left when it was parked:
-
-- [ ] D1–D3. Resolve cooked and tile ownership before a live candidate. Keep the submitted-slot history rules and three-screen stop limit.
-- [ ] D1–D3. Integrate one shared surface evaluator, then capture the shipped ground and spur replays, range and cooked replacement controls, and paired frame costs. Review both targets in motion before promotion.
+holds its criteria D1 to D3, the proposed reference clip, the diagnosis handoff, the finished work and the work
+left. It re-enters only as a new commission against those criteria.
 
 ## M4 Exact finite-disk shadow reference match
 
 A deferred bounded spike, outside the done-when file. M3 and the other V1 gates proceed without it.
 [The record](../../evidence/ATMOSPHERE/M1-M4-records.md#m4-exact-finite-disk-shadow-reference-match-deferred-bounded-spike)
-holds the finished work.
-
-- [ ] Compare one reviewed representation with the original-geometry disk reference at the broad edge, distant narrow crest including moving receivers, the 64 m close terrain exclusion, the 24 cm compact caster at 160 m and the overlap. Keep the open Sun control and one coverage union. Use the frozen raised, distant, broad and close 4 m patches and the four row-665 receiver/phase domains at x=480, 720, 960 and 1200. Keep the crest-only ablation, close umbra, compact-only and overlap controls. Retain a 0.5 percentage-point continuous omission bound. Prove the retained blocked set is a subset of the reference or separately bound overcoverage to the same tolerance. Freeze finite sample and reference integration tolerances before the run.
-- [ ] Publish the verdict and the complete source, receiver and caster cost for the measured domain. Only a passing candidate can propose a separate in-game landing.
-
-Work left:
-
-- [ ] Review at most one representation with a distinct source-side reuse mechanism and explicit producer, receiver and caster work caps fixed before running. Run it once against the frozen witnesses. Park it if it exceeds the cap or fails admission, retain the failure and stop. M3 and other V1 gates can proceed independently.
+holds its criteria, the finished work and the work left.
 
 ## M5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once: done
 [review](../../evidence/ATMOSPHERE/M5-review.md)
 
+## M9 Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome
+
+Read [The air at the ground](DESIGN.md#the-air-at-the-ground) and
+[the module list's ruling on M9](../ARCHITECTURE.md#exact-baselines) first. The pass is
+`crates/thrum-render/src/atmosphere/aerial.wgsl`, which ends a line at `ground_distance`. `altitude` in
+`geometry.wgsl` holds every altitude at zero and the charts' lookups rely on that, so the depth under the
+ground is the pass's own to work out. `gpu/tests/aerial.rs` reads a volume back and `products/tests/filtered.rs`
+has the lent operation's blend in f64; the new tests are a module `aerial_ground` beside them, with tests
+whose names begin `near_ground_reads` and `above_ground_bytes`, which the checks filter on.
+
+The order is part of this milestone. Before any change, run the verifier at the starting commit and keep its
+record, store M9.2's frames and take M9.8's first arm. The change and the refreshed references then land
+together, because the gate passes a covered change only with a proof for its exact content: regenerate each
+reference that moved from the changed commit with `APPLE-TILE`'s own scripts, then run the verifier for the
+proof. `scripts/apple_tile_m0.py` made the Mac set, and the verifier archives each Chrome run's manifest. If
+M9.1 misses its allowance, or a reference moves where M9.6 says none may, end
+`BLOCKED` with the measurement. `SCENE-VIEWS` M1 and `CLOUDS`' rulings edit the same pass; integrate on top of
+what has landed.
+
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 
-Read [Closing G3s](DESIGN.md#closing-g3s) first.
-
-- [ ] Recapture the route and the dawn-to-night scrub with TAAU on, on Mac and Chrome, and list which recorded
-      defects still show.
-- [ ] Fix what shows, one defect at a time, with the referees green after each and no reference, case or bound
-      changed.
-- [ ] Record the commit M6 starts from, and rerun it beside the final build for the cost comparison; quote the
-      M1 and M2 records as history.
-- [ ] Maturity rows and the brief's G3s line, naming solar sky and aerial accuracy as not qualified.
+Read [Closing G3s](DESIGN.md#closing-g3s) first. Record the commit M6 starts from before changing anything:
+M6.5 reruns it beside the final build.
 
 ## M7 Haze thickens from crisp air to murk under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
 

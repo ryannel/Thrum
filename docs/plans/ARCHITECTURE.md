@@ -9,14 +9,14 @@
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | Nothing for its M9; APPLE-PRESENTATION M3 for its M6 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish (for ATMOSPHERE its M6, which closes G3s) |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
@@ -145,7 +145,8 @@ reasoning behind those entries. The project settings allow one Codex builder, so
 1. **First.** `PLATFORM-RUNTIME-MAC` M2. `APPLE-TILE` M0, then M1–M3. `APPLE-TILE` is first because everything
    after it reads its graph, its recipe selection or its pre-tone input.
 2. **Beside them, in other files.** `CREATOR` M1 (`thrum-app`, `thrum-controls`, `examples/starter`, docs).
-   `ATMOSPHERE` M5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam).
+   `ATMOSPHERE` M5 (`thrum-render/src/atmosphere`, the forward light group, the contribution seam), then its
+   M9 (the aerial pass at the model's ground), which waits for nothing and which `WATERS` M2 waits for.
 3. **After `APPLE-TILE:M0`.** `APPLE-PRESENTATION` M1 (jitter, matrices and motion), which runs on the current
    portable output and needs only M0's proof tools.
 4. **After `APPLE-TILE:M2`.** `APPLE-PRESENTATION` M2 (temporal inputs and history; it shares `runtime.rs`).
@@ -647,6 +648,33 @@ bytes. A fresh frame whose decoded bytes hash to the retained digest is taken as
 adds this reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`; the script's byte mode, the
 retained files and `APPLE-TILE`'s items do not change. If a set does not match on untouched main, the builder
 ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
+
+**Ruling on `ATMOSPHERE` M9 (with `APPLE-TILE` and `SHOWCASE`), 14 November 2026.** M9 is meant to change
+the default output of every scene: the aerial pass no longer stops a line of sight at the model's ground
+([its design](ATMOSPHERE/DESIGN.md#the-air-at-the-ground)). It is not built behind a selection, because the
+stop is a defect of the one aerial product and a selection would keep it in every scene that did not ask.
+
+- **Which baselines move.** All five registered sets are expected to: `apple-tile-native` and the four Chrome
+  manifests. Each holds terrain that reads a line which met the ground: low ground 3 to 12 km from the
+  valley's cameras, up to 0.4% of the covered pixels at the route's checkpoints, 4% to 5% in the sunset still
+  and 0.1% to 0.2% in the night still
+  ([the planner's reading of the mesh](../evidence/ATMOSPHERE/design-proof/README.md), a prediction and not a
+  GPU run). Those pixels gain haze. The sky, the stars, the near ground, the props and the letterbox bars are
+  predicted not to move. M9's builder records which sets did move.
+- **Who refreshes them.** The gate passes a covered change only with a proof for its exact content, so the
+  change and the references cannot land apart, and no milestone of `APPLE-TILE`'s could hold them. By this
+  ruling M9's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s own
+  scripts, in the landing that makes the change. The registry, the comparisons, their sampling and every
+  script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` M9.5 holds
+  the verifier at the starting commit and at the claimed one and the old and new hashes in both modules'
+  logs, M9.6 has a reviewer see that only distant low terrain moved, and `APPLE-TILE` M12 reruns its exact
+  matrices on the refreshed references with its items unchanged.
+- **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds; M9.7 runs that comparison
+  with its baseline and thresholds as they are. If it fails, the builder ends `BLOCKED` and `SHOWCASE`
+  settles it. Any other module's exact test that M9 moves is that module's under rule 1, and the builder
+  ends `BLOCKED` with it.
+- **Everyone else.** A builder with covered changes in flight reruns the verifier after it rebases onto M9,
+  as after any covered landing. A module whose milestone carries the verifier as an item needs no change.
 
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
@@ -1601,3 +1629,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `ATMOSPHERE` changed, and no contract text. Open for `ATMOSPHERE`'s next plan, in its log: the aerial
   pass stops a column at the model's ground, which thins haze just above the horizon for any observer
   near sea level, the main view's included.
+- 2026-11-14 `ATMOSPHERE` re-planned for [the air at the ground](ATMOSPHERE/DESIGN.md#the-air-at-the-ground),
+  acting on `SCENE-VIEWS`' proposal: a new milestone M9, built before M6, in which the aerial pass carries a
+  line of sight on under the model's ground, with the air's density by its own law and the Sun's light dimmed
+  by that air. No interface's arguments or units change. [Exact baselines](#exact-baselines) gains a ruling:
+  M9 changes the default output, all five registered sets are expected to move, and M9's builder refreshes
+  them in its own landing. `WATERS` M2 now waits for `ATMOSPHERE:M9`. `ATMOSPHERE` M7.3 gains probes near
+  the ground. No design or item of `SCENE-VIEWS`, `CLOUDS` or `APPLE-TILE` changed, no other item of
+  `WATERS`, and no contract text.

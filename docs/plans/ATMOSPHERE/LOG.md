@@ -342,3 +342,41 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   [part F](../../evidence/SCENE-VIEWS/design-proof/README.md)). Remedy as in Hillaire's
   [`RenderSkyRayMarching.hlsl`](https://github.com/sebh/UnrealEngineSkyAtmosphere/blob/master/Resources/RenderSkyRayMarching.hlsl).
   Mirror views inherit it and take the same fix. Not measured on a GPU.
+
+
+## 14 November 2026 — the air at the ground
+
+- 2026-11-14 The lead's task, acting on the proposal above: "the aerial pass stops a descending column at the
+  model's ground, so observers near sea level read thin haze just above the horizon, and mirror views inherit
+  it. Sea-level scenes (the sea, sunsets) are a showcase priority. Fix it in ATMOSPHERE's design and plan with
+  the modern technique, keeping SCENE-VIEWS, WATERS and CLOUDS consistent, and say where exact baselines move."
+- 2026-11-14 Added [The air at the ground](DESIGN.md#the-air-at-the-ground) and M9, placed before M6 and
+  waiting for nothing. The air goes on under the model's ground: a line keeps its direction and layers, its
+  samples under the ground take the density their laws give at that depth, and the Sun's light there is the
+  ground's, dimmed by the air between. It reaches every volume the one pass makes, a mirror view's included,
+  and the view volume's cells take the same rule in M7. No lent operation's arguments or units change.
+- 2026-11-14 Measured in [part IV](../../evidence/ATMOSPHERE/design-proof/README.md), a stand-in in f64. The
+  stop loses up to 92% of the in-scatter just above the horizon and up to 72% on the sea, in bands that move
+  with the camera. The selected rule is within 0.6% for Suns 2° up and higher. M9.1's allowance is set from
+  it: the selected rule at 0.35 of it or less, each wrong rule over it.
+- 2026-11-14 Not chosen. Holding the ground's air and light, which Unreal's author names: 3% to 6% low toward
+  a low Sun, the sunset case. Hillaire's re-aimed line: 8% to 24% high there. The density law with the
+  surface's light, as Bevy's march gives: up to 6% high. Moving the model's ground down, weighting the blend
+  in the decoder, and marching every pixel. A selection that keeps the stop as the default.
+- 2026-11-14 Exact baselines. M9 changes every scene's default output. All five registered sets are expected
+  to move, at distant low terrain only ([the valley reading](../../evidence/ATMOSPHERE/design-proof/README.md)),
+  and M9's builder refreshes them in its own landing by
+  [the module list's ruling](../ARCHITECTURE.md#exact-baselines). `WATERS` M2 now waits for M9.
+- 2026-11-14 M7.3 gains probes on the ground and just above the horizon, so the view volume is held where its
+  rows pass under the ground. M5, M6, M8 and the rest of M7 are unchanged.
+- 2026-11-14 Plan file. M3's and M4's criteria and work left are in
+  [the record](../../evidence/ATMOSPHERE/M1-M4-records.md), where they already stood, and no longer repeated
+  in the plan. M6's list of steps left the plan; its items hold them. The assumption that M5 proceeds ahead of
+  the port decision is deleted, because M5 is Done.
+- 2026-11-14 Checks. The done-when file passes the loop's validator. M9.1's and M9.2's commands were run and
+  fail as they should before the work exists. `./dev check`, the Chrome case, the verifier and the showcase
+  comparison were not dry-run: the GPU is shared, and they are commands of items already approved. Read for
+  this revision: Hillaire's reference shader, Bevy 0.17's aerial pass, the Unreal forum thread, `aerial.wgsl`,
+  `geometry.wgsl`, `transport.wgsl`, the aerial decoders and `gpu/tests/aerial.rs`. No GPU run by the planner.
+- 2026-11-14 The design has not been reviewed since this change. No builder starts M9 until a design review
+  returns Design Approved.

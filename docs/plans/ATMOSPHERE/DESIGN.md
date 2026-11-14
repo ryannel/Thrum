@@ -14,6 +14,8 @@ shared sky, Sun, light-transmittance and environment-reflection products."
 
 [The view volume](#the-view-volume-haze-fog-and-light-near-the-camera), at the end, governs M7 and M8, added on
 14 November for haze, fog and shafts of light; it is track 2 and follows G3s.
+[The air at the ground](#the-air-at-the-ground) governs M9, added the same day. M9 is built before M6: it
+corrects the aerial product where the view meets the ground, which every scene at sea level shows.
 
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
@@ -252,7 +254,7 @@ texels are already rounded to that step.
 | Sun light at a world position | RGB illuminance on a plane facing the Sun, from the true Sun through the air only; no geometric shadow, no cloud factor | Any world position. Above the 100 km top the light is unattenuated unless the ray enters the shell. Below the first chart row (6.15 m) the altitude clamps, a known approximation that reaches 1.2% in blue at sea level with the Sun on the horizon. A Sun behind the planet at that point returns exactly zero |
 | Sky radiance along a direction | RGB radiance of the sky without the Sun's disk: the solar part and the night part, already summed | The active camera's observer altitude only; any direction, including the ground side below the horizon. The night part exists for 0–15 km observer altitude; outside that the result is Sun-only and the fallback is reported, as today |
 | Incident diffuse on a normal | RGB irradiance from the sky, never negative | One answer per frame at the camera's location, for any normal. It does not vary with world position |
-| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
+| Aerial `(T,S)` to a point | RGB transmittance and in-scattered radiance, night included, accumulated **from the active camera** to a point in its view | The active view only, addressed by the point's screen position and its distance from the camera. Beyond 32 km it returns the 32 km value. From M9 the air goes on under the model's ground, so a point on low ground or just above the horizon takes the haze of its own line ([The air at the ground](#the-air-at-the-ground)). A segment that starts anywhere but the camera, and any second camera, is not offered in M5; a consumer that needs one proposes it through [the module list](../ARCHITECTURE.md#interfaces) |
 | Environment reflection | RGB radiance of the disk-free sky filtered to a GGX lobe around a direction at a roughness, solar and night parts decoded and summed; and the split-sum pair `(scale, bias)` for a view cosine and the same roughness | One cube per frame at the camera's location, no parallax. Roughness is the material roughness the forward pass uses, clamped to 0.045–1. View cosine 0–1. The library maps roughness to its filtered level; a contribution never names a mip |
 
 The reflection operation is the one `SEA` uses as the fallback under its screen-space reflection. It returns the
@@ -462,6 +464,214 @@ scene with a volume is on the route.
 - Whether a consumer needs aerial transport for a segment that does not start at the camera, or for a second
   camera. Neither is offered in M5; `CLOUDS` or `SEA` proposes it the same way.
 
+## The air at the ground
+
+M9, added on 14 November 2026. It is built before M6 and waits for nothing: the sea and sunsets are seen
+from sea level, and M6 waits for TAAU.
+
+**The request**, the lead's task of 14 November 2026, acting on
+[`SCENE-VIEWS`' proposal](LOG.md): "the aerial pass stops a descending column at the model's ground, so
+observers near sea level read thin haze just above the horizon, and mirror views inherit it. Sea-level scenes
+(the sea, sunsets) are a showcase priority. Fix it in ATMOSPHERE's design and plan with the modern technique,
+keeping SCENE-VIEWS, WATERS and CLOUDS consistent, and say where exact baselines move."
+
+### Cue
+
+| Cue | Where it must hold | Plausible wrong substitute, and what rejects it |
+|---|---|---|
+| G1 Haze deepens evenly to the horizon. Water and low ground take the haze their distance gives, and a hull, an island or a far shore just above the horizon stands in the same haze as the water under it, toward the Sun and away from it | Observers from the model's ground to 15 km; points to 32 km; any camera tilt; a Sun from high to setting; the main view, a mirror view and the view volume | Haze added by depth near the horizon, or a rule in the decoder for rows under the ground. Rejected by the read at a point against the product's own column along that point's line, at every tilt |
+
+The bar is the sea's horizon at sunset in Sea of Thieves and the coast in Red Dead Redemption 2, in words.
+
+### What is wrong today
+
+The aerial volume holds, for each of 32 by 32 lines of sight, the transport from the camera to 33 distances.
+The pass ends a line that descends where it meets the model's ground, the sphere at sea level, and every
+layer beyond holds the value at that end. No drawn point lies on such a line past its end. But a read blends
+the lines round a point, and round a point on low ground, or just above the horizon, one of them has ended
+short of the point's distance. The point then reads less haze than its own line holds.
+
+[Part IV](../../evidence/ATMOSPHERE/design-proof/README.md) runs the pass's quadrature in f64 in a stand-in
+air. In a 60° view, with points 1 to 30 km away:
+
+| Observer above the model's ground | A point on a line 0.05° to 1° above the horizon | A point on the ground |
+|---|---|---|
+| 0 m (a mirror view of the sea) | up to 92% of its in-scatter missing | |
+| 3 m | up to 89% | up to 72% |
+| 40 m | up to 67% | up to 51% |
+| 245 m (the showcase valley) | up to 35% | up to 39% |
+| 1.8 km | none | up to 12% |
+
+The loss comes and goes as the horizon falls on a row of the volume or between two. For the sea 3 km away
+from 40 m it runs from 5% to 31% and back within one row of camera tilt, which on level water is a band
+across the picture that moves with the camera.
+
+### Research
+
+Aerial perspective in current engines is a small volume aligned to the camera, as here
+([Hillaire 2020](https://diglib7.eg.org/bitstream/handle/10.1111/cgf14050/v39i4pp013-022.pdf); Unreal Engine's default path;
+Bevy's `aerial_view_lut`). Three treatments of the ground are published.
+
+- **Hillaire's reference implementation**
+  ([`RenderSkyRayMarching.hlsl`](https://github.com/sebh/UnrealEngineSkyAtmosphere/blob/master/Resources/RenderSkyRayMarching.hlsl),
+  MIT, read for this revision) integrates each cell by itself. A cell whose far end is under the ground has
+  that end lifted onto the ground, and the cell is integrated along the straight line from the camera to the
+  lifted point.
+- **Unreal Engine's** volume is the same author's. In 2021 he described what remains in it, "the low resolution
+  aerial perspective texture can show up when you are right-on or below the planet virtual ground", and the
+  remedy he thought best, "set the fog amount of voxel below the surface to the fog amount of their projected on the
+  planet ground level" ([forum](https://forums.unrealengine.com/t/sky-atmosphere-fog-issue/157202)). The
+  workaround he gave is to move the planet down. Unreal also offers aerial perspective marched for every pixel
+  as a costlier option.
+- **Bevy** (`aerial_view_lut.wgsl`, release 0.17, read for this revision) marches each line through the
+  ground with no test for it. Its density follows the exponential law below zero altitude, and its Sun's light
+  comes from a chart that ends at the ground.
+
+Part IV.2 runs each rule that has a figure below on the same points:
+
+| Rule for a line under the ground | In-scatter error in clear air, 60° view | Verdict |
+|---|---|---|
+| Stop at the ground (today) | 35% to 92% low | The defect |
+| Move the model's ground below the scene | | Every altitude in the scene is then wrong by the offset: thinner haze everywhere and a later sunset |
+| Hold: carry on, with the air and the Sun's light of the ground point above | Within 1.5% away from the Sun; 3% to 6% low toward a Sun 0.5° to 10° up | The remedy Unreal's author names. It leaves a kink at the ground in a function the read blends linearly, and it is worst in a sunset |
+| Re-aim: Hillaire's reference | 1% to 4% low, and 8% to 24% high toward a low Sun | The lifted line is at another angle to the Sun and another length, and each layer is marched again from the camera |
+| Dense: the density law carried under the ground, the Sun's light of the ground point above (Bevy's, in effect) | Up to 1% high for a high Sun or one behind the view; 1.5% to 6% high toward or across a low Sun | Denser air lit as if it were at the surface |
+| **Continue: the air goes on under the ground, its density by its own law and the Sun's light dimmed by that air** | **Within 0.6% for a Sun 2° up and higher, within 1.7% at 0.5°** | **Selected.** The line's values are then smooth across the ground, which is what a linear blend needs |
+| Weight the blend by which lines are above the ground, in the decoder | | Four loads in place of one filtered read in every reader, a second decoder for a mirror view, and nothing for a row pair that is wholly under the ground |
+| March the air for every pixel (Unreal's option) | | Water, clouds and a mirror view read the lent volume at points that are not opaque pixels; it would be a second product beside the volume |
+
+### Mechanism
+
+**The air goes on under the model's ground.** For the aerial product the ground is not an end. A line of
+sight keeps its direction and its layers at their own distances to 32 km or the top of the air, whichever
+comes first. At a sample under the ground:
+
+- the gases and the aerosol have the densities their own laws give at that depth, so the air is denser than
+  at the surface, as the air of a basin below sea level is;
+- the Sun's light is the light at the ground point above the sample, dimmed by the air between along the
+  Sun's ray. The charts end at the ground, so the pass takes that dimming from how the charts' light changes
+  with height just above the ground, or integrates it. Part IV.2's `slope` is the first: it stays within 0.4
+  percentage points of the exact continuation. Which one is the builder's; [the acceptance](#numerical-acceptance-for-the-air-at-the-ground)
+  decides;
+- a Sun the ground hides from the ground point above stays hidden;
+- the multiple-scattering source and the night source are those of the ground point above, in the denser air.
+  Both are diffuse and small, and neither has the Sun's steep change with height.
+
+Transmittance, solar in-scatter, the single-scattered luminance the shadowed decoder splits off, and the night
+term all go on this way. Arithmetic far under the ground, where no read reaches, is the builder's to keep
+finite: a read blends lines no more than one row apart, so the deepest sample any read takes is 32 km times
+the row spacing down, 2 km at a 90° field of view, where the aerosol is 5.3 times its surface density.
+
+**Nothing above the ground changes.** A line that never meets the ground, and every layer of a descending
+line that ends before the line meets it, holds the bytes it holds today. The decoders, the lent operation's
+arguments and units, the sky-view chart and the lent Sun light are untouched. The sky's own ground side still
+ends at the ground, because that is where a line of sight into the planet ends.
+
+**Every volume the pass makes.** There is one aerial pass, so the rule reaches each of its volumes with no
+second copy:
+
+- the main view's volume, in every scene, with no selection. A scene cannot ask for the old stop;
+- a secondary view's volume, which [`SCENE-VIEWS`](../SCENE-VIEWS/DESIGN.md#what-a-views-air-is-held-to)
+  defines as this pass's own for an observer at the mirror plane's height. A mirror of the sea stands on the
+  model's ground, where every descending line is under it from the start;
+- [the view volume](#the-view-volume-haze-fog-and-light-near-the-camera), whose cells take the same rule
+  for the air's terms in M7.
+
+**A drawn point under the model's ground**, such as land below sea level, takes the air of its whole line,
+the part under the ground included. `WATERS` removes the forward pass's air from a sea bed with the same
+lookup that applied it ([its optics](../WATERS/DESIGN.md#optics)), so it is unaffected by what the volume
+holds there.
+
+### Check that it can work
+
+The pass already takes a sample's altitude and its direction to the Sun from the sample's own position, and
+its density law is a pair of exponentials and a tent that is zero below 10 km, so the law is defined at
+negative altitude as written. The Sun's light is one more read of a chart the pass already samples. Part IV,
+in f64, in single scattering, with the engine's molecules and aerosol in one band at a time:
+
+- **IV.2, by Sun.** `Continue` is within 0.6% of a fine quadrature of the point's own line for Suns 2° up and
+  higher, across observers 0 to 245 m, lines 0.05° to 1° above the horizon, points on the ground and points
+  1 to 30 km away, at every camera tilt. `Hold` is 3.4% to 6.2% low toward a low Sun, where most of the
+  in-scatter is the aerosol's forward peak and the aerosol's scale height is close to the height one row
+  spans at 30 km.
+- **IV.3, by field of view.** As a share of [the view volume's ceiling](#numerical-acceptance-for-the-view-volume):
+  at most 0.08 at 30° to 60° and 0.28 at 90° for Suns 2° up and higher; 0.31 and 0.93 with the Sun 0.5° up
+  dead ahead. The figures against the product's own column along the line are the same to two places: what
+  remains is the blend of rows, and no part of it is the quadrature along the line.
+- **IV.4, in three bands.** Against the allowance below, `continue` is at most 0.35 in red, green and blue.
+  `Hold` misses it in transmittance in every case, by 1.2 to 2 times. `Dense` misses it in in-scatter with
+  the Sun 2° up, by 1.2 to 2.7 times. The stop misses by 33 times and more.
+- **IV.5, the view volume's rows.** On 90 rows the stop is still 78% low from 3 m, and `continue` is within
+  0.1%.
+
+Unrun: the engine's spectral integrator, its multiple scattering and its charts' own interpolation near the
+ground, which M9.1 sees first; and the look, which `WATERS` M2 judges on a sea.
+
+### Numerical acceptance for the air at the ground
+
+M9.1 compares a read with **the product's own column along the point's line**: the stored column of a texel
+whose centre lies on that line, in a volume made for a camera turned so that one does. The reference is made
+by the same pass, charts and layers as the read, and takes no blend of rows. So the comparison measures what
+the rule decides and nothing else, and it qualifies nothing about how far the stored transport is from true
+transport, which stays [unqualified](#numerical-acceptance).
+
+- **The read.** The f64 evaluation of the lent operation on the volume read back, as
+  [the filtered-decode rule](#numerical-acceptance) defines it, at a point that lies on a column of the
+  volume and between two rows. H4 already holds the sampler to that evaluation, and a sampler's blend weights
+  are too coarse to carry this comparison.
+- **The cases.** A 60° field of view. Observers 0, 3, 50 and 245 m above the model's ground, with points 3,
+  10 and 30 km away on lines 0.05° and 0.2° above the horizon. Points on the model's ground 3 km from an
+  observer at 3 m, 3 and 10 km from one at 40 m, and 3, 10 and 30 km from one at 100 m. Each at eight camera
+  pitches that walk the horizon across one row, and with the Sun 45° up and 60° across the view, 10° up
+  behind it, 5° up and 20° off the view's heading, and 2° up and 10° off it.
+- **The allowance decides.** Per channel: transmittance within `0.01 × expected + 0.001`; solar in-scatter
+  within `0.025 × expected + 0.0025 × F`, where `F` is the reference column's in-scatter at 32 km; each plus
+  `Q`, one stored step. The night term within 10% of the reference's, which is P5's bound. Part IV.4 puts the
+  selected rule at 0.35 of this or less, and each wrong rule over it.
+- **The stop must fail.** From the same volumes, the test evaluates each read again with every column held
+  at its value where it met the ground. For the points 30 km away above the horizon and the ground points
+  10 km away, that read misses the allowance by more than five times at one pitch or more; part IV.4's least
+  is 11 times.
+- **The record.** The worst share of the allowance by Sun and channel, and beside it the same reads with the
+  Sun 0.5° up dead ahead and at a 90° field of view. The record decides nothing.
+- **A miss is a plan change.** If a pass the builder believes follows the mechanism misses the allowance,
+  the builder records where and by how much and ends `BLOCKED`. The allowance is not widened in the build.
+
+M9.2 pins what does not move: every texel of a line that never meets the ground, and every layer that ends
+before its line meets the ground, holds the bytes the commit before M9 stored, for the same frames.
+
+P10's fixture, a camera at 245 m with rows 1.1° below the level, already holds lines that meet the ground
+inside 32 km. It compares storage with a float32 run of the same integrator, so it passes unchanged and now
+covers the air under the ground. No preserved referee's reference, case or bound changes.
+
+### Exact baselines
+
+M9 is meant to change every scene's default output, so [rule 1](../ARCHITECTURE.md#exact-baselines) applies
+as a planned move. [A reading of the valley's mesh](../../evidence/ATMOSPHERE/design-proof/README.md) predicts
+which pixels: terrain whose altitude is less than about 3% of its distance, which from the valley's cameras is
+the low ground 3 to 12 km out. That is up to 0.4% of the covered pixels at the moving route's checkpoints, 4% to
+5% in the sunset still and 0.1% to 0.2% in the night still. Those pixels gain haze; nothing else is predicted
+to move. All five registered sets hold such pixels, so all five are expected to move, the scene-linear ones
+with certainty. [The module list's ruling](../ARCHITECTURE.md#exact-baselines) says who refreshes them and
+how; M9.5 and M9.6 carry it.
+
+### Risks
+
+| Risk | Early sign | Wrong substitute to refuse |
+|---|---|---|
+| The engine's read misses the allowance where the stand-in passes | M9.1's first run | Widening the allowance, or dropping the low Suns |
+| Only the density is continued, with the Sun's light of the surface | In-scatter high toward a Sun 2° up; M9.1 misses there | Tuning the density to hide it |
+| A refresh hides an unrelated change | A reference moves at pixels the volume cannot reach: sky, near ground, a prop | Refreshing without M9.6's images |
+| Values far under the ground overflow or go to NaN | A non-finite texel in the volume read back | Clamping the stored value after the fact |
+| Another builder is in `aerial.wgsl` (`SCENE-VIEWS` M1, `CLOUDS`' rulings) | A merge that restores the stop | A second copy of the pass |
+
+### Cost
+
+A descending line now runs all 32 layers, where it used to skip those past the ground: at most the work the
+upward lines already do, with one more chart read for each sample under the ground. The volume is 1,024
+lines of 128 steps. M9.8 records the aerial pass's GPU time paired before and after on the valley, on the Mac
+and in Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
+
 ## Closing G3s
 
 M6. The gate closes when the valley's sky and sunlight pass a clean-context review in motion on Mac and Chrome.
@@ -605,6 +815,14 @@ only, because the provider has already put its own optical depth into the kernel
 order. The cell holds the summed extinction and the summed lit source. Beside them it holds the **clear
 baseline**: the air and haze alone, with no shadow, no cloud factor and no medium.
 
+**A cell under the model's ground.** The grid's rows descend as the aerial volume's do, and a read blends
+them the same way. So a cell's point under the ground takes the air's terms by
+[the rule M9 gives a column](#the-air-at-the-ground): the densities their laws give at that depth, and the
+Sun's light of the ground point above dimmed by the air between. The joint cell and the clear baseline both
+take it. A provider's coefficients are the provider's at every point the volume names, and the scene's
+shadow and the cloud factor are read at the point as anywhere. On 90 rows the stop would lose 78% of the
+in-scatter just above the horizon from 3 m, and the rule is within 0.1% (part IV.5).
+
 **History.** A cell's coefficients and sources are blended with their history, reprojected through the cell's
 world position and the previous view, and every frame each ray is integrated from the blended cells with the
 step that conserves energy. History is kept on what is integrated and not on the integrated result, so a
@@ -693,6 +911,9 @@ and what is recorded are kept apart.
 - **A miss is a plan change.** If a volume the builder believes correct misses the ceiling at a grid a recipe
   ships, the builder records where and by how much and ends `BLOCKED`. The ceiling is not widened in the build.
   Part III says what to expect and what the remedies are.
+- **Near the ground.** M7.3's probes include points on the model's ground and on lines 0.05° and 0.2° above
+  the horizon, from observers 3 m, 40 m and 245 m up, so the ceiling holds the volume where its rows pass
+  under the ground.
 - **At a medium's face** the volume resolves the medium to a cell, so M8.1's probes stand a cell or more from
   its slab's faces.
 - **The wrong composition** M8.1 rejects is the slab's own pair composed with the air's pair, in either order.
