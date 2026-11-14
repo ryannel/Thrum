@@ -1,0 +1,54 @@
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 5.48s
+    Finished `release` profile [optimized] target(s) in 0.17s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+scan 1.362208ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 33.948959ms, publish 362.375µs -> generation 1
+Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/scripts/capture_v1_runtime.py", line 398, in <module>
+    run(parser.parse_args())
+    ~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/scripts/capture_v1_runtime.py", line 301, in run
+    load = LoadRecord(output)
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/scripts/t2_load.py", line 19, in __init__
+    self.processes = subprocess.check_output(
+                     ~~~~~~~~~~~~~~~~~~~~~~~^
+        ["/bin/ps", "-axo", "pid,pcpu,comm", "-r"], text=True).splitlines()[:16]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 587, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 669, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 1213, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 2156, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: '/bin/ps'
+Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/scripts/culling_capture.py", line 39, in <module>
+    main()
+    ~~~~^^
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/scripts/culling_capture.py", line 26, in main
+    subprocess.run(command, cwd=ROOT, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 692, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command ['python3', 'scripts/capture_v1_runtime.py', '--binary', 'target/release/v1-game', '--store', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/capture-20261114-030520/store', '--case', 'route', '--route', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/capture-20261114-030520/fast-yaw-1080.json', '--mode', 'realtime', '--output', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/capture-20261114-030520/native-realtime'] returned non-zero exit status 1.

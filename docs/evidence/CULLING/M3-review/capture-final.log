@@ -1,0 +1,25 @@
+RUN cargo build --locked --offline --release -p v1-game -p thrum-cook
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.72s
+RUN sh examples/v1-game/web/build.sh
+    Finished `release` profile [optimized] target(s) in 0.37s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+RUN target/release/thrum-cook cook examples/v1-game/assets/showcase /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/store
+scan 274.25µs (reused 10 hashed 0 unstable 0), cooked 0 reused 9 in 2.153875ms, publish 262.25µs -> unchanged
+RUN native fixed route through submitted-image capture
+RUN node scripts/capture_v1_browser.mjs --cook target/release/thrum-cook --mode fixed --route-file examples/v1-game/routes/moving-v1.json --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-fixed
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-fixed/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 600226958 encoded bytes
+RUN python3 scripts/package_v1_browser.py --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-fixed
+RUN python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/store --case route --route /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/culling-fast-yaw-1080.json --mode realtime --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/native-realtime
+{"complete": true, "console_locked": false, "retained_bytes": 4501523112}
+RUN node scripts/capture_v1_browser.mjs --cook target/release/thrum-cook --mode realtime --route-file examples/v1-game/routes/culling-fast-yaw.json --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-realtime
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-realtime/ThrumCapture.app: replacing existing signature
+PASS complete capture; 482 exact submitted images, 595426501 encoded bytes
+RUN python3 scripts/package_v1_browser.py --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/chrome-realtime
+CAPTURE COMPLETE /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7

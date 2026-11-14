@@ -153,8 +153,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -164,8 +164,8 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -173,10 +173,10 @@
           "statement": "The valley's default mode is set by the design's rule from paired rows on the moving route, recorded with their load and the reason.",
           "ask": "Do the retained rows support the valley's default mode by the design's rule, and does the game report that mode on the Mac and in Chrome?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CULLING/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -185,8 +185,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -196,8 +196,8 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -207,8 +207,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -217,8 +217,8 @@
           "inspect": "Capture the valley with T2 engine capture: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback, not elapsed-time motion. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive frames at 1x.",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -227,8 +227,8 @@
           "inspect": "Capture the valley in Chrome with T2 engine capture: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -237,8 +237,8 @@
           "ask": "Does each clause of gate G3c in the brief hold on main, with evidence linked from docs/evidence/CULLING/: compute frustum and Hi-Z culling; GPU-written indirect instance counts; one indexed indirect draw per mesh and pipeline bucket; stable mesh offsets; a material table that compute can read; visibility and image equivalence; full- and partial-visibility costs recorded as tripwires? Is the ledger's G3c row current, with implementation, correctness, visuals and device results kept apart?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -248,16 +248,27 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CULLING/M3.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CULLING/M3-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh."
+      "status": "in_progress",
+      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
+      "findings": [
+        {
+          "name": "Star visibility selects Direct for the cooked valley",
+          "item": "M3.3",
+          "repeat": false
+        },
+        {
+          "name": "Legacy culling cost benchmarks silently measure Direct twice",
+          "repeat": false
+        }
+      ]
     }
   ]
 }

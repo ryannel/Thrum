@@ -1,0 +1,29 @@
+   Compiling objc2-foundation v0.3.2
+   Compiling thiserror v2.0.21
+   Compiling bytemuck v1.25.2
+   Compiling serde_core v1.0.229
+   Compiling divan-macros v0.1.21
+   Compiling divan v0.1.21
+   Compiling naga-types v30.0.1
+   Compiling objc2-metal v0.3.2
+   Compiling naga v30.0.1
+   Compiling wgpu-types v30.0.1
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling serde_json v1.0.154
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling wgpu-core v30.0.1
+   Compiling wgpu v30.0.1
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/crates/thrum-render)
+    Finished `bench` profile [optimized] target(s) in 12.82s
+     Running benches/camera_culling.rs (target/release/deps/camera_culling-c5cce7b59acff73a)
+adapter=Apple M3 Max; 1280x720; shadows on; ABBA 60 blocks (A=Direct, B=Frustum); p50 (p95) per frame
+count | view | in view | whole GPU ms D→F | forward ms D→F | visibility ms | within-block F−D GPU ms | CPU encode us D→F
+10000 | full | 100.0% | 1.669 (1.829) → 1.682 (1.867) | 0.829 → 0.831 | 0.000 (0.000) | +0.028 | 41 → 42
+10000 | half | 50.8% | 2.426 (2.504) → 2.423 (2.499) | 1.200 → 1.198 | 0.000 (0.000) | +0.004 | 133 → 132
+10000 | 5% | 4.8% | 1.840 (1.930) → 1.841 (1.905) | 0.901 → 0.900 | 0.000 (0.000) | +0.002 | 123 → 126
+100000 | full | 100.0% | 3.002 (3.128) → 2.989 (3.104) | 2.066 → 2.057 | 0.000 (0.000) | -0.006 | 159 → 155
+100000 | half | 50.5% | 3.773 (3.811) → 3.772 (3.803) | 2.842 → 2.840 | 0.000 (0.000) | +0.003 | 167 → 166
+100000 | 5% | 5.0% | 2.526 (2.566) → 2.527 (2.569) | 1.581 → 1.584 | 0.000 (0.000) | +0.002 | 34 → 33

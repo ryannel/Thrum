@@ -1,0 +1,32 @@
+RUN cargo build --locked --offline --release -p v1-game -p thrum-cook
+    Blocking waiting for file lock on package cache
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/target/release/deps/libintel_tex_2-109965a54605b5eb.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.48s
+RUN sh examples/v1-game/web/build.sh
+    Finished `release` profile [optimized] target(s) in 0.29s
+Run: python3 -m http.server 8765 --bind 127.0.0.1 --directory "target/v1-game-web"
+RUN node docs/evidence/CULLING/M3-review/stars-default.mjs
+ordinary adapter=browser WebGPU (adapter name withheld) format=Bgra8Unorm extent=1280x720; callbacks=603 presented=602 samples=600 ticks=601 elapsed=10.030s unavailable=0 overload_events=0 refused_ticks=0 timestamp_clamps=0 shed_views=1 report_drops=0 generation=1 recovery_attempts=0 recovered=0 GPU_timed=600 latest_visual_age=0; tick CPU p50/p95=200.0/300.0 us; encode CPU p50/p95=300.0/600.0 us; GPU near/far/cluster/forward/history/display/present p50-p95 ms=0.066/0.066, 0.262/0.393, 0.000/0.066, 0.524/0.590, 0.000/0.066, 0.524/0.590, 0.524/0.524; culling=Frustum; culling_counted=600/600 culling_drawn_p50=0 culling_drawn_p95=0 culling_prepass_p50=0 culling_active=10000; culling_requested=Frustum culling_reason=Supported
+&stars=off adapter=browser WebGPU (adapter name withheld) format=Bgra8Unorm extent=1280x720; callbacks=603 presented=602 samples=600 ticks=601 elapsed=10.029s unavailable=0 overload_events=0 refused_ticks=0 timestamp_clamps=0 shed_views=1 report_drops=0 generation=1 recovery_attempts=0 recovered=0 GPU_timed=600 latest_visual_age=0; tick CPU p50/p95=100.0/300.0 us; encode CPU p50/p95=200.0/500.0 us; GPU near/far/cluster/forward/history/display/present p50-p95 ms=0.066/0.066, 0.262/0.328, 0.000/0.066, 0.590/0.655, 0.000/0.066, 0.524/0.590, 0.524/0.524; culling=Direct; culling_requested=Direct culling_reason=RequestedDirect
+&stars=off&culling=frustum adapter=browser WebGPU (adapter name withheld) format=Bgra8Unorm extent=1280x720; callbacks=602 presented=602 samples=600 ticks=601 elapsed=10.017s unavailable=0 overload_events=0 refused_ticks=0 timestamp_clamps=0 shed_views=0 report_drops=0 generation=1 recovery_attempts=0 recovered=0 GPU_timed=600 latest_visual_age=0; tick CPU p50/p95=100.0/300.0 us; encode CPU p50/p95=200.0/500.0 us; GPU near/far/cluster/forward/history/display/present p50-p95 ms=0.066/0.066, 0.262/0.393, 0.000/0.066, 0.524/0.590, 0.000/0.066, 0.524/0.590, 0.524/0.524; culling=Frustum; culling_counted=600/600 culling_drawn_p50=0 culling_drawn_p95=0 culling_prepass_p50=0 culling_active=10000; culling_requested=Frustum culling_reason=Supported
+RUN target/release/thrum-cook cook examples/v1-game/assets/showcase /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/store
+scan 1.788292ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 35.02275ms, publish 339.792µs -> generation 1
+RUN python3 scripts/capture_v1_runtime.py --binary target/release/v1-game --store /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/store --case route --route /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/moving-v1-1080.json --mode fixed --output /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/native-fixed
+{"complete": false, "console_locked": false, "retained_bytes": 877}
+game failed: exit 1; see stderr.txt
+Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/docs/evidence/CULLING/M3-review/capture_review.py", line 21, in <module>
+    run(['python3','scripts/capture_v1_runtime.py','--binary','target/release/v1-game','--store',str(out/'store'),'--case','route','--route',str(dest),'--mode',mode,'--output',str(out/f'native-{mode}')])
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/docs/evidence/CULLING/M3-review/capture_review.py", line 11, in run
+    subprocess.run(args, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 692, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command ['python3', 'scripts/capture_v1_runtime.py', '--binary', 'target/release/v1-game', '--store', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/store', '--case', 'route', '--route', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/moving-v1-1080.json', '--mode', 'fixed', '--output', '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/CULLING/tmp/culling-m3/review-21aa3fb7/native-fixed'] returned non-zero exit status 1.

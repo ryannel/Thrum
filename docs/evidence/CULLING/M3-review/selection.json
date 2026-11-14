@@ -1,0 +1,515 @@
+{
+  "revision": "21aa3fb764d1931b88ba2d08f919cd290d7adc82",
+  "selections": [
+    {
+      "file": "native-fixed-route/approach.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/approach.ppm",
+      "source_sha256": "3f6fd8c65415fe7de47084c373deaaf1ab8a1d0c7cc833596cd96f352c199a74",
+      "sha256": "35d37f5eded4ded6cb34adbf70684a089027555063061fdb114887f5b19bbf8c"
+    },
+    {
+      "file": "native-fixed-route/mirror-light.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/mirror-light.ppm",
+      "source_sha256": "4238aeac89d1f372865ef95557b912fad85e32085f0813e3d57f0db2a24d960b",
+      "sha256": "8fa10750834a322192068094cbf976ffb894764977a5e77b7403a9e49e6e6920"
+    },
+    {
+      "file": "native-fixed-route/near-plane.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/near-plane.ppm",
+      "source_sha256": "d107d5cf47ac828efb8393a676f2335f2f1613535fd9749d04ae86a1a3f4c9d9",
+      "sha256": "d539da22c8411e8b42a5110adbe49afdee2cc795ff43b4a108ff4ec132441e94"
+    },
+    {
+      "file": "native-fixed-route/post-cut.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/post-cut.ppm",
+      "source_sha256": "dd6b4827e5cd94ce94b9b19b18b5dc6e45fe5324ce63aa3988cb53fd9b204031",
+      "sha256": "020ca162981fb28ee0c330276543ad8fb1e64719b65bbb97a1f71e0220ff7100"
+    },
+    {
+      "file": "native-fixed-route/pre-cut.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/pre-cut.ppm",
+      "source_sha256": "90f89951c63d2c63e4b2eb6bbb583aa93df1b2ebf73af33f89770c354e3872b1",
+      "sha256": "977a2aaa91aaf169f5cdb5e83cea3bb8f3b06a81988c2a91c742b85bdaad89da"
+    },
+    {
+      "file": "native-fixed-route/approach.identity.json",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/approach.identity.json",
+      "sha256": "ea824cc0f2c469aeedf4f362120d292de8b48199eca4ed57bfde09c9d7286326"
+    },
+    {
+      "file": "native-fixed-route/pre-cut.identity.json",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/pre-cut.identity.json",
+      "sha256": "5dceff4a0f8acf0b3f87ab4ba183ffe5f529ff4ee4f9a488819e460aaaef6290"
+    },
+    {
+      "file": "native-fixed-route/post-cut.identity.json",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/post-cut.identity.json",
+      "sha256": "5f3937fd4664b9b9dd7d644284e219b743fc6a7c5c05f57426e845bee144a021"
+    },
+    {
+      "file": "native-fixed-route/near-plane.identity.json",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/near-plane.identity.json",
+      "sha256": "487b00f865a48b35d751ee609c0d59d2705d51a77f00fb5873ae5a2697f4fc65"
+    },
+    {
+      "file": "native-fixed-route/mirror-light.identity.json",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-fixed-route/checkpoints/mirror-light.identity.json",
+      "sha256": "9284de11d67d09d118a775456b280ace140f0c5145ea466b86b25382e1f70cfb"
+    },
+    {
+      "file": "chrome-fixed/checkpoint-225.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-fixed/png/000285.png",
+      "sha256": "7128011296fea042aba576ac3081006958d3a193e145c924dfda8d081fa48e9f"
+    },
+    {
+      "file": "chrome-fixed/checkpoint-350.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-fixed/png/000409.png",
+      "sha256": "6b994b64441b010d11624ae3f1b45e851e4d3f24886672b47731648ba7b24ad5"
+    },
+    {
+      "file": "chrome-fixed/checkpoint-376.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-fixed/png/000435.png",
+      "sha256": "28d6d8289b52b51aa3015408336b5b5a9d5f706a4ede4191f9b2ded35f44d228"
+    },
+    {
+      "file": "chrome-fixed/checkpoint-386.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-fixed/png/000445.png",
+      "sha256": "4f39145b2fc62f5efc3b95393784faa52a822d4c91b32e9f68d5ab0b47380fb3"
+    },
+    {
+      "file": "chrome-fixed/checkpoint-530.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-fixed/png/000589.png",
+      "sha256": "1f9ffd94d3e1109c64b76d687f122564c2c95078f463415adff864e1411f2587"
+    },
+    {
+      "file": "native-realtime/preview-1x.mp4",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-realtime/preview-1x.mp4",
+      "sha256": "4ecb47de0aa572a26e482dd61a2c462132b9ba0879d60dbde640a1f047054e4a"
+    },
+    {
+      "file": "native-realtime/contact.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-realtime/contact.png",
+      "sha256": "631a67bcb7c298470d25b0f4ca0808c926631c80210ac3f42ea9dad50010b874"
+    },
+    {
+      "file": "native-realtime/whole-285.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-realtime/png/000570.png",
+      "sha256": "669ec5594f8fb4fd821799b8e31e626d065cf606169080cf610911e422e8f695"
+    },
+    {
+      "file": "native-realtime/crops-285-1x.png",
+      "sha256": "2fa9da99daa462d83639a83118f224bc7a3085d2432031a555d0a9532e0d9cdd",
+      "regions_xywh": [
+        [
+          0,
+          410,
+          320,
+          240
+        ],
+        [
+          800,
+          108,
+          320,
+          240
+        ],
+        [
+          1600,
+          410,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 570,
+          "tick": 285,
+          "source_png_sha256": "669ec5594f8fb4fd821799b8e31e626d065cf606169080cf610911e422e8f695"
+        },
+        {
+          "submission_id": 571,
+          "tick": 285,
+          "source_png_sha256": "c511e3e6a499937bbb2cbe250930ad406e5caeb521887f9da304cf7bb287304f"
+        },
+        {
+          "submission_id": 572,
+          "tick": 286,
+          "source_png_sha256": "386f1207fd2321703653d020f0bccd192611975523fd1ec5b15938ce8b2ca181"
+        },
+        {
+          "submission_id": 573,
+          "tick": 286,
+          "source_png_sha256": "25e70e0582f9bf16eb8906c62f77b8c4cc7ecefa522e1d03359c696a8963c457"
+        },
+        {
+          "submission_id": 574,
+          "tick": 287,
+          "source_png_sha256": "7af46487dd5807b5d70586b47aba71b3b4a67fcdbd23114427a8f2b3aa0136be"
+        },
+        {
+          "submission_id": 575,
+          "tick": 287,
+          "source_png_sha256": "a8f5c697b8567f168bc41cac7d4be88b40792a94eb1bf579ef8d1119e8052bcc"
+        }
+      ]
+    },
+    {
+      "file": "native-realtime/whole-375.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-realtime/png/000750.png",
+      "sha256": "821d63616d843bac590b5797aeb1083bfff929b1194edde45142f005d03f60e0"
+    },
+    {
+      "file": "native-realtime/crops-375-1x.png",
+      "sha256": "45f0896dd25bbc84168da7ac9eb1154f5e24d866d755dc3011c92ec4f4042b39",
+      "regions_xywh": [
+        [
+          0,
+          410,
+          320,
+          240
+        ],
+        [
+          800,
+          108,
+          320,
+          240
+        ],
+        [
+          1600,
+          410,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 750,
+          "tick": 375,
+          "source_png_sha256": "821d63616d843bac590b5797aeb1083bfff929b1194edde45142f005d03f60e0"
+        },
+        {
+          "submission_id": 751,
+          "tick": 375,
+          "source_png_sha256": "a73553d6589fa807ecfa284072a9a3ecaa41411f57ab59188f14f033574e1e62"
+        },
+        {
+          "submission_id": 752,
+          "tick": 376,
+          "source_png_sha256": "c17028136a1ea9f0c59b7a70d2467c1dbbcede7268091163e505823f35d229fe"
+        },
+        {
+          "submission_id": 753,
+          "tick": 376,
+          "source_png_sha256": "184441bd636d7aa8c1d5be949baa218eb3a3247ab168017dcb8fe7d9fb3bc5f1"
+        },
+        {
+          "submission_id": 754,
+          "tick": 377,
+          "source_png_sha256": "3b0844db0a6a70162269e40aa4aa95466d36e89f785ba9a2dac5a9711ebf2cfb"
+        },
+        {
+          "submission_id": 755,
+          "tick": 377,
+          "source_png_sha256": "8cc1cdf7c1c3f287ab6c844515411867510278ecae99b7d2d54398c0ec59529d"
+        }
+      ]
+    },
+    {
+      "file": "native-realtime/whole-420.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/native-realtime/png/000840.png",
+      "sha256": "93e910fea95159cc62a711f0a31f7a1faadff5c11d01892c5bd86577e4f672b0"
+    },
+    {
+      "file": "native-realtime/crops-420-1x.png",
+      "sha256": "c9d3ed5b218f3dd2ac75369d2e1ed9d8e4dc8be6bb71fb1e263e38da1f8e804d",
+      "regions_xywh": [
+        [
+          0,
+          410,
+          320,
+          240
+        ],
+        [
+          800,
+          346,
+          320,
+          240
+        ],
+        [
+          1600,
+          410,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 840,
+          "tick": 420,
+          "source_png_sha256": "93e910fea95159cc62a711f0a31f7a1faadff5c11d01892c5bd86577e4f672b0"
+        },
+        {
+          "submission_id": 841,
+          "tick": 421,
+          "source_png_sha256": "d23ae5b393b46a1d36ff07361a7cf082fc7fbcdd4020af7d778c53cf2bd1ef32"
+        },
+        {
+          "submission_id": 842,
+          "tick": 421,
+          "source_png_sha256": "dd40a2b6ff53f0bf5ea6bde79e4b170c7686b9ef8ecd46895219e3330f936815"
+        },
+        {
+          "submission_id": 843,
+          "tick": 421,
+          "source_png_sha256": "dabe19b61a46a38137ba66a815d7a78003be93ee0a5a809c39f20a90f51c3832"
+        },
+        {
+          "submission_id": 844,
+          "tick": 422,
+          "source_png_sha256": "b8c7cf877bcc147504fe15002a357280abee3c91e3aa68d53a164fc2796dc5c5"
+        },
+        {
+          "submission_id": 845,
+          "tick": 422,
+          "source_png_sha256": "10d9744a906d25d10586de238d0a145d65c2988de904de94c04cd2c12a97ba6d"
+        }
+      ]
+    },
+    {
+      "file": "chrome-realtime/preview-1x.mp4",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-realtime/preview-1x.mp4",
+      "sha256": "125ac96404eeb483c058a943f909e7f70f160514a5b0357d4410091de8c2c31e"
+    },
+    {
+      "file": "chrome-realtime/contact.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-realtime/contact.png",
+      "sha256": "51a6b74a416f2a2db8c7b4692d4e7dbdd2a00435ce017e60fa042ff1f981cdc2"
+    },
+    {
+      "file": "chrome-realtime/whole-285.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-realtime/png/000345.png",
+      "sha256": "9823ff0ce276b2072ce8d95d69ac865f7ca40d41c2b0b8b6ad727c21a3b83f86"
+    },
+    {
+      "file": "chrome-realtime/crops-285-1x.png",
+      "sha256": "77014095a7f5275353d6df2769fd1eab972c96e2382a24ab2f365ee3662a7dce",
+      "regions_xywh": [
+        [
+          0,
+          274,
+          320,
+          240
+        ],
+        [
+          480,
+          72,
+          320,
+          240
+        ],
+        [
+          960,
+          274,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 345,
+          "tick": 285,
+          "source_png_sha256": "9823ff0ce276b2072ce8d95d69ac865f7ca40d41c2b0b8b6ad727c21a3b83f86"
+        },
+        {
+          "submission_id": 346,
+          "tick": 286,
+          "source_png_sha256": "bcd8f3ccabab408d2785c08e6effdb462e20d993b38fdd8fe1dfe20ac28a77c3"
+        },
+        {
+          "submission_id": 347,
+          "tick": 286,
+          "source_png_sha256": "f35b0f9123d88686bc9025717d4e61f4be099fefeb09a3fdfe4ad35be322287f"
+        },
+        {
+          "submission_id": 348,
+          "tick": 287,
+          "source_png_sha256": "64baae6e3906bceaf5e091afa4843f321f4971da926ea5f551c04fa766374eb3"
+        },
+        {
+          "submission_id": 349,
+          "tick": 289,
+          "source_png_sha256": "b872eb24bc2fb435e54058f10e89128334777a8d1ea4f623a95dac07e003afda"
+        },
+        {
+          "submission_id": 350,
+          "tick": 290,
+          "source_png_sha256": "9f163e5762bffc0bc194ec4a20128171dab4bce77a8c8a7d4625864546049694"
+        }
+      ]
+    },
+    {
+      "file": "chrome-realtime/whole-375.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-realtime/png/000435.png",
+      "sha256": "1e1435d8bc41a333e679cf2612e20170cc72e8f2080b131d27104f0d389c10f8"
+    },
+    {
+      "file": "chrome-realtime/crops-375-1x.png",
+      "sha256": "d1f641449f482d15a5bffdf0e28c24254e8932c276ddf140393111c3ce1fd8af",
+      "regions_xywh": [
+        [
+          0,
+          274,
+          320,
+          240
+        ],
+        [
+          480,
+          72,
+          320,
+          240
+        ],
+        [
+          960,
+          274,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 435,
+          "tick": 374,
+          "source_png_sha256": "1e1435d8bc41a333e679cf2612e20170cc72e8f2080b131d27104f0d389c10f8"
+        },
+        {
+          "submission_id": 436,
+          "tick": 376,
+          "source_png_sha256": "cbce6b6044e87e1eb8d5d18329625510e6a419bd853458736a4d7de8afdd8f28"
+        },
+        {
+          "submission_id": 437,
+          "tick": 377,
+          "source_png_sha256": "a338950344c30610cd552e37401a938307737cd98275f9cef5e518cbc416063e"
+        },
+        {
+          "submission_id": 438,
+          "tick": 378,
+          "source_png_sha256": "2203f12bad4f597a732619f2c6fe0510751668ccdb819b1d402903accdff6842"
+        },
+        {
+          "submission_id": 439,
+          "tick": 378,
+          "source_png_sha256": "d69b34f36f5adef659bb4c3bd48f35503d4e4a76ecbc3c1516eaa1aac3d4c8f8"
+        },
+        {
+          "submission_id": 440,
+          "tick": 380,
+          "source_png_sha256": "30e0c2db5ab82273be4a3f49bc593f563c45dafe474fe65117d168daa656f604"
+        }
+      ]
+    },
+    {
+      "file": "chrome-realtime/whole-420.png",
+      "source": "tmp/culling-m3/review-21aa3fb7/chrome-realtime/png/000480.png",
+      "sha256": "2b5484087c2d42b1394a5228b805b5926da4090948f315fd8c8ed996d69c8d09"
+    },
+    {
+      "file": "chrome-realtime/crops-420-1x.png",
+      "sha256": "0d9dfd5efb19ceccbf51ee8722b276a582fb36f1a08fd35f10105251990060df",
+      "regions_xywh": [
+        [
+          0,
+          274,
+          320,
+          240
+        ],
+        [
+          480,
+          230,
+          320,
+          240
+        ],
+        [
+          960,
+          274,
+          320,
+          240
+        ]
+      ],
+      "layout": "six consecutive frames, top to bottom; left/centre/right regions left to right; no resampling",
+      "frames": [
+        {
+          "submission_id": 480,
+          "tick": 420,
+          "source_png_sha256": "2b5484087c2d42b1394a5228b805b5926da4090948f315fd8c8ed996d69c8d09"
+        },
+        {
+          "submission_id": 481,
+          "tick": 420,
+          "source_png_sha256": "793ca37155a504b5977f5349a3915aebdfaa9039fc8364f81df5f01b38bfa579"
+        },
+        {
+          "submission_id": 482,
+          "tick": 422,
+          "source_png_sha256": "3cd6ec570a47a324d77c5d769729b6bd3bd717705b4e8669a289808f9affcbeb"
+        },
+        {
+          "submission_id": 483,
+          "tick": 423,
+          "source_png_sha256": "9dbef06b409527e9c9f38c301389e5e4decc5533c832b0ee0d8cae370c2f42c5"
+        },
+        {
+          "submission_id": 484,
+          "tick": 423,
+          "source_png_sha256": "b7f0b25453c89961ed368ec7e5f4efcf63759b7c00ba3705c69f4321ad4c53b1"
+        },
+        {
+          "submission_id": 485,
+          "tick": 425,
+          "source_png_sha256": "7a1387244884ddd52d531e26c191167e64b9d7029472255270d17755c2d42ddf"
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "chrome-fixed": {
+      "frames": 481,
+      "extent": [
+        1280,
+        720
+      ],
+      "complete": true,
+      "median_submission_gap_ms": 35.19999999999891,
+      "p95_submission_gap_ms": 49.600000000000364,
+      "max_submission_gap_ms": 73.39999999999873,
+      "scope": "engine submissions with capture ON; not physical display cadence"
+    },
+    "native-realtime": {
+      "frames": 964,
+      "extent": [
+        1920,
+        1080
+      ],
+      "complete": true,
+      "median_submission_gap_ms": 8.292875000000095,
+      "p95_submission_gap_ms": 11.26449999999977,
+      "max_submission_gap_ms": 12.516208000000006,
+      "scope": "engine submissions with capture ON; not physical display cadence"
+    },
+    "chrome-realtime": {
+      "frames": 482,
+      "extent": [
+        1280,
+        720
+      ],
+      "complete": true,
+      "median_submission_gap_ms": 16.90000000000009,
+      "p95_submission_gap_ms": 20.199999999999818,
+      "max_submission_gap_ms": 22.800000000000182,
+      "scope": "engine submissions with capture ON; not physical display cadence"
+    }
+  }
+}
