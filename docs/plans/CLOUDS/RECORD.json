@@ -26,7 +26,58 @@
   "milestones": {
     "M1": {
       "definitions": "e363c5e8a4a3b78ea1cf971809c953a9f111cd93b426ec20963e0aec6f0f4398",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "bcbea0b3cc9fcc33d8c587af218aa6e7c1fd2c1f",
+          "review": "docs/evidence/CLOUDS/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "fail",
+            "M1.5": "pass",
+            "M1.6": "fail",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass",
+            "M1.13": "pass",
+            "M1.14": "pass",
+            "M1.15": "pass"
+          },
+          "findings": [
+            {
+              "name": "density-does-not-implement-designed-erosion",
+              "item": "M1.6",
+              "repeat": false
+            },
+            {
+              "name": "top-continuity-proof-substitutes-depth",
+              "item": "M1.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 112592,
+            "cached": 1216640,
+            "output": 7542,
+            "turns": 1
+          },
+          "at": "2026-11-14T14:45:48Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
