@@ -1,6 +1,28 @@
 {
   "module": "RIVERS",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/RIVERS/design-review.md",
+    "commit": "51210c3771e938675bac99e66c00aca89635298c",
+    "hash": "919ab537297ecd421feff7e45e965f42979618ca320e20252c967f07b94f3196",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 116655,
+      "cached": 1632512,
+      "output": 10344,
+      "turns": 1
+    },
+    "at": "2026-11-14T11:13:45Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "36ffcdd9fa7b4290177f2417c6c3ff69940487d341a9270ad39e46ca82e59cc3",
