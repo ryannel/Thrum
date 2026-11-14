@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-14 Resumed M2 and retained the earlier session's real Metal timing-switch test and native
+  panel measurements. Three world-pause and material-edit pairs exceed their unchanged spreads;
+  the four profile-window tests pass after rebasing. Browser and final integration checks remain
+  pending. [M2 evidence](../../evidence/CREATOR/M2.md) distinguishes coupled changes and measured cost.
+
 - 2026-11-14 Implemented M2's shared table and profile window, shell bindings and the frame-host
   timing-demand switch. CPU unit tests and native/Wasm compilation and linting passed; device,
   browser and panel proofs remain unverified at this checkpoint. [Builder evidence](../../evidence/CREATOR/M2.md).

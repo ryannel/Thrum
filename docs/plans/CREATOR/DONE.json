@@ -76,10 +76,10 @@
           "statement": "With the profiler on, the Mac panel and the Chrome page show the frame-callback interval and present calls, CPU time of world tick, extract, upload and encode + submit, and GPU time per named graph pass, each a median over a stated window of recent completed frames, refreshed a few times a second.",
           "ask": "Does every CPU and GPU number come from the frame host's completed samples through the profile window, and every interval row from the shell's callback record, with no second timer and no row named as display cadence? Do tests in ./dev check cover the window, the median and the refresh rate?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/world/before-0.json.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -98,10 +98,10 @@
           "statement": "Timing demand is one switch on the frame host, on by default. A frame encoded with it off writes no timestamp, submits no resolve or readback, and says GPU time was not requested. Switching either way with frames in flight, and across a device replacement, loses no frame sample and frees every slot.",
           "ask": "Read the thrum-render diff and its device tests in ./dev check. Do the tests switch both ways with frames in flight and across a replacement, and does a host that never touches the switch behave as before? Does the diff change anything else in the frame lifecycle?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/timing-switch-test.log; docs/evidence/CREATOR/m2/native/timing-switch-test.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
@@ -120,20 +120,20 @@
           "statement": "Only the window and page shells turn timing demand off, and only for an app that declared the profiler group, with its toggle off, in a run that writes no frames report. A paired on/off run on the V1 valley records what the profiler costs, with build, load, order and the spread of identical runs.",
           "ask": "Do THRUM_REPORT, the Mac qualification command and the V1 page's 600-sample report still run timed from their first frame, with their output unchanged? Are the paired figures recorded as observations, with no budget claimed?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/pair-0.json.gz; docs/evidence/CREATOR/m2/native/pair-1.json.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.6",
           "statement": "On the Mac, two known changes each move the row that measures them by more than that row's spread with no change: pausing the valley's world lowers World tick, and a starter material-hook edit that adds fragment work raises the GPU pass that draws the cooked mesh. The panel stays legible at the default window size.",
           "inspect": "With the profiler on, repeat each change and a no-change control at least three times, capturing the panel offscreen before and after. Does the named row move the named way beyond its no-change spread each time, does no row outside the design's coupled list move beyond its spread without a recorded cause, and can every row be read without resizing?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/row-audit.json; docs/evidence/CREATOR/m2/native/world/; docs/evidence/CREATOR/m2/native/material/",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
