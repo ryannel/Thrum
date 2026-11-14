@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "36ffcdd9fa7b4290177f2417c6c3ff69940487d341a9270ad39e46ca82e59cc3",
+      "definitions": "9b69329d691c91a91d26e6b09b4af1f28bdef17bf87fea04957356a3f57120ab",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M2": {
@@ -43,21 +43,21 @@
       }
     },
     "M3": {
-      "definitions": "109cd50361870b683afe685e32f59b37174c4ca08c7af9eb126fd7c6ee481ca8",
+      "definitions": "560157529a1695ef354332a63add4b356d14a7b0c24e4c577d2b942f4f9f769b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M4": {
-      "definitions": "1085e2582fc34bb10f4e88cbb65194cd5b1d9f5428dd255724a6e5ee839bace8",
+      "definitions": "4c10e76ba3e1e70ef1b5f70b177b5621bf8e598f85b476d2bd26ce1b12a76a16",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M5": {
@@ -70,21 +70,21 @@
       }
     },
     "M6": {
-      "definitions": "9d894ea74f2b4d228c2b9e09e60d51bc9e107c415c696bc4a9d73b5d88d6acdd",
+      "definitions": "470e917ec32396ea205ea705195b51d196cdb5570c32afcdb5a291b01b6b9a54",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M7": {
-      "definitions": "52fed4930f3f5df33c05da69e1c07ffa505b7e8752bad5da462411959a025f18",
+      "definitions": "e1fb0248421b8a89e1b48646a2c68d2422d11a496b58e9473bd2cc47b2f075b9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     }
   },
@@ -92,11 +92,15 @@
     {
       "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
       "at": "2026-11-14T11:06:55Z"
+    },
+    {
+      "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/design-review.md) each found 1 Must Fix. Resolve both in the designs and plans, keeping them consistent with WATERS, PUDDLES and ATMOSPHERE. Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T13:57:36Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T11:06:55Z"
+    "at": "2026-11-14T13:57:36Z"
   },
   "design_history": [
     {

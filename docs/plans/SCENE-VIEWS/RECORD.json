@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "6570cf0af39111dd8012001dabd6cbdfac9228603c44e8b5e4325a8d56f5fb86",
+      "definitions": "6f79076df2d19a90e0f8e4b520c7c264e786580f4cb99fb93c686e9faee98ba9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M2": {
-      "definitions": "4147db84e03f7ccd367ac15d1aaa5f4c5234c00ad05e2fdf5b181479490a5009",
+      "definitions": "783d9ec2f942b6301b29cb69cb5f5546aebe9e5f753301cb1e9e4e8ad2583ed4",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     },
     "M3": {
-      "definitions": "1ff5182b609cfc4cec315ec9ccdc5402dc7aad7be2dc17db5a9ca7e501b25f40",
+      "definitions": "55f76b1a89f5792eda5acbe41a1d4539a1dd1d625262de3327ac013f977b0ac0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
+        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
+        "at": "2026-11-14T13:57:36Z"
       }
     }
   },
@@ -56,11 +56,15 @@
     {
       "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well.\" The WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under water, which are standard in high-end underwater views; bring the underwater view up to that bar in WATERS (or the owning module), and plan the new module SCENE-VIEWS that WATERS M14 depends on. Choose methods from first principles and current practice. Do not change WATERS M1, which is being built.",
       "at": "2026-11-14T10:11:12Z"
+    },
+    {
+      "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/design-review.md) each found 1 Must Fix. Resolve both in the designs and plans, keeping them consistent with WATERS, PUDDLES and ATMOSPHERE. Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T13:57:36Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T10:11:12Z"
+    "at": "2026-11-14T13:57:36Z"
   },
   "design_history": [
     {
