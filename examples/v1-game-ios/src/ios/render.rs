@@ -342,25 +342,6 @@ pub(super) fn start(
     .map_err(|error| format!("iOS render owner: {error}"))
 }
 
-/// The platform's device recipe, shared by preparation and recovery. wgpu asks
-/// for a fresh adapter for each device.
-fn request_device(
-    instance: &wgpu::Instance,
-) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue), String> {
-    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        ..Default::default()
-    }))
-    .map_err(|error| format!("iOS adapter: {error:?}"))?;
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        required_features: DeviceCapabilities::requested_timing_features(&adapter),
-        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-        ..Default::default()
-    }))
-    .map_err(|error| format!("iOS device: {error:?}"))?;
-    Ok((adapter, device, queue))
-}
-
 impl FrameReply {
     fn native_witness(&mut self, host: &ThreadedFrameHost) {
         if let Some(native) = host.native_witness_report() {
@@ -439,7 +420,8 @@ impl Owner {
             return Err("iOS render owner is already prepared".into());
         }
         self.instance = Some(instance.clone());
-        let (adapter, device, queue) = request_device(instance)?;
+        let (adapter, device, queue) =
+            crate::device::request_device(instance).map_err(|e| e.to_string())?;
         let watch = Watch::register(&device, FIRST_GENERATION, &self.lost_wake);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, FIRST_GENERATION);
         // Every CAMetalLayer accepts Bgra8Unorm; prefer it as before, and check
@@ -479,12 +461,14 @@ impl Owner {
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
         let name = format!(
-            "{:?}; downlevel={:?}; recipe={:?}; registry={}; unified_memory={:?}",
+            "{:?}; downlevel={:?}; recipe={:?}; registry={}; unified_memory={:?}; texture_profiles={:?}; max_storage_buffers_per_shader_stage={}",
             capabilities.adapter(),
             capabilities.downlevel(),
             capabilities.recipe(),
             capabilities.registry_digest(),
-            capabilities.unified_memory()
+            capabilities.unified_memory(),
+            thrum_asset_gpu::texture_profiles(device.features()),
+            device.limits().max_storage_buffers_per_shader_stage
         );
         self.gpu = Some(Gpu {
             adapter,
@@ -620,7 +604,8 @@ impl Owner {
         let inputs = gpu.host.device_prepare_inputs().map_err(fail)?;
         let generation = self.next_generation;
         self.next_generation += 1;
-        let (adapter, device, queue) = request_device(&instance).map_err(RecoverFault::Failed)?;
+        let (adapter, device, queue) = crate::device::request_device(&instance)
+            .map_err(|e| RecoverFault::Failed(e.to_string()))?;
         let watch = Watch::register(&device, generation, &self.lost_wake);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
         if watch.is_lost() {

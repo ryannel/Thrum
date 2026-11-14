@@ -7,7 +7,7 @@ publish.workspace = true
 description = "Thin UIKit scene shell for the shared V1 game diagnostic"
 
 [lib]
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
 [lints]
 workspace = true
@@ -15,12 +15,15 @@ workspace = true
 [dependencies]
 thrum-core = { path = "../../crates/thrum-core" }
 v1-game = { path = "../v1-game" }
+pollster = "=1.0.1"
+thrum-render = { path = "../../crates/thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal", "wgsl"] }
 
 [target.'cfg(target_os = "ios")'.dependencies]
 thrum-app = { path = "../../crates/thrum-app" }
 serde_json = "=1.0.154"
-pollster = "=1.0.1"
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
-thrum-render = { path = "../../crates/thrum-render" }
-wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal", "wgsl"] }
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
+
+[dev-dependencies]
+thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }

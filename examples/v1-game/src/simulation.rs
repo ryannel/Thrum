@@ -47,7 +47,7 @@ fn component(key: ComponentKey, mode: AccessMode) -> Access {
 fn setup(
     epoch: WorldEpoch,
     config: SimConfig,
-) -> Result<(GameRuntime<Page, Rules>, Rules, Candidate), SimError> {
+) -> Result<(GameRuntime<Rules>, Rules, Candidate), SimError> {
     use AccessMode::{Read, Write};
     let mut registry = ComponentRegistry::default();
     let ownership = registry
@@ -201,7 +201,7 @@ fn map_runtime(error: RuntimeError) -> SimError {
 
 /// One V1 game world over the engine's generic checked authority.
 pub struct Simulation {
-    runtime: GameRuntime<Page, Rules>,
+    runtime: GameRuntime<Rules>,
     rules: Rules,
     candidate: Candidate,
 }
@@ -612,7 +612,7 @@ fn validate_frame_actions(
 }
 
 fn validate_frame(
-    runtime: &GameRuntime<Page, Rules>,
+    runtime: &GameRuntime<Rules>,
     rules: &Rules,
     frame: &InputFrame<SimAction>,
 ) -> Result<(), FrameError> {
@@ -655,10 +655,7 @@ fn validate_frame(
     Ok(())
 }
 
-fn validate_commands(
-    runtime: &GameRuntime<Page, Rules>,
-    commands: &[Command],
-) -> Result<(), SimError> {
+fn validate_commands(runtime: &GameRuntime<Rules>, commands: &[Command]) -> Result<(), SimError> {
     let mut free = runtime.free_count();
     let mut spawns = 0;
     for (index, command) in commands.iter().enumerate() {

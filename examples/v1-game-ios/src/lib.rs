@@ -1,5 +1,7 @@
 //! UIKit lifecycle and surface adapter for the shared V1 game diagnostic.
 
+pub mod device;
+
 #[cfg(any(target_os = "ios", test))]
 mod gesture;
 #[cfg(target_os = "ios")]

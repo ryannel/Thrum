@@ -28,8 +28,6 @@ const MOVE: SystemId = SystemId(1);
 const NUDGE: SystemId = SystemId(2);
 const EXCLUDED: u32 = 4;
 
-struct Page;
-
 struct Candidate {
     motion: WriteRead2<Height, Drift>,
     changed: usize,
@@ -139,7 +137,7 @@ impl Rules {
     }
 }
 
-impl TickGame<Page> for Rules {
+impl TickGame for Rules {
     type Error = Refused;
     type Candidate = Candidate;
     type ParallelOutput = ();
@@ -166,7 +164,7 @@ impl TickGame<Page> for Rules {
 }
 
 struct Fixture {
-    runtime: GameRuntime<Page, Rules>,
+    runtime: GameRuntime<Rules>,
     rules: Rules,
     candidate: Candidate,
     handles: Vec<Handle>,
@@ -220,8 +218,11 @@ fn fixture(mode: ExecutionMode) -> Fixture {
             Rules::simulate,
         ),
     ];
+    registry
+        .select_publication::<Height>(true)
+        .expect("height publication");
     let mut runtime =
-        GameRuntime::new(WorldEpoch(31), CAPACITY, registry, systems, || Page).expect("setup");
+        GameRuntime::new_published(WorldEpoch(31), CAPACITY, registry, systems).expect("setup");
     runtime.set_execution_mode(mode);
     // Movers interleave with statics so the activity partition reorders rows.
     let handles = (0..u32::try_from(CAPACITY).expect("capacity"))
@@ -395,7 +396,7 @@ fn a_runtime_whose_commit_unwound_refuses_reuse() {
     }));
     assert!(delta.is_err(), "a poisoned runtime must refuse a delta");
     // A full restore replaces the half-committed state and recovers the runtime.
-    world.runtime.restore(&capture, || Page).expect("restore");
+    world.runtime.restore_published(&capture).expect("restore");
     world
         .runtime
         .publish_initial(&mut world.rules, &mut world.candidate);

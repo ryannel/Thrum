@@ -317,34 +317,6 @@ impl<T> SnapshotRing<T> {
         self.previous = None;
     }
 
-    /// Patch the newest unleased endpoint accepted by `source_tick` in place.
-    /// The caller has already restored authority and invalidated old leases.
-    /// A successful patch consumes that page's pending and outbound unions.
-    pub(crate) fn patch_rewind(
-        &mut self,
-        source_tick: impl Fn(&T) -> Option<u64>,
-        patch: impl FnOnce(&mut T, u64),
-    ) -> Result<(), PublicationBusy> {
-        let (index, tick) = self
-            .pages
-            .iter()
-            .enumerate()
-            .filter(|(_, page)| reusable(page))
-            .filter_map(|(index, page)| source_tick(page).map(|tick| (index, tick)))
-            .max_by_key(|&(_, tick)| tick)
-            .ok_or(PublicationBusy)?;
-        let page = Arc::get_mut(&mut self.pages[index]).ok_or(PublicationBusy)?;
-        patch(page, tick);
-        self.changes[index].dirty.clear();
-        self.changes[index].captured = true;
-        self.outbound.clear();
-        self.retired_source = None;
-        self.latest = Some(Arc::clone(&self.pages[index]));
-        self.previous = None;
-        self.cursor = (index + 1) % self.pages.len();
-        Ok(())
-    }
-
     /// Reserved payload and dirty sidecar storage for diagnostics.
     /// `payload_bytes` reports one page including its nested allocations.
     pub fn reserved_bytes(&self, payload_bytes: impl Fn(&T) -> usize) -> usize {
@@ -671,44 +643,5 @@ mod tests {
         })
         .expect("new branch continuation");
         assert_eq!(*ring.previous().expect("new previous"), 2);
-    }
-
-    #[test]
-    fn rewind_patch_retires_source_and_consumes_only_selected_page_changes() {
-        let mut ring = SnapshotRing::new(8, 2, || 0_u64);
-        for value in 1..=4 {
-            ring.capture(|page, _, _, _, _| *page = value)
-                .expect("published page");
-        }
-        ring.mark_structural(7);
-        ring.reset_timeline();
-        ring.patch_rewind(
-            |page| Some(*page),
-            |page, tick| {
-                assert_eq!(tick, 3, "newest unleased source");
-                *page = 2;
-            },
-        )
-        .expect("rewind patch");
-        assert!(ring.retired_source.is_none());
-        assert!(ring.previous().is_none());
-        assert!(ring.outbound.view().slots().next().is_none());
-        assert!(
-            ring.changes[2]
-                .dirty
-                .structural
-                .iter()
-                .all(|word| *word == 0)
-        );
-        assert_eq!(ring.changes[0].dirty.structural, &[1_u64 << 7]);
-        ring.capture(|page, cold, pending, outbound, source| {
-            assert!(!cold);
-            assert_eq!(pending.slots().collect::<Vec<_>>(), &[7]);
-            assert!(outbound.slots().next().is_none());
-            assert_eq!(source, Some(&2));
-            *page = 3;
-        })
-        .expect("released retired page is next in cursor order");
-        assert_eq!(ring.cursor, 0);
     }
 }

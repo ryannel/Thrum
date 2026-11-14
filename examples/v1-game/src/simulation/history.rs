@@ -7,8 +7,8 @@ use thrum_core::sim::{
 };
 
 use super::{
-    Command, PeerControl, Rules, SimAction, SimError, Simulation, map_runtime, page::Page,
-    peer_storage_bytes, validate_commands, validate_frame,
+    Command, PeerControl, Rules, SimAction, SimError, Simulation, map_runtime, peer_storage_bytes,
+    validate_commands, validate_frame,
 };
 
 pub(super) struct HistoryRecord {
@@ -29,7 +29,7 @@ fn record_storage_bytes(record: &HistoryRecord) -> usize {
     input_storage_bytes(&record.inputs) + record.commands.capacity() * size_of::<Command>()
 }
 
-impl HistoryGame<Page> for Rules {
+impl HistoryGame for Rules {
     type HistoryState = Vec<PeerControl>;
     type HistoryRecord = HistoryRecord;
     type TickRequest = [Command];
@@ -64,7 +64,7 @@ impl HistoryGame<Page> for Rules {
 
     fn prepare_history_tick(
         &mut self,
-        runtime: &GameRuntime<Page, Self>,
+        runtime: &GameRuntime<Self>,
         tick: u64,
         record: &Self::HistoryRecord,
     ) -> Result<(), Self::Error> {
@@ -207,17 +207,7 @@ impl SimulationHistory {
     /// Returns divergence or a request outside the retained window.
     pub fn rewind(&mut self, sim: &mut Simulation, count: usize) -> Result<(), SimError> {
         self.inner
-            .rewind(
-                &mut sim.runtime,
-                &mut sim.rules,
-                count,
-                |_, page, old_timeline, target, latest| {
-                    page.source_tick(old_timeline, target, latest)
-                },
-                |_, world, page, source, target, timeline, steps| {
-                    page.patch_rewind(world, steps, source, target, timeline);
-                },
-            )
+            .rewind(&mut sim.runtime, &mut sim.rules, count)
             .map_err(map_history)?;
         if count != 0 {
             sim.rules.commands.clear();

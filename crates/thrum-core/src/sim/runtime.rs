@@ -298,9 +298,9 @@ pub enum TickError<E> {
 /// Game-owned rules for one registered authority. Preparation receives only
 /// immutable game state, mutable shared candidate scratch and an append-only
 /// engine edit writer. Values stay late-bound until final preflight; later
-/// callbacks cannot replace or remove earlier queued operations. `apply` and
-/// `capture` run only after complete validation and must be infallible.
-pub trait TickGame<P> {
+/// callbacks cannot replace or remove earlier queued operations. `apply`
+/// runs only after complete validation and must be infallible.
+pub trait TickGame {
     /// Expected game-rule or input error.
     type Error: Send;
     /// Reusable game-owned candidate and query scratch, never committed state.
@@ -328,73 +328,57 @@ pub trait TickGame<P> {
     /// Apply the fully validated candidate. All target handles and registered
     /// component presence must have been checked during `prepare`.
     fn apply(&mut self, world: &WorldRead<'_>, tick: u64, candidate: &Self::Candidate);
-
-    /// Copy one complete committed endpoint into an unleased reusable page.
-    fn capture(
-        &mut self,
-        _world: &WorldRead<'_>,
-        _candidate: &mut Self::Candidate,
-        _events: &[StructuralChange],
-        _page: &mut P,
-        _cold: bool,
-        _page_dirty: DirtyPage<'_>,
-        _outbound_dirty: DirtyPage<'_>,
-        _source: Option<&P>,
-        _tick: u64,
-        _timeline: u64,
-    ) {
-    }
 }
 
 /// One game callback bound to its access declaration before schedule compile.
-pub struct RegisteredSystem<P, G: TickGame<P>> {
+pub struct RegisteredSystem<G: TickGame> {
     spec: SystemSpec,
-    callback: Callback<P, G>,
+    callback: Callback<G>,
 }
 
-type SystemCallback<P, G> = fn(
+type SystemCallback<G> = fn(
     &G,
     &WorldRead<'_>,
     Executor,
     u64,
-    &mut <G as TickGame<P>>::Candidate,
-    &mut EditWriter<'_, <G as TickGame<P>>::Candidate>,
-) -> Result<(), <G as TickGame<P>>::Error>;
+    &mut <G as TickGame>::Candidate,
+    &mut EditWriter<'_, <G as TickGame>::Candidate>,
+) -> Result<(), <G as TickGame>::Error>;
 
-type ParallelCallback<P, G> = fn(
+type ParallelCallback<G> = fn(
     &G,
     &WorldRead<'_>,
     Executor,
     u64,
-    &mut <G as TickGame<P>>::ParallelOutput,
-) -> Result<(), <G as TickGame<P>>::Error>;
+    &mut <G as TickGame>::ParallelOutput,
+) -> Result<(), <G as TickGame>::Error>;
 
-type DirectCallback<P, G> = fn(
+type DirectCallback<G> = fn(
     &G,
     &mut WorldTxn<'_>,
     Executor,
     u64,
-    &mut <G as TickGame<P>>::Candidate,
-    &mut EditWriter<'_, <G as TickGame<P>>::Candidate>,
-) -> Result<(), <G as TickGame<P>>::Error>;
+    &mut <G as TickGame>::Candidate,
+    &mut EditWriter<'_, <G as TickGame>::Candidate>,
+) -> Result<(), <G as TickGame>::Error>;
 
-enum Callback<P, G: TickGame<P>> {
-    Serial(SystemCallback<P, G>),
-    Parallel(ParallelCallback<P, G>),
-    Direct(DirectCallback<P, G>),
+enum Callback<G: TickGame> {
+    Serial(SystemCallback<G>),
+    Parallel(ParallelCallback<G>),
+    Direct(DirectCallback<G>),
 }
 
-struct BoundSystem<P, G: TickGame<P>> {
+struct BoundSystem<G: TickGame> {
     id: SystemId,
-    callback: Callback<P, G>,
+    callback: Callback<G>,
     output: G::ParallelOutput,
     #[cfg(not(target_arch = "wasm32"))]
     result: Option<Result<(), G::Error>>,
 }
 
-impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
+impl<G: TickGame> RegisteredSystem<G> {
     /// Bind one declared system to the game callback the engine will invoke.
-    pub fn new(spec: SystemSpec, callback: SystemCallback<P, G>) -> Self {
+    pub fn new(spec: SystemSpec, callback: SystemCallback<G>) -> Self {
         Self {
             spec,
             callback: Callback::Serial(callback),
@@ -402,7 +386,7 @@ impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
     }
 
     /// Bind a conflict-free callback that writes only to its private output.
-    pub fn parallel(spec: SystemSpec, callback: ParallelCallback<P, G>) -> Self {
+    pub fn parallel(spec: SystemSpec, callback: ParallelCallback<G>) -> Self {
         Self {
             spec,
             callback: Callback::Parallel(callback),
@@ -411,7 +395,7 @@ impl<P, G: TickGame<P>> RegisteredSystem<P, G> {
 
     /// Bind a typed in-place system. Tentative component writes roll back if
     /// this or any later precommit callback refuses the tick.
-    pub fn direct(spec: SystemSpec, callback: DirectCallback<P, G>) -> Self {
+    pub fn direct(spec: SystemSpec, callback: DirectCallback<G>) -> Self {
         Self {
             spec,
             callback: Callback::Direct(callback),
@@ -503,20 +487,6 @@ impl TentativeDirty for DirectDirty {
 /// requested Rayon captures serially; `RayonForced` always splits.
 const PARALLEL_CAPTURE_CROSSOVER: Option<usize> = None;
 
-type EnginePageCapture<P> = fn(
-    &mut P,
-    &RegisteredWorld,
-    bool,
-    DirtyPage<'_>,
-    DirtyPage<'_>,
-    Option<&P>,
-    u64,
-    u64,
-    Option<&WorldUndo>,
-    &[StructuralChange],
-    bool,
-);
-
 /// Which final-tick preimages an engine page capture receives.
 #[derive(Clone, Copy)]
 enum FinalUndo<'a> {
@@ -538,15 +508,13 @@ enum PublicationState {
 
 /// One engine-owned registered world, compiled schedule and leased page ring.
 /// The concrete game supplies no engine-side component or action type.
-pub struct GameRuntime<P, G: TickGame<P>> {
+pub struct GameRuntime<G: TickGame> {
     world: RegisteredWorld,
     schedule: Schedule,
-    waves: Vec<Vec<BoundSystem<P, G>>>,
-    pages: SnapshotRing<P>,
-    engine_capture: Option<EnginePageCapture<P>>,
+    waves: Vec<Vec<BoundSystem<G>>>,
+    pages: SnapshotRing<PublicationPage>,
     initial_published: bool,
     publication_state: PublicationState,
-    rewind_patch_target: Option<u64>,
     tick: u64,
     timeline: u64,
     revision: u64,
@@ -571,7 +539,7 @@ pub struct GameRuntime<P, G: TickGame<P>> {
     poisoned: bool,
 }
 
-impl<P, G: TickGame<P>> GameRuntime<P, G> {
+impl<G: TickGame> GameRuntime<G> {
     /// Digest committed authority, including game resources supplied by the caller.
     /// Component partials are reported in schema order for divergence diagnosis.
     ///
@@ -656,31 +624,6 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         Ok(())
     }
 
-    /// Rebuild a complete endpoint from one baseline and contiguous deltas.
-    ///
-    /// # Errors
-    ///
-    /// A capture is foreign or the delta sequence has a gap.
-    ///
-    /// # Panics
-    ///
-    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
-    pub fn restore_through(
-        &mut self,
-        base: &RuntimeCapture,
-        deltas: &[RuntimeDelta],
-        make_page: impl FnMut() -> P,
-    ) -> Result<(), RuntimeError> {
-        if base.nonce != self.nonce {
-            return Err(RuntimeError::WrongCapture);
-        }
-        let mut merged = base.clone_independent();
-        for delta in deltas {
-            merged.advance(delta)?;
-        }
-        self.restore(&merged, make_page)
-    }
-
     /// Capture registered components, identities, slot generations and free
     /// order after a complete committed tick. This is a cold replay path.
     pub fn capture(&self) -> RuntimeCapture {
@@ -700,10 +643,10 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// # Errors
     ///
     /// The capture belongs to a different epoch, capacity or component schema.
-    pub fn restore(
+    fn restore(
         &mut self,
         capture: &RuntimeCapture,
-        make_page: impl FnMut() -> P,
+        make_page: impl FnMut() -> PublicationPage,
     ) -> Result<(), RuntimeError> {
         if capture.nonce != self.nonce {
             return Err(RuntimeError::WrongCapture);
@@ -726,7 +669,6 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             make_page,
         );
         self.publication_state = PublicationState::Current;
-        self.rewind_patch_target = None;
         self.poisoned = false;
         Ok(())
     }
@@ -827,49 +769,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         self.structural_journal.clear();
         self.pages.reset_timeline();
         self.publication_state = PublicationState::Skipped;
-        self.rewind_patch_target = Some(tick);
         Ok(())
-    }
-
-    /// Publish an inverse patch from an unleased endpoint of the retired
-    /// branch. The game names eligible source pages and updates only slots
-    /// touched between that source and the restored authority tick.
-    pub fn patch_rewound_page(
-        &mut self,
-        steps: &[RuntimeUndo],
-        source_tick: impl Fn(&P) -> Option<u64>,
-        patch: impl FnOnce(&WorldRead<'_>, &mut P, u64, u64, u64, &[RuntimeUndo]),
-    ) -> bool {
-        self.assert_usable();
-        // Engine pages always diff from the last published endpoint. A spare
-        // old-branch page may be older than that source, so wait until a page
-        // is actually requested or the replay's final tick publishes it.
-        if self.engine_capture.is_some() {
-            return false;
-        }
-        if self.publication_state == PublicationState::Current
-            || self.rewind_patch_target != Some(self.tick)
-            || steps.first().is_none_or(|first| first.from != self.tick)
-        {
-            return false;
-        }
-        let world = WorldRead {
-            world: &self.world,
-            nonce: self.nonce,
-            system: None,
-        };
-        if self
-            .pages
-            .patch_rewind(source_tick, |page, source| {
-                patch(&world, page, source, self.tick, self.timeline, steps);
-            })
-            .is_err()
-        {
-            return false;
-        }
-        self.publication_state = PublicationState::Current;
-        self.rewind_patch_target = None;
-        true
     }
 
     /// Current presentation branch generation.
@@ -888,12 +788,12 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// Only if the compiled schedule refers to a registration absent from
     /// its own validated input list.
     ///
-    pub fn new(
+    fn new(
         epoch: WorldEpoch,
         capacity: usize,
         registry: ComponentRegistry,
-        systems: Vec<RegisteredSystem<P, G>>,
-        make_page: impl FnMut() -> P,
+        systems: Vec<RegisteredSystem<G>>,
+        make_page: impl FnMut() -> PublicationPage,
     ) -> Result<Self, RuntimeError> {
         let schedule = Schedule::new(
             &registry,
@@ -933,10 +833,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             schedule,
             waves,
             pages: SnapshotRing::new(capacity, component_count, make_page),
-            engine_capture: None,
             initial_published: false,
             publication_state: PublicationState::Current,
-            rewind_patch_target: None,
             tick: 0,
             timeline: 0,
             revision: 0,
@@ -1200,12 +1098,12 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     }
 
     /// Lease the latest complete game-authored page, if one exists.
-    pub fn latest(&self) -> Option<Arc<P>> {
+    pub fn latest(&self) -> Option<Arc<PublicationPage>> {
         self.pages.latest()
     }
 
     /// Lease the immediately preceding complete page, if one exists.
-    pub fn previous(&self) -> Option<Arc<P>> {
+    pub fn previous(&self) -> Option<Arc<PublicationPage>> {
         self.pages.previous()
     }
 
@@ -1246,12 +1144,14 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             return false;
         }
         self.publication_state = PublicationState::Current;
-        self.rewind_patch_target = None;
         true
     }
 
-    /// Reserved page-ring bytes including game-owned nested page columns.
-    pub fn publication_reserved_bytes(&self, page_bytes: impl Fn(&P) -> usize) -> usize {
+    /// Reserved page-ring bytes including selected component columns.
+    pub fn publication_reserved_bytes(
+        &self,
+        page_bytes: impl Fn(&PublicationPage) -> usize,
+    ) -> usize {
         self.pages.reserved_bytes(page_bytes)
     }
 
@@ -1260,7 +1160,7 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// # Panics
     ///
     /// Panics only if an unpublished ring has lost all four private pages or
-    /// the game capture callback panics.
+    /// a registered component snapshot operation panics.
     pub fn publish_initial(&mut self, game: &mut G, candidate: &mut G::Candidate) {
         self.assert_usable();
         if !self.initial_published {
@@ -1281,8 +1181,8 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     /// # Panics
     ///
     /// Panics only if the reserved page becomes unavailable inside the
-    /// exclusive tick, or a game apply/capture callback panics. A panic from
-    /// apply or capture leaves the runtime poisoned: every later step, rewind,
+    /// exclusive tick, or game apply or component snapshot code panics. Such
+    /// a panic leaves the runtime poisoned: every later step, rewind,
     /// publish, capture, delta or seed panics until `restore` replaces the
     /// whole state.
     pub fn step(
@@ -1338,16 +1238,13 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         publication: PublicationMode,
     ) {
         if publication == PublicationMode::Defer || !self.pages.can_capture() {
-            self.publication_state = PublicationState::Skipped;
-            if self.engine_capture.is_some() {
-                match undo {
-                    Some(record) => self.deferred_undo.copy_from(&record.world),
-                    // The unrecorded tick's preimages move out of the
-                    // transaction scratch, which the next step clears.
-                    None => std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo),
-                }
-                self.publication_state = PublicationState::SkippedWithUndo;
+            match undo {
+                Some(record) => self.deferred_undo.copy_from(&record.world),
+                // The unrecorded tick's preimages move out of the
+                // transaction scratch, which the next step clears.
+                None => std::mem::swap(&mut self.abort_undo, &mut self.deferred_undo),
             }
+            self.publication_state = PublicationState::SkippedWithUndo;
             return;
         }
         let final_undo = undo.map_or(FinalUndo::Abort, |record| FinalUndo::Record(&record.world));
@@ -1357,21 +1254,19 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
     }
 
     /// Capture the current endpoint into the next free page, through the
-    /// engine capture when one is registered and the game capture otherwise.
+    /// engine-owned publication capture.
     /// `journal` passes this tick's structural changes; the tick-zero seal
     /// passes none.
     fn capture_latest(
         &mut self,
-        game: &mut G,
-        candidate: &mut G::Candidate,
+        _game: &mut G,
+        _candidate: &mut G::Candidate,
         final_undo: FinalUndo<'_>,
         journal: bool,
     ) -> Result<(), PublicationBusy> {
         let Self {
             world,
             pages,
-            engine_capture,
-            nonce,
             tick,
             timeline,
             abort_undo,
@@ -1396,38 +1291,19 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
         let events: &[StructuralChange] = if journal { structural_journal } else { &[] };
         let (tick, timeline) = (*tick, *timeline);
         pages.capture(|page, cold, page_dirty, outbound_dirty, source| {
-            if let Some(capture) = engine_capture {
-                capture(
-                    page,
-                    world,
-                    cold,
-                    page_dirty,
-                    outbound_dirty,
-                    source,
-                    tick,
-                    timeline,
-                    final_undo,
-                    events,
-                    parallel,
-                );
-            } else {
-                game.capture(
-                    &WorldRead {
-                        world,
-                        nonce: *nonce,
-                        system: None,
-                    },
-                    candidate,
-                    events,
-                    page,
-                    cold,
-                    page_dirty,
-                    outbound_dirty,
-                    source,
-                    tick,
-                    timeline,
-                );
-            }
+            capture_publication_page(
+                page,
+                world,
+                cold,
+                page_dirty,
+                outbound_dirty,
+                source,
+                tick,
+                timeline,
+                final_undo,
+                events,
+                parallel,
+            );
         })
     }
 
@@ -1628,7 +1504,6 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             record.spent = false;
         }
         self.tick = next;
-        self.rewind_patch_target = None;
         self.delta_from_revision = self.revision;
         self.revision = self.next_revision;
         self.next_revision = following_revision;
@@ -1668,7 +1543,7 @@ fn capture_publication_page(
     );
 }
 
-impl<G: TickGame<PublicationPage>> GameRuntime<PublicationPage, G> {
+impl<G: TickGame> GameRuntime<G> {
     /// Construct a registry-selected engine publication ring before the
     /// registry moves into authority storage. Games supply only their schema
     /// and rule callbacks; page capture stays inside the engine.
@@ -1684,18 +1559,40 @@ impl<G: TickGame<PublicationPage>> GameRuntime<PublicationPage, G> {
         epoch: WorldEpoch,
         capacity: usize,
         registry: ComponentRegistry,
-        systems: Vec<RegisteredSystem<PublicationPage, G>>,
+        systems: Vec<RegisteredSystem<G>>,
     ) -> Result<Self, RuntimeError> {
         let mut prepared = (0..PAGE_COUNT)
             .map(|_| PublicationPage::new(&registry, epoch, capacity))
             .collect::<Vec<_>>();
-        let mut runtime = Self::new(epoch, capacity, registry, systems, || {
+        Self::new(epoch, capacity, registry, systems, || {
             prepared
                 .pop()
                 .expect("one prepared publication per ring page")
-        })?;
-        runtime.engine_capture = Some(capture_publication_page);
-        Ok(runtime)
+        })
+    }
+
+    /// Rebuild a complete endpoint from one baseline and contiguous deltas.
+    ///
+    /// # Errors
+    ///
+    /// A capture is foreign or the delta sequence has a gap.
+    ///
+    /// # Panics
+    ///
+    /// Only if an engine-produced delta contradicts its recorded slot order or schema.
+    pub fn restore_through(
+        &mut self,
+        base: &RuntimeCapture,
+        deltas: &[RuntimeDelta],
+    ) -> Result<(), RuntimeError> {
+        if base.nonce != self.nonce {
+            return Err(RuntimeError::WrongCapture);
+        }
+        let mut merged = base.clone_independent();
+        for delta in deltas {
+            merged.advance(delta)?;
+        }
+        self.restore_published(&merged)
     }
 
     /// Restore a cold authority capture and rebuild engine publication pages.

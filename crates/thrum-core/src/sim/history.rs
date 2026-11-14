@@ -4,11 +4,10 @@ use std::{collections::VecDeque, mem::size_of, num::NonZeroUsize};
 
 use super::{
     GameRuntime, PublicationMode, RuntimeEndpoint, RuntimeError, RuntimeUndo, TickError, TickGame,
-    WorldRead,
 };
 
 /// Game policy paired with the engine's bounded rollback schedule.
-pub trait HistoryGame<P>: TickGame<P> + Sized {
+pub trait HistoryGame: TickGame + Sized {
     /// Complete game-owned authority resources needed to restore a tick.
     type HistoryState: Clone;
     /// Inputs and commands needed to re-admit and replay one tick.
@@ -37,7 +36,7 @@ pub trait HistoryGame<P>: TickGame<P> + Sized {
     /// The record is invalid for the current game authority.
     fn prepare_history_tick(
         &mut self,
-        runtime: &GameRuntime<P, Self>,
+        runtime: &GameRuntime<Self>,
         tick: u64,
         record: &Self::HistoryRecord,
     ) -> Result<(), Self::Error>;
@@ -82,9 +81,9 @@ pub struct RuntimeHistory<S, R> {
 impl<S: Clone, R> RuntimeHistory<S, R> {
     /// Start at an already published committed endpoint. The game must reject
     /// creation while uncommitted input is pending before calling this method.
-    pub fn new<P, G>(runtime: &GameRuntime<P, G>, game: &G, window: NonZeroUsize) -> Self
+    pub fn new<G>(runtime: &GameRuntime<G>, game: &G, window: NonZeroUsize) -> Self
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R>,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R>,
     {
         Self {
             endpoint: runtime.endpoint(),
@@ -153,13 +152,9 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
                 .sum::<usize>()
     }
 
-    fn check<P, G>(
-        &self,
-        runtime: &GameRuntime<P, G>,
-        game: &G,
-    ) -> Result<(), HistoryError<G::Error>>
+    fn check<G>(&self, runtime: &GameRuntime<G>, game: &G) -> Result<(), HistoryError<G::Error>>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R>,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R>,
     {
         if runtime.tick() != self.latest_tick()
             || runtime.endpoint() != self.endpoint
@@ -175,15 +170,15 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
     /// # Errors
     ///
     /// The branch diverged, or game preparation or the tick refused.
-    pub fn step<P, G>(
+    pub fn step<G>(
         &mut self,
-        runtime: &mut GameRuntime<P, G>,
+        runtime: &mut GameRuntime<G>,
         game: &mut G,
         candidate: &mut G::Candidate,
         request: &G::TickRequest,
     ) -> Result<u64, HistoryError<G::Error>>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R> + Sync,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R> + Sync,
     {
         self.check(runtime, game)?;
         let mut record = self
@@ -210,9 +205,9 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         }
     }
 
-    fn commit<P, G>(
+    fn commit<G>(
         &mut self,
-        runtime: &mut GameRuntime<P, G>,
+        runtime: &mut GameRuntime<G>,
         game: &mut G,
         candidate: &mut G::Candidate,
         record: R,
@@ -220,7 +215,7 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         replaying: bool,
     ) -> Result<u64, (HistoryError<G::Error>, R)>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R> + Sync,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R> + Sync,
     {
         let Some(next) = runtime.tick().checked_add(1) else {
             return Err((HistoryError::Tick(TickError::TickExhausted), record));
@@ -281,16 +276,16 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
     ///
     /// The branch diverged, the tick is not queued for replay, or validation
     /// rejected the proposed replacement. Every error leaves history unchanged.
-    pub fn amend_future<P, G, V>(
+    pub fn amend_future<G, V>(
         &mut self,
-        runtime: &GameRuntime<P, G>,
+        runtime: &GameRuntime<G>,
         game: &G,
         tick: u64,
         validate: impl FnOnce(&R) -> Result<V, G::Error>,
         apply: impl FnOnce(&mut R, V),
     ) -> Result<(), HistoryError<G::Error>>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R>,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R>,
     {
         self.check(runtime, game)?;
         let entry = self
@@ -309,14 +304,14 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
     /// # Errors
     ///
     /// The branch diverged, retained input is invalid, or the tick refused.
-    pub fn replay_next<P, G>(
+    pub fn replay_next<G>(
         &mut self,
-        runtime: &mut GameRuntime<P, G>,
+        runtime: &mut GameRuntime<G>,
         game: &mut G,
         candidate: &mut G::Candidate,
     ) -> Result<bool, HistoryError<G::Error>>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R> + Sync,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R> + Sync,
     {
         self.check(runtime, game)?;
         let Some(entry) = self.future.pop_front() else {
@@ -343,9 +338,7 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         }
     }
 
-    /// Reverse retained ticks and queue their records for replay. Source-page
-    /// selection receives old timeline, target and latest ticks. The patch
-    /// receives source tick, target tick, new timeline and reversed records.
+    /// Reverse retained ticks and queue their records for replay.
     /// Page pressure defers publication without refusing authority rewind.
     ///
     /// # Errors
@@ -355,16 +348,14 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
     /// # Panics
     ///
     /// Only if internally paired queues lose a retained record.
-    pub fn rewind<P, G>(
+    pub fn rewind<G>(
         &mut self,
-        runtime: &mut GameRuntime<P, G>,
+        runtime: &mut GameRuntime<G>,
         game: &mut G,
         count: usize,
-        source_tick: impl Fn(&G, &P, u64, u64, u64) -> Option<u64>,
-        patch: impl FnOnce(&G, &WorldRead<'_>, &mut P, u64, u64, u64, &[RuntimeUndo]),
     ) -> Result<(), HistoryError<G::Error>>
     where
-        G: HistoryGame<P, HistoryState = S, HistoryRecord = R>,
+        G: HistoryGame<HistoryState = S, HistoryRecord = R>,
     {
         self.check(runtime, game)?;
         if count > self.undos.len() {
@@ -373,10 +364,7 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         if count == 0 {
             return Ok(());
         }
-        let latest = self.latest_tick();
         let start = self.undos.len() - count;
-        let target = latest - u64::try_from(count).expect("retained tick count fits u64");
-        let old_timeline = runtime.timeline();
         let contiguous = self.undos.make_contiguous();
         runtime
             .rewind_many(&mut contiguous[start..])
@@ -384,13 +372,6 @@ impl<S: Clone, R> RuntimeHistory<S, R> {
         game.restore_history_state(&self.states[start]);
         self.committed_state.clone_from(&self.states[start]);
         self.endpoint = runtime.endpoint();
-        runtime.patch_rewound_page(
-            &contiguous[start..],
-            |page| source_tick(game, page, old_timeline, target, latest),
-            |world, page, source, target, timeline, steps| {
-                patch(game, world, page, source, target, timeline, steps);
-            },
-        );
         for _ in 0..count {
             let undo = self.undos.pop_back().expect("retained undo");
             self.future.push_front(ReplayTick {

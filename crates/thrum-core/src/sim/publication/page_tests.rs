@@ -267,7 +267,7 @@ fn warm_two_hundred_spawn_burst_preserves_page_reservations() {
 }
 
 #[test]
-fn sparse_inverse_patch_compares_selected_source_and_rejects_stale_generations() {
+fn engine_inverse_publication_compares_the_retired_source() {
     let (mut world, mut pages) = fixture(128);
     publish(&mut pages, &world, 0, 0, None, &[]);
     let mut undo = world.empty_undo();
@@ -276,33 +276,17 @@ fn sparse_inverse_patch_compares_selected_source_and_rejects_stale_generations()
     pages.mark_component(0, 0);
     publish(&mut pages, &world, 1, 0, Some(&undo), &[]);
     let latest = pages.latest().expect("source page");
-    assert_eq!(latest.source_tick(0, 0, 1), Some(1));
-    assert_eq!(latest.source_tick(1, 0, 1), None);
+    assert_eq!(latest.id().tick, 1);
+    assert_eq!(latest.timeline(), 0);
     drop(latest);
     let mut inverse = Vec::new();
     undo.visit_changed_slots(|slot| inverse.push(slot));
     undo.restore(&mut world, &[]);
     pages.reset_timeline();
-    pages
-        .patch_rewind(
-            |page| page.source_tick(0, 0, 1),
-            |page, source| {
-                let old = page.id();
-                page.patch_changed(
-                    &world,
-                    |mark| {
-                        for &slot in &inverse {
-                            mark(slot);
-                        }
-                    },
-                    0,
-                    1,
-                );
-                assert_eq!(page.patch_source(), Some((old, 0)));
-                assert_eq!(source, old.tick);
-            },
-        )
-        .expect("unleased inverse source");
+    for slot in inverse {
+        pages.mark_component(0, slot);
+    }
+    publish(&mut pages, &world, 0, 1, None, &[]);
     let patched = pages.latest().expect("patched endpoint");
     assert_eq!(patched.id().tick, 0);
     assert_eq!(patched.timeline(), 1);
@@ -502,30 +486,18 @@ fn partitioned_rewind_swaps_neighbors_without_reporting_layout_changes() {
     undo.restore(&mut world, &[]);
     drop(held);
     pages.reset_timeline();
-    pages
-        .patch_rewind(
-            |page| page.source_tick(0, 1, 1),
-            |page, _| {
-                page.patch_changed(
-                    &world,
-                    |mark| {
-                        for &slot in &inverse {
-                            mark(slot);
-                        }
-                    },
-                    0,
-                    1,
-                );
-            },
-        )
-        .expect("rewind page");
+    for slot in inverse {
+        pages.mark_component(0, slot);
+        pages.mark_component(1, slot);
+    }
+    publish(&mut pages, &world, 0, 1, None, &[]);
     let page = pages.latest().expect("restored publication");
     assert_partitioned_values(&page, &[10, 11, 12, 13], &[0, 1, 0, 1]);
     assert_eq!(page.dirty().component::<u32>(), &[0, 3]);
     assert_eq!(page.dirty().component::<u64>(), &[0, 3]);
     assert_eq!(page.dirty().structural(), &[]);
     assert_eq!(page.previous_id(), None);
-    assert_eq!(page.source_endpoint().expect("patch source").0.tick, 1);
+    assert_eq!(page.source_endpoint().expect("patch source").0.tick, 2);
 }
 
 #[test]

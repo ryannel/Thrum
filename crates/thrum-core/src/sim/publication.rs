@@ -105,15 +105,6 @@ pub(super) trait ErasedPublicationColumn: Send + Sync {
         directories: (Option<&DenseDirectory>, Option<&DenseDirectory>),
     );
     fn mark_present(&self, dirty: &mut [u64], directory: Option<&DenseDirectory>);
-    fn patch(
-        &mut self,
-        world: &RegisteredWorld,
-        component: usize,
-        slots: &[u32],
-        dirty: &mut [u64],
-        identities: &[u64],
-        directory: Option<&DenseDirectory>,
-    );
     fn swap_rows(&mut self, row: usize, other: usize);
     fn reserved_bytes(&self) -> usize;
 }
@@ -619,30 +610,6 @@ impl<T: PartialEq + Send + Sync + 'static> ErasedPublicationColumn for Publicati
                 dirty[slot / 64] |= 1 << (slot % 64);
             }
         }
-    }
-
-    fn patch(
-        &mut self,
-        world: &RegisteredWorld,
-        component: usize,
-        slots: &[u32],
-        dirty: &mut [u64],
-        identities: &[u64],
-        directory: Option<&DenseDirectory>,
-    ) {
-        let source = world.column_at::<T>(component).values();
-        for &slot in slots {
-            let index = slot as usize;
-            let row = world.row_of_slot(slot);
-            let page_row = row_of(directory, index);
-            if self.current[page_row] != source[row]
-                || (source[row].is_some() && identities[index / 64] & (1 << (index % 64)) != 0)
-            {
-                dirty[index / 64] |= 1 << (index % 64);
-            }
-            self.refresh_slot(source, row_of(directory, index), row);
-        }
-        self.clear_previous_overrides();
     }
 
     fn swap_rows(&mut self, row: usize, other: usize) {
@@ -1414,104 +1381,6 @@ impl PublicationPage {
                 .temporal
                 .extend(dirty_slots(words, words, self.ids.len()));
         }
-    }
-
-    /// Select an initialized old-branch endpoint in the retained rewind range.
-    pub fn source_tick(&self, old_timeline: u64, target: u64, latest: u64) -> Option<u64> {
-        (self.initialized
-            && self.timeline == old_timeline
-            && (target..=latest).contains(&self.id.tick))
-        .then_some(self.id.tick)
-    }
-
-    /// Refresh an unleased old-branch page from a restored world. Only slots
-    /// named by retained reverse records are examined; lifecycle and component
-    /// output is the exact diff against this selected source page.
-    ///
-    /// # Panics
-    ///
-    /// The world and records must belong to this page's runtime and capacity.
-    pub fn patch_rewind(
-        &mut self,
-        world: &super::WorldRead<'_>,
-        steps: &[super::RuntimeUndo],
-        source: u64,
-        target: u64,
-        timeline: u64,
-    ) {
-        self.patch_changed(
-            world.world,
-            |mark| {
-                for step in steps.iter().take_while(|step| step.tick() <= source) {
-                    step.visit_changed_slots(&mut *mark);
-                }
-            },
-            target,
-            timeline,
-        );
-    }
-
-    fn patch_changed(
-        &mut self,
-        world: &RegisteredWorld,
-        visit_changed: impl FnOnce(&mut dyn FnMut(u32)),
-        target: u64,
-        timeline: u64,
-    ) {
-        assert_eq!(
-            world.capacity(),
-            self.ids.len(),
-            "rewind publication capacity"
-        );
-        assert_eq!(world.epoch(), self.id.epoch, "rewind publication epoch");
-        self.scratch_words.fill(0);
-        visit_changed(&mut |slot| {
-            self.scratch_words[slot as usize / 64] |= 1 << (slot % 64);
-        });
-        self.candidates.clear();
-        self.candidates.extend(dirty_slots(
-            &self.scratch_words,
-            &self.scratch_words,
-            self.ids.len(),
-        ));
-        self.columns
-            .reconcile_layout(world, &self.scratch_words, &self.scratch_words);
-        self.endpoint.clear();
-        self.pair.clear();
-        self.dirty.clear();
-        self.events.clear();
-        self.identities.fill(0);
-        for index in 0..self.candidates.len() {
-            let slot = self.candidates[index];
-            let before = self
-                .handle(slot)
-                .map(|handle| (self.ids[slot as usize].expect("old live identity"), handle));
-            self.refresh_identity(world, slot);
-            self.lifecycle(slot, before);
-        }
-        for (index, column) in self.columns.selected.iter_mut().enumerate() {
-            column.values.patch(
-                world,
-                column.component,
-                &self.candidates,
-                &mut self.endpoint.columns[index].1,
-                &self.identities,
-                self.columns.directory.as_ref(),
-            );
-            if column.values.is_temporal() {
-                self.pair.columns[index]
-                    .1
-                    .copy_from_slice(&self.endpoint.columns[index].1);
-            }
-        }
-        self.collect_changes();
-        self.patch_source = Some((self.id, self.timeline));
-        self.source_endpoint = self.patch_source;
-        self.id.tick = target;
-        self.timeline = timeline;
-        self.previous_id = None;
-        self.baseline = false;
-        self.initialized = true;
     }
 
     /// Page storage and reusable scratch retained by the runtime.

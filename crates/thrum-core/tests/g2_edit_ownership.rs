@@ -6,21 +6,14 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditError,
-        EditWriter, EntityWriter, ExecutionMode, GameRuntime, PublicationMode, ReadPermit,
-        RegisteredSystem, RegisteredWorldError, Stage, StructuralPermit, SystemId, SystemSpec,
-        TickError, TickGame, WorldRead, WritePermit,
+        EditWriter, EntityWriter, ExecutionMode, GameRuntime, PublicationMode, PublicationPage,
+        ReadPermit, RegisteredSystem, RegisteredWorldError, Stage, StructuralPermit, SystemId,
+        SystemSpec, TickError, TickGame, WorldRead, WritePermit,
     },
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Height(u32);
-
-#[derive(Debug, Default, Eq, PartialEq)]
-struct Page {
-    tick: u64,
-    height: Option<Height>,
-    spawned: bool,
-}
 
 #[derive(Default)]
 struct Candidate {
@@ -88,7 +81,7 @@ impl Rules {
     }
 }
 
-impl TickGame<Page> for Rules {
+impl TickGame for Rules {
     type Error = ();
     type Candidate = Candidate;
     type ParallelOutput = Option<SystemId>;
@@ -121,30 +114,9 @@ impl TickGame<Page> for Rules {
     }
 
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {}
-
-    fn capture(
-        &mut self,
-        world: &WorldRead<'_>,
-        _candidate: &mut Candidate,
-        _events: &[thrum_core::sim::StructuralChange],
-        page: &mut Page,
-        _cold: bool,
-        _page_dirty: thrum_core::sim::DirtyPage<'_>,
-        _outbound_dirty: thrum_core::sim::DirtyPage<'_>,
-        _source: Option<&Page>,
-        tick: u64,
-        _timeline: u64,
-    ) {
-        page.tick = tick;
-        page.height = world.with(&self.read, self.handle, |height| *height).ok();
-        page.spawned = world.handle(StableId(2)).is_some();
-    }
 }
 
-fn fixture(
-    callbacks: Callbacks,
-    mode: ExecutionMode,
-) -> (GameRuntime<Page, Rules>, Rules, Candidate) {
+fn fixture(callbacks: Callbacks, mode: ExecutionMode) -> (GameRuntime<Rules>, Rules, Candidate) {
     let mut registry = ComponentRegistry::default();
     let height = registry
         .register::<Height>(ComponentSchemaId(0xE01))
@@ -218,7 +190,10 @@ fn fixture(
             }),
         ]
     };
-    let mut runtime = GameRuntime::new(WorldEpoch(11), 2, registry, systems, Page::default)
+    registry
+        .select_publication::<Height>(true)
+        .expect("height publication");
+    let mut runtime = GameRuntime::new_published(WorldEpoch(11), 2, registry, systems)
         .expect("edit ownership runtime");
     runtime.set_execution_mode(mode);
     let handle = runtime
@@ -263,13 +238,14 @@ fn assert_refusal_and_retry(
             .with(&rules.read, rules.handle, |height| *height),
         Ok(Height(1))
     );
-    let baseline = Page {
-        tick: 0,
-        height: Some(Height(1)),
-        spawned: false,
-    };
-    assert_eq!(*held, baseline);
-    assert_eq!(*runtime.latest().expect("unchanged publication"), baseline);
+    assert_page(&held, 0, rules.handle, Height(1), false);
+    assert_page(
+        &runtime.latest().expect("unchanged publication"),
+        0,
+        rules.handle,
+        Height(1),
+        false,
+    );
     if callbacks == Callbacks::Parallel {
         assert_eq!(candidate.merged, [SystemId(1), SystemId(2)]);
     }
@@ -283,15 +259,14 @@ fn assert_refusal_and_retry(
         Ok(Height(9))
     );
     assert!(runtime.handle(StableId(2)).is_some());
-    assert_eq!(
-        *runtime.latest().expect("committed page"),
-        Page {
-            tick: 1,
-            height: Some(Height(9)),
-            spawned: true,
-        }
+    assert_page(
+        &runtime.latest().expect("committed page"),
+        1,
+        rules.handle,
+        Height(9),
+        true,
     );
-    assert_eq!(*held, baseline);
+    assert_page(&held, 0, rules.handle, Height(1), false);
     if callbacks == Callbacks::Parallel {
         assert_eq!(candidate.merged, [SystemId(1), SystemId(2)]);
     }
@@ -348,11 +323,6 @@ fn later_callback_updates_are_the_final_payload_of_an_earlier_descriptor() {
 fn foreign_component_edit_rolls_back_direct_write_and_retry_retains_first_preimage() {
     let (mut runtime, mut rules, mut candidate) = fixture(Callbacks::Direct, ExecutionMode::Serial);
     let held = runtime.latest().expect("held baseline page");
-    let baseline = Page {
-        tick: 0,
-        height: Some(Height(1)),
-        spawned: false,
-    };
     let mut undo = runtime.new_undo();
     rules.fault = Fault::WrongSystem;
     assert_eq!(
@@ -373,8 +343,14 @@ fn foreign_component_edit_rolls_back_direct_write_and_retry_retains_first_preima
             .with(&rules.read, rules.handle, |height| *height),
         Ok(Height(1))
     );
-    assert_eq!(*held, baseline);
-    assert_eq!(*runtime.latest().expect("unchanged publication"), baseline);
+    assert_page(&held, 0, rules.handle, Height(1), false);
+    assert_page(
+        &runtime.latest().expect("unchanged publication"),
+        0,
+        rules.handle,
+        Height(1),
+        false,
+    );
 
     rules.fault = Fault::None;
     assert_eq!(
@@ -387,14 +363,7 @@ fn foreign_component_edit_rolls_back_direct_write_and_retry_retains_first_preima
         Ok(1)
     );
     let committed = runtime.latest().expect("committed page");
-    assert_eq!(
-        *committed,
-        Page {
-            tick: 1,
-            height: Some(Height(9)),
-            spawned: true
-        }
-    );
+    assert_page(&committed, 1, rules.handle, Height(9), true);
     assert_eq!(
         runtime
             .read()
@@ -414,13 +383,16 @@ fn foreign_component_edit_rolls_back_direct_write_and_retry_retains_first_preima
             .with(&rules.read, rules.handle, |height| *height),
         Ok(Height(1))
     );
-    assert_eq!(*held, baseline);
+    assert_page(&held, 0, rules.handle, Height(1), false);
+    assert_page(&committed, 1, rules.handle, Height(9), true);
+}
+
+fn assert_page(page: &PublicationPage, tick: u64, handle: Handle, height: Height, spawned: bool) {
+    assert_eq!(page.id().tick, tick);
+    assert_eq!(page.component::<Height>(handle), Some(&height));
     assert_eq!(
-        *committed,
-        Page {
-            tick: 1,
-            height: Some(Height(9)),
-            spawned: true
-        }
+        (0..page.slot_capacity())
+            .any(|slot| page.stable_id(u32::try_from(slot).expect("slot")) == Some(StableId(2))),
+        spawned
     );
 }

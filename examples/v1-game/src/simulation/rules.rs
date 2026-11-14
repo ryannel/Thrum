@@ -12,11 +12,8 @@ use thrum_core::{
     },
 };
 
-use super::{
-    page::Page,
-    types::{
-        Command, Health, Ownership, Position, SimAction, SimConfig, SimError, Velocity, Visual,
-    },
+use super::types::{
+    Command, Health, Ownership, Position, SimAction, SimConfig, SimError, Velocity, Visual,
 };
 
 #[derive(Clone)]
@@ -504,7 +501,7 @@ impl Rules {
     }
 }
 
-impl TickGame<Page> for Rules {
+impl TickGame for Rules {
     type Error = SimError;
     type Candidate = Candidate;
     type ParallelOutput = ResolveStage;

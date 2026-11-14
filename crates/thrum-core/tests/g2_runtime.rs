@@ -20,17 +20,10 @@ struct Drift(f64);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Tag(u32);
 
-#[derive(Default)]
-struct Page {
-    tick: u64,
-    rows: Vec<(Handle, StableId, Height)>,
-}
-
 struct Candidate {
     motion: Read2<Height, Drift>,
     order_query: Read2<Height, Drift>,
     order: Vec<StableId>,
-    capture: Read2<Height, Drift>,
     batch: Vec<(Handle, Height)>,
     spawns: Vec<StableId>,
 }
@@ -127,7 +120,7 @@ impl Rules {
     }
 }
 
-impl TickGame<Page> for Rules {
+impl TickGame for Rules {
     type Error = GameError;
     type Candidate = Candidate;
     type ParallelOutput = ();
@@ -153,26 +146,6 @@ impl TickGame<Page> for Rules {
     fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, _candidate: &Candidate) {
         self.churn = None;
         self.optional_edit = None;
-    }
-
-    fn capture(
-        &mut self,
-        world: &WorldRead<'_>,
-        candidate: &mut Candidate,
-        _events: &[thrum_core::sim::StructuralChange],
-        page: &mut Page,
-        _cold: bool,
-        _page_dirty: thrum_core::sim::DirtyPage<'_>,
-        _outbound_dirty: thrum_core::sim::DirtyPage<'_>,
-        _source: Option<&Page>,
-        tick: u64,
-        _timeline: u64,
-    ) {
-        page.tick = tick;
-        page.rows.clear();
-        candidate.capture.visit(world, |handle, id, height, _| {
-            page.rows.push((handle, id, *height));
-        });
     }
 }
 
@@ -203,8 +176,7 @@ fn system(
     }
 }
 
-#[test]
-fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn() {
+fn runtime_fixture() -> GameRuntime<Rules> {
     let mut registry = ComponentRegistry::default();
     let height = registry
         .register::<Height>(ComponentSchemaId(0xA1))
@@ -218,7 +190,10 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     let tag = registry
         .register::<Tag>(ComponentSchemaId(0xA4))
         .expect("optional tag schema");
-    let mut runtime = GameRuntime::new(
+    registry
+        .select_publication::<Height>(true)
+        .expect("height publication");
+    GameRuntime::new_published(
         WorldEpoch(9),
         2,
         registry,
@@ -250,9 +225,13 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
                 |_, _, _, _, _, _| Ok(()),
             ),
         ],
-        Page::default,
     )
-    .expect("generic game setup");
+    .expect("generic game setup")
+}
+
+#[test]
+fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn() {
+    let mut runtime = runtime_fixture();
     assert!(matches!(
         runtime.read2::<Height, Drift>(SystemId(99)),
         Err(RuntimeError::UndeclaredAccess)
@@ -286,8 +265,13 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         Err(TickError::Game(GameError::Rejected))
     );
     assert_eq!(runtime.tick(), 0);
-    assert_eq!(baseline.rows[0].2, Height(1.0));
-    assert_eq!(runtime.latest().expect("same page").tick, 0);
+    assert_eq!(
+        *baseline
+            .component::<Height>(first)
+            .expect("baseline height"),
+        Height(1.0)
+    );
+    assert_eq!(runtime.latest().expect("same page").id().tick, 0);
     game.reject = false;
     assert_eq!(runtime.step(&mut game, &mut candidate), Ok(1));
     runtime
@@ -299,7 +283,14 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         runtime.read().with(&game.height_read, first, |h| *h),
         Ok(Height(3.0))
     );
-    assert_eq!(runtime.latest().expect("first tick").rows[0].2, Height(3.0));
+    assert_eq!(
+        *runtime
+            .latest()
+            .expect("first tick")
+            .component::<Height>(first)
+            .expect("height"),
+        Height(3.0)
+    );
     assert_duplicate_batch_refuses(&mut runtime, &mut game, &mut candidate, first);
     game.bad_edit = Some(first);
     assert_eq!(
@@ -332,14 +323,14 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
         runtime
             .latest()
             .expect("churn page")
-            .rows
-            .iter()
-            .find(|(_, id, _)| *id == StableId(3))
-            .map(|(_, _, height)| *height),
+            .component::<Height>(replacement)
+            .copied(),
         Some(Height(7.0))
     );
     assert_eq!(
-        baseline.rows[0].2,
+        *baseline
+            .component::<Height>(first)
+            .expect("baseline height"),
         Height(1.0),
         "leased baseline stays complete"
     );
@@ -350,7 +341,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     let order = candidate.order.clone();
     assert_eq!(order, [StableId(3), StableId(2)]);
     runtime
-        .restore(&saved, Page::default)
+        .restore_published(&saved)
         .expect("same runtime capture");
     assert_eq!(
         runtime.capture_delta_into(&mut delta_two),
@@ -364,7 +355,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
     assert_eq!(candidate.order, order);
 
     runtime
-        .restore(&branch_point, Page::default)
+        .restore_published(&branch_point)
         .expect("restore branch point");
     let restored_bytes = runtime
         .read()
@@ -406,7 +397,7 @@ fn game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn()
 }
 
 fn assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
-    runtime: &mut GameRuntime<Page, Rules>,
+    runtime: &mut GameRuntime<Rules>,
     game: &mut Rules,
     candidate: &mut Candidate,
 ) {
@@ -433,7 +424,7 @@ fn assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
         .rewind_many(std::slice::from_mut(&mut undo))
         .expect("first inverse application");
     runtime
-        .restore(&future, Page::default)
+        .restore_published(&future)
         .expect("same numeric revision restored cold");
     assert_eq!(
         runtime.rewind_many(std::slice::from_mut(&mut undo)),
@@ -456,13 +447,12 @@ fn assert_undo_is_one_shot_and_busy_tick_cannot_fake_patch(
     }
     runtime.step(game, candidate).expect("busy tick commits");
     assert!(!runtime.has_current_publication());
-    assert!(!runtime.patch_rewound_page(&[], |_| Some(0), |_, _, _, _, _, _| {}));
     assert!(!runtime.has_current_publication());
     drop(held);
 }
 
 fn assert_duplicate_batch_refuses(
-    runtime: &mut GameRuntime<Page, Rules>,
+    runtime: &mut GameRuntime<Rules>,
     game: &mut Rules,
     candidate: &mut Candidate,
     first: Handle,
@@ -480,7 +470,7 @@ fn assert_duplicate_batch_refuses(
     game.duplicate_batch = false;
 }
 
-fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
+fn test_rules(runtime: &GameRuntime<Rules>) -> Rules {
     Rules {
         write: runtime
             .write_permit::<Height>(SystemId(1))
@@ -510,7 +500,7 @@ fn test_rules(runtime: &GameRuntime<Page, Rules>) -> Rules {
 }
 
 fn assert_optional_component_history(
-    runtime: &mut GameRuntime<Page, Rules>,
+    runtime: &mut GameRuntime<Rules>,
     game: &mut Rules,
     candidate: &mut Candidate,
 ) {
@@ -530,7 +520,7 @@ fn assert_optional_component_history(
     let mut replayed = before.clone_independent();
     replayed.advance(&insert_delta).expect("apply insert delta");
     runtime
-        .restore(&replayed, Page::default)
+        .restore_published(&replayed)
         .expect("restore inserted tag");
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
@@ -549,14 +539,14 @@ fn assert_optional_component_history(
         Err(RegisteredWorldError::MissingComponent)
     );
     runtime
-        .restore(&replayed, Page::default)
+        .restore_published(&replayed)
         .expect("restore removed tag");
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
         Err(RegisteredWorldError::MissingComponent)
     );
     runtime
-        .restore(&inserted, Page::default)
+        .restore_published(&inserted)
         .expect("restore saved insert");
     assert_eq!(
         runtime.read().with(&game.tag_read, handle, |tag| *tag),
@@ -565,7 +555,7 @@ fn assert_optional_component_history(
 }
 
 fn assert_coalesced_optional_component_history(
-    runtime: &mut GameRuntime<Page, Rules>,
+    runtime: &mut GameRuntime<Rules>,
     game: &mut Rules,
     candidate: &mut Candidate,
 ) {
@@ -630,7 +620,7 @@ fn assert_coalesced_optional_component_history(
     game.motion_enabled = true;
 }
 
-fn seed_test_world(runtime: &mut GameRuntime<Page, Rules>) -> Handle {
+fn seed_test_world(runtime: &mut GameRuntime<Rules>) -> Handle {
     let first = runtime
         .seed(StableId(1), |entity| {
             entity.add(Height(1.0))?;
@@ -649,7 +639,7 @@ fn seed_test_world(runtime: &mut GameRuntime<Page, Rules>) -> Handle {
     first
 }
 
-fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
+fn test_candidate(runtime: &GameRuntime<Rules>) -> Candidate {
     Candidate {
         motion: runtime
             .read2::<Height, Drift>(SystemId(1))
@@ -658,15 +648,12 @@ fn test_candidate(runtime: &GameRuntime<Page, Rules>) -> Candidate {
             .read2::<Height, Drift>(SystemId(1))
             .expect("declared canonical read"),
         order: Vec::new(),
-        capture: runtime
-            .read2::<Height, Drift>(SystemId(2))
-            .expect("declared capture read"),
         batch: Vec::new(),
         spawns: Vec::new(),
     }
 }
 
-fn assert_invalid_journal_access(runtime: &GameRuntime<Page, Rules>) {
+fn assert_invalid_journal_access(runtime: &GameRuntime<Rules>) {
     assert!(runtime.read().live_at_slot(u32::MAX).is_none());
     assert!(!runtime.read().visit_changes_since(0, 99, |_| {}));
 }
