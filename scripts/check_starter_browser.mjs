@@ -208,26 +208,48 @@ try {
     assert(supported ? numeric(await gpuRows()) : (await gpuRows()).every(([,text])=>text.includes('no timestamp queries')), 'GPU values contradict adapter features');
     await screenshot('profiler-wide');
     if(mode === 'profiler') {
-      // A real load change after frame 600: remove the cooked mesh's fragment work.
+      // A real geometry load change after frame 600, large enough for coarse timestamps.
       // Canvas size changes only the presentation surface, not the fixed render extent.
       const baseline = await gpuRows();
       const boundary = await latest();
       const gltf = path.join(source, 'meshes/rock.gltf');
       const original = await fs.readFile(gltf, 'utf8');
-      const shifted = JSON.parse(original);
-      shifted.nodes[0].translation = [500, 0, 0];
-      await fs.writeFile(gltf, JSON.stringify(shifted));
-      await until(async()=> /generation 2 drawn/.test(await evaluate('document.querySelector("#status").textContent')), 'changed fragment workload drawn');
+      const loadedMesh = JSON.parse(original);
+      const originalBuffer = await fs.readFile(path.join(path.dirname(gltf), loadedMesh.buffers[0].uri));
+      const position = loadedMesh.accessors[0];
+      const sourceView = loadedMesh.bufferViews[position.bufferView];
+      const positions = originalBuffer.subarray(sourceView.byteOffset, sourceView.byteOffset + sourceView.byteLength);
+      const buffers = [originalBuffer];
+      const primitive = loadedMesh.meshes[0].primitives[0];
+      loadedMesh.meshes[0].primitives = [];
+      let offset = originalBuffer.length;
+      const layers = 4096;
+      for (let layer = 0; layer < layers; layer++) {
+        const bytes = Buffer.from(positions);
+        const shift = (layer + 1) * 0.0001;
+        for (let vertex = 0; vertex < position.count; vertex++) bytes.writeFloatLE(bytes.readFloatLE(vertex * 12 + 8) + shift, vertex * 12 + 8);
+        const view = loadedMesh.bufferViews.length;
+        loadedMesh.bufferViews.push({buffer:0,byteOffset:offset,byteLength:bytes.length,target:34962});
+        const accessor = loadedMesh.accessors.length;
+        loadedMesh.accessors.push({...position,bufferView:view,min:position.min.map((v,i)=>v+(i===2?shift:0)),max:position.max.map((v,i)=>v+(i===2?shift:0))});
+        loadedMesh.meshes[0].primitives.push({...primitive,attributes:{...primitive.attributes,POSITION:accessor}});
+        buffers.push(bytes);
+        offset += bytes.length;
+      }
+      const binary = Buffer.concat(buffers);
+      loadedMesh.buffers[0] = {uri:`data:application/octet-stream;base64,${binary.toString('base64')}`,byteLength:binary.length};
+      await fs.writeFile(gltf, JSON.stringify(loadedMesh));
+      await until(async()=> /generation 2 drawn/.test(await evaluate('document.querySelector("#status").textContent')), 'changed geometry workload drawn');
       const changedBoundary = await latest();
       await until(async()=> (await latest()) > changedBoundary + 150, 'recent window replaced after load change', 180000);
       const loaded = await gpuRows();
       const changed = await capture('profiler-load');
       assert(hash(changed)!==hash(before), 'load change did not change submitted scene pixels');
-      results.load = { baseline, loaded, boundary, changedBoundary, newest:await latest(), edit:'rock node translated outside the camera; cooked fragment work removed' };
+      results.load = { baseline, loaded, boundary, changedBoundary, newest:await latest(), edit:`${layers} independently optimized rock shells; ${position.count * layers} source vertices` };
       if(supported) {
         const number = text => Number(/([\d.]+) ms/.exec(text)?.[1] ?? NaN);
         const forward = rows => number(rows.find(([name])=>/forward/.test(name))?.[1] ?? '');
-        assert(forward(loaded) < forward(baseline), `forward pass did not respond to removed mesh fragments: ${JSON.stringify(results.load)}`);
+        assert(forward(loaded) > forward(baseline), `forward pass did not respond to added geometry: ${JSON.stringify(results.load)}`);
       }
       await fs.writeFile(gltf, original);
       await until(async()=> /generation 3 drawn/.test(await evaluate('document.querySelector("#status").textContent')), 'restored mesh drawn');
