@@ -61,7 +61,11 @@ class Scene:
         self.cpu_before = usage.ru_utime + usage.ru_stime
         self.started = time.monotonic()
         self.process = subprocess.Popen(command, cwd=ROOT, env=dict(ENV, **env, THRUM_PROFILE_OUTPUT=str(directory), THRUM_PARAMS=str(self.params)), stdout=self.log, stderr=self.log, start_new_session=True)
-        wait_for(lambda: latest(directory) if self.process.poll() is None else self.fail(), "native completed samples")
+        try:
+            wait_for(lambda: latest(directory) if self.process.poll() is None else self.fail(), "native completed samples")
+        except BaseException:
+            self.close()
+            raise
 
     def fail(self):
         raise RuntimeError(f"Native scene exited {self.process.returncode}: {(self.directory / 'command.log').read_text()[-2000:]}")

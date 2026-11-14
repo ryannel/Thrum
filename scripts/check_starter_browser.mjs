@@ -208,19 +208,31 @@ try {
     assert(supported ? numeric(await gpuRows()) : (await gpuRows()).every(([,text])=>text.includes('no timestamp queries')), 'GPU values contradict adapter features');
     await screenshot('profiler-wide');
     if(mode === 'profiler') {
-      // A real load change, only after 600 completed frames: 16x the fragment pixels.
+      // A real load change after frame 600: remove the cooked mesh's fragment work.
+      // Canvas size changes only the presentation surface, not the fixed render extent.
       const baseline = await gpuRows();
       const boundary = await latest();
-      await evaluate('(()=>{const c=document.querySelector("canvas");c.width=3840;c.height=2160;})()');
-      await until(async()=> (await latest()) > boundary + 150, 'recent window replaced after load change', 180000);
+      const gltf = path.join(source, 'meshes/rock.gltf');
+      const original = await fs.readFile(gltf, 'utf8');
+      const shifted = JSON.parse(original);
+      shifted.nodes[0].translation = [500, 0, 0];
+      await fs.writeFile(gltf, JSON.stringify(shifted));
+      await until(async()=> /generation 2 drawn/.test(await evaluate('document.querySelector("#status").textContent')), 'changed fragment workload drawn');
+      const changedBoundary = await latest();
+      await until(async()=> (await latest()) > changedBoundary + 150, 'recent window replaced after load change', 180000);
       const loaded = await gpuRows();
-      results.load = { baseline, loaded, boundary, newest:await latest() };
+      const changed = await capture('profiler-load');
+      assert(hash(changed)!==hash(before), 'load change did not change submitted scene pixels');
+      results.load = { baseline, loaded, boundary, changedBoundary, newest:await latest(), edit:'rock node translated outside the camera; cooked fragment work removed' };
       if(supported) {
         const number = text => Number(/([\d.]+) ms/.exec(text)?.[1] ?? NaN);
         const forward = rows => number(rows.find(([name])=>/forward/.test(name))?.[1] ?? '');
-        assert(forward(loaded) > forward(baseline), `forward pass did not respond to 16x pixels: ${JSON.stringify(results.load)}`);
+        assert(forward(loaded) < forward(baseline), `forward pass did not respond to removed mesh fragments: ${JSON.stringify(results.load)}`);
       }
-      await evaluate('(()=>{const c=document.querySelector("canvas");c.width=960;c.height=540;})()');
+      await fs.writeFile(gltf, original);
+      await until(async()=> /generation 3 drawn/.test(await evaluate('document.querySelector("#status").textContent')), 'restored mesh drawn');
+      const restoredBoundary = await latest();
+      await until(async()=> (await latest()) > restoredBoundary + 130, 'restored recent window');
     }
     await cdp.call('Emulation.setDeviceMetricsOverride',{ width:480,height:900,deviceScaleFactor:1,mobile:false },sid);
     await delay(500);
