@@ -3,7 +3,10 @@
 - 2026-11-14 Baseline attempt on `d360fbcf` passed 38/4 native comparisons and all 481
   records in Chrome day SDR, day linear and night SDR. Night linear failed identity at
   ordinal 170: tick/source_tick 289 and alpha 1 rather than 290 and alpha 0. Its 481
-  manifest pixel hashes all match the retained reference. No baseline or comparator was
+  manifest pixel hashes all match the retained reference. A separate decode/hash pass over
+  all 481 stored gzip frames also found zero raw digest differences; the candidate manifest
+  SHA-256 is `e6702ba57b62779c01499d3986fcdb6344e9d23a2be8f12442e504f7f653a923`.
+  No baseline or comparator was
   changed. The browser world's configured 2 ms elapsed work slice can defer the second of
   two due ticks, which is consistent with this equivalent endpoint; no tick-cost witness
   was exported, so that cause is an inference, not a measured attribution. Chrome was
