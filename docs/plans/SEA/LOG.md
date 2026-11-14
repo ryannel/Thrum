@@ -131,7 +131,7 @@ combined source. The merge gate runs the full repository check again.
   absent. The rebase changed none of the sea crates, their renderer dependency
   or workspace dependencies; the ambient target also passed again at `4372f847`.
   The first verifier attempt at that source stopped at native route-motion
-  capture: Metal was correct, but the interval was incomplete, with 153 readback
+  capture: the backend was Metal, but the interval was incomplete, with 153 readback
   ring omissions and zero writer omissions. Its compact diagnostic archive is
   `tmp/sea-m2/baseline-first-failure.json.gz`; disposable pixels were removed
   after preserving the metadata. This identifies the rejected completion
