@@ -144,7 +144,7 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
             else:
                 chrome_pid = json.loads((output / "chrome/driver.json").read_text())["chrome_pid"]
                 os.killpg(chrome_pid, signal.SIGKILL)
-            (output / "kill.json").write_text(json.dumps({"harness_action":"SIGKILL", "elapsed":time.monotonic()-began}))
+            (output / "kill.json").write_text(json.dumps({"harness_action":"SIGKILL", "elapsed":time.monotonic()-began,"scope":"Chrome browser process group; network-service death is not claimed" if target=="chrome-webgpu" else "native client process including its I/O thread"}))
         client_status = client.wait(timeout=seconds + 30)
         if identity == "version":
             assert client_status != 0, "wrong ticket version accepted"
@@ -164,7 +164,11 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
     host_rows = rows(output / "host.jsonl")
     host_results = [row["result"] for row in host_rows if "result" in row]
     if case == "kill-peer":
-        assert host_results and any("Closed(TimedOut)" in row.get("events",[]) for row in host_rows)
+        closed = [event for row in host_rows for event in row.get("events",[]) if event.startswith("Closed(")]
+        # Chrome's surviving network service may send a normal session close after the browser
+        # parent is killed. The idle-cut case separately requires the host's timeout.
+        allowed = {"Closed(TimedOut)","Closed(Peer(0))","Closed(Transport)"} if target=="chrome-webgpu" else {"Closed(TimedOut)"}
+        assert host_results and closed and all(event in allowed for event in closed)
         return {"host":host_rows, "harness_kill":json.loads((output / "kill.json").read_text())}
     if target == "chrome-webgpu":
         client_record = json.loads((output / "browser.json").read_text())

@@ -33,6 +33,13 @@ chrome.stderr.on('data', chunk => { stderr = (stderr + chunk.toString()).slice(-
 let socket;
 let next = 0;
 const calls = new Map();
+function signalChrome(signal) {
+  try { process.kill(-chrome.pid,signal); }
+  catch (error) {
+    if (error.code === 'EPERM') chrome.kill(signal);
+    else if (error.code !== 'ESRCH') throw error;
+  }
+}
 let cleaning;
 function cleanup() {
   return cleaning ??= (async () => {
@@ -41,10 +48,10 @@ function cleanup() {
     server.close();
     if (chrome.exitCode === null && chrome.signalCode === null) {
       const exited = new Promise(resolve=>chrome.once('exit',resolve));
-      try { process.kill(-chrome.pid,'SIGTERM'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+      signalChrome('SIGTERM');
       await Promise.race([exited,delay(1000)]);
       if (chrome.exitCode === null && chrome.signalCode === null) {
-        try { process.kill(-chrome.pid,'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+        signalChrome('SIGKILL');
         await Promise.race([exited,delay(1000)]);
       }
     }
