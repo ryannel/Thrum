@@ -100,3 +100,30 @@ fn controls_ramp_at_the_response_rate() {
     close(state.parameters().coverage, 0.2, 1e-15);
     close(state.parameters().kind, 0.2, 1e-15);
 }
+
+#[test]
+fn a_full_day_at_40_metres_per_second_matches_extended_precision() {
+    for scale in [1.0, 60.0] {
+        let mut p = parameters(0.4, 0.6);
+        p.wind = [40.0, 0.0];
+        p.time_scale = scale;
+        let mut state = State::new(p, 10.0, 0).expect("state");
+        let mut travel = [0.0; 2];
+        let mut time = [0.0; 2];
+        for tick in 1..=5_184_000 {
+            state.step(tick, 1.0 / 60.0).expect("tick");
+            wide_add(&mut travel, 40.0 * (1.0 / 60.0) * scale);
+            wide_add(&mut time, (1.0 / 60.0) * scale);
+        }
+        close(
+            state.travel()[0],
+            travel[0] + travel[1],
+            5_184_000.0 * f64::EPSILON * 40.0 * 86_400.0 * scale,
+        );
+        close(
+            state.time(),
+            time[0] + time[1],
+            5_184_000.0 * f64::EPSILON * 86_400.0 * scale,
+        );
+    }
+}

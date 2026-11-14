@@ -58,13 +58,21 @@ fn births_have_no_generation_beat() {
         let average = spectrum.iter().sum::<f64>() / 180.0;
         let mut peaks = Vec::new();
         for harmonic in 1_usize..=4 {
-            // Nearest DFT bin to h / period (six hours / 1600 seconds).
-            let bin = (27 * harmonic).div_ceil(2);
-            peaks.push(spectrum[bin - 1] / average);
+            // Evaluate the actual generation frequency, including half-bin
+            // frequencies, rather than hiding a beat between FFT bins.
+            let mut re = 0.0;
+            let mut im = 0.0;
+            for (minute, count) in counts.iter().enumerate() {
+                let angle = TAU * harmonic as f64 * (minute as f64 + 0.5) * 60.0 / 1600.0;
+                re += (count - mean) * angle.cos();
+                im += (count - mean) * angle.sin();
+            }
+            let power = re * re + im * im;
+            peaks.push(power / average);
             assert!(
-                spectrum[bin - 1] < 4.6 * average,
+                power < 4.6 * average,
                 "seed {seed}, harmonic {harmonic}: {}",
-                spectrum[bin - 1] / average
+                power / average
             );
         }
         assert!((products / n - (sum / n).powi(2)).abs() / (squares / n) < 0.04);
