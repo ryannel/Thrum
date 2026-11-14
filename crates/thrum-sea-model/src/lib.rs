@@ -7,7 +7,7 @@ mod conformance;
 mod spectrum;
 mod waves;
 
-pub use cascade::{Cascade, Differential, GRID_SIZE};
+pub use cascade::{Cascade, Differential, GRID_SIZE, LOOP_SECONDS, cascade_frequency, loop_cycles};
 pub use conformance::{Conformance, SeaProvider, compare};
 pub use spectrum::{Forcing, Spectrum, Swell, Transition};
 pub use waves::{Component, LongWaves, Sample, SeaError};
