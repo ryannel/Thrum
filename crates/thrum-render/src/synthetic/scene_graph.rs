@@ -278,21 +278,8 @@ impl PreparedSynthetic {
             .filter(|access| access.kind == AccessKind::UniformRead)
             .cloned()
             .collect::<Vec<_>>();
-        if let Some(cloud) = &self.cloud {
-            cloud.append_reads(&mut graph, &mut accesses)?;
-        }
-        let atmosphere_inputs = self
-            .atmosphere
-            .as_ref()
-            .map(|atmosphere| {
-                atmosphere.append_graph(
-                    &mut graph,
-                    &mut prepared_keys,
-                    &mut accesses,
-                    directional.clone(),
-                )
-            })
-            .transpose()?;
+        let atmosphere_inputs =
+            self.append_environment(&mut graph, &mut prepared_keys, &mut accesses, &directional)?;
         let contribution_start = accesses.len();
         let effect_resources =
             self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
@@ -305,14 +292,13 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             &contribution_reads,
         )?;
-        let air_key = self.air_shadow_key();
-        let air_shadow = (shadow.as_ref().filter(|_| self.air_shadow.is_some()))
-            .map(|maps| {
-                prepared_keys.insert(air_key);
-                let reads = [maps.clone(), directional.clone()];
-                air_shadow::append_graph(&mut graph, air_key, reads, &mut accesses)
-            })
-            .transpose()?;
+        let air_shadow = self.append_air_shadow(
+            &mut graph,
+            &mut prepared_keys,
+            shadow.as_ref(),
+            &directional,
+            &mut accesses,
+        )?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         self.append_material_textures(&mut graph, &mut accesses)?;
         let [depth, scene, motion, reactive] =
@@ -988,6 +974,69 @@ impl PreparedSynthetic {
         Ok(())
     }
 
+    fn append_environment(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        accesses: &mut Vec<Access>,
+        directional: &ResourceId,
+    ) -> Result<Option<(ResourceId, ResourceId)>, RenderError> {
+        if let Some(cloud) = &self.cloud {
+            cloud.append_reads(graph, accesses)?;
+        }
+        Ok(self
+            .atmosphere
+            .as_ref()
+            .map(|atmosphere| atmosphere.append_graph(graph, keys, accesses, directional.clone()))
+            .transpose()?)
+    }
+
+    fn append_air_shadow(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        shadow: Option<&ResourceId>,
+        directional: &ResourceId,
+        accesses: &mut Vec<Access>,
+    ) -> Result<Option<ResourceId>, RenderError> {
+        let key = self.air_shadow_key();
+        shadow
+            .filter(|_| self.air_shadow.is_some())
+            .map(|maps| {
+                keys.insert(key);
+                air_shadow::append_graph(graph, key, [maps.clone(), directional.clone()], accesses)
+            })
+            .transpose()
+    }
+
+    fn surface_binding(
+        graph: &CompiledGraph,
+        id: usize,
+    ) -> Result<RecordBinding<SceneFamily>, RenderError> {
+        let surface = graph
+            .surface_resource()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        Ok(RecordBinding::<SceneFamily>::new(
+            id,
+            PassKind::Render,
+            move |frame, pass| {
+                let (presenter, binding, view, extent) =
+                    frame.surface.ok_or(RenderError::GraphPassMismatch)?;
+                presenter
+                    .encode_compiled(
+                        frame.encoder,
+                        binding,
+                        view,
+                        extent,
+                        frame.timings.as_deref_mut(),
+                        pass,
+                        &surface,
+                    )
+                    .map_err(RenderError::Present)
+            },
+        ))
+    }
+
     pub(super) fn bind_scene_graph(
         &self,
         graph: CompiledGraph,
@@ -1023,24 +1072,7 @@ impl PreparedSynthetic {
                 }
 
                 Some(key) if key == crate::present::pipeline_key(self.key.device_generation) => {
-                    let surface = graph
-                        .surface_resource()
-                        .ok_or(RenderError::GraphPassMismatch)?;
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
-                        let (presenter, binding, view, extent) =
-                            frame.surface.ok_or(RenderError::GraphPassMismatch)?;
-                        presenter
-                            .encode_compiled(
-                                frame.encoder,
-                                binding,
-                                view,
-                                extent,
-                                frame.timings.as_deref_mut(),
-                                pass,
-                                &surface,
-                            )
-                            .map_err(RenderError::Present)
-                    })
+                    Self::surface_binding(&graph, id)?
                 }
                 Some(key)
                     if self
