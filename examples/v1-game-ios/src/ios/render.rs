@@ -362,6 +362,21 @@ fn request_device(
 }
 
 impl FrameReply {
+    fn native_witness(&mut self, host: &ThreadedFrameHost) {
+        if let Some(native) = host.native_witness_report() {
+            let _ = write!(
+                self.cooked,
+                "\nnative_selection={:?}\nnative_encoded={}\nnative_submitted={}\nnative_discarded={}\nnative_resets={}\nnative_completed={}\n",
+                native.selection,
+                native.encoded,
+                native.submitted,
+                native.discarded,
+                native.resets,
+                native.completed
+            );
+        }
+    }
+
     fn new(request: &FrameRequest, generation: u64, target: TargetLeadStatus) -> Self {
         Self {
             epoch: request.epoch,
@@ -511,7 +526,9 @@ impl Owner {
                 {
                     self.capture.failed(&mut gpu.host, &self.signals, &error);
                 }
-                return Ok(unrun(gpu.watch.generation, SurfaceStatus::NoLease));
+                let mut reply = unrun(gpu.watch.generation, SurfaceStatus::NoLease);
+                reply.native_witness(&gpu.host);
+                return Ok(reply);
             }
             if self.signals.stale_wake.swap(false, Ordering::AcqRel)
                 && gpu.watch.generation > FIRST_GENERATION
@@ -775,18 +792,7 @@ impl Owner {
                 )
             });
         reply.pending_frames = gpu.host.pending_frames();
-        if let Some(native) = gpu.host.native_witness_report() {
-            let _ = write!(
-                reply.cooked,
-                "\nnative_selection={:?}\nnative_encoded={}\nnative_submitted={}\nnative_discarded={}\nnative_resets={}\nnative_completed={}\n",
-                native.selection,
-                native.encoded,
-                native.submitted,
-                native.discarded,
-                native.resets,
-                native.completed
-            );
-        }
+        reply.native_witness(&gpu.host);
         let culling = gpu.host.culling_selection();
         let _ = write!(
             reply.cooked,
