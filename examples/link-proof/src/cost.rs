@@ -62,7 +62,7 @@ impl Cost {
             self.next_snapshot += 5_000;
         }
         if let Some(bytes) = self.echo.take() {
-            match link.send(Lane::Reliable, &bytes, now) {
+            match link.send(Lane::Reliable, &bytes, 0) {
                 Ok(()) => (),
                 Err(LinkError::Full) => {
                     self.echo = Some(bytes);
@@ -81,7 +81,7 @@ impl Cost {
                 match bytes[0] {
                     0 if self.host => {
                         bytes[0] = 1;
-                        match link.send(lane, &bytes, now) {
+                        match link.send(lane, &bytes, 0) {
                             Ok(()) => (),
                             Err(LinkError::Full) => {
                                 self.echo = Some(bytes);
@@ -160,7 +160,7 @@ impl Cost {
                         vec![self.sequence.to_le_bytes()[0]; if index == 0 { 400 } else { 189 }];
                     bytes[0] = 0;
                     bytes[1..9].copy_from_slice(&self.sequence.to_le_bytes());
-                    match link.send(lane, &bytes, now) {
+                    match link.send(lane, &bytes, 0) {
                         Ok(()) => {
                             self.pending
                                 .insert(self.sequence, (now, phase.min(3), index));
@@ -185,7 +185,7 @@ impl Cost {
                     let mut bytes = [0; 9];
                     bytes[0] = 2;
                     bytes[1] = u8::try_from(self.stage).map_err(|_| "stage")?;
-                    link.send(Lane::Reliable, &bytes, now)
+                    link.send(Lane::Reliable, &bytes, 0)
                         .map_err(|e| e.to_string())?;
                 }
             }
@@ -197,7 +197,7 @@ impl Cost {
                 bytes[0] = if self.host { 3 } else { 4 };
                 bytes[1] = id;
                 bytes[2] = part_byte;
-                match link.send(Lane::Reliable, &bytes, now) {
+                match link.send(Lane::Reliable, &bytes, 0) {
                     Ok(()) => part += 1,
                     Err(LinkError::Full) => {
                         self.outgoing = Some((id, part, count));

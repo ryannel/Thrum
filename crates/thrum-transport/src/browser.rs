@@ -91,6 +91,7 @@ pub fn connect(ticket: &Ticket, profile: Profile) -> Result<Link, LinkError> {
     let transport = configure().map_err(|_| LinkError::StartFailed)?;
     let startup_ms = profile.startup_ms;
     let link = Link::new(profile);
+    link.state.lock().expect("link state poisoned").clock_fn = Some(now);
     let io = link.clone();
     let transport = std::rc::Rc::new(transport);
     let control = std::rc::Rc::clone(&transport);

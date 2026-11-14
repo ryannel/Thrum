@@ -1,5 +1,9 @@
 # TRANSPORT log
 
+- 2026-11-14 The browser now timestamps accepted messages on its own monotonic clock, as the native adapter does;
+  only the virtual carrier takes queue time from the caller. The cost workload deliberately supplies zero queue
+  timestamps on both socket adapters, independently of its round-trip clock, to exercise that boundary.
+
 - 2026-11-14 Target diagnostics found and fixed close ordering: retain the native WebTransport session until its
   CONNECT close capsule completes, and let the browser's session-close observer supply the peer's code before a
   stream error wins. A direct Chrome coded close now passes. The reconnect harness waits for the host to observe

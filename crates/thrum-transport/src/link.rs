@@ -197,6 +197,7 @@ pub(crate) struct Message {
 #[derive(Debug)]
 pub(crate) struct State {
     pub clock: Option<std::time::Instant>,
+    pub clock_fn: Option<fn() -> u64>,
     pub profile: Profile,
     pub open: bool,
     pub closed: Option<CloseReason>,
@@ -207,6 +208,14 @@ pub(crate) struct State {
     pub counts: Counters,
 }
 impl State {
+    fn time(&self, caller: u64) -> u64 {
+        if let Some(clock) = self.clock_fn {
+            return clock();
+        }
+        self.clock.map_or(caller, |clock| {
+            u64::try_from(clock.elapsed().as_millis()).unwrap_or(u64::MAX)
+        })
+    }
     pub(crate) fn expire(&mut self, now: u64) {
         while self.outbound[1]
             .front()
@@ -288,6 +297,7 @@ impl Link {
             id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
             state: Arc::new(Mutex::new(State {
                 clock: None,
+                clock_fn: None,
                 profile,
                 open: false,
                 closed: None,
@@ -309,16 +319,15 @@ impl Link {
     pub fn is_open(&self) -> bool {
         self.state.lock().expect("link state poisoned").open
     }
-    /// Queue a whole message, copying it once. `now` is caller monotonic milliseconds.
+    /// Queue a whole message, copying it once. `now` supplies virtual milliseconds for the
+    /// in-memory carrier; socket adapters measure queue age on their own monotonic clock.
     /// # Errors
     /// Refuses empty, oversize, non-open sends and reliable sends beyond the queue cap.
     /// # Panics
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn send(&self, lane: Lane, bytes: &[u8], now: u64) -> Result<(), LinkError> {
         let mut state = self.state.lock().expect("link state poisoned");
-        let now = state.clock.map_or(now, |clock| {
-            u64::try_from(clock.elapsed().as_millis()).unwrap_or(u64::MAX)
-        });
+        let now = state.time(now);
         let index = lane.index();
         let refused = if bytes.is_empty() {
             Some((LinkError::Empty, 0))
@@ -389,9 +398,7 @@ impl Link {
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn counters(&self, now: u64) -> Counters {
         let state = self.state.lock().expect("link state poisoned");
-        let now = state.clock.map_or(now, |clock| {
-            u64::try_from(clock.elapsed().as_millis()).unwrap_or(u64::MAX)
-        });
+        let now = state.time(now);
         let mut result = state.counts.clone();
         for (index, queue) in state.outbound.iter().enumerate() {
             result.lanes[index].oldest_ms = queue.front().map(|m| now.saturating_sub(m.at));

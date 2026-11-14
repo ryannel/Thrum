@@ -9,7 +9,9 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -19,6 +21,9 @@ def main():
     parser.add_argument("--items",nargs="+",help="approved item IDs to run; omitted runs all checks and the project gate")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
+    rustc = Path(subprocess.check_output(["rustup","which","--toolchain","1.99.1","rustc"],text=True).strip())
+    os.environ["PATH"] = str(rustc.parent)+os.pathsep+os.environ["PATH"]
+    os.environ["RUSTC_WRAPPER"] = ""
     spec = importlib.util.spec_from_file_location("transport_build_loop",args.loop)
     loop = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = loop
