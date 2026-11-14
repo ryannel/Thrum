@@ -572,6 +572,23 @@ pub struct GameRuntime<P, G: TickGame<P>> {
 }
 
 impl<P, G: TickGame<P>> GameRuntime<P, G> {
+    /// Digest committed authority, including game resources supplied by the caller.
+    /// Component partials are reported in schema order for divergence diagnosis.
+    ///
+    /// # Errors
+    /// Returns the schema of a component registered without portable encoding.
+    pub fn world_digest(
+        &self,
+        resources: &impl crate::profile::StateEncode,
+        mut partial: impl FnMut(super::ComponentSchemaId, u64),
+    ) -> Result<u64, super::ComponentSchemaId> {
+        use crate::profile::{Digest, StateEncode};
+        let mut digest = Digest::default();
+        self.tick.encode(&mut digest);
+        self.world.digest(&mut digest, &mut partial)?;
+        resources.encode(&mut digest);
+        Ok(digest.finish())
+    }
     /// Identity of the current committed authority endpoint.
     pub fn endpoint(&self) -> RuntimeEndpoint {
         RuntimeEndpoint {
@@ -1552,6 +1569,9 @@ impl<P, G: TickGame<P>> GameRuntime<P, G> {
             self.edit_scratch
                 .validate(&self.world, self.nonce, &self.edits, candidate)
                 .map_err(TickError::Edit)?;
+            self.world
+                .validate_profile()
+                .map_err(|error| TickError::Edit(EditError::World(error)))?;
             Ok(())
         }));
         match preparation {

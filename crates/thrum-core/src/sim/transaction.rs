@@ -198,7 +198,10 @@ fn validate_batch_replace<T: Clone + Send + Sync + 'static>(
     let rows = values
         .downcast_ref::<Vec<(Handle, T)>>()
         .ok_or(EditError::WrongValueType)?;
-    for (handle, _) in rows {
+    for (handle, value) in rows {
+        world
+            .validate_profile_value(component, value, handle.slot)
+            .map_err(EditError::World)?;
         scratch.validate_component(
             world,
             *handle,
@@ -355,6 +358,7 @@ impl<C> Edit<C> {
 }
 
 pub(super) struct EditScratch {
+    spawn_slots: Vec<u32>,
     marks: Vec<u64>,
     retired: Vec<u64>,
     generation: u64,
@@ -368,6 +372,7 @@ pub(super) struct EditScratch {
 impl EditScratch {
     pub(super) fn new(capacity: usize, components: usize) -> Self {
         Self {
+            spawn_slots: Vec::new(),
             marks: vec![0; capacity.saturating_mul(components)],
             retired: vec![0; capacity],
             generation: 0,
@@ -394,6 +399,15 @@ impl EditScratch {
         }
         self.builders_used = 0;
         self.spawn_ids.clear();
+        world.copy_free_slots(&mut self.spawn_slots);
+        for edit in edits {
+            if let EditKind::Despawn { handle, .. } = &edit.inner {
+                world.entity(*handle).map_err(EditError::World)?;
+                if world.reusable_after_despawn(*handle) {
+                    self.spawn_slots.push(handle.slot);
+                }
+            }
+        }
         let mut available = world.free_count();
         let mut spawns = 0;
         for edit in edits {
@@ -419,6 +433,15 @@ impl EditScratch {
                         && !valid_value(value(candidate, *index))
                     {
                         return Err(EditError::WrongValueType);
+                    }
+                    if let Some(value) = value {
+                        world
+                            .validate_profile_value(
+                                *component,
+                                value(candidate, *index),
+                                handle.slot,
+                            )
+                            .map_err(EditError::World)?;
                     }
                 }
                 EditKind::BatchReplace {
@@ -472,7 +495,11 @@ impl EditScratch {
                     }
                     let builder = &mut self.builders[self.builders_used];
                     world
-                        .prepare_bundle(builder, |writer| fill(candidate, *index, writer))
+                        .prepare_bundle(
+                            builder,
+                            self.spawn_slots.pop().ok_or(EditError::Capacity)?,
+                            |writer| fill(candidate, *index, writer),
+                        )
                         .map_err(EditError::World)?;
                     self.builders_used += 1;
                     spawns += 1;

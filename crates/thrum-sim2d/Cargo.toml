@@ -1,0 +1,13 @@
+[package]
+name = "thrum-sim2d"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Deterministic derived circle queries"
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-core = { path = "../thrum-core" }

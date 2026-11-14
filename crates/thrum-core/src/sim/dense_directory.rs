@@ -60,6 +60,20 @@ impl Clone for DenseDirectory {
 }
 
 impl DenseDirectory {
+    pub(super) fn encode(&self, digest: &mut crate::profile::Digest) {
+        use crate::profile::StateEncode;
+        for map in [&self.slot_to_row, &self.row_to_slot] {
+            u64::try_from(map.len())
+                .expect("map length fits u64")
+                .encode(digest);
+            for &value in map {
+                u64::try_from(value).expect("row fits u64").encode(digest);
+            }
+        }
+        u64::try_from(self.active_len)
+            .expect("active length fits u64")
+            .encode(digest);
+    }
     /// Reserves every logical slot, initially inactive and in logical order.
     pub(super) fn new(capacity: usize) -> Self {
         Self {

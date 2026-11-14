@@ -9,6 +9,9 @@ description = "Thrum's shared simulation identities, clock and provisional world
 [lints]
 workspace = true
 
+[features]
+conformance-control = []
+
 [dependencies]
 smallvec = "=1.16.4"
 

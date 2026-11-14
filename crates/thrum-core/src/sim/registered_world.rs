@@ -1,6 +1,9 @@
 //! Game-registered component storage with engine-owned identity. This is the
 //! G2 replacement seam for the fixed A1 store; only checked handles escape.
 
+#[cfg(test)]
+mod digest_tests;
+
 use std::{
     any::Any,
     collections::hash_map::RandomState,
@@ -533,6 +536,13 @@ impl IdIndex {
 /// world state; callers validate a whole command batch before applying it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RegisteredWorldError {
+    /// A profile component would store a non-finite number.
+    NonFinite {
+        /// Durable component identity.
+        schema: ComponentSchemaId,
+        /// Logical slot of the invalid value.
+        slot: u32,
+    },
     /// Capacity is outside the slot address range or no free slot remains.
     Capacity,
     /// Stable identity already belongs to a live entity.
@@ -555,6 +565,7 @@ pub enum RegisteredWorldError {
 
 /// Reusable typed bundle writer. It never exposes storage rows or a mutable world.
 pub struct EntityWriter<'a> {
+    slot: u32,
     builder: &'a mut EntityBundle,
     registry: &'a ComponentRegistry,
 }
@@ -577,6 +588,16 @@ impl EntityWriter<'_> {
         else {
             return Err(RegisteredWorldError::UnregisteredComponent);
         };
+        if self.registry.entries[index]
+            .profile
+            .as_ref()
+            .is_some_and(|profile| !(profile.valid)(&value))
+        {
+            return Err(RegisteredWorldError::NonFinite {
+                schema: self.registry.entries[index].schema,
+                slot: self.slot,
+            });
+        }
         if !self.builder.add(index, value) {
             return Err(RegisteredWorldError::DuplicateComponent);
         }
@@ -638,6 +659,91 @@ impl<T> Default for ChunkOutput<T> {
 }
 
 impl RegisteredWorld {
+    pub(super) fn copy_free_slots(&self, output: &mut Vec<u32>) {
+        output.clone_from(&self.free);
+    }
+    pub(super) fn validate_profile_value(
+        &self,
+        component: usize,
+        value: &dyn Any,
+        slot: u32,
+    ) -> Result<(), RegisteredWorldError> {
+        let entry = &self.registry.entries[component];
+        if entry
+            .profile
+            .as_ref()
+            .is_some_and(|profile| !(profile.valid)(value))
+        {
+            return Err(RegisteredWorldError::NonFinite {
+                schema: entry.schema,
+                slot,
+            });
+        }
+        Ok(())
+    }
+
+    pub(super) fn validate_profile(&self) -> Result<(), RegisteredWorldError> {
+        for (index, entry) in self.registry.entries.iter().enumerate() {
+            if let Some(profile) = &entry.profile
+                && let Some(slot) = (profile.validate)(self, index)
+            {
+                return Err(RegisteredWorldError::NonFinite {
+                    schema: entry.schema,
+                    slot,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn digest(
+        &self,
+        digest: &mut crate::profile::Digest,
+        partial: &mut impl FnMut(ComponentSchemaId, u64),
+    ) -> Result<(), ComponentSchemaId> {
+        use crate::profile::{Digest, StateEncode};
+        u64::try_from(self.slots.len())
+            .expect("capacity fits u64")
+            .encode(digest);
+        for slot in &self.slots {
+            slot.stable.is_some().encode(digest);
+            slot.generation.encode(digest);
+            slot.stable.map_or(0, |id| id.0).encode(digest);
+            slot.structural_tick.encode(digest);
+        }
+        u64::try_from(self.free.len())
+            .expect("free length fits u64")
+            .encode(digest);
+        for slot in &self.free {
+            slot.encode(digest);
+        }
+        // The identity index is canonicalized by logical slot, independently of
+        // randomized bucket layout. Encode actual lookups to catch a broken index.
+        for slot in &self.slots {
+            let found = slot.stable.and_then(|id| self.ids.get(id));
+            found.is_some().encode(digest);
+            found.unwrap_or(0).encode(digest);
+        }
+        self.directory.is_some().encode(digest);
+        if let Some(directory) = &self.directory {
+            directory.encode(digest);
+        }
+        let mut order: Vec<_> = (0..self.registry.entries.len()).collect();
+        order.sort_unstable_by_key(|&index| self.registry.entries[index].schema.0);
+        for component in order {
+            let entry = &self.registry.entries[component];
+            let profile = entry.profile.as_ref().ok_or(entry.schema)?;
+            let mut column = Digest::default();
+            entry.schema.0.encode(&mut column);
+            for slot in 0..self.capacity() {
+                self.change_ticks[tick_index(component, slot, self.capacity())].encode(&mut column);
+            }
+            (profile.encode)(self, component, &mut column);
+            partial(entry.schema, column.finish());
+            column.finish().encode(digest);
+        }
+        Ok(())
+    }
     pub(super) fn capacity(&self) -> usize {
         self.slots.len()
     }
@@ -1241,10 +1347,12 @@ impl RegisteredWorld {
     pub(super) fn prepare_bundle(
         &self,
         builder: &mut EntityBundle,
+        slot: u32,
         fill: impl FnOnce(&mut EntityWriter<'_>) -> Result<(), RegisteredWorldError>,
     ) -> Result<(), RegisteredWorldError> {
         builder.clear();
         let result = fill(&mut EntityWriter {
+            slot,
             builder,
             registry: &self.registry,
         });
@@ -1384,6 +1492,7 @@ impl RegisteredWorld {
         }
         let slot = *self.free.last().ok_or(RegisteredWorldError::Capacity)?;
         let result = fill(&mut EntityWriter {
+            slot,
             builder: &mut self.builder,
             registry: &self.registry,
         });
@@ -1514,6 +1623,7 @@ impl RegisteredWorld {
         dirty: &mut impl TentativeDirty,
     ) -> Result<bool, RegisteredWorldError> {
         self.entity(handle)?;
+        self.validate_profile_value(component, &value, handle.slot)?;
         let slot = handle.slot;
         let row = self.row_of_slot(slot);
         let prior_tick = self.change_tick_at(component, slot);

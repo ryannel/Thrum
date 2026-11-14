@@ -57,6 +57,51 @@ pub enum RegistrationError {
 }
 
 impl ComponentRegistry {
+    /// Register a portable component with canonical encoding and finite-value validation.
+    ///
+    /// # Panics
+    /// Only if an engine-internal registered column or slot invariant is broken.
+    ///
+    /// # Errors
+    /// The type or schema is already registered.
+    pub fn register_profile<T: Copy + Send + Sync + crate::profile::StateEncode + 'static>(
+        &mut self,
+        schema: ComponentSchemaId,
+    ) -> Result<ComponentKey, RegistrationError> {
+        let key = self.register::<T>(schema)?;
+        self.entries.last_mut().expect("new entry").profile = Some(ProfileComponent {
+            valid: |value| {
+                value
+                    .downcast_ref::<T>()
+                    .is_some_and(crate::profile::StateEncode::is_finite)
+            },
+            encode: |world, component, digest| {
+                use crate::profile::StateEncode;
+                for slot in 0..world.capacity() {
+                    let row = world.row_of_slot(u32::try_from(slot).expect("slot fits"));
+                    let value = world.column_at::<T>(component).get(row);
+                    value.is_some().encode(digest);
+                    if let Some(value) = value {
+                        value.encode(digest);
+                    }
+                }
+            },
+            validate: |world, component| {
+                for slot in 0..world.capacity() {
+                    let slot = u32::try_from(slot).expect("slot fits");
+                    if world
+                        .column_at::<T>(component)
+                        .get(world.row_of_slot(slot))
+                        .is_some_and(|value| !value.is_finite())
+                    {
+                        return Some(slot);
+                    }
+                }
+                None
+            },
+        });
+        Ok(key)
+    }
     /// Register one game component type and its durable schema identity.
     ///
     /// # Errors
@@ -129,6 +174,7 @@ impl ComponentRegistry {
             return Err(RegistrationError::DuplicateSchema);
         }
         self.entries.push(ComponentEntry {
+            profile: None,
             key,
             schema,
             indexed,
@@ -564,7 +610,14 @@ impl<T: Send + Sync + 'static> SnapshotColumn for TypedColumn<T> {
     }
 }
 
+pub(super) struct ProfileComponent {
+    pub(super) valid: fn(&dyn Any) -> bool,
+    pub(super) encode: fn(&RegisteredWorld, usize, &mut crate::profile::Digest),
+    pub(super) validate: fn(&RegisteredWorld, usize) -> Option<u32>,
+}
+
 pub(super) struct ComponentEntry {
+    pub(super) profile: Option<ProfileComponent>,
     pub(super) key: ComponentKey,
     pub(super) schema: ComponentSchemaId,
     indexed: bool,

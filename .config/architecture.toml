@@ -8,6 +8,19 @@ game_manifest = "examples/v1-game/Cargo.toml"
 manifest = "crates/thrum-core/Cargo.toml"
 allowed_workspace_dependencies = []
 
+[packages.thrum-sim2d]
+manifest = "crates/thrum-sim2d/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-core"]
+
+[packages.crowd-2d]
+manifest = "examples/crowd-2d/Cargo.toml"
+rule_package = true
+allowed_workspace_dependencies = ["thrum-core", "thrum-sim2d"]
+
+[packages.crowd-2d-run]
+manifest = "examples/crowd-2d-run/Cargo.toml"
+allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]
+
 [packages.thrum-sea-model]
 manifest = "crates/thrum-sea-model/Cargo.toml"
 # CPU spectrum and conformance oracle; no graphics or game dependencies.

@@ -1,0 +1,545 @@
+use std::{any::Any, num::NonZeroUsize};
+use thrum_core::{
+    ActorId, Handle, Origin, PeerId, StableId, WorldEpoch,
+    profile::{Digest, Number as N, StateEncode, Vector, random},
+    sim::{
+        Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, Edit, EditWriter,
+        EntityWriter, Executor, GameRuntime, HistoryGame, InputFrame, ReadPermit, RegisteredSystem,
+        RegisteredWorldError, RuntimeHistory, Stage, StructuralPermit, SystemId, SystemSpec,
+        TickGame, WorldRead, WritePermit,
+    },
+};
+use thrum_sim2d::{Circle, CircleIndex};
+
+/// Complete body authority. Kinds are player=0, enemy=1 and projectile=2.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Body {
+    /// Planar position.
+    pub position: Vector,
+    /// Per-tick displacement.
+    pub velocity: Vector,
+    /// Collision radius.
+    pub radius: N,
+    /// Role in the reference rules.
+    pub kind: u32,
+    /// Player index or projectile owner.
+    pub player: u32,
+    /// Remaining health for enemies, lifetime for projectiles.
+    pub health: i32,
+}
+impl StateEncode for Body {
+    fn encode(&self, digest: &mut Digest) {
+        self.position.encode(digest);
+        self.velocity.encode(digest);
+        self.radius.encode(digest);
+        self.kind.encode(digest);
+        self.player.encode(digest);
+        self.health.encode(digest);
+    }
+    fn is_finite(&self) -> bool {
+        self.position.is_finite() && self.velocity.is_finite() && self.radius.is_finite()
+    }
+}
+
+/// Authority resources restored with world history.
+#[derive(Clone, Default)]
+pub struct Resources {
+    /// Held controls, already converted by the engine.
+    pub controls: [[N; 2]; 4],
+    /// Last accepted sequence per peer.
+    pub sequences: [u64; 4],
+    /// Next stable identity, never reused.
+    pub next_id: u64,
+    /// Successful projectile hits.
+    pub hits: u64,
+}
+impl StateEncode for Resources {
+    fn encode(&self, digest: &mut Digest) {
+        self.controls.encode(digest);
+        self.sequences.encode(digest);
+        self.next_id.encode(digest);
+        self.hits.encode(digest);
+    }
+}
+
+/// Reference rule set and registered capabilities.
+pub struct Crowd {
+    /// Diagnostic injection used solely by the platform-sine negative control.
+    pub control: Option<fn(N) -> N>,
+    read: ReadPermit<Body>,
+    write: WritePermit<Body>,
+    structure: StructuralPermit,
+    /// Committed resources.
+    pub resources: Resources,
+    frames: [InputFrame<()>; 4],
+}
+
+/// Reusable derived state and candidate edits.
+pub struct Candidate {
+    rows: Vec<(Handle, StableId, Body)>,
+    circles: Vec<Circle>,
+    index: CircleIndex,
+    batch: Vec<(Handle, Body)>,
+    births: Vec<Body>,
+    dead: Vec<u32>,
+    pub(super) damage: Vec<u32>,
+    nearest: Vec<(N, u32)>,
+    resources: Resources,
+    /// Neighbours actually visited during this tick's separation queries.
+    pub neighbours: u64,
+}
+
+fn vector(x: i32, y: i32) -> Vector {
+    Vector {
+        x: N::from_i32(x),
+        y: N::from_i32(y),
+    }
+}
+fn length(value: Vector) -> N {
+    (value.x * value.x + value.y * value.y).sqrt()
+}
+fn direction(from: Vector, to: Vector) -> Vector {
+    let delta = Vector {
+        x: to.x - from.x,
+        y: to.y - from.y,
+    };
+    let scale = length(delta).max(N::ONE / N::from_i32(1024));
+    Vector {
+        x: delta.x / scale,
+        y: delta.y / scale,
+    }
+}
+fn enemy(tick: u64, id: u64) -> Body {
+    let x = random(42, tick, u128::from(id), 0) * N::from_i32(2) - N::ONE;
+    let y = random(42, tick, u128::from(id), 1) * N::from_i32(2) - N::ONE;
+    let normal = direction(vector(0, 0), Vector { x, y });
+    Body {
+        position: Vector {
+            x: normal.x * N::from_i32(80),
+            y: normal.y * N::from_i32(80),
+        },
+        velocity: vector(0, 0),
+        radius: N::ONE / N::from_i32(3),
+        kind: 1,
+        player: 0,
+        health: 1,
+    }
+}
+fn batch(candidate: &Candidate) -> &dyn Any {
+    &candidate.batch
+}
+fn birth(
+    candidate: &Candidate,
+    index: usize,
+    writer: &mut EntityWriter<'_>,
+) -> Result<(), RegisteredWorldError> {
+    writer.add(candidate.births[index])?;
+    Ok(())
+}
+
+impl Crowd {
+    fn simulate(
+        &self,
+        world: &WorldRead<'_>,
+        _executor: Executor,
+        tick: u64,
+        candidate: &mut Candidate,
+        edits: &mut EditWriter<'_, Candidate>,
+    ) -> Result<(), RegisteredWorldError> {
+        candidate.rebuild(world, &self.read)?;
+        let column = world.column(&self.read)?;
+        let mut players = [vector(0, 0); 4];
+        for &(_, _, body) in &candidate.rows {
+            if body.kind == 0 {
+                players[body.player as usize] = body.position;
+            }
+        }
+        for frame in &self.frames {
+            let player = usize::try_from(frame.actor.0).expect("four players");
+            if frame.tick != tick || frame.origin.sequence <= self.resources.sequences[player] {
+                return Err(RegisteredWorldError::InvalidHandle);
+            }
+            candidate.resources.controls[player] =
+                [N::from_axis(frame.axes[0]), N::from_axis(frame.axes[1])];
+            candidate.resources.sequences[player] = frame.origin.sequence;
+        }
+        for &(handle, _, body) in &candidate.rows {
+            if body.kind != 2 {
+                continue;
+            }
+            let endpoint = Vector {
+                x: body.position.x + body.velocity.x,
+                y: body.position.y + body.velocity.y,
+            };
+            let mut hit = None;
+            candidate
+                .index
+                .overlap(endpoint, body.radius, |circle| {
+                    if hit.is_none() {
+                        hit = Some(circle.slot);
+                    }
+                })
+                .expect("projectile in domain");
+            if let Some(slot) = hit {
+                candidate.damage[slot as usize] += 1;
+                candidate.resources.hits += 1;
+                candidate.dead.push(handle.slot);
+            } else if body.health <= 1 {
+                candidate.dead.push(handle.slot);
+            }
+        }
+        for &(handle, _, mut body) in &candidate.rows {
+            if body.kind == 1 && candidate.damage[handle.slot as usize] > 0 {
+                body.health -= i32::try_from(candidate.damage[handle.slot as usize])
+                    .expect("bounded projectiles");
+                if body.health <= 0 {
+                    candidate.dead.push(handle.slot);
+                    candidate.births.push(enemy(
+                        tick,
+                        candidate.resources.next_id + candidate.births.len() as u64,
+                    ));
+                }
+            }
+            if candidate.dead.contains(&handle.slot) {
+                edits.push(Edit::despawn(&self.structure, handle));
+                continue;
+            }
+            match body.kind {
+                0 => {
+                    let controls = candidate.resources.controls[body.player as usize];
+                    body.velocity = Vector {
+                        x: controls[0] / N::from_i32(12),
+                        y: controls[1] / N::from_i32(12),
+                    };
+                    if tick % 24 == u64::from(body.player) * 6 {
+                        candidate
+                            .index
+                            .nearest(body.position, N::from_i32(12), 1, &mut candidate.nearest)
+                            .expect("player in domain");
+                        if let Some(&(_, slot)) = candidate.nearest.first() {
+                            let target = column.at_slot(slot).expect("indexed enemy");
+                            let normal = direction(body.position, target.position);
+                            candidate.births.push(Body {
+                                position: body.position,
+                                velocity: Vector {
+                                    x: normal.x / N::from_i32(2),
+                                    y: normal.y / N::from_i32(2),
+                                },
+                                radius: N::ONE / N::from_i32(6),
+                                kind: 2,
+                                player: body.player,
+                                health: 32,
+                            });
+                        }
+                    }
+                }
+                1 => {
+                    let mut target = players[0];
+                    let dx = target.x - body.position.x;
+                    let dy = target.y - body.position.y;
+                    let mut distance = dx * dx + dy * dy;
+                    // Compare squared distances, retaining player index on ties.
+                    for player in players {
+                        let dx = player.x - body.position.x;
+                        let dy = player.y - body.position.y;
+                        let squared = dx * dx + dy * dy;
+                        if squared < distance {
+                            target = player;
+                            distance = squared;
+                        }
+                    }
+                    let mut chase = direction(body.position, target);
+                    if let Some(control) = self.control {
+                        chase.x = control(chase.x);
+                    }
+                    let mut push = vector(0, 0);
+                    candidate
+                        .index
+                        .overlap(body.position, N::from_i32(2), |circle| {
+                            if circle.slot == handle.slot {
+                                return;
+                            }
+                            candidate.neighbours += 1;
+                            let dx = body.position.x - circle.centre.x;
+                            let dy = body.position.y - circle.centre.y;
+                            let squared = dx * dx + dy * dy;
+                            if squared > N::ZERO && squared < N::ONE {
+                                let scale =
+                                    (N::ONE - squared) / squared.max(N::ONE / N::from_i32(64));
+                                push.x = push.x + dx * scale;
+                                push.y = push.y + dy * scale;
+                            }
+                        })
+                        .expect("enemy in domain");
+                    body.velocity = Vector {
+                        x: (chase.x / N::from_i32(128) + push.x / N::from_i32(32))
+                            .clamp(-N::ONE, N::ONE),
+                        y: (chase.y / N::from_i32(128) + push.y / N::from_i32(32))
+                            .clamp(-N::ONE, N::ONE),
+                    };
+                }
+                _ => {
+                    body.health -= 1;
+                }
+            }
+            body.position.x =
+                (body.position.x + body.velocity.x).clamp(N::from_i32(-120), N::from_i32(120));
+            body.position.y =
+                (body.position.y + body.velocity.y).clamp(N::from_i32(-120), N::from_i32(120));
+            candidate.batch.push((handle, body));
+        }
+        edits.push(Edit::replace_batch(&self.write, batch));
+        for index in 0..candidate.births.len() {
+            let id = candidate.resources.next_id;
+            candidate.resources.next_id += 1;
+            edits.push(Edit::spawn(
+                &self.structure,
+                StableId(u128::from(id)),
+                index,
+                birth,
+            ));
+        }
+        Ok(())
+    }
+}
+
+impl TickGame<()> for Crowd {
+    type Error = RegisteredWorldError;
+    type Candidate = Candidate;
+    type ParallelOutput = ();
+    fn reset_candidate(&self, candidate: &mut Candidate) {
+        candidate.rows.clear();
+        candidate.circles.clear();
+        candidate.batch.clear();
+        candidate.births.clear();
+        candidate.dead.clear();
+        candidate.damage.fill(0);
+        candidate.resources.clone_from(&self.resources);
+        candidate.neighbours = 0;
+    }
+    fn reset_parallel_output(&self, _output: &mut ()) {}
+    fn merge_parallel(
+        &self,
+        _system: SystemId,
+        _output: &mut (),
+        _candidate: &mut Candidate,
+        _tick: u64,
+        _edits: &mut EditWriter<'_, Candidate>,
+    ) {
+    }
+    fn apply(&mut self, _world: &WorldRead<'_>, _tick: u64, candidate: &Candidate) {
+        self.resources.clone_from(&candidate.resources);
+    }
+}
+
+impl HistoryGame<()> for Crowd {
+    type HistoryState = Resources;
+    type HistoryRecord = [InputFrame<()>; 4];
+    type TickRequest = [InputFrame<()>; 4];
+    fn history_revision(&self) -> u64 {
+        0
+    }
+    fn history_state(&self) -> &Resources {
+        &self.resources
+    }
+    fn restore_history_state(&mut self, state: &Resources) {
+        self.resources.clone_from(state);
+    }
+    fn new_history_record(&self) -> Self::HistoryRecord {
+        self.frames.clone()
+    }
+    fn record_history_tick(&self, request: &Self::TickRequest, record: &mut Self::HistoryRecord) {
+        record.clone_from(request);
+    }
+    fn prepare_history_tick(
+        &mut self,
+        _runtime: &GameRuntime<(), Self>,
+        tick: u64,
+        record: &Self::HistoryRecord,
+    ) -> Result<(), Self::Error> {
+        for (index, frame) in record.iter().enumerate() {
+            if frame.tick != tick
+                || frame.actor.0 != index as u64
+                || frame.origin.peer.0 != index as u64
+                || frame.origin.connection_epoch != 1
+                || frame.origin.sequence <= self.resources.sequences[index]
+                || frame.validate_axes().is_err()
+            {
+                return Err(RegisteredWorldError::InvalidHandle);
+            }
+        }
+        self.frames.clone_from(record);
+        Ok(())
+    }
+}
+
+/// Registered runtime, rule resources and rollback retention for one crowd.
+pub struct Simulation {
+    /// Engine authority.
+    pub runtime: GameRuntime<(), Crowd>,
+    /// Game rules and resources.
+    pub game: Crowd,
+    /// Reusable candidate work.
+    pub candidate: Candidate,
+    /// Eight-tick sparse history.
+    pub history: RuntimeHistory<Resources, [InputFrame<()>; 4]>,
+}
+impl Simulation {
+    /// Rebuild X[n]'s derived index through the same path the registered rule uses.
+    ///
+    /// # Panics
+    /// If the reference runtime's registered read capability is invalid.
+    pub fn rebuild_index(&mut self) {
+        self.candidate
+            .rebuild(&self.runtime.read(), &self.game.read)
+            .expect("registered index read");
+    }
+    /// Construct and publish a deterministic crowd.
+    ///
+    /// # Panics
+    /// If count is outside the reference workload's supported 4..=10,000 bodies.
+    pub fn new(count: u32, epoch: u128) -> Self {
+        assert!((4..=10_000).contains(&count), "reference crowd count");
+        let capacity = count as usize + 128;
+        let mut registry = ComponentRegistry::default();
+        let body = registry
+            .register_profile::<Body>(ComponentSchemaId(1))
+            .expect("body schema");
+        let system = SystemId(1);
+        let mut runtime = GameRuntime::new(
+            WorldEpoch(epoch),
+            capacity,
+            registry,
+            vec![RegisteredSystem::new(
+                SystemSpec {
+                    id: system,
+                    stage: Stage::Simulate,
+                    accesses: vec![
+                        Access {
+                            key: AccessKey::Component(body),
+                            mode: AccessMode::Write,
+                        },
+                        Access {
+                            key: AccessKey::External(1),
+                            mode: AccessMode::Write,
+                        },
+                    ],
+                    after: vec![],
+                },
+                Crowd::simulate,
+            )],
+            || (),
+        )
+        .expect("crowd runtime");
+        let read = runtime.read_permit(system).expect("body read");
+        let write = runtime.write_permit(system).expect("body write");
+        let structure = runtime
+            .structural_permit(system, 1)
+            .expect("structural permit");
+        let mut game = Crowd {
+            control: None,
+            read,
+            write,
+            structure,
+            resources: Resources {
+                next_id: u64::from(count) + 1,
+                ..Resources::default()
+            },
+            frames: std::array::from_fn(|index| {
+                InputFrame::new(
+                    Origin {
+                        peer: PeerId(index as u64),
+                        connection_epoch: 1,
+                        sequence: 0,
+                    },
+                    ActorId(index as u64),
+                    0,
+                    [0.0; 3],
+                )
+            }),
+        };
+        let width = N::from_i32(i32::try_from(count).expect("body count fits"))
+            .sqrt()
+            .ceil()
+            .to_i32();
+        for index in 0..count {
+            let index_i32 = i32::try_from(index).expect("count fits");
+            let mut body = enemy(0, u64::from(index));
+            body.position = Vector {
+                x: N::from_i32(index_i32 % width - width / 2) * N::from_i32(3) / N::from_i32(2),
+                y: N::from_i32(index_i32 / width - width / 2) * N::from_i32(3) / N::from_i32(2),
+            };
+            if index < 4 {
+                body.kind = 0;
+                body.player = index;
+                body.position = vector(index_i32 * 3 - 4, 0);
+            }
+            runtime
+                .seed(StableId(u128::from(index) + 1), |writer| {
+                    writer.add(body)?;
+                    Ok(())
+                })
+                .expect("seed body");
+        }
+        let mut candidate = Candidate {
+            rows: Vec::with_capacity(capacity),
+            circles: Vec::with_capacity(capacity),
+            index: CircleIndex::new(N::from_i32(4)).expect("cell size"),
+            batch: Vec::with_capacity(capacity),
+            births: Vec::with_capacity(128),
+            dead: Vec::with_capacity(128),
+            damage: vec![0; capacity],
+            nearest: Vec::with_capacity(1),
+            resources: Resources::default(),
+            neighbours: 0,
+        };
+        runtime.publish_initial(&mut game, &mut candidate);
+        let history = RuntimeHistory::new(&runtime, &game, NonZeroUsize::new(8).expect("window"));
+        Self {
+            runtime,
+            game,
+            candidate,
+            history,
+        }
+    }
+    /// Digest the current endpoint.
+    ///
+    /// # Panics
+    /// If the reference body's portable schema has been replaced.
+    pub fn digest(&self) -> u64 {
+        self.runtime
+            .world_digest(&self.game.resources, |_, _| {})
+            .expect("portable schema")
+    }
+}
+
+impl Candidate {
+    fn rebuild(
+        &mut self,
+        world: &WorldRead<'_>,
+        permit: &ReadPermit<Body>,
+    ) -> Result<(), RegisteredWorldError> {
+        self.rows.clear();
+        self.circles.clear();
+        let column = world.column(permit)?;
+        for slot in 0..self.damage.len() {
+            let slot = u32::try_from(slot).expect("slot fits");
+            if let Some(live) = world.live_at_slot(slot)
+                && let Some(body) = column.at_slot(slot)
+            {
+                self.rows.push((live.handle(), live.stable_id(), *body));
+                if body.kind == 1 {
+                    self.circles.push(Circle {
+                        slot,
+                        centre: body.position,
+                        radius: body.radius,
+                    });
+                }
+            }
+        }
+        self.index
+            .build(&self.circles)
+            .expect("validated reference circles");
+        Ok(())
+    }
+}

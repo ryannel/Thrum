@@ -1,5 +1,18 @@
 # SIM-2D log
 
+- 2026-11-14 M1 implementation. Added the binary32 profile number and vector, Philox2x32-10,
+  portable state encoding, registered-component finite validation, and the committed world digest.
+  The reference crowd uses registered edits and eight-tick engine history. Straight corrected Mac
+  traces retain the timeline folds and checkpoints for 2,000, 5,000 and 10,000 bodies. The runner
+  uses the production input codec and separate Mac, Chrome Wasm and simulator executables.
+- 2026-11-14 Verified before the first checkpoint. Core and crowd target tests, exhaustive input
+  conversion boundaries, metadata mutation coverage, Clippy and documentation checks passed.
+  Chrome's platform-sine control diverged at tick 1. Full target qualification, costs and exact
+  image verification follow at the source checkpoint. No timing or visual result is claimed yet.
+- 2026-11-14 The documentation gate exposed ten dangling links in older CREATOR, CULLING and
+  CLOUDS handoffs. Replaced the absent working-tree links with historical checkpoint/path references,
+  preserving their evidence claims. This repair lets the repository documentation gate run.
+
 - 2026-11-13 Planned from the lead's task (row 16 of the module list); no words of the owner's were passed on, so
   the design quotes the owner's page of 10 November. Three milestones replace the brief the module list carried,
   whose text is in git (`git show 7a3694b8:docs/plans/ARCHITECTURE.md`). M1 waits on `SHOWCASE:M8`.
