@@ -213,3 +213,10 @@
   submission/present/empty-submit counters, resets on same-world resume and passes endpoint inspection.
   D10.1–D10.4 pass; D10.5 remains open for attended OS-window setup. Integration still uses the official gate.
   No speed, MetalFX, panel or physical-device claim. [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+
+- **2026-11-14 — M10 rebased baseline and gate retry.** Official integration rebased to `012668c2`; all 500
+  captured source hashes remain unchanged. Fresh native/Chrome baselines pass on `ca8b41f5` in 920.36 seconds.
+  The following full gate timed out waiting for watcher generation 2. Its exact test binary then passed all
+  four tests and three further consecutive runs. The cause is unconfirmed; no test threshold or source changed.
+  The failure is retained and a complete gate retry is required before merge. D10.5 remains open for access.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md).
