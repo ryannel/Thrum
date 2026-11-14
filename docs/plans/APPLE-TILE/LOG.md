@@ -228,6 +228,12 @@
   are retained; no image tolerance, OS grant or test threshold changed.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-14 — M10 third guarded refusal.** Transient free-space recovery permitted another queued retry,
+  but it too was refused at the initial 16 GiB floor after acquiring GPU exclusivity. All three jobs exited 1
+  before completing qualification or reaching check/merge. Active M10 sources remain intact; lead coordination
+  of sustained shared capacity is required. The current handoff and direct refusal logs are committed.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+
 - **2026-11-14 — M10 attended continuation.** Rebased to `cc8f25a5`, resolving the handoff conflict.
   Read-only preflight confirms unlocked Mac and existing Screen Recording access; D10.5 capture remains unrun.
   The prepared observer and source audit are retained; game/renderer/host sources are unchanged.
