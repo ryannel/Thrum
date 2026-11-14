@@ -115,6 +115,15 @@ impl ProfileWindow {
         if !self.enabled || !self.available || sample.submission_order < self.minimum {
             return;
         }
+        if self
+            .newest
+            .is_some_and(|last| now.saturating_sub(last) > STALE)
+        {
+            self.samples.clear();
+            self.intervals.clear();
+            self.callback = None;
+            self.refreshed = None;
+        }
         if let Some(timings) = &sample.gpu_pass_ns
             && !self
                 .names

@@ -391,6 +391,7 @@ impl<G: Game + 'static> App<G> {
 
     fn device_lost(&mut self, generation: u64) -> Result<(), String> {
         if self.recovery.lost(generation)? {
+            self.profile.set_available(false);
             self.device_losses = self.device_losses.saturating_add(1);
             self.invalidate_surface()?;
             self.edits.request();
