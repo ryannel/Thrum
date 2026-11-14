@@ -26,6 +26,14 @@ fn rgb(c: vec3<f32>) -> vec3<f32> { return vec3(c.x+c.y-c.z,c.x+c.z,c.x-c.y-c.z)
 fn bounded(p: vec2<i32>) -> vec2<i32> {
     return clamp(p,vec2(0),vec2<i32>(textureDimensions(colour))-vec2(1));
 }
+fn reconstruction_filter(distance: f32) -> f32 {
+    // Mitchell-Netravali, B = C = 1/3, support two pixels. The source
+    // neighbourhood is already loaded for clipping and velocity dilation.
+    let x = abs(distance);
+    if x < 1.0 { return ((7.0*x-12.0)*x*x+16.0/3.0)/6.0; }
+    if x < 2.0 { return (((-7.0/3.0*x+12.0)*x-20.0)*x+32.0/3.0)/6.0; }
+    return 0.0;
+}
 fn history_at(p: vec2<f32>) -> vec4<f32> {
     let base = vec2<i32>(floor(p));
     let f = fract(p);
@@ -82,16 +90,26 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     var front = textureLoad(depth,p,0);
     var low = vec3(1e30);
     var high = vec3(-1e30);
+    let centre = textureLoad(colour,p,0).rgb;
+    var source = vec3(0.0);
+    var source_weight = 0.0;
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
             let at = bounded(p+vec2(x,y));
             let z = textureLoad(depth,at,0);
             if z > front { front = z; nearest = at; }
-            let c = ycocg(textureLoad(colour,at,0).rgb);
+            let sample = textureLoad(colour,at,0).rgb;
+            let offset = vec2<f32>(f32(x),f32(y))-params.jitter.xy;
+            let filter_weight = reconstruction_filter(offset.x)*reconstruction_filter(offset.y);
+            source += (sample-centre)*filter_weight;
+            source_weight += filter_weight;
+            let c = ycocg(sample);
             low = min(low,c); high = max(high,c);
         }
     }
-    let current = textureLoad(colour,p,0).rgb;
+    // The jittered raster samples p-jitter. Reconstruct at the output pixel
+    // centre, including when disocclusion leaves no usable temporal history.
+    let current = max(vec3(0.0),centre+source/source_weight);
     let velocity = textureLoad(motion,nearest,0).xy;
     let previous = vec2<f32>(p)+velocity;
     let uv = (vec2<f32>(p)+vec2(0.5)-params.jitter.xy)/vec2<f32>(extent);
