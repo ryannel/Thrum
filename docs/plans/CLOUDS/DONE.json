@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
