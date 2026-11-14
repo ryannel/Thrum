@@ -132,7 +132,13 @@ pub fn connect(ticket: &Ticket, profile: Profile) -> Result<Link, LinkError> {
                     .and_then(|v| v.as_f64())
                     .map_or(0, close_code),
             ),
-            Err(_) => CloseReason::Transport,
+            Err(_) => {
+                if closed.is_open() {
+                    CloseReason::Transport
+                } else {
+                    CloseReason::Refused
+                }
+            }
         };
         closed
             .state
@@ -164,6 +170,20 @@ async fn read_chunk(reader: &Reader) -> Result<Vec<u8>, JsValue> {
         return Err("stream ended".into());
     }
     Ok(Uint8Array::new(&field(&result, "value")?).to_vec())
+}
+async fn failed(link: &Link, reason: CloseReason) {
+    // Stream failures can arrive before the CONNECT close capsule. Let `closed` own the
+    // peer's code; a broken stream on an otherwise live session still terminates the link.
+    if reason == CloseReason::Transport {
+        let deadline = now().saturating_add(1_000);
+        while link.is_open() && now() < deadline {
+            pause().await;
+        }
+    }
+    link.state
+        .lock()
+        .expect("link state poisoned")
+        .close(reason);
 }
 async fn setup(link: Link, transport: &Transport) -> Result<(), JsValue> {
     JsFuture::from(transport.ready()).await?;
@@ -209,21 +229,13 @@ async fn setup(link: Link, transport: &Transport) -> Result<(), JsValue> {
     let outbound = link.clone();
     spawn_local(async move {
         if reliable_out(&outbound, &writer).await.is_err() {
-            outbound
-                .state
-                .lock()
-                .expect("link state poisoned")
-                .close(CloseReason::Transport);
+            failed(&outbound, CloseReason::Transport).await;
         }
     });
     let inbound = link.clone();
     spawn_local(async move {
-        if reliable_in(&inbound, &reader, buffer).await.is_err() {
-            inbound
-                .state
-                .lock()
-                .expect("link state poisoned")
-                .close(CloseReason::Protocol);
+        if let Err(reason) = reliable_in(&inbound, &reader, buffer).await {
+            failed(&inbound, reason).await;
         }
     });
     let writer = field(&datagrams, "writable")?
@@ -252,33 +264,28 @@ async fn setup(link: Link, transport: &Transport) -> Result<(), JsValue> {
         }
         .await;
         if result.is_err() {
-            outbound
-                .state
-                .lock()
-                .expect("link state poisoned")
-                .close(CloseReason::Transport);
+            failed(&outbound, CloseReason::Transport).await;
         }
     });
     spawn_local(async move {
         let result = async {
             while link.is_open() {
-                let bytes = read_chunk(&reader).await?;
+                let bytes = read_chunk(&reader)
+                    .await
+                    .map_err(|_| CloseReason::Transport)?;
                 if bytes.is_empty() || bytes.len() > crate::DATAGRAM_LIMIT {
-                    return Err("invalid datagram".into());
+                    return Err(CloseReason::Protocol);
                 }
                 link.state
                     .lock()
                     .expect("link state poisoned")
                     .receive(Lane::Datagram, bytes);
             }
-            Ok::<(), JsValue>(())
+            Ok::<(), CloseReason>(())
         }
         .await;
-        if result.is_err() {
-            link.state
-                .lock()
-                .expect("link state poisoned")
-                .close(CloseReason::Transport);
+        if let Err(reason) = result {
+            failed(&link, reason).await;
         }
     });
     Ok(())
@@ -303,12 +310,12 @@ async fn reliable_out(link: &Link, writer: &Writer) -> Result<(), JsValue> {
     }
     Ok(())
 }
-async fn reliable_in(link: &Link, reader: &Reader, mut buffer: Vec<u8>) -> Result<(), JsValue> {
+async fn reliable_in(link: &Link, reader: &Reader, mut buffer: Vec<u8>) -> Result<(), CloseReason> {
     while link.is_open() {
         if buffer.len() >= 4 {
             let length = u32::from_le_bytes(buffer[..4].try_into().expect("four bytes")) as usize;
             if length == 0 || length > RELIABLE_LIMIT {
-                return Err("invalid frame length".into());
+                return Err(CloseReason::Protocol);
             }
             if buffer.len() >= length + 4 {
                 let room = {
@@ -327,7 +334,11 @@ async fn reliable_in(link: &Link, reader: &Reader, mut buffer: Vec<u8>) -> Resul
                 continue;
             }
         }
-        buffer.extend(read_chunk(reader).await?);
+        buffer.extend(
+            read_chunk(reader)
+                .await
+                .map_err(|_| CloseReason::Transport)?,
+        );
     }
     Ok(())
 }

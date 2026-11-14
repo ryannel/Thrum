@@ -13,12 +13,14 @@ impl Drop for Relay {
 }
 fn relay(ticket: &mut thrum_transport::Ticket) -> Relay {
     use std::io::{BufRead, BufReader};
-    std::fs::create_dir_all("tmp/transport").expect("scratch");
-    let output = std::path::PathBuf::from(format!(
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    std::fs::create_dir_all(root.join("tmp/transport")).expect("scratch");
+    let output = root.join(format!(
         "tmp/transport/alloc-relay-{}.json",
         std::process::id()
     ));
     let mut child = std::process::Command::new("python3")
+        .current_dir(root)
         .args([
             "scripts/transport_relay.py",
             "--host",

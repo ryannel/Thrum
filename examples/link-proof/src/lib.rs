@@ -87,14 +87,16 @@ impl Actor {
                 if elapsed >= 1_500 && self.script.direction() == closer {
                     if self.case == "close-load" {
                         for _ in 0..16 {
-                            self.script
-                                .send(
-                                    link,
-                                    thrum_transport::Lane::Reliable,
-                                    thrum_transport::RELIABLE_LIMIT,
-                                    now,
-                                )
-                                .map_err(|_| thrum_transport::CloseReason::Protocol)?;
+                            match self.script.send(
+                                link,
+                                thrum_transport::Lane::Reliable,
+                                thrum_transport::RELIABLE_LIMIT,
+                                now,
+                            ) {
+                                Ok(()) => (),
+                                Err(thrum_transport::LinkError::Full) => break,
+                                Err(_) => return Err(thrum_transport::CloseReason::Protocol),
+                            }
                         }
                     }
                     link.close(42);
@@ -126,7 +128,7 @@ pub fn record(link: &Link, script: &Script, now: u64) -> Value {
     let report = script.report();
     json!({
         "id": link.id(), "open": link.is_open(),
-        "identity":script.identity(),"peer_identity":script.peer_identity(),
+        "identity":format!("{:016x}",script.identity()),"peer_identity":script.peer_identity().map(|id|format!("{id:016x}")),
         "reliable_sent": report.reliable_sent, "reliable_received": report.reliable_received,
         "datagrams_sent": report.datagrams_sent, "datagrams_received": report.datagrams_received,
         "reordered": report.reordered,

@@ -1,5 +1,12 @@
 # TRANSPORT log
 
+- 2026-11-14 Target diagnostics found and fixed close ordering: retain the native WebTransport session until its
+  CONNECT close capsule completes, and let the browser's session-close observer supply the peer's code before a
+  stream error wins. A direct Chrome coded close now passes. The reconnect harness waits for the host to observe
+  the old close before opening against its four-link cap; a live conditioned-host control test passes. Chrome
+  shutdown now terminates its owned process group. Allocation probing under A0 measured one 189-byte caller-thread
+  allocation per warmed reliable send/drain. These development checks are not promoted milestone evidence.
+
 - 2026-11-14 Builder checkpoint: added the dependency-free bounded link, caller-clock conditioned carrier,
   versioned tickets, optional pinned Quinn/WebTransport carriers and shared Rust proof tooling. Four virtual-time
   tests and strict native/Wasm Clippy pass. Real development exchanges reached Chrome 157 and the iOS 27.2

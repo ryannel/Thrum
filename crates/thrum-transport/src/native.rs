@@ -120,7 +120,10 @@ pub fn connect(ticket: &Ticket, profile: Profile) -> Result<Link, LinkError> {
                 let reason = if error
                     .downcast_ref::<tokio::time::error::Elapsed>()
                     .is_some()
-                {
+                    || matches!(
+                        error.downcast_ref::<quinn::ConnectionError>(),
+                        Some(quinn::ConnectionError::TimedOut)
+                    ) {
                     CloseReason::TimedOut
                 } else {
                     CloseReason::Refused
@@ -493,4 +496,7 @@ async fn drive(
         .lock()
         .expect("link state poisoned")
         .close(reason);
+    // Keep the H3 control streams alive until the CONNECT close capsule is delivered.
+    // Dropping the last Session first turns a coded close into a critical-stream error in Chrome.
+    drop(session.closed().await);
 }

@@ -74,7 +74,7 @@ impl Default for Profile {
             datagram_bytes: 64_000,
             age_ms: 250,
             stack_bytes: 4_096,
-            startup_ms: 5_000,
+            startup_ms: 4_000,
             idle_ms: 4_000,
             links: 4,
             controller: Controller::Bbr,
@@ -178,7 +178,7 @@ pub struct Counters {
     pub dropped_cap: u64,
     /// Inbound datagrams discarded oldest-first at capacity.
     pub dropped_inbound: u64,
-    /// Stack queued bytes, absent when the adapter cannot report them.
+    /// Stack buffer bytes charged, including library metadata; absent when not reported.
     pub stack_bytes: Option<usize>,
     /// Transport round-trip estimate in microseconds.
     pub rtt_us: Option<u64>,

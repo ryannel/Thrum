@@ -199,6 +199,8 @@ fn shared_limits_script_and_ticket_identity() {
     let ends = memory.connect_ticket(&ticket).expect("correct identity");
     memory.advance(120);
     let mut scripts = [Script::new(0), Script::new(1)];
+    scripts[0].identify(10);
+    scripts[1].identify(20);
     for direction in 0..2 {
         scripts[direction]
             .limits(&ends[direction], 120)
@@ -215,6 +217,15 @@ fn shared_limits_script_and_ticket_identity() {
             scripts[1 - direction].report().reliable_sent
         );
     }
+    assert_eq!(scripts[0].peer_identity(), Some(20));
+    assert_eq!(scripts[1].peer_identity(), Some(10));
+    scripts[0].identify(11);
+    scripts[0]
+        .send(&ends[0], Lane::Reliable, 32, 250)
+        .expect("cross-link fault");
+    memory.advance(251);
+    memory.advance(400);
+    assert_eq!(scripts[1].drain(&ends[1]), Err(CloseReason::Protocol));
     for closer in 0..2 {
         let mut carrier = Memory::new(Profile::default(), Conditioner::default()).expect("profile");
         let pair = carrier.connect().expect("pair");

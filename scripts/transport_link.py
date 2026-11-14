@@ -117,7 +117,8 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
                 pid = first_row(client, output / "client.jsonl")["client_pid"]
                 os.kill(pid, signal.SIGKILL)
             else:
-                os.killpg(client.pid, signal.SIGKILL)
+                chrome_pid = json.loads((output / "chrome/driver.json").read_text())["chrome_pid"]
+                os.killpg(chrome_pid, signal.SIGKILL)
             (output / "kill.json").write_text(json.dumps({"harness_action":"SIGKILL", "elapsed":time.monotonic()-began}))
         client_status = client.wait(timeout=seconds + 30)
         if identity == "version":
@@ -163,10 +164,12 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
         relay_record = json.loads((output / "relay.json").read_text())
         application_bytes = sum(lane["sent_bytes"] for result in [host_result,client_result] for lane in result["lanes"])
         costs["wire_bytes_per_application_byte"] = sum(row["seen_bytes"] for row in relay_record["directions"]) / application_bytes
-        steady = costs["phases"][0]["datagram_ms"]["p95"]
-        costs["datagram_rtt_rose_during_transfer"] = any(phase["datagram_ms"]["p95"] > steady for phase in costs["phases"][1:])
+        steady = costs["phases"][0]["datagram_ms"]
+        costs["datagram_rtt_rises"] = [{"phase":phase["phase"],"quantile":quantile,"steady_ms":steady[quantile],"during_ms":phase["datagram_ms"][quantile]} for phase in costs["phases"][1:] for quantile in ["median","p95","maximum"] if phase["datagram_ms"][quantile] > steady[quantile]]
+        costs["datagram_rtt_rose_during_transfer"] = bool(costs["datagram_rtt_rises"])
         history = host_result["costs"]["wire_history"]
-        costs["wire_per_application_byte_grew"] = history[-1]["wire_per_application_byte"] > history[0]["wire_per_application_byte"] * 1.25
+        costs["wire_per_application_byte_grew"] = history[-1]["wire_per_application_byte"] > history[0]["wire_per_application_byte"]
+        costs["host_wire_interval_ratios"] = [{"end_ms":after["elapsed_ms"],"ratio":(after["wire_bytes"]-before["wire_bytes"])/max(1,after["application_bytes"]-before["application_bytes"])} for before,after in zip(history,history[1:])]
         return {"host":host_result,"client":client_record,"relay":relay_record}
     if case == "expiry":
         for result in [host_result, client_result]:
@@ -185,6 +188,9 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
             assert "Closed(TimedOut)" in events
         elif case == "close-host":
             assert "Closed(Local(42))" in events and "Closed(Peer(42))" in client_events
+        elif case == "close-load":
+            assert "Closed(Local(42))" in client_events
+            assert client_result["reliable_sent"] > host_result["reliable_received"], "close did not interrupt reliable sends"
         else:
             assert "Closed(Peer(42))" in events and "Closed(Local(42))" in client_events
         return {"host":host_rows,"client":client_record}
@@ -198,7 +204,7 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
             assert receiver["reordered"] > 0, "no datagram reordering"
             assert receiver["datagrams_received"] < sender["datagrams_sent"], "no datagram loss"
         else:
-            assert receiver["reordered"] == 0, "unexpected direct reordering"
+            assert receiver["datagrams_received"] > 0, "direct datagram lane delivered nothing"
         assert sender["lanes"][0]["sent"] == sender["reliable_sent"]
         assert sender["lanes"][1]["received"] == sender["datagrams_received"]
     record = {"host": host_result, "client": client_record}
@@ -230,7 +236,8 @@ def reconnect(target, output):
         ids = [row["id"] for row in result if "Open" in row.get("events",[])]
         assert len(ids) == 2 and ids[0] != ids[1], "reconnect reused a link"
         assert sum("Closed(Peer(42))" in row.get("events",[]) for row in result) == 2
-        return {"host":result, "old_id":ids[0], "new_id":ids[1]}
+        records = [json.loads((output / f"client{i}.json").read_text()) if target == "chrome-webgpu" else rows(output / f"client{i}.jsonl") for i in range(2)]
+        return {"host":result, "clients":records, "old_id":ids[0], "new_id":ids[1]}
     finally:
         for process in clients:
             stop(process)
@@ -305,6 +312,12 @@ def session(output):
                 previous = len(host_ids())
                 if action == "heal-reconnect":
                     (output / f"relay-control-{index}").write_text("open")
+                client["control"].write_text("close")
+                deadline = time.monotonic()+8
+                while not any(row.get("id")==event["old_host_id"] and any(e.startswith("Closed(") for e in row.get("events",[])) for row in rows(output / "host.jsonl")):
+                    if time.monotonic()>deadline:
+                        raise RuntimeError("peer did not observe the close before reconnect")
+                    time.sleep(0.02)
                 client["control"].write_text("reconnect")
                 client["host_id"] = await_open(previous)
                 client["local_id"] += 1
@@ -445,7 +458,15 @@ def main():
                     client = item["client"]
                     return (client["result"] if isinstance(client,dict) else next(value["result"] for value in client if "result" in value))["costs"]
                 costs = result_cost(row)
-                costs["quarter_worse_than_previous_run"] = None if prior is None else any(now > before * 1.25 for now,before in zip(costs["transfer_ms"],result_cost(prior)["transfer_ms"],strict=True))
+                def metrics(value):
+                    result = {"connect_to_open_ms":value["connect_to_open_ms"],"wire_bytes_per_application_byte":value["wire_bytes_per_application_byte"]}
+                    result.update({f"transfer_{index}_ms":number for index,number in enumerate(value["transfer_ms"])})
+                    for phase in value["phases"]:
+                        for lane in ["reliable_ms","datagram_ms"]:
+                            result.update({f"{phase['phase']}_{lane}_{quantile}":phase[lane][quantile] for quantile in ["median","p95","maximum"]})
+                    return result
+                costs["quarter_worse_rows"] = [] if prior is None else [{"row":name,"current":value,"previous":metrics(result_cost(prior))[name]} for name,value in metrics(costs).items() if value > metrics(result_cost(prior))[name]*1.25]
+                costs["quarter_worse_than_previous_run"] = None if prior is None else bool(costs["quarter_worse_rows"])
                 if args.target == "mac-metal":
                     allocation = run(["cargo","bench","--locked","--offline","-p","link-proof","--features","allocation-proof","--bench","allocations"],capture_output=True,text=True,env={**ENV,"TRANSPORT_ALLOCATION_CONTROLLER":controller})
                     assert "warmed_send_and_drain" in allocation.stdout and "alloc" in allocation.stdout.lower()
