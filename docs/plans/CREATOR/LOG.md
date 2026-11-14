@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Inspected and retained M2.7's hardware Chrome pages at default width, 480 px and off.
+  Their 20 ordered profiler rows match the native starter and remain readable; all off rows state
+  their reason. The parent run later failed an incorrect automatic-recovery assertion, so its
+  complete check is not claimed. [M2 evidence](../../evidence/CREATOR/M2.md) records the corrected
+  proof and the two browser checks still queued on the shared GPU.
+
 - 2026-11-14 Resumed M2 and retained the earlier session's real Metal timing-switch test and native
   panel measurements. Three world-pause and material-edit pairs exceed their unchanged spreads;
   the four profile-window tests pass after rebasing. Browser and final integration checks remain

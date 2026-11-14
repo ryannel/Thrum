@@ -140,10 +140,10 @@
           "statement": "The same profiler rows are present and readable on the starter's page in Chrome, with GPU rows either numeric with their step or showing their reason.",
           "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide, then again after switching it off. Are the rows the same set as on the Mac, readable, labelled by their source, and honest about step size or the reason a number is missing?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-ui/selection.json; docs/evidence/CREATOR/m2/browser-ui/profiler-wide.png; docs/evidence/CREATOR/m2/browser-ui/profiler-narrow.png; docs/evidence/CREATOR/m2/browser-ui/profiler-off.png",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
