@@ -2432,7 +2432,7 @@ struct SceneGraphs<G> {
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
     pub(crate) native: Option<Arc<native_witness::Binding>>,
-    late_groups: Vec<wgpu::BindGroup>,
+    effects: after_opaque::TargetEffects,
     capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
@@ -2546,7 +2546,7 @@ impl OffscreenTarget {
         let scene_view = texture_view(&ids.scene)?;
         let motion_view = texture_view(&ids.motion)?;
         let reactive_view = texture_view(&ids.reactive)?;
-        let late_groups = prepared.late_bindings(device, &textures, &ids, &depth)?;
+        let effects = prepared.late_bindings(device, &textures, &ids, &depth)?;
         let temporal = prepared.temporal.target(
             device,
             &textures,
@@ -2668,7 +2668,7 @@ impl OffscreenTarget {
         Ok(Self {
             native,
             capture_source,
-            late_groups,
+            effects,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             day_graphs,

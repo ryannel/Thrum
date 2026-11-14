@@ -40,6 +40,7 @@ pub(super) async fn run(
         }
         drop(fields(device, queue, handle).await?);
     }
+    let mut timing_record = "timestamps unsupported by enabled device".to_owned();
     if device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
         let timing = timing.ok_or("missing native timing outcome")?;
         if timing.execution("effect 0: trail") != Some(thrum_render::timing::PassExecution::NotRun)
@@ -55,6 +56,11 @@ pub(super) async fn run(
         ) {
             return Err("consumer did not report executed timing".into());
         }
+        timing_record = format!(
+            "effect 0: trail={:?}; effect 2: consumer={:?}",
+            timing.execution("effect 0: trail"),
+            timing.execution("effect 2: consumer")
+        );
     }
     host.set_quality_knob(&knobs[1].name, 2)?;
     host.world_mut().0.tick = 101;
@@ -88,6 +94,6 @@ pub(super) async fn run(
     }
     drop(host.poll_completed().map_err(error)?);
     Ok(format!(
-        "quality knobs={knobs:?}: staged boundary, none/effect/view invalidations, skipped producer versus measured consumer, unchanged pipeline count={count:?}"
+        "quality knobs={knobs:?}: staged boundary, none/effect/view invalidations, {timing_record}, unchanged pipeline count={count:?}"
     ))
 }

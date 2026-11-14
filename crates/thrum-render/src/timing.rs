@@ -85,6 +85,11 @@ impl SceneGpuTimings {
             None
         }
     }
+    /// Declared compute passes skipped in this frame, under their executor names.
+    #[must_use]
+    pub fn not_run_passes(&self) -> &[String] {
+        &self.not_run
+    }
 
     /// Actual executed, timed graph passes (including the surface consumer).
     pub fn passes(&self) -> &[PassTiming] {

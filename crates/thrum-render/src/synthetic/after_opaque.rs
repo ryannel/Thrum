@@ -7,6 +7,10 @@ use crate::graph::{
 use std::collections::BTreeSet;
 
 pub(super) const COPY: &str = "effect refraction copy";
+pub(super) struct TargetEffects {
+    pub(super) groups: Vec<wgpu::BindGroup>,
+    pub(super) names: Vec<String>,
+}
 pub(super) struct LateGraph {
     pub(super) copy: Option<ResourceId>,
     pub(super) first: Option<usize>,
@@ -15,6 +19,9 @@ pub(super) struct LateGraph {
 
 impl super::OffscreenTarget {
     pub(crate) fn first_late_pass(&self) -> Option<&str> {
+        if self.effects.groups.is_empty() {
+            return None;
+        }
         self.graph(false)
             .plan()
             .pass_bindings()
@@ -122,7 +129,7 @@ impl PreparedSynthetic {
         textures: &crate::graph::GraphTextures,
         ids: &TargetResources,
         depth: &wgpu::TextureView,
-    ) -> Result<Vec<wgpu::BindGroup>, RenderError> {
+    ) -> Result<TargetEffects, RenderError> {
         let copy = ids
             .refraction
             .as_ref()
@@ -133,7 +140,8 @@ impl PreparedSynthetic {
                     .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()))
             })
             .transpose()?;
-        self.effect_graph
+        let groups = self
+            .effect_graph
             .after_opaque
             .iter()
             .map(|declaration| {
@@ -159,7 +167,15 @@ impl PreparedSynthetic {
                     entries: &entries,
                 }))
             })
-            .collect()
+            .collect::<Result<_, RenderError>>()?;
+        let names = self
+            .effect_graph
+            .passes
+            .iter()
+            .enumerate()
+            .map(|(index, pass)| format!("effect {index}: {}", pass.name))
+            .collect();
+        Ok(TargetEffects { groups, names })
     }
 }
 
@@ -213,7 +229,7 @@ impl SceneContext<'_> {
         let view_offset =
             self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
         pass.set_bind_group(0, &self.target.view_bind_group, &[view_offset]);
-        pass.set_bind_group(1, &self.target.late_groups[index], &[]);
+        pass.set_bind_group(1, &self.target.effects.groups[index], &[]);
         if let Some(contribution) = self.contribution.as_deref() {
             contribution.draw_after_opaque(index, &mut pass, &self.contribution_frame);
         }
