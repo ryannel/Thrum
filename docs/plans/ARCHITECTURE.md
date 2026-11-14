@@ -226,7 +226,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
 | **Body query**: one batched asynchronous GPU query for all water, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (the body of water with its depth and current, or dry ground; height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `WATERS` → games and P3 | C09, [WATERS](WATERS/DESIGN.md#bodies-and-the-query) |
 | **Wave field**: the wind's waves as analytic long-wave components and spectral cascades with their slope and Jacobian moments, evaluated every frame at the display's time and keeping nothing between frames; an f64 evaluator of the same waves; the spectrum's energy in each layer's band for a given fetch | `SEA` → `WATERS` | [SEA](SEA/DESIGN.md#the-ambient-sea) |
-| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage a body moves its level. A chart is what a flow solver writes, and a basin whose stage moves is what a puddle is | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map) |
+| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support. A chart is what a flow solver writes, and a basin whose stage moves is what a puddle is | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map) |
 | **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted | games, `RIVERS` (a fall's plunge), `PUDDLES` (drops) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
@@ -479,7 +479,7 @@ state, each kind with one owner:
 | Module | Owns | Why it is its own |
 |---|---|---|
 | `SEA` | The wind's wave field and its oracle | It depends on nothing about where water lies, every body reads it, and its first two milestones were planned and under way. They are unchanged |
-| `WATERS` | The map, the surface, optics, interaction waves, foam and the query, proved on a sea, a beach, a lake, a pond and a hand-made channel | The shared system has to exist once, and it is proved on still water, where a bed and a shore first appear, before running water is planned |
+| `WATERS` | The map, the surface, optics, interaction waves, foam and the query, proved on a sea, a beach, a lake, a pond and a hand-made channel | The shared system has to exist once, and it is proved on still water, where a bed and a shore first appear, before running water is drawn on it |
 | `RIVERS` | The flow solver that writes charts, and waterfalls | A prepared flow is a different kind of work, on the CPU and in files of its own, and falls are a new kind of geometry |
 | `PUDDLES` | Rain's hollows and their fill, and the wetness of ground | It reaches into the forward pass's materials, which no other water module touches |
 
@@ -559,7 +559,9 @@ rivers; floats carried and turned by it; foam where it loses height and at rocks
 sheet, its plunge, its foam and its rings in the pool below. Mechanisms to settle, starting from
 [WATERS](WATERS/DESIGN.md#what-the-later-modules-build-on): the steady shallow-water solve that writes a chart
 (the scheme, its wet and dry fronts, when it has converged, where it runs and how its result is stored and
-reloaded when the ground changes); the flow's roughness as gains; foam births from the chart's loss; where a flow
+reloaded when the ground changes), with the footprint, ends and join weights
+[the map's rules](WATERS/DESIGN.md#the-water-map) hold a chart to; how a river's reach answers a change of its
+source's stage, which `WATERS` leaves as prepared between the ends; the flow's roughness as gains; foam births from the chart's loss; where a flow
 leaves the bed and becomes a fall, the sheet's shape and look, and the plunge as impulses and births; whether one
 mean current a window serves interaction waves in a stream (`WATERS` M9 records what it saw). Needs: `WATERS:M1`
 for the map it writes to, `WATERS:M9` for its first frame, `CONTENT-LOOP` if a chart is cooked. Read first: the
@@ -568,8 +570,13 @@ Flux, Horizon Forbidden West's baked river effects and Uncharted 4's rapids.
 
 **`PUDDLES`: rain, puddles and wet ground.** Finished means: rain that wets the ground it can reach and leaves
 shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under drops
-and feet, reflect the sky and what stands in them, and dry out; a wet shore where waves have run; and the same
-on the island and in the V1 valley behind a selection, in Chrome too. Mechanisms to settle: finding hollows and
+and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have run, under
+the sheen and foam `WATERS` draws there as [its film](WATERS/DESIGN.md#the-surface-and-the-frame-contract), read
+from the same wave support; and the same
+on the island and in the V1 valley behind a selection, in Chrome too. Mechanisms to settle: how puddles that overflow
+into each other merge and part again, keeping each body's identity, stage and the rings and foam on it with no
+visible rebuild or reset, which is a seam question settled here with `WATERS`, whose map refuses basins that
+overlap; finding hollows and
 their sills from the bed at the scale of a puddle; fill and loss from a rain rate; rain rings as a wave layer;
 the wetness of ground as a field and how the forward pass's materials read it, which needs a seam ruling with
 that pass's owner; micro-puddles that live in a material's own height. Needs: `WATERS:M8`; a rain rate, which is
@@ -1194,3 +1201,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   three sea rulings are now [rulings for `WATERS`](#seam-rulings-for-waters), with ruling 2 covering see-through
   and mirror-still water; `CLOUDS` M11 waits on `WATERS:M8`. Track 3's rows are renumbered 19 to 24. No
   contract, exact baseline or other module's item changed.
+- 2026-11-14 `WATERS` re-planned after [its design review](../evidence/WATERS/design-review.md) asked for changes.
+  The water-map row now carries a chart's ends and joins, stage ranges, what preparation refuses and the shore
+  margin. `RIVERS`' brief gains the chart's ends and how a reach answers its source's stage; `PUDDLES`' brief
+  gains the seam question of basins that merge, and its wet shore is the sand's darkening under the film
+  `WATERS` draws. No contract, seam ruling, exact baseline or other module's item changed.
