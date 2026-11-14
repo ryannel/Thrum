@@ -1,6 +1,7 @@
 # Clouds: a weather-driven sky that shades and lights the world
 
-13 November 2026, revised 14 November and judged again from first principles the same day. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
+13 November 2026, revised 14 November, judged again from first principles the same day, and revised after
+[its second review](../../evidence/CLOUDS/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
 [module list](../ARCHITECTURE.md). C02, C04, C06, C07, C08, C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [ENVIRONMENT](../../design/modules/ENVIRONMENT.md) and
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern.
@@ -47,7 +48,7 @@ gives the verdict on every choice the design of 13 November inherited: six chang
 reasons that do not rest on Broadsides having built them. [What Broadsides offers](#what-broadsides-offers) says
 what may be copied.
 
-It is not a blind study. Read for it: the design of 13 November and [its review](../../evidence/CLOUDS/design-review.md);
+It is not a blind study. Read for it: the design of 13 November and [its review](../../evidence/CLOUDS/design-review-1.md);
 the Broadsides procedural notes at `b4d8250e6` (`THRUM-PORT`, `RUNTIME-DESIGN`, `COST-2026-11-06`, `COST-MODEL`,
 `ASSET-CONTRACT`, `PROCEDURAL-COMPLETION`, `bw_core/src/weather.rs` with its data file, and for this revision
 `bw_core/src/medium/scatter.rs`, `bw_render_clouds/src/phase.rs`, `cloud_lighting.ron` and the list of its cloud
@@ -157,8 +158,11 @@ What each source was read for, and how far.
 - **Jendersie and d'Eon 2023** ("An Approximate Mie Scattering Function for Fog and Cloud Rendering", SIGGRAPH
   Talks). A water droplet's phase function as a Henyey–Greenstein lobe plus a Draine lobe, four parameters fitted
   to droplet diameters of 5 to 50 µm. Read through Broadsides' `bw_core/src/medium/scatter.rs` at `b4d8250e6`,
-  which carries the fits and a test that reproduces the paper's parameters at 20 µm; the paper's own file could
-  not be opened in this session. Part E of the proof below evaluates it.
+  which carries the fits and a test that reproduces the paper's parameters at 20 µm, and in the paper's
+  [supplemental](https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie-supplemental.pdf),
+  sections 2 and 3.1: both lobes are normalised phase functions and the fit is its equations 7 to 10. The paper
+  treats a point source; averaging over the Sun's disc is this design's. Parts E and G of the proofs below
+  evaluate it.
 - **Looked for, 14 November:** a successor to these methods published from 2024 to 2026. Found: a 2026 method that
   relights clouds as meshes with a learned encoding (Olajos, Doggett and Goswami), and a hybrid of sparse voxels
   and noise. Titles and abstracts only. Neither is shipped practice or runs in a browser's limits, and neither
@@ -166,8 +170,8 @@ What each source was read for, and how far.
 - **Not read:** the Red Dead Redemption 2 course notes (Bauer 2019; not found to fetch), the 2015 and 2017 Nubis
   talks, and the Broadsides cloud shaders beyond their names and sizes. Nothing below rests on them.
 
-Three reproductions were run for this design, the second for its revision and the third for the first-principles
-judgement, and are kept with their output in
+Four reproductions were run for this design, the second for its revision, the third for the first-principles
+judgement and the fourth after its second review, and are kept with their output in
 [the evidence folder](../../evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
 reports them.
 
@@ -193,11 +197,11 @@ against the users and cues above. "Keep" means it would be chosen again with Bro
 | Wind as travel integrated per tick, and every pattern in the air frame | **Keep** | Drift is then exact and costs nothing, and no texture can slide through a mask |
 | 2D fields with a vertical profile and noise, not a voxel sky | **Keep** | Every commissioned camera is below the cloud base, which is where the method shipped. Nubis³ measured a dense voxel sky at over 30 ms and built voxels for flying through cloud. A shape gives a true volume where one is wanted |
 | Light from one summed Sun-path product and a few local samples | **Keep** | Already a departure from Broadsides, whose cone taps and ambient rays were 86% of its work. One product also gives ground shade and long-distance shadow |
-| The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 46 times too dim inside the aureole, and two to three times too dim looking away from the Sun (part E). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
+| The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 60 times too dim inside the aureole, and two to three times too dim looking away from the Sun (parts E and G). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
 | Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time, as `WATERS` does its waves. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
 | A placed volume stands for one cell of the field | **Keep** | It is why the query, the picture and the shade agree on a shape's outline at any distance, and why a shape forms, drifts and thins like any cloud. It does not rest on the library existing |
 | Shapes are placed only by the field's hash | **Change** | A demo composes its sky: a tower beside the Sun at sunset. A profile places shapes by the hash or by the game's own list of [directed shapes](#placed-volumes), which are cells whose place, shape and life the game sets |
-| Shadow-only as the one reduced profile | **Change** | Shade, the visible sky, the world's light and shapes are each a capability, and a scene declares only those it uses. A sunset demo needs no library; a top-down game needs only shade |
+| Shadow-only as the one reduced profile | **Change** | Shade, the visible sky, the world's light and shapes are each a capability, and a scene declares only those it uses. A sunset demo needs no library; a top-down game needs only shade, and holds a library only if it wants the shade of shapes |
 | Clouds shade and light the world through `ATMOSPHERE`, never by themselves | **Keep** | One owner applies each factor once. A private sky or a second shadow term is what made Broadsides' verdicts unusable here |
 | The layer ends at render extent and the engine reconstructs | **Keep** | One reconstructor sees every drawer's motion. Unreal, Frostbite and Decima all trace clouds below the render extent and hand a full-extent layer on |
 | Nothing copied from Broadsides until a licence is named; stand-in shapes first | **Change** | The owner's words of 14 November. The library is the example's content from M6. See below |
@@ -213,8 +217,8 @@ the planner opened `scatter.rs`, `phase.rs`, the library's licence record and ha
 
 | Mechanism here | Where Broadsides has it | Expected fit |
 |---|---|---|
-| The droplet phase: the published fit, both lobes written to stay exact near the forward peak, the Sun's disc as a spread, the mean cosine, and the energy-conserving step | `crates/core/bw_core/src/medium/scatter.rs`, with its tests; the GPU twin `crates/gpu/bw_gpu/shaders/lib/medium.wesl` | Close. This is [cloud light](#cloud-light)'s first order as stated |
-| Phases evaluated once and looked up by angle | `crates/render/bw_render_clouds/src/phase.rs`, `shaders/cloud_phase_table.wesl` | Useful if a table measures faster than the closed form; here the angle is one value a ray, so the closed form may be enough |
+| The droplet phase for a point Sun: the published fit, both lobes written to stay exact near the forward peak, the mean cosine, and the energy-conserving step | `crates/core/bw_core/src/medium/scatter.rs`, with its tests; the GPU twin `crates/gpu/bw_gpu/shaders/lib/medium.wesl` | Close, but for the Sun's disc. Its `spread` widens the lobe's squared angle and leaves the numerator alone, which removes 0.3% to 23% of the first order's energy across the droplet range (part G). That rule is not copied; [cloud light](#cloud-light) averages over the disc |
+| A phase table by angle, read once a ray | `crates/render/bw_render_clouds/src/phase.rs`, `shaders/cloud_phase_table.wesl` | The form fits: a table spaced toward the forward peak, held as read-only storage with no sampler. Its contents are the widened lobe and are made again from the model's disc average |
 | Integer hashes and noise | `bw_core::noise`; `shaders/cloud_noise.wesl` | May fit. The noise here must come from the same integer hash on every target |
 | The twelve accepted volumes, their records and the growth track's keys | At `79637f789`: `assets/clouds/heaped-fair/` (Git LFS; density is the PNG's red channel, 128³), `factory/clouds/heaped-fair/B3-HANDOFF.md` for axes, extents, placement and hashes, and `factory/clouds/heaped-fair/review/m2-authored-growth-v2/` for the track's manifest of eleven keys. The key volumes themselves are outside Git, in the Broadsides folder under `tmp/evidence-store/cloud-route-2026-11-08/m2-authored-growth-v2/`, and `factory/clouds/heaped-fair/coherent_growth.py` makes them again | The example's library, unchanged. Its licence record comes with it |
 | The shape record and its parser | `crates/core/bw_data/src/cloud_shape.rs` | Game-side, for reading the library's sidecars into the example's placement data |
@@ -230,7 +234,10 @@ interval there, M3 tries the remedies in [risk 1](#risks) that its record points
 and building goes on; whether the layer's extent or the light model should then change is a planner's decision
 from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
 relief, its near level is refined or the local samples grow, here first. If a game needs hashed shapes and
-directed ones in one sky, the map's texel gains a second slot; nothing else moves.
+directed ones in one sky, the map's texel gains a second slot; nothing else moves. If a game wants the shade of
+shapes with no volume in memory, a profile that shades every placed cell through its column form is the path
+already built for a lease that is not resident: a different, approximate shade (part H), and a choice a game
+would declare. It is not built.
 
 ## Mechanisms
 
@@ -318,8 +325,9 @@ same integer hash on every target.
 density** reads the detail noise; the view march and its local light samples use it. The **coarse density**
 takes the detail noise at its mean, a constant of the profile, so it erodes an edge by the average amount and
 reads no detail texture; the Sun's path and the sky overlay use it. It is what the full density tends to as a
-sample's footprint grows past the detail noise, and the Sun path's columns are wider than that. The model
-evaluates both in f64, and each consumer is held to the reference for the density it uses.
+sample's footprint grows past the detail noise, and the Sun path's columns are wider than that. Nothing else
+differs: over a [placed cell](#placed-volumes) both read the same forms with the same weights, the lent slab
+included. The model evaluates both in f64, and each consumer is held to the reference for the density it uses.
 
 Coefficients from different condensate add before attenuation. Two forms of the same condensate (the volume form
 and the column form of one [placed cell](#placed-volumes)) are blended with weights that sum to one. Nothing is
@@ -349,8 +357,9 @@ that M2 measures first and then asserts; that no part is older than its bound is
 One product holds optical depth along the Sun's ray, from the top of the cloud layer down: `tau(column,
 height)`, in levels of camera-following windows whose columns are Sun rays. A column is indexed by where its ray
 crosses the bottom of the layer. It is filled by marching the **coarse density** along each ray, time-sliced by
-tiles of columns, and stored in place. It integrates the same density in both profiles and never reads the
-detail noise, so its bytes do not depend on whether clouds are drawn.
+tiles of columns, and stored in place. It integrates the same density in every profile and never reads the
+detail noise, so its bytes do not depend on whether clouds are drawn. Over a placed cell that density is the
+[shape's own](#placed-volumes), read from the lent slab.
 
 **The path direction.** The columns follow the environment identity's true Sun, never the apparent surface
 light, with one floor: their elevation is `max(Sun elevation, lowest elevation)`, a profile constant (2° in the
@@ -398,16 +407,34 @@ A sample's scattered radiance, integrated over its step with Frostbite's equatio
 - **Orders.** Four, with the retained reference's `WEIGHTS` and `BRANCH_B`. Each order reuses the same `tau_sun`,
   so multiple scattering costs no density read. `Pₙ` is the order's phase.
 - **The first order's phase is the droplet's own**: a Henyey–Greenstein lobe plus a Draine lobe (Jendersie and
-  d'Eon 2023), `(1 − w)·HG(θ, g_HG) + w·Draine(θ, g_D, α)`, with the Henyey–Greenstein lobe widened by the Sun's
-  disc (its squared angle gains half the squared angular radius of the lent Sun), which bounds the forward peak.
-  The four parameters are type data, interpolated along the type axis. `thrum-cloud-model` gives the published fit
-  from a droplet diameter of 5 to 50 µm, so a table takes its phase from the droplet radius its extinction comes
-  from, and a game that wants another look gives its own four numbers. This lobe is the silver lining: a rim
-  within a few degrees of the Sun, not a glow 20° wide, and a brighter cloud with the Sun behind the viewer.
+  d'Eon 2023), `(1 − w)·HG(θ, g_HG) + w·Draine(θ, g_D, α)`. Its four parameters are type data.
+  `thrum-cloud-model` gives the published fit from a droplet diameter of 5 to 50 µm, so a type takes its phase
+  from the droplet radius its extinction comes from, and a game that wants another look gives its own four
+  numbers. This lobe is the silver lining: a rim within a few degrees of the Sun, not a glow 20° wide, and a
+  brighter cloud with the Sun behind the viewer.
+- **The Sun is a disc, and the phase is averaged over it.** What a sample scatters toward the eye from a Sun of
+  angular radius ρ is the mean of that phase over the directions to every point of the lent Sun's disc. This is
+  the phase that is rendered, and it is the whole first order's, both lobes. An average of a phase that
+  integrates to 1 integrates to 1, so the disc moves light about within a degree or so of the Sun and removes
+  none: across 5 to 50 µm the integral is 1.000000 (part G). Its mean cosine is the point Sun's times
+  `(1 + cos ρ)/2`, a change in the sixth decimal place. At the Sun's centre it is the phase's energy inside the
+  disc over the disc's solid angle, which bounds the forward peak: 1,792 sr⁻¹ for a 20 µm droplet against
+  2,743 for a point Sun, and 4,325 against 18,673 at 50 µm, where the lobe is narrower than the Sun. Beyond 2°
+  it is the point Sun's phase to within 2%.
+- **A table, because the average has no closed form.** Widening the lobe's squared angle, the rule Broadsides
+  uses, loses 0.3% to 23% of the first order's energy across the droplet range; the same lobe scaled back to unit
+  energy is a lobe of lower `g`, which puts up to 70% too much light 1° to 2° from the Sun (part G). So
+  `thrum-cloud-model` evaluates the average in f64, by quadrature over the disc, and gives it as a table over
+  the scattering angle, spaced so the degrees nearest the Sun hold most of its entries. Each row of the type
+  table has its table, made at preparation from the row's four parameters and the lent Sun's angular radius; a
+  type between two rows blends their tables by weight, and a blend of phases that each integrate to 1 does too.
+  The renderer reads the model's table and computes none of its own. Its size is the builder's, held to the
+  bound M1 measures: 1,025 entries hold the integral to 1.0001 for a 50 µm droplet, and 257 to 1.002.
 - **The later orders** keep the reference's Henyey–Greenstein lobes, `LIQUID_G[1..3]`: light scattered many times
   has forgotten the droplet.
-- **Once a ray.** The Sun is one direction, so the angle `θ` and all four phases are one evaluation a ray, in
-  f32 from `sin²(θ/2)` so the forward peak keeps its digits. No sample pays for the phase.
+- **Once a ray.** A ray has one angle `θ` to the Sun's centre, so all four phases are one evaluation a ray: a
+  read of the table and three closed forms, in f32 from `sin²(θ/2)` so the forward peak keeps its digits. No
+  sample pays for the phase.
 - **Ambient.** Sky light from above and ground light from below, each dimmed by the diffuse transmittance of the
   cloud between: `1 / (1 + ¾(1 − g)·tau)`, the two-stream result for a layer that scatters without absorbing,
   with `tau` above and below the sample taken from the column already read. Bases darken and never go black. The
@@ -516,6 +543,24 @@ the shape, so the query, the picture and the shade agree on its outline at any d
   weight, and what is drawn over a point never depends on the camera by more than the bound allows. The same
   function feeds the Sun's path and the overlay, so a placed cloud is lit, shades the ground with its own
   outline and is reflected like any other.
+- **A shape's shade is its volume's.** The Sun's path integrates the coarse density of the forms that are
+  drawn, with the weights the weather map names: the lent slab wherever the volume form has weight, the column
+  form elsewhere. A footprint cannot stand in for the slab there. It holds each column's sum and its lowest and
+  highest heights, and not how the density lies between them, so two shapes with one footprint can differ along
+  a slanting ray: in the review's pair, a transmittance of 0.02 against 0.57 at a 45° Sun, where a path made
+  from their footprint gives 0.24 for both (part H). So Shade needs the volumes wherever a scene declares
+  Shapes, with the trace or without it. The map writes the slot and the weight from the camera, the placed
+  range and the lease, and never from whether the trace is declared; a scene with Sky off therefore integrates
+  the same slab with the same weights, and its ground field is the same bytes.
+- **Read at the slab's finest level.** The Sun's path samples the slab along each column's own ray, at the
+  level the voxels were cooked at. A slab averaged to the column's width spreads an opaque shape's shade past
+  its outline: for a cumulus of 20 m voxels under 80 m columns, the ground factor is 0.01 to 0.05 RMS from the
+  volume's own with the finest level and 0.11 to 0.18 with the averaged one at the type's extinction (part H).
+  Between columns the product interpolates optical depth, as it does for every cloud.
+- **A cell in its column form is shaded through it**, in every profile: past the placed range, beyond the
+  capacity below, and while no lease is resident. That shade has the footprint's outline straight down and its
+  heights, and is 0.04 to 0.14 RMS from the volume's own on the ground under a slanting Sun (part H). It is a
+  stated approximation, used where the cloud itself is drawn that way.
 - **Reading a slab.** The march samples no level coarser than the one that holds one texel a slab, and holds its
   coordinate along the stacking axis half a texel of the coarser level it reads inside the slab. Up to that
   level every texel is an average of one slab alone; the next level averages neighbouring shapes, and is never
@@ -525,8 +570,8 @@ the shape, so the query, the picture and the shade agree on its outline at any d
   its cell. A growth-track instance blends its two keys around its age, or around its growth where the game
   directs it, and its footprint is the same blend of theirs.
 - **Capacity.** The number of volume-form instances is a profile limit checked against the capability record.
-  Placed cells beyond it, and every placed cell while no lease is resident, are drawn in their column form,
-  nearest first, and the refusal is counted and reported. The query is the same either way.
+  Placed cells beyond it, and every placed cell while no lease is resident, are drawn and shaded in their
+  column form, nearest first, and the refusal is counted and reported. The query is the same either way.
 
 ### Capabilities, shadow-only and headless
 
@@ -539,13 +584,17 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
 | **Shade** | The weather map, the shape noise and the Sun's path, with the ground field `ATMOSPHERE` applies | Weather |
 | **Sky** | The visible layer: the trace, the layer's history, the detail noise, the compose and the far-aerial use | Shade |
 | **World light** | The sky overlay and the haze scale | Sky |
-| **Shapes** | The library's footprints, with Shade; its leased volumes, with Sky. By the field's hash or by the game | Shade |
+| **Shapes** | The library: its footprints, which the field's query reads, and its leased volumes, which the Sun's path reads for a shape's shade and the trace, with Sky, for its picture. By the field's hash or by the game | Shade |
 
 - **Headless** is Weather alone: a server answers point queries, and needs a library's footprints and never its
   volumes.
-- **Shadow-only** is Weather and Shade, with Shapes if the sky has them. The Sun's path integrates the coarse
-  density whatever else is declared, so its ground field is the same bytes with or without Sky and World light,
-  under a sky whose full density the detail noise does erode.
+- **Shadow-only** is Weather and Shade, with Shapes if the sky has them. Leaving Sky out releases what only
+  the picture uses: the trace, the layer and its history, the detail noise, the compose and the overlay. The
+  library is not among them, because [a shape's shade is its volume's](#placed-volumes); a shadow-only scene
+  with shapes holds their lease, and one without shapes holds no volume. The Sun's path integrates the coarse
+  density whatever else is declared, so with the same library resident and the same camera its ground field is
+  the same bytes with or without Sky and World light, under a sky whose full density the detail noise does
+  erode and under placed clouds in either form.
 - **A sky with no library** leaves Shapes out. No footprint, lease or slot exists, and the map's presentation
   values are not written.
 
@@ -564,7 +613,7 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   per level, weather map cadence, overlay cadence, and placed range. Extent knobs select a sub-rectangle of a
   fixed allocation, so no knob creates a resource or pipeline. None changes the weather field, the columns the
   weather map holds or what a query returns; the placed range changes only the map's presentation values, the
-  slot and the volume form's weight.
+  slot and the volume form's weight, and through them which form of a placed cell is drawn and shaded.
 
 ### Check that it can work
 
@@ -589,7 +638,7 @@ From `cloud_field_proof.py`, a CPU sketch with first-profile constants:
 - **K6.** Unrun. The layer's reconstruction and its look under TAAU are first seen in M3 and M9.
 
 From `revision_proof.py`, run for the revision of 14 November against
-[the design review](../../evidence/CLOUDS/design-review.md)'s counterexamples:
+[the first design review](../../evidence/CLOUDS/design-review-1.md)'s counterexamples:
 
 - **The Sun's path as the Sun sinks.** Beside a broken cloud bank, with the Sun going from 8° to 1°, the factor
   under open sky, in a gap and where the ray enters the bank changes by an amount that halves when the Sun's
@@ -614,13 +663,33 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
 - **The first order's phase.** For a 20 µm droplet the phase integrates to 1 over the sphere with a mean cosine
   of 0.88, against the reference lobe's 0.86, so the energy is the same and its direction is not. Against the
   droplet, the reference lobe is 3.9 times too bright at 5° from the Sun and 3.4 times at 10°, 46 times too dim
-  at half a degree, and 2.0 to 3.4 times too dim from 140° to 180°. Averaged over the Sun's disc the droplet's
-  forward peak is 1,709 sr⁻¹, down from 2,743 for a point Sun.
+  at half a degree, and 2.0 to 3.4 times too dim from 140° to 180°. Within 2° of the Sun those figures used
+  the widened lobe the second review refuted; part G below gives them again.
 - **Drift.** At 60× in a 40 m/s wind a cloud 1,500 m off moves 37 pixels a tick at 1440 rows. Taken at the tick
   it is shown as 0 then 37; at the display's time, as 18 then 18. At 1× the same wind gives 0 then 0.6 against
   0.3 then 0.3.
 - **Directed shapes and capabilities.** Unrun. Both are the placed cell and the profile already reproduced, with
   their inputs from the game; M1 and M8 prove them first.
+
+From `second_revision_proof.py`, run after [the second review](../../evidence/CLOUDS/design-review.md), on its
+counterexamples and wider cases:
+
+- **G, the phase over the Sun's disc.** At droplet diameters of 5, 10, 20, 40 and 50 µm the disc-averaged phase
+  integrates to 1.000000 over the sphere, where the widened lobe gives 0.9966, 0.9811, 0.9266, 0.8109 and
+  0.7677. Its mean cosine equals the closed form to six places (0.879306 at 20 µm, against 0.879310 for a point
+  Sun). At the Sun's centre the quadrature equals the closed form: 99, 1,792 and 4,325 sr⁻¹ at 5, 20 and 50 µm.
+  The disc changes the point Sun's phase by 12% at half a degree, 2% at 2° and 0.2% at 5° for a 20 µm droplet.
+  Against it the reference lobe is 60 times too dim at half a degree, 3.8 times too bright at 5° and 3.4 times
+  at 10°. A table of 1,025 entries read with linear interpolation integrates to 1.0001 and is within 0.2% at
+  its midpoints; 257 entries give 1.002 and 3%; 65 give 1.04 and are too few.
+- **H, a placed shape's shade.** The review's two shapes of one footprint give Sun paths of 3.9598 and 0.5657
+  through their volumes at 45°, and one path of 1.4142 from their footprint. For a cumulus of 20 m voxels with
+  a dense core, a shelf and a hollow, at a 45° and a 20° Sun, thin and at the type's extinction, with hard and
+  with softened edges, a product of 80 m columns filled from the volume at its finest level is 0.002 to 0.05
+  RMS in transmittance from the volume's own on the ground and 0.004 to 0.08 inside the cloud, which is the
+  band the product holds for procedural cloud. Filled from the volume averaged to 80 m it is 0.03 to 0.18 and
+  0.02 to 0.17, and from the column form 0.04 to 0.14 and 0.06 to 0.16. The largest single differences, 0.4 at
+  a hard opaque edge, are an edge placed within one column's width.
 
 ## The system as it runs
 
@@ -684,17 +753,17 @@ there, not here.
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
-| Phases | Frame, once a ray | Four closed forms | None in the march | |
+| Phases | Frame, once a ray; the tables at preparation | One table read and three closed forms; a table for each row of the type table, about 4 KiB each at 1,025 entries | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
-| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
+| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
 | Time-lapse | Ages are held in weather time | At 60×, the whole map (262 k texels) and up to the Sun path's whole fill each frame | Unestimated beyond those counts; M2 records 1×, 8× and 60× | |
 | Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples | The largest term; M3 measures it | 268 ms; 33 M density evaluations |
 | Resolve | Frame | 1280×720 texels | 0.1–0.2 ms | 0.9 ms |
 | Compose | Frame | Sky pixels at render extent; a pass that loads scene colour | 0.2–0.4 ms and a tile pass break | |
 | Sky overlay | An eighth a frame | 6 × 48² rays, coarse density | Under 0.05 ms | 15 ms capture |
-| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again | About 47 MiB plus the library | 62 MiB plus history |
+| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included | About 47 MiB plus the library | 62 MiB plus history |
 
 **Records and tripwires, never gates** ([brief](../BRIEF.md), decision 3). `scripts/cloud_cost.py`, created in
 M2, takes a paired record of one scene at one view, capture off: the scene with clouds and with them absent,
@@ -725,7 +794,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
    frame at a lower layer scale, which removes the layer's history from the picture.
 4. **Low-Sun relief is lost in the summed product**, or its coarse density shades an eroded edge visibly
    differently from the cloud that is drawn. Early sign: M3's record of the two densities' Sun paths, and M5's
-   low-Sun stills against the oracle. Fallback: more local samples at low Sun, or a finer near level.
+   low-Sun stills against the oracle. Fallback: more local samples at low Sun, or a finer near level. The same
+   holds for a placed shape, whose shade edge the product places within one column's width (part H): M6's
+   record and its stills of a shape's shade are the early sign.
 5. **`ATMOSPHERE`'s products resist the overlay**, because their storage is relative to the Sun. Early sign:
    M8's first test. The ruling states behaviour, not storage; if the producers cannot compose it, the proposal
    goes to that module's log.
@@ -733,8 +804,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
    limits on the Mac, and M4 is the first real Chrome run.
 7. **The droplet's forward peak aliases or flickers** in the part-extent trace, as a ring or a crawling aureole
    around the Sun through thin cloud. Early sign: M5's stills and pan toward the Sun. The fix is in the phase's
-   evaluation (its precision, or the angle taken at the texel's centre), never a return to the wide lobe; a game
-   that wants a softer look gives its own four numbers.
+   evaluation (its precision, its table's spacing, or the angle taken at the texel's centre), never a return to
+   the wide lobe or to a rule that loses energy; a game that wants a softer look gives its own four numbers.
 8. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -774,6 +845,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
+| How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |
+| How far is the product over a placed shape from the volume's own Sun path, at its edges and inside it, on the GPU? | M6 measures first, beside part H's figures |
 | Does the incident-light meter already see cloud shade? | M8 reads the code and measures |
 | Can the scene's residency take the library as a second source folder? | M6; if not, the proposal goes to `CONTENT-LOOP`'s log |
 | Is an Apple-tile kernel variant a measured win? | M12 |

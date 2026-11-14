@@ -113,3 +113,27 @@
 - 2026-11-14 Water was re-planned as one system: the sea's surface, optics and example now belong to `WATERS`, and
   `SEA` keeps only the wave field. M11 waits on `WATERS:M8` in place of `SEA:M8`, and its example is
   `examples/water` (package `water-scene`, `scripts/check_water_browser.mjs`). Nothing else of this module changed.
+- 2026-11-14 Second design review: changes requested, two Must Fix
+  ([review](../../evidence/CLOUDS/design-review.md)). A footprint cannot give a placed shape's shade under a
+  slanting Sun, yet Shade without Sky was given footprints alone; and the Sun-disc spread on the first order's
+  lobe removed 2% to 23% of its energy from 10 to 50 µm. The four earlier findings were found resolved.
+- 2026-11-14 Resolved, a shape's shade: the Sun's path integrates the forms that are drawn, so Shade holds the
+  leased volumes wherever Shapes is declared, with Sky or without. Headless still needs footprints only, and a
+  cell in its column form is shaded through it in every profile. M6.2 and M8.9 written again; M1.15 and M6.12
+  are new. M6.2's Sun-path bound is M6's own measured one, since a hard edge sits within a column's width.
+  New assumption: a shadow-only scene with shapes keeps its library loaded.
+- 2026-11-14 Found in [part H](../../evidence/CLOUDS/design-proof/second_revision_proof.py): the Sun's path
+  must read a slab at its finest level. An average to the 80 m column spreads an opaque shape's shade, 0.11 to
+  0.18 RMS against 0.01 to 0.05. Not chosen: a path from the column form in both profiles (0.04 to 0.14 RMS
+  from the volume's shade), and a small always-resident coarse copy of each shape, which is that average.
+- 2026-11-14 Resolved, the Sun's disc: the first order's phase is averaged over the disc in the model, by
+  quadrature, and read from a table. Part G: it integrates to 1.000000 from 5 to 50 µm, and its mean cosine is
+  the point Sun's times (1 + cos ρ)/2. Not chosen: the widened lobe scaled back to unit energy, a lobe of lower
+  g that is up to 70% too bright 1° to 2° from the Sun. M1.8 keeps the point-Sun checks, M1.14 is new for the
+  rendered phase, M5.1 is written again, and Broadsides' `spread` rule is not copied.
+- 2026-11-14 Suggestion S1 taken: M5.1's local-reach check is scoped to a fixture with no detail erosion, where
+  the full and the coarse density agree. It cost one clause and removed a check that could not pass as worded.
+- 2026-11-14 Found while resolving: within 2° of the Sun, part E of `first_principles_proof.py` used the widened
+  lobe. Part G gives those figures again: the reference lobe is 60 times too dim at half a degree, not 46. The
+  supplemental of Jendersie and d'Eon was read, sections 2 and 3.1. Plan notes were shortened to hold the plan
+  under its word limit; no milestone's scope changed beyond the items named above.
