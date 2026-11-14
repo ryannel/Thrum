@@ -396,6 +396,68 @@ enum Fault {
     StaleHistory,
 }
 
+async fn metal_device() -> (wgpu::Device, wgpu::Queue) {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::METAL,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .expect("Metal adapter");
+    adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .expect("Metal device")
+}
+
+#[expect(
+    unsafe_code,
+    reason = "A dedicated no-op raw callback tests locked-wgpu API separation without mutating or ending the native command buffer"
+)]
+fn raw_noop(encoder: &mut wgpu::CommandEncoder) {
+    // SAFETY: no raw object escapes and no commands, wgpu calls, end or commit
+    // happen in this callback. The test intentionally tries the other API only
+    // after this call has returned, and expects wgpu's refusal before recording.
+    unsafe {
+        encoder.as_hal_mut::<wgpu::hal::api::Metal, _, _>(|raw| assert!(raw.is_some()));
+    }
+}
+
+fn wgpu_copy(device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+    let buffer = || {
+        device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("API separation fixture"),
+            size: 8,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        })
+    };
+    encoder.copy_buffer_to_buffer(&buffer(), 0, &buffer(), 0, 8);
+}
+
+#[test]
+#[should_panic(
+    expected = "Mixing the wgpu encoding API with the raw encoding API is not permitted"
+)]
+fn locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback() {
+    let (device, _queue) = pollster::block_on(metal_device());
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    raw_noop(&mut encoder);
+    wgpu_copy(&device, &mut encoder);
+}
+
+#[test]
+#[should_panic(
+    expected = "Mixing the wgpu encoding API with the raw encoding API is not permitted"
+)]
+fn locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback() {
+    let (device, _queue) = pollster::block_on(metal_device());
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    wgpu_copy(&device, &mut encoder);
+    raw_noop(&mut encoder);
+}
+
 #[expect(
     clippy::print_stdout,
     reason = "The device fixture records its actual Metal adapter in the retained test log"
