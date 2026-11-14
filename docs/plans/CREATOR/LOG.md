@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Completed M2.2 and M2.4's hardware Chrome proofs. Added geometry after frame 656
+  raised forward GPU time from 0.393 to 13.369 ms; unsupported, hidden and lost-device rows
+  showed reasons. The off arm stopped timestamp work while a new presented submission completed,
+  and on cleared pre-switch numbers. [M2 evidence](../../evidence/CREATOR/M2.md) retains both complete
+  passing runs. Exact-image verification and integration remain pending.
+
 - 2026-11-14 Inspected and retained M2.7's hardware Chrome pages at default width, 480 px and off.
   Their 20 ordered profiler rows match the native starter and remain readable; all off rows state
   their reason. The parent run later failed an incorrect automatic-recovery assertion, so its

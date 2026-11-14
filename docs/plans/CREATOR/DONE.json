@@ -88,10 +88,10 @@
           "lock": "gpu",
           "ask": "Read the profiler case and the tests. Does the case change the load only after frame 600 and fail when a row is fed from the shell's first-600 report buffer or shows a number while the adapter reports no timestamp-query feature? Do tests cover each reason, and the window emptying on a device replacement?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-profiler/run.json; docs/evidence/CREATOR/m2/browser-profiler/profiler-load.png; docs/evidence/CREATOR/m2/native/profile-window-tests.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
