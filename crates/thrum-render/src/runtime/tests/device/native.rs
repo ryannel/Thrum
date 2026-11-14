@@ -152,7 +152,7 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
         ] {
             let twin = sequence(&capabilities, &queue, NativeWitness::Wgsl, source).await;
             let metal = sequence(&capabilities, &queue, NativeWitness::Metal, source).await;
-            assert_eq!(metal, twin, "exact coordinator {source:?}");
+            assert!(metal == twin, "exact coordinator {source:?}");
             if source != CaptureSource::Sdr {
                 for value in metal.iter().flat_map(|frame| frame.as_chunks::<2>().0) {
                     let value = half::f16::from_le_bytes([value[0], value[1]]);
@@ -295,9 +295,8 @@ fn metal_native_submission_failure_loss_and_extent_replacement_reset_history() {
                 extent: [96, 48],
             }))
             .unwrap();
-        assert_eq!(
-            replaced,
-            image(&mut twin),
+        assert!(
+            replaced == image(&mut twin),
             "replacement resets to the exact prepared twin"
         );
         println!(
@@ -422,8 +421,8 @@ fn metal_native_two_slots_select_submitted_history_before_completion() {
             assert_eq!(&second[..8], &[0; 8]);
             pairs.push([first, second]);
         }
-        assert_eq!(
-            pairs[0], pairs[1],
+        assert!(
+            pairs[0] == pairs[1],
             "two in-flight native histories exactly match the twin"
         );
         println!(
