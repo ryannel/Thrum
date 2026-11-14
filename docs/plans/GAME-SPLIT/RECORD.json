@@ -1,10 +1,10 @@
 {
   "module": "GAME-SPLIT",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/GAME-SPLIT/design-review.md",
-    "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
-    "hash": "22be991fdd856c8accc8dfdc452fa836d041e29359096a48fb19496a4e10f8c2",
+    "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
+    "hash": "a360130ff323e797a1bbb25d1ebd2b79a74d9f69da9cbbf84d58ee85b7656b77",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,21 +16,22 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 95725,
-      "cached": 946944,
-      "output": 5355,
+      "input": 68168,
+      "cached": 673024,
+      "output": 3610,
       "turns": 1
     },
-    "at": "2026-11-14T23:30:32Z"
+    "at": "2026-11-14T23:37:07Z"
   },
   "milestones": {
     "M1": {
-      "definitions": "7cf2f06860b0cb5cad9c872f809bb879da4a8821a883d649e85d69d4ebd8b7e7",
+      "definitions": "3ccedd4a8019020d38906398cfee7e1009502a894c1f4a5011fd0895806dcbe4",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
-        "at": "2026-11-14T23:26:02Z"
+        "by": "design review",
+        "review": "docs/evidence/GAME-SPLIT/design-review.md",
+        "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
+        "at": "2026-11-14T23:37:07Z"
       }
     },
     "M2": {
@@ -52,12 +53,13 @@
       }
     },
     "M4": {
-      "definitions": "0b6cb8f6cdfad599d3fee270f64136a910caa6f137851957608f2371024e23a5",
+      "definitions": "1c082a9ab1004f8bf4028e6e57a968502305f3557ac6d1849a141d407733e0bf",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
-        "at": "2026-11-14T23:26:02Z"
+        "by": "design review",
+        "review": "docs/evidence/GAME-SPLIT/design-review.md",
+        "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
+        "at": "2026-11-14T23:37:07Z"
       }
     },
     "M5": {
@@ -107,6 +109,29 @@
         "turns": 1
       },
       "at": "2026-11-14T22:19:39Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/GAME-SPLIT/design-review-2.md",
+      "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+      "hash": "22be991fdd856c8accc8dfdc452fa836d041e29359096a48fb19496a4e10f8c2",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 95725,
+        "cached": 946944,
+        "output": 5355,
+        "turns": 1
+      },
+      "at": "2026-11-14T23:30:32Z"
     }
   ]
 }
