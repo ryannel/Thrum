@@ -36,7 +36,7 @@ impl Taau {
         }
     }
     pub(super) fn new(device: &crate::runtime::DeviceSite, reference: bool) -> Self {
-        let entries: Vec<_> = (0..=10)
+        let entries: Vec<_> = (0..=11)
             .filter(|binding| !reference || [0, 4, 6, 7, 9].contains(binding))
             .map(|binding| {
                 let ty = match binding {
@@ -49,7 +49,7 @@ impl Taau {
                         },
                         view_dimension: wgpu::TextureViewDimension::D2,
                     },
-                    9 | 10 => wgpu::BindingType::Buffer {
+                    9..=11 => wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: wgpu::BufferSize::new(if binding == 9 {
@@ -207,6 +207,10 @@ impl Taau {
                     binding: 10,
                     resource: exposure[write].as_entire_binding(),
                 });
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 11,
+                    resource: exposure[1 - write].as_entire_binding(),
+                });
             }
             device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("TAAU submitted sides"),
@@ -324,6 +328,24 @@ impl PreparedSynthetic {
                 0..super::exposure::SAMPLE_BYTES,
                 AccessKind::UniformRead,
             ));
+            let previous_exposure = graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes: super::exposure::SAMPLE_BYTES,
+                    usage: wgpu::BufferUsages::STORAGE
+                        | wgpu::BufferUsages::UNIFORM
+                        | wgpu::BufferUsages::COPY_SRC,
+                },
+                ResourceScope::History {
+                    owner: 2,
+                    epoch: self.key.device_generation,
+                    initialized: true,
+                },
+            )?;
+            accesses.push(Access::new(
+                previous_exposure,
+                0..super::exposure::SAMPLE_BYTES,
+                AccessKind::UniformRead,
+            ));
         }
         keys.insert(self.taau_key());
         let pass = graph.pass(Pass {
@@ -362,11 +384,24 @@ impl TaauTarget {
             extent[1] as f32,
         ]);
         let packed = view.pack_view(previous, 1.0);
+        let previous_packed = previous.pack_view(previous, 1.0);
         words[52..56].copy_from_slice(&[
             f32::from_le_bytes(packed[152..156].try_into().expect("jitter x")),
             f32::from_le_bytes(packed[156..160].try_into().expect("jitter y")),
-            u32::from_le_bytes(packed[228..232].try_into().expect("jitter phase")) as f32,
-            0.0,
+            if view.reconstruction_reference() {
+                u32::from_le_bytes(packed[228..232].try_into().expect("jitter phase")) as f32
+            } else {
+                f32::from_le_bytes(
+                    previous_packed[152..156]
+                        .try_into()
+                        .expect("previous jitter x"),
+                )
+            },
+            f32::from_le_bytes(
+                previous_packed[156..160]
+                    .try_into()
+                    .expect("previous jitter y"),
+            ),
         ]);
         let bytes: [u8; 224] = std::array::from_fn(|i| words[i / 4].to_le_bytes()[i % 4]);
         queue.write_buffer(&self.params, 0, &bytes);

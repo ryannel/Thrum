@@ -17,6 +17,7 @@ struct Params {
 @group(0) @binding(9) var<uniform> params: Params;
 struct Exposure { values: vec4<f32>, metadata: vec4<u32> }
 @group(0) @binding(10) var<uniform> exposure: Exposure;
+@group(0) @binding(11) var<uniform> previous_exposure: Exposure;
 
 fn ycocg(c: vec3<f32>) -> vec3<f32> {
     return vec3(dot(c,vec3(0.25,0.5,0.25)),(c.r-c.b)*0.5,(-c.r+2.0*c.g-c.b)*0.25);
@@ -57,7 +58,9 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let world = world_h/max(abs(world_h.w),1e-20)*sign(world_h.w);
     let linear_depth = abs((params.view*world).z);
     let expected = abs((params.previous_view*world).z);
-    let old_depth = textureLoad(previous_depth,bounded(vec2<i32>(round(previous))),0).r;
+    // Depth history is a jittered raster, unlike the resolved colour history.
+    let depth_at = previous+params.jitter.zw-params.jitter.xy;
+    let old_depth = textureLoad(previous_depth,bounded(vec2<i32>(round(depth_at))),0).r;
     let sky = textureLoad(depth,p,0) == 0.0;
     let depth_ok = (sky && old_depth == 0.0) || (!sky && abs(expected-old_depth) <= max(0.01,expected*0.01));
     var weight = 0.95*(1.0-textureLoad(reactive,p,0).r);
@@ -65,13 +68,17 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
         weight = 0.0;
     }
     let retained = history_at(previous);
-    let rescaled = retained.rgb*(params.state.y/max(retained.a,1e-20));
-    let clipped = rgb(clamp(ycocg(rescaled),low,high));
+    let rescaled = retained.rgb*(exposure.values.x/max(previous_exposure.values.x,1e-20));
+    let retained_ycocg = ycocg(rescaled);
+    let bounded_ycocg = clamp(retained_ycocg,low,high);
+    // Preserve the exact value when clipping is unnecessary. A YCoCg round trip
+    // and weighted sum can otherwise lose a half-precision ULP on every frame.
+    let clipped = select(rgb(bounded_ycocg),rescaled,all(retained_ycocg == bounded_ycocg));
     let luminance_scale = max(exposure.values.x*exposure.values.y,1e-20);
     let a = (1.0-weight)/(1.0+max(0.0,ycocg(current).x/luminance_scale));
     let b = weight/(1.0+max(0.0,ycocg(clipped).x/luminance_scale));
-    let resolved = max(vec3(0.0),(current*a+clipped*b)/max(a+b,1e-20));
+    let resolved = max(vec3(0.0),current+(clipped-current)*(b/max(a+b,1e-20)));
     textureStore(output,p,vec4(resolved,1.0));
-    textureStore(next_colour,p,vec4(resolved,params.state.y));
+    textureStore(next_colour,p,vec4(resolved,exposure.values.x));
     textureStore(next_depth,p,vec4(select(linear_depth,0.0,sky)));
 }
