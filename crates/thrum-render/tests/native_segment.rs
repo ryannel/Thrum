@@ -184,13 +184,16 @@ impl Textures {
         }
     }
 
-    fn copy(&self, encoder: &mut wgpu::CommandEncoder) {
+    fn copy(&self, encoder: &mut wgpu::CommandEncoder, select_history: bool) {
         for target in [&self.output, &self.next] {
             encoder.copy_texture_to_texture(
                 self.scene.as_image_copy(),
                 target.as_image_copy(),
                 EXTENT,
             );
+            if !select_history {
+                continue;
+            }
             encoder.copy_texture_to_texture(
                 wgpu::TexelCopyTextureInfo {
                     origin: wgpu::Origin3d { x: 4, y: 1, z: 0 },
@@ -218,6 +221,7 @@ impl Textures {
         encoder: &mut wgpu::CommandEncoder,
         pipeline: &ProtocolObject<dyn MTLComputePipelineState>,
         skip_tile: bool,
+        select_history: bool,
     ) {
         // SAFETY: all guards and their wgpu owners outlive recording and submission.
         // All textures were initialized via wgpu; extents/formats/usages match. Metal
@@ -242,6 +246,9 @@ impl Textures {
                 unsafe {
                     blit.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin(
                         scene.raw_handle(), 0, 0, MTLOrigin { x: 0, y: 0, z: 0 }, MTLSize { width: 32, height: 4, depth: 1 }, target, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 });
+                }
+                if !select_history {
+                    continue;
                 }
                 // SAFETY: the 8x2 crop lies inside both retained 32x4 textures.
                 unsafe {
@@ -341,7 +348,7 @@ fn bytes(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
 
 #[test]
 fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
-    let (actual, pattern) = fixture(false, false);
+    let (actual, pattern) = fixture(Fault::None);
     assert_eq!(actual[0], actual[2], "exact output");
     assert_eq!(actual[1], actual[3], "exact history");
     assert_eq!(
@@ -354,34 +361,37 @@ fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
         &pattern[8..256],
         "same-submit producer actually consumed"
     );
-    let (no_tile, _) = fixture(false, true);
-    assert_ne!(
-        no_tile[0], no_tile[2],
-        "omitting native storage writes must fail exact output"
-    );
-    assert_ne!(
-        no_tile[1], no_tile[3],
-        "omitting native storage writes must fail exact history"
-    );
-    let (no_native, _) = fixture(true, false);
-    assert_ne!(
-        no_native[0], no_native[2],
-        "no-op native work must fail exact output"
-    );
-    assert_ne!(
-        no_native[1], no_native[3],
-        "no-op native work must fail exact history"
-    );
+    for fault in [
+        Fault::NoCommands,
+        Fault::NoTile,
+        Fault::NoReset,
+        Fault::StaleSource,
+        Fault::StaleHistory,
+    ] {
+        let (broken, _) = fixture(fault);
+        assert_ne!(broken[0], broken[2], "{fault:?} must fail exact output");
+        assert_ne!(broken[1], broken[3], "{fault:?} must fail exact history");
+    }
     println!(
-        "M10 boundary: exact 1024-byte output and history; no-op native and omitted native storage-write controls rejected"
+        "M10 boundary: eight single-submit frames exact; all five omission/stale/reset controls rejected"
     );
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Fault {
+    None,
+    NoCommands,
+    NoTile,
+    NoReset,
+    StaleSource,
+    StaleHistory,
 }
 
 #[expect(
     clippy::print_stdout,
     reason = "The device fixture records its actual Metal adapter in the retained test log"
 )]
-fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
+fn fixture(fault: Fault) -> (Vec<Vec<u8>>, Vec<u8>) {
     pollster::block_on(async {
         let graph = fixture_graph();
         assert_eq!(
@@ -405,8 +415,8 @@ fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .expect("device");
-        let native = Textures::new(&device);
-        let twin = Textures::new(&device);
+        let mut native = Textures::new(&device);
+        let mut twin = Textures::new(&device);
         native.initialize(&queue);
         twin.initialize(&queue);
         let kernel = native_pipeline(&device);
@@ -424,81 +434,124 @@ fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
         });
         let views = [&twin.previous, &twin.output, &twin.next]
             .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()));
-        let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None,
-            layout: &pipeline.get_bind_group_layout(0),
-            entries: &views
-                .iter()
-                .enumerate()
-                .map(|(i, view)| wgpu::BindGroupEntry {
-                    binding: u32::try_from(i).expect("binding"),
-                    resource: wgpu::BindingResource::TextureView(view),
-                })
-                .collect::<Vec<_>>(),
+        let binds: [_; 2] = std::array::from_fn(|side| {
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: &pipeline.get_bind_group_layout(0),
+                entries: &if side == 0 { [0, 1, 2] } else { [2, 1, 0] }
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &view)| wgpu::BindGroupEntry {
+                        binding: u32::try_from(i).expect("binding"),
+                        resource: wgpu::BindingResource::TextureView(&views[view]),
+                    })
+                    .collect::<Vec<_>>(),
+            })
         });
-        let mut producer =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        // Both scene inputs change in this submission, after initialization. Each
-        // finite nonnegative half pattern is exact, including tiny/subnormal texels.
-        let pattern: Vec<u8> = (0..512_u16)
-            .flat_map(|i| (i % 0x3c00).to_le_bytes())
-            .collect();
         let upload = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: 1024,
-            usage: wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: true,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
-        upload
-            .slice(..)
-            .get_mapped_range_mut()
-            .expect("upload mapping")
-            .copy_from_slice(&pattern);
-        upload.unmap();
-        for textures in [&native, &twin] {
-            producer.copy_buffer_to_texture(
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &upload,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(256),
-                        rows_per_image: Some(4),
+        let mut last = None;
+        for frame in 0..8_u16 {
+            let reset = frame == 3;
+            if reset {
+                twin.initialize(&queue);
+                if fault != Fault::NoReset {
+                    native.initialize(&queue);
+                }
+            }
+            let select_history = frame % 2 == 1 && !reset;
+            let mut producer =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            // Both scene inputs change in this submission, after initialization. Each
+            // finite nonnegative half pattern is exact, including tiny/subnormal texels.
+            let pattern: Vec<u8> = (0..512_u16)
+                .flat_map(|i| (i + frame * 512).to_le_bytes())
+                .collect();
+            queue.write_buffer(&upload, 0, &pattern);
+            for (skip, textures) in [
+                (fault == Fault::StaleSource && frame != 0, &native),
+                (false, &twin),
+            ] {
+                if skip {
+                    continue;
+                }
+                producer.copy_buffer_to_texture(
+                    wgpu::TexelCopyBufferInfo {
+                        buffer: &upload,
+                        layout: wgpu::TexelCopyBufferLayout {
+                            offset: 0,
+                            bytes_per_row: Some(256),
+                            rows_per_image: Some(4),
+                        },
                     },
-                },
-                textures.scene.as_image_copy(),
-                EXTENT,
+                    textures.scene.as_image_copy(),
+                    EXTENT,
+                );
+            }
+            let mut raw = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            if fault != Fault::NoCommands {
+                native.native(&mut raw, &kernel, fault == Fault::NoTile, select_history);
+            }
+            let mut consumer =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            twin.copy(&mut consumer, select_history);
+            {
+                let mut pass = consumer.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+                pass.set_pipeline(&pipeline);
+                pass.set_bind_group(0, &binds[usize::from(frame % 2)], &[]);
+                pass.dispatch_workgroups(1, 1, 1);
+            }
+            let buffers = [&native.output, &native.next, &twin.output, &twin.next]
+                .map(|t| readback(&device, &mut consumer, t));
+            let mut commands = [
+                Some(producer.finish()),
+                Some(raw.finish()),
+                Some(consumer.finish()),
+            ];
+            queue.submit(
+                graph
+                    .pass_order
+                    .iter()
+                    .map(|&pass| commands[pass].take().expect("one encoder per graph pass")),
             );
-        }
-        let mut raw = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        if !skip_native {
-            native.native(&mut raw, &kernel, skip_tile);
-        }
-        let mut consumer =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        twin.copy(&mut consumer);
-        {
-            let mut pass = consumer.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
-            pass.set_pipeline(&pipeline);
-            pass.set_bind_group(0, &bind, &[]);
-            pass.dispatch_workgroups(1, 1, 1);
-        }
-        let buffers = [&native.output, &native.next, &twin.output, &twin.next]
-            .map(|t| readback(&device, &mut consumer, t));
-        let mut commands = [
-            Some(producer.finish()),
-            Some(raw.finish()),
-            Some(consumer.finish()),
-        ];
-        queue.submit(
-            graph
-                .pass_order
+            let result = buffers
                 .iter()
-                .map(|&pass| commands[pass].take().expect("one encoder per graph pass")),
-        );
-        let result = buffers
-            .iter()
-            .map(|b| bytes(&device, b))
-            .collect::<Vec<_>>();
-        (result, pattern)
+                .map(|b| bytes(&device, b))
+                .collect::<Vec<_>>();
+            if fault == Fault::None {
+                assert_eq!(result[0], result[2], "frame {frame} output");
+                assert_eq!(result[1], result[3], "frame {frame} history");
+                let bit = u8::from(if frame < 3 {
+                    frame % 2 == 0
+                } else {
+                    frame % 2 == 1
+                });
+                assert_eq!(
+                    &result[0][..8],
+                    &[0, 60 * bit, 0, 60 * bit, 0, 60 * bit, 0, 60 * bit],
+                    "frame {frame} submitted tile state"
+                );
+                if select_history {
+                    let prior: Vec<u8> = (144..176_u16)
+                        .flat_map(|i| (i + (frame - 1) * 512).to_le_bytes())
+                        .collect();
+                    assert_eq!(
+                        &result[0][288..352],
+                        prior,
+                        "frame {frame} selects prior submitted crop"
+                    );
+                }
+            }
+            if fault != Fault::StaleHistory {
+                std::mem::swap(&mut native.previous, &mut native.next);
+            }
+            std::mem::swap(&mut twin.previous, &mut twin.next);
+            last = Some((result, pattern));
+        }
+        last.expect("eight fixture frames")
     })
 }
