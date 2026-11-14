@@ -1,5 +1,20 @@
 # CLOUDS log
 
+- 2026-11-15 M1.13 passed unchanged on `7e41bac72726c7942b34084d52f2f917ebbec088` in 960.25 seconds:
+  38 and 4 native comparisons, and all 481 records in each of the four Chrome sets.
+  The exact-baseline gate also passed. The covered-content key is
+  `701dda2dac327d33c5c856b248dcdef2d27b5b25f151096c03cfcb71515cfad1`.
+  Native binary SHA-256: `ba220134bd42b0b1d20ee084310cdf7de2200539655e92186e4253be77d1e127`;
+  Wasm SHA-256: `73ba68ab3a76c0afa3d76e6809e6df76b30beea58a06d994af0f63b83b82e121`;
+  cooked root: `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d`.
+  The complete verifier record remains at `tmp/baseline-guard/verify-20261114T232332.821353Z/record.json`.
+  Every M1 builder item now has target evidence. The project check and canonical integration
+  output are retained in shared Git job `20261114-233453-29572`; its merge must report
+  `MERGED` before completion is claimed. Earlier capture failures remain historical
+  diagnostics, not image regressions or a guarantee that the capture observer never omits.
+  Their owned scratch is deliberately retained for capture-admission diagnosis; release
+  it after that investigation has retained its selected records.
+
 - 2026-11-14 The unchanged retry on `03a5b1e1` stopped earlier, in native
   `portable-route-motion`: backend Metal, adapter Apple M3 Max, 960 GPU records, 871 images,
   90 readback-ring omissions and zero writer omissions. The runtime correctly reported
