@@ -1,0 +1,79 @@
+{
+  "source_commit": "b0e08412fa39471b272d260f43a177e302977d43",
+  "target": "mac-metal",
+  "item_checks": [
+    {
+      "id": "M1.1",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 2 tests\ntest wind_height_and_fetch_have_physical_response ... ok\ntest disjoint_layers_conserve_independently_integrated_variance ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s\n\n\n   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.90s\n     Running tests/spectrum.rs (target/debug/deps/spectrum-bf53d6482abfe015)"
+    },
+    {
+      "id": "M1.2",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
+      "exit": 0,
+      "result": "pass",
+      "output": "(not run again: it passed on these same files before)"
+    },
+    {
+      "id": "M1.3",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test long_waves",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 3 tests\ntest one_component_matches_closed_form_at_a_displaced_label ... ok\ntest far_point_after_a_day_matches_extended_precision ... ok\ntest spatial_and_time_derivatives_match_world_finite_differences ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\n   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/long_waves.rs (target/debug/deps/long_waves-39145f853e41b4cb)"
+    },
+    {
+      "id": "M1.4",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test cascades",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 2 tests\ntest conjugates_axes_and_high_modes_are_not_lost ... ok\ntest full_256_band_matches_direct_sum_at_every_texel_centre ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.43s\n\n\n   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s\n     Running tests/cascades.rs (target/debug/deps/cascades-336b1d58dcba448b)"
+    },
+    {
+      "id": "M1.5",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test transition",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 1 test\ntest every_power_follows_response_and_every_phase_survives_retargeting ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s\n\n\n   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\n     Running tests/transition.rs (target/debug/deps/transition-378109092a667c6c)"
+    },
+    {
+      "id": "M1.6",
+      "check": "cargo test --locked --offline -p thrum-sea-model --test conformance",
+      "exit": 0,
+      "result": "pass",
+      "output": "running 2 tests\ntest invalid_answers_cannot_silently_pass ... ok\ntest identical_model_is_zero_and_phase_fault_has_analytic_height ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\n   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s\n     Running tests/conformance.rs (target/debug/deps/conformance-9c40616ea1cfe23d)"
+    },
+    {
+      "id": "M1.7",
+      "check": "cargo tree --locked --offline -p thrum-sea-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
+      "exit": 0,
+      "result": "pass",
+      "output": ""
+    },
+    {
+      "id": "M1.8",
+      "result": "no check",
+      "proof": [
+        "ask"
+      ]
+    },
+    {
+      "id": "M1.9",
+      "check": "python3 scripts/exact_baselines.py verify",
+      "lock": "gpu",
+      "exit": 0,
+      "result": "pass",
+      "output": "RUN native-build\nRUN cooker-build\nRUN web-build\nRUN cook\nRUN apple_tile_m1\nRUN apple_tile_m2\nRUN chrome-day-sdr\nRUN chrome-day-sdr-compare\nRUN chrome-day-scene-linear\nRUN chrome-day-scene-linear-compare\nRUN chrome-night-sdr\nRUN chrome-night-sdr-compare\nRUN chrome-night-scene-linear\nRUN chrome-night-scene-linear-compare\nPASS exact baselines; proof tmp/baseline-guard/proofs/9082fc7f55ab0da1b49660e4c5912880748bb107fcb377e631765d2018d70a11.json; 987.58s"
+    }
+  ],
+  "repository_check": [
+    {
+      "id": "Test command",
+      "check": "./dev check",
+      "exit": 0,
+      "result": "pass",
+      "output": "    Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)\n     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)\n   Doc-tests asset_loop\n   Doc-tests thrum_app\n   Doc-tests thrum_asset\n   Doc-tests thrum_asset_gpu\n   Doc-tests thrum_content_runtime\n   Doc-tests thrum_controls\n   Doc-tests thrum_cook\n   Doc-tests thrum_core\n   Doc-tests thrum_network\n   Doc-tests thrum_render\n   Doc-tests thrum_sea_model\n   Doc-tests v1_game\n   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-asset-gpu)\n   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-app)\n   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/examples/v1-game)\nwarning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS\n         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS\n  |\n  = note: `#[warn(linker_messages)]` on by default\n\nwarning: `v1-game` (test \"cooked_assets_gpu\") generated 1 warning\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.82s\n     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)"
+    }
+  ]
+}

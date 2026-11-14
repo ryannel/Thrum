@@ -17,8 +17,8 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "ask": "Read the test. Is its tolerance on the summed variance derived from the quadrature it uses, and is it tighter than the smallest band's share? Does it cover a glassy calm, a trade wind and a gale, each with and without swell?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -27,8 +27,8 @@
           "statement": "Significant height rises with wind: under 5 cm with wind below 1 m/s and no swell, and 5 m or more for a fully developed sea at 20 m/s. Each long-wave component obeys the deep-water relation, frequency squared equals g times wavenumber.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test spectrum",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md"
         },
         {
           "id": "M1.3",
@@ -36,8 +36,8 @@
           "check": "cargo test --locked --offline -p thrum-sea-model --test long_waves",
           "ask": "Does the closed-form comparison use values the test worked out without calling the evaluator? Does the test cover a sea steep enough that the surface above a point must be found by iteration, and say when the iteration cannot converge?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -46,24 +46,24 @@
           "statement": "A direct f64 sum over one cascade band's wave vectors and a 256-square inverse transform of the same band agree at every texel centre, for displacement, slopes and the Jacobian, to one part in a billion of the band's RMS height.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascades",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md"
         },
         {
           "id": "M1.5",
           "statement": "A change of wind or swell keeps every component's and every bin's phase and moves its power toward the new spectrum along the declared response curve. The model's height at a fixed point has no step at the change.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test transition",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md"
         },
         {
           "id": "M1.6",
           "statement": "A conformance harness takes any provider of sea answers and reports its largest difference from the model in height, slope and velocity over a stated set of points and ticks. Given the model it reports zero; given the model with one component's phase moved, it reports the height that move makes.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test conformance",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md"
         },
         {
           "id": "M1.7",
@@ -71,8 +71,8 @@
           "check": "cargo tree --locked --offline -p thrum-sea-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the crate or its tests name a sea preset, a hull or a water type that belongs to a game?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -81,8 +81,8 @@
           "statement": "No file in this milestone is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/SEA/PROVENANCE.md` lists the file with its source commit, path and licence.",
           "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -92,8 +92,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M1.md"
         }
       ]
     },
