@@ -1,5 +1,13 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1 implementation: the iPhone's preparation and recovery call one Mac-testable request with content
+  features and adapter limits. Core now has only the engine page; game capture and rewind patch callbacks are
+  removed, retaining deferred final-tick undo and previous poses. Verified on the Mac: core tests, the two new
+  deferred rewind/cold-capture byte comparisons, 42 unchanged V1 simulation tests and focused Clippy. The iOS
+  target compiles. GPU/simulator and exact-baseline proof remain pending; initial integration was refused for
+  absent baseline proof, and documentation checks report existing missing links in other modules. Details and
+  source identity are in [M1 evidence](../../evidence/REVIEW-ENGINE/M1/README.md).
+
 - 2026-11-14 Planned from the owner's request to plan and drive the code review's fixes. It takes the findings in
   crates where no builder is at work, so it starts at once. Checked while planning: no planned module's design
   (`SIM-2D`, `SESSION`, `SWARM`) uses a game-authored page, so H14 removes it. H18 is fixed with no change to the

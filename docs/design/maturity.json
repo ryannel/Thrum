@@ -92,7 +92,7 @@
       ]
     },
     "G2_generic_simulation": {
-      "implementation": "engine_undo_publication_append_only_edits_chunked_parallel_mover_kernel_parallel_warm_page_capture_and_private_Resolve_stage;_G2S_closed_7_Nov",
+      "implementation": "engine_undo_publication_append_only_edits_chunked_parallel_mover_kernel_parallel_warm_page_capture_and_private_Resolve_stage;_G2S_closed_7_Nov;_REVIEW_ENGINE_M1_removes_game_authored_pages_and_rewind_patch_callbacks",
       "functional_validation": "full_dev_check;_forced_Rayon_chunk_overlap_probe;_100k_Serial_Rayon_RayonForced_complete_state_equal_to_straight_corrected_run_after_churn_kernel_and_Resolve_refusal;_1000_tick_randomized_replay;_held_page_and_zero_warmed_caller_allocations;_40k_Serial_Rayon_RayonForced_byte_identical_pages_with_asserted_capture_dispatch;_independent_closeout_review",
       "experienced_quality": "synthetic_game_path_runs_no_v1_visual_acceptance",
       "platform_performance": {
@@ -106,7 +106,8 @@
       "scope": "Presence-aware corrected replay, engine-owned descriptors, per-system permits and a private Resolve stage merged in order. The mover kernel runs in word-aligned chunks; forced Rayon dispatches it and matches every mode. Warm page capture runs in page-row chunks under RayonForced. The quiet ABBA found no crossover, so requested Rayon is the measured serial fallback and RayonForced is the tested parallel correctness path; G2S closed 7 Nov. No iPhone claim.",
       "evidence": [
         "../evidence/v1-workload/G2R-CONSOLIDATED-2026-11-05.md",
-        "../evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md"
+        "../evidence/v1-workload/G2S-PARALLEL-RESOLVE-2026-11-07.md",
+        "../evidence/REVIEW-ENGINE/M1/README.md"
       ]
     },
     "G3s_first_light": {
