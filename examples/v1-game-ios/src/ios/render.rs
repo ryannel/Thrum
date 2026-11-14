@@ -871,6 +871,7 @@ impl Gpu {
         background: &AtomicBool,
         diagnostics: bool,
     ) -> Result<Option<DriveReport>, FrameError> {
+        let native_hold = self.host.native_witness_report().is_some();
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
             return advanced.submit(None).map(Some);
@@ -944,6 +945,15 @@ impl Gpu {
                     // the device while this drawable is held.
                     let until = Instant::now() + stall;
                     while Instant::now() < until {
+                        // The native race observes cancellation while still in
+                        // the background. Once both owner signals are visible,
+                        // finish this qualification hold and refuse the frame.
+                        if native_hold
+                            && background.load(Ordering::Acquire)
+                            && !lease.is_current(request.epoch)
+                        {
+                            break;
+                        }
                         if lose_now.swap(false, Ordering::AcqRel) {
                             device.destroy();
                             destroyed.set(true);
