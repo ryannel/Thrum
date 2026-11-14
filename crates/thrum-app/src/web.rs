@@ -211,6 +211,9 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             self.profile_minimum = self.host.last_submission().map_or(0, |order| order + 1);
             self.profile_enabled = enabled;
         }
+        if !self.clock.visible() || self.graphics.is_lost() {
+            self.profile_minimum = self.host.last_submission().map_or(0, |order| order + 1);
+        }
         self.host.set_timing_requested(writes_report || enabled);
         self.profile
             .set_available(self.clock.visible() && !self.graphics.is_lost());
