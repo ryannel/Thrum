@@ -70,7 +70,8 @@
       "depends_on": [
         "SIM-2D:M3",
         "SESSION:M1",
-        "RENDER-2D:M5"
+        "RENDER-2D:M5",
+        "GAME-SPLIT:M4"
       ],
       "quality_bar": "A crowd as dense and as legible as Vampire Survivors' or Halls of Torment's late game, at several times their count: the hero is found at a glance, every hit shows, and nothing stutters. The look is the concept the owner picked, in `examples/swarm/CONCEPT.md`.",
       "items": [

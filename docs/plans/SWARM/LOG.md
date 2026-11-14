@@ -87,3 +87,9 @@
   M7, so M6 now waits for `GAME-UI:M6` and M7 for `SESSION:M7`; M6.3, M6.4 and M7.1 are rewritten as uses of
   what those leave, and the game changes no engine crate for either. Rulings 1 and 2 stay. The sandbox
   assumption is deleted. The revised design needs a design review.
+- 2026-11-14 Owner, on the V1 game: "it shouldn't even sit in the same code base ideally"; the lead's task adds
+  that the swarm game "follows the same shape from the start", in the games repository
+  `/Users/ryannel/Workspace/thrum-games`. M2 now waits for `GAME-SPLIT:M4`, which creates that repository and the
+  game gate. No item changed. This design and its checks still say `examples/swarm`, and ruling 1 is overtaken;
+  a re-plan onto the gate is owed before M2 starts ([module list](../ARCHITECTURE.md#the-proving-ground-and-where-a-game-lives)).
+

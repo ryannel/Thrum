@@ -7,8 +7,10 @@ Each section covers one recurring job:
 - the older shapes you will meet and should not copy;
 - what to do where no shared helper exists yet.
 
-The 14 Nov 2026 code review (`tmp/code-review-2026-11-14/CODE-REVIEW.md`) found each split this file describes.
-Its finding IDs are given so you can see the evidence.
+The 14 Nov 2026 code review (`docs/evidence/code-review-2026-11-14/CODE-REVIEW.md`) found each split this file
+describes. Its finding IDs are given so you can see the evidence. `./dev check` holds the mechanical shapes by rule
+(`scripts/shape_rules.py`, once `REPO-RULES` M1 is Done); `docs/plans/ARCHITECTURE.md` says which module fixes each
+finding.
 
 Contents: [Errors](#errors) · [Data shared with WGSL](#data-shared-with-wgsl) ·
 [Shader source](#shader-source) · [Naming GPU work](#naming-gpu-work) ·

@@ -1,0 +1,313 @@
+{
+ "module": "REVIEW-RENDER",
+ "milestones": [
+  {
+   "id": "M1",
+   "name": "Each light buffer has one writer, a failed surface encode says why, and the same fault is reported the same way wherever it is raised",
+   "status": "not_started",
+   "failed_reviews": 0,
+   "failed_reviews_with_repeat": 0,
+   "diagnoses": 0,
+   "depends_on": [
+    "ATMOSPHERE:M9",
+    "APPLE-TILE:M10",
+    "APPLE-PRESENTATION:M3",
+    "EFFECT-GRAPH:M3",
+    "CULLING:M3"
+   ],
+   "quality_bar": "Three confirmed defects closed the way a careful engine team closes them: the fix, a test that fails without it, and not one retained pixel moved.",
+   "items": [
+    {
+     "id": "M1.1",
+     "statement": "The directional light record the CPU writes and the environment light the atmosphere's diffuse pass writes are two buffers, each with exactly one writer, one Rust record, one WGSL declaration and a layout test. No byte offset splits a buffer between two writers.",
+     "check": "cargo test --locked --offline -p thrum-render --test light_records",
+     "lock": "gpu",
+     "ask": "Does anything outside the atmosphere write the environment light buffer, or anything but the scene renderer's CPU upload write the directional record? Is the literal 48, or the 208-byte binding, left anywhere? Does `thrum-asset-gpu`'s cooked shader still compile against the light group through the published seam?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M1.2",
+     "statement": "A surface encode failure is kept: the drive report and the frame sample say that the surface frame was dropped and why, by kind, and a failure that is not transient is returned to the caller.",
+     "check": "cargo test --locked --offline -p thrum-render --test surface_fault",
+     "lock": "gpu",
+     "ask": "Does the test raise a stale binding, an extent mismatch and a timing-capacity failure, and see each reported by its own kind? Is `.is_ok()` or `let _ =` used on a fallible encode anywhere in the runtime?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M1.3",
+     "statement": "`FrameError` has no blanket conversion from a string: a missing presenter is the same variant from `resize_surface` and from `drive`, and a GPU fault, a usage error and a world error can be told apart by matching.",
+     "check": "cargo test --locked --offline -p thrum-render --test frame_error_kinds",
+     "ask": "Are both `From<String>` and `From<&str>` gone? Does any call site still build a `FrameError` from formatted `Debug` text?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M1.4",
+     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+     "check": "python3 scripts/exact_baselines.py verify",
+     "lock": "gpu",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    }
+   ]
+  },
+  {
+   "id": "M2",
+   "name": "Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test",
+   "status": "not_started",
+   "failed_reviews": 0,
+   "failed_reviews_with_repeat": 0,
+   "diagnoses": 0,
+   "depends_on": [],
+   "quality_bar": "The discipline of `encase` and `bytemuck` users such as Bevy's render crates: a layout drift between Rust and WGSL fails a test, where today it shades wrongly without a word.",
+   "items": [
+    {
+     "id": "M2.1",
+     "statement": "A test walks every struct that any `thrum-render` shader binds as a uniform or storage buffer, in every composed shader source the crate builds, and fails unless a `#[repr(C)]` `Pod` Rust record is registered for it with equal size and member offsets.",
+     "check": "cargo test --locked --offline -p thrum-render --test wgsl_records",
+     "ask": "Does the test find bound structs by reflection over the composed sources production builds, so a new shader or struct cannot be left out? Change one field's type in a WGSL struct: does the test fail?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M2.2",
+     "statement": "Each such record is written whole from its struct. No uniform or storage record in the scene renderer, the atmosphere or visibility is packed by byte offsets, and the atmosphere reads the view record through its struct, not through offsets into another module's bytes.",
+     "ask": "Search the three modules for `to_le_bytes` and `copy_from_slice` on record bytes: is any record a shader reads still assembled that way? Does one flag still have two writers, as `has_local_lights` did?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M2.3",
+     "statement": "A WGSL struct used by several shaders is declared once and composed in: the same test fails if one struct name is declared in two sources.",
+     "check": "cargo test --locked --offline -p thrum-render --test wgsl_single_declaration",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    },
+    {
+     "id": "M2.4",
+     "statement": "A constant used on both sides is generated into the shader from the Rust value: the scene renderer's and the atmosphere's shared constants appear as literals in no `.wgsl` file.",
+     "ask": "Take the constants the review lists under M23 and M29: is each now generated? Is any number still typed into both a `.rs` and a `.wgsl` file?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M2.5",
+     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+     "check": "python3 scripts/exact_baselines.py verify",
+     "lock": "gpu",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    }
+   ]
+  },
+  {
+   "id": "M3",
+   "name": "Passes, stages and pipelines in the renderer are named by typed keys, so a rename or a new pass cannot silently drop a timing bucket or a barrier",
+   "status": "not_started",
+   "failed_reviews": 0,
+   "failed_reviews_with_repeat": 0,
+   "diagnoses": 0,
+   "depends_on": [],
+   "quality_bar": "Identity as a frame graph declares it in Frostbite's and Bevy's render graphs: one declaration per pass that carries its name, accesses, recorder and timing category, with every table derived from it.",
+   "items": [
+    {
+     "id": "M3.1",
+     "statement": "Every pass in the compiled graph of every scene variant has a typed key with a unique role, a name constant and a timing category, and its recorder is bound from its declaration. The pass count comes from the compiled graph.",
+     "check": "cargo test --locked --offline -p thrum-render --test pass_keys",
+     "lock": "gpu",
+     "ask": "Is any pass still matched by a string literal, a bare role integer or a guard chain? Add a pass with no recorder or no timing category in a scratch edit: does it fail to compile or fail this test?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M3.2",
+     "statement": "GPU timing is gathered by the category a pass declares. No timing bucket is found by matching a pass name, and a pass whose time lands in no bucket fails the test instead of reading as zero. The frame timing feed gives `CREATOR`'s profiler the names and buckets it gave.",
+     "check": "cargo test --locked --offline -p thrum-render --test timing_categories",
+     "lock": "gpu",
+     "ask": "Does `timing.rs` import anything from the scene renderer or the atmosphere? Do the profiler's rows and the frames report show the same pass names as before?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M3.3",
+     "statement": "An atmosphere stage is one typed key. Its bind-group inputs and its graph accesses are built from one table of the charts it reads, so they cannot differ, and its role, validity bit and timing bucket come from the key.",
+     "check": "cargo test --locked --offline -p thrum-render --test atmosphere_stage_table",
+     "lock": "gpu",
+     "ask": "Is the chart dependency table still written twice? Is any chart still reached as an index into a list, or remapped by an `if`?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M3.4",
+     "statement": "Visibility's pipeline roles and the scene's instance identity lanes are named, not hex tags or tuple positions.",
+     "ask": "Are the ASCII role tags the review lists under L34, and the `ids[0]`, `ids[2]`, `ids[3]` reads under L18, replaced by names in every file that used them?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M3.5",
+     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+     "check": "python3 scripts/exact_baselines.py verify",
+     "lock": "gpu",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    }
+   ]
+  },
+  {
+   "id": "M4",
+   "name": "A renderer failure can be matched and printed, and the crate's error no longer lives in the scene renderer",
+   "status": "not_started",
+   "failed_reviews": 0,
+   "failed_reviews_with_repeat": 0,
+   "diagnoses": 0,
+   "depends_on": [
+    "REPO-RULES:M1"
+   ],
+   "quality_bar": "Errors as `thrum-asset`'s `AssetError` already is, and as wgpu's own typed errors are: a caller can tell device loss from a usage bug by matching, and a person can read the message.",
+   "items": [
+    {
+     "id": "M4.1",
+     "statement": "No public function in `thrum-render` returns a string as its error.",
+     "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-render",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    },
+    {
+     "id": "M4.2",
+     "statement": "The render error is defined in the crate's own error module with `Display` and `Error`. A bad instance transform has its own variant, the capacity variant is split into the limits it stood for, and every public error type in the crate implements `Error`: a test names them all and does not compile for one that does not.",
+     "check": "cargo test --locked --offline -p thrum-render --test error_types",
+     "ask": "Does the test's list hold every error type the crate exports? Does a degenerate instance transform still come back as a lighting error? How many causes does each capacity variant now cover?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M4.3",
+     "statement": "The atmosphere and the contribution seam import neither their error nor their shared constants from the scene renderer: errors come from the error module and the shared constants from a neutral module both depend on. An effect graph that fails validation returns a typed error, not a string code.",
+     "ask": "What does `atmosphere` still import from the scene renderer, and is any of it an error, a constant or a format? Can a caller match on why an effect graph was refused?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M4.4",
+     "statement": "`FrameError` carries typed sources, and every crate and example that matched on or printed the old errors builds and behaves as before.",
+     "check": "cargo test --locked --offline -p thrum-render -p thrum-asset-gpu -p thrum-sea -p thrum-app",
+     "lock": "gpu",
+     "ask": "Is any error still turned into text with `{:?}` on its way up through the runtime?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M4.5",
+     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+     "check": "python3 scripts/exact_baselines.py verify",
+     "lock": "gpu",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    }
+   ]
+  },
+  {
+   "id": "M5",
+   "name": "A frame's GPU timing costs no extra submission and no allocation, and a resize compiles one graph",
+   "status": "not_started",
+   "failed_reviews": 0,
+   "failed_reviews_with_repeat": 0,
+   "diagnoses": 0,
+   "depends_on": [],
+   "quality_bar": "Waste removed, not tuned: work whose result nobody used is gone, a counter shows it, and no retained pixel moved.",
+   "items": [
+    {
+     "id": "M5.1",
+     "statement": "Timestamp queries are resolved in the frame's own encoder and mapped on that submission: timing a frame adds no submission, and a completed frame's timing reaches the frame sample without allocating.",
+     "check": "cargo test --locked --offline -p thrum-render --test timing_cost",
+     "lock": "gpu",
+     "ask": "Does the test count submissions for a timed and an untimed run of the same frames? Does the game's frame-allocation test now cover a completed, timed frame? With the timing-demand switch off, is anything gathered?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M5.2",
+     "statement": "The presenter has one presentation path. The standalone graph that nothing called is gone, and a resize or rotation compiles no graph of the presenter's own.",
+     "check": "cargo test --locked --offline -p thrum-render --test presenter_single_path",
+     "lock": "gpu",
+     "ask": "Is there any public presenter entry point that no production caller uses?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M5.3",
+     "statement": "Paired frame records before and after are on file for the valley on the Mac, with the load. No figure in them decides this item.",
+     "ask": "Are both rows from the same route and build settings at named commits?",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": "",
+     "verdict": "",
+     "review": ""
+    },
+    {
+     "id": "M5.4",
+     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+     "check": "python3 scripts/exact_baselines.py verify",
+     "lock": "gpu",
+     "target": "mac-metal",
+     "builder_result": "open",
+     "evidence": ""
+    }
+   ]
+  }
+ ]
+}

@@ -26,10 +26,16 @@
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1 and RENDER-2D M5 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets |
+| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up |
+| 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests |
+| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors |
+| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
+| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 to start; TEST-SUPPORT M1, REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
-are the 2D and online engine work, which is built beside V1, and 25 is the swarm game, which starts after V1. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
+are the 2D and online engine work, which is built beside V1, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
 its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
 loop writes.
 
@@ -1214,6 +1220,9 @@ passing. No engine crate gains a type, string or file of either game.
    of the V1 game or the sky kit when a game with a 2D scene, an interface and no sky kit runs, is capturable
    and is packaged for Chrome, is made a property of the game.
 
+Ruling 1 is overtaken by [track 4](#the-proving-ground-and-where-a-game-lives): games live in their own
+repository, so the guard has no second game to admit, and `SWARM` is re-planned onto the game gate before its M2.
+
 Rulings 3 and 4, the iOS shell for a second game and a driven world, moved on 14 November to
 [`GAME-UI`'s ruling 5](#seam-rulings-for-game-ui) and [`SESSION`'s ruling 3](#seam-rulings-for-session): they
 are engine work, built before the game starts.
@@ -1381,6 +1390,156 @@ rehearsed match (after `SESSION:M4`), the iPhone simulator (after `GAME-UI:M6`),
 named, the guard and what the window and page still assume are built in M2 under
 [the seam rulings](#seam-rulings-for-swarm); the iPhone shell and the driven world moved to `GAME-UI` M6 and
 `SESSION` M7 on 14 November.
+
+## Track 4: the code review and the game's separation
+
+Added 14 November 2026 from two requests of the owner's that day. On the
+[whole-repository code review](../evidence/code-review-2026-11-14/CODE-REVIEW.md) (20 High, 81 Medium, 61 Low and
+17 Nit findings, in thirteen themes T1 to T13): "can you not just plan and drive that work?" On the game: "it
+sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as
+much as we can, it shouldn't even sit in the same code base ideally." Six modules, rows 26 to 31. None gates the
+V1 exit, and none changes an item of another module.
+
+### Why new modules
+
+The review's findings sit in code that existing modules own, and eight of those modules have builders at work. A
+module's design is approved word for word, so adding a milestone and its mechanism to an owning module's design
+would stop its builder until the design is reviewed again. The fixes are therefore cut into new modules by
+isolation, so that each can be built without colliding with the others, and built inside the owners' code under
+[the rulings below](#seam-rulings-for-track-4), as `WATERS`, `RENDER-2D` and `GAME-UI` build inside other modules'
+state. Ownership does not move: once built, each fix belongs to the module that owns the code, and later work
+there keeps its tests passing.
+
+### Modules and what each owns (track 4)
+
+| Module | Owns (state and code) | Builds inside |
+|---|---|---|
+| `REPO-RULES` | The shape rules, their baseline and the `--zero` proof (`scripts/shape_rules.py`, `.config/shape-baseline.json`); the evidence size rule, the bulk manifest and its restore command; the one rename and split of names and files; repository layout ([design](REPO-RULES/DESIGN.md)) | `scripts/repo_check.py`; every crate, for the rename only |
+| `REVIEW-ENGINE` | Nothing of its own: the review's fixes in `thrum-core`, `thrum-network`, `thrum-sea`, `thrum-sea-model`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` and `thrum-controls`, and the iPhone app's device request ([design](REVIEW-ENGINE/DESIGN.md)) | Core (G1, G2S), `SEA`'s and so `WATERS`' crates, `CONTENT-LOOP`'s and `COOKED-DRAW`'s, `PLATFORM-RUNTIME-IOS`'s |
+| `TEST-SUPPORT` | `crates/thrum-test-support`: the GPU gate, the test device, fixtures shared between packages ([design](TEST-SUPPORT/DESIGN.md)) | Every crate's tests |
+| `REVIEW-RENDER` | Nothing of its own: the review's fixes in `thrum-render` ([design](REVIEW-RENDER/DESIGN.md)) | `APPLE-TILE`'s, `APPLE-PRESENTATION`'s, `ATMOSPHERE`'s, `CULLING`'s and `EFFECT-GRAPH`'s files |
+| `HOST` | The device recipe and its fault watch; the world lifecycle policy for pause and overload; what a surface outcome means; render-once and await-drawn; the contract a game implements to be hosted ([design](HOST/DESIGN.md)) | `thrum-render`'s capabilities (`APPLE-TILE`), `thrum-core`'s clock, `thrum-app` (`CREATOR`, `PLATFORM-RUNTIME-MAC`, `PLATFORM-RUNTIME-WEB`), the iPhone app (`PLATFORM-RUNTIME-IOS`), the V1 game's host code |
+| `GAME-SPLIT` | The game gate and the games repository's layout; the rule that no engine package reaches a game; the proving ground as the engine's own test content; the move of the game ([design](GAME-SPLIT/DESIGN.md)) | `examples/v1-game`, `examples/v1-game-ios`, `.config/architecture.toml`, the engine's tests that read game files |
+
+### Where each theme of the review is fixed
+
+| Theme | Fixed by |
+|---|---|
+| Step 1, the canonical shapes and their rules | The shapes are in [patterns](../../.agents/skills/thrum-engineering/references/patterns.md); the rules are `REPO-RULES` M1 |
+| Confirmed bugs | H01: `REVIEW-ENGINE` M1 (iPhone features and limits), then `HOST` M1 (one recipe). H14: `REVIEW-ENGINE` M1. H09, M41, H11: `REVIEW-RENDER` M1 |
+| T1 Rust and WGSL records | `REVIEW-ENGINE` M2 (sea) and M3 (cooked assets); `REVIEW-RENDER` M2 |
+| T2 typed keys | `REVIEW-ENGINE` M2 (sea); `REVIEW-RENDER` M3 |
+| T6 test support and one GPU gate | `TEST-SUPPORT` M1 and M2 |
+| T5 the engine and game boundary | `GAME-SPLIT` M1 to M5; H19 in `REVIEW-ENGINE` M3; M56 in `HOST` M4 |
+| T4 one device recipe and host core | `HOST` M1 to M4 |
+| T3 errors | `REVIEW-ENGINE` M4, `REVIEW-RENDER` M4, `HOST` M5; the games keep string errors until they are their own repository's concern |
+| T12 cost | H16 and H18: `REVIEW-ENGINE` M2 and M3. M52, M67, M64: `REVIEW-ENGINE` M5. M40, M38: `REVIEW-RENDER` M5. M01: `HOST` M3 |
+| T9 and T10 names and splits | `REPO-RULES` M3, one landing |
+| T13 hygiene | `REPO-RULES` M2 (bulk files, H03) and M4 |
+| Not scheduled | T7 (shader source), T8 (configuration by environment variable, beyond a rule that stops new reads in libraries) and T11 (mechanisms built several times) are not in the review's order of attack. M24, M71 and M58 wait for the performance phase the brief puts after the exit, and M31 for the governor's cadence controls. Each is an assumption in the owning plan |
+
+### What starts at once, and what waits
+
+Running when this was planned: `CULLING` M3, `APPLE-PRESENTATION` M3, `APPLE-TILE` M10, `CREATOR` M3, `EFFECT-GRAPH`
+M3, `ATMOSPHERE` M9, `CLOUDS` M1 and `WATERS` M1. A new milestone never rewrites a file one of them holds; it waits
+for that milestone. Later milestones of those modules are built on what has landed here.
+
+| Starts | Milestones | Because |
+|---|---|---|
+| At once | `REPO-RULES` M1; `REVIEW-ENGINE` M1, then M2 and M3 | Scripts and docs; `thrum-core`, the iPhone app's request, `thrum-sea`, `thrum-asset-gpu` and `thrum-cook`, where no builder is at work |
+| When `REPO-RULES` M1 is Done | `REPO-RULES` M2; `TEST-SUPPORT` M1; `GAME-SPLIT` M1; `REVIEW-ENGINE` M4 | They use the rule engine. None touches a held file |
+| When `ATMOSPHERE` M9, `APPLE-TILE` M10, `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3 and `CULLING` M3 are Done | `REVIEW-RENDER` M1 to M5 | Every one of them holds files in `thrum-render` |
+| When those, less `ATMOSPHERE` M9, and `CREATOR` M3 are Done | `HOST` M1 to M5 | They hold `thrum-app`, the frame runtime and the V1 game's host and capture files |
+| When `CULLING` M3, `EFFECT-GRAPH` M3 and `APPLE-PRESENTATION` M3 are Done | `GAME-SPLIT` M2 | They hold the visibility tests, the game's effect and the temporal witness |
+| After `HOST` | `TEST-SUPPORT` M2 (`HOST` M1); `GAME-SPLIT` M3 (`HOST` M4) | The test device is the recipe's; the game must hold no host code before it is cut |
+| After every fix above | `REPO-RULES` M3, then M4 | A rename collides with everything, so it lands once, last |
+| After `SHOWCASE` M8 | `GAME-SPLIT` M4 | The V1 exit closes before the game moves |
+| After the last milestone whose check names `-p v1-game` | `GAME-SPLIT` M5 | A builder cannot edit a pinned check |
+
+`thrum-sea` becomes `WATERS`' to extend at its M2, and `thrum-core` is where `SIM-2D` M1 works. `REVIEW-ENGINE` M1
+and M2 are best landed before those start; if they have started, each builder integrates on what has landed.
+`REPO-RULES` M3 lands as one change: a builder in the renderer at that moment rebases once.
+
+<a id="seam-rulings-for-track-4"></a>
+
+### Seam rulings for track 4
+
+Each change below is built by the track 4 builder of the milestone named, inside state another module owns. No
+item, test assertion, bound or reference of the owning module changes, no exact comparison is loosened, and every
+registered baseline stays exact: each milestone that edits a covered path carries the verifier. Once built, each
+belongs to its owner.
+
+1. **The rules bind everyone from `REPO-RULES` M1.** They are ratchets: a file may not gain a violation and a new
+   file starts at zero, so a running builder is refused only for a shape it adds. The baseline may only go down.
+   Another module adds a rule through the same engine, with fixtures, in the milestone that first needs it.
+2. **Bulk evidence** (`REPO-RULES` M2). A file over the cap leaves the tree and stays in Git history, listed in
+   `docs/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
+   modules'. No review, record or design is edited, and a registered exact-baseline reference never leaves. From
+   then on a builder keeps large captures in scratch or the local store, as
+   [the design](REPO-RULES/DESIGN.md#mechanisms) says.
+3. **One publication model in core** (`REVIEW-ENGINE` M1; G2S). The engine's page is the only one. The V1 game's
+   dead patch closure is deleted by the same builder.
+4. **The sea's keys, records and upload** (`REVIEW-ENGINE` M2 and M5; `SEA`, and `WATERS` from its M2). The wave
+   field interface and `SEA`'s bounds are unchanged. `WATERS`, `RIVERS` and `PUDDLES` extend the typed table, not
+   positions.
+5. **The cooked loader** (`REVIEW-ENGINE` M3; `CONTENT-LOOP`, `COOKED-DRAW`). The cooked format, every content
+   address and `COOKED-DRAW`'s equivalence are unchanged. `examples/asset-loop` is removed. The edit-to-visible
+   tripwire measures the engine's loader from then on, so its baseline is recorded again once, with the old and
+   new figures side by side; `scripts/check_g5_tripwires.sh` keeps its name for `CONTENT-LOOP` M3.
+6. **The renderer** (`REVIEW-RENDER` M1 to M5). The light group gains a second buffer, so every reader of the
+   contribution seam's light layout follows in the same landing (`thrum-asset-gpu`, `thrum-sea`). Pass names stay
+   exported constants and the frame timing feed gives `CREATOR`'s profiler what it gave. The timing-demand switch
+   keeps its meaning. A change that cannot keep a retained image exact is not built: the builder ends `BLOCKED`.
+7. **The device recipe** (`HOST` M1; `APPLE-TILE`'s capabilities and registry, the three shells). Recipe selection
+   does not change. The browser keeps today's request as the recipe's named portable profile, so no Chrome
+   baseline moves; compressed textures in Chrome would change default output and are `CONTENT-LOOP`'s to propose
+   under [rule 1](#exact-baselines). On the Mac an uncaptured GPU error is recorded and survived.
+8. **The host core and the game contract** (`HOST` M2 to M5; `CREATOR`, the platform modules, core's clock).
+   `SESSION` M7's driven world extends the one lifecycle policy. `GAME-UI` M6 still moves the iPhone app's UIKit
+   lifecycle into `thrum-app`, onto this contract. `APPLE-PRESENTATION`'s seams 5 to 7, `WATERS`' ruling 3,
+   `RENDER-2D`'s and `GAME-UI`'s shell rulings are built on whichever of these has landed.
+9. **Test support** (`TEST-SUPPORT` M1 and M2; every module's tests). A test's device and gate change; what it
+   asserts does not. No test that ran on the Mac becomes one that skips.
+10. **Names** (`REPO-RULES` M3). `synthetic` becomes `scene` and milestone codes leave file names, in one landing.
+    A name that an open check, `./dev` or the baseline registry uses keeps working. No `DESIGN.md` is edited:
+    approved designs keep saying `synthetic`, and `thrum-engineering`'s table maps old paths to new.
+11. **The proving ground and the game** (`GAME-SPLIT` M2 to M5; `SHOWCASE`, `CULLING`'s visibility tests,
+    `APPLE-PRESENTATION`'s temporal witness, `BASELINE-GUARD`'s registry). Until M5 the proving ground is the
+    package `v1-game` at `examples/v1-game`, so every approved check that names it runs as written, and its
+    `proving` feature is on by default. M5 changes paths in `.config/exact-baselines.json` and no reference.
+
+### The proving ground, and where a game lives
+
+An engine milestone proves itself in its own crate's tests or in the proving ground, never in a game. Where an
+approved design says a selection or a test lives in `examples/v1-game` (`CLOUDS`, `PUDDLES`, `ATMOSPHERE` M7 and
+M8, `CONTENT-LOOP` M2, `RENDER-2D`, `GAME-UI`), that is the proving ground, and those plans stand as written.
+`PUDDLES` M6 draws rain over the populated valley: `SHOWCASE` M5 builds that scene before the game moves, and the
+proving ground keeps its frozen copy.
+
+A game lives in the games repository, `/Users/ryannel/Workspace/thrum-games`, and reaches the engine only through
+packages under `crates/`, by sibling path. Its plan, done-when file, reviews and evidence stay here, because the
+loop runs in one repository; its builder commits the game's code there and proves it through
+[the game gate](GAME-SPLIT/DESIGN.md#mechanisms).
+
+- **`SHOWCASE`** builds M5 to M8 in `examples/v1-game` as planned. `GAME-SPLIT` M4 then moves what it owns and
+  shows the V1 exit from outside ([how](GAME-SPLIT/DESIGN.md#how-the-v1-gate-is-verified-once-the-game-lives-outside)).
+- **`SWARM`** is built in the games repository from its first line, at `thrum-games/swarm/`, by the owner's
+  decision of 14 November. Its M2 now waits for `GAME-SPLIT:M4`. Its design and checks still say `examples/swarm`,
+  and its ruling 1 (a second external game in the repository guard) is overtaken: the guard has no game to admit.
+  `SWARM` is re-planned onto the gate before its M2 starts; that is a planning task, with nothing for the owner
+  to decide.
+
+### Interfaces (track 4)
+
+| Interface | Provider → consumers | Defined in |
+|---|---|---|
+| **Shape rules**: `shape_rules.py check`, the ratchet baseline, `--rule R --zero PATH` as a proof that a path is clean, and how a module adds a rule | `REPO-RULES:M1` → every module | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
+| **Bulk evidence**: the manifest, `evidence_store.py check`, `restore` and `put` | `REPO-RULES:M2` → every builder and reviewer | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
+| **GPU gate and test device**: a test asks for a GPU and runs, is skipped with a printed reason, or fails under `THRUM_REQUIRE_GPU=1` | `TEST-SUPPORT:M1` → every GPU test | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
+| **Device recipe**: a device, its capability record and its fault watch from one request, native or portable | `HOST:M1` → shells, captures, benches, `TEST-SUPPORT` | C04, [HOST](HOST/DESIGN.md#mechanisms) |
+| **World lifecycle policy**, **render once** and **await drawn** | `HOST:M2` and `M3` → shells, captures, tests; `SESSION:M7` | [HOST](HOST/DESIGN.md#mechanisms) |
+| **Game contract**: what a game implements to run in the window, on the page and offscreen | `HOST:M4` → games, kit scenes; `GAME-UI:M6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
+| **Game gate**: a game in the games repository built and checked against the engine checkout under test, with both revisions recorded | `GAME-SPLIT:M1` → `SHOWCASE` after the move, `SWARM` | [GAME-SPLIT](GAME-SPLIT/DESIGN.md#mechanisms) |
 
 ## Owner decisions
 
@@ -1730,3 +1889,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `SWARM` M7 to a new `SESSION` M7 and the shared iPhone shell from `SWARM` M6 to a new `GAME-UI` M6, with their
   rulings. (2) `APPLE-PRESENTATION` M4 to M12 planned, seams 5 to 9 settled, and `SHOWCASE` M7, `WATERS` M11
   and `CLOUDS` M12 given their real edges. `APPLE-PRESENTATION` M1 to M3 are unchanged.
+- 2026-11-14 Track 4 added from two requests of the owner's, quoted in its section: the code review's fixes and
+  the game's separation, as six modules (rows 26 to 31) with designs, plans and done-when files. No item of any
+  other module changed. `SWARM` M2 gained a dependency on `GAME-SPLIT:M4`, since the swarm game is built in the
+  games repository; `SWARM`'s paths are re-planned before that milestone. Decided here: fixes are built in new
+  modules under rulings, because eight owning modules have builders at work and an approved design cannot gain a
+  mechanism without stopping them; the game moves after `SHOWCASE:M8`; no Git history is rewritten.
