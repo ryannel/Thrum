@@ -36,7 +36,7 @@ Each field texel is three consecutive `vec4<f32>` values:
 | Cascade | displacement xyz, Jacobian | slope xz, dX/dx, dX/dz | velocity xyz, dZ/dz |
 | Long waves | horizontal displacement x, world height, horizontal displacement z, Jacobian | world slope xz, zero, zero | material velocity xyz, Eulerian height derivative |
 
-The long buffer starts with 4,096 query slots (unused slots evaluate at the anchor), followed
+The long buffer starts with 4,096 query slots (unused slots are cleared without evaluation), followed
 by eight row-major 128 × 128 cache levels. The cache stores the displaced-world-point result
 of its restricted long-wave model. No forces read this display cache.
 

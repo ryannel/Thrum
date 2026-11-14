@@ -159,8 +159,12 @@ fn sample_long(point: vec2<f32>, max_k: f32) -> Field {
 @compute @workgroup_size(64)
 fn long_waves(@builtin(global_invocation_id) id: vec3<u32>) {
     let i=id.x;
-    if i<p.time.z { long_field[i]=sample_long(queries[i],1e20); return; }
-    let cache=i-p.time.z; if cache>=8u*128u*128u { return; }
+    if i<4096u {
+        if i<p.time.z { long_field[i]=sample_long(queries[i],1e20); }
+        else { long_field[i]=Field(vec4(0.0),vec4(0.0),vec4(0.0)); }
+        return;
+    }
+    let cache=i-4096u; if cache>=8u*128u*128u { return; }
     let level=cache/(128u*128u); let xy=cache%(128u*128u); let info=p.levels[level];
     let point=info.xy+(vec2(f32(xy%128u),f32(xy/128u))+0.5)*info.z;
     long_field[i]=sample_long(point,info.w);

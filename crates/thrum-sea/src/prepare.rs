@@ -246,7 +246,6 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
         mip_uniforms,
         staging,
         upload: vec![0; usize::try_from(staging_size).expect("bounded upload")],
-        query_count: 0,
         levels: [CacheLevel {
             origin: [0.0; 2],
             texel: 1.0,
