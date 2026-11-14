@@ -658,7 +658,7 @@
       },
       "M3": {
         "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
-        "functional_validation": "Native and Wasm Clippy, shader validation and real Metal alternating-slot/reset execution pass. The first 640x360 game reference run repeats its SDR reference images exactly and passes independent cut/reset controls, but fails improvement over no AA at all six checkpoints. Corrected kernel and submitted-linear f32 cycle comparison target reruns are pending.",
+        "functional_validation": "Native and Wasm Clippy, shader validation and real Metal alternating-slot/reset execution pass. At 9c1349f2 all six 640x360 independent linear reference-cycle means agree bit for bit and both cut controls pass; four colour comparisons still fail improvement over no AA. Subsequent depth-footprint diagnostics improve five checkpoints, with night tied; unbiased half-float history target proof remains pending.",
         "experienced_quality": "First candidate inspected against its reference and rejected by the required colour metric. No M3 motion qualification or independent review yet.",
         "platform_performance": {
           "mac": "First-candidate GPU timestamps exist at 640x360; changed-kernel paired timing and the 1080p estimate remain unqualified.",
