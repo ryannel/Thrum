@@ -141,10 +141,6 @@
 - 2026-11-14 M1 builder implemented the renderer-free CPU weather authority, directed footprints and volume
   paths, density/conformance references, and point/disc optics. [Evidence](../../evidence/CLOUDS/M1.md) and
   [phase measurements](../../evidence/CLOUDS/M1-phase.md) distinguish the numerical proofs from later visuals.
-  On `e9a7620e`, all 14 automated item checks passed; provenance was inspected with no Broadsides file copied.
-  The exact verifier reported `PASS exact baselines` in 922.90 seconds: native matrices passed 38 and 4
-  comparisons, and each Chrome day/night SDR/scene-linear set passed all 481 records. Its covered-content key
-  was `2a88ba9a92a09c95374b0cc5bfd0480b4b7782eb3c4e2a10dea1553a98c77c8f`. The build script retains complete
-  check outputs under shared Git check key `1190e26f38e7ca52478fa707`. No cloud visual or performance claim follows.
-  The full milestone check on `e448e7be` passed all 15 commands, including `./dev check` (repository policy,
-  formatting, workspace Clippy/tests, native GPU integration and the configured Wasm checks).
+  All 14 item checks and the full project gate passed before integration; the detailed counts and revisions
+  are in the evidence. Provenance was inspected with no Broadsides file copied. Integration rebased onto
+  `145cadb2` and correctly requested a replacement baseline proof after two covered upstream scripts changed.
