@@ -148,6 +148,11 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
     hypothesis = ('The full Game Performance 16s window retained the full marked interval but exceeded its bounded process deadline. Use only Metal Application, Display and Points of Interest to reduce unrelated system-wide event and finalization volume, keeping the same 16s window and game. Require complete markers, drawable joins and bounded completion.' if args.presented_minimal else 'Explicit --window 16s replaces the template 5s ring buffer; retained ca-client-presented-handler rows must span both Whole markers. Empty display tables are recorded, not a failure.') if presented else OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
     if presented and args.presented_deferred:
         hypothesis = 'The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.'
+    if args.post_apple_tile_m3:
+        hypothesis = ('Fresh post-APPLE-TILE M3 qualification using Mac M2\'s accepted '
+                      'minimal/deferred configuration. One ON and one OFF recording, '
+                      'with no diagnostic attempts. Require complete Whole coverage, '
+                      'validated presented-time conversion and bounded completion.')
     if traced:
         ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else {'commission': '11-November-2026-presented-time-ab66bca5' if presented else '9-November-2026', 'attempts': []}
         if args.post_apple_tile_m3:
