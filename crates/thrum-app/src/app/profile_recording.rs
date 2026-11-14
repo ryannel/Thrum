@@ -24,6 +24,7 @@ impl Recording {
         samples: &[FrameSample],
         controls: &Controls,
         panel: Option<&MacPanel>,
+        counts: [u64; 3],
     ) -> Result<(), String> {
         if now.saturating_sub(self.saved) < Duration::from_millis(250) {
             return Ok(());
@@ -46,7 +47,8 @@ impl Recording {
         } else {
             None
         };
-        let record = serde_json::json!({"elapsed":now.as_secs_f64(),"model":model,"frames":frames});
+        let record = serde_json::json!({"elapsed":now.as_secs_f64(),"model":model,"frames":frames,
+            "display_link_callbacks":counts[0],"render_callbacks":counts[1],"present_calls":counts[2]});
         let mut log = OpenOptions::new()
             .create(true)
             .append(true)

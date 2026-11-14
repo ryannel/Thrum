@@ -638,14 +638,6 @@ impl<G: Game + 'static> App<G> {
         }
         self.sync_panel();
         self.worker_walls.push(reply.worker_wall);
-        if let Some(recording) = &mut self.profile_recording {
-            recording.observe(
-                self.origin.elapsed(),
-                &self.samples,
-                self.game.controls(),
-                self.panel.as_ref(),
-            )?;
-        }
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
         }
@@ -1352,9 +1344,23 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
             false,
         );
         self.sync_panel();
-        let refresh = self
-            .profile
-            .is_enabled()
+        if let Some(recording) = &mut self.profile_recording
+            && let Err(error) = recording.observe(
+                now,
+                &self.samples,
+                self.game.controls(),
+                self.panel.as_ref(),
+                [
+                    self.display_link_callbacks as u64,
+                    self.callbacks as u64,
+                    self.presented as u64,
+                ],
+            )
+        {
+            self.error = Some(error);
+            event_loop.exit();
+        }
+        let refresh = (self.profile.is_enabled() || self.profile_recording.is_some())
             .then_some(now + Duration::from_millis(250));
         event_loop.set_control_flow(refresh.map_or(ControlFlow::Wait, |at| {
             ControlFlow::WaitUntil(self.origin + at)
