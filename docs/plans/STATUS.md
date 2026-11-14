@@ -161,7 +161,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
 - SEA's design: Design Ready for Review · [design](SEA/DESIGN.md) · [plan](SEA/PLAN.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
-- CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
+- The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly (CLOUDS M1): Not Started · [plan](CLOUDS/PLAN.md)
 
 ### Recently done
 
@@ -204,7 +204,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Design Ready for Review |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion, and its governor and MetalFX milestones to close | Design Ready for Review |
-| 16 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Changes Requested |
+| 16 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M1 of 12 · Not Started |
 | 17 | RIVERS | Rivers, streams and waterfalls that run down the land, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream | Not planned yet |
 | 18 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 | Not planned yet |
 | 19 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
