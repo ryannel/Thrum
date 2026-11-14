@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -184,7 +184,17 @@
           "item": "M1.4",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "Should M1.4 measure thickness through clear transitions, or should the planner revise M1.2\u2019s zero-top convention and the fixed-base geometry?",
+        "work": {
+          "commit": "a48dc380103e0fb036f4ef1c4a081b9fe4a81ebd",
+          "branch": "build/clouds",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/CLOUDS/M1-handoff.md"
+      }
     },
     {
       "id": "M13",
