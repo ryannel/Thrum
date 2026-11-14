@@ -2368,6 +2368,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-sea"
+version = "0.1.0"
+dependencies = [
+ "pollster",
+ "thrum-render",
+ "thrum-sea-model",
+ "wgpu",
+]
+
+[[package]]
 name = "thrum-sea-model"
 version = "0.1.0"
 

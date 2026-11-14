@@ -1,0 +1,29 @@
+[package]
+name = "thrum-sea"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Frame-time ambient wave fields on the scene effect graph"
+autotests = false
+
+[[test]]
+name = "ambient_gpu"
+
+[[test]]
+name = "frames_gpu"
+
+[[test]]
+name = "portable_limits_gpu"
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-sea-model = { path = "../thrum-sea-model" }
+thrum-render = { path = "../thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[dev-dependencies]
+pollster = "=1.0.1"
+

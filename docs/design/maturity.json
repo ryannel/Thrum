@@ -4574,6 +4574,15 @@
     "sequencing": "G3 registry, portable and Apple tile recipes, frame contract, derived attachments, pipeline caches, GPU culling; G3b display link; G3s physical atmosphere; G4 EDR, reconstruction, governor, latency; G5 meshlets, KTX2, BLAKE3, mapped products; after V1 QUIC offload, Android tile, desktop high, vendor providers, ray tracing and ML on rented hardware.",
     "device_evidence": []
   },
+  "sea_ambient_field": {
+    "as_of": "2026-11-14",
+    "owner": "SEA",
+    "implementation": "frame_time_gpu_kernels_and_composable_effect_declaration",
+    "correctness": "cpu_loop_velocity_and_portable_shader_validation_passed_metal_pending",
+    "visuals": "not_drawn_this_module",
+    "device": "unqualified",
+    "evidence": "../evidence/SEA/M2.md"
+  },
   "sea_and_cloud_port_design": {
     "as_of": "2026-11-06",
     "decision": "selected",

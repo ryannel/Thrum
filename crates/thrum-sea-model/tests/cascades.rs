@@ -36,7 +36,8 @@ fn direct_grid(band: &Cascade, time: f64) -> Vec<[f64; 9]> {
         for c in band.components() {
             let [kx, kz] = c.wave_vector;
             let k = kx.hypot(kz);
-            let (s, cos) = (kx * px - c.frequency() * time + c.phase).sin_cos();
+            let (s, cos) =
+                (kx * px - thrum_sea_model::cascade_frequency(*c) * time + c.phase).sin_cos();
             let a = c.amplitude;
             let cosine = [
                 0.0,
