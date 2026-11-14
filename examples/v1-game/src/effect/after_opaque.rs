@@ -9,7 +9,7 @@ use thrum_render::{
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
 };
 
-struct Scene {
+pub(super) struct Scene {
     temporal: bool,
 }
 impl SceneSource<SourceTick> for Scene {
@@ -17,6 +17,7 @@ impl SceneSource<SourceTick> for Scene {
         let x = if page.tick < 12 { -1.0 } else { 1.0 };
         into.extract(*page, [0.; 3], |sink| {
             sink.push(0, 1, 1, [x, 2., 2.], 0);
+            sink.push(1, 2, 1, [0., 2., -2.], 0);
         })
     }
     fn frame(
@@ -47,7 +48,7 @@ impl SceneSource<SourceTick> for Scene {
 fn error(e: impl std::fmt::Debug) -> String {
     format!("{e:?}")
 }
-fn half(bytes: &[u8]) -> f32 {
+pub(super) fn half(bytes: &[u8]) -> f32 {
     let n = u16::from_le_bytes([bytes[0], bytes[1]]);
     let sign = if n & 0x8000 == 0 { 1. } else { -1. };
     let exponent = i32::from((n >> 10) & 31);
@@ -58,7 +59,7 @@ fn half(bytes: &[u8]) -> f32 {
         sign * (1. + mantissa / 1024.) * 2_f32.powi(exponent - 15)
     }
 }
-async fn host(
+pub(super) async fn host(
     caps: &DeviceCapabilities,
     queue: &wgpu::Queue,
     temporal: bool,
@@ -79,7 +80,7 @@ async fn host(
             tick: 10,
         }),
         Scene { temporal },
-        SyntheticScene::grid(1).map_err(error)?,
+        SyntheticScene::grid(2).map_err(error)?,
         1.,
     )
     .await
@@ -101,6 +102,18 @@ pub async fn run(
         caps.generation(),
         caps.recipe()
     )];
+    record.extend(graph_cases(caps, queue).await?);
+    record.push(shared_copy(caps, queue).await?);
+    record.push(Box::pin(super::after_compute::run(device, queue, caps)).await?);
+    record.extend(Box::pin(slab_pixels(device, queue, caps, instance)).await?);
+    Ok(record.join("\n"))
+}
+
+async fn graph_cases(
+    caps: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+) -> Result<Vec<String>, String> {
+    let mut record = Vec::new();
     for (temporal, effect, refraction, count) in [
         (false, false, false, 0),
         (true, false, false, 0),
@@ -138,15 +151,46 @@ pub async fn run(
             "temporal={temporal} effect={effect} refraction={refraction}: passes={names:?}; {depth}"
         ));
     }
-    record.push(shared_copy(caps, queue).await?);
+    Ok(record)
+}
+
+async fn slab_pixels(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    caps: &DeviceCapabilities,
+    instance: &wgpu::Instance,
+) -> Result<Vec<String>, String> {
+    let mut record = Vec::new();
     let mut host = host(caps, queue, true).await?;
+    let mut baseline = super::after_opaque::host(caps, queue, true).await?;
     let (effect, handle) = DiagnosticEffect::new();
     host.set_scene_contribution(Box::new(effect.with_slab(true)))?;
+    for subject in [&mut host, &mut baseline] {
+        subject
+            .enable_submitted_capture_from(
+                31,
+                thrum_render::runtime::CaptureLimits::default(),
+                thrum_render::synthetic::CaptureSource::SceneLinear,
+            )
+            .map_err(error)?;
+    }
     let mut frames = Vec::new();
+    let mut refracted = 0;
     for tick in 10..=16 {
         host.world_mut().0.tick = tick;
+        baseline.world_mut().0.tick = tick;
         if tick == 16 {
             host.world_mut().0.timeline = 4;
+            baseline.world_mut().0.timeline = 4;
+        }
+        if tick == 13 {
+            handle.lock().map_err(error)?.controls.slab_offset = 3.;
+            drop(
+                host.advance(Duration::from_millis(12_500))
+                    .map_err(error)?
+                    .encode_scene()
+                    .map_err(error)?,
+            );
         }
         {
             let mut state = handle.lock().map_err(error)?;
@@ -167,6 +211,25 @@ pub async fn run(
             .submitted_temporal_witness()
             .ok_or("missing submitted temporal witness")?;
         let bytes = read_texture_bytes(device, queue, texture, 0, 8).await?;
+        baseline
+            .advance(Duration::from_secs(tick))
+            .map_err(error)?
+            .encode_scene()
+            .map_err(error)?
+            .submit(None)
+            .map_err(error)?;
+        let baseline_witness = baseline
+            .submitted_temporal_witness()
+            .ok_or("baseline temporal witness")?
+            .clone();
+        let baseline_depth = read_texture_bytes(device, queue, &baseline_witness, 0, 8).await?;
+        let progress = handle.lock().map_err(error)?.textures[2][0].clone();
+        let pixels =
+            super::qualification::submitted_colour(&mut host, device, queue, &progress, tick)
+                .await?;
+        let baseline_pixels =
+            super::qualification::submitted_colour(&mut baseline, device, queue, &progress, tick)
+                .await?;
         let values = bytes
             .as_chunks::<8>()
             .0
@@ -200,6 +263,16 @@ pub async fn run(
                     "tick {tick} displacement expected={expected}: {centre:?}"
                 ));
             }
+            refracted += refraction_pixels(
+                device,
+                queue,
+                &handle,
+                &values,
+                &pixels,
+                &baseline_pixels,
+                &baseline_depth,
+            )
+            .await?;
         }
         record.push(format!("submitted tick={tick}: centre={centre:?}"));
         frames.push(values);
@@ -223,12 +296,73 @@ pub async fn run(
         ));
     }
     record.push(format!("current-depth cuts: exposed={exposed},hidden={hidden}; unjittered displacement, cut and effect reset pass"));
+    if refracted == 0 {
+        return Err("refraction proof sampled no geometry behind the slab".into());
+    }
+    record.push(format!("submitted refraction: shifted scene colour and single attenuation checked, {refracted} samples from geometry behind the slab; discarded displacement 3 never committed"));
     handle.lock().map_err(error)?.controls.slab_reset = false;
     replacement(&mut host, device, instance, caps).await?;
     record.push(
         "replacement device: invalid slab motion and reactive=1 on submitted generation 2".into(),
     );
-    Ok(record.join("\n"))
+    Ok(record)
+}
+
+async fn refraction_pixels(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    handle: &super::EffectHandle,
+    inputs: &[[f32; 4]],
+    pixels: &[u8],
+    baseline: &[u8],
+    depth: &[u8],
+) -> Result<usize, String> {
+    let textures = {
+        let witness = handle.lock().map_err(error)?;
+        [2, 3, 4, 5].map(|index| witness.textures[index][0].clone())
+    };
+    let mut fields = Vec::new();
+    for (i, texture) in textures.iter().enumerate() {
+        fields.push(
+            super::qualification::read_texture(device, queue, texture, if i == 2 { 2 } else { 0 })
+                .await?,
+        );
+    }
+    let mut refracted = 0;
+    for y in 0..64usize {
+        for x in 0..64usize {
+            if (inputs[y * 64 + x][0] - 0.35).abs() > 0.003 {
+                continue;
+            }
+            let shifted = (y * 64 + (x + 6).min(63)) * 8;
+            let slab_depth = 0.1 * (100. - 10.) / (10. * (100. - 0.1));
+            let source = if half(&depth[shifted + 2..shifted + 4]) > slab_depth {
+                (y * 64 + x) * 8
+            } else {
+                shifted
+            };
+            let value = fields[0][y % 32 * 32 + x % 32]
+                + fields[1][y % 8 * 8 + x % 8]
+                + fields[2][y % 2 * 2 + x % 2]
+                + fields[3][y % 8 * 8 + x % 8];
+            let weight = f32::from(u16::try_from(value % 17).map_err(error)?) / 17.;
+            for (channel, tint) in [0.002, 0.008, 0.01].into_iter().enumerate() {
+                let expected = half(&baseline[source + channel * 2..source + channel * 2 + 2])
+                    * (0.65 + tint * weight);
+                let actual = half(
+                    &pixels[(y * 64 + x) * 8 + channel * 2..(y * 64 + x) * 8 + channel * 2 + 2],
+                );
+                if (actual - expected).abs() > expected.abs() * 0.001 + 0.000_000_06 {
+                    return Err(format!(
+                        "refraction at ({x},{y}) channel {channel}: expected {expected}, got {actual}"
+                    ));
+                }
+            }
+            let source_depth = half(&depth[source + 2..source + 4]);
+            refracted += usize::from(source_depth > 0. && source_depth < 0.01);
+        }
+    }
+    Ok(refracted)
 }
 
 async fn shared_copy(caps: &DeviceCapabilities, queue: &wgpu::Queue) -> Result<String, String> {

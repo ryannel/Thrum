@@ -65,7 +65,7 @@ impl SceneGpuTimings {
     pub(crate) fn set_effect_boundary(&mut self, value: Option<f64>) {
         self.effect_boundary = value;
     }
-    /// Upper bracket from the preceding timed pass's end through the first late render pass.
+    /// Upper bracket from the preceding timed pass's end through the first late pass.
     /// Includes a requested refraction copy, the pass boundary and that render pass's work.
     /// This overlaps `passes()` and must never be added to the scene sum.
     #[must_use]

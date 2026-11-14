@@ -59,6 +59,25 @@ enum AttachmentUse {
 }
 
 impl PreparedSynthetic {
+    fn append_forward_epilogues(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        forward: usize,
+        stats: &[ResourceId],
+        (instance, history_write, history_bytes): (ResourceId, ResourceId, u64),
+        simulate: &[usize],
+    ) -> Result<(), RenderError> {
+        for &pass in simulate {
+            graph.dependency(pass, forward)?;
+        }
+        let bytes = self.visibility.as_ref().map_or(
+            crate::visibility::ARGS_BYTES,
+            VisibilityPrepared::args_bytes,
+        );
+        Self::append_camera_stats(graph, stats, bytes)?;
+        self.append_history_publish(graph, keys, forward, instance, history_write, history_bytes)
+    }
     /// Declares one cleared full-view attachment and its forward access.
     fn view_attachment(
         (width, height, graph, accesses): (u32, u32, &mut FrameGraph, &mut Vec<Access>),
@@ -254,6 +273,11 @@ impl PreparedSynthetic {
         );
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
+        let late_uniforms = accesses
+            .iter()
+            .filter(|access| access.kind == AccessKind::UniformRead)
+            .cloned()
+            .collect::<Vec<_>>();
         if let Some(cloud) = &self.cloud {
             cloud.append_reads(&mut graph, &mut accesses)?;
         }
@@ -270,7 +294,8 @@ impl PreparedSynthetic {
             })
             .transpose()?;
         let contribution_start = accesses.len();
-        self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
+        let effect_resources =
+            self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
         let contribution_reads = accesses[contribution_start..].to_vec();
         let shadow = self.append_shadow_passes(
             &mut graph,
@@ -313,18 +338,13 @@ impl PreparedSynthetic {
             accesses,
             external_side_effect: true,
         });
-        let args_bytes = self.visibility.as_ref().map_or(
-            crate::visibility::ARGS_BYTES,
-            VisibilityPrepared::args_bytes,
-        );
-        Self::append_camera_stats(&mut graph, &camera.stats, args_bytes)?;
-        self.append_history_publish(
+        self.append_forward_epilogues(
             &mut graph,
             &mut prepared_keys,
             forward,
-            instance,
-            history_write,
-            history_bytes,
+            &camera.stats,
+            (instance, history_write, history_bytes),
+            &effect_resources.simulate,
         )?;
         // Late writers need a stable colour predecessor. Prepare the optional star
         // pass before them; it records only when this frame selects stars. Empty
@@ -345,7 +365,8 @@ impl PreparedSynthetic {
             &mut prepared_keys,
             [&depth, &scene, &motion, &reactive],
             [width, height],
-            &contribution_reads,
+            &effect_resources,
+            &late_uniforms,
             early_stars.unwrap_or(forward),
         )?;
         let temporal = self.append_temporal(
@@ -375,12 +396,7 @@ impl PreparedSynthetic {
             [width, height],
         )?;
         let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
-        if late.first.is_some() {
-            graph.dependency(late.last, display_pass)?;
-            if let Some(pass) = temporal.witness_pass {
-                graph.dependency(late.last, pass)?;
-            }
-        }
+        late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
@@ -393,7 +409,7 @@ impl PreparedSynthetic {
             readback.clone(),
             generation,
             &prepared_keys,
-            (capture_source == CaptureSource::SceneLinear).then_some(late.last),
+            (capture_source == CaptureSource::SceneLinear).then_some(late.colour),
             surface.as_ref(),
         )?;
         let stars = if early_stars.is_some() {
@@ -980,7 +996,11 @@ impl PreparedSynthetic {
                                     .unwrap_or(0) =>
                 {
                     let index = (key.role - 3000) as usize;
-                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
+                    let kind = match self.effect_graph.after_opaque[index].kind {
+                        crate::contribution::AfterOpaqueKind::Render => PassKind::Render,
+                        crate::contribution::AfterOpaqueKind::Compute => PassKind::Compute,
+                    };
+                    RecordBinding::<SceneFamily>::new(id, kind, move |frame, pass| {
                         frame.after_opaque(index, pass)
                     })
                 }

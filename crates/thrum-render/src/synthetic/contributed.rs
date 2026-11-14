@@ -56,7 +56,7 @@ impl PreparedSynthetic {
         graph: &mut FrameGraph,
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<(), RenderError> {
+    ) -> Result<crate::contribution::EffectResources, RenderError> {
         let passes = self.contribution_passes;
         let token = |graph: &mut FrameGraph, usage| {
             graph.resource(
@@ -133,8 +133,9 @@ impl PreparedSynthetic {
                 store: true,
             });
         }
-        accesses.extend(self.effect_graph.append(graph, self.key, prepared_keys)?);
-        Ok(())
+        let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
+        accesses.extend_from_slice(&resources.opaque_reads);
+        Ok(resources)
     }
 
     /// The forward pass a [`SceneContribution`] draws into.

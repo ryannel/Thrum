@@ -11,8 +11,8 @@
   "overlay": "off",
   "keys": [
     {"tick": 0, "eye": [0.0, 244.92, 16.0], "yaw_degrees": 0.0, "pitch_degrees": 0.0},
-    {"tick": 2, "eye": [0.0, 244.92, 16.0], "yaw_degrees": 0.0, "pitch_degrees": 0.0}
+    {"tick": 6, "eye": [0.0, 244.92, 16.0], "yaw_degrees": 0.0, "pitch_degrees": 0.0}
   ],
   "cuts": [],
-  "checkpoints": [{"tick": 1, "name": "slab-crossings"}]
+  "checkpoints": [{"tick": 4, "name": "slab-crossings"}]
 }

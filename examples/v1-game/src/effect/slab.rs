@@ -26,6 +26,32 @@ impl Slab {
     pub(super) fn declaration(&self) -> AfterOpaquePass {
         AfterOpaquePass {
             name: "diagnostic slab".into(),
+            kind: thrum_render::contribution::AfterOpaqueKind::Render,
+            cadence: thrum_render::contribution::EffectCadence::EveryFrame,
+            accesses: vec![
+                (2, 0..1, wgpu::TextureViewDimension::D2),
+                (3, 0..1, wgpu::TextureViewDimension::D3),
+                (4, 0..6, wgpu::TextureViewDimension::D2Array),
+                (5, 0..6, wgpu::TextureViewDimension::D2Array),
+            ]
+            .into_iter()
+            .map(
+                |(resource, range, view)| thrum_render::contribution::EffectAccess {
+                    resource,
+                    range,
+                    view: Some(view),
+                    kind: thrum_render::graph::AccessKind::SampledRead,
+                    history: None,
+                },
+            )
+            .chain(std::iter::once(thrum_render::contribution::EffectAccess {
+                resource: 7,
+                range: 0..32,
+                view: None,
+                kind: thrum_render::graph::AccessKind::UniformRead,
+                history: None,
+            }))
+            .collect(),
             depth: true,
             refraction: self.refraction,
         }
@@ -198,9 +224,9 @@ fn shader(refraction: bool) -> String {
         "{}\n{}",
         include_str!("slab.wgsl"),
         if refraction {
-            "@group(1) @binding(1) var scene_copy:texture_2d<f32>; fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{ let size=vec2<i32>(textureDimensions(scene_copy)); let q=clamp(p+vec2(6,0),vec2(0),size-vec2(1)); return vec4(textureLoad(scene_copy,q,0).rgb*0.65+tint,1.0); }"
+            "@group(1) @binding(1) var scene_copy:texture_2d<f32>; fn colour(p:vec2<i32>, tint:vec3<f32>, z:f32)->vec4<f32>{ let size=vec2<i32>(textureDimensions(scene_copy)); var q=clamp(p+vec2(6,0),vec2(0),size-vec2(1)); if(textureLoad(depth,q,0)>z){q=p;} return vec4(textureLoad(scene_copy,q,0).rgb*(vec3(0.65)+tint),1.0); }"
         } else {
-            "fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{return vec4(tint+vec3(0.01,0.025,0.035),0.35);}"
+            "fn colour(p:vec2<i32>, tint:vec3<f32>, z:f32)->vec4<f32>{return vec4(0.0,0.0,0.0,0.35);}"
         }
     )
 }

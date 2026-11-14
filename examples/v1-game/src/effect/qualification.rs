@@ -83,6 +83,30 @@ fn error(e: impl std::fmt::Debug) -> String {
     format!("{e:?}")
 }
 
+pub(super) async fn submitted_colour<W: FrameWorld, V: SceneSource<W::Page>>(
+    host: &mut FrameHost<W, V>,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    progress: &wgpu::Texture,
+    tick: u64,
+) -> Result<Vec<u8>, String> {
+    for _ in 0..16 {
+        drop(host.poll_completed().map_err(error)?);
+        if let Some(image) = host.try_submitted_image().map_err(error)? {
+            if image.sample.tick != tick
+                || image.pixel_source != thrum_render::synthetic::CaptureSource::SceneLinear
+            {
+                return Err("submitted colour identity/stage".into());
+            }
+            let pixels = image.rgba.clone();
+            host.recycle_submitted_image(image);
+            return Ok(pixels);
+        }
+        drop(read_texture(device, queue, progress, 0).await?);
+    }
+    Err("submitted colour readback did not complete".into())
+}
+
 /// Read every texel of one texture and mip, stripping GPU row padding.
 /// # Panics
 /// Panics if the private readback callback mutex is poisoned.

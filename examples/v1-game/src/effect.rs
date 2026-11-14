@@ -1,4 +1,5 @@
 //! Opt-in integer diagnostic for EFFECT-GRAPH. It is never installed by default.
+mod after_compute;
 pub mod after_opaque;
 pub mod qualification;
 mod slab;
@@ -234,7 +235,7 @@ impl SceneContribution for DiagnosticEffect {
         if let D::Texture { layers, .. } = &mut field {
             *layers = 1;
         }
-        let resources = vec![
+        let mut resources = vec![
             (
                 field.clone(),
                 S::History {
@@ -376,9 +377,33 @@ impl SceneContribution for DiagnosticEffect {
                 history: None,
             });
         }
+        if self.slab.is_some() {
+            resources.push((
+                D::Buffer {
+                    bytes: 32,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                },
+                S::Imported { initialized: true },
+            ));
+        }
         EffectGraph {
             resources,
             passes,
+            opaque_reads: if self.slab.is_none() && self.opaque_visual {
+                vec![
+                    access(0, A::SampledRead, Some(H::Result)),
+                    access(1, A::SampledRead, Some(H::Result)),
+                    EffectAccess {
+                        resource: 6,
+                        range: 0..128,
+                        kind: A::UniformRead,
+                        view: None,
+                        history: None,
+                    },
+                ]
+            } else {
+                Vec::new()
+            },
             after_opaque: self
                 .slab
                 .as_ref()

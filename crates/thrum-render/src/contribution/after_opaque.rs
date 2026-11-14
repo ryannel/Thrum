@@ -1,11 +1,26 @@
 //! Prepared inputs shared by late scene effects. No allocation occurs in a frame.
 
-/// One render pass after opaque, sky and stars and before reconstruction and tone.
+/// Work recorded after opaque, sky and stars.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AfterOpaqueKind {
+    /// Load scene colour, motion and reactive targets and draw into them.
+    Render,
+    /// Read requested scene inputs and write declared effect-local resources.
+    Compute,
+}
+
+/// One pass after opaque, sky and stars and before reconstruction and tone.
 /// List order is execution order; medium integration remains the consumer's policy.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AfterOpaquePass {
     /// Executor timing name, unique within the effect.
     pub name: String,
+    /// Render composition or compute into effect-owned outputs.
+    pub kind: AfterOpaqueKind,
+    /// Runtime scheduling class. Render passes load attachments and must run every frame.
+    pub cadence: super::EffectCadence,
+    /// Effect-local resource hazards, including history previous/next/result bindings.
+    pub accesses: Vec<super::EffectAccess>,
     /// Sample the current frame's reverse-Z depth at group 1, binding 0.
     pub depth: bool,
     /// Sample one shared pre-effect scene-colour copy at group 1, binding 1.

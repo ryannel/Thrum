@@ -53,7 +53,8 @@ mod graph;
 mod list;
 mod quality;
 mod state;
-pub use after_opaque::AfterOpaquePass;
+pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
+pub(crate) use graph::EffectResources;
 pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 pub use list::SceneContributions;
 pub use quality::{QualityInvalidation, QualityKnob, QualitySettings};
@@ -243,6 +244,21 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Whether a declared late compute pass runs, asked after upload. Render composition
+    /// always runs because it loads the scene attachments.
+    fn after_opaque_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {
+        true
+    }
+    /// Record a declared late compute pass. The renderer binds the view at group 0 and
+    /// requested scene inputs at group 1. Owned outputs and history sides are prebound by
+    /// the effect; mark a history produced only after recording its whole-output writer.
+    fn encode_after_opaque(
+        &mut self,
+        _index: usize,
+        _pass: &mut wgpu::ComputePass<'_>,
+        _frame: &ContributionFrame,
+    ) {
+    }
     /// Runtime controls available to a caller without effect-specific knowledge.
     fn quality_knobs(&self) -> Vec<QualityKnob> {
         Vec::new()

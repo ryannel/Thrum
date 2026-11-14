@@ -1943,6 +1943,7 @@ async function main() {
           const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const game=await import('/v1_game.js');return await game.${method}();})()`, awaitPromise: true, returnByValue: true }, sessionId);
           if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
           const record = { case: mode, target: 'chrome-webgpu', exact: r.result.value };
+          await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
           if (mode === 'effect-after-opaque') {
             await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
             if (args.cook === 'target/debug/thrum-cook') execFileSync('rustup', ['run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });

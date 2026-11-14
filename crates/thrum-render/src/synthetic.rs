@@ -1136,7 +1136,9 @@ impl PreparedSynthetic {
         let mut view_entries = vec![
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                visibility: wgpu::ShaderStages::VERTEX
+                    | wgpu::ShaderStages::FRAGMENT
+                    | wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: true,
@@ -1144,7 +1146,11 @@ impl PreparedSynthetic {
                 },
                 count: None,
             },
-            uniform_layout(1, AUX_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
+            uniform_layout(
+                1,
+                AUX_BYTES as u64,
+                wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
+            ),
         ];
         if meshes.is_some() {
             view_entries.push(BucketRoute::view_layout_entry(

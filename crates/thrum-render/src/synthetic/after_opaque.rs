@@ -15,6 +15,24 @@ pub(super) struct LateGraph {
     pub(super) copy: Option<ResourceId>,
     pub(super) first: Option<usize>,
     pub(super) last: usize,
+    pub(super) colour: usize,
+}
+impl LateGraph {
+    pub(super) fn order_consumers(
+        &self,
+        graph: &mut FrameGraph,
+        passes: [Option<usize>; 2],
+    ) -> Result<(), RenderError> {
+        if self.first.is_some() {
+            for pass in passes.into_iter().flatten() {
+                graph.dependency(self.last, pass)?;
+                if self.colour != self.last {
+                    graph.dependency(self.colour, pass)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl super::OffscreenTarget {
@@ -44,7 +62,8 @@ impl PreparedSynthetic {
         keys: &mut BTreeSet<PipelineKey>,
         targets: [&ResourceId; 4],
         extent: [u32; 2],
-        reads: &[Access],
+        resources: &crate::contribution::EffectResources,
+        uniforms: &[Access],
         forward: usize,
     ) -> Result<LateGraph, RenderError> {
         let [depth, scene, motion, reactive] = targets;
@@ -90,11 +109,14 @@ impl PreparedSynthetic {
         for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
             let key = self.late_key(index);
             keys.insert(key);
-            let mut accesses = reads.to_vec();
-            accesses.extend(
-                [scene, motion, reactive]
-                    .map(|id| Access::new(id.clone(), 0..1, AccessKind::AttachmentLoad)),
-            );
+            let mut accesses = uniforms.to_vec();
+            accesses.extend(resources.accesses(&declaration.accesses));
+            if declaration.kind == crate::contribution::AfterOpaqueKind::Render {
+                accesses.extend(
+                    [scene, motion, reactive]
+                        .map(|id| Access::new(id.clone(), 0..1, AccessKind::AttachmentLoad)),
+                );
+            }
             if declaration.depth {
                 accesses.push(Access::new(depth.clone(), 0..1, AccessKind::SampledRead));
             }
@@ -113,14 +135,23 @@ impl PreparedSynthetic {
                 external_side_effect: true,
             });
             graph.dependency(last, pass)?;
-            if last != previous_render {
+            if declaration.kind == crate::contribution::AfterOpaqueKind::Render
+                && last != previous_render
+            {
                 graph.dependency(previous_render, pass)?;
             }
             first.get_or_insert(pass);
             last = pass;
-            previous_render = pass;
+            if declaration.kind == crate::contribution::AfterOpaqueKind::Render {
+                previous_render = pass;
+            }
         }
-        Ok(LateGraph { copy, first, last })
+        Ok(LateGraph {
+            copy,
+            first,
+            last,
+            colour: previous_render,
+        })
     }
 
     pub(super) fn late_bindings(
@@ -174,6 +205,14 @@ impl PreparedSynthetic {
             .iter()
             .enumerate()
             .map(|(index, pass)| format!("effect {index}: {}", pass.name))
+            .chain(
+                self.effect_graph
+                    .after_opaque
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, pass)| pass.kind == crate::contribution::AfterOpaqueKind::Compute)
+                    .map(|(index, pass)| format!("effect after {index}: {}", pass.name)),
+            )
             .collect();
         Ok(TargetEffects { groups, names })
     }
@@ -205,6 +244,11 @@ impl SceneContext<'_> {
         index: usize,
         compiled: &CompiledPass,
     ) -> Result<(), RenderError> {
+        if self.prepared.effect_graph.after_opaque[index].kind
+            == crate::contribution::AfterOpaqueKind::Compute
+        {
+            return self.after_opaque_compute(index, compiled);
+        }
         let mut pass = compiled
             .begin_render(
                 self.encoder,
@@ -232,6 +276,24 @@ impl SceneContext<'_> {
         pass.set_bind_group(1, &self.target.effects.groups[index], &[]);
         if let Some(contribution) = self.contribution.as_deref() {
             contribution.draw_after_opaque(index, &mut pass, &self.contribution_frame);
+        }
+        Ok(())
+    }
+    fn after_opaque_compute(
+        &mut self,
+        index: usize,
+        compiled: &CompiledPass,
+    ) -> Result<(), RenderError> {
+        if let Some(contribution) = self.contribution.as_deref_mut()
+            && contribution.after_opaque_runs(index, &self.contribution_frame)
+        {
+            let mut pass = compiled
+                .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            let offset = self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
+            pass.set_bind_group(0, &self.target.view_bind_group, &[offset]);
+            pass.set_bind_group(1, &self.target.effects.groups[index], &[]);
+            contribution.encode_after_opaque(index, &mut pass, &self.contribution_frame);
         }
         Ok(())
     }

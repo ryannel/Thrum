@@ -1,5 +1,16 @@
 # EFFECT-GRAPH log
 
+- 2026-11-14 The first native slab and cadence/quality runs pass on both recipes. Chrome's functional slab
+  script completed before its fixed capture refused a checkpoint within four ticks of the route origin;
+  the route is corrected. A preliminary native noon/night campaign recorded images, then refused its next
+  cost arm below 16 GiB free. Those images exposed additive tint brightening night sky; the diagnostic now
+  applies bounded transmission and rejects foreground refraction samples. These are preliminary proofs only.
+- 2026-11-14 A [read-only code audit](../../evidence/EFFECT-GRAPH/M3-code-audit.md) found the missing compute
+  form of the approved late stage. Added local access declarations and opaque reads, late compute callbacks,
+  shared compute-visible view inputs and the external trace/history/compose/epilogue witness. Refraction now has
+  submitted scene-linear pixel assertions and slab motion has a discarded-displacement assertion. Native
+  Clippy, shader validation and preparation refusal tests pass; final target and exact proofs remain pending.
+
 - 2026-11-14 M3 implementation checkpoint: late render passes request depth independently of one shared
   refraction source, with prepared input bindings, contribution-list dispatch and temporal outputs from the
   diagnostic slab. Added async eligibility metadata, discoverable staged quality controls and named not-run

@@ -9,7 +9,8 @@ define lifetime and temporal conventions.
 
 `rebuild` prepares every pipeline and binding on `SceneSurface::device`, before readiness. A new device
 generation starts a new effect epoch. Same-generation rebuilds retain state unless an owned descriptor changes.
-`effect_graph` declares real resources and named compute passes. Resource indices and retained owner IDs are
+`effect_graph` declares real resources, named simulate passes and `opaque_reads` for the fixed opaque draw.
+Late-only outputs do not become forward inputs. Resource indices and retained owner IDs are
 local to the contribution; the ordered list remaps them. Prepared graph accesses describe physical usage.
 The renderer validates dimensions, ranges, storage capabilities and cadence before accepting the attachment.
 
@@ -22,9 +23,13 @@ the whole output is written. Resolve previous/next/result with `EffectState::sid
 output when its producer ran and the committed side otherwise. Commit clocks, anchors, history sides and prior
 deformation only in `submitted(true)`. A discarded encoder commits nothing.
 
-Declare late render passes in `EffectGraph::after_opaque` with `AfterOpaquePass`. They run after opaque,
+Declare late render or compute passes in `EffectGraph::after_opaque` with `AfterOpaquePass`. They run after opaque,
 sky and the optional stars, in contribution order, before temporal consumers and the pre-tone input.
-The late pass loads scene colour, motion and reactive attachments. Set `depth` to sample this frame's
+Each pass declares effect-local `accesses` with the same ranges and history bindings as simulate passes.
+A render pass loads scene colour, motion and reactive attachments. Local attachment or copy accesses are refused
+at preparation, since these callbacks use the scene's attachments. A compute pass records through
+`encode_after_opaque`, with `after_opaque_runs` selecting runtime skips; it writes declared private outputs.
+The same cadence and full-frame history rules apply. Set `depth` to sample this frame's
 reverse-Z depth at group 1 binding 0; depth storage follows the union of declared readers. Independently set
 `refraction` to sample the shared RGBA16Float scene-colour copy at group 1 binding 1. It contains opaque, sky
 and stars before any late effect. All refracting effects share one copy. A depth-only effect creates no copy;
@@ -33,7 +38,11 @@ the original render pass, so consumers should judge their measured cost when sel
 
 Create the late pipeline with the scene's view layout at group 0 and `AfterOpaquePass::input_layout` at
 group 1, then any owned bindings. The renderer prepares and binds both shared groups. `draw_after_opaque`
-sets the pipeline and owned groups and records draws. Compare sampled reverse-Z depth to the fragment's
+sets the pipeline and owned groups and records draws. Compute passes receive the same view and target inputs,
+including the view's inverse projection and extent; their outputs can feed a later history resolve and render
+composition. `examples/v1-game/src/effect/after_compute.rs` demonstrates trace → resolve → render → compute,
+including skips, discard and a final compute pass after the last colour writer.
+Compare sampled reverse-Z depth to the fragment's
 depth; a larger sampled value denotes a nearer opaque surface. A volume need not write depth.
 Output pre-exposed scene-linear colour in target 0, motion in target 1, reactive coverage in target 2.
 Motion is **previous pixel minus current pixel**, top-left origin, X right/Y down, in render pixels, from

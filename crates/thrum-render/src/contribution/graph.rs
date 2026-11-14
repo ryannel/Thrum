@@ -2,7 +2,8 @@
 
 use super::HistoryBinding;
 use crate::graph::{
-    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceScope,
+    Access, AccessKind, FrameGraph, Pass, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
+    ResourceScope,
 };
 use std::{collections::BTreeSet, ops::Range};
 
@@ -52,11 +53,68 @@ pub struct EffectGraph {
     pub resources: Vec<(ResourceDescriptor, ResourceScope)>,
     /// Ordered simulate passes.
     pub passes: Vec<EffectPass>,
+    /// Resources read by the fixed opaque draw callback. Late-only outputs stay out of forward.
+    pub opaque_reads: Vec<EffectAccess>,
     /// Render passes after the sky and stars, in contribution order.
     pub after_opaque: Vec<super::AfterOpaquePass>,
 }
 
+pub(crate) struct EffectResources {
+    pub(crate) opaque_reads: Vec<Access>,
+    pub(crate) simulate: Vec<usize>,
+    pairs: Vec<(ResourceId, ResourceId)>,
+}
+impl EffectResources {
+    pub(crate) fn accesses(&self, accesses: &[EffectAccess]) -> Vec<Access> {
+        accesses
+            .iter()
+            .map(|access| Access {
+                resource: if matches!(
+                    access.history,
+                    Some(HistoryBinding::Next | HistoryBinding::Result)
+                ) {
+                    self.pairs[access.resource].1.clone()
+                } else {
+                    self.pairs[access.resource].0.clone()
+                },
+                range: access.range.clone(),
+                kind: access.kind,
+                view: access.view,
+                store: true,
+            })
+            .collect()
+    }
+}
+
 impl EffectGraph {
+    fn declarations(
+        &self,
+    ) -> impl Iterator<Item = (Option<&str>, EffectCadence, bool, &[EffectAccess])> {
+        self.passes
+            .iter()
+            .map(|pass| {
+                (
+                    Some(pass.name.as_str()),
+                    pass.cadence,
+                    pass.async_eligible,
+                    pass.accesses.as_slice(),
+                )
+            })
+            .chain(std::iter::once((
+                None,
+                EffectCadence::EveryFrame,
+                false,
+                self.opaque_reads.as_slice(),
+            )))
+            .chain(self.after_opaque.iter().map(|pass| {
+                (
+                    Some(pass.name.as_str()),
+                    pass.cadence,
+                    false,
+                    pass.accesses.as_slice(),
+                )
+            }))
+    }
     /// Refuse declarations whose runtime skips could violate the compiled graph.
     /// # Errors
     /// Returns a named preparation error for a cadence, producer or binding misuse.
@@ -72,17 +130,49 @@ impl EffectGraph {
         }
         let mut names = BTreeSet::new();
         for pass in &self.after_opaque {
-            if !names.insert(&pass.name) {
-                return Err(format!("DuplicateEffectPass: {}", pass.name));
+            if pass.kind == super::AfterOpaqueKind::Render
+                && pass.accesses.iter().any(|access| {
+                    matches!(
+                        access.kind,
+                        AccessKind::AttachmentLoad
+                            | AccessKind::AttachmentClear
+                            | AccessKind::CopyRead
+                            | AccessKind::CopyWrite
+                    )
+                })
+            {
+                return Err(format!("AfterOpaqueUsesSceneAttachments: {}", pass.name));
+            }
+            if pass.kind == super::AfterOpaqueKind::Render
+                && pass.cadence != EffectCadence::EveryFrame
+            {
+                return Err(format!("CadenceRequiresRetainedOutput: {}", pass.name));
+            }
+            if pass.kind == super::AfterOpaqueKind::Compute
+                && pass.accesses.iter().any(|access| {
+                    matches!(
+                        access.kind,
+                        AccessKind::AttachmentLoad
+                            | AccessKind::AttachmentClear
+                            | AccessKind::CopyRead
+                            | AccessKind::CopyWrite
+                            | AccessKind::VertexRead
+                            | AccessKind::IndexRead
+                    )
+                })
+            {
+                return Err(format!("AfterOpaqueRequiresComputeAccess: {}", pass.name));
             }
         }
         let mut producers = vec![None; self.resources.len()];
-        for (index, pass) in self.passes.iter().enumerate() {
-            if !names.insert(&pass.name) {
-                return Err(format!("DuplicateEffectPass: {}", pass.name));
+        for (index, (name, cadence, async_eligible, accesses)) in self.declarations().enumerate() {
+            if let Some(name) = name
+                && !names.insert(name)
+            {
+                return Err(format!("DuplicateEffectPass: {name}"));
             }
-            for access in &pass.accesses {
-                if pass.async_eligible
+            for access in accesses {
+                if async_eligible
                     && matches!(
                         access.kind,
                         AccessKind::AttachmentLoad
@@ -93,7 +183,10 @@ impl EffectGraph {
                             | AccessKind::IndexRead
                     )
                 {
-                    return Err(format!("AsyncRequiresCompute: {}", pass.name));
+                    return Err(format!(
+                        "AsyncRequiresCompute: {}",
+                        name.unwrap_or("opaque reads")
+                    ));
                 }
                 let (_, scope) = self
                     .resources
@@ -107,19 +200,28 @@ impl EffectGraph {
                         | AccessKind::AttachmentLoad
                         | AccessKind::AttachmentClear
                 );
+                if name.is_none() && (writes || access.kind == AccessKind::CopyRead) {
+                    return Err("OpaqueReadRequiresReadAccess".into());
+                }
                 if writes
-                    && pass.cadence != EffectCadence::EveryFrame
+                    && cadence != EffectCadence::EveryFrame
                     && (!matches!(
                         scope,
                         ResourceScope::Persistent { .. } | ResourceScope::History { .. }
                     ) || matches!(access.kind, AccessKind::AttachmentLoad))
                 {
-                    return Err(format!("CadenceRequiresRetainedOutput: {}", pass.name));
+                    return Err(format!(
+                        "CadenceRequiresRetainedOutput: {}",
+                        name.unwrap_or("opaque reads")
+                    ));
                 }
                 if matches!(scope, ResourceScope::History { .. }) {
                     if writes {
-                        if pass.cadence == EffectCadence::TimeSliced {
-                            return Err(format!("TimeSlicedHistory: {}", pass.name));
+                        if cadence == EffectCadence::TimeSliced {
+                            return Err(format!(
+                                "TimeSlicedHistory: {}",
+                                name.unwrap_or("opaque reads")
+                            ));
                         }
                         if access.history != Some(HistoryBinding::Next) {
                             return Err("HistoryWriteRequiresNext".into());
@@ -138,8 +240,8 @@ impl EffectGraph {
                 }
             }
         }
-        for (index, pass) in self.passes.iter().enumerate() {
-            for access in &pass.accesses {
+        for (index, (_, _, _, accesses)) in self.declarations().enumerate() {
+            for access in accesses {
                 if access.history == Some(HistoryBinding::Result)
                     && producers[access.resource].is_none_or(|producer| producer >= index)
                 {
@@ -155,11 +257,11 @@ impl EffectGraph {
         graph: &mut FrameGraph,
         base: PipelineKey,
         keys: &mut BTreeSet<PipelineKey>,
-    ) -> Result<Vec<Access>, crate::synthetic::RenderError> {
+    ) -> Result<EffectResources, crate::synthetic::RenderError> {
         self.validate()
             .map_err(crate::synthetic::RenderError::Validation)?;
         let mut owners = std::collections::BTreeMap::new();
-        let resources = self
+        let pairs = self
             .resources
             .iter()
             .map(|(descriptor, scope)| {
@@ -179,6 +281,11 @@ impl EffectGraph {
                 Ok((previous, next))
             })
             .collect::<Result<Vec<_>, crate::graph::GraphError>>()?;
+        let mut resources = EffectResources {
+            pairs,
+            opaque_reads: Vec::new(),
+            simulate: Vec::new(),
+        };
         for (index, pass) in self.passes.iter().enumerate() {
             let key = PipelineKey {
                 role: 2000
@@ -191,63 +298,16 @@ impl EffectGraph {
                 name: format!("effect {index}: {}", pass.name),
                 scope: PassScope::View(1),
                 pipeline: Some(key),
-                accesses: pass
-                    .accesses
-                    .iter()
-                    .map(|access| Access {
-                        resource: if matches!(
-                            access.history,
-                            Some(HistoryBinding::Next | HistoryBinding::Result)
-                        ) {
-                            resources[access.resource].1.clone()
-                        } else {
-                            resources[access.resource].0.clone()
-                        },
-                        range: access.range.clone(),
-                        kind: access.kind,
-                        view: access.view,
-                        store: true,
-                    })
-                    .collect(),
+                accesses: resources.accesses(&pass.accesses),
                 external_side_effect: true,
             });
+            resources.simulate.push(id);
             if pass.async_eligible {
                 graph.mark_async_eligible(id);
             }
         }
-        let mut reads = Vec::new();
-        for ((descriptor, _), (_, result)) in self.resources.iter().zip(&resources) {
-            let (range, kind) = match descriptor {
-                ResourceDescriptor::Texture {
-                    layers,
-                    mips,
-                    usage,
-                    ..
-                } if usage.contains(wgpu::TextureUsages::TEXTURE_BINDING) => (
-                    0..u64::from(*layers) * u64::from(*mips),
-                    AccessKind::SampledRead,
-                ),
-                ResourceDescriptor::Buffer { bytes, usage }
-                    if usage.contains(wgpu::BufferUsages::UNIFORM) =>
-                {
-                    (0..*bytes, AccessKind::UniformRead)
-                }
-                ResourceDescriptor::Buffer { bytes, usage }
-                    if usage.contains(wgpu::BufferUsages::STORAGE) =>
-                {
-                    (0..*bytes, AccessKind::StorageRead)
-                }
-                _ => continue,
-            };
-            reads.push(Access {
-                resource: result.clone(),
-                range,
-                kind,
-                view: None,
-                store: true,
-            });
-        }
-        Ok(reads)
+        resources.opaque_reads = resources.accesses(&self.opaque_reads);
+        Ok(resources)
     }
 }
 

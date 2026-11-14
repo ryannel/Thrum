@@ -89,6 +89,7 @@ use thrum_render::{
 };
 fn declaration(scope: S, cadence: C) -> EffectGraph {
     EffectGraph {
+        opaque_reads: Vec::new(),
         after_opaque: Vec::new(),
         resources: vec![(
             D::Buffer {
@@ -259,4 +260,62 @@ fn async_eligibility_refuses_non_compute_accesses() {
             "AsyncRequiresCompute: producer"
         );
     }
+}
+
+#[test]
+fn late_passes_share_history_validation_and_refuse_unrecordable_accesses_at_preparation() {
+    use thrum_render::contribution::{AfterOpaqueKind as K, AfterOpaquePass};
+    let mut graph = declaration(
+        S::History {
+            owner: 1,
+            epoch: 1,
+            initialized: true,
+        },
+        C::EveryFrame,
+    );
+    let producer = graph.passes.remove(0);
+    let late = AfterOpaquePass {
+        name: "late producer".into(),
+        kind: K::Compute,
+        cadence: C::Skippable,
+        accesses: producer.accesses,
+        depth: true,
+        refraction: false,
+    };
+    graph.after_opaque.push(late.clone());
+    graph.validate().expect("late history producer");
+    let mut reader = late.clone();
+    reader.name = "late result".into();
+    reader.kind = K::Render;
+    reader.cadence = C::EveryFrame;
+    reader.accesses[0].kind = A::StorageRead;
+    reader.accesses[0].history = Some(H::Result);
+    graph.after_opaque.push(reader.clone());
+    graph.validate().expect("late result after producer");
+    graph.after_opaque.swap(0, 1);
+    assert_eq!(
+        graph.validate().expect_err("early result"),
+        "ResultBeforeProducer"
+    );
+    graph.after_opaque = vec![reader];
+    for kind in [
+        A::AttachmentLoad,
+        A::AttachmentClear,
+        A::CopyRead,
+        A::CopyWrite,
+    ] {
+        graph.after_opaque[0].accesses[0].kind = kind;
+        assert_eq!(
+            graph
+                .validate()
+                .expect_err("unsupported local render access"),
+            "AfterOpaqueUsesSceneAttachments: late result"
+        );
+    }
+    graph.after_opaque = vec![late];
+    graph.after_opaque[0].cadence = C::TimeSliced;
+    assert_eq!(
+        graph.validate().expect_err("partial late history"),
+        "TimeSlicedHistory: late producer"
+    );
 }

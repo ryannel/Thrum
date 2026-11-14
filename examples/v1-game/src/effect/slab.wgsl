@@ -25,5 +25,5 @@ struct Output { @location(0) colour:vec4<f32>, @location(1) motion:vec2<f32>, @l
     let tint=vec3(0.002,0.008,0.01)*f32(value%17u)/17.0;
     var motion=vec2(65504.0);
     if(params.offsets.z>0.0 && v.current.w>0.0 && v.previous.w>0.0){motion=(v.previous.xy/v.previous.w-v.current.xy/v.current.w)*vec2(0.5,-0.5)*aux.extent.xy;}
-    return Output(colour(at,tint),motion,select(1.0,0.35,params.offsets.z>0.0));
+    return Output(colour(at,tint,v.position.z),motion,select(1.0,0.35,params.offsets.z>0.0));
 }

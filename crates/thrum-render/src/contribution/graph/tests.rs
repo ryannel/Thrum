@@ -10,6 +10,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
         history: Some(history),
     };
     let mut effect = EffectGraph {
+        opaque_reads: vec![access(AccessKind::StorageRead, HistoryBinding::Result)],
         after_opaque: Vec::new(),
         resources: vec![(
             ResourceDescriptor::Buffer {
@@ -67,7 +68,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
             &mut keys,
         )
         .expect("effect declaration");
-    assert_eq!(reads.len(), 1);
+    assert_eq!(reads.opaque_reads.len(), 1);
     let compiled = graph
         .compile(1, &keys)
         .expect("distinct history sides compile without in-pass aliasing");

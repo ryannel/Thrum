@@ -35,10 +35,17 @@ def selected_image(folder):
                                           runtime['writer_result']['Ok']['frame_sha256'])) as frames:
         raw = next(frames)
     png(folder / 'selected.png', raw, *manifest['extent'])
+    decoded = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(folder / 'selected.png'),
+                                       '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'])
+    if hashlib.sha256(decoded).digest() != hashlib.sha256(raw).digest():
+        raise ValueError('selected PNG does not preserve submitted bytes')
     row = {'file': 'selected.png', 'rgba_sha256': hashlib.sha256(raw).hexdigest(),
            'submission': manifest['records'][0], 'source_revision': manifest['source_revision'],
-           'binary_sha256': manifest['binary_sha256'], 'mode': 'fixed', 'extent': manifest['extent']}
+           'binary_sha256': manifest['binary_sha256'], 'mode': 'fixed', 'extent': manifest['extent'],
+           'source_archive_identity': manifest['lossless_source_archive'],
+           'bulk_release': 'All source hashes verified; fixed selected PNG decoded exactly. Full interval is not retained or claimed as motion proof.'}
     (folder / 'selected.json').write_text(json.dumps(row, indent=2) + '\n')
+    (folder / manifest['spool_file']).unlink()
     return row
 
 

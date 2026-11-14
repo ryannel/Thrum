@@ -60,6 +60,14 @@ impl SceneContribution for SceneContributions {
                     access.resource += offset;
                 }
             }
+            for access in declaration.opaque_reads.iter_mut().chain(
+                declaration
+                    .after_opaque
+                    .iter_mut()
+                    .flat_map(|pass| pass.accesses.iter_mut()),
+            ) {
+                access.resource += offset;
+            }
             let mut owners = std::collections::BTreeMap::new();
             for (_, scope) in &mut declaration.resources {
                 if let crate::graph::ResourceScope::Persistent { owner, .. }
@@ -70,6 +78,7 @@ impl SceneContribution for SceneContributions {
                 }
             }
             graph.resources.extend(declaration.resources);
+            graph.opaque_reads.extend(declaration.opaque_reads);
             graph.passes.extend(declaration.passes);
             for pass in &mut declaration.after_opaque {
                 pass.name = format!("effect {member}: {}", pass.name);
@@ -96,6 +105,33 @@ impl SceneContribution for SceneContributions {
         for (entry, count) in self.entries.iter().zip(self.after_counts.iter().copied()) {
             if index < count {
                 entry.draw_after_opaque(index, pass, frame);
+                return;
+            }
+            index -= count;
+        }
+    }
+    fn after_opaque_runs(&self, mut index: usize, frame: &ContributionFrame) -> bool {
+        for (entry, count) in self.entries.iter().zip(self.after_counts.iter().copied()) {
+            if index < count {
+                return entry.after_opaque_runs(index, frame);
+            }
+            index -= count;
+        }
+        false
+    }
+    fn encode_after_opaque(
+        &mut self,
+        mut index: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        for (entry, count) in self
+            .entries
+            .iter_mut()
+            .zip(self.after_counts.iter().copied())
+        {
+            if index < count {
+                entry.encode_after_opaque(index, pass, frame);
                 return;
             }
             index -= count;
