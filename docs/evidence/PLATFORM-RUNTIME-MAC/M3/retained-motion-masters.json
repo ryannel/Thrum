@@ -1,0 +1,12 @@
+[
+  {
+    "path": "tmp/mac-m3/v1-game",
+    "bytes": 11251792,
+    "sha256": "5ee819346927e2e48def9c0e4ddf701a6d9617cfc873640242ca40033b48f1ea"
+  },
+  {
+    "path": "tmp/mac-m3/motion/session/frames.zst",
+    "bytes": 580991261,
+    "sha256": "760665fe0948ef04f01d446e2160f67ff26257dfe5610b545b81d299a6dda795"
+  }
+]

@@ -1,0 +1,77 @@
+[
+  {
+    "submission_id": 239,
+    "offset": 0,
+    "rgba_sha256": "a865b1e6fc6765f6d4dec2190328d70f12d3d0ba9a6018f724659934c8ebb588",
+    "submit_ns": 0,
+    "yaw": 0.0,
+    "full": "full-0.png",
+    "crop": "crop-0.png",
+    "crop_xywh": [
+      0,
+      360,
+      960,
+      540
+    ]
+  },
+  {
+    "submission_id": 419,
+    "offset": 1492992000,
+    "rgba_sha256": "106d41b6c24b0f8ac73a83dd9ddf4eca83150092ba3ed6a0ef27de15db379500",
+    "submit_ns": 1504506500,
+    "yaw": 9.049986839294434,
+    "full": "full-1.5.png",
+    "crop": "crop-1.5.png",
+    "crop_xywh": [
+      0,
+      360,
+      960,
+      540
+    ]
+  },
+  {
+    "submission_id": 479,
+    "offset": 1990656000,
+    "rgba_sha256": "689665b1968011d7c05d796935adb92f2d4cab022e09687dc0eff19b361a4b7b",
+    "submit_ns": 2003333916,
+    "yaw": 18.049991607666016,
+    "full": "full-2.png",
+    "crop": "crop-2.png",
+    "crop_xywh": [
+      0,
+      360,
+      960,
+      540
+    ]
+  },
+  {
+    "submission_id": 539,
+    "offset": 2488320000,
+    "rgba_sha256": "8f4abd98f38343aaddab7dbd233f0670746568384a9f93340e6c058d4eca99aa",
+    "submit_ns": 2503564000,
+    "yaw": 27.04999542236328,
+    "full": "full-2.5.png",
+    "crop": "crop-2.5.png",
+    "crop_xywh": [
+      0,
+      360,
+      960,
+      540
+    ]
+  },
+  {
+    "submission_id": 659,
+    "offset": 3483648000,
+    "rgba_sha256": "85ea3ba193209eece43900842400319b6e568e42c147fcabcf8def92170053c8",
+    "submit_ns": 3501051750,
+    "yaw": 35.9999885559082,
+    "full": "full-3.5.png",
+    "crop": "crop-3.5.png",
+    "crop_xywh": [
+      0,
+      360,
+      960,
+      540
+    ]
+  }
+]
