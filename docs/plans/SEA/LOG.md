@@ -149,3 +149,10 @@ combined source. The merge gate runs the full repository check again.
   [attempt metadata](../../evidence/SEA/M2-disk-attempt.json.gz) and cleaned only
   owned cooked scratch and 2.3 GiB of build output. The helper now allows 2 GiB
   of build headroom above the observer's unchanged floor. M2.8 remains open.
+- 2026-11-14 M2.8's complete exact verifier passed on `da942df9`: both native
+  matrices and all four Chrome sets, with no retained image changed. The
+  [baseline record](../../evidence/SEA/M2-baselines.json) retains source identity,
+  artifact hashes, comparison counts and elapsed time. All nine builder items
+  now have target evidence; the milestone remains `in_progress` for the lead's
+  checks. The rebase changed no sea or renderer source. Final gated integration
+  follows this evidence checkpoint.
