@@ -71,78 +71,6 @@
         "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
         "at": "2026-11-14T00:03:20Z"
       }
-    },
-    "M3": {
-      "definitions": "94b613f0b2b27f960184f7828b7cbc63d3e90518437a0deb58c27568aa656d4b",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "The design review of SEA at docs/evidence/SEA/design-review.md asked for changes. Resolve its 5 Must Fix findings in the",
-        "at": "2026-11-13T22:58:14Z"
-      }
-    },
-    "M4": {
-      "definitions": "0324531e4b3ae574beacccb016517a202be5515f3561324f13bc924ef86d1b07",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
-    },
-    "M5": {
-      "definitions": "169613b4503756fb3bac3d654639db9ea33ba1caff5260a803c78cbb625e9b32",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
-    },
-    "M6": {
-      "definitions": "b1fa9ebcc494345632810c6729e1ef1427aa171d8c8213325f25e8859b6ce960",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
-    },
-    "M7": {
-      "definitions": "6d6624c54e2b7762052036214f2d15fd25421858f3952560c4bd8c2a644b1659",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
-    },
-    "M8": {
-      "definitions": "10017f28d5d6a3ac8e6b0a2ddf75e3b64a84fc22598ef3bc0981b608260174f8",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "The design review of SEA at docs/evidence/SEA/design-review.md asked for changes. Resolve its 5 Must Fix findings in the",
-        "at": "2026-11-13T22:58:14Z"
-      }
-    },
-    "M9": {
-      "definitions": "88fd0c041eb62e6635509f38af92f89af6fcb24aea0732b0181a3a2279916f39",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
-    },
-    "M10": {
-      "definitions": "75e6bd5cca02f73796b1bd350977794f9faa53ab42f6265f325e3f1c76ba5364",
-      "reviews": [],
-      "authorised": {
-        "by": "plan",
-        "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
-        "at": "2026-11-14T00:03:20Z"
-      }
     }
   },
   "briefs": [
@@ -157,11 +85,15 @@
     {
       "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But we should make sure that it aligns with the approach we want. But yes, you can copy that code out and reuse as is if it's useful.\" Then: \"We can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate design.\" Then, on clouds: \"So in broadsides you will find both a procedural cloud setup as well as pre-baked clouds. The idea being that we could support both those two sky types as well as a hybrid as needed by the game being built.\" And then: \"That's the approach we were going with in broadsides that might not be the right approach here. The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine. Maybe that's a flexible set of cloud capabilities built from what we did in broadsides, maybe it isn't, but it should start from first principles.\" Lead's reading, to record as assumptions: the owner's last words govern; the existing SEA design and docs/design/decisions/SEA-AND-CLOUD-PORT.md describe the Broadsides approach and are inputs to judge, not constraints; Broadsides code, shaders and assets may be copied and reused as is wherever the design you arrive at finds them useful, and Broadsides itself stays unmodified. Settle the best SEA for the Thrum engine, keep or change the current design accordingly and say why, and update the port decision to match what you decide. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
       "at": "2026-11-14T00:03:20Z"
+    },
+    {
+      "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.\" Earlier the same day: \"The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine.\" SEA today plans only an open sea; inland water lives in older designs (docs/design/modules/WATER*.md, docs/design/decisions/E1-GPU-WATER.md) with no module planned. From first principles, design Thrum's water as one cohesive system covering every body of water a game needs, and settle how the modules, plan and build order carry it (renaming or splitting SEA if that is right). Treat the existing designs and Broadsides as evidence, not constraints. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
+      "at": "2026-11-14T01:49:07Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T00:03:20Z"
+    "at": "2026-11-14T01:49:07Z"
   },
   "design_history": [
     {

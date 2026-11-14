@@ -1,0 +1,115 @@
+{
+  "module": "WATERS",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "87a32024fbe7141c10b92ba32946092bff51c72458101cbbbb8cd377a9f472a2",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M2": {
+      "definitions": "8451afef013a43df9cf559c460bcbf29f9171a6223a5806d9d2dfa105cf325d2",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M3": {
+      "definitions": "68620417cf08292c68ff620d9fee175250c3155adc6a7f99c2ca85c3e0592cf1",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M4": {
+      "definitions": "643e52700c9073401fa22095f22152e971ac7c89eabfbdfec79e31e88389be1c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M5": {
+      "definitions": "8d5bc4a7910d55ee1b9e850013aa1414647370f8bde13d840b2ea10f34ccef74",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M6": {
+      "definitions": "ed89eb4b2dd35f36711a1425cd49188aebc16e16582cf76ff09422d65c3f601b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M7": {
+      "definitions": "4e87615d24ab088343157f7daff1b0d28f40ad7c23c2382d11b718a6a00b81bf",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M8": {
+      "definitions": "2bbb47597ae67d07de0cc3888181d862e2509947384f850a382c5a206c9f219d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M9": {
+      "definitions": "4f040d303e073ffa9cbef3d3478cd4b93f86dcd61cdd3f791cb3be435542a2c7",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M10": {
+      "definitions": "fb0712597ffff0a06707ab0538e08d938c33ded107582178fd29bbd813c8f0cc",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    },
+    "M11": {
+      "definitions": "2d3c793fc4b3cd4885ca44d10f3e35d9e1cfdd6275d5babf1db24dee5ae2e929",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
+        "at": "2026-11-14T01:49:07Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.\" Earlier the same day: \"The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine.\" SEA today plans only an open sea; inland water lives in older designs (docs/design/modules/WATER*.md, docs/design/decisions/E1-GPU-WATER.md) with no module planned. From first principles, design Thrum's water as one cohesive system covering every body of water a game needs, and settle how the modules, plan and build order carry it (renaming or splitting SEA if that is right). Treat the existing designs and Broadsides as evidence, not constraints. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
+      "at": "2026-11-14T01:49:07Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-14T01:49:07Z"
+  }
+}
