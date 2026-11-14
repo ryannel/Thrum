@@ -70,11 +70,11 @@
     },
     "EFFECT_GRAPH_seam": {
       "implementation": "M3_after_opaque_render_and_compute_requests_async_metadata_quality_controls_implemented;_integration_pending",
-      "functional_validation": "9096b368_submitted_slab_command_passed_on_both_Metal_recipes:_depth_union_shared_copy_current_occlusion_refraction_pixels_unjittered_motion_reset_device_replacement_discard_and_late_compute_history_composition;_remaining_native_cadence_async_and_Chrome_commands_pending",
+      "functional_validation": "50e9063f_native_M3.1-M3.4_commands_passed:_depth_union_shared_copy_current_occlusion_refraction_pixels_unjittered_motion_reset_device_replacement_discard_late_compute_history_composition_async_refusals_absent_graph_snapshots_and_quality_invalidation_GPU_readbacks;_compiled_async_metadata_and_order_unit_passed;_Chrome_submitted_inputs_passed_fixed_capture_pending",
       "experienced_quality": "builder_inspected_four_T2_fixed_native_noon_night_whole_frames_and_native_size_crossings_on_both_recipes;_Chrome_and_independent_review_pending;_reconstructed_motion_not_claimed",
       "platform_performance": {
         "mac": "twelve_capture_OFF_paired_arms_on_9096b368;_depth_boundary_brackets_0.992-1.109ms_copy_plus_boundary_1.020-1.131ms;_raw_named_pass_sum_copy_minus_depth_66-90us;_load_retained;_bracket_differences_have_both_signs_no_isolated_transfer_cost_speedup_or_frame_latency_claim",
-        "browser": "final_source_WebGPU_function_and_fixed_capture_pending;_no_performance_claim",
+        "browser": "50e9063f_submitted_inputs_passed;_fixed_T2_capture_pending_after_authored_camera_fixture_correction;_no_performance_claim",
         "ios": "not_targeted"
       },
       "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate.",

@@ -211,10 +211,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
@@ -223,10 +223,10 @@
           "lock": "gpu",
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",

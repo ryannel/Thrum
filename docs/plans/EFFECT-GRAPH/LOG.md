@@ -1,5 +1,11 @@
 # EFFECT-GRAPH log
 
+- 2026-11-14 The rebased `50e9063f` batch passes native M3.1–M3.4, including quality invalidations and named
+  not-run timing. Chrome's submitted inputs pass; its fixed capture refused the diagnostic route's rounded
+  initial eye. Corrected the fixture to the exact authored eye and orientation and checked both keys against
+  that camera. [Retained proof](../../evidence/EFFECT-GRAPH/M3-proof.md) records the passes and actual refusal;
+  full Chrome inspection, exact baselines, repository gate and integration remain pending.
+
 - 2026-11-14 Rebased the private M3 branch onto main `145cadb2` before final qualification. Incoming changes
   affect documentation and Mac qualification scripts. Git confirms native-proof source `9096b368` has the
   same crates, V1 game, M3 checker/campaign and engine-capture drivers. Replaced the still-queued individual
