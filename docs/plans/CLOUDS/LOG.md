@@ -137,3 +137,12 @@
   lobe. Part G gives those figures again: the reference lobe is 60 times too dim at half a degree, not 46. The
   supplemental of Jendersie and d'Eon was read, sections 2 and 3.1. Plan notes were shortened to hold the plan
   under its word limit; no milestone's scope changed beyond the items named above.
+
+- 2026-11-14 M1 builder implemented the renderer-free CPU weather authority, directed footprints and volume
+  paths, density/conformance references, and point/disc optics. [Evidence](../../evidence/CLOUDS/M1.md) and
+  [phase measurements](../../evidence/CLOUDS/M1-phase.md) distinguish the numerical proofs from later visuals.
+  On `e9a7620e`, all 14 automated item checks passed; provenance was inspected with no Broadsides file copied.
+  The exact verifier reported `PASS exact baselines` in 922.90 seconds: native matrices passed 38 and 4
+  comparisons, and each Chrome day/night SDR/scene-linear set passed all 481 records. Its covered-content key
+  was `2a88ba9a92a09c95374b0cc5bfd0480b4b7782eb3c4e2a10dea1553a98c77c8f`. The build script retains complete
+  check outputs under shared Git check key `1190e26f38e7ca52478fa707`. No cloud visual or performance claim follows.
