@@ -38,8 +38,8 @@
           "statement": "`GameRuntime` has one publication model, the engine's page. The game-authored capture path, the state only that path used and the rewind patch callbacks are gone, and the V1 game passes no patch closure. The engine's own deferred publication keeps its undo preimages and previous poses.",
           "ask": "Is there any path left by which a game fills a page itself, or any branch on whether the engine captures? Do `thrum-core`'s runtime tests build their fixtures on the engine page? If `PublicationPage::patch_rewind` remains, what in the engine calls it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md",
           "verdict": "",
           "review": ""
         },
@@ -49,8 +49,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test rewind_publication && cargo test --locked --offline -p v1-game --test simulation",
           "ask": "Read the new test. Does it compare whole pages, byte for byte, and does it cover a rewind that lands while a publication is deferred?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/core-tests.log; docs/evidence/REVIEW-ENGINE/M1/simulation.log",
           "verdict": "",
           "review": ""
         },
