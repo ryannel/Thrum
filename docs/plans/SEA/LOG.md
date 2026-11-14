@@ -125,3 +125,16 @@ combined source. The merge gate runs the full repository check again.
   the [cost record](../../evidence/SEA/M2-cost.md) explains the estimate overruns.
   No surface or integrated performance is claimed. Exact baseline qualification
   and final integration are being completed separately.
+- 2026-11-14 Resumed M2 and completed all three Metal integration targets and the
+  library tests at `4b1fbfa8`. The integration script rebased the work to
+  `4372f847`, then refused integration because its exact-baseline proof was
+  absent. The rebase changed none of the sea crates, their renderer dependency
+  or workspace dependencies; the ambient target also passed again at `4372f847`.
+  The first verifier attempt at that source stopped at native route-motion
+  capture: Metal was correct, but the interval was incomplete, with 153 readback
+  ring omissions and zero writer omissions. Its compact diagnostic archive is
+  `tmp/sea-m2/baseline-first-failure.json.gz`; disposable pixels were removed
+  after preserving the metadata. This identifies the rejected completion
+  condition, not the cause of the omissions. The complete scripted M2 check is
+  background job `20261114-054946-45357`; it remains queued between target checks
+  and includes another baseline attempt. No baseline reference was changed.
