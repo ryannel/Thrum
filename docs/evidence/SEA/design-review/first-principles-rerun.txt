@@ -1,0 +1,19 @@
+Downloading numpy (5.2MiB)
+ Downloaded numpy
+Installed 1 package in 14ms
+Part F: phase after 24 hours
+  wavelength 20.00 m  omega  1.756  cycles/loop   286  speed change 0.0376%  f32 seconds 0.0170 rad  loop phase 7.04e-07 rad
+  wavelength  9.00 m  omega  2.617  cycles/loop   427  speed change 0.1163%  f32 seconds 0.0214 rad  loop phase 8.45e-07 rad
+  wavelength  2.00 m  omega  5.551  cycles/loop   905  speed change 0.0274%  f32 seconds 0.0380 rad  loop phase 1.59e-06 rad
+  wavelength  0.40 m  omega 12.414  cycles/loop  2023  speed change 0.0043%  f32 seconds 0.1178 rad  loop phase 3.18e-06 rad
+  wavelength  0.07 m  omega 29.674  cycles/loop  4836  speed change 0.0021%  f32 seconds 0.2556 rad  loop phase 7.29e-06 rad
+  worst: f32 seconds 0.256 rad, loop phase 7.29e-06 rad
+Part G: display time and query carry, as a share of the wave's amplitude
+  wavelength   blend of endpoints 1 tick apart   evaluated at display time   carry 2 ticks   carry 3 ticks
+    150.0 m     0.0014%                         0                             0.023%         0.051%
+     20.0 m     0.0107%                         0                             0.171%         0.385%
+      9.0 m     0.0238%                         0                             0.380%         0.856%
+      2.0 m     0.1070%                         0                             1.711%         3.844%
+      0.4 m     0.5346%                         0                             8.520%        19.057%
+  texture reads a sea pixel makes for the ambient layers: one set when they are evaluated at the
+  display's time, two sets when two tick endpoints are blended in the surface pass.

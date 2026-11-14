@@ -1,153 +1,151 @@
 # SEA design review
 
-**Design approved, with one Suggestion and no Must Fix findings.** Reviewed commit
-`7c7744bb5a632ad26c9376b4d2a8746f2a5f399b`, 14 November 2026, against the previous review at
-`53767d79505df0d3ed7be9edc1553c4a7fb0c0c7`.
+**Design approved, with two Suggestions and no Must Fix findings.** Reviewed commit
+`25345e8f99772193380689ccb89eb38827e4a589`, 14 November 2026, against the design review at
+`7c7744bb5a63`.
 
-The revised design does what the human asked for: a reusable Mac and Chrome sea with the brief's S1–S7,
-shared lighting, asynchronous body queries, physical wakes, persistent foam, controls and reconstruction
-proofs. It keeps sea outside the V1 exit and respects the owner's performance policy. All five previous
-Must Fix findings are resolved. This approves the design and its acceptance criteria; it does not qualify
-running water, visual quality or device performance.
+The revised SEA design serves the human's request as the wave-field part of the wider water system.
+The owner asked for cohesive water including puddles, rivers, waterfalls, streams and lakes, and the
+planner task explicitly allowed splitting the module. SEA now supplies the CPU model and GPU ambient
+waves; WATERS owns their readers and the common surface, query, interaction waves, foam and optics.
+RIVERS and PUDDLES have explicit module briefs, consumers and build order in ARCHITECTURE. This is a
+justified division of work, not a deletion of the original sea deliverable. It leaves water outside
+the V1 exit and keeps measured performance separate from numeric admission gates.
 
-**S4 — Suggestion, verified evidence limitation: distinguish the foam transfer proof from the complete hitch proof.**
+This verdict approves SEA's design and acceptance criteria. It does not approve all of WATERS' new
+mechanisms, design the later river and puddle modules, or qualify running water, visuals or performance.
 
-[DESIGN.md](../../plans/SEA/DESIGN.md), lines 314–344, and M7.11 in
-[DONE.json](../../plans/SEA/DONE.json) describe transfers, bounded births and transport during a hitch.
-Part D of [revision_proof.py](design-proof/revision_proof.py) exercises only the source-free, unsaturated
-linear transfer chain. It contains neither the full-cover loss rule, births, drift nor spreading. Its
-long-step equality therefore establishes the transfer result for those inputs, not equality of the complete
-foam update. Near full cover, surfacing air introduces the additional bounded transfer that the linear
-matrix alone does not represent.
+**S5 — Suggestion, verified wording ambiguity: give the new rate-of-change comparison its units.**
 
-Keep that distinction explicit when implementing and recording M7.11: judge the composed update against the
-reference with active births and transport, including cover near one, and identify its numerical tolerance.
-This is sharper proof coverage, not a build blocker: M7.11 already requires births and drift to agree with
-the reference, M7.1 requires bounded cover, and the design states where excess surfacing air goes. No new
-mechanism or more prescriptive test procedure is requested.
+SEA M2.2 in [DONE.json](../../plans/SEA/DONE.json), lines 134–137, adds rate of change to the cascade
+comparison but describes the largest difference as a share of the band's RMS height. Displacement is
+in metres; its time derivative is in metres per second. Consequently one dimensionless percentage of
+height does not specify both error measures. [DESIGN.md](../../plans/SEA/DESIGN.md), lines 150–151,
+makes that derivative an input to motion, query carry and reduced cadence, so its measurement should
+remain interpretable by those consumers.
 
-**Previous Must Fix findings, checked against the revised assembly**
+When recording the measured bound, name the derivative's units and its normalization separately, or
+state the time interval over which derivative error is converted to displacement error. The existing
+independent f64 comparison and long-session wrong-phase rejection remain useful and judgeable; this
+is a clarification of the measurement, not a request for another mechanism or a blocking test campaign.
 
-- **MF1 — Resolved: numeric performance gates override the approved brief.** DESIGN lines 557–570 now
-  explicitly separate measured figures from admission. The check fails for missing measurements or an
-  uninvestigated tripwire, not for crossing a timing threshold. PLAN's M3 no longer stops later building
-  on frame cost. M3.6, M6.8, M7.9, M8.7, M9.10 and M10.5 all require paired records and investigation and
-  explicitly exclude a numeric verdict. The full-refresh ambition, visual smoothness and M10.6's attended
-  presentation witness remain. This matches project-brief decision 3 and the owner's performance decision.
+**S4 — Suggestion carried forward, verified evidence limitation: distinguish foam transfer from the complete hitch update.**
 
-- **MF2 — Resolved: body rectangles do not define the region receiving their reflections.** DESIGN lines
-  379–414 distinguish source rectangles from receiving rectangles, construct reflection/refraction volumes,
-  project them into a receiving mask and trace from receiving sea pixels into the gathered source. Reach,
-  slope allowance, fading and off-screen fallback are explicit. The old counterexample is covered: the
-  2 m body at 20 m, viewed from 2 m, has a receiving vertical interval approximately `[-0.205, 0]`, which
-  contains the reflected image outside its direct silhouette. Part C's 36 ray cases report zero missed
-  receivers, including reflected hits outside the source rectangle. M8.3 now requires a whole reflection;
-  M8.5 tests receiving coverage independently against CPU rays. M8.7 records the potentially large gale
-  mask with zero, one and nine bodies. The plan discloses the registered-body, 64 m reach and 20° normal
-  limits as an assumption rather than quietly promising general scene reflection.
+The previous review's S4 now belongs to WATERS M7.13, formerly SEA M7.11.
+[WATERS' design](../../plans/WATERS/DESIGN.md), lines 533–545, preserves the transfer chain and the
+full-cover loss rule. Part D of [revision_proof.py](design-proof/revision_proof.py) still exercises
+the source-free linear transfer chain, without bounded births, saturation, drift or spreading.
+Its long-step equality is evidence for that chain, not the entire composed foam update.
 
-- **MF3 — Resolved: the gathered colour is not the physical radiance used in the optics equation.** DESIGN
-  lines 416–447 now invert the forward pass's exposure and camera-path transport before the sample enters
-  water composition. The gather's storage scale and the surface's inverse scale are stated. I checked the
-  producer in [synthetic.wgsl](../../../crates/thrum-render/src/synthetic.wgsl), its clear and shadowed aerial
-  variants, and [ATMOSPHERE's lent operations](../../plans/ATMOSPHERE/DESIGN.md#environment-identity-and-products).
-  The clear-path inverse matches the existing producer. The reflected short air segment, camera-direction
-  radiance, vertical submerged illumination, shadowed in-scatter and clamped storage are declared
-  approximations; the design no longer claims that ATMOSPHERE supplies an arbitrary reflected segment.
-  Part E recovers stored colour 1.142 instead of 0.354 from the raw copy or 1.001 from exposure-only
-  correction. New M8.9 requires an independent CPU expectation, two exposure scales and a distant case
-  that rejects both wrong substitutes. Existing visual optics items still judge the resulting appearance.
+Keep this distinction in the eventual implementation evidence: WATERS M7.13 already requires births
+and transport to agree with the reference, and M7.1 requires bounded cover. The composed comparison
+should state its tolerance and include active births and cover near one. The migration has not removed
+that obligation, and this remains a Suggestion rather than a new blocker for SEA.
 
-- **MF4 — Resolved: alternating banks cannot supply the promised consecutive endpoints after skipped ticks.**
-  DESIGN lines 142–188 now promise the last two committed updates, each timestamped, and blend across
-  their actual span. After ticks 9 and 10 followed by tick 12, the banks are 10 and 12; at alpha 0.5 the
-  weight is 0.75, not an invented tick-11 endpoint. Full frames seed both banks, captures preserve them,
-  and discarded frames commit nothing. This matches EFFECT-GRAPH's state table and `EffectState`'s
-  capture/submission rules. The design declares the interpolation error and an eight-tick catch-up bound
-  with counted dropped ticks. M2.4 and M4.2 follow the new table; new M6.10 and M7.11 cover stateful wake
-  and foam lifecycle. The ordinary two-presentations-per-tick interpolation remains, and M3/M9 still
-  require submitted motion and visual stability. This is an explicit bounded approximation rather than
-  an impossible claim that the missing endpoint exists.
+**Previous review findings**
 
-- **MF5 — Resolved: M7.1 forbids the stock transfers it requires.** DESIGN lines 314–327 and M7.1 now allow
-  recipients to rise, constrain film plus yield-weighted air inventory, name the sink and require eventual
-  disappearance. The independent closed-form expectation must reject simple decay of each stock. Part D
-  shows fresh film becoming aged film: at 6 seconds fresh is about 0.368, aged about 0.533 and inventory
-  about 0.901. Recipient growth and falling total inventory are compatible. The impossible per-stock
-  monotonicity requirement is gone; S4 above concerns the scope of the additional hitch evidence.
+The latest review approved the design and had no unresolved Must Fix. I checked that the five earlier
+fixes it recorded survive the revision, including where their ownership moved.
 
-The earlier Suggestions were also taken. **S1** is addressed by distinguishing free propagation from forcing
-and border damping, selecting the eight-tick bound and adding M6.10. Its measured 0.63% periodic-hitch error
-belongs to the proof's single 256 × 0.5 m level and moving Gaussian source; it is not a GPU or coupled-hull
-qualification. **S2** is addressed by normalizing query answers to a requested use tick, retaining the source
-state tick and extrapolating a late use only from that use tick (DESIGN lines 245–255; M5.1–M5.2).
-**S3** is addressed by shortening inspection procedures while keeping capture modes, cues and operating ranges;
-DESIGN lines 599–603 retain the shared extent, native-size viewing and consecutive motion at 1x.
+| Earlier finding | Result in this revision |
+|---|---|
+| **MF1 — numeric performance gates override the approved brief** | Remains resolved. SEA's cost account, lines 227–242, labels estimates and says no timing figure decides an item. M2.7 records per-frame pass costs and requires causes for overruns. The paired whole-frame records and tripwire investigations moved to WATERS M2.7, M6.12, M7.12, M8.10, M10.11 and M11.5; numeric timing admission did not return. |
+| **MF2 — body rectangles do not define the region receiving their reflections** | The correction moved to WATERS' optics: source rectangles and receiving rectangles remain distinct, with the reflected and refracted volumes and bounded fallback. WATERS M8.4 requires whole reflected bodies; M8.7 retains the independent CPU-ray coverage question, including a reflection outside its source rectangle. Wider scene gathering is an intentional inland-water addition, not a return to silhouette-only receiving coverage. |
+| **MF3 — the gathered colour is not the physical radiance used in the optics equation** | The inverse of exposure and camera aerial transport, storage scale, and declared approximations remain in WATERS' optics. M8.8 retains the independent expected-colour question, sixteenfold exposure separation and distant panel that reject both raw-copy and exposure-only substitutes. |
+| **MF4 — alternating banks cannot supply the promised consecutive endpoints after skipped ticks** | SEA no longer promises ambient endpoints: M2.4 requires recomputation at each frame's display time. WATERS retains timestamped last-committed endpoints for wake and foam, interpolation over their actual span, bounded catch-up and counted dropped ticks. M6.13 and M7.13 explicitly cover those endpoints and lifecycle. No missing tick is invented. |
+| **MF5 — M7.1 forbids the stock transfers it requires** | WATERS M7.1 preserves recipient growth, falling total film plus yield-weighted air inventory, bounded cover and eventual disappearance. Its independent closed-form question still rejects decay of each stock in isolation. S4 above remains the narrower evidence issue. |
+
+The earlier S1 catch-up/source-path requirements remain in WATERS M6.13. S2's normalization to the
+requested use tick remains in WATERS M5.1–M5.2, now with separate source times for the frame-evaluated
+cascades and tick-stepped wake. The bounded cascade prediction error is explicitly disclosed. S3's
+visual inspection scope was not replaced by numerical field checks: the moved milestones retain
+submitted imagery and motion inspections on Mac and Chrome.
 
 **Changed-item audit**
 
-I read every current item (89 across ten milestones), compared the previous and current criteria, and checked
-all 38 changed or added items named in the request. The table groups items only where the assessment is the same.
-Each remains judgeable at its milestone, subject to the dependencies and the already-disclosed M10 readiness
-check for the future governor and MetalFX milestones.
+I read all 18 current SEA items, compared the changed criteria with the reviewed base, and read every
+removed milestone's statements and quality bar against its destination in WATERS. M1's planner-written
+criteria are unchanged; its completed status is a separate milestone result, not a finding of this review.
 
-| Changed or added items | Assessment against the earlier review and the request |
+| Changed criterion | Assessment |
 |---|---|
-| M2.4; M4.2 | MF4: state assertions now use timestamped committed endpoints and the declared lifecycle table on Metal and Chrome. |
-| M3.2, M3.3, M3.5 | S3: near water, vista, shared lighting and motion inspections retain their cues and modes. The first-frame lighting inspection is no longer relied on to prove the later gather conversion. |
-| M3.6 | MF1: first-frame paired measurement and investigation replace the numeric gate. |
-| M4.3, M4.4 | S3: Chrome visual parity and temporal observation remain; browser callback intervals remain labelled separately from presentation. |
-| M5.1, M5.2 | S2: use-time normalization and a single late extrapolation are explicit. Same-tick cascade accuracy stays separate from prediction error. |
-| M5.5 | S3: rest, 5 and 15 m/s, trade wind and gale, chase and side views remain. |
-| M6.5, M6.6 | S3: two speeds, turn, stop/restart, spreading, floater response and moving-window seams remain. |
-| M6.8 | MF1: paired wake cost and investigation replace the numeric gate. |
-| M6.10 (new) | MF4/S1: bounded multi-tick forcing, dropped ticks, resets, discard and capture are testable; the held-at-last-position substitute must fail. |
-| M7.1 | MF5: transfer accounting permits recipients to rise and rejects independent decay. |
-| M7.5, M7.6 | S3: wind range, two heights, cap persistence, pattern repeat, hull/stern appearance and the minute-long source-off trail remain. |
-| M7.9 | MF1: paired foam cost and investigation replace the numeric gate. |
-| M7.11 (new) | MF4: foam catch-up and lifecycle now have acceptance coverage. S4 above identifies the narrower scope of the design's preliminary proof. |
-| M8.1, M8.2 | S3: hours, winds, view heights, two submerged depths and thin-crest lighting remain. |
-| M8.3, M8.5 | MF2: whole reflected bodies, receiving-region coverage, source-only gathering and fallback have complementary visual and numerical proofs. |
-| M8.4, M8.6 | S3: one cloud factor and labelled stand-in, plus Chrome's specified optics comparison, remain. |
-| M8.7 | MF1/MF2: cost is a record; it now includes body-ray work under both calm and gale coverage. |
-| M8.9 (new) | MF3: independently computed transport and exposure expectations reject the original composition errors. |
-| M9.3, M9.4, M9.5 | S3: preset/hour/height range, 1–20 km vista and the complete calm-to-gale transition remain. |
-| M9.6, M9.7, M9.8 | S3: TAAU, pan, fast craft, cut, rebuild and field overlays remain on their named targets. |
-| M9.10 | MF1: complete gale cost and investigation replace the numeric gate. |
-| M10.2, M10.7 | S3: MetalFX comparison and the combined gale scene remain, with chase and elevated views. |
-| M10.5 | MF1: both Mac recipes, tick/repeat frames and showcase extent remain as measurements without numeric admission. |
+| M2 quality bar and dependencies | The bar now asks for the same waves at the same time however frames fall, rather than identical tick banks. `EFFECT-GRAPH:M2` remains the dependency. Its prepared resources, named compute passes and per-frame clock suffice for numerical GPU proofs without a drawn surface. |
+| M2.2 | Adds rate of change, an inter-tick frame time, early and 24-hour comparisons, and rejection of f32-second phase. These distinguish the new behavior from the old tick-only field. S5 clarifies the recorded error units. |
+| M2.3 | Removing “bank” matches the single freshly evaluated field. Mip slope and Jacobian moments remain checked against the base level. |
+| M2.4 | Covers different alphas within one tick, pause, hitch, discard, capture at another tick, backward tick, timeline change and device replacement against the CPU model. An old field reused at every alpha fails. No future WATERS surface is needed to read back these results. |
+| M2.5 | Wind transitions must follow the model at each frame time, so an upload that simply steps powers at presentation boundaries cannot rely on the old tick-only criterion. |
+| M2.7 | Costs are now per frame, consistent with the new scheduling. The deleted skipped-pass report is unnecessary for these every-frame passes; reduced cadence belongs to WATERS' later knobs. |
+| M2.9, added | Whole-cycle cascade frequencies, the half-cycle rounding bound and loop equality are directly testable in the CPU model. Long waves retain exact deep-water frequencies. This explicitly commissions the change to M1's existing cascade evaluator. |
 
-**Scope and evidence**
+The removed milestones have these destinations in [WATERS' criteria](../../plans/WATERS/DONE.json):
 
-I read the two planner tasks under `briefs` in [RECORD.json](../../plans/SEA/RECORD.json), whole and oldest
-first, the approved project brief and SEA's module brief before judging the revision. The re-plan task asks
-for the five findings to be resolved; it changes no human requirement. I then read the previous review,
-the complete current DESIGN and PLAN, every current done-when item, and their substantive changes from the
-reviewed base. I also read the project's review guidance and calibration examples, the SEA ownership and
-seam rulings in ARCHITECTURE, the port and performance decisions, and relevant C02/C04/C07–C09/C12 contracts.
-The producer checks described above cover the effect-state implementation and the atmosphere/forward handoff.
-No reading was delegated. This was not a blind technique-selection study, and I did not inspect Broadsides.
+| Removed SEA milestone | Destination and retained obligation |
+|---|---|
+| M3 | WATERS M2: first native sea, shared light, frame contribution, smooth motion and paired cost. |
+| M4 | WATERS M3: first Chrome sea, numerical parity, lifecycle and visible motion. Its lifecycle item now uses display-time fields too. |
+| M5 | WATERS M5: asynchronous queries, refusal and generations, one craft and eight floats, speed range, Chrome and game-owned integration. |
+| M6 | WATERS M6: physical wake, theoretical wavelength and angle, other-body response, turn/stop behavior, reference agreement and lifecycle; extended to inland interaction waves. |
+| M7 | WATERS M7: transported four-stock foam, births, persistence, cooked pattern, Chrome, visuals and lifecycle; extended to shore and current. |
+| M8 | WATERS M8: reflection/refraction, radiance conversion, shared cloud shade, Chrome and cost; extended to beds and shore reflections. |
+| M9 | WATERS M10: controls, full preset/hour/height/vista range, TAAU, resets, overlays and knobs. |
+| M10 | WATERS M11: MetalFX, governor, paired variants, attended cadence, combined scene, public documentation, maturity and provenance. The future APPLE-PRESENTATION M7/M8 readiness check remains explicit. |
 
-The revised design preserves game-owned presets and body integration, GPU-owned queries and wakes, capability
-limits, counted refusal, public controls and governor seams. It adds no unrequested inland, multiplayer or
-parked spray work. Licensing and port timing remain disclosed assumptions. The acceptance sequence reaches a
-first native frame and then Chrome before adding wakes, foam and full optics. Later reconstruction and closure
-still wait for their producers; this review does not claim those future dependencies are already built.
+WATERS M2 depends on SEA M2, so the first drawn consumer cannot precede the field it requires.
+ARCHITECTURE's “Water as one system” and “RIVERS and PUDDLES” sections assign the remaining owner-requested
+water types to modules, with shared interfaces and concrete completion cues. They are outstanding planned
+work, not capabilities delivered by SEA M2. The scope split is disclosed in SEA's plan as an assumption
+the owner can overturn.
 
-I read the complete revision proof and its imported wake operator, then reran parts A–E unchanged with:
+**Mechanism and interface checks**
+
+The ambient field can be recomputed from the model and time without the old GPU endpoint lifecycle.
+I checked the actual [contribution clock](../../../crates/thrum-render/src/contribution/state.rs) and
+[contribution interface](../../../crates/thrum-render/src/contribution.rs): the clock supplies tick,
+tick duration, alpha, timeline and capture identity; named compute passes can run each frame. Captures
+must not advance committed effect state, but evaluating a function into disposable output does not do
+that. SEA declares these passes without state production. WATERS declares them within its contribution,
+before its stateful passes and readers, rather than creating another executor.
+
+I also read the existing CPU cascade and component evaluators. They currently use the deep-water
+frequency and do not return cascade time derivatives. The revised PLAN explicitly assigns both changes
+to SEA M2; it does not silently assume M1 already built them. M2.9 preserves the long-wave relation while
+changing only cascade frequencies. The design and plan's “M1 and M2 are unchanged” wording refers to the
+later scope split, not to all changes since the reviewed commit; the M2 implementation paragraph gives
+the actual work.
+
+The wrapped phase follows directly from integer arithmetic: a bin with integer cycle count `n`, multiplied
+by the loop fraction modulo 2^32, advances by exactly `n` turns per loop. Quantizing the loop fraction has
+less than one unit of error, so its phase error before float conversion is bounded by `2πn / 2^32`.
+The separate non-looping long waves prevent the entire ambient field acquiring that temporal loop.
+
+I read and reran [first_principles_proof.py](design-proof/first_principles_proof.py) unchanged:
 
 ```sh
-UV_CACHE_DIR=/private/tmp/sea-design-review-uv PYTHONDONTWRITEBYTECODE=1 uv run --no-project --with numpy python docs/evidence/SEA/design-proof/revision_proof.py
+PYTHONDONTWRITEBYTECODE=1 uv run --no-project --no-cache --with numpy python docs/evidence/SEA/design-proof/first_principles_proof.py
 ```
 
-The [rerun output](design-review/revision-proof-rerun.txt) records the numerical results. It is a rerun of
-planner evidence, not an independently implemented oracle. The review also checks the reflection geometry,
-transport inverse and endpoint example directly against their producers and definitions. No SEA engine
-scene exists yet, so no GPU, visual, Chrome or display-cadence qualification was attempted. The original
-long-wave and wake simulations were not rerun as separate programs.
+[The rerun output](design-review/first-principles-rerun.txt) agrees with the design: across its five
+sample wavelengths, f32-second phase reaches 0.2556 rad error after a day; integer-loop phase reaches
+7.29 × 10⁻⁶ rad; the largest sampled frequency change is 0.1163%. Part G gives 0.5346% amplitude error
+for blending a 0.4 m wave's tick endpoints, and explicitly quantifies the later query's prediction error.
+This is a rerun of planner evidence, not a GPU qualification or a proof over every admitted profile.
+Part G's zero error for direct evaluation is an analytic identity, not a measured implementation result.
+The reduced sampling cost is a plausible cost account, still awaiting the paired WATERS M2 measurement.
 
-`./dev check-docs` passed; [the output](design-review/check-docs-revision.log) is retained. Only this review
-and its evidence folder were changed, left uncommitted for the review script. DONE.json and all planner fields
-remain untouched.
+**Scope and validation**
+
+Read: all four planner tasks in RECORD.json, whole and oldest first; the approved project brief; the
+historical SEA brief; the previous review; the complete current SEA DESIGN, PLAN and DONE; the removed
+milestone statements; the relevant WATERS mechanisms, all its milestone statements and quality bars,
+and the proof fields carrying the earlier fixes. I also read the module split and later-module briefs,
+the port decision, C02/C04/C06, the effect clock/interface, the CPU wave/cascade code, and the project's
+review guidance and calibration examples. There is no plans glossary. Reading and judging were not
+delegated. This was not a blind technique-selection study or a complete review of WATERS.
+
+No GPU scene, browser, image sequence or physical display was inspected. Those remain the responsibilities
+of the named implementation milestones. No Broadsides source was modified or newly qualified.
+
+`./dev check-docs` passed; [the output](design-review/check-docs-current.log) is retained. Only this review
+and its evidence folder were changed, left uncommitted for the review script. DONE.json is untouched.
 
 DESIGN OK
