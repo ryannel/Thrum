@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-5 of 25 modules done · 10 in progress · 10 to come
+6 of 25 modules done · 9 in progress · 10 to come
 
 ### Needs you now
 
@@ -201,7 +201,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md)
 - A stateful native segment composes inside one submission (APPLE-TILE M10): In Progress · [plan](APPLE-TILE/PLAN.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): Not Started · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
@@ -213,6 +212,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3), 14 Nov · [review](../evidence/PLATFORM-RUNTIME-MAC/M3-review.md)
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2), 14 Nov · [review](../evidence/CREATOR/M2-review.md)
 - The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device (SEA M2), 14 Nov · [review](../evidence/SEA/M2-review.md)
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3), 14 Nov · [review](../evidence/APPLE-TILE/M3-review.md)
@@ -241,7 +241,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M3 of 4 · Ready for Review |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · In Progress |
