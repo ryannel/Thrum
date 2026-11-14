@@ -1,0 +1,23 @@
+APPLE-TILE M10 initial boundary proof, 14 November 2026
+Source: cdede38916f55e1709a8ab1c15d40483eb72f388
+Executable SHA-256: 666784919ffa74ec4f0fe91098d26f9356701f5af7c19ea772cc2aa547f8c5f4
+Command, outside sandbox, under the shared GPU lock:
+python3 <orchestrate-2.2.2>/skills/orchestration/build/scripts/agent_loop.py lock gpu -- sh -c 'rustup run 1.99.1 cargo test --locked --offline -p thrum-render --test native_segment -- --nocapture'
+
+Selected output:
+M10 Metal adapter: AdapterInfo { name: "Apple M3 Max", device_type: IntegratedGpu, backend: Metal }
+locked_wgpu_refuses_wgpu_then_raw_even_for_noop_raw_callback - should panic ... ok
+locked_wgpu_refuses_raw_then_wgpu_even_for_noop_raw_callback - should panic ... ok
+M10 boundary: eight single-submit frames exact; all five omission/stale/reset controls rejected
+whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+
+The two expected refusals are wgpu's "Mixing the wgpu encoding API with the raw encoding API is not permitted".
+Positive frames compare all 1024 output bytes and all 1024 history bytes exactly,
+plus an independent binary tile and prior-submission crop oracle. Five controls
+omit native commands, omit the native storage kernel, omit reset, reuse stale
+source, or reuse stale history; each fails both exact output and history parity.
+Each frame has one ordered submit containing wgpu producer/raw Metal/wgpu consumer.
+
+Scope: small device feasibility fixture only. No game route, T2 visual output,
+held frame-host lifetime, simulator race, window function or performance qualification.

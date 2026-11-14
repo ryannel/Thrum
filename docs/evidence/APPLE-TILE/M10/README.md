@@ -42,7 +42,9 @@ the runtime compiler therefore worked on this target despite the absent optional
 Two additional device tests require locked-wgpu to refuse mixed APIs in both directions, including a no-op
 raw callback. They compile and pass scoped Clippy; their device result remains pending.
 
-The corrected Metal fixture is queued outside the sandbox under the shared `gpu` lock. No passing device result,
+The corrected fixture passed all three tests on the Apple M3 Max at `cdede389`, outside the sandbox under
+the shared `gpu` lock. [Selected output and exact scope](fixture-cdede389.txt). This permits route integration;
+it does not pass any complete milestone item by itself. No integrated device result,
 route/T2 capture, simulator native background race, full repository gate, baseline guard or merge is claimed.
 An earlier broad `graph::` test filter selected one Metal test in the sandbox, which found no adapter;
 the CPU-only filters were then run successfully. That refusal is not a native-boundary failure.

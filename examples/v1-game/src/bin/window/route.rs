@@ -61,6 +61,8 @@ pub(super) fn record(
     let source = match std::env::var("THRUM_CAPTURE_SOURCE").as_deref() {
         Ok("sdr") | Err(_) => CaptureSource::Sdr,
         Ok("scene-linear") => CaptureSource::SceneLinear,
+        Ok("native-output") => CaptureSource::NativeOutput,
+        Ok("native-history") => CaptureSource::NativeHistory,
         _ => return Err("unknown route capture source".to_owned()),
     };
     let camera = host
@@ -96,7 +98,7 @@ pub(super) fn record(
     write_json_line(
         &mut log,
         &serde_json::json!({
-            "target": "native", "backend":format!("{:?}",capabilities.adapter().backend), "adapter":capabilities.adapter().name, "image_label": if source == CaptureSource::Sdr { "native submitted SDR output" } else { "native submitted scene-linear RGBA16Float output" },
+            "target": "native", "backend":format!("{:?}",capabilities.adapter().backend), "adapter":capabilities.adapter().name, "image_label": match source { CaptureSource::Sdr => "native submitted SDR output", CaptureSource::SceneLinear => "native submitted scene-linear RGBA16Float output", _ => "labelled native copy/select RGBA16Float diagnostic" },
             "recipe":format!("{:?}",capabilities.recipe()), "registry_digest":capabilities.registry_digest(), "resident_device_bytes":capabilities.resident_device_bytes(),
             "unified_memory":capabilities.unified_memory(), "storage_report":host.storage_report(),
             "display_overlay":std::env::var("THRUM_CAPTURE_DISPLAY_OVERLAY").unwrap_or_else(|_|"off".to_owned()),

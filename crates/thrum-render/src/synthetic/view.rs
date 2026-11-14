@@ -26,6 +26,7 @@ pub(super) enum Projection {
 /// V2 view packet owns the broader identity and history contract.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SyntheticView {
+    native_witness: super::NativeWitness,
     projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
@@ -54,6 +55,7 @@ impl Default for SyntheticView {
             Vec4::new(0.0, 0.0, 1.0, 1.0),
         );
         Self {
+            native_witness: super::NativeWitness::Off,
             projection: Projection::OrthographicFixture,
             view_proj: reverse_z,
             camera: Vec3::new(0.0, 0.0, -3.0),
@@ -73,6 +75,17 @@ impl Default for SyntheticView {
 }
 
 impl SyntheticView {
+    /// Select a labelled stateful copy/select diagnostic before preparation.
+    /// Requires the FrameHost coordinator; ordinary scene baselines leave it off.
+    #[must_use]
+    pub fn with_native_witness(mut self, selection: super::NativeWitness) -> Self {
+        self.native_witness = selection;
+        self
+    }
+
+    pub(super) fn native_witness(&self) -> super::NativeWitness {
+        self.native_witness
+    }
     /// Build a finite right-handed perspective view with WebGPU [0,1]
     /// reverse depth. Near maps to one and far to zero.
     /// # Errors
@@ -137,6 +150,7 @@ impl SyntheticView {
         let fy = 1.0 / (fov_y_radians * 0.5).tan();
         let fx = fy / aspect;
         Ok(Self {
+            native_witness: super::NativeWitness::Off,
             projection: Projection::Perspective {
                 view,
                 fx,

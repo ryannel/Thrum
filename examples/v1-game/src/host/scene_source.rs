@@ -268,7 +268,29 @@ fn g3t_overlay_control(scene: &mut SyntheticScene, control: &str) -> Result<(), 
     Ok(())
 }
 
+fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
+    use thrum_render::synthetic::NativeWitness;
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        match std::env::var("THRUM_NATIVE_WITNESS").as_deref() {
+            Ok("metal") => NativeWitness::Metal,
+            Ok("wgsl") => NativeWitness::Wgsl,
+            Ok("no-commands") => NativeWitness::NoCommands,
+            Ok("no-tile") => NativeWitness::NoTile,
+            Ok("no-reset") => NativeWitness::NoReset,
+            Ok("stale-source") => NativeWitness::StaleSource,
+            Ok("stale-history") => NativeWitness::StaleHistory,
+            _ => NativeWitness::Off,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        NativeWitness::Off
+    }
+}
+
 pub(crate) struct GameScene {
+    native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
@@ -360,6 +382,7 @@ impl GameScene {
             camera_yaw: 0.0,
             display_overlay: setup.display_overlay,
             temporal_inputs: temporal.is_some(),
+            native_witness: native_witness_selection(),
             temporal_star_edit: temporal.as_ref().map_or(u64::MAX, |f| {
                 f["star_edit_tick"].as_u64().expect("fixture star tick")
             }),
@@ -395,6 +418,7 @@ impl GameScene {
         };
         scene.view = scene
             .view
+            .with_native_witness(native_witness_selection())
             .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs)
             .with_display_overlay(setup.display_overlay);
         scene.camera_culling = setup.camera_culling;
@@ -545,6 +569,7 @@ impl SceneSource<PublishedPage> for GameScene {
             )?
         }
         .with_temporal_inputs(self.temporal_inputs)
+        .with_native_witness(self.native_witness)
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360]);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
@@ -766,6 +791,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
             valley_stars: true,
             day_phase_offset: 0.1,

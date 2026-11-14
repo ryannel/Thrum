@@ -775,6 +775,18 @@ impl Owner {
                 )
             });
         reply.pending_frames = gpu.host.pending_frames();
+        if let Some(native) = gpu.host.native_witness_report() {
+            let _ = write!(
+                reply.cooked,
+                "\nnative_selection={:?}\nnative_encoded={}\nnative_submitted={}\nnative_discarded={}\nnative_resets={}\nnative_completed={}\n",
+                native.selection,
+                native.encoded,
+                native.submitted,
+                native.discarded,
+                native.resets,
+                native.completed
+            );
+        }
         let culling = gpu.host.culling_selection();
         let _ = write!(
             reply.cooked,

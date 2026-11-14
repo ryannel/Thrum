@@ -32,6 +32,10 @@ impl DeviceSite {
         self.0.create_compute_pipeline(desc)
     }
 
+    pub(crate) fn native_prepared(&self) {
+        let _ = &self.0;
+    }
+
     /// Declare a transition on the calling thread. Nothing in default builds.
     #[inline]
     #[expect(

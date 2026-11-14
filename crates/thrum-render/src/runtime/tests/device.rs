@@ -9,6 +9,7 @@ use std::{
 
 #[derive(Default)]
 struct Policy {
+    native: crate::synthetic::NativeWitness,
     camera: f32,
     atmosphere: bool,
     empty: bool,
@@ -54,7 +55,9 @@ impl SceneSource<SourceTick> for Policy {
             }
         });
         let history_epoch = u64::from(self.camera_cut_tick.is_some_and(|cut| source.tick >= cut));
-        let view = view.with_history_epoch(history_epoch);
+        let view = view
+            .with_history_epoch(history_epoch)
+            .with_native_witness(self.native);
         Ok(SceneFrame { view, lighting })
     }
 }
@@ -103,6 +106,7 @@ async fn culled_host(
         timeline: 3,
     };
     let mut scene = SyntheticScene::grid(1).expect("scene");
+    scene.view = scene.view.with_native_witness(policy.native);
     scene.sun_shadows = sun_shadows;
     scene.camera_culling = camera_culling;
     FrameHost::new(
@@ -1389,4 +1393,5 @@ fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
     });
 }
 
+mod native;
 mod split_graph;

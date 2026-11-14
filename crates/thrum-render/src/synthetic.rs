@@ -38,16 +38,20 @@ pub(crate) mod frame_stats;
 mod history_gpu;
 mod mesh_arena;
 mod mesh_route;
+mod native_witness;
 mod readback;
 mod scene_apply;
 mod scene_graph;
 mod scene_source;
 mod shadow;
 pub(crate) mod stars;
+mod target;
 mod target_storage;
 mod temporal;
 mod upload;
 mod view;
+pub(crate) use native_witness::NativeFrame;
+pub use native_witness::{NativeWitness, NativeWitnessReport};
 pub use readback::{CaptureSource, PixelReadback};
 
 pub(crate) use air_shadow::AIR_SHADOW_PASS;
@@ -550,6 +554,7 @@ pub struct InstanceUploadReport {
 /// Fully prepared opaque/static forward and SDR display roles. Both pipelines
 /// finish creation before this object is returned; encode never builds them.
 pub struct PreparedSynthetic {
+    native: Option<Arc<native_witness::Factory>>,
     culling_selection: CullingSelection,
     temporal_inputs: bool,
     temporal: temporal::TemporalInputs,
@@ -638,6 +643,8 @@ type LateSurface<'a> = (
 );
 
 struct SceneContext<'a> {
+    native: Option<&'a NativeFrame>,
+    segments: Option<&'a mut Vec<wgpu::CommandBuffer>>,
     surface: Option<LateSurface<'a>>,
     prepared: &'a PreparedSynthetic,
     target: &'a OffscreenTarget,
@@ -866,6 +873,7 @@ impl SceneContext<'_> {
                 self.encoder,
                 self.target,
                 Some(&self.prepared.exposure.samples[self.exposure_side]),
+                self.native,
             )
     }
 }
@@ -1716,6 +1724,15 @@ impl PreparedSynthetic {
             return Err(RenderError::Validation(error.to_string()));
         }
         Ok(Self {
+            native: if scene.view.native_witness() == NativeWitness::Off {
+                None
+            } else {
+                Some(native_witness::Factory::new(
+                    capabilities,
+                    queue,
+                    scene.view.native_witness(),
+                )?)
+            },
             temporal_inputs: scene.view.temporal_inputs(),
             temporal,
             capabilities: capabilities.clone(),
@@ -2000,33 +2017,6 @@ impl PreparedSynthetic {
         Ok(())
     }
 
-    fn prepare_target_display(
-        &self,
-        device: &wgpu::Device,
-        ids: &TargetResources,
-        scene: &wgpu::TextureView,
-        motion: &wgpu::TextureView,
-        temporal: &temporal::TemporalTarget,
-    ) -> Result<PreparedPreToneInput, RenderError> {
-        self.sdr_tone_stage().prepare_input(
-            device,
-            ids.pre_tone.clone(),
-            PreToneViews {
-                colour: if ids.temporal.witness.as_ref() == Some(&ids.pre_tone.colour) {
-                    &temporal
-                        .witness
-                        .as_ref()
-                        .ok_or(RenderError::GraphPassMismatch)?
-                        .0
-                } else {
-                    scene
-                },
-                motion,
-                exposure: &self.exposure.samples,
-            },
-        )
-    }
-
     /// Carry submitted CPU view metadata across GPU-resource replacement. The
     /// new GPU history stays invalid, but a prepared view never becomes the prior
     /// submitted camera. Publication copies the live cursor, not a worker snapshot.
@@ -2199,7 +2189,7 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        self.encode_inner(encoder, generation, target, timings, None, None)
+        self.encode_inner(encoder, generation, target, timings, None, None, None, None)
     }
 
     /// Encode the scene with an engine contribution drawn at the end of its forward pass, and
@@ -2214,11 +2204,22 @@ impl PreparedSynthetic {
         timings: Option<&mut GpuTimings>,
         readback: Option<&mut PixelReadback>,
         contribution: Option<&mut (dyn SceneContribution + 'static)>,
+        native: Option<&NativeFrame>,
+        segments: &mut Vec<wgpu::CommandBuffer>,
     ) -> Result<(), RenderError> {
         if let Some(readback) = readback.as_deref() {
             readback.check_target(target)?;
         }
-        self.encode_inner(encoder, generation, target, timings, readback, contribution)
+        self.encode_inner(
+            encoder,
+            generation,
+            target,
+            timings,
+            readback,
+            contribution,
+            native,
+            Some(segments),
+        )
     }
 
     /// Encode the same scene with its dependent Copy pass in one checked graph.
@@ -2234,7 +2235,16 @@ impl PreparedSynthetic {
         readback: &mut PixelReadback,
     ) -> Result<(), RenderError> {
         readback.check_target(target)?;
-        self.encode_inner(encoder, generation, target, timings, Some(readback), None)
+        self.encode_inner(
+            encoder,
+            generation,
+            target,
+            timings,
+            Some(readback),
+            None,
+            None,
+            None,
+        )
     }
 
     pub(crate) fn encode_surface(
@@ -2249,6 +2259,8 @@ impl PreparedSynthetic {
         target
             .graph(readback)
             .execute_after_acquire(&mut SceneContext {
+                native: None,
+                segments: None,
                 surface: Some(surface),
                 prepared: self,
                 target,
@@ -2271,6 +2283,8 @@ impl PreparedSynthetic {
         mut timings: Option<&'a mut GpuTimings>,
         readback: Option<&'a mut PixelReadback>,
         contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
+        native: Option<&'a NativeFrame>,
+        segments: Option<&'a mut Vec<wgpu::CommandBuffer>>,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
         if generation != self.key.device_generation {
@@ -2286,6 +2300,8 @@ impl PreparedSynthetic {
             timings.check_passes(generation, count)?;
         }
         graph.execute_before_acquire(&mut SceneContext {
+            native,
+            segments,
             surface: None,
             prepared: self,
             target,
@@ -2367,6 +2383,7 @@ fn storage_buffer(
 const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 struct TargetResources {
+    native: Option<native_witness::graph::Resources>,
     pre_tone: PreToneInput,
     temporal: temporal::TemporalResources,
     depth: ResourceId,
@@ -2388,6 +2405,7 @@ struct SceneGraphs<G> {
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
+    pub(crate) native: Option<Arc<native_witness::Binding>>,
     capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
@@ -2419,6 +2437,19 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 impl OffscreenTarget {
+    pub(crate) fn reserve_native(&self, cut: bool) -> Result<Option<NativeFrame>, RenderError> {
+        self.native
+            .as_ref()
+            .map(|native| native.reserve(cut))
+            .transpose()
+    }
+
+    /// Diagnostic provider outcomes for this extent/generation, when enabled.
+    #[must_use]
+    pub fn native_witness_report(&self) -> Option<NativeWitnessReport> {
+        self.ids.native.as_ref()?;
+        self.native.as_ref().map(|native| native.provider.report())
+    }
     pub(crate) fn untimed_pass_names(
         &self,
         readback: bool,
@@ -2432,59 +2463,13 @@ impl OffscreenTarget {
         };
         plan.pass_bindings()
             .take(executed)
-            .filter(|(_, pass)| pass.kind == Some(crate::graph::PassKind::Copy))
+            .filter(|(_, pass)| {
+                matches!(
+                    pass.kind,
+                    Some(crate::graph::PassKind::Copy | crate::graph::PassKind::Native)
+                )
+            })
             .map(|(_, pass)| pass.name.clone())
-    }
-
-    pub(crate) fn bind_surface_graph(
-        &mut self,
-        prepared: &PreparedSynthetic,
-        profile: crate::present::SurfaceProfile,
-    ) -> Result<(), RenderError> {
-        let compiled = prepared.compile_graph(
-            self.width,
-            self.height,
-            self.row_bytes,
-            self.capture_source,
-            Some(profile),
-        )?;
-        self.textures
-            .rebind(
-                self.night_graphs
-                    .as_ref()
-                    .unwrap_or(&self.day_graphs)
-                    .readback
-                    .plan(),
-                &compiled.night.as_ref().unwrap_or(&compiled.day).readback,
-            )
-            .map_err(RenderError::Graph)?;
-        self.display = prepared.sdr_tone_stage().prepare_input(
-            &self.device,
-            compiled.ids.pre_tone.clone(),
-            PreToneViews {
-                colour: if compiled.ids.temporal.witness.as_ref()
-                    == Some(&compiled.ids.pre_tone.colour)
-                {
-                    &self
-                        .temporal
-                        .witness
-                        .as_ref()
-                        .ok_or(RenderError::GraphPassMismatch)?
-                        .0
-                } else {
-                    &self.scene_view
-                },
-                motion: &self.motion_view,
-                exposure: &prepared.exposure.samples,
-            },
-        )?;
-        self.ids = compiled.ids;
-        self.day_graphs = compiled.day.bind(prepared)?;
-        self.night_graphs = compiled
-            .night
-            .map(|graphs| graphs.bind(prepared))
-            .transpose()?;
-        Ok(())
     }
 
     /// Allocate a nonempty bounded target and display bind group from
@@ -2568,8 +2553,25 @@ impl OffscreenTarget {
             &prepared.exposure.samples,
         )?;
         let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
-        let display =
-            prepared.prepare_target_display(device, &ids, &scene_view, &motion_view, &temporal)?;
+        let native = prepared
+            .native
+            .as_ref()
+            .map(|factory| {
+                factory.binding(
+                    textures
+                        .texture(&ids.scene)
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                )
+            })
+            .transpose()?;
+        let display = prepared.prepare_target_display(
+            device,
+            &ids,
+            &scene_view,
+            &motion_view,
+            &temporal,
+            native.as_deref(),
+        )?;
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared
@@ -2578,23 +2580,7 @@ impl OffscreenTarget {
                 .pack_aux(width, height),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let shadow = match (&prepared.shadow, &ids.shadow) {
-            (Some(_prepared_shadow), Some(id)) => Some(ShadowTarget::new(
-                textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
-            )),
-            (None, None) => None,
-            _ => return Err(RenderError::GraphPassMismatch),
-        };
-        let air_shadow = match (&prepared.air_shadow, &ids.air_shadow) {
-            (Some(air), Some(id)) => Some(air.target(
-                device,
-                textures.texture(id).ok_or(RenderError::GraphPassMismatch)?,
-                prepared.shadow.as_ref().zip(shadow.as_ref()),
-                &prepared.directional_buffer,
-            )?),
-            (None, None) => None,
-            _ => return Err(RenderError::GraphPassMismatch),
-        };
+        let (shadow, air_shadow) = prepared.prepare_target_shadows(device, &textures, &ids)?;
         let prepass_depth = ids
             .prepass_depth
             .as_ref()
@@ -2671,6 +2657,7 @@ impl OffscreenTarget {
         let day_graphs = day.bind(prepared)?;
         let night_graphs = night.map(|graphs| graphs.bind(prepared)).transpose()?;
         Ok(Self {
+            native,
             capture_source,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),

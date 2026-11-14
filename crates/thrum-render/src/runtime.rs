@@ -336,6 +336,8 @@ struct PreparedSample {
 }
 
 struct RecordedScene {
+    segments: Vec<wgpu::CommandBuffer>,
+    native: Option<crate::synthetic::NativeFrame>,
     slot_index: usize,
     capture_slot: Option<usize>,
     encoder: wgpu::CommandEncoder,
@@ -822,6 +824,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .join("\n")
     }
 
+    /// Outcomes of the optional labelled native copy/select diagnostic.
+    #[must_use]
+    pub fn native_witness_report(&self) -> Option<crate::synthetic::NativeWitnessReport> {
+        self.slots
+            .first()
+            .and_then(|slot| slot.target.native_witness_report())
+    }
+
     /// Pipeline creation events in this generation, when creation instrumentation is enabled.
     /// A runtime cadence change must leave this count unchanged.
     #[cfg_attr(
@@ -1298,6 +1308,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         let slot = &mut self.slots[slot_index];
+        let native = slot
+            .target
+            .reserve_native(self.scene.view.history_reset())
+            .map_err(|error| format!("native reserve: {error:?}"))?;
+        let mut segments = Vec::new();
         slot.target.arm_culling_stats();
         let capture = submitted_capture::reserve(
             &mut self.submitted_capture,
@@ -1313,6 +1328,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             Some(&mut slot.timings),
             capture.map(|(_, readback)| readback),
             self.contribution.as_deref_mut(),
+            native.as_ref(),
+            &mut segments,
         ) {
             drop(encoder);
             if let Some(index) = capture_slot
@@ -1326,6 +1343,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return Err(FrameError::Gpu(format!("render encode: {error:?}")));
         }
         Ok(RecordedScene {
+            native,
+            segments,
             slot_index,
             capture_slot,
             encoder,
@@ -1356,6 +1375,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         admit: impl FnOnce() -> Result<(), FrameError>,
     ) -> Result<(), FrameError> {
         let RecordedScene {
+            native,
+            segments,
             slot_index,
             capture_slot,
             mut encoder,
@@ -1403,6 +1424,22 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.dropped_surface = self.dropped_surface.saturating_add(1);
             report.dropped_view = true;
         }
+        if native.is_some() && self.presenter.is_some() && !surface_presented {
+            drop(encoder);
+            drop(segments);
+            drop(native);
+            if let Some(index) = capture_slot
+                && let Some(tap) = self.submitted_capture.as_mut()
+            {
+                tap.abandon(index);
+            }
+            slot.timings
+                .discard_unsubmitted(self.generation)
+                .map_err(|error| format!("native presentation discard: {error:?}"))?;
+            self.queue.submit([]);
+            report.wall = wall_start.elapsed();
+            return Ok(());
+        }
         if let Err(error) = slot.timings.finish_render(self.generation, &encoder) {
             drop(encoder);
             if let Some(index) = capture_slot
@@ -1422,13 +1459,22 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             tap.finish_timing(index, &encoder)?;
         }
         slot.render_done.store(false, Ordering::Release);
-        self.queue.submit([encoder.finish()]);
+        self.queue.submit(
+            segments
+                .into_iter()
+                .chain(std::iter::once(encoder.finish())),
+        );
+        let native = native.map(crate::synthetic::NativeFrame::submitted);
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(true);
         }
         let done = Arc::clone(&slot.render_done);
-        self.queue
-            .on_submitted_work_done(move || done.store(true, Ordering::Release));
+        self.queue.on_submitted_work_done(move || {
+            if let Some(native) = native {
+                native.completed();
+            }
+            done.store(true, Ordering::Release);
+        });
         self.creations.frame();
         slot.target.map_culling_stats(
             self.prepared.camera_culling(),
@@ -1492,6 +1538,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a GPU encode or submission error.
     pub fn begin_capture(&mut self) -> Result<PendingCapture, FrameError> {
+        if self.native_witness_report().is_some() {
+            return Err(FrameError::InvalidState(
+                "native witness uses the submitted-image tap, not endpoint capture",
+            ));
+        }
         let creations = self.creations.clone();
         let _region = creations.region(CreationPhase::Transition, "capture");
         let needs_extract = self.extractor.frame().source().is_none_or(|source| {
@@ -1600,6 +1651,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 None,
                 Some(&mut pixels),
                 self.contribution.as_deref_mut(),
+                None,
+                &mut Vec::new(),
             )
             .map_err(|error| format!("capture render/readback: {error:?}"))?;
         let submitted = self.queue.submit([encoder.finish()]);

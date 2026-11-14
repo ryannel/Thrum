@@ -380,6 +380,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     let source = match std::env::var("THRUM_CAPTURE_SOURCE").as_deref() {
         Ok("sdr") | Err(_) => CaptureSource::Sdr,
         Ok("scene-linear") => CaptureSource::SceneLinear,
+        Ok("native-output") => CaptureSource::NativeOutput,
+        Ok("native-history") => CaptureSource::NativeHistory,
         _ => return Err("unknown capture source".to_owned()),
     };
     let (qos, encoding, disk_limit) = capture_settings()?;
@@ -559,6 +561,9 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
+    if let Some(native) = driver.native_witness_report() {
+        result["native_witness"] = json!({"selection":format!("{:?}",native.selection),"encoded":native.encoded,"submitted":native.submitted,"discarded":native.discarded,"resets":native.resets,"completed":native.completed,"resident_bytes":native.resident_bytes});
+    }
     std::fs::write(
         output.join("runtime.json"),
         serde_json::to_vec_pretty(&result).map_err(|e| e.to_string())?,
@@ -654,7 +659,12 @@ pub(super) fn prepare_route(
         if Instant::now() >= deadline {
             return Err("routed capture content preparation deadline".to_owned());
         }
-        drop(host.capture_pixels()?);
+        if host.native_witness_report().is_some() {
+            host.drive(Duration::ZERO, None)?;
+            drop(host.poll_completed()?);
+        } else {
+            drop(host.capture_pixels()?);
+        }
         std::thread::sleep(Duration::from_millis(2));
     }
     host.resume(Duration::ZERO)?;

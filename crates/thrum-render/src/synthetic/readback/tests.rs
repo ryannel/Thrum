@@ -38,6 +38,7 @@ fn metal_readback_preserves_sdr_and_linear_channels_and_removes_row_padding() {
                 let resource = match source {
                     CaptureSource::Sdr => &target.ids.output,
                     CaptureSource::SceneLinear => &target.ids.scene,
+                    _ => unreachable!("ordinary source fixture"),
                 };
                 let texture = target.textures.texture(resource).unwrap();
                 // queue.write_texture requires COPY_DST, which the ordinary output
@@ -65,7 +66,9 @@ fn metal_readback_preserves_sdr_and_linear_channels_and_removes_row_padding() {
                     });
                 }
                 let mut readback = target.readback(&device);
-                readback.copy_into(&mut encoder, &target, None).unwrap();
+                readback
+                    .copy_into(&mut encoder, &target, None, None)
+                    .unwrap();
                 queue.submit([encoder.finish()]);
                 device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
                 let pixels = readback.try_collect(41).unwrap().unwrap();

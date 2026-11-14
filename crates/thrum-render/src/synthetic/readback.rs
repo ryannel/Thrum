@@ -13,6 +13,10 @@ pub enum CaptureSource {
     Sdr,
     /// Pre-tone scene-linear RGBA16Float, including the prepared star composite.
     SceneLinear,
+    /// Labelled copy/select diagnostic output, never an ordinary scene baseline.
+    NativeOutput,
+    /// Labelled copy/select next history for this submitted candidate.
+    NativeHistory,
 }
 
 impl CaptureSource {
@@ -21,7 +25,7 @@ impl CaptureSource {
     pub const fn bytes_per_pixel(self) -> u32 {
         match self {
             Self::Sdr => 4,
-            Self::SceneLinear => 8,
+            Self::SceneLinear | Self::NativeOutput | Self::NativeHistory => 8,
         }
     }
 }
@@ -71,19 +75,34 @@ impl PixelReadback {
         encoder: &mut wgpu::CommandEncoder,
         target: &OffscreenTarget,
         exposure: Option<&wgpu::Buffer>,
+        native: Option<&super::NativeFrame>,
     ) -> Result<(), RenderError> {
         if let Some(timer) = &mut self.copy_timing {
             timer.marker(self.generation, encoder, false)?;
         }
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
-                texture: target
-                    .textures
-                    .texture(match self.source {
-                        CaptureSource::Sdr => &target.ids.output,
-                        CaptureSource::SceneLinear => &target.ids.scene,
-                    })
-                    .ok_or(RenderError::GraphPassMismatch)?,
+                texture: match self.source {
+                    CaptureSource::Sdr => target
+                        .textures
+                        .texture(&target.ids.output)
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                    CaptureSource::SceneLinear => target
+                        .textures
+                        .texture(&target.ids.scene)
+                        .ok_or(RenderError::GraphPassMismatch)?,
+                    CaptureSource::NativeOutput => {
+                        &target
+                            .native
+                            .as_ref()
+                            .ok_or(RenderError::GraphPassMismatch)?
+                            .provider
+                            .output
+                    }
+                    CaptureSource::NativeHistory => {
+                        native.ok_or(RenderError::GraphPassMismatch)?.history()
+                    }
+                },
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,

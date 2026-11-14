@@ -197,6 +197,10 @@ pub struct ThreadedFrameHost {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ThreadedFrameHost {
+    /// Outcomes of the explicitly selected native copy/select witness.
+    pub fn native_witness_report(&self) -> Option<thrum_render::synthetic::NativeWitnessReport> {
+        self.inner.native_witness_report()
+    }
     /// Culling decision of the published render generation.
     pub fn culling_selection(&self) -> thrum_render::synthetic::CullingSelection {
         self.inner.culling_selection()
@@ -419,6 +423,12 @@ impl FrameHost {
     #[must_use]
     pub fn storage_report(&self) -> String {
         self.inner.storage_report()
+    }
+
+    /// Outcomes of the explicitly selected native copy/select witness.
+    #[must_use]
+    pub fn native_witness_report(&self) -> Option<thrum_render::synthetic::NativeWitnessReport> {
+        self.inner.native_witness_report()
     }
 
     /// Maximum submitted scene packets retained by the engine.
