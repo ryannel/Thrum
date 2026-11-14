@@ -261,6 +261,13 @@ async fn checkpoint(
             }
             let (bytes, sample, exposure) = submitted(&mut host, device, surface);
             if mode == "reference" {
+                if std::env::var_os("THRUM_RECONSTRUCTION_TRACE").is_some() {
+                    std::fs::write(
+                        directory.join(format!("reference-{frame:02}.rgba16f")),
+                        &bytes,
+                    )
+                    .unwrap();
+                }
                 linear_cycle(
                     &mut reference_sum,
                     &mut first_reference,
@@ -386,6 +393,11 @@ fn reconstruction_reference_on_submitted_game_frames() {
             "twilight",
             "night-upslope",
         ] {
+            if let Ok(selected) = std::env::var("THRUM_RECONSTRUCTION_CHECKPOINT")
+                && selected != name
+            {
+                continue;
+            }
             checkpoint(&device, &queue, &caps, &surface, &output, name).await;
         }
         Box::pin(cut(&device, &queue, &caps, &surface, &output)).await;
