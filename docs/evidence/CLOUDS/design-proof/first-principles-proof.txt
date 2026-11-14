@@ -1,0 +1,33 @@
+Part E. First-order phase, sr^-1, at scattering angle theta (0 = toward the Sun)
+  reference = HG(0.86); droplet = HG + Draine for a 20 um droplet, averaged over the Sun's disc
+  mix = the four orders as a thin edge returns them: 0.7 * first + 0.2 HG(.43) + 0.07 HG(.215) + 0.03 HG(.1075)
+  theta   reference    droplet   droplet/reference   mix(reference)   mix(droplet)
+    0.5      7.5140   346.2375         46.08           5.3442       242.4506
+    2.0      6.9843    10.3470          1.48           4.9732         7.3271
+    5.0      4.9017     1.2721          0.26           3.5144         0.9737
+   10.0      2.1189     0.6266          0.30           1.5634         0.5188
+   20.0      0.4784     0.3492          0.73           0.4046         0.3141
+   45.0      0.0547     0.0630          1.15           0.0792         0.0850
+   90.0      0.0090     0.0011          0.13           0.0237         0.0181
+  140.0      0.0039     0.0078          2.02           0.0130         0.0158
+  180.0      0.0032     0.0109          3.39           0.0114         0.0168
+  Rim against body: the thin edge 5 degrees from the Sun over the same edge at 45 degrees
+    reference mix 44.4 times; droplet mix 11.5 times
+  droplet 10 um: integral over the sphere 1.0000, mean cosine 0.8642
+  droplet 20 um: integral over the sphere 1.0000, mean cosine 0.8793
+  droplet 40 um: integral over the sphere 1.0000, mean cosine 0.8890
+  reference HG(0.86): integral 1.0000, mean cosine 0.8600
+  forward peak of the 20 um droplet: 2743 sr^-1 as a point Sun, 1709 averaged over the disc
+
+Part F. Drift of a cloud 1,500 m away, across the view, in pixels of a 1440-row frame with a 60 degree field
+  The tick is 60 Hz and the display 120 Hz, so each tick is shown twice.
+  wind  time-lapse   metres a tick   at the tick: steps, px   at the display's time: steps, px
+    10        1x           0.17        0 then   0.15               0.08 then  0.08
+    10        8x           1.33        0 then   1.22               0.61 then  0.61
+    10       60x          10.00        0 then   9.17               4.58 then  4.58
+    40        1x           0.67        0 then   0.61               0.31 then  0.31
+    40        8x           5.33        0 then   4.89               2.44 then  2.44
+    40       60x          40.00        0 then  36.67              18.33 then 18.33
+  Evolution at the tick, 60x: a cell that lives 12 minutes changes its envelope by at most
+    0.22% of its range in one tick of 1 s of weather (a raised-cosine envelope).
+

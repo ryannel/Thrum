@@ -13,7 +13,7 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "The weather state steps once a tick. Travel is wind integrated per tick in f64 and is never wind times absolute time; a wind change alters only later travel; each parameter moves toward its target over the response time; the time scale multiplies both travel and weather time. The same ticks give the same bytes.",
+          "statement": "The weather state steps once a tick. Travel is wind integrated per tick in f64 and is never wind times absolute time; a wind change alters only later travel; each parameter moves toward its target over the response time; the time scale multiplies both travel and weather time. The state keeps the travel of its last tick, and the travel at a display time between two ticks is `travel(C) - (1 - alpha) * (travel(C) - travel(C - 1))`. The same ticks give the same bytes.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test state",
           "ask": "Read the test. Does it change the wind mid-run and compare the travel with a sum the test keeps itself? Does it run a day of ticks at 40 m/s, and at a time scale of 60, against a sum taken in extended precision?",
           "target": "mac-metal",
@@ -88,9 +88,9 @@
         },
         {
           "id": "M1.8",
-          "statement": "The model's optics match the retained references: a Beer segment with its limit at zero extinction, the composition of ordered segments, and the four-order phase model with the references' weights, extinction scales and asymmetries.",
+          "statement": "The model's optics match their references. A Beer segment with its limit at zero extinction, the composition of ordered segments, and the later three orders' weights, extinction scales and asymmetries match the retained references. The first order's phase is the type's droplet phase, a Henyey-Greenstein lobe plus a Draine lobe with the Sun's disc as a spread: it integrates to 1 over the sphere, its mean cosine is the closed form's, it keeps its digits at half a degree from the Sun in f32, and the fit from droplet diameter gives the published parameters at 20 \u00b5m.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test optics",
-          "ask": "Do the expected values come from `scripts/reference/cloud/optical_reference.py`, recorded with the command that printed them, and not from the code under test?",
+          "ask": "Do the expected values for segments and the later orders come from `scripts/reference/cloud/optical_reference.py`, recorded with the command that printed them? Do the first order's come from the published fit and from quadrature in the test, and not from the code under test or from a copied file's own tests?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -120,8 +120,8 @@
         },
         {
           "id": "M1.11",
-          "statement": "No file in this milestone is copied or translated from Broadsides unless the owner's licence for it is recorded in the log, and then `docs/evidence/CLOUDS/PROVENANCE.md` lists the file with its source commit, path and licence.",
-          "ask": "Does the provenance file exist and say either that nothing was lifted or which files were, and does the log hold the owner's licence if any were?",
+          "statement": "Every file in this milestone that is copied or translated from Broadsides does what the design states, and `docs/evidence/CLOUDS/PROVENANCE.md` lists it with its source commit and path. Nothing GPL or share-alike is among them.",
+          "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the files added? For each copied file, do the tests that prove it take their expected values from somewhere other than the copy?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -130,6 +130,17 @@
         },
         {
           "id": "M1.12",
+          "statement": "In a directed profile the state holds the game's shapes. One added at envelope 0 forms as its envelope moves toward its target over the response time, its growth moves the same way, and it is dropped once its envelope and its target are both 0. Over a directed shape the query returns its footprint at that point, scaled by its envelope and added to the cells and deck there; with coverage at 0 the query is zero everywhere outside the directed footprints. Through an add, a growth and a removal, halving the time step halves the largest change in column optical depth. A shape whose footprint would overlap another directed shape's, or one beyond the limit, is refused, the refusal is returned and counted, and the state is unchanged. A world point turned into the air frame and back after a day's travel at 40 m/s returns within the f64 rounding of the travel.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test directed",
+          "ask": "Is the shape the test's own? Does the test add a shape where cells are alive and show that the column there is the sum, and does it try an overlapping add and an add beyond the limit?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -156,7 +167,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "`examples/v1-game` has a cloud selection, off by default, that here builds the shadow-only profile. With it on, the game keeps a weather state in its world and its tick page and adds the cloud contribution. With it off, the game's world, page, compiled graph and storage are what they were.",
+          "statement": "`examples/v1-game` has a cloud selection, off by default, that here declares Weather and Shade alone. With it on, the game keeps a weather state in its world and its tick page and adds the cloud contribution. With it off, the game's world, page, compiled graph and storage are what they were.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_selection_gpu",
           "ask": "Does the game reach clouds only through the public interfaces of `thrum-clouds` and `thrum-cloud-model`? Do `thrum-clouds` and its tests hold no preset, type table or look?",
           "lock": "gpu",
@@ -226,8 +237,8 @@
         },
         {
           "id": "M2.7",
-          "statement": "At 1x the shade drifts with the wind, smoothly, with no step at the product's refresh and no swimming. At 60x, patches form and dissolve with no pop.",
-          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence.",
+          "statement": "At 1x the shade drifts with the wind, smoothly, with no step at the product's refresh and no swimming. At 60x, patches form and dissolve with no pop, and the drift moves by even steps from frame to frame at the display's refresh.",
+          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -269,6 +280,18 @@
         },
         {
           "id": "M2.11",
+          "statement": "Shade is shown at the display's time. In two submitted frames of one tick with different interpolation alpha, the ground field's mapping differs by the wind's travel between the two display times, and no texel of the weather map, the Sun-path product or the ground field is written for the second. After a cut the mapping is the committed tick's.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_display_time_gpu",
+          "ask": "Is the expected travel worked out in the test from the wind and the two display times, and not read back from the effect?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -325,9 +348,9 @@
         },
         {
           "id": "M3.4",
-          "statement": "In submitted frames a cloud that holds most of a pixel writes motion from unjittered positions equal to its front point's displacement, wind drift included, and reactive coverage; clouds write no depth. A cut and a profile change mark the layer's history invalid, and the layer is whole in that frame. With clouds absent, the compiled graph and its storage are unchanged.",
+          "statement": "In submitted frames a cloud that holds most of a pixel writes motion from unjittered positions equal to its front point's displacement between the two frames' display times, wind drift included, and reactive coverage; clouds write no depth. A cut and a profile change mark the layer's history invalid, and the layer is whole in that frame. With clouds absent, the compiled graph and its storage are unchanged.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_frame_contract_gpu",
-          "ask": "Is the motion compared with a displacement worked out from the CPU model and the wind, with temporal sampling selected?",
+          "ask": "Is the motion compared with a displacement worked out from the CPU model and the wind, with temporal sampling selected, for two frames of one tick as well as for frames a tick apart?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -371,7 +394,7 @@
         },
         {
           "id": "M3.8",
-          "statement": "The Sun's path integrates the coarse density in both profiles. With the shadow-only profile, the trace, the layer's history and the detail noise are not declared, and the ground field holds the same bytes as with visible clouds on, under a sky where the detail noise changes the full density's extinction along the Sun paths the test probes. How far the coarse density's Sun path is from the full density's at those probes is on record, in transmittance.",
+          "statement": "The Sun's path integrates the coarse density in both profiles. With Weather and Shade alone, the trace, the layer's history and the detail noise are not declared, and the ground field holds the same bytes as with visible clouds on, under a sky where the detail noise changes the full density's extinction along the Sun paths the test probes. How far the coarse density's Sun path is from the full density's at those probes is on record, in transmittance.",
           "check": "cargo test --locked --offline -p thrum-clouds --features thrum-render/creation-counters --test shadow_only_gpu",
           "ask": "Does the test first show that detail erosion changes the full density's extinction at its probes, so that equal bytes could not come from a sky with nothing to erode? Is the recorded difference set beside the design proof's figure?",
           "lock": "gpu",
@@ -503,9 +526,9 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "A sample's light follows the design: four orders with the retained reference's weights, extinction scales and asymmetries; a Sun optical depth made of a local part and the product's part, each counted once; ambient from the clear sky's radiance through the two-stream diffuse transmittance. For slabs and a sphere of known optical depth, radiance toward and away from the Sun is within the bound this milestone measured first against the retained reference.",
+          "statement": "A sample's light follows the design: four orders with the retained reference's weights and extinction scales; the first order's phase the type's droplet phase, widened by the Sun's disc, and the later orders the reference's lobes, all evaluated once a ray; a Sun optical depth made of a local part and the product's part, each counted once; ambient from the clear sky's radiance through the two-stream diffuse transmittance. For slabs and a sphere of known optical depth, radiance at scattering angles of 2\u00b0, 10\u00b0, 45\u00b0, 90\u00b0 and 180\u00b0 is within the bound this milestone measured first against the model's references.",
           "check": "cargo test --locked --offline -p thrum-clouds --test light_gpu",
-          "ask": "Do the expected values come from the retained Python references? Does the test show that doubling the local reach leaves the summed optical depth unchanged within its quadrature, so that no part is counted twice?",
+          "ask": "Do the expected values come from the retained Python references and, for the first order, from the model's phase that M1.8 holds to its closed form? Does the test show that doubling the local reach leaves the summed optical depth unchanged within its quadrature, so that no part is counted twice?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -525,7 +548,7 @@
         },
         {
           "id": "M5.3",
-          "statement": "At a 10\u00b0 and a 4\u00b0 Sun, Sun-facing sides take warm light, clouds shade each other across the field, edges toward the Sun carry a silver lining, and against the Sun thin edges are brighter than thick cores.",
+          "statement": "At a 10\u00b0 and a 4\u00b0 Sun, Sun-facing sides take warm light, clouds shade each other across the field, edges toward the Sun carry a silver lining that is a bright rim close to the Sun and not a glow across the sky, against the Sun thin edges are brighter than thick cores, and clouds seen with the Sun behind the viewer are bright.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 and a 4\u00b0 Sun, looking toward, across and away from it. Judge each whole and in native-size crops of a backlit edge, a lit flank and a cloud in another's shade.",
           "target": "mac-metal",
           "builder_result": "open",
@@ -557,8 +580,8 @@
         },
         {
           "id": "M5.6",
-          "statement": "In Chrome, at noon, at a 10\u00b0 Sun, at 0\u00b0 and at \u22126\u00b0, the sky passes M5.2's, M5.3's and M5.4's lists.",
-          "inspect": "Capture the same `fixed` stills in Chrome at those four Sun elevations. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "statement": "In Chrome, at noon, at a 10\u00b0 Sun, at 0\u00b0 and at \u22126\u00b0, the sky passes M5.2's, M5.3's and M5.4's lists, and a pan across the Sun passes M5.8's.",
+          "inspect": "Capture the same `fixed` stills in Chrome at those four Sun elevations. Judge them by those lists, then compare native-size crops with the Mac's. Capture the `realtime` pan of M5.8 in Chrome and judge it the same way.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -579,6 +602,16 @@
         },
         {
           "id": "M5.8",
+          "statement": "Thin cloud crossing the Sun shows a steady aureole: in a slow pan across the Sun at 1x there is no ring, band, flicker or crawl around it.",
+          "inspect": "Capture a `realtime` sequence of 20 seconds at a 30\u00b0 Sun with thin cloud over it, panning slowly across the Sun. Judge consecutive frames in native-size crops around the Sun.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -592,7 +625,7 @@
     },
     {
       "id": "M6",
-      "name": "A cloud made as content stands in the weather's sky, lit and shading like the clouds around it, and one grows through its staged keys",
+      "name": "A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -600,7 +633,7 @@
       "depends_on": [
         "CONTENT-LOOP:M1"
       ],
-      "quality_bar": "One sky: a placed cloud that cannot be told from its neighbours by its light, its shade or its edges, as hero clouds sit among the rest in Horizon Forbidden West. The stand-in shapes are judged for fit, not for beauty.",
+      "quality_bar": "One sky: a placed cloud that cannot be told from its neighbours by its light, its shade or its edges, as hero clouds sit among the rest in Horizon Forbidden West. Each library shape's own anatomy is judged in M10.",
       "items": [
         {
           "id": "M6.1",
@@ -640,7 +673,7 @@
         {
           "id": "M6.4",
           "statement": "At noon and at a 10\u00b0 Sun, a placed cloud among procedural ones has the same light and the same base level, edges that break as its neighbours' do, and no seam or box outline. Where a procedural cloud is partly in front of it and partly behind, each hides the other correctly. The shade on the ground has the placed cloud's outline.",
-          "inspect": "Capture `fixed` stills of a placed stand-in among procedural clouds at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and one looking down its shade. Judge each whole and in native-size crops of the placed cloud's edge, its base and the overlap with a neighbour.",
+          "inspect": "Capture `fixed` stills of a placed library cloud among procedural clouds at noon and at a 10\u00b0 Sun, from 2 m and from 40 m, and one looking down its shade. Judge each whole and in native-size crops of the placed cloud's edge, its base and the overlap with a neighbour.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -659,8 +692,9 @@
         },
         {
           "id": "M6.6",
-          "statement": "The stand-in shapes and the stand-in growth track are made in this repository by a tool that is committed with them, with footprints derived by the model's function, are labelled as stand-ins in the game, and take nothing from Broadsides.",
-          "ask": "Does the tool's source show how each stand-in is made, and does `docs/evidence/CLOUDS/PROVENANCE.md` say so?",
+          "statement": "The example's library is the accepted one: the six fair, three mediocris and three congestus volumes and the eleven keys of the congestus growth track are in the game as stacked volume products, cooked by a committed tool from files copied unchanged, with footprints derived by the model's function. Each slab's voxels hash to the value recorded for it at the source, the library's licence record is beside it, and `docs/evidence/CLOUDS/PROVENANCE.md` lists every copied file with its source commit and path.",
+          "check": "cargo test --locked --offline -p v1-game --test clouds_library",
+          "ask": "Does the provenance file match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides records the design names, and not from the cooked products?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -680,7 +714,7 @@
         },
         {
           "id": "M6.8",
-          "statement": "With placed stand-ins in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of the stacked products and the footprints for each profile. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With placed library clouds in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of the stacked products and the footprints for each profile. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene placed",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -692,6 +726,28 @@
         },
         {
           "id": "M6.9",
+          "statement": "In a directed profile the game's shapes are drawn where it put them. Over a directed shape the GPU weather map's column matches the model's query within this milestone's bound; with coverage at 0 every pixel outside the shapes and their shade equals the frame with clouds absent; a refused shape is counted, reported and not drawn.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_directed_gpu",
+          "ask": "Does the test place its shape through the game's weather state and the public interface, at a point it chose, and compare with the model's query there?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.10",
+          "statement": "A composed sky: at a 10\u00b0 Sun with coverage at 0, a library tower the game placed beside the Sun stands there alone, forms with no pop when it is added, rises through its growth track as the game moves its growth, drifts with the wind, and thins away when the game lets it go.",
+          "inspect": "Capture a `fixed` still of the tower beside the Sun, and `realtime` sequences of its forming, its growth at 30x and its thinning. Judge the still whole and in native-size crops, and consecutive frames of each sequence.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -746,8 +802,8 @@
         },
         {
           "id": "M7.4",
-          "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
-          "inspect": "Capture `realtime` sequences of 20 seconds at each wind and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
+          "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, and at 60x at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, by even steps from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
+          "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -909,6 +965,18 @@
         },
         {
           "id": "M8.9",
+          "statement": "A capability a scene leaves out costs it nothing. With Weather and Shade, with Sky added, and with World light added, each with and without Shapes, the effect declares only that set's passes, resources and pipelines. Under one weather the ground field holds the same bytes whether or not Sky and World light are declared.",
+          "check": "cargo test --locked --offline -p thrum-clouds --features thrum-render/creation-counters --test capabilities_gpu",
+          "ask": "Does the test count creations by name for each set, and would a capability whose output was hidden while its passes still ran fail it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -1008,7 +1076,7 @@
         },
         {
           "id": "M9.8",
-          "statement": "Across the four presets, at noon and at a 10\u00b0 Sun, with placed stand-ins, the overlay and the haze scale on, the paired cost record is taken again at 2560\u00d71440, beside the earlier records for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "Across the four presets, at noon and at a 10\u00b0 Sun, with library clouds, the overlay and the haze scale on, the paired cost record is taken again at 2560\u00d71440, beside the earlier records for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene range",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -1033,7 +1101,7 @@
     },
     {
       "id": "M10",
-      "name": "The twelve accepted cloud volumes and the growing congestus stand in the sky",
+      "name": "The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -1043,27 +1111,6 @@
       "items": [
         {
           "id": "M10.1",
-          "statement": "The owner has named the licence under which the cloud library enters this repository, and the log records the owner's words.",
-          "check": "grep -Eq '^- [0-9]{4}-[0-9]{2}-[0-9]{2} Owner licence for the cloud library: ' docs/plans/CLOUDS/LOG.md",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M10.2",
-          "statement": "The six fair, three mediocris and three congestus volumes and the congestus growth track are in the game as stacked volume products, with footprints derived from them. Each slab's voxels hash to the value recorded for its shape from the source, and `docs/evidence/CLOUDS/PROVENANCE.md` lists every lifted file with its source commit, path and licence.",
-          "check": "cargo test --locked --offline -p v1-game --test clouds_library",
-          "ask": "Does the provenance file match the files added, and is anything in the repository from Broadsides that it does not list? Do the hashes in the test come from the Broadsides source at the brief's commits?",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M10.3",
           "statement": "Each of the twelve shapes, at 3 to 8 km, from 2 m and from 40 m, at noon and at a 10\u00b0 Sun, shows its accepted anatomy in this sky: lit and shaded as its neighbours are, its base on the shared level, with no box, seam, voxel step or filtering band. The anatomy itself is the owner's accepted content and is not judged again.",
           "inspect": "Capture `fixed` stills of each shape at both Suns and heights. Judge contact sheets by family, then native-size crops of each shape's lit side, base and edge.",
           "target": "mac-metal",
@@ -1073,7 +1120,7 @@
           "review": ""
         },
         {
-          "id": "M10.4",
+          "id": "M10.2",
           "statement": "At 1x from about 10 km the growing congestus keeps its foot while its crown rises and a shoulder forms, with no step between keys. At 30x the growth reads as one continuous rise.",
           "inspect": "Capture `realtime` sequences of the whole track at 1x and at 30x, with two fair clouds in frame for scale. Judge consecutive frames, and stills at the track's start, middle and end.",
           "target": "mac-metal",
@@ -1083,9 +1130,9 @@
           "review": ""
         },
         {
-          "id": "M10.5",
-          "statement": "Under the fair preset, at noon, at a 10\u00b0 Sun and at sunset, library clouds among procedural ones read as one sky, and their shade on the valley has their outlines.",
-          "inspect": "Capture `fixed` stills at the three Suns from 2 m and from 40 m, and a `realtime` 30-second sequence at 8x. Judge each whole and in native-size crops where a library cloud meets a procedural one.",
+          "id": "M10.3",
+          "statement": "Under the fair preset, at noon, at a 10\u00b0 Sun and at sunset, library clouds among procedural ones read as one sky, and their shade on the valley has their outlines. With the placed share at 1, a sky of library shapes alone reads as a fair sky to the horizon, and no shape is recognised as a repeat within one view.",
+          "inspect": "Capture `fixed` stills at the three Suns from 2 m and from 40 m, and a `realtime` 30-second sequence at 8x. Judge each whole and in native-size crops where a library cloud meets a procedural one. Add `fixed` stills of the sky at a placed share of 1, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1093,8 +1140,8 @@
           "review": ""
         },
         {
-          "id": "M10.6",
-          "statement": "In Chrome the library is resident, and the fair sky with it passes M10.3's list for one shape of each family and M10.5's list at noon.",
+          "id": "M10.4",
+          "statement": "In Chrome the library is resident, and the fair sky with it passes M10.1's list for one shape of each family and M10.3's list at noon.",
           "inspect": "Capture the corresponding `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -1103,7 +1150,7 @@
           "review": ""
         },
         {
-          "id": "M10.7",
+          "id": "M10.5",
           "statement": "With all twelve shapes and the track resident and in view, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same view, with the bytes of each stacked product for R8 and for BC4. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/cloud_cost.py check --scene library",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
@@ -1115,7 +1162,7 @@
           "review": ""
         },
         {
-          "id": "M10.8",
+          "id": "M10.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -1308,7 +1355,7 @@
         },
         {
           "id": "M12.8",
-          "statement": "A game maker can add clouds to a scene from the public documentation: the profile, the weather state and its step, the type table, the library's stacked product and its records, the point query, the limits, counters and knobs, and the stated approximations.",
+          "statement": "A game maker can add clouds to a scene from the public documentation: the profile and its capabilities, the weather state and its step, directed shapes, the type table, the library's stacked product and its records, the point query, the limits, counters and knobs, and the stated approximations.",
           "ask": "Could a game maker use clouds from the documentation and the design alone? Does the documentation state the supported range for geometry and camera, the air inside a cloud's interval, the haze scale and what happens below the lowest Sun elevation?",
           "target": "mac-metal",
           "builder_result": "open",

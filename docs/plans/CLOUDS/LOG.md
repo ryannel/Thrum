@@ -69,3 +69,44 @@
   read; nothing is asked of the cooker. S2: cadences bound age in weather time, each part of the map is held to
   the model at the tick it was written (M2.2, M4.2), and a knob changes no query answer and no column the map
   holds (M9.7, M12.3). S3: M7.5's recordings run as long as whole lives need.
+- 2026-11-14 Owner, through the lead: "You can fully use everything in broadsides. But we should make sure that it
+  aligns with the approach we want. But yes, you can copy that code out and reuse as is if it's useful." Then: "We
+  can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate
+  design."
+- 2026-11-14 Owner, through the lead, on clouds: "So in broadsides you will find both a procedural cloud setup as
+  well as pre-baked clouds. The idea being that we could support both those two sky types as well as a hybrid as
+  needed by the game being built." Then: "That's the approach we were going with in broadsides that might not be
+  the right approach here. The agent should look at that work from first principles and figure out how to design
+  the best possible atmospheric system for the thrum game engine. Maybe that's a flexible set of cloud
+  capabilities built from what we did in broadsides, maybe it isn't, but it should start from first principles."
+- 2026-11-14 Lead's reading, recorded as assumptions in the plan: the owner's last words govern; the design of
+  13 November, the brief and the port decision are inputs to judge; Broadsides code, shaders and assets may be
+  copied as is where the design finds them useful; Broadsides stays unmodified.
+- 2026-11-14 Design judged again from first principles; the verdict on each inherited choice is in
+  [the design](DESIGN.md#judged-from-first-principles). Kept, for reasons that do not rest on Broadsides: the
+  weather field with its CPU query, the air frame, 2D fields with a profile, the Sun-path product, a placed
+  volume as a cell of the field, light and shade through `ATMOSPHERE`, the layer ending at render extent, and all
+  seven cues. The four Must Fix resolutions of the review stand.
+- 2026-11-14 Changed: the two Broadsides paths and their hybrid are one medium whose sources are data, and
+  shade, the visible sky, the world's light and shapes are capabilities a scene leaves out at no cost (new item
+  M8.9; "shadow-only" is Weather and Shade). K5 is restated as what the engine does.
+- 2026-11-14 Changed: the first scattering order takes the droplets' phase, Henyey-Greenstein plus Draine, as
+  type data (M1.8, M5.1 and M5.3 written again; M5.8 is new). Part E of
+  [first_principles_proof.py](../../evidence/CLOUDS/design-proof/first_principles_proof.py): the reference lobe
+  is 3.9 times too bright at 5 degrees from the Sun and 2 to 3.4 times too dim looking away from it.
+- 2026-11-14 Changed: drift is shown at the display's time and evolution stays on the tick (M1.1, M2.7, M3.4 and
+  M7.4 written again; M2.11 is new). Part F: at 60x in a 40 m/s wind a near cloud would step 0 then 37 pixels.
+- 2026-11-14 Changed: a game can place shapes itself, as directed shapes in the weather state, in a profile that
+  places by the game and not by the hash (new items M1.12, M6.9 and M6.10), as an assumption.
+- 2026-11-14 Changed: Broadsides may be copied where it does what the design states. The licence assumption was
+  deleted, answered by the owner's words above; third-party material keeping its own licence is an assumption.
+  The accepted library is the example's content from M6 (M6.6 written again from the old M10.2; the stand-ins
+  are gone), M10.1's licence check is deleted, and M10 now judges the twelve shapes in the finished sky. M1.11
+  was written again. The design names where Broadsides has each mechanism.
+- 2026-11-14 Found while planning: the growth track's eleven key volumes are not in Broadsides' Git. They are in
+  that folder's `tmp/evidence-store/cloud-route-2026-11-08/m2-authored-growth-v2/source-keys-replay.tar.gz`
+  (SHA-256 `e24dcd2306836ac0843eed25341807403356d2bb3f1fb385c0f003ec37a63795`, verified), and
+  `coherent_growth.py` there makes them again. M6's note says so.
+- 2026-11-14 [The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md)'s cloud half now summarises this
+  design in place of the 6 November profile. The module list's row, its licence line and its consolidation
+  paragraph were brought into step. No seam ruling, contract, exact baseline or other module's item changed.
