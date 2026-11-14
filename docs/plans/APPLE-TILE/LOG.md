@@ -199,3 +199,9 @@
   simulator and T2 proofs plus the exact baseline/repository gate are queued behind the shared GPU; no integrated
   item acceptance is claimed. [Continuation record](../../evidence/APPLE-TILE/M10-handoff.md) names the jobs and limits.
   D10.5 still needs the owner's unlocked active Mac session and existing OS-observer Screen Recording grant.
+
+- **2026-11-14 — M10 resumed target verification.** Source `07282556` passes the exact native/Chrome baseline
+  campaign and the official M10 check with full `./dev check` under GPU exclusivity. All four integrated native
+  lifecycle tests now pass, including the corrected exact coordinator comparison and five negative controls.
+  D10.1 boundary and D10.3 lifetime/reset pass; diagnostic T2 and simulator function remain pending, and D10.5
+  still needs attended access. No speed, MetalFX or panel claim. [Evidence](../../evidence/APPLE-TILE/M10/README.md).
