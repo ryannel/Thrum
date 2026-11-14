@@ -34,7 +34,7 @@ pub struct Profile {
     pub period: f64,
     /// Detail erosion at its mean, 0..=1.
     pub detail_mean: f64,
-    /// Maximum fractional shape/detail erosion, 0..=1; zero disables erosion.
+    /// Shape threshold and edge-detail strength, 0..=1; zero disables erosion.
     pub erosion: f64,
 }
 
@@ -248,8 +248,22 @@ impl Field {
     ) -> f64 {
         let air = state.to_air([point[0], point[2]]);
         let p = state.parameters();
+        let extinction = self.kind(p.kind).extinction();
+        let shape_noise = self.noise([air[0] / 200.0, point[1] / 200.0, air[1] / 200.0], 40);
+        let detail = match fidelity {
+            Density::Uneroded => 0.0,
+            Density::Coarse => self.profile.detail_mean,
+            Density::Full => self.noise([air[0] / 25.0, point[1] / 25.0, air[1] / 25.0], 41),
+        };
+        let erode = |sigma| {
+            if matches!(fidelity, Density::Uneroded) {
+                sigma
+            } else {
+                self.erode(sigma, extinction, shape_noise, detail)
+            }
+        };
         let column = self.column(air, state.time(), p);
-        let mut sigma = column_density(column, point[1]);
+        let mut sigma = erode(column_density(column, point[1]));
         for shape in state.shapes() {
             let column = self.placed_column(air, shape, p);
             let column_sigma = column_density(column, point[1]);
@@ -262,16 +276,25 @@ impl Field {
                 ]) * shape.envelope
                     * self.kind(p.kind).extinction()
             });
-            sigma += volume_sigma * weight.clamp(0.0, 1.0)
-                + column_sigma * (1.0 - weight.clamp(0.0, 1.0));
+            sigma += erode(volume_sigma) * weight.clamp(0.0, 1.0)
+                + erode(column_sigma) * (1.0 - weight.clamp(0.0, 1.0));
         }
-        let shape_noise = self.noise([air[0] / 200.0, point[1] / 200.0, air[1] / 200.0], 40);
-        let detail = match fidelity {
-            Density::Uneroded => return sigma,
-            Density::Coarse => self.profile.detail_mean,
-            Density::Full => self.noise([air[0] / 25.0, point[1] / 25.0, air[1] / 25.0], 41),
-        };
-        sigma * (1.0 - self.profile.erosion * shape_noise) * (1.0 - self.profile.erosion * detail)
+        sigma
+    }
+
+    fn erode(&self, sigma: f64, extinction: f64, shape: f64, detail: f64) -> f64 {
+        if sigma <= 0.0 || extinction <= 0.0 || self.profile.erosion == 0.0 {
+            return sigma;
+        }
+        // The envelope and vertical profile form a signal swept through fixed
+        // air-frame noise. Remapping removes weak edges entirely and leaves
+        // solid interiors intact. The hash noise is strictly below one.
+        let signal = (sigma / extinction).min(1.0);
+        let threshold = self.profile.erosion * shape;
+        let shaped = ((signal - threshold) / (1.0 - threshold)).max(0.0);
+        // Detail acts only on the remaining edge, and never on a solid core.
+        let eroded = (shaped - self.profile.erosion * detail * (1.0 - shaped)).max(0.0);
+        sigma * (eroded / signal).min(1.0)
     }
 
     /// Midpoint f64 path reference, for any direction. The caller states a finite

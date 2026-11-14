@@ -94,3 +94,44 @@ fn slant_path_reads_voxels_not_their_column_sum() {
     }
     assert!((depths[0] - depths[1]).abs() > 0.5, "{depths:?}");
 }
+
+#[test]
+fn eroded_slant_paths_integrate_both_public_density_variants() {
+    let shape = Shape::new([8; 3], 20.0, values(false)).expect("shape");
+    let field = field(7, 0.35);
+    let state = support::formed(&shape);
+    let sample = Sample {
+        tick: 1,
+        origin: [-70.0, 710.0, 0.0],
+        direction: [0.6, 0.8, 0.0],
+        length: 180.0,
+        steps: 7200,
+    };
+    let uneroded = field.optical_depth(&sample, &state, Density::Uneroded, |_| Some(&shape), 1.0);
+    let mut results = Vec::new();
+    for fidelity in [Density::Full, Density::Coarse] {
+        // Independently use a trapezoid rule at four times the path resolution.
+        // Horizontal tent kernels are linear within a voxel; profile/noise
+        // introduce continuous bounded curvature. Halve again to verify the
+        // numerical allowance of 0.001 optical depth on this stated fixture.
+        let integrate = |steps: u32| {
+            let ds = sample.length / f64::from(steps);
+            (0..=steps)
+                .map(|i| {
+                    let distance = f64::from(i) * ds;
+                    let p =
+                        std::array::from_fn(|j| sample.origin[j] + sample.direction[j] * distance);
+                    let endpoint = if i == 0 || i == steps { 0.5 } else { 1.0 };
+                    field.density(p, &state, fidelity, |_| Some(&shape), 1.0) * ds * endpoint
+                })
+                .sum::<f64>()
+        };
+        let reference = integrate(sample.steps * 4);
+        close(reference, integrate(sample.steps * 8), 0.0005);
+        let path = field.optical_depth(&sample, &state, fidelity, |_| Some(&shape), 1.0);
+        close(path, reference, 0.001);
+        assert!(path > 0.0 && path < uneroded);
+        results.push(path);
+    }
+    assert!((results[0] - results[1]).abs() > 0.001, "{results:?}");
+}
