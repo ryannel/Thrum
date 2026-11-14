@@ -48,7 +48,7 @@ of live water.
 
 | Domain | GPU state | Method |
 |---|---|---|
-| Open sea | Analytic long waves + FFT short-wave cascades | The port decision's spectral profile, evaluated once per tick into a camera-following field clipmap |
+| Open sea | Analytic long waves + FFT short-wave cascades | [SEA's design](../../plans/SEA/DESIGN.md): functions of time, evaluated every presented frame at the display's time, the long waves into a camera-centred field clipmap |
 | Sea interaction | Two-level dispersive wake solver | eWave-style spectral propagation (Tessendorf, SIGGRAPH 2014 course): a near level of about 0.25 m cells, a far level of about 2 m cells, 256² each |
 | Rivers, lakes, pools | Finite shallow water / generalised heightfield | WATER-DYNAMICS' selected methods and the initial HLL patch, run as GPU compute |
 | Whitewater | Fresh foam, aged foam, aeration, slick | One transported field per domain, fed by one deposition pass |
@@ -57,7 +57,9 @@ The CPU keeps a f64 evaluator of the analytic long waves:
 * as the **test oracle** for the GPU sea;
 * as part of the **conformance model** for authorities without a GPU (see Multiplayer).
 
-Water advances on committed tick time with bounded catch-up, never on frame `dt`. Tests use analytic oracles and
+Water state (wakes, inland flow, whitewater) advances on committed tick time with bounded catch-up, never on frame
+`dt`. The open sea's waves hold no state: they are evaluated at the display's time, which is the committed tick
+and the frame's interpolation alpha. Tests use analytic oracles and
 tolerances, not bit equality.
 
 ## The wake

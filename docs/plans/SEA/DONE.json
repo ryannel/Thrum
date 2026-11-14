@@ -99,7 +99,7 @@
     },
     {
       "id": "M2",
-      "name": "The GPU computes the same sea as the CPU model, tick after tick, through pauses, hitches and a replaced device",
+      "name": "The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -107,7 +107,7 @@
       "depends_on": [
         "EFFECT-GRAPH:M2"
       ],
-      "quality_bar": "State that stays with the world as a shipped simulation does: the same waves at the same tick however frames fall, held to an independent oracle and not to its own earlier output.",
+      "quality_bar": "A sea that is the same waves at the same time however frames fall, as a shipped simulation's is, held to an independent oracle and not to its own earlier output.",
       "items": [
         {
           "id": "M2.1",
@@ -123,9 +123,9 @@
         },
         {
           "id": "M2.2",
-          "statement": "Each cascade's displacement on Metal matches the model's direct f64 sum at 1,024 texel centres. The largest difference is recorded as a share of the band's RMS height, and the test holds that recorded bound.",
+          "statement": "Each cascade's displacement and rate of change on Metal match the model's direct f64 sum at 1,024 texel centres, at a frame time between two ticks, within the first minute and after 24 hours. The largest difference is recorded as a share of the band's RMS height, and the test holds that one recorded bound at both times.",
           "check": "cargo test --locked --offline -p thrum-sea --test ambient_gpu",
-          "ask": "Is the recorded difference under 1% of each band's RMS height, and was the bound written from a measurement on this Mac and in the record with its date and commit?",
+          "ask": "Is the recorded difference under 1% of each band's RMS height, and was the bound written from a measurement on this Mac and in the record with its date and commit? Does the 24-hour case fail when the phase is formed from seconds in f32?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -135,7 +135,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "Each cascade bank's mips hold the slope mean and covariance and the Jacobian's mean and variance, equal to the same moments computed from the base level.",
+          "statement": "Each cascade's mips hold the slope mean and covariance and the Jacobian's mean and variance, equal to the same moments computed from the base level.",
           "check": "cargo test --locked --offline -p thrum-sea --test ambient_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -146,9 +146,9 @@
         },
         {
           "id": "M2.4",
-          "statement": "Through a scripted run of repeated ticks, a pause, a hitch of many ticks, a discarded frame, a capture frame at another tick, a backward tick, a new timeline and a replaced device, the sea's two banks after every submitted frame hold what the design's endpoint table gives: the newer the model's sea at the committed tick, the older the model's sea at the tick committed before it, or at the same tick after a full frame, each with its tick. A discarded frame and a capture frame change neither.",
-          "check": "cargo test --locked --offline -p thrum-sea --test state_gpu",
-          "ask": "Are the expectations written from the model and the design's endpoint table, and not from an earlier run of the GPU code? Does the run discard the frame that first writes a bank, and hitch from one committed tick straight to one two or more later?",
+          "statement": "Through a scripted run of frames between ticks, repeated ticks, a pause, a hitch of many ticks, a discarded frame, a capture frame at another tick, a backward tick, a new timeline and a replaced device, the long waves, the cascades and the field cache of every submitted frame are the model's sea at that frame's display time, and a capture frame's are the model's at the capture's own time. The sea keeps no ambient field from one frame for the next: a frame that follows a discarded frame or a replaced device is no different from any other.",
+          "check": "cargo test --locked --offline -p thrum-sea --test frames_gpu",
+          "ask": "Are the expectations written from the model at each frame's time, and not from an earlier run of the GPU code? Do two frames on one tick with different interpolation alphas show different seas, and does a pause show one?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -158,8 +158,8 @@
         },
         {
           "id": "M2.5",
-          "statement": "During a wind change the GPU's sea follows the model's transition at every tick, with no step in height at fixed points.",
-          "check": "cargo test --locked --offline -p thrum-sea --test state_gpu",
+          "statement": "During a wind change the GPU's sea follows the model's transition at every frame's time, with no step in height at fixed points.",
+          "check": "cargo test --locked --offline -p thrum-sea --test frames_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -180,7 +180,7 @@
         },
         {
           "id": "M2.7",
-          "statement": "The GPU time of each sea simulate pass per tick, by pass name, and the bytes of every sea resource are on record for this Mac with the load on the machine, beside the design's estimates. A skipped pass reports as not run.",
+          "statement": "The GPU time of each sea simulate pass per frame, by pass name, and the bytes of every sea resource are on record for this Mac with the load on the machine, beside the design's estimates.",
           "ask": "Does `docs/evidence/SEA/M2-cost.md` hold those rows at the claimed commit, and name a cause for any pass over its estimate?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -193,6 +193,16 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.9",
+          "statement": "Each cascade bin in `thrum-sea-model` turns a whole number of times in the profile's loop, with a frequency within half a cycle per loop of the deep-water value, so the cascades at a time and one loop later are equal. The long waves keep the exact deep-water relation and do not repeat.",
+          "check": "cargo test --locked --offline -p thrum-sea-model --test cascade_loop",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -272,7 +282,7 @@
         },
         {
           "id": "M3.6",
-          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the sea absent gives the whole frame on tick frames and on repeat frames, each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "The first frame's cost is on record. On this Mac at 2560×1440, capture off, a paired record with the sea absent gives the whole frame on tick frames and on repeat frames, each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene first-frame",
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -328,8 +338,8 @@
         },
         {
           "id": "M4.2",
-          "statement": "In Chrome, through repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the sea's two banks after each submitted frame hold what the design's endpoint table gives.",
-          "check": "node scripts/check_sea_browser.mjs --case state",
+          "statement": "In Chrome, through frames between ticks, repeated ticks, a hidden and shown page, a hitch and a lost and recovered device, the long waves and the cascades of each submitted frame are the model's sea at that frame's display time.",
+          "check": "node scripts/check_sea_browser.mjs --case frames",
           "lock": "gpu",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -382,7 +392,7 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, valid at the point's use tick, with that tick, the state tick it was made from and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model at the use tick within 2 mm, and for a point whose use tick is the state tick the cascade part is within M2's bound, with each point's footprint choosing the cascade mip.",
+          "statement": "One dispatch per tick answers every posted point with height, slope, surface velocity and the time derivative of height, valid at the point's use tick, with that tick, the times its layers were made from and a support flag for each layer. For 2,048 points on a gale the long-wave part matches the model at the use tick within 2 mm, and the cascade part matches the model's cascades at the frame's time, carried to the use tick by their rate of change, within M2's bound, with each point's footprint choosing the cascade mip.",
           "check": "cargo test --locked --offline -p thrum-sea --test query_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -482,7 +492,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "The f64 wake reference in `thrum-sea-model`, forced on deep water by the moving Gaussian pressure patch of `wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2\u03c0U\u00b2/g at 3 m/s and at 6 m/s, a ridge within 3\u00b0 of 19.47\u00b0 at 3 m/s and narrower than 19.47\u00b0 at 6 m/s. After the source is removed a crest travels on at its phase speed.",
+          "statement": "The f64 wake reference in `thrum-sea-model`, forced on deep water by the moving Gaussian pressure patch of `wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2πU²/g at 3 m/s and at 6 m/s, a ridge within 3° of 19.47° at 3 m/s and narrower than 19.47° at 6 m/s. After the source is removed a crest travels on at its phase speed.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test wake",
           "target": "mac-metal",
           "builder_result": "open",
@@ -558,7 +568,7 @@
         },
         {
           "id": "M6.8",
-          "statement": "With the wake running, the paired cost record is taken again for the wake scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the wake running, the paired cost record is taken again for the wake scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene wake",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -581,9 +591,9 @@
         },
         {
           "id": "M6.10",
-          "statement": "A hitch of up to eight ticks is one wake step. With a hitch of eight ticks every second, the wake after 20 s differs from the same run stepped tick by tick by under 2% of the field's RMS height, where the design measured 0.6%. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the wake to calm and the scene's status says so. A discarded frame and a capture frame change nothing.",
+          "statement": "After every submitted frame the wake's two endpoints hold what the design's endpoint table gives: the committed tick's wake and the wake of the tick committed before it, each with its tick. A hitch of up to eight ticks is one wake step. With a hitch of eight ticks every second, the wake after 20 s differs from the same run stepped tick by tick by under 2% of the field's RMS height, where the design measured 0.6%. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the wake to calm and the scene's status says so. A discarded frame and a capture frame change nothing.",
           "check": "cargo test --locked --offline -p thrum-sea --test wake_gpu",
-          "ask": "Does the test's hitch move the body's pressure along its path over the step, and does the bound fail when the pressure is held at the body's last place?",
+          "ask": "Does the test's hitch move the body's pressure along its path over the step, and does the bound fail when the pressure is held at the body's last place? Does the run discard the frame that first writes an endpoint?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -693,7 +703,7 @@
         },
         {
           "id": "M7.9",
-          "statement": "With foam running in a gale, the paired cost record is taken again for the foam scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With foam running in a gale, the paired cost record is taken again for the foam scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene foam",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -716,7 +726,7 @@
         },
         {
           "id": "M7.11",
-          "statement": "A hitch of up to eight ticks is one foam step: after it the transfers and births match the reference stepped tick by tick as M7.2 holds them, and a drifting patch is where the drift carries it. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
+          "statement": "After every submitted frame the foam's two endpoints hold what the design's endpoint table gives. A hitch of up to eight ticks is one foam step: after it the transfers and births match the reference stepped tick by tick as M7.2 holds them, and a drifting patch is where the drift carries it. Ticks beyond eight are counted as dropped. A backward tick, a new timeline and a replaced device reset the foam to none. A discarded frame and a capture frame change nothing.",
           "check": "cargo test --locked --offline -p thrum-sea --test foam_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -803,7 +813,7 @@
         },
         {
           "id": "M8.7",
-          "statement": "With the optics running, the paired cost record is taken again for the optics scene at 2560\u00d71440, beside the last record for the same view, with the gather and the body rays recorded on a calm sea and in a gale with zero, one and nine bodies on screen. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the optics running, the paired cost record is taken again for the optics scene at 2560×1440, beside the last record for the same view, with the gather and the body rays recorded on a calm sea and in a gale with zero, one and nine bodies on screen. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene optics",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -945,7 +955,7 @@
         },
         {
           "id": "M9.10",
-          "statement": "In a gale with the craft, wake, foam and optics all running, the paired cost record is taken again for the gale scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "In a gale with the craft, wake, foam and optics all running, the paired cost record is taken again for the gale scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene gale",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -959,6 +969,18 @@
           "id": "M9.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M9.12",
+          "statement": "A sea profile that leaves out the body query, the wake, whitewater or body optics declares none of that capability's passes and creates none of its resources, and the surface's shader makes none of its reads. On a sea with no body and no foam, a profile with the open sea alone submits the frame the full profile does, to within one step of the 8-bit output.",
+          "check": "cargo test --locked --offline -p sea-scene --features thrum-render/creation-counters --test capabilities_gpu",
+          "ask": "Is each capability left out of the compiled graph, or is its work still done and its output hidden?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1067,8 +1089,8 @@
         },
         {
           "id": "M10.9",
-          "statement": "The maturity ledger's `E1.water` row and `docs/evidence/SEA/PROVENANCE.md` are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every lifted file is named with its source commit, path and licence.",
-          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance file match the files in the three packages?",
+          "statement": "The maturity ledger's `E1.water` row and `docs/evidence/SEA/PROVENANCE.md` are current: implementation, correctness, visuals and device kept apart, the parked spikes and device runs owed are listed, and every file copied or translated from Broadsides is named with its source commit and path, with the licence of any material that came into Broadsides from elsewhere.",
+          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance file match the files in the three packages, and is any listed material GPL or share-alike?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

@@ -60,3 +60,32 @@
   the catch-up bound of 8 ticks is set from part A. S2: a query answer is valid at its use tick, and carries that
   tick and its state tick (design, M5.1, M5.2, the module list's body-query row). S3: inspections name the mode,
   the views and the range, and leave the route to the reviewer; the design's capture rule says so once.
+- 2026-11-14 Owner, through the lead: "You can fully use everything in broadsides. But we should make sure that it
+  aligns with the approach we want. But yes, you can copy that code out and reuse as is if it's useful." Then: "We
+  can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate
+  design."
+- 2026-11-14 Owner, through the lead, on clouds: "That's the approach we were going with in broadsides that might
+  not be the right approach here. The agent should look at that work from first principles and figure out how to
+  design the best possible atmospheric system for the thrum game engine. Maybe that's a flexible set of cloud
+  capabilities built from what we did in broadsides, maybe it isn't, but it should start from first principles."
+- 2026-11-14 Lead's reading, recorded as assumptions in the plan: the owner's last words govern the sea too; the
+  design of 13 November and the port decision are inputs to judge; Broadsides code, shaders and assets may be
+  copied as is where the design finds them useful; Broadsides stays unmodified.
+- 2026-11-14 Design judged again from first principles; the verdict on each inherited choice is in
+  [the design](DESIGN.md#judged-from-first-principles). Kept, for reasons that do not rest on Broadsides: the
+  three layers, the field cache, the GPU query, the two-level eWave wake, the reaction-force source, four foam
+  stocks, body-only reflection, bodies integrated by the game, and all seven cues.
+- 2026-11-14 Changed: the long waves, cascades and field cache are evaluated every frame at the display's time
+  and keep nothing between frames, in place of tick copies blended in the surface pass. Only the wake and foam
+  keep two endpoints. M2's name, M2.2 to M2.5, M2.7, M4.2 and M5.1 were written again to that; M6.10 and M7.11 now
+  hold the endpoint table. Parts F and G of `first_principles_proof.py` are the evidence.
+- 2026-11-14 Changed: cascade phase is a whole number of turns in a declared loop (1,024 s), because f32 seconds
+  are 0.26 rad wrong after 24 hours (part F). New item M2.9 puts the loop frequencies in `thrum-sea-model`.
+- 2026-11-14 Changed: every part beyond the open sea is a capability a scene can leave out at no cost (new item
+  M9.12), as an assumption. The design names where Broadsides has each mechanism and how a copy is recorded.
+- 2026-11-14 The licence and no-Broadsides-asset assumptions were deleted, answered by the owner's words above.
+  Third-party material inside Broadsides keeps its own licence; that reading is an assumption. M10.9 was reworded.
+  M1's items are unchanged: M1.8 is met by the log entry above, and its built model needs no change before M2.
+- 2026-11-14 [The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) now says the sea's methods are this
+  design's and Broadsides is a resource; its cloud half was left for `CLOUDS`' planner. The water decision's
+  open-sea row and the module list's licence line were brought into step.
