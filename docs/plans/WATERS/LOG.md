@@ -177,3 +177,9 @@
   ([its design](../SCENE-VIEWS/DESIGN.md#what-a-views-air-is-held-to)). M14.2's water-to-panel stretch can
   take its expected value the same way. `RIVERS`' second review had the solve write a chart's wetting gauges
   from each inflow as well as from the lower sample's water (ruling 2). No text, item or bound here changed.
+- 2026-11-14 `SCENE-VIEWS`' third design review: air from the plane now needs a level plane, and a view's
+  volume is `ATMOSPHERE`'s for an observer at the plane's height
+  ([its design](../SCENE-VIEWS/DESIGN.md#what-a-view-owns-and-what-it-shares)). A mirror's plane here is a
+  body's level, so no text, item or bound here changed. For M14's builder: near sea level `ATMOSPHERE`'s
+  product thins haze just above the horizon, in the main view and in a mirror alike
+  ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md)), so M14.2's panel wants a line well above it.

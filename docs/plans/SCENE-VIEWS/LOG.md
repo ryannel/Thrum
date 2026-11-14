@@ -69,3 +69,30 @@
   230 m away. The pass's own quadrature is about one step from a fine one in a one-band stand-in.
 - 2026-11-14 Not run by the planner: any GPU check, so that a correct view meets the rounding allowance on
   Metal and in Chrome is unrun. No suggestion was made in this review.
+- 2026-11-14 Third design review asked for changes: one Must Fix,
+  [`air-filter-crossing-boundary`](../../evidence/SCENE-VIEWS/design-review.md). The second revision left a
+  line that never crosses the plane with no air. The decoder blends neighbouring lines, so a fragment just
+  above the plane's horizon lost in-scatter: 38% in the review's case, 75.6 times the allowance.
+- 2026-11-14 Resolved in the volume, with no new filter and no wider allowance. With air from the plane a
+  view's volume is `ATMOSPHERE`'s for an observer at the plane's height on every line, crossing or not: the
+  pass's column depends only on the observer's altitude and the line's direction, and under a level plane
+  every crossing has one altitude. It is then the volume of the main camera M1.12 compares with, texel for
+  texel, so the equality holds at the horizon. The decoder still measures from a fragment's own crossing.
+- 2026-11-14 Narrowed: air from the plane needs a level plane, and is refused by name for any other. Under
+  planes tilted 2° and 20°, lines one row apart start 17 m and 154 m apart in altitude, so a blend is no
+  observer's and has no reference. Every plane `WATERS`, `RIVERS` and `PUDDLES` ask for is a water level. M1.5 loses its
+  20° tilted case. An assumption line says so.
+- 2026-11-14 Items. M1.5 is the whole stored volume against the pass's own for a camera on the plane, on a
+  raised plane and at sea level, half of it lines that never cross. M1.12 gains the review's case, a line
+  0.2° above the horizon of a plane 50 m up, and shows the emptied lines miss. M1.9 refuses air from a
+  plane that is not level. M2 and M3 are unchanged; the example now stands 250 m above sea level.
+- 2026-11-14 [Part F](../../evidence/SCENE-VIEWS/design-proof/README.md), with the pass's ground bound.
+  Found on the way: the pass stops a descending column at the model's ground, so any observer near sea
+  level reads thin haze just above the horizon. In the stand-in a view on the sea is 7% to 88% low there,
+  and an ordinary main camera 3 m above the sea 7% to 62% low at 3 km. It is the product as it stands, so
+  a view equals it. Proposed to `ATMOSPHERE` in [its log](../ATMOSPHERE/LOG.md), and an assumption here.
+- 2026-11-14 Not chosen: renormalising the filter over crossing lines, and clamping a never-crossing line
+  to the plane. Each differs from the main view's read by more than rounding, so neither has a reference.
+- 2026-11-14 The review made no suggestion. Not run by the planner: any GPU check. Read for this revision:
+  `aerial.wgsl`, the three decoders, the sampler in `atmosphere/gpu.rs`, `atmosphere.rs`' altitude range,
+  and the camera volume of Hillaire's reference implementation.

@@ -336,3 +336,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - 2026-11-14 Suggestions. Taken: the handover's in-scatter claim is qualified by the reviewer's bank at the
   ramp; the half-float step is no longer called at most 0.1% of every value; M7.9's and M8.7's inspections
   name every sequence. Left: the exposure control's scale, which is M5's built test and not this plan's.
+- 2026-11-14 Proposal from `SCENE-VIEWS`' planner for this module's next plan; nothing here changed. The aerial
+  pass stops a descending column at the model's ground, so an observer near sea level reads thin haze just above the
+  horizon (7% to 62% low from 3 m in a one-band stand-in; see
+  [part F](../../evidence/SCENE-VIEWS/design-proof/README.md)). Remedy as in Hillaire's
+  [`RenderSkyRayMarching.hlsl`](https://github.com/sebh/UnrealEngineSkyAtmosphere/blob/master/Resources/RenderSkyRayMarching.hlsl).
+  Mirror views inherit it and take the same fix. Not measured on a GPU.

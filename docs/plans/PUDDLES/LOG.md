@@ -63,3 +63,5 @@
   the same case (M4.1, M5.2, M8.3).
 - 2026-11-14 Not run by the planner: any GPU check, the bands' ranking as a camera moves, and the stores with
   the covering transfers in a full fill step. Part 1's account was run without stores.
+- 2026-11-14 `SCENE-VIEWS`' third design review: a view's air may start only at a level plane. A band's
+  plane is its lowest water, which is level, so ruling 8 and M7 stand. No text, item or bound here changed.
