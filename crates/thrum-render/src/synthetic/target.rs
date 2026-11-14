@@ -41,6 +41,8 @@ impl OffscreenTarget {
                         .0
                 } else if let Some(native) = &self.native {
                     &native.provider.view
+                } else if let Some(taau) = &self.taau {
+                    &taau.output
                 } else {
                     &self.scene_view
                 },
@@ -66,6 +68,7 @@ impl PreparedSynthetic {
         motion: &wgpu::TextureView,
         temporal: &temporal::TemporalTarget,
         native: Option<&native_witness::Binding>,
+        taau: Option<&super::taau::TaauTarget>,
     ) -> Result<PreparedPreToneInput, RenderError> {
         self.sdr_tone_stage().prepare_input(
             device,
@@ -79,6 +82,8 @@ impl PreparedSynthetic {
                         .0
                 } else if let Some(native) = native {
                     &native.provider.view
+                } else if let Some(taau) = taau {
+                    &taau.output
                 } else {
                     scene
                 },

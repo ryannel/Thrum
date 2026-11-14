@@ -4,6 +4,13 @@
 use crate::runtime::DeviceSite;
 mod recipe;
 pub use recipe::{Recipe, RecipeError};
+
+/// Generation-selected temporal provider. Portable TAAU is the admitted default.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Reconstructor {
+    /// Shader-based temporal reconstruction, available on every recipe.
+    Taau,
+}
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(crate) mod apple;
 
@@ -20,9 +27,16 @@ pub struct DeviceCapabilities {
     downlevel: Option<wgpu::DownlevelFlags>,
     unified_memory: Option<bool>,
     recipe: Result<Recipe, RecipeError>,
+    reconstructor: Reconstructor,
 }
 
 impl DeviceCapabilities {
+    /// Resolve the provider once during preparation. Native providers require
+    /// separate qualification before they can replace this portable default.
+    #[must_use]
+    pub fn reconstructor(&self) -> Reconstructor {
+        self.reconstructor
+    }
     /// Optional timestamp feature to request while the platform creates its
     /// device. The enabled result is captured in this record afterward.
     #[must_use]
@@ -81,6 +95,7 @@ impl DeviceCapabilities {
             downlevel,
             unified_memory: None,
             recipe: Ok(Recipe::Portable),
+            reconstructor: Reconstructor::Taau,
             features: device.features(),
             limits: device.limits(),
             site,

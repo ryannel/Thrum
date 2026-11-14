@@ -41,6 +41,14 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
     Ok(crate::GameSetup {
+        reconstruction: match std::env::var("THRUM_RECONSTRUCTION").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => {
+                thrum_render::synthetic::Reconstruction::Off
+            }
+            Ok("taau") => thrum_render::synthetic::Reconstruction::Taau,
+            Ok("reference") => thrum_render::synthetic::Reconstruction::Reference,
+            _ => return Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
+        },
         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
         diagnostic_clouds: std::env::var("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,

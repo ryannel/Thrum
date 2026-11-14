@@ -60,7 +60,7 @@
         const cooked = probe.has("assets");
         const game = probe.has("field")
           ? await create_field_game(canvas, probe.get("culling") ?? "default", probe.has("field-meshes"))
-          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on");
+          : await create_browser_game(canvas, cooked && probe.get("stars") !== "off", probe.has("diagnostic-clouds"), false, probe.get("culling") ?? undefined, probe.get("meshes") === "on", probe.get("reconstruction") === "taau");
         if (probe.has("diagnostic-clouds")) {
           const label = document.createElement("p");
           label.textContent = "Diagnostic cloud-shade stand-in, drifting at 160 m/s east and 40 m/s south.";

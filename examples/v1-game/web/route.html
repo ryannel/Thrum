@@ -77,7 +77,7 @@
         const text = await (await fetch(query.get("route"), { cache: "no-store" })).text();
         const route = JSON.parse(text);
         const canvas = document.querySelector("#scene");
-        const game = await create_route_game(canvas, text, false, query.get('culling') ?? undefined, query.get('meshes') === 'on');
+        const game = await create_route_game(canvas, text, false, query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau');
         const dpr = window.devicePixelRatio;
         canvas.style.width = `${route.render_extent[0] / dpr}px`;
         canvas.style.height = `${route.render_extent[1] / dpr}px`;

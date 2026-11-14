@@ -247,6 +247,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 &mut slots,
                 self.presenter.as_ref(),
             )?;
+            for slot in &mut slots {
+                slot.target
+                    .share_reconstruction_history(&self.prepared, &self.slots[0].target);
+            }
             Some(slots)
         };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;

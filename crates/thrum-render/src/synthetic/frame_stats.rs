@@ -106,7 +106,7 @@ pub(crate) fn pass_durations(
     for pass in passes {
         if matches!(
             pass.name.as_ref(),
-            "temporal exposure texture" | "temporal input witness"
+            "temporal exposure texture" | "temporal input witness" | "portable TAAU"
         ) {
             continue;
         }

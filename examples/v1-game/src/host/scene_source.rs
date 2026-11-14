@@ -298,6 +298,7 @@ pub(crate) struct GameScene {
     pub(super) camera_yaw: f32,
     pub(super) display_overlay: DisplayOverlay,
     temporal_inputs: bool,
+    reconstruction: thrum_render::synthetic::Reconstruction,
     temporal_pan: (u64, f32),
     temporal_star_edit: u64,
     camera: Option<SceneCamera>,
@@ -383,6 +384,7 @@ impl GameScene {
             display_overlay: setup.display_overlay,
             temporal_inputs: temporal.is_some(),
             native_witness: native_witness_selection(),
+            reconstruction: setup.reconstruction,
             temporal_star_edit: temporal.as_ref().map_or(u64::MAX, |f| {
                 f["star_edit_tick"].as_u64().expect("fixture star tick")
             }),
@@ -420,6 +422,12 @@ impl GameScene {
             .view
             .with_native_witness(native_witness_selection())
             .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs)
+            .with_reconstruction(
+                setup.reconstruction != thrum_render::synthetic::Reconstruction::Off,
+            )
+            .with_reconstruction_reference(
+                setup.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
+            )
             .with_display_overlay(setup.display_overlay);
         scene.camera_culling = setup.camera_culling;
         if setup.diagnostic_clouds {
@@ -571,7 +579,11 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_temporal_inputs(self.temporal_inputs)
         .with_native_witness(self.native_witness)
         .with_display_overlay(self.display_overlay)
-        .with_jitter_sequence(0, [640, 360]);
+        .with_jitter_sequence(0, [640, 360])
+        .with_reconstruction(self.reconstruction != thrum_render::synthetic::Reconstruction::Off)
+        .with_reconstruction_reference(
+            self.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
+        );
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]
@@ -799,6 +811,7 @@ mod tests {
             camera_yaw,
             display_overlay: DisplayOverlay::Off,
             temporal_inputs: false,
+            reconstruction: thrum_render::synthetic::Reconstruction::Off,
             temporal_pan: (30, -0.05),
             temporal_star_edit: 15,
             camera: Some(camera),

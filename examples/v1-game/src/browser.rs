@@ -115,10 +115,16 @@ pub async fn create_browser_game(
     temporal_inputs: Option<bool>,
     culling: Option<String>,
     meshes: Option<bool>,
+    reconstruction: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     create_game(
         canvas,
         crate::GameSetup {
+            reconstruction: if reconstruction.unwrap_or(false) {
+                thrum_render::synthetic::Reconstruction::Taau
+            } else {
+                thrum_render::synthetic::Reconstruction::Off
+            },
             display_overlay: if temporal_inputs.unwrap_or(false) {
                 thrum_render::synthetic::DisplayOverlay::TemporalInputs
             } else {
@@ -159,6 +165,7 @@ pub async fn create_field_game(
         canvas,
         crate::GameSetup {
             display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
+            reconstruction: thrum_render::synthetic::Reconstruction::Off,
             content: crate::GameContent::Field,
             diagnostic_clouds: false,
             camera_culling,
@@ -318,6 +325,7 @@ pub async fn create_route_game(
     diagnostic_clouds: Option<bool>,
     culling: Option<String>,
     meshes: Option<bool>,
+    reconstruction: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     canvas.set_width(extent[0]);
@@ -326,6 +334,11 @@ pub async fn create_route_game(
         canvas,
         crate::GameSetup {
             valley_stars: true,
+            reconstruction: if reconstruction.unwrap_or(false) {
+                thrum_render::synthetic::Reconstruction::Taau
+            } else {
+                thrum_render::synthetic::Reconstruction::Off
+            },
             route_overlay: overlay,
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             camera_culling: valley_culling(culling.as_deref(), true)?,

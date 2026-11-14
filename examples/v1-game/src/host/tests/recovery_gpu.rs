@@ -379,6 +379,7 @@ fn mixed_mesh_field_keeps_its_meshes_through_gpu_replacement() {
             },
             crate::GameSetup {
                 display_overlay: DisplayOverlay::Off,
+                reconstruction: thrum_render::synthetic::Reconstruction::Off,
                 diagnostic_clouds: false,
                 content: crate::GameContent::Field,
                 camera_culling: thrum_render::synthetic::CullMode::Frustum,

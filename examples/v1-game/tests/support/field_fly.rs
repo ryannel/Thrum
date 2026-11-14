@@ -94,6 +94,7 @@ fn fly_inner(field_meshes: bool, with_occlusion: bool, progress: &std::cell::Cel
                     &capabilities,
                     FrameConfig::default(),
                     GameSetup {
+                        reconstruction: thrum_render::synthetic::Reconstruction::Off,
                         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,
                         content: GameContent::Field,

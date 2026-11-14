@@ -59,36 +59,6 @@ enum AttachmentUse {
 }
 
 impl PreparedSynthetic {
-    fn select_pre_tone(
-        &self,
-        scene: &ResourceId,
-        motion: &ResourceId,
-        exposure_sample: &ResourceId,
-        temporal: &super::temporal::TemporalResources,
-        native: Option<&super::native_witness::graph::Resources>,
-        extent: [u32; 2],
-    ) -> Result<PreToneInput, RenderError> {
-        Ok(PreToneInput {
-            colour: if let Some(native) = native {
-                native.output.clone()
-            } else if self
-                .pending_view
-                .unwrap_or(self.view_sample)
-                .temporal_diagnostic()
-            {
-                temporal
-                    .witness
-                    .clone()
-                    .ok_or(RenderError::GraphPassMismatch)?
-            } else {
-                scene.clone()
-            },
-            motion: motion.clone(),
-            exposure: exposure_sample.clone(),
-            extent,
-        })
-    }
-
     /// Declares one cleared full-view attachment and its forward access.
     fn view_attachment(
         (width, height, graph, accesses): (u32, u32, &mut FrameGraph, &mut Vec<Access>),
@@ -340,11 +310,17 @@ impl PreparedSynthetic {
             .as_ref()
             .map(|_| super::native_witness::graph::append(&mut graph, &scene, [width, height]))
             .transpose()?;
-        let pre_tone = self.select_pre_tone(
-            &scene,
-            &motion,
+        let taau = self.append_taau(
+            &mut graph,
+            &mut prepared_keys,
+            [&scene, &depth, &motion, &reactive],
             &exposure_sample,
+            [width, height],
+        )?;
+        let pre_tone = self.pre_tone_input(
+            (&scene, &motion, &exposure_sample),
             &temporal,
+            taau.as_ref(),
             native.as_ref(),
             [width, height],
         )?;
@@ -392,6 +368,9 @@ impl PreparedSynthetic {
             if let Some(pass) = temporal.witness_pass {
                 graph.dependency(stars, pass)?;
             }
+            if let Some(taau) = &taau {
+                graph.dependency(stars, taau.pass)?;
+            }
             graph.validate_capabilities(&self.capabilities)?;
             Some(SceneGraphs::compile(
                 &mut graph,
@@ -411,6 +390,7 @@ impl PreparedSynthetic {
                 native,
                 pre_tone,
                 temporal,
+                taau,
                 depth,
                 scene,
                 motion,
@@ -420,6 +400,38 @@ impl PreparedSynthetic {
                 air_shadow,
                 prepass_depth: camera.prepass_depth,
             },
+        })
+    }
+
+    fn pre_tone_input(
+        &self,
+        (scene, motion, exposure): (&ResourceId, &ResourceId, &ResourceId),
+        temporal: &super::temporal::TemporalResources,
+        taau: Option<&super::taau::TaauResources>,
+        native: Option<&super::native_witness::graph::Resources>,
+        extent: [u32; 2],
+    ) -> Result<PreToneInput, RenderError> {
+        let colour = if let Some(native) = native {
+            native.output.clone()
+        } else if self
+            .pending_view
+            .unwrap_or(self.view_sample)
+            .temporal_diagnostic()
+        {
+            temporal
+                .witness
+                .clone()
+                .ok_or(RenderError::GraphPassMismatch)?
+        } else if let Some(taau) = taau {
+            taau.output.clone()
+        } else {
+            scene.clone()
+        };
+        Ok(PreToneInput {
+            colour,
+            motion: motion.clone(),
+            exposure: exposure.clone(),
+            extent,
         })
     }
 
@@ -997,6 +1009,11 @@ impl PreparedSynthetic {
                     let witness = key == self.temporal_key(true);
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
                         frame.temporal(pass, witness)
+                    })
+                }
+                Some(key) if key == self.taau_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.taau(pass)
                     })
                 }
                 Some(key) if key == self.exposure_key() => {
