@@ -1,0 +1,17 @@
+1. Switching a spatial Sun-path field to one far mean
+   tau=0: T immediately above cutoff=1.000000, below=0.135335, jump=0.864665
+   tau=4: T immediately above cutoff=0.018316, below=0.135335, jump=0.117020
+   Shrinking the Sun-angle step does not shrink either jump.
+2. Equal column means do not imply a pointwise upper bound
+   CPU columns=(1.0, 3.0); placed columns=(3.0, 1.0)
+   Equal means: 2 and 2; pointwise bound: False
+   More generally, nonnegative A-B with integral zero requires A=B almost everywhere.
+3. Removing detail erosion changes a common-density shadow integral
+   Visible full density: tau=2.5, T=0.082085
+   Without detail erosion: tau=5, T=0.006738
+4. Ordinary 3D mips do not preserve twelve stacked shapes
+   mip 7: 1x1x12, values=[0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220]
+   mip 8: 1x1x6, values=[10, 50, 90, 130, 170, 210]
+   mip 9: 1x1x3, values=[30, 110, 190]
+   mip 10: 1x1x1, values=[70]
+   Mip 7 has one texel per slab; mip 8 already averages adjacent shapes.

@@ -1,0 +1,13 @@
+A. Sun-disc spreading: the rendered formula versus unit normalization
+diameter  5 um: point 1.000000000; spread exact 0.996604517; quadratures 0.996604517, 0.996604517; loss 0.340%
+diameter 10 um: point 1.000000000; spread exact 0.981128543; quadratures 0.981128543, 0.981128543; loss 1.887%
+diameter 20 um: point 1.000000000; spread exact 0.926591787; quadratures 0.926591787, 0.926591787; loss 7.341%
+diameter 40 um: point 1.000000000; spread exact 0.810887893; quadratures 0.810887893, 0.810887893; loss 18.911%
+diameter 50 um: point 1.000000000; spread exact 0.767689542; quadratures 0.767689542, 0.767689542; loss 23.231%
+
+B. Equal footprints do not determine oblique optical depth
+Footprints (tau, bottom m, top m): ((2.0, 0, 400), (2.0, 0, 400))
+shape A: oblique tau 3.959797975, T 0.019066966
+shape B: oblique tau 0.565685425, T 0.567970712
+A footprint-only shadow path receives identical inputs for A and B, but their volume Sun paths differ.
+The distinction persists with shared constant erosion and can be smoothed; detail-noise omission is not its cause.

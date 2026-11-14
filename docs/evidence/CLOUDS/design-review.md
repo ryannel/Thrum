@@ -1,196 +1,168 @@
 # CLOUDS design review
 
-**Changes requested: four Must Fix findings.** The design covers the commissioned sky and its consumers, but
-building it as written would conflict with the owner's performance policy and with its own optical and
-placed-volume acceptance criteria.
+**Changes requested: two Must Fix findings.** The revised design fits the human's commission, including the
+request to choose Thrum's mechanisms independently of Broadsides. Its placed-shape capability and Sun-disc
+phase still contradict their acceptance requirements. These need design decisions before building.
 
-Reviewed commit: `a0c0bda30e1da38cff06ff4ef7f90c25e030ef28`. This is a design review, not a judgement of running
-clouds. There was no previous CLOUDS design review. No milestone verdict or planner file was changed.
+Reviewed commit: `f2418fb348cd19faf73df292cee640ee83d97dfe`, 14 November 2026. Previous review:
+`docs/evidence/CLOUDS/design-review.md` at `a0c0bda30e1da38cff06ff4ef7f90c25e030ef28`.
+This judges the design and its reviewability, not running clouds. No planner file or milestone verdict changed.
 
 ## Must Fix findings
 
-### 1. Must Fix — numeric-performance-gates — verified
+### 1. Must Fix — shadow-only-density-mismatch — verified, different cause after revision
 
-The plan makes a numeric performance result a condition of building and passing, contrary to the approved
-project brief. [DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 442–452, says an automated check fails above
-the refresh interval or at about 25% regression, and requires re-planning before M5 if the refresh cannot be
-held. [PLAN.md](../../plans/CLOUDS/PLAN.md)'s M3 instructions consequently tell the builder to stop.
+**M8.9 cannot deliver identical ground-field bytes for the declared capability sets when Shapes is present.**
+M6.2 also requires that field to match the volume's coarse density. The old detail-noise mismatch is fixed,
+but the revision introduces a resource omission with the same consequence for placed clouds.
 
-This reaches [DONE.json](../../plans/CLOUDS/DONE.json): M2.8, M3.9, M5.7, M6.8, M7.8, M8.8, M9.8, M10.7,
-M11.6 and M12.5 require the whole frame to fit 8.33 ms wherever the clouds-off frame does. For example, a
-clouds-off frame of 8.2 ms and a clouds-on frame of 8.4 ms fails, regardless of the investigation or measured
-cause. Calling these checks “tripwires, never gates” does not change their consequence.
+[DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 317–322, defines coarse density as full density with
+only the detail-noise term replaced by its mean. Lines 510–518 make a nearby placed cell read its volume
+slab and feed that same function to the Sun's path. Yet the capability table, line 542, supplies leased
+volumes only with Sky; Shade gets footprints alone. Lines 546–548 and M8.9 require identical shade with
+and without Sky. A footprint stores each vertical column's sum and occupied bottom/top, not its
+distribution of extinction with height.
 
-[The project brief](../../plans/BRIEF.md), decision 3, and the
-[owner's performance decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md) explicitly replace
-numeric gates with measurements, investigation and later tuning. C12 says the same. The module brief also
-asks for paired records and tripwires rather than a budget gate. The planner's full-refresh assumption cannot
-override that instruction.
+That information cannot recover a volume's oblique Sun path. The independent
+[counterexample](design-review/revision-counterexamples.py), section B, constructs two small shapes with
+identical footprints, including their occupied bottom and top, but different interior density distributions.
+At a 45° Sun their path optical depths are **3.959798 and 0.565685**, giving factors **0.019067 and
+0.567971**. A footprint-only evaluator receives the same inputs for both and cannot produce both answers.
+The [output](design-review/revision-counterexamples.txt) records exact voxel integration; this is not a
+measurement of an accepted library asset. Shared constant detail erosion does not recover the missing data.
 
-**Resolution:** keep the cost account, paired measurements, regression investigation, visual smoothness and
-attended cadence evidence. Make the performance items prove that work and its recorded disposition, rather
-than fail on the timing number alone. Remove the numeric-only stop/re-plan rule throughout the design and plan.
+The column form can supply an approximate shadow without the volume, but it is a different density along
+oblique rays. Using it only when Sky is absent breaks byte equality; using it in both profiles changes the
+specified Sun-path density and M6.2's oracle. The model's vertical bound remains valid in either case,
+which is why the previous placed-column proof does not settle this conflict.
 
-### 2. Must Fix — placed-volume-query-contract — verified
+**Resolution:** specify the shadow representation and its required resources for placed shapes, consistently
+with and without Sky. Reconcile the capability table, full/coarse definition and M6.2/M8.9 with that
+choice. Prove the result with a nonuniform placed volume under an oblique Sun, retaining K3's same-shade
+promise and an explicit relationship to the visible volume. The planner owns that choice; this review does
+not select a replacement mechanism.
 
-The placed-volume mechanism does not establish the pointwise relationship to the weather query that M7.6
-requires. [DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 176–178, calls the queried column optical depth a
-bound on what is drawn. Lines 317–324 instead scale an independently shaped volume to the cell's **mean**
-column optical depth. M1.6 and M6.2 require preservation of that mean; M7.6 requires that over **any** ground
-point the drawn optical depth never exceeds the query and is zero wherever the query says clear.
+### 2. Must Fix — sun-disc-phase-normalization — verified, new
 
-Equal means cannot supply that guarantee. Take an isolated cell with two equal-area columns of optical depths
-1 and 3, and a placed shape with columns 3 and 1. Both have mean 2, yet the first placed column exceeds the
-query. More generally, if the placed columns must be everywhere no larger than the procedural columns and
-have the same integral, they must equal them almost everywhere. An independently authored silhouette is not
-guaranteed to have that distribution. A positive blend weight does not remove the violation. Clipping the
-shape to the procedural dome is an additional mechanism, changes the accepted anatomy, and does not by itself
-preserve the required mean.
+**M1.8's rendered phase cannot integrate to one under the specified Sun-disc formula.** M5.1 adopts the
+same formula. [DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 400–410, adds half the Sun's squared angular
+radius to the HG lobe's squared angle. In
+[first_principles_proof.py](design-proof/first_principles_proof.py), lines 20–22 and 38–40,
+that increases the denominator everywhere without compensating the numerator. It removes energy rather
+than redistributing it over the Sun's disc.
 
-This is central to consolidating the accepted library with the procedural authority, not an extra accuracy
-case. The design proof explicitly leaves placed volumes unrun. The algebra is reproduced in
-[counterexamples.py](design-review/counterexamples.py), section 2, with
-[output](design-review/counterexamples.txt).
+The design proof's normalization check, line 78, explicitly passes `spread=0.0`. Its reported unit integral
+therefore checks the point-Sun phase, while its appearance comparisons use the spread phase. I integrated
+the latter independently by a closed-form integral of the widened HG lobe and by two quadrature
+resolutions; all agree. At the proof's Sun radius, the complete HG–Draine mixture integrates to:
 
-**Resolution:** settle what the headless column query promises for a placed cell, how the common density
-preserves that promise, and which quantities are bounds versus averages. Reconcile M1.6, M6.2 and M7.6 with
-that definition while retaining the accepted shapes and one weather authority. Demonstrate the relationship
-with a differently shaped volume; normalization of its mean alone is insufficient.
+| Droplet diameter | Integral with Sun-disc spreading | Missing first-order energy |
+|---|---:|---:|
+| 10 µm | 0.981129 | 1.89% |
+| 20 µm | 0.926592 | 7.34% |
+| 40 µm | 0.810888 | 18.91% |
+| 50 µm | 0.767690 | 23.23% |
 
-### 3. Must Fix — sun-fallback-discontinuity — verified
+These are inside the supported 5–50 µm range, not quadrature error. Section A of the
+[counterexample script](design-review/revision-counterexamples.py) and its
+[output](design-review/revision-counterexamples.txt) reproduce the calculation. The original
+[Jendersie–d'Eon supplemental](https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie-supplemental.pdf),
+sections 2 and 3.1, supports the normalized mixture and diameter fit; it does not establish normalization
+of this added spreading rule.
 
-The low-Sun mechanism cannot deliver M5.4–M5.5's continuous sunset. [DESIGN.md](../../plans/CLOUDS/DESIGN.md),
-lines 228–233, switches every receiver from its spatially varying optical depth to one `tau_far` below the
-lowest valid elevation, initially 2°. It makes the same switch outside the field's region. This is also the
-specified behaviour of [CLOUDS seam ruling 1](../../plans/ARCHITECTURE.md#seam-rulings-for-clouds).
+**Resolution:** settle a Sun-disc treatment consistent with the intended energy and angular behavior, and
+make the normalization proof exercise the phase actually rendered. Keep the point-Sun fit check separate
+from the finite-Sun check, and state which mean cosine M1.8 requires after spreading. The proof must meet
+the supported droplet range, not pass only by disabling the new operation. This objection is to the
+spreading mechanism, not to choosing the droplet phase.
 
-Under a broken sky, a clear Sun ray can have `tau = 0` immediately above the cutoff while the far mean is 2.
-Its factor then jumps from 1 to 0.135335. A ray with `tau = 4` jumps from 0.018316 to 0.135335. Neither jump
-shrinks when the Sun-angle step is halved. At 2° the Sun is still above the horizon, so this need not be hidden
-by a zero direct-light term. Moving a receiver across the validity boundary has the corresponding spatial
-problem. See section 1 of the [counterexample output](design-review/counterexamples.txt).
+## Disposition of the previous review
 
-I also read the existing consumer in `crates/thrum-render/src/atmosphere/cloud.rs` and `cloud.wgsl`, and
-[ATMOSPHERE's provider contract](../../plans/ATMOSPHERE/DESIGN.md#environment-identity-and-products). Its
-current unit-transmission fallback explicitly requires the provider to approach that value continuously.
-Changing the fallback value does not remove that obligation. No transition to the new mean is specified.
+I checked the four previous Must Fix findings against the revised design, plan and items before looking
+for revision defects. I read and reran the planner's standard-library revision proof; its
+[rerun output](design-review/revision-proof-rerun.txt) is retained.
 
-**Resolution:** define a continuous transition in elevation and at the spatial support boundary, including
-how the far value remains defined after the detailed product becomes invalid. Reconcile the producer,
-consumer ruling and M2.3/M5.4/M5.5. A heterogeneous sky crossing the cutoff must show the claimed continuity;
-clear and uniformly overcast cases alone would hide this defect.
+| Previous name | Disposition |
+|---|---|
+| `numeric-performance-gates` | **Resolved.** The cost account and M3 plan no longer stop on a timing number. All ten cost items require paired measurements and investigation, explicitly saying no figure decides the item. M12.6 permits a recorded performance-phase follow-up. Visual smoothness and attended cadence remain obligations. |
+| `placed-volume-query-contract` | **Resolved for the original column mismatch.** The query now uses the shape's own footprint, not a dome with an equal mean. M1.6/M1.7 establish the model's pointwise bound; M6.2/M7.6 distinguish GPU filtering error and nearby clear samples. The asymmetric-shape reproduction confirms the column relationship. It does not prove oblique shadow equality, which is finding 1. |
+| `sun-fallback-discontinuity` | **Resolved.** A continuous floored path direction replaces the elevation switch; a border blends transmission to the mean far transmission. ARCHITECTURE ruling 1 agrees. M2.4/M5.5 test heterogeneous sky across the cutoff and boundary. The rerun shows changes shrinking with step size where the old rule had a fixed jump. |
+| `shadow-only-density-mismatch` | **Original detail-noise cause resolved; same-shade obligation still fails for the new shape capabilities.** Both profiles now integrate the same constant-detail coarse density, and M3.8 requires nontrivial erosion. Finding 1 preserves the name but identifies the different missing resource and affected item. |
 
-### 4. Must Fix — shadow-only-density-mismatch — verified specification conflict
+All three earlier Suggestions were taken: slab sampling has a coarsest level and slab-local coordinate
+clamp, with contrasting-neighbour tests in M6.1; map age and conformance time are explicit and presentation
+slots are separated from weather columns; M7.5 allows recordings long enough for whole lives. The slab
+proof confirms isolation through level 7 and mixing at the excluded level 8.
 
-The design cannot simultaneously use the specified full density for its Sun-path product, remove detail
-erosion in shadow-only mode, and retain identical shadow bytes. [DESIGN.md](../../plans/CLOUDS/DESIGN.md),
-lines 182–191, makes shape noise and detail erosion part of the one density evaluated by every consumer.
-Lines 211–214 fill the Sun-path product by marching that density. Lines 333–335 then omit detail noise from
-the shadow-only profile while promising the same ground field. M3.8 requires both resource omission and byte
-equality; M2.8 also requires the detail resource to be absent.
+## Fit to the human's request
 
-For an edge segment whose extinction is halved by detail erosion, a 100 m path at the stated interior scale
-of 0.05 m⁻¹ has optical depth 2.5 with erosion and 5 without it. The corresponding factors are 0.082085 and
-0.006738. This is an illustration of the contradiction, not a measurement of a cloud asset; see section 3 of
-the [counterexamples](design-review/counterexamples.txt).
+I read all three tasks in `RECORD.json` under `briefs`, oldest first, and the approved project brief before
+judging the design. The approved brief remains the authority for purpose, the V1 exit and performance
+policy. The later owner words authorize reuse of Broadsides and ask for an independent choice of cloud
+capabilities; they do not make Broadsides' previous assembly a requirement.
 
-A shared coarse shadow representation could make equality possible, or an equivalent evaluator could retain
-the same density without the stored detail texture. Neither is the currently specified mechanism. Simply
-omitting erosion only when visible clouds are off changes shade, contrary to K3.
+The design preserves K1–K7: recognizable weather, G3s lighting, matching shade, structural life and drift,
+accepted shapes, temporal stability and visitor controls on Mac and Chrome. A common medium with optional
+capabilities is a reasoned response to the later task. Its comparison of retained and changed choices
+discloses exposure to the old design and gives reasons beyond reuse. Clouds remain outside the V1 exit,
+behind selections, with the sea's existing optical interface preserved. No change to SEA M1's work is
+required by the cloud revisions I inspected.
 
-**Resolution:** specify the density and approximation that the Sun-path product actually integrates in both
-profiles, and the resources needed for it. Keep its relationship to the view density and CPU oracle explicit,
-update the cost account if necessary, and make M3.8 test a case where detail erosion changes extinction.
+Game-directed shapes are additional scope, but the plan identifies them as an assumption, bounds their
+capacity and gives them proofs. The geometry/camera restriction, time-lapse range and deferred formation
+demo are likewise disclosed. Moving the accepted library to M6 uses the recorded reuse permission;
+provenance and third-party restrictions remain. M10 still checks all twelve shapes and the growth track
+in Thrum's light. This review neither reaccepts that content nor authorizes publishing it.
+
+## Changed-item coverage and milestone reviewability
+
+I read all **113 current items**, including every changed/new item listed in the task, and compared the
+removals with the previous version. These are design assessments, not milestone verdicts.
+
+| Milestone | Changed/new items read | Assessment with earlier milestones available |
+|---|---|---|
+| M1 | M1.1, M1.6–M1.13 | CPU field, footprint, directed-shape, provenance and interpolation proofs need no renderer. The new optics requirement needs finding 2 resolved. |
+| M2 | M2.1–M2.12 | Shade-first remains achievable on EFFECT-GRAPH M2 and ATMOSPHERE M5. New continuity and repeated-tick mapping checks reject the former fallback and tick-stepped drift. Conformance names sample age; cost records include accelerated weather. |
+| M3 | Quality bar; M3.4, M3.8, M3.9 | Numeric timing admission is removed. Motion is checked against independent display-time displacement, including two frames of one tick. The procedural shadow-only proof is coherent; placed shapes arrive later and need finding 1. TAAU qualification remains M9. |
+| M4 | M4.2, M4.4 | Actual Chrome state, recovery and submitted motion are required. Aged samples are compared at their source ticks; callback intervals are separated from presented time. |
+| M5 | M5.1, M5.3–M5.9 | Droplet light and aureole inspections, sunset continuity and Chrome motion can be judged after M4. Finding 2 affects the optical mechanism. Cost acceptance follows the brief. See S1 for the local-reach diagnostic. |
+| M6 | Quality bar/dependency; M6.1–M6.4, M6.6, M6.8–M6.11 | CONTENT-LOOP M1 supplies the lease. Slab isolation, column bounds and directed placement have independent tests. Accepted content enters here with source hashes. Finding 1 prevents the later capability proof from agreeing with the volume-shadow contract. |
+| M7 | M7.4–M7.6, M7.8 | Wind, whole-life recordings and filtering-aware column comparisons are reviewable; the too-short recording prescription is gone. Performance is recorded without a numeric gate. |
+| M8 | M8.8–M8.10 | Settled atmosphere extensions support world-light proofs. M8.9 tests all capability sets, making finding 1 unavoidable rather than a hypothetical unused combination. |
+| M9 | M9.7, M9.8 | TAAU and controls have named dependencies. Knob invariants distinguish authority from placed-slot presentation changes. Cost records retain the full scene. |
+| M10 | M10.1–M10.6; removed M10.7/M10.8 | The licence wait is removed on the later owner instruction; source-content proof moved to M6.6. Anatomy, growth, mixed sky and Chrome inspections remain, with a new all-shapes sky inspection. Old M10.7's cost item is now M10.5 without its numeric gate; old M10.8's baseline verifier is now M10.6. Neither proof vanished. |
+| M11 | M11.6 | Paired sea-scene cost records replace numeric admission. SEA M8 supplies the receiver and reflection consumer; unchanged integration items preserve depth ordering. |
+| M12 | M12.3, M12.5, M12.6, M12.8 | Governor and MetalFX existence is checked before work. Cadence remains attended, capture-off evidence; investigations may leave tuning follow-ups. Public documentation covers capabilities and directed shapes. |
+
+The visual items continue to reject the principal convincing substitutes: a panorama instead of volume,
+unrelated scrolling shade, moving noise instead of growth, separately composited hero clouds, and static
+history masking motion errors. No additional build blocker was established from the other changed items.
 
 ## Suggestions
 
-### S1. Suggestion — define sampling of the stacked volume's mip tail — verified
+### S1. Suggestion — scope the local-reach invariance diagnostic — verified wording ambiguity
 
-Stacking shapes does not by itself make every mip stay inside its slab, as DESIGN.md lines 313–315 claim.
-The existing cooker (`crates/thrum-cook/src/texture.rs`, lines 102–113 and 384–416) downsamples the entire
-volume until all dimensions reach one. Twelve stacked 128³ shapes become a 1×1×12 level, then a 1×1×6 level
-that averages pairs of shapes. Section 4 of the [counterexample output](design-review/counterexamples.txt)
-reproduces that recurrence with constant-valued slabs.
+M5.1 asks whether doubling local reach leaves summed optical depth unchanged within quadrature error.
+The revised local segment uses full density and the distant segment coarse density. Changing the split
+therefore changes the integral by the full-minus-coarse density over the moved interval, even with exact
+quadrature. The diagnostic remains useful on a fixture where the densities agree. Clarify that scope, or
+distinguish representation error from quadrature error. This requires no new testing procedure and does
+not invalidate the selected local-plus-distant approximation.
 
-State the usable mip range and slab-local filtering/addressing policy, including growth keys. This can be
-resolved by a bounded sampling policy within the chosen representation; it need not introduce a new loader.
-If special cooking is chosen, settle that ask with CONTENT-LOOP, whose design explicitly leaves atlases to
-the consumer's later request. M6.1 already requires isolation, so its test should include the coarsest sampled
-levels and contrasting neighbouring slabs.
+## Evidence, limits and validation
 
-### S2. Suggestion — distinguish current weather from aged presentation samples — verified ambiguity
+I performed the reading and judgement myself, without delegates. I read the design, plan, record, previous
+review and current items, then the planner's revision log. I checked relevant contracts, retained cloud
+ownership/transport rules, the port decision, CLOUDS seam rulings, EFFECT-GRAPH's tick/interpolation rules
+and the existing atmosphere provider in `cloud.rs`/`cloud.wgsl`. I read both new proof scripts, reran the
+revision proof and wrote the independent counterexamples above. I checked the phase fit against the primary
+supplemental source. I did not reread Broadsides code/assets, rerun the older NumPy field sketch, or run GPU
+or visual tests: there is no implemented cloud renderer to qualify. No device or visual-quality pass is claimed.
 
-DESIGN.md lines 199–214 updates the weather map at about 2 Hz and the Sun product in tiles. Its cost account
-spreads Sun updates over 8, 32 and 128 frames. Neither the timebase of “2 Hz” nor the interpolation/age policy
-is stated. At 60×, half a second of wall time spans 30 seconds of weather evolution. The continuous CPU
-function alone does not prove that replacing an aged texel is visually continuous. M2.6 and M9.5 provide
-useful motion inspections that should expose this during building.
+Validation: `./dev check-docs` passed: 815 Markdown files, 5,658 local links, 30 module records, crate policy
+and current design hashes. The [check log](design-review/revision-check-docs.txt) records the result.
+`git diff --check` passed. The final working-tree inventory contains only this review and four new evidence
+files in `design-review/`; earlier evidence is preserved. The temporary Cargo output was removed, and all
+changes are left uncommitted for the review command.
 
-Clarify the sample time used for conformance in M2.2/M4.2 and how age enters the allowed error. Also narrow
-M9.7/M12.3's “no weather-map texel changed” to authoritative weather meaning: the map explicitly contains a
-placed slot and weight, while placed range is a quality knob that changes those presentation fields. The CPU
-query remaining unchanged is the appropriate invariant; identical presentation bytes are a different claim.
-
-### S3. Suggestion — let lifetime inspections run for the lifetime — verified
-
-M7.5 prescribes 60-second recordings at 8× and 60× and asks reviewers to follow at least three clouds from
-birth to death. At 8× that covers eight weather minutes; the first profile's cells live 12–30 minutes.
-Keep the whole-life requirement and leave the recording duration to the builder. This is a reason to shorten
-the procedural proof instructions, not add another capture checklist.
-
-## Fit to the request and milestone reviewability
-
-I derived the commission first from the sole verbatim task in RECORD.json, the approved project brief and the
-CLOUDS brief. The required result is one deterministic weather authority with procedural and accepted placed
-clouds, G3s lighting, matching shade, formation and thinning, stable motion, visitor controls, Mac and Chrome
-support, and consolidation in Thrum without making clouds a V1 exit gate. The design covers all seven named
-cues and includes the sea consumer. The sky overlay and haze scale support the requested shared lighting;
-they are relevant additions. The licence hold, stand-in-first sequence and off-by-default scene selections
-respect the stated boundaries. The geometry restriction, time-lapse range and timing interpretation are
-explicit assumptions for the human, rather than silently omitted scope. The performance interpretation still
-needs finding 1's correction because the approved brief wins.
-
-I read all 107 items in DONE.json and considered each with preceding milestones available. The table groups
-that assessment; it does not assign milestone verdicts.
-
-| Milestone | Items | Assessment at its planned endpoint |
-|---|---:|---|
-| M1 | 11 | CPU-only proofs are available independently; density/query semantics need finding 2 resolved. |
-| M2 | 10 | Shade can be proved before a view march; GPU provider extension has an identified owner. Findings 1, 3 and 4 affect its rules. |
-| M3 | 12 | First visible frame, transport and motion outputs can be judged before TAAU; full reconstruction is deliberately later. Findings 1 and 4 apply. |
-| M4 | 5 | Actual Chrome conformance and submitted captures are required, rather than a Mac proxy. Clarify aged-state comparison as in S2. |
-| M5 | 8 | The lighting inspections reject a simple gradient and cover sunset. The fallback must change to make their continuity requirement attainable. |
-| M6 | 9 | Cooked stand-ins prove the lease and hybrid route without copying the unlicensed library. Resolve finding 2 and the mip policy. |
-| M7 | 9 | Preset transitions and whole-life motion reject a moving texture substitute. The pointwise bound conflicts with placed volumes; S3 corrects the recording prescription. |
-| M8 | 9 | Reflection/diffuse overlay and haze have explicit owning-module changes and preservation checks. No new prerequisite is hidden here. |
-| M9 | 9 | TAAU and controls are explicitly deferred until APPLE-PRESENTATION M3 and CREATOR M1. Clarify quality-knob invariants as in S2. |
-| M10 | 8 | Accepted content is explicitly required after the licence, so stand-ins cannot close K5. Source hashes and anatomy inspections are useful independent proofs. |
-| M11 | 7 | SEA M8 provides the receiver and reflection consumer; the sea-depth ordering is explicit. |
-| M12 | 10 | Governor and MetalFX existence checks precede work; attended panel evidence is separate from engine capture. Numeric timing gates still require correction. |
-
-The visual lists generally address convincing substitutes: shared bases and parallax rather than a sky dome,
-cloud-aligned shade rather than an unrelated scrolling field, structural life rather than drifting noise,
-mixed occlusion rather than a separately composited hero, and fast motion rather than static history hiding
-artifacts. The numerical findings above are requirements that these later inspections cannot reconcile on
-the planner's behalf.
-
-## Evidence and limits
-
-I read the design, plan, all done-when items, record and log; the retained cloud ownership/transport rules;
-relevant C04/C07/C08/C12 contracts; CLOUDS interface rulings; the atmosphere provider on both sides; and the
-volume cooker and lease contract. I also read the design proof's Python source and saved output. I did not
-inspect Broadsides code or assets, qualify the accepted library anew, or run GPU/cloud visual tests: the cloud
-renderer is not built. No running-quality or device-performance conclusion is claimed.
-
-The new [counterexample script](design-review/counterexamples.py) was run with Python's standard library;
-its [output](design-review/counterexamples.txt) records the four small checks above. These are algebraic and
-cooker-recurrence examples, not engine test results. The planner's NumPy proof was not rerun: the available
-`python3` has no NumPy. Attempts to open the cited Frostbite and Nubis³ PDFs through the web reader exceeded
-its document-size limit; the review does not independently certify their quoted timings or paper summaries.
-
-Validation: `./dev check-docs` passed (810 Markdown files, 5,528 local links, 30 module records, crate policy
-and current design hashes); [the log](design-review/check-docs.txt) records the result. Build output was
-directed to `/tmp/thrum-clouds-design-review-target`. The final working-tree check showed only this review
-and its evidence folder added, with all previously tracked files unchanged.
-
-DESIGN CHANGES: 4 must_fix findings
+DESIGN CHANGES: 2 must_fix findings
