@@ -1,0 +1,6 @@
+1025 f32 entries, coordinate u = sqrt(sin(theta/2)); simulated f32 linear read
+ 5 um: integrals 1.000019455, 1.000019455; mean 0.843421094 vs 0.843419506; max relative probe error 5.13764e-05
+20 um: integrals 1.000078464, 1.000078464; mean 0.879313900 vs 0.879305633; max relative probe error 0.000386099
+50 um: integrals 1.000133774, 1.000133774; mean 0.891202253 vs 0.891188810; max relative probe error 0.00140026
+37% 5 um + 63% 50 um: integral 1.000091476
+PASS: table accuracy is feasible in simulated f32; actual shader remains M1/M5 proof.

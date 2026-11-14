@@ -1,0 +1,30 @@
+A. Sun-path factor under open sky beside a broken cloud bank
+   Sun sinking from 8 deg to 1 deg: largest change between consecutive Sun steps,
+   for 20000 / 40000 / 80000 steps
+   old: the field, then exp(-far mean tau) below 2 deg
+      under open sky       1.000000  1.000000  1.000000   ratios 1.00, 1.00
+      ray enters the bank  0.006861  0.003430  0.001715   ratios 2.00, 2.00
+      gap in the bank      1.000000  1.000000  1.000000   ratios 1.00, 1.00
+   new: the columns' elevation is max(Sun, 2 deg); no switch
+      under open sky       0.000000  0.000000  0.000000   ratios 0.00, 0.00
+      ray enters the bank  0.006861  0.003430  0.001715   ratios 2.00, 2.00
+      gap in the bank      0.001897  0.000949  0.000474   ratios 2.00, 2.00
+   a receiver leaving the field's region at a 60 deg Sun: largest change between receiver steps,
+   for 4000 / 8000 / 16000 steps over 4 km
+      old: the field, then exp(-far mean tau) outside: 0.999441  0.999441  0.999441   ratios 1.00, 1.00
+      new: mix(far mean transmittance, field, border weight): 0.000377  0.000189  0.000094   ratios 2.00, 2.00
+      far value over the 160 km window: mean transmittance 0.5032; exp(-mean optical depth) would be 5.59e-04
+   closed deck, thinnest column tau 8.01: largest factor and far value from a 20 deg Sun to below the horizon 1.99e-25, against exp(-thinnest) 3.32e-04
+B. A placed cell's query is its shape's own column
+   volume form before erosion against the query, 1500 points: largest difference 1.51e-14
+   eroded volume form, column form and blends at weights 0, 0.25, 0.5, 1: largest (drawn - query) 0.00e+00; drawn where the query is clear: 0
+   the refuted rule, a dome of the same mean column as the query: placed column exceeds it at 26% of points, by up to 8.50 (mean column 1.34)
+   a read one mip coarser is a local average and exceeds the point query by up to 2.04 at an edge: that is the GPU's measured bound, not the model's
+C. The Sun's path integrates a coarse density that needs no detail noise
+   150 m edge paths: tau with no erosion 3.75, with detail erosion 3.13 to 3.41, coarse 3.27
+   transmittance of an 80 m column, mean of the full density's paths against one coarse path: RMS 0.0011; against a path with erosion left out: RMS 0.0142
+   the coarse path reads the profile and one constant, so both profiles compute the same number
+D. A stacked volume read slab by slab
+   twelve slabs of 128, alternately 0 and 255; levels 0 to 7, each blended with the next, coordinate held half a texel of the coarser level inside the slab: largest error 0
+   the same reads with no clamp: largest error 127.5
+   level 8 holds 6 texels with values [128, 128, 128, 128, 128, 128]: past the cap every texel mixes two shapes

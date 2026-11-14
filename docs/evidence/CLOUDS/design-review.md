@@ -1,168 +1,169 @@
 # CLOUDS design review
 
-**Changes requested: two Must Fix findings.** The revised design fits the human's commission, including the
-request to choose Thrum's mechanisms independently of Broadsides. Its placed-shape capability and Sun-disc
-phase still contradict their acceptance requirements. These need design decisions before building.
+**Design approved, with two Suggestions and no Must Fix findings.** The revised design answers the human's
+request for a reusable cloud system chosen for Thrum, with Broadsides available as a resource. Both Must Fix
+findings from the previous review are resolved. This approves the design and its proof order, not cloud
+appearance, device performance or an implementation.
 
-Reviewed commit: `f2418fb348cd19faf73df292cee640ee83d97dfe`, 14 November 2026. Previous review:
-`docs/evidence/CLOUDS/design-review.md` at `a0c0bda30e1da38cff06ff4ef7f90c25e030ef28`.
-This judges the design and its reviewability, not running clouds. No planner file or milestone verdict changed.
+Reviewed commit: `79d39ed1e247cc941502b89938c4debe48bf500e`, 14 November 2026. Previous review:
+`docs/evidence/CLOUDS/design-review.md` at `f2418fb348cd19faf73df292cee640ee83d97dfe`.
 
-## Must Fix findings
+## Previous findings
 
-### 1. Must Fix — shadow-only-density-mismatch — verified, different cause after revision
+### shadow-only-density-mismatch — resolved
 
-**M8.9 cannot deliver identical ground-field bytes for the declared capability sets when Shapes is present.**
-M6.2 also requires that field to match the volume's coarse density. The old detail-noise mismatch is fixed,
-but the revision introduces a resource omission with the same consequence for placed clouds.
+The missing resource is now present. [DESIGN.md](../../plans/CLOUDS/DESIGN.md#placed-volumes), lines 546–573,
+requires the Sun's path to read the leased slab wherever a placed cell has volume-form weight. The slot and
+weight depend on the camera, placed range and lease, never on whether Sky is declared. The capability table
+and shadow-only definition, lines 581–600, give Shapes its lease in every rendering profile. Both profiles
+use the column form when the lease is absent or the volume form has no weight. The headless query still
+needs only footprints. The plan explicitly records the library memory retained in shadow-only mode.
 
-[DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 317–322, defines coarse density as full density with
-only the detail-noise term replaced by its mean. Lines 510–518 make a nearby placed cell read its volume
-slab and feed that same function to the Sun's path. Yet the capability table, line 542, supplies leased
-volumes only with Sky; Shade gets footprints alone. Lines 546–548 and M8.9 require identical shade with
-and without Sky. A footprint stores each vertical column's sum and occupied bottom/top, not its
-distribution of extinction with height.
+This resolves the actual counterexample: equal vertical footprints do not imply equal oblique paths, but
+the shadow evaluator no longer tries to recover those paths from footprints. M1.15 requires independent
+voxel integrals to distinguish the equal-footprint pair. M6.2 requires the GPU result to follow the volume
+at weight 1, the column form at 0 and their blend between, with a nonuniform shape at two Sun elevations.
+Its reviewer question requires the footprint-only result to fall outside the accepted bound at the volume
+probes. M6.12 then requires identical bytes with and without Sky at the same weights, including the absent
+lease case. M8.9 preserves that obligation when World light is added and checks resource creation too.
+Together these reject both the original missing-volume implementation and the substitute that uses the
+footprint in both profiles merely to make their bytes agree.
 
-That information cannot recover a volume's oblique Sun path. The independent
-[counterexample](design-review/revision-counterexamples.py), section B, constructs two small shapes with
-identical footprints, including their occupied bottom and top, but different interior density distributions.
-At a 45° Sun their path optical depths are **3.959798 and 0.565685**, giving factors **0.019067 and
-0.567971**. A footprint-only evaluator receives the same inputs for both and cannot produce both answers.
-The [output](design-review/revision-counterexamples.txt) records exact voxel integration; this is not a
-measurement of an accepted library asset. Shared constant detail erosion does not recover the missing data.
+I read and reran [the planner's revised proof](design-proof/second_revision_proof.py). Its equal-footprint
+pair gives optical depths 3.959767 and 0.565681 from the two volumes, versus 1.414203 from the common column
+form. [The rerun](design-review/second-revision-proof-rerun.txt) also reproduces the wider placed-shape
+results. These are CPU feasibility results; neither this script nor this review proves GPU byte equality.
+That remains M6.12's job. The finite-column approximation has explicit error and visual checks; see S1
+below for how its proof should be described.
 
-The column form can supply an approximate shadow without the volume, but it is a different density along
-oblique rays. Using it only when Sky is absent breaks byte equality; using it in both profiles changes the
-specified Sun-path density and M6.2's oracle. The model's vertical bound remains valid in either case,
-which is why the previous placed-column proof does not settle this conflict.
+### sun-disc-phase-normalization — resolved
 
-**Resolution:** specify the shadow representation and its required resources for placed shapes, consistently
-with and without Sky. Reconcile the capability table, full/coarse definition and M6.2/M8.9 with that
-choice. Prove the result with a nonuniform placed volume under an oblique Sun, retaining K3's same-shade
-promise and an explicit relationship to the visible volume. The planner owns that choice; this review does
-not select a replacement mechanism.
+[Cloud light](../../plans/CLOUDS/DESIGN.md#cloud-light), lines 409–440, replaces denominator widening with an
+average of the entire first-order phase over the Sun's disc. For each incident direction the normalized
+phase integrates to one over outgoing directions. Averaging these integrals with normalized disc weights
+therefore also gives one. Rotational symmetry gives the first moment as the point-source mean cosine times
+`(1 + cos ρ)/2`. At the disc centre the result is the point-source phase integrated over the disc, divided
+by the disc's solid angle. These are properties of the selected mechanism, not a renormalization hiding
+the old angular error. The point-source mixture and fit agree with sections 2 and 3.1 of the primary
+[Jendersie–d’Eon supplemental](https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie-supplemental.pdf).
+The finite-disc convolution is the design's additional operation.
 
-### 2. Must Fix — sun-disc-phase-normalization — verified, new
+The rerun gives unit integral to six decimal places at 5, 10, 20, 40 and 50 µm, and the predicted first
+moment. M1.8 now proves the point-source model separately; M1.14 proves the disc average and the table read
+in f32, including the forward peak and a blend of type tables. M5.1 reads that same table and includes 0°
+and 0.25° radiance probes. The old widened lobe cannot pass the normalization requirement, and simply
+returning the point-source phase cannot pass the centre-of-disc requirement.
 
-**M1.8's rendered phase cannot integrate to one under the specified Sun-disc formula.** M5.1 adopts the
-same formula. [DESIGN.md](../../plans/CLOUDS/DESIGN.md), lines 400–410, adds half the Sun's squared angular
-radius to the HG lobe's squared angle. In
-[first_principles_proof.py](design-proof/first_principles_proof.py), lines 20–22 and 38–40,
-that increases the denominator everywhere without compensating the numerator. It removes energy rather
-than redistributing it over the Sun's disc.
+I additionally checked the proposed 1,025-entry table with simulated f32 storage, coordinates and linear
+interpolation, independently integrating that lookup with composite Simpson quadrature. At 5, 20 and
+50 µm its integrals are 1.000019455, 1.000078464 and 1.000133774; the largest relative error at M1.14's
+angle probes is 0.001401. A 37/63 blend of the endpoint tables integrates to 1.000091476. Doubling the
+integration resolution leaves those reported integrals unchanged. The [check](design-review/phase-table-check.py)
+and [output](design-review/phase-table-check.txt) show that f32 does not invalidate the proposed table.
+This check reuses the inspected planner disc quadrature; it is independent of its table-integration code,
+not an independent Mie solver or a GPU test.
 
-The design proof's normalization check, line 78, explicitly passes `spread=0.0`. Its reported unit integral
-therefore checks the point-Sun phase, while its appearance comparisons use the spread phase. I integrated
-the latter independently by a closed-form integral of the widened HG lobe and by two quadrature
-resolutions; all agree. At the proof's Sun radius, the complete HG–Draine mixture integrates to:
+### Previous Suggestion S1 — taken and resolved
 
-| Droplet diameter | Integral with Sun-disc spreading | Missing first-order energy |
-|---|---:|---:|
-| 10 µm | 0.981129 | 1.89% |
-| 20 µm | 0.926592 | 7.34% |
-| 40 µm | 0.810888 | 18.91% |
-| 50 µm | 0.767690 | 23.23% |
-
-These are inside the supported 5–50 µm range, not quadrature error. Section A of the
-[counterexample script](design-review/revision-counterexamples.py) and its
-[output](design-review/revision-counterexamples.txt) reproduce the calculation. The original
-[Jendersie–d'Eon supplemental](https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie-supplemental.pdf),
-sections 2 and 3.1, supports the normalized mixture and diameter fit; it does not establish normalization
-of this added spreading rule.
-
-**Resolution:** settle a Sun-disc treatment consistent with the intended energy and angular behavior, and
-make the normalization proof exercise the phase actually rendered. Keep the point-Sun fit check separate
-from the finite-Sun check, and state which mean cosine M1.8 requires after spreading. The proof must meet
-the supported droplet range, not pass only by disabling the new operation. This objection is to the
-spreading mechanism, not to choosing the droplet phase.
-
-## Disposition of the previous review
-
-I checked the four previous Must Fix findings against the revised design, plan and items before looking
-for revision defects. I read and reran the planner's standard-library revision proof; its
-[rerun output](design-review/revision-proof-rerun.txt) is retained.
-
-| Previous name | Disposition |
-|---|---|
-| `numeric-performance-gates` | **Resolved.** The cost account and M3 plan no longer stop on a timing number. All ten cost items require paired measurements and investigation, explicitly saying no figure decides the item. M12.6 permits a recorded performance-phase follow-up. Visual smoothness and attended cadence remain obligations. |
-| `placed-volume-query-contract` | **Resolved for the original column mismatch.** The query now uses the shape's own footprint, not a dome with an equal mean. M1.6/M1.7 establish the model's pointwise bound; M6.2/M7.6 distinguish GPU filtering error and nearby clear samples. The asymmetric-shape reproduction confirms the column relationship. It does not prove oblique shadow equality, which is finding 1. |
-| `sun-fallback-discontinuity` | **Resolved.** A continuous floored path direction replaces the elevation switch; a border blends transmission to the mean far transmission. ARCHITECTURE ruling 1 agrees. M2.4/M5.5 test heterogeneous sky across the cutoff and boundary. The rerun shows changes shrinking with step size where the old rule had a fixed jump. |
-| `shadow-only-density-mismatch` | **Original detail-noise cause resolved; same-shade obligation still fails for the new shape capabilities.** Both profiles now integrate the same constant-detail coarse density, and M3.8 requires nontrivial erosion. Finding 1 preserves the name but identifies the different missing resource and affected item. |
-
-All three earlier Suggestions were taken: slab sampling has a coarsest level and slab-local coordinate
-clamp, with contrasting-neighbour tests in M6.1; map age and conformance time are explicit and presentation
-slots are separated from weather columns; M7.5 allows recordings long enough for whole lives. The slab
-proof confirms isolation through level 7 and mixing at the excluded level 8.
+M5.1 now scopes local-reach invariance to a fixture without detail erosion, where full and coarse density
+agree. That tests double counting without requiring two deliberately different density representations
+to have the same integral. The actual approximation is still checked and visually judged elsewhere.
 
 ## Fit to the human's request
 
-I read all three tasks in `RECORD.json` under `briefs`, oldest first, and the approved project brief before
-judging the design. The approved brief remains the authority for purpose, the V1 exit and performance
-policy. The later owner words authorize reuse of Broadsides and ask for an independent choice of cloud
-capabilities; they do not make Broadsides' previous assembly a requirement.
+I read all five tasks in `RECORD.json` under `briefs`, oldest first, and the approved project brief before
+judging the design. The project brief governs the purpose, V1 exit and performance policy. The later owner
+words permit reuse and require first-principles selection; the lead's interpretations remain labelled
+assumptions. The water task concerns the cohesive water system and explains the transfer of the receiver
+and example to WATERS; it does not implicitly commission precipitation or inland-water simulation inside
+CLOUDS.
 
-The design preserves K1–K7: recognizable weather, G3s lighting, matching shade, structural life and drift,
-accepted shapes, temporal stability and visitor controls on Mac and Chrome. A common medium with optional
-capabilities is a reasoned response to the later task. Its comparison of retained and changed choices
-discloses exposure to the old design and gives reasons beyond reuse. Clouds remain outside the V1 exit,
-behind selections, with the sea's existing optical interface preserved. No change to SEA M1's work is
-required by the cloud revisions I inspected.
+The design retains the commissioned K1–K7 experiences: recognizable weather through the horizon, cloud
+lighting through the day, shade shared by all receivers, structural life and world-space drift, accepted
+placed shapes and growth, temporal stability, and visitor controls on Mac and Chrome. Its common density
+and optional capabilities serve procedural, shape-only and mixed skies without making Broadsides' old
+assembly a constraint. Game-directed shapes remain an explicitly disclosed addition. Reuse is recorded
+with provenance and does not transfer Broadsides' visual acceptance to Thrum's lighting.
 
-Game-directed shapes are additional scope, but the plan identifies them as an assumption, bounds their
-capacity and gives them proofs. The geometry/camera restriction, time-lapse range and deferred formation
-demo are likewise disclosed. Moving the accepted library to M6 uses the recorded reuse permission;
-provenance and third-party restrictions remain. M10 still checks all twelve shapes and the growth track
-in Thrum's light. This review neither reaccepts that content nor authorizes publishing it.
+The CPU weather remains authoritative; GPU products are derived. G3s still owns sky, Sun and receiver
+attenuation, EFFECT-GRAPH owns execution and state commit, CONTENT-LOOP owns volume residency, and the
+engine owns reconstruction. Keeping volume leases for shape shade respects this ownership and does not
+require a new content interface. The V1 exit remains unchanged behind off-by-default selections. Numeric
+costs remain measured baselines and tripwires, as the approved brief requires. The camera/geometry range,
+formation-demo deferral and other exclusions remain disclosed assumptions, rather than hidden reductions
+of an acceptance item.
 
-## Changed-item coverage and milestone reviewability
+## Changed-item coverage and reviewability
 
-I read all **113 current items**, including every changed/new item listed in the task, and compared the
-removals with the previous version. These are design assessments, not milestone verdicts.
+I read the complete current design and plan, all 116 done-when items, and the design/item diff from
+`f2418fb348cd`. Every changed or added item named in this review's task is covered below. These are design
+assessments; no milestone verdict was changed.
 
-| Milestone | Changed/new items read | Assessment with earlier milestones available |
-|---|---|---|
-| M1 | M1.1, M1.6–M1.13 | CPU field, footprint, directed-shape, provenance and interpolation proofs need no renderer. The new optics requirement needs finding 2 resolved. |
-| M2 | M2.1–M2.12 | Shade-first remains achievable on EFFECT-GRAPH M2 and ATMOSPHERE M5. New continuity and repeated-tick mapping checks reject the former fallback and tick-stepped drift. Conformance names sample age; cost records include accelerated weather. |
-| M3 | Quality bar; M3.4, M3.8, M3.9 | Numeric timing admission is removed. Motion is checked against independent display-time displacement, including two frames of one tick. The procedural shadow-only proof is coherent; placed shapes arrive later and need finding 1. TAAU qualification remains M9. |
-| M4 | M4.2, M4.4 | Actual Chrome state, recovery and submitted motion are required. Aged samples are compared at their source ticks; callback intervals are separated from presented time. |
-| M5 | M5.1, M5.3–M5.9 | Droplet light and aureole inspections, sunset continuity and Chrome motion can be judged after M4. Finding 2 affects the optical mechanism. Cost acceptance follows the brief. See S1 for the local-reach diagnostic. |
-| M6 | Quality bar/dependency; M6.1–M6.4, M6.6, M6.8–M6.11 | CONTENT-LOOP M1 supplies the lease. Slab isolation, column bounds and directed placement have independent tests. Accepted content enters here with source hashes. Finding 1 prevents the later capability proof from agreeing with the volume-shadow contract. |
-| M7 | M7.4–M7.6, M7.8 | Wind, whole-life recordings and filtering-aware column comparisons are reviewable; the too-short recording prescription is gone. Performance is recorded without a numeric gate. |
-| M8 | M8.8–M8.10 | Settled atmosphere extensions support world-light proofs. M8.9 tests all capability sets, making finding 1 unavoidable rather than a hypothetical unused combination. |
-| M9 | M9.7, M9.8 | TAAU and controls have named dependencies. Knob invariants distinguish authority from placed-slot presentation changes. Cost records retain the full scene. |
-| M10 | M10.1–M10.6; removed M10.7/M10.8 | The licence wait is removed on the later owner instruction; source-content proof moved to M6.6. Anatomy, growth, mixed sky and Chrome inspections remain, with a new all-shapes sky inspection. Old M10.7's cost item is now M10.5 without its numeric gate; old M10.8's baseline verifier is now M10.6. Neither proof vanished. |
-| M11 | M11.6 | Paired sea-scene cost records replace numeric admission. SEA M8 supplies the receiver and reflection consumer; unchanged integration items preserve depth ordering. |
-| M12 | M12.3, M12.5, M12.6, M12.8 | Governor and MetalFX existence is checked before work. Cadence remains attended, capture-off evidence; investigations may leave tuning follow-ups. Public documentation covers capabilities and directed shapes. |
+| Changed scope | Assessment with preceding milestones and declared dependencies available |
+|---|---|
+| M1.8 | Point-source optics are a CPU-only proof, distinct from finite-disc rendering. The expected values have independent sources. |
+| M1.14 | The rendered phase/table can be judged without a renderer by reproducing its f32 read. Normalization, first moment, peak and type blending reject the prior mechanism. |
+| M1.15 | CPU voxel fixtures can distinguish identical footprints with different oblique paths before any cooked product or renderer exists. |
+| M5.1 | M1 supplies the disc reference/table, and M3–M4 supply rendering. Near-Sun probes and the corrected local-reach fixture are achievable. |
+| M6.2 | CONTENT-LOOP M1 supplies the lease. M1's reference and M2's Sun-path machinery exist. The new M6-specific bound recognizes placed-shape filtering without permitting a footprint-only substitute. |
+| M6.12 | Both profiles can hold the same volume lease after M6's placed-volume work. Resident/absent and intermediate-weight cases make byte equality meaningful. |
+| M8.9 | The capabilities and World light exist by this milestone. Explicitly retaining the lease closes the old resource contradiction; creation counts still reject hidden-but-running work. |
+| M11 dependency/quality bar | The dependency is now WATERS M8. The quality bar is unchanged. WATERS supplies water depth, reflection and direct-Sun shade before cloud integration, including the craft used by M11.4. |
+| M11.1 | The selection now targets `examples/water` and `water-scene`, consistent with the module list's ruling 5. Off-selection equality and public-interface use remain. See S2 for one stale owner name. |
+| M11.2 | The test package changes to `water-scene`; water depth, single attenuation and environment reflection obligations remain unchanged and agree with WATERS' optics. |
+| M11.5 | The browser command changes to `check_water_browser.mjs`, matching WATERS' example. First-frame validation and the noon visual inspection remain required. |
 
-The visual items continue to reject the principal convincing substitutes: a panorama instead of volume,
-unrelated scrolling shade, moving noise instead of growth, separately composited hero clouds, and static
-history masking motion errors. No additional build blocker was established from the other changed items.
+The remaining items keep the independent appearance and motion inspections, CPU/GPU conformance, resource
+and lifecycle checks, and later reconstruction/governor qualification. A static panorama, unrelated shadow
+texture, density that only fades instead of developing structure, or heavy temporal history hiding motion
+cannot satisfy the combined requirements. No additional Must Fix was established.
 
 ## Suggestions
 
-### S1. Suggestion — scope the local-reach invariance diagnostic — verified wording ambiguity
+### S1. Suggestion — state the placed-shape proof's sampling and reference scale — verified
 
-M5.1 asks whether doubling local reach leaves summed optical depth unchanged within quadrature error.
-The revised local segment uses full density and the distant segment coarse density. Changing the split
-therefore changes the integral by the full-minus-coarse density over the moved interval, even with exact
-quadrature. The diagnostic remains useful on a fixture where the densities agree. Clarify that scope, or
-distinguish representation error from quadrature error. This requires no new testing procedure and does
-not invalidate the selected local-plus-distant approximation.
+Part H's [implementation](design-proof/second_revision_proof.py), lines 274–287, uses **four density samples
+per stored slice**, not one. At lines 348–349 its reference is a seven-ray average of transmittance over a
+column's width, not the point ray alone. The design's results at lines 685–692 summarize this as agreement
+with the volume's own path, while the cost table at line 759 counts slices as samples (6.3 million for a
+full three-level fill). Clarify these two qualifications beside the reported error and cost: which spatial
+quantity the error compares, and how many integration samples produce it. Stored slices and density reads
+are different counts.
+
+This is not a build blocker: the script states its actual reference, the cost figures are estimates, and
+M2/M6 already require measured work and conformance with filtering explained. The mechanism remains
+feasible. The clarification prevents the builder from treating the reported accuracy as demonstrated at
+one read per slice, or treating a filtered reference as a pointwise bound.
+
+### S2. Suggestion — name the migrated water owner in M11.1 — verified
+
+[The M11.1 reviewer question](../../plans/CLOUDS/DONE.json), line 1227, still asks whether any item or test
+of `SEA` changed. The example and optics now belong to `WATERS`. Name WATERS as the affected owner here
+(keeping SEA protected too if useful). This is a stale inspection prompt, not an interface gap: the plan
+already says to change nothing else of WATERS, and ARCHITECTURE ruling 5 protects the owning module's items.
 
 ## Evidence, limits and validation
 
-I performed the reading and judgement myself, without delegates. I read the design, plan, record, previous
-review and current items, then the planner's revision log. I checked relevant contracts, retained cloud
-ownership/transport rules, the port decision, CLOUDS seam rulings, EFFECT-GRAPH's tick/interpolation rules
-and the existing atmosphere provider in `cloud.rs`/`cloud.wgsl`. I read both new proof scripts, reran the
-revision proof and wrote the independent counterexamples above. I checked the phase fit against the primary
-supplemental source. I did not reread Broadsides code/assets, rerun the older NumPy field sketch, or run GPU
-or visual tests: there is no implemented cloud renderer to qualify. No device or visual-quality pass is claimed.
+I performed the reading and judgement myself, with no delegates. Alongside the module files and prior
+review, I checked the relevant C02/C04/C06–C09/C12 contracts, module-list seam rulings, port decision,
+CONTENT-LOOP lease semantics, EFFECT-GRAPH tick/interpolation rules, and WATERS' depth/optics design and M8
+items. I read the planner's revision log after assessing the changes. This is a revision review with the
+prior design and findings visible, not a blind first-principles study.
 
-Validation: `./dev check-docs` passed: 815 Markdown files, 5,658 local links, 30 module records, crate policy
-and current design hashes. The [check log](design-review/revision-check-docs.txt) records the result.
-`git diff --check` passed. The final working-tree inventory contains only this review and four new evidence
-files in `design-review/`; earlier evidence is preserved. The temporary Cargo output was removed, and all
-changes are left uncommitted for the review command.
+Commands run for numerical evidence:
 
-DESIGN CHANGES: 2 must_fix findings
+- `python3 -B docs/evidence/CLOUDS/design-proof/second_revision_proof.py`
+- `python3 -B docs/evidence/CLOUDS/design-review/phase-table-check.py`
+
+Both completed successfully. I did not run GPU, Chrome, capture or device-performance tests, inspect a
+running cloud renderer, reread Broadsides assets/code, or rerun the older field sketches. No visual,
+performance or implementation maturity is promoted by this review. M12's existing governor/MetalFX and
+attended-display requirements remain prerequisites to closing that milestone, not to approving the design.
+
+Validation: `./dev check-docs` passed (829 Markdown files, module records, crate policy and current design
+hashes); the [log](design-review/second-revision-check-docs.txt) records it. `git diff --check` passed.
+Only this review and four new evidence files in `design-review/` are changed. Planner files and existing
+evidence are left intact. The owned temporary Cargo output was removed, and the changes remain uncommitted
+for the review script.
+
+DESIGN OK
