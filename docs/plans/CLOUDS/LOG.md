@@ -1,5 +1,20 @@
 # CLOUDS log
 
+- 2026-11-14 M1 resumed against the planner's revised clear-column convention. Source
+  `f188edfc` retains the weather's type/base and sets clear top=base; `0b097fab` explicitly
+  checks every coverage-zero column. Temporal and spatial tests measure top, thickness,
+  coverage and optical depth, include different type bases and clear/cloud transitions,
+  and reject a switched cell in each quantity. The unchanged reviewer probe's top maxima
+  are now 25.799/14.199/7.615 m at 4/2/1 seconds; [current evidence](../../evidence/CLOUDS/M1.md)
+  retains its output. The older contradiction and blocked handoff below are historical.
+- 2026-11-14 All 13 CPU/dependency item commands passed on `cb8f2aeb`, with full outputs
+  under shared Git check key `212e9f1f636916305ff19efa`. Builder inspection found the ask
+  proofs met as described in the current evidence. `./dev check-docs` passed after fixing
+  broken links in two upstream handoffs to explicitly name their unmerged evidence paths.
+  The initial GPU-queued check was cancelled before any capture so evidence could be
+  finalised; replacement job `20261114-220907-79067` continues the baseline verification.
+  No new baseline or full project-gate pass is claimed by this entry.
+
 - 2026-11-14 M1 review follow-up: implemented bounded shape thresholding and edge-only detail
   erosion; revision evidence (`../../evidence/CLOUDS/M1-revision.md` on branch `build/clouds`) records CPU tests, Clippy
   and 252 fully removed edge samples among 891 positive uneroded probes. No visual claim.
