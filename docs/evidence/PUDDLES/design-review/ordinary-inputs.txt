@@ -1,0 +1,16 @@
+Earth: rain 10 mm/h, soak 15 mm/h, pores 3 mm, relief 0.5 mm
+  600s: film=0.000000 mm, pores=0.555556
+  1080s: film=0.000000 mm, pores=1.000000
+  1200s: film=0.333333 mm, pores=1.000000
+  1800s: film=0.500000 mm, pores=1.000000
+  3600s: film=0.500000 mm, pores=1.000000
+
+Mean-ground mirror plane: puddle level 0.05 m, plane 0.20 m
+  Post segment from waterline to plane excluded by above-plane clip: 0.15 m
+  Level difference 0.15 m is inside WATERS' 1 m plane tolerance
+
+One-canopy rule: opaque roof underside 3 m, half-through crown at 2 m
+  Point height 0.0 m: designed exposure 0.5
+  Point height 2.5 m: designed exposure 1.0
+  Point height 3.1 m: designed exposure 1.0
+  Vertical rain below the opaque roof should be zero, away from edges
