@@ -132,3 +132,9 @@ combined source. The merge gate runs the full repository check again.
   [recovery note](../../evidence/SEA/M2-handoff.md) links retained diagnostics.
   Background check `20261114-054946-45357` continues; direct M2.8 verifier
   `20261114-074918-88657` is also queued. No baseline reference was changed.
+- 2026-11-14 The direct verifier `20261114-074918-88657` refused its disk-space
+  preflight before rendering. Space subsequently recovered to 21 GiB. The
+  [qualification helper](../../evidence/SEA/qualify_m2_baselines.py), job
+  `20261114-094322-25542`, remains queued and updates this branch before checking
+  its proof. CLOUDS has now merged new covered source, so the helper's rebase is
+  required for the final baseline gate. M2.8 remains unproved.
