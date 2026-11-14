@@ -335,6 +335,13 @@ carry the verifier as their claim-time check. M1 may be built before the gate ex
 matrix as an automated check, its builder reruns that check after every rebase and before `land`, and Chrome's
 baseline is first rechecked when `BASELINE-GUARD`'s builder runs the verifier on main.
 
+A verifier run can fail with no image moved. Until `CULLING` M3's coverage output is on main, the valley is not
+one image under GPU load on the Mac, and Chrome shows the same signature: one frame of a capture can differ from
+its reference along shared triangle edges, as M3's qualification at `324586ee` did at one Chrome record of 481.
+[The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) gives the four tests by which such
+a run is set aside as load variation, and the record it needs. M3.9 holds this module to that ruling. A failed
+run that misses any test is rule 1's: the builder stops, writes the proposal in the log and ends `BLOCKED`.
+
 ## Cost account
 
 - **Absent:** no pass, no resource, no copy, no per-frame call beyond iterating an empty list.

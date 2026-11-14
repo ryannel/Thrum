@@ -270,6 +270,17 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "M3.9",
+          "statement": "Every verifier run that failed an image comparison during this milestone from 15 November 2026 on, the run at `324586ee` included, was load variation by the four tests of the module list's ruling on a frame that varies under load, and has the record that ruling asks for.",
+          "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/M3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
+          "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [

@@ -15,41 +15,39 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: the diagnostic effect stays in the V1 game example behind a selection that is off by default, as a test fixture; it is never part of the showcase.
 - Assumption: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it.
 - Assumption: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones.
+- Assumption: M3 does not wait for `CULLING` M3 to stop the game's image varying under GPU load. Until then an exact-image run that fails only along triangle edges is recorded, checked by a reviewer and run again, and M3 lands on a complete pass. The other choice adds `CULLING:M3` to M3's `depends_on`, which holds M3 and the six modules waiting on it until that milestone is Done.
 
-## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused
+## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
+[review](../../evidence/EFFECT-GRAPH/M1-review.md)
 
-Criteria: M1.1–M1.5 in the done-when file.
-
-- [x] Give the texture descriptor a dimension, with allocation, range flattening and transient reuse for each kind. Stay inside the graph's descriptor, validation and allocation code.
-- [x] Add the preparation-time refusals the design lists, including the checks against the capability record, and record the limits Chrome reports on this Mac.
-- [x] Prove each kind on Metal by exact readback, through resize and device replacement, and pin the compiled passes of the existing scene variants.
-- [x] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
-
-## M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome
-
-Criteria: M2.1–M2.8 in the done-when file.
-
-- [x] Let a scene hold an ordered list of contributions, and let a contribution declare resources and passes at the `upload`, `simulate`, `shadow` and `opaque` stages through the public seam.
-- [x] Give each frame its tick, timeline and tick duration, and apply the design's state table: keep on an equal tick, advance on a later one, reset on an earlier one or a new timeline. Commit the state tick and the wrapping anchor only in `submitted`.
-- [x] Give each history pair its own committed side with the `previous`, `next` and `result` bindings, flipped at submission only when its producer ran.
-- [x] Add the three cadence classes, the compiler's refusals and full frames on a new epoch and on reset.
-- [x] Build the diagnostic effect in `examples/v1-game` with an integer rule: two histories at different cadences, the consumer the tests read back, and the time-sliced volume. Write the scripted run's expectations from the state table; add the Mac run and the Chrome case.
-- [x] Capture the trail for the reviewer; record costs with and without the effect from the executor's named pass timings.
+## M2 A test effect keeps its simulation in step with the world through dropped frames, pauses and a replaced device, on Mac and in Chrome: done
+[review](../../evidence/EFFECT-GRAPH/M2-review.md)
 
 ## M3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome
 
-Criteria: M3.1–M3.8 in the done-when file.
+Criteria: M3.1–M3.9 in the done-when file.
 
-- [ ] Add the `after-opaque` stage after the star composite and before the pre-tone input. Store depth for the union of its readers, and declare the shared refraction copy only when an effect requests it.
-- [ ] Write motion, reactive coverage and invalid history from the slab under the temporal contribution.
-- [ ] Add the async-eligible flag with its check and listing, the knob list with commit at a frame boundary, and "not run" timing under pass names.
-- [ ] Run Chrome and both native recipes; record the copy and pass-break costs; document the seam; add the ledger row.
+The milestone is built and not merged. It is on branch `build/effect-graph-m3`, in the worktree
+`.claude/worktrees/effect-graph-m3`, last at `baeb6d1f`, and its handoff is
+`docs/evidence/EFFECT-GRAPH/M3-handoff.md` on that branch. What stopped it was one Chrome record of 481 at
+`324586ee`. [The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) now covers that
+failure: `APPLE-TILE` owes nothing, and its references, the comparisons and the verifier stay as they are.
+[The planner's reading](../../evidence/EFFECT-GRAPH/M3-replan/README.md) of the two retained frames is the
+difference image to check your own against.
 
-Stop rules, for every milestone:
+The order is part of the task. The ruling's fourth test needs a complete verifier pass on the content that
+failed, so first run the unchanged verifier on that content. `baeb6d1f` differs from `324586ee` only in
+evidence, plans and the ledger, so its content key should be the failed run's, `dc5b66d1…`; confirm that before
+the run, and use a checkout of `baeb6d1f` if a rebase has already changed the covered content. On a pass,
+complete the record M3.9 asks for, then qualify the rebased commit as the handoff lists: the verifier again if
+the content key changed, the full gate, the native captures and costs, and `land`. If the same record fails
+again, or the failure misses any of the four tests, end `BLOCKED` with both runs. Once the record is complete,
+release the scratch the handoff kept for the diagnosis.
+
+Stop rules:
 - With no effect attached, an existing scene must compile to the same passes and draw the same bytes. If it does not, stop and fix that before anything else.
-- If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`.
-- `graph.rs`, `scene_graph.rs`, `contribution.rs` and the frame host are shared with `APPLE-TILE` M3, `APPLE-PRESENTATION` M2, `CULLING` and `CREATOR` M2. Integrate on top of what has landed, and never restore an older copy to resolve a conflict.
-- Build every proof from the commit you claim. In M1, rerun the milestone's checks after every rebase, before `land`. From M2, run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
-- Do not change the host's frame-sample timing fields before `APPLE-TILE:M3` is Done; M2 reads the executor's named pass timings.
+- If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`. The one exception is a verifier run that meets all four tests of the ruling above.
+- `graph.rs`, `scene_graph.rs`, `contribution.rs` and the frame host are shared with `APPLE-TILE`, `APPLE-PRESENTATION`, `CULLING` and `CREATOR`. Integrate on top of what has landed, and never restore an older copy to resolve a conflict.
+- Build every proof from the commit you claim. Run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
 - A mechanism no named consumer needs is not built. A stage or resource kind the design lacks goes to the log as a proposal.
 - Chrome checks need a browser launch outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.

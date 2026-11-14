@@ -264,3 +264,10 @@
   path that differs is outside those inputs or shown, by checkable evidence, not to be built, loaded or run;
   otherwise it is run again before the push or the claim. M3.11 rewritten; M3.10's question gains one clause.
   [Design](DESIGN.md#what-a-campaign-stands-for). The review raised no new Suggestions. No GPU check run.
+
+- 2026-11-15 Planner, from `EFFECT-GRAPH` M3's stop: Chrome's image varies too. Two Chrome records, one of
+  `APPLE-TILE` M10 and one of `EFFECT-GRAPH` M3, differ from their references only along shared triangle edges
+  ([reading](../../evidence/EFFECT-GRAPH/M3-replan/README.md)); the design lists Chrome as not measured.
+  [The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) lets a failed verifier run of
+  that kind be set aside until M3's coverage output lands; after that such a failure ends `BLOCKED`. The design
+  and M3's items are unchanged.

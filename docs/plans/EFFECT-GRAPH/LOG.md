@@ -85,3 +85,10 @@
   both modules' cases. Chrome state/recovery and all exact baselines pass again on `c9ebc788`; the
   [source diff and proof](../../evidence/EFFECT-GRAPH/M2-proof.md) identify the unaffected native/capture evidence.
   Upstream production renderer and diagnostic code did not change. M2 remains `in_progress` for the scripted gate.
+- 2026-11-15 Planner, after M3's builder ended `BLOCKED needs_dependency` and named `APPLE-TILE` (handoff on
+  `build/effect-graph-m3` at `baeb6d1f`). Read the two retained frames: the 12,637 pixels of Chrome night
+  scene-linear record 1 lie along the far hills' triangle edges, the load variation `CULLING` M3 corrects, and
+  `APPLE-TILE` M10 met the same without M3 ([reading](../../evidence/EFFECT-GRAPH/M3-replan/README.md)). So
+  `APPLE-TILE` owes nothing and no dependency was added. [The module list](../ARCHITECTURE.md#a-frame-that-varies-under-load)
+  gained a ruling on setting such a run aside, the design a paragraph, and M3 the item M3.9. M3.1 to M3.8 are
+  unchanged. The plan file took the current shape, without task lists. No GPU check was run for this revision.

@@ -743,6 +743,58 @@ and in every exact test of the default.
   landing, as after any covered landing. Exact tests that compare a run with itself need no change, and stop
   varying under load once they are built on it.
 
+<a id="a-frame-that-varies-under-load"></a>
+
+**Ruling on a frame that varies under load (with `APPLE-TILE`, `BASELINE-GUARD`, `CULLING` and `EFFECT-GRAPH`),
+15 November 2026.** `EFFECT-GRAPH` M3's builder stopped under rule 1. At `324586ee` the verifier passed both
+native matrices and three Chrome sets, and failed Chrome night scene-linear at one record of 481, with every
+identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan said whose it was.
+
+- **What it is.** In the reference, records 0 and 1 of that set are one tick submitted twice, with one digest.
+  In the failed capture record 0 hashes to it and record 1 does not. The two differ at 12,637 pixels, by a median
+  of 2 half-float steps, and those pixels are thin lines along the triangle edges of the far hills
+  ([the planner's reading](../evidence/EFFECT-GRAPH/M3-replan/README.md)). `APPLE-TILE` M10 met the same a day
+  earlier on a build without `EFFECT-GRAPH` M3: Chrome day SDR, record 227, 299 pixels, at most two byte values,
+  and a retry that matched all 481 ([its record](../evidence/APPLE-TILE/M10/chrome-frame-227/chrome-diagnostic.json)).
+  This is the signature of the defect in [`CULLING`'s design](CULLING/DESIGN.md#m3-one-image-under-load), where
+  derivatives at shared triangle edges change with GPU load, now seen in Chrome, which that design lists as not
+  measured. It is an inference from where the pixels lie, not a reading of Chrome's derivatives.
+- **Whose it is.** Nothing is owed by `APPLE-TILE` or `BASELINE-GUARD`: the references, the comparisons, the
+  registry and the verifier are right and stay as they are, and neither module gains a milestone. The correction
+  is `CULLING` M3's, by the ruling above. `EFFECT-GRAPH` M3 does not wait for it. Every landing on a covered path
+  meets the same variation, so a hold on one milestone would settle nothing, and a hold on all of them would stop
+  the build until a milestone that must itself pass the verifier.
+- **The rule, for content without `CULLING` M3's coverage output.** A failed verifier run stays failed: it
+  writes no proof, and nothing from it counts towards one. The builder may set it aside as **load variation**
+  and run the verifier again, in place of stopping under rule 1, only when all four of these hold:
+  1. *Identities.* Every identity field of every record matches. Only image bytes, or their digests, differ.
+  2. *Matching bytes.* For each failed image the builder holds bytes that match its reference: the retained
+     reference on the Mac; in Chrome a frame whose decoded bytes hash to the retained digest, from another
+     record of that digest in the same capture or from a fresh capture of the same content.
+  3. *Where.* Between the failed image and the matching bytes, every differing pixel lies along an edge between
+     triangles of opaque geometry: thin lines, with no patch filled, and none in the sky, among the stars or in
+     the letterbox bars.
+  4. *The same content passes.* The whole verifier, unchanged, then passes on the same covered content, by its
+     content key. That run is the proof, and it is complete: every record of every set, in one run. If it
+     fails, it is a failed run of its own and is judged by these same tests, and a record that fails in both
+     runs is not variation.
+
+  A failure that misses any of the four is rule 1's: the builder stops, writes the proposal in its log and ends
+  `BLOCKED` with every run. That includes an identity field that differs while the images are equal, which
+  `EFFECT-GRAPH` M3 met once on earlier content and which has no known cause.
+- **What does not change.** The verifier does not retry inside a run, accept a frame from a failed run, search
+  for a nearer frame, skip a record or compare within a tolerance, and no reference is refreshed. The gate still
+  passes covered content only on a complete pass.
+- **The record.** In the module's evidence folder, for each run set aside: the failed run's record with its
+  content key, revision and binary or Wasm hashes; each failed image and its matching bytes, lossless; an image
+  of where they differ, with the count of differing pixels, their bounds and the largest difference; and the
+  passing run's record on the same content key. The module's log gains one line that links it. At the review of
+  a milestone that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one,
+  or a difference image that shows anything but those lines, is a Must Fix.
+- **When it ends.** With the landing that puts `CULLING` M3's coverage output on main. On content that holds
+  the output, a failure of this kind is evidence that the correction does not hold on that target: the builder
+  ends `BLOCKED` with the record, and a planner settles it here.
+
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
 
@@ -1974,3 +2026,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `TEST-SUPPORT:M1`, which delivers the `test-crate-edges` rule the game gate's `boundary` runs; the start order
   and row 31 say so. Ruling 11 gained the verifier's one change: it hands `THRUM_GAMES` to the commands it
   starts. No item of any other module changed.
+- 2026-11-15 [Exact baselines](#exact-baselines) gained a ruling on a frame that varies under load, after
+  `EFFECT-GRAPH` M3's builder stopped on one Chrome record of 481 and named `APPLE-TILE`. The planner's reading
+  of the retained frames puts the difference on shared triangle edges, the variation `CULLING` M3 corrects. A
+  failed run of that kind may be set aside, with a record, when the whole verifier then passes on the same
+  content; the rule ends with `CULLING` M3's landing. `EFFECT-GRAPH` M3 gained M3.9. The registry, the
+  verifier, the comparisons, every reference and every other module's items are unchanged.
