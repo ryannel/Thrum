@@ -168,7 +168,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A stateful native segment composes inside one submission (APPLE-TILE M10): Not Started · [plan](APPLE-TILE/PLAN.md)
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2): Not Started · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
-- ATMOSPHERE's design: Design Ready for Review · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
+- ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
 - A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 - The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device (SEA M2): Not Started · [plan](SEA/PLAN.md)
@@ -209,7 +209,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Not Started |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M2 of 3 · Not Started |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 3 · Not Started |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 | Design Ready for Review |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 | Design Changes Requested |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
