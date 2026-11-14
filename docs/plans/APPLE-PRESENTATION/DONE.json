@@ -194,7 +194,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md#target-result",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D3.3",
@@ -226,7 +226,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md#target-result",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D3.5",
