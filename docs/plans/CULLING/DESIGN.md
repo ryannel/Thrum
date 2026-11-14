@@ -60,7 +60,9 @@ culling mode.
 1. Occlusion on the bucket route, so it works on realistic meshes, with the mesh tie witness the evidence owes.
 2. The mode follows the device and the measurements: a capability-selected fallback to Direct, Chrome on mixed
    meshes, and the field default decided from paired rows.
-3. The valley's 10,000 entities culled by default with no pixel changed, on Mac and Chrome, and the gate closed.
+3. The valley's 10,000 entities culled by default and equal to Direct in every pixel, on Mac and Chrome, and the
+   gate closed. That proof needs Direct itself to be one image, so M3 also makes the forward pass draw
+   [one image under load](#m3-one-image-under-load).
 
 **Not built here:** LOD selection; several cameras; meshlet culling of field meshes; a visibility buffer; Metal
 indirect command buffers; GPU-written draw *counts* (`MULTI_DRAW_INDIRECT_COUNT` has no Metal or WebGPU support in
@@ -245,16 +247,81 @@ proves the valley's entities on the meshes that exist, and `SHOWCASE` reruns the
 ### M3: the valley's entities
 
 The valley keeps its content. Its 10,000 entities move from Direct to the default the rule above gives, on the cube
-route, where Frustum and Occlusion are byte-equal to Direct, so no retained image changes. An opt-in mesh selection
+route, where Frustum and Occlusion are byte-equal to Direct, so culling changes no retained image. An opt-in mesh selection
 for the same entities (as `THRUM_FIELD_MESHES` does for the field) runs the bucket route with its Sun-caster
 culling against bucket-ordered Direct, which is the configuration `SHOWCASE` adopts.
 
 **Under temporal sampling.** The prepass, both culls and the forward pass read one view record, so a jittered
 projection moves them together and the proof is unchanged. Motion and reactive outputs come from the forward pass,
-which is untouched. M3 proves equality with temporal sampling selected.
+whose colour, motion and reactive arithmetic is untouched. M3 proves equality with temporal sampling selected.
 
 **Compute-readable materials.** The gate asks that compute can read the material table. The one existing material
 buffer gains compute visibility; no second table is made.
+
+### M3: one image under load
+
+Added 14 November 2026, after M3's builder stopped on [the module list's](../ARCHITECTURE.md#exact-baselines)
+rule 1. Its evidence is on branch `build/culling` at `fb6afe7d`, under `docs/evidence/CULLING/M3/`
+(`pinned-probes-d70c1a27/`, `triangle-merging/`, `sample-dependency/`, `sample-frequency/`,
+`qualification-a5ab2143/`), and reaches main with M3's first landing.
+
+**The defect.** On Metal the valley drawn Direct is not one image. With other work on the GPU, two hosts that
+draw the same tick Direct differ at 4 to 152 pixels, and they still do with instance culling, Sun-caster culling
+and cooked-meshlet culling all absent. At the differing pixels the primitive, the depth and the UV agree and the
+UV derivatives do not. Apple's driver merges adjacent triangles, and a fragment at a shared edge can then take its
+implicit derivatives from the neighbouring triangle's values
+([Khronos Vulkan-Portability issue 54](https://github.com/KhronosGroup/Vulkan-Portability/issues/54), which
+quotes Apple's reply that Metal "is not disabling 'triangle merging' optimizations within the driver, when
+texture sampling with implicit LOD"). In four retained 2×2 quads, one host's derivatives equal the differences
+across two primitives exactly. Which edges merge changes under load. So no oracle drawn by the same shader can
+be relied on, and every exact comparison of the valley is exposed: this module's, and `APPLE-TILE`'s retained
+references, which hold merged derivatives.
+
+**The mechanism.** Every opaque forward fragment entry that takes an implicit derivative, through a
+`textureSample` or through `dpdx` or `dpdy` of an interpolated value, writes an all-ones `sample_mask` output.
+The driver does not merge triangles under a fragment shader that writes coverage, so each fragment's derivatives
+come from its own triangle. The value covers every sample, so coverage, depth and the shader's arithmetic are as
+they were; only derivatives at shared edges change, and with them the mip level and the Sun receiver's slope
+there. There is one shader source for every backend and recipe: no Metal-only variant and no selection. Volume
+entries, and passes whose fragment stage takes no derivative, stay as they are. This is the workaround an
+implementer on that issue reports shipping in Darwinia, over ANGLE's Metal backend and over MoltenVK. It has to
+be a written output: they found that a declared but unused one is optimised away.
+
+**Why not another way.** Each of these was built and is retained on the branch. Explicit gradients for the
+material samples moved 4,859 reference pixels and the hosts still differed. Sample-frequency interpolation
+failed M3.4's own check by one pixel. Making the Sun search depend on the samples failed under load. A depth output
+on opaque fragments was stable over four loaded routes, and at the `portable-sdr-approach` checkpoint its image
+is byte-equal to the coverage output's, 8,303 pixels from the retained reference. Two independent ways of
+stopping the merge give the same bytes, so that image is the unmerged one. The depth output is not chosen,
+because it moves the depth test after the shader for every opaque fragment. A selection that kept today's output
+as the default is not chosen either: every scene that did not ask would draw an image that varies, and the exact
+tests would prove a configuration nobody ships.
+
+**What moves.** The default output of every scene with textured or shadowed opaque geometry, at pixels whose
+2×2 quad spans more than one triangle. `APPLE-TILE`'s registered references therefore move, and
+[the module list's ruling on M3](../ARCHITECTURE.md#exact-baselines) says who refreshes them. Once refreshed,
+they hold the mechanism in place: a build that lost the coverage output draws the old bytes and fails the
+verifier.
+
+**Proof that it is one image.** A passing route proves little, because builds with no repair in them have
+passed 8, 16 and 24 complete routes in a row. M3.11 is therefore an interleaved campaign on the Mac. The claimed shader and a
+control that differs from it only by leaving out the coverage output take turns, one complete route each, with
+the same recipe and source, four hosts, two counted render workers and the full exact comparison at every tick,
+over both recipes and both sources (SDR and scene-linear). The campaign ends when the control has differed in
+five routes. The claimed shader must have run at least as many routes as the control and differed in none. If
+the output did nothing, five differences would all fall to the control with a chance of 1 in 32; five is the
+planner's choice of how strong the proof is, and the campaign's length follows the control's measured rate. A
+campaign in which the control does not differ proves nothing, and is reported, not shortened. If the claimed
+shader differs once, the mechanism is wrong or incomplete: keep both payloads and end `BLOCKED`.
+
+**Cost.** A coverage write can cost fragment time: merged triangles shaded fewer helper fragments at shared
+edges, and the driver may test depth later. Nobody has measured it here. M3.13 records it under
+[Performance](#performance), as paired rows of the claimed shader and the same control. If the whole frame
+passes the tripwire there, the builder ends `BLOCKED` with the rows, and a planner weighs the cost against a
+narrower mechanism.
+
+**Not measured.** Whether Chrome's image varied in the same way. The same shader source reaches Chrome, where
+M3.2 and M3.5 stand as the proof, and M3.10 records whether Chrome's four reference sets moved.
 
 ## The system as it runs
 
@@ -284,17 +351,23 @@ only when a scene is prepared.
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
 is caught. For this module:
 
-- It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome. Once `BASELINE-GUARD` M1 is
-  Done, the proof gate in `./dev check` refuses any landing whose exact content has not passed the verifier, and
-  M2 and M3 wait for it and carry the verifier as their claim-time check.
+- It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome, with one exception that the
+  module list rules: M3's [coverage output](#m3-one-image-under-load). Once `BASELINE-GUARD` M1 is Done, the
+  proof gate in `./dev check` refuses any landing whose exact content has not passed the verifier, and M2 and M3
+  wait for it and carry the verifier as their claim-time check.
 - M1 may be built before the gate exists. It carries the native matrix as an automated check, and its builder
   reruns that check after every rebase and before `land`. Chrome's baseline is first rechecked when
   `BASELINE-GUARD`'s builder runs the verifier on main; M1 is meant to change no default output on either
   target.
 - Its own exact comparisons are relative (each mode against its oracle in the same run), so they hold no retained
   bytes. Another module's builder must not loosen them.
-- M3 changes a default. It is allowed only because the new default is byte-equal to the old one, which the
-  verifier then proves on every landing.
+- M3 changes the valley's default mode. That is allowed only because the culled image is byte-equal to Direct,
+  which M3.1 and M3.2 prove.
+- M3's coverage output is the one change of this module that moves retained images. Under the ruling, its
+  builder regenerates each reference that moved, with `APPLE-TILE`'s own scripts, in the landing that adds the
+  output. The registry, the comparisons, their sampling and every script stay as they are, and the references
+  stay `APPLE-TILE`'s. M3.10 holds the refresh and M3.12 has a reviewer see what moved. No other change of M3
+  may move a reference.
 
 ## Risks
 
@@ -309,6 +382,12 @@ is caught. For this module:
    tie witness loses pixels with the full ε. Fallback: as risk 1.
 5. **wgpu's indirect-call validation adds untimed GPU work.** It stays on in shipped builds and is bounded once
    with a bench-only comparison.
+7. **The coverage output is not the whole cause, or stops working.** The evidence for it is bounded: four quads
+   and eight loaded routes. A later compiler could also fold the output away. Early sign: the claimed shader
+   differs in M3.11's campaign, or the verifier draws the old bytes. Outcome: the builder ends `BLOCKED` with the
+   payloads and nothing is refreshed.
+8. **The coverage output costs too much.** Early sign: M3.13's paired rows pass the tripwire. Outcome: as
+   [the mechanism](#m3-one-image-under-load) says.
 
 ## Performance
 
@@ -318,6 +397,9 @@ recorded and every row labelled contended, because the GPU is shared. Tripwires:
 against the previous checkpoint at the same configuration; per-instance cost that stops being flat from 10,000
 slots to the prepare limit; per-bucket cost that grows from 1 to 64 buckets; allocation growth per encode. No
 quiet-GPU figure exists, and none is claimed.
+
+The coverage output's cost is recorded the same way on the valley's moving route: the claimed shader paired with
+a control that leaves the output out, per pass and for the whole frame, on both native recipes.
 
 ## Proof and builder handoff
 
@@ -338,3 +420,5 @@ quiet-GPU figure exists, and none is claimed.
 | Does the derived ε hold on a mesh face lying on its bounds? | M1's tie witness and its zero-tolerance mutant |
 | Does any pose need the footprint widening? | M1's reference search, and the no-widening mutant if it finds one |
 | Does Occlusion win on realistic meshes at 1080p on this Mac? | M2's paired rows |
+| Which of the five registered reference sets does the coverage output move? | M3.10's record |
+| What does the coverage output cost on the valley? | M3.13's paired rows |

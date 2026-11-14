@@ -1,18 +1,13 @@
 # CULLING log
 
-- 2026-11-14 Clean `e90704cb` passes all six literal M3 checks and the full
-  workspace tests. The exact verifier again passes native 38 + 4 comparisons
-  and four Chrome sets of 481 records. A subsequent repository gate hits the
-  pre-existing watcher deadline at generation 2. Twenty isolated repetitions
-  pass, and the native watcher registers its stream before the initial cook;
-  that inspection does not explain the intermittent failure. The full gate
-  retry and the checked merge supply the remaining integration verification.
-  M3 remains `in_progress`, with all ten builder items pass and target evidence
-  linked from [M3 evidence](../../evidence/CULLING/M3.md).
-  Retain `tmp/culling-m3/capture-20261113-231534/` (7.2 GiB) through independent
-  motion review. The complete M3 scratch root (22 GiB including that recording)
-  remains available for review and the historical pixel investigation; release
-  redundant recordings after review and decisive failure-input retention checks.
+- 2026-11-14 Clean `e90704cb` passes all six literal M3 checks and the full workspace tests. The exact verifier again passes
+  native 38 + 4 comparisons and four Chrome sets of 481 records. A subsequent repository gate hits the pre-existing watcher
+  deadline at generation 2. Twenty isolated repetitions pass, and the native watcher registers its stream before the initial
+  cook; that inspection does not explain the intermittent failure. The full gate retry and the checked merge supply the
+  remaining integration verification. M3 remains `in_progress`, with all ten builder items pass and target evidence linked
+  from [M3 evidence](../../evidence/CULLING/M3.md). Retain `tmp/culling-m3/capture-20261113-231534/` (7.2 GiB) through
+  independent motion review. The complete M3 scratch root (22 GiB including that recording) remains available for review and
+  the historical pixel investigation; release redundant recordings after review and decisive failure-input retention checks.
 
 - 2026-11-13 The complete current-source field capture passes all 1,930 ticks,
   with Occlusion halving Frustum on 1,918 ticks. The repository gate exposed
@@ -21,15 +16,14 @@
   Both focused Metal cloud tests pass. The final clean-source milestone checks
   and checked integration follow with M3 `in_progress`.
 
-- 2026-11-13 M3 source `396132a1` passes all six automated target checks,
-  including both native recipes, Chrome, 32 temporal phases and every retained
-  exact baseline. Two current-source paired runs per recipe retain Frustum as
-  the valley default. The resumed builder inspected the fixed checkpoints and
-  consecutive native-size edge, ridge and cover sequences on Mac and Chrome,
-  plus mixed-field fixed-time entrance/exit frames, finding no culling discontinuity.
-  [M3 evidence](../../evidence/CULLING/M3.md) records the G3c clause audit and
-  updated ledger, while retaining the individually unattributed historical failures.
-  M3 remains `in_progress` for the final repository gate and checked merge.
+- 2026-11-13 M3 source `396132a1` passes all six automated target checks, including both native
+  recipes, Chrome, 32 temporal phases and every retained exact baseline. Two current-source paired
+  runs per recipe retain Frustum as the valley default. The resumed builder inspected the fixed
+  checkpoints and consecutive native-size edge, ridge and cover sequences on Mac and Chrome, plus
+  mixed-field fixed-time entrance/exit frames, finding no culling discontinuity. [M3
+  evidence](../../evidence/CULLING/M3.md) records the G3c clause audit and updated ledger, while
+  retaining the individually unattributed historical failures. M3 remains `in_progress` for the
+  final repository gate and checked merge.
 
 - 2026-11-13 The rebased candidate passes all five non-baseline M3 checks.
   A resource-reflection audit finds its non-shadowed entry still requires Sun
@@ -54,43 +48,32 @@
   narrows this failure to other inputs or forward evaluation; it is not a repair.
   Diagnostic production edits are restored, and M3 items remain open.
 
-- 2026-11-13 Resumed at `2fd5cf06`. Its literal M3 checker passes native cubes,
-  Chrome cubes/meshes and temporal sampling, but native meshes differ at six
-  SDR pixels at tick 255. Metal API/GPU shader validation separately reproduces
-  an 18-pixel scene-linear difference without a reported validation error.
-  The exact verifier rejects APPLE-TILE's `portable-sdr-approach` with 4,859
-  changed pixels. The explicit-gradient candidate is rejected and the shader
-  restored byte for byte to its `64c81cd2` blob; no reference changed. The
-  [retained evidence](../../evidence/CULLING/M3.md#explicit-gradient-candidate-rejected-at-2fd5cf06)
-  separates candidate results from the unqualified restored source. Under the
-  plan's exact-baseline stop rule, the [handoff](../../evidence/CULLING/M3-handoff.md)
-  proposes continuing diagnosis with existing sampling and retained references.
-  M3 stays `in_progress`, all builder items remain open, and no merge is claimed.
+- 2026-11-13 Resumed at `2fd5cf06`. Its literal M3 checker passes native cubes, Chrome cubes/meshes and temporal sampling, but
+  native meshes differ at six SDR pixels at tick 255. Metal API/GPU shader validation separately reproduces an 18-pixel scene-linear
+  difference without a reported validation error. The exact verifier rejects APPLE-TILE's `portable-sdr-approach` with 4,859 changed
+  pixels. The explicit-gradient candidate is rejected and the shader restored byte for byte to its `64c81cd2` blob; no reference
+  changed. The [retained evidence](../../evidence/CULLING/M3.md#explicit-gradient-candidate-rejected-at-2fd5cf06) separates
+  candidate results from the unqualified restored source. Under the plan's exact-baseline stop rule, the
+  [handoff](../../evidence/CULLING/M3-handoff.md) proposes continuing diagnosis with existing sampling and retained references. M3
+  stays `in_progress`, all builder items remain open, and no merge is claimed.
 
-- 2026-11-13 Clean `64c81cd2` passes Chrome cubes/meshes, the full temporal
-  cycle and every exact baseline (native 38 + 4, four Chrome sets of 481).
-  The native item checks reproduce sparse terrain differences: cube Occlusion
-  at tick 379 and independent mesh Direct at tick 180. All three same-time
-  recaptures of each host converge to the common Direct bytes, with no tick
-  advance or changed alpha/exposure value. [Reachable evidence](../../evidence/CULLING/M3.md)
-  retains the original failures and the earlier fully passing native mesh run.
-  Shader-instrumented stage comparisons pass but change compilation and do not
-  repair the original. A new scoped candidate evaluates explicit UV gradients
-  before Sun control flow and shares them across material samples; sampler and
-  anisotropy stay unchanged. Four extra scalars live across the Sun search;
-  strict target/baseline checks and measured GPU cost are pending.
+- 2026-11-13 Clean `64c81cd2` passes Chrome cubes/meshes, the full temporal cycle and every exact baseline (native 38 +
+  4, four Chrome sets of 481). The native item checks reproduce sparse terrain differences: cube Occlusion at tick 379
+  and independent mesh Direct at tick 180. All three same-time recaptures of each host converge to the common Direct
+  bytes, with no tick advance or changed alpha/exposure value. [Reachable evidence](../../evidence/CULLING/M3.md)
+  retains the original failures and the earlier fully passing native mesh run. Shader-instrumented stage comparisons
+  pass but change compilation and do not repair the original. A new scoped candidate evaluates explicit UV gradients
+  before Sun control flow and shares them across material samples; sampler and anisotropy stay unchanged. Four extra
+  scalars live across the Sun search; strict target/baseline checks and measured GPU cost are pending.
 
-- 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome
-  fixed and realtime inspection frames, the mixed-field readbacks and the
-  independent-Direct SDR/scene-linear failure bytes. [M3 evidence](../../evidence/CULLING/M3.md)
-  distinguishes historical passes from pending committed-source qualification;
-  [the investigation](../../evidence/CULLING/M3-investigation.md) records the
-  exact failures. A temporary depth readback finds all 361 near-shadow maps
-  identical across Direct, Frustum, Occlusion and independent Direct; the other
-  layers remain queued. Shadowed-air-only ablation still fails at tick 180.
-  Temporary renderer edits are reverted. Repaired 27 stale evidence-link
-  destinations after the plan-record migration; `./dev check-docs` passes
-  777 Markdown files and 4,975 local links. No M3 item is newly marked pass.
+- 2026-11-13 Resumed M3 from `f8255e6b`. Promoted the selected native/Chrome fixed and realtime inspection frames,
+  the mixed-field readbacks and the independent-Direct SDR/scene-linear failure bytes. [M3
+  evidence](../../evidence/CULLING/M3.md) distinguishes historical passes from pending committed-source
+  qualification; [the investigation](../../evidence/CULLING/M3-investigation.md) records the exact failures. A
+  temporary depth readback finds all 361 near-shadow maps identical across Direct, Frustum, Occlusion and
+  independent Direct; the other layers remain queued. Shadowed-air-only ablation still fails at tick 180.
+  Temporary renderer edits are reverted. Repaired 27 stale evidence-link destinations after the plan-record
+  migration; `./dev check-docs` passes 777 Markdown files and 4,975 local links. No M3 item is newly marked pass.
 
 - 2026-11-11 Planned from the owner's task, quoted in the design. Before the loop, a Claude session built Frustum,
   Occlusion on cubes, the bucket route in Direct and Frustum, and Sun-caster culling (7–8 November); its four
@@ -260,3 +243,11 @@
   checks and iOS Clippy pass, including native 38 + 4 exact comparisons and four Chrome
   sets of 481 records. [M2 evidence](../../evidence/CULLING/M2.md) retains the reports,
   raw readbacks, stills and mutation patch. M2.2 is pass, and M2 is `in_progress`.
+
+- 2026-11-14 Planner, from the lead's task: "Decide ownership of the helper-derivative (Metal triangle-merging)
+  correction and the APPLE-TILE baseline qualification so CULLING M3 can finish; prefer the smallest change that
+  keeps one authority for each baseline. Do not split modules." Settled by
+  [a ruling in the module list](../ARCHITECTURE.md#exact-baselines), as `ATMOSPHERE` M9's was: M3's builder
+  adds the coverage output and regenerates the references it moves in one landing, and they stay `APPLE-TILE`'s.
+  M3.10 rewritten; M3.11 (loaded campaign against a control), M3.12 (what moved) and M3.13 (cost) added; M3
+  renamed. [Design](DESIGN.md#m3-one-image-under-load). M1's and M2's finished task lists left the plan file.

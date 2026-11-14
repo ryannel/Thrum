@@ -15,47 +15,38 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 - Assumption: the native-only culling recipes (subgroup compaction, first-instance draws) are not built for V1. They stay candidates for the performance phase the brief puts after the exit.
 - Assumption: the culling mode is chosen when a scene is prepared, at launch or page load, and no control switches it while the game runs. The brief and gate G3c do not ask for a switch, and one that works needs a change across the frame runtime, the browser host and the contribution seam; the design says why and names the mechanism to cost if it is wanted.
 - Assumption: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it.
+- Assumption: the forward pass's coverage output is on in every scene, with no switch, so that the game draws one image under GPU load. It changes pixels along shared triangle edges, so M3 refreshes `APPLE-TILE`'s reference sets once, in its own landing, and its cost in frame time is measured there, not known today. The other choice keeps today's output as the default behind a selection, and leaves the variation in every scene and every exact test that does not ask.
 
-## M1 On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel
+## M1 On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel: done
+[review](../../evidence/CULLING/M1-review.md)
 
-Criteria: M1.1–M1.5 in the done-when file.
+## M2 The game picks its culling mode from the device and the measurements, and says which mode ran: done
+[review](../../evidence/CULLING/M2-review.md)
 
-- [x] Key the visible-last bits by logical slot on the bucket route, clear the next side each frame, and lift the refusal in mesh admission.
-- [x] Add a depth-only twin of each bucket class pipeline and draw the prepass per bucket from the prepass list.
-- [x] Witness equality with bucket-ordered Direct: layout churn, the release flythrough, resize and device replacement, and the mesh tie at the far turned pose, with the design's mutants recorded as failing.
-- [x] Search the reference for a pose that needs the footprint widening. Record the witness and its failing no-widening mutant, or the poses searched.
-- [x] Rerun `APPLE-TILE`'s M0 matrix on a release build of the commit to be claimed.
+## M3 The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome
 
-### Review round 1 — MF1, mixed-mesh host lifecycle (M1.4)
+Criteria: M3.1–M3.13 in the done-when file. Read [One image under load](DESIGN.md#m3-one-image-under-load) and
+[the module list's ruling on M3](../ARCHITECTURE.md#exact-baselines) first.
 
-- [x] Exercise a running `runtime::FrameHost` with the game's full mixed-mesh field, a surface presenter and hidden slots in the named `visibility_buckets` target.
-- [x] Call the host's surface resize and replacement-device preparation/publication APIs, compare every next frame with bucket-ordered Direct, and assert resolved Occlusion, retained scene identity and renewed hiding.
-- [x] Retain fresh Metal output and source identity for M1.4, re-verify affected checks and merge the repaired milestone for review.
+The work so far is on branch `build/culling` at `fb6afe7d`, with
+[the handoff](../../evidence/CULLING/M3-handoff.md) there. Commit `86e8efd5` on it is the coverage output, later
+reversed; `docs/evidence/CULLING/M3/triangle-merging/` holds its patch, the loaded-route and qualification
+runners and the retained controls. [The failed review](../../evidence/CULLING/M3-review.md) found M3.3 open: star
+visibility selected Direct for the cooked valley, and the legacy cost benchmarks measured Direct twice.
 
-## M2 The game picks its culling mode from the device and the measurements, and says which mode ran
-
-Criteria: M2.1–M2.5 in the done-when file.
-
-- [x] Resolve the requested mode from the capability record, report requested and resolved modes with the reason, and make every equality witness assert the resolved mode.
-- [x] Run the simulator with a culled mode requested and record the Direct fallback.
-- [x] Give Chrome the mixed-mesh field and its oracle case.
-- [x] Record paired Direct, Frustum and Occlusion rows on the mixed-mesh field at 1920×1080 from two runs, and set the field's default by the design's rule.
-- [x] Fix review finding `simulator_complete_scene_unchecked` for M2.2 by comparing the actual simulator fallback host with a same-input explicit-Direct image oracle, while checking its capability reason and progressing presentations.
-- [x] Demonstrate that omitted scene geometry fails the simulator check, and retain reachable positive and negative image evidence with source and binary identity.
-- [x] Update the maturity ledger's paired timing medians to the retained M2 runs, re-verify affected items and merge the review repair with M2 `in_progress`.
-
-## M3 The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome
-
-Criteria: M3.1–M3.10 in the done-when file.
-
-- [ ] Add the route comparison against Direct on both targets, and the opt-in mesh selection for the valley's entities.
-- [ ] Record paired rows on the moving route and set the valley's default by the design's rule.
-- [ ] Prove equality with temporal sampling selected, and make the material table readable from compute.
-- [ ] Capture the valley for the reviewer's motion inspection; update the maturity ledger and the evidence page.
+The order is part of this milestone. Before any change, run the verifier at the starting commit and keep its
+record. The coverage output and the refreshed references then land together as M3's first checkpoint, because
+the gate passes a covered change only with a proof for its exact content, and because every other proof of M3
+has to be drawn by the corrected shader: regenerate each reference that moved from the changed commit with
+`APPLE-TILE`'s own scripts, then run the verifier for the proof. `scripts/apple_tile_m0.py` made the Mac set, and
+the verifier archives each Chrome run's manifest. M3.11's campaign, M3.13's rows, M3.3's rows and the captures
+follow, all from that shader. If the claimed shader differs in the campaign, a reference moves where M3.12 says
+none may, or M3.13 passes the tripwire, end `BLOCKED` with the measurement. `APPLE-TILE` M10 and `ATMOSPHERE` M9
+also land covered changes; integrate on top of what has landed.
 
 Stop rules, for every milestone:
 - If a mode differs from its oracle in any pixel, stop and diagnose. Never widen a comparison, sample fewer frames or change the oracle to pass.
-- If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`.
+- If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`. The one exception is the refresh the module list rules for M3's coverage output.
 - Build every proof from the commit you claim. In M1, rerun the milestone's checks after every rebase that brings in commits under `crates/`, `examples/v1-game` or `scripts/`, before `land`. From M2, run the verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.
 - A default mode changes only on the recorded rows the design's rule names. No speed claim rests on one run or on an uncontended figure that does not exist.
 - Chrome and simulator checks need a browser or simulator launch outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.

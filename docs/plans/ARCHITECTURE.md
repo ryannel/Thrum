@@ -701,6 +701,42 @@ stop is a defect of the one aerial product and a selection would keep it in ever
 - **Everyone else.** A builder with covered changes in flight reruns the verifier after it rebases onto M9,
   as after any covered landing. A module whose milestone carries the verifier as an item needs no change.
 
+**Ruling on `CULLING` M3 (with `APPLE-TILE`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
+the valley drawn Direct is not one image under GPU load, the correction moves `APPLE-TILE`'s references, and no
+plan said who owned either ([its design](CULLING/DESIGN.md#m3-one-image-under-load) has the defect, the
+mechanism and the evidence). The correction is an all-ones coverage output on the forward shader's opaque
+fragment entries, which stops the driver's triangle merging. It is not built behind a selection, because the
+variation is a defect of the one forward pass, and a selection would leave it in every scene that did not ask
+and in every exact test of the default.
+
+- **Who builds the correction.** `CULLING` M3's builder, in `thrum-render`'s forward shader and wherever else
+  an opaque forward fragment entry takes an implicit derivative. No milestone is added to `APPLE-TILE`, which
+  has a builder on M10. Once built, the output belongs to the forward pass: later work there keeps it, and an
+  opaque fragment entry added by any module writes the same output.
+- **Which baselines move.** `apple-tile-native` is known to: 8,303 pixels of `portable-sdr-approach` on the
+  candidate, and the verifier stopped there, so the other native references and the four Chrome manifests are
+  unmeasured. Pixels on shared triangle edges of textured or shadowed opaque geometry are expected to move in
+  every set that holds such geometry; the sky, the stars and the letterbox bars are not. M3's builder records
+  which sets moved.
+- **Who refreshes them.** As for M9, the gate passes a covered change only with a proof for its exact content,
+  so the change and the references cannot land apart, and no milestone of `APPLE-TILE`'s could hold them. By
+  this ruling M3's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s
+  own scripts, in the one landing that adds the output. The registry, the comparisons, their sampling and every
+  script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` M3.10 holds
+  the verifier at the starting commit and at the claimed one and the old and new hashes in both modules' logs,
+  M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
+  triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
+  items unchanged. No other change of M3 may move a reference.
+- **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, runs
+  the verifier at its new starting commit and regenerates from there. Each records its own old and new hashes,
+  so the two causes stay apart.
+- **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds, which stay as they are.
+  Any other module's exact test that the output moves is that module's under rule 1, and the builder ends
+  `BLOCKED` with it.
+- **Everyone else.** A builder with covered changes in flight reruns the verifier after it rebases onto the
+  landing, as after any covered landing. Exact tests that compare a run with itself need no change, and stop
+  varying under load once they are built on it.
+
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
 
@@ -1895,3 +1931,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   games repository; `SWARM`'s paths are re-planned before that milestone. Decided here: fixes are built in new
   modules under rulings, because eight owning modules have builders at work and an approved design cannot gain a
   mechanism without stopping them; the game moves after `SHOWCASE:M8`; no Git history is rewritten.
+- 2026-11-14 [Exact baselines](#exact-baselines) gained a ruling on `CULLING` M3, from the lead's task after
+  its builder stopped under rule 1. `CULLING` M3 builds the forward pass's coverage output and regenerates the
+  `APPLE-TILE` references it moves in the same landing; the references stay `APPLE-TILE`'s. `CULLING` M3.10 was
+  rewritten and M3.11 to M3.13 added. No item of any other module changed, and no module or milestone was added.
