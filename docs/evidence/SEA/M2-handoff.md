@@ -17,9 +17,9 @@ listed by `agent_loop.py jobs --worktree .`, rather than launch another duplicat
 The helper runs under `lock gpu`, updates only this branch to current main, and
 uses the repository's own baseline gate. It verifies when a valid proof is
 missing. If space is below 16 GiB, it inspects and cleans only this worktree's
-private target directory, refusing a linked target. Do not edit the worktree
-while the helper is active: it can rebase HEAD. Its terminal result and report
-are the next evidence needed.
+private target directory, refusing a linked target. Leave the worktree unchanged
+while it rebases or verifies. At `AWAIT_EVIDENCE`, make and commit the evidence
+changes described below; the helper no longer changes the branch in that phase.
 
 The helper now keeps its GPU slot for the final evidence and integration phase.
 Wait with `wait <job> --worktree . --until AWAIT_EVIDENCE:` to observe that phase
