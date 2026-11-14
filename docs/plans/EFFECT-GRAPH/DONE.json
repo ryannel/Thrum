@@ -188,10 +188,10 @@
           "lock": "gpu",
           "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -200,10 +200,10 @@
           "lock": "gpu",
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
@@ -211,10 +211,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test effect_state",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -223,10 +223,10 @@
           "lock": "gpu",
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -245,20 +245,20 @@
           "statement": "On both native recipes the slab is cut cleanly by nearer geometry, refracts the scene behind it, dims the sky and stars behind it once, and leaves no seam where it meets opaque surfaces.",
           "inspect": "Capture `fixed` stills with T2 engine capture at noon and at night, on the portable and Apple tile recipes, with the slab crossing terrain, a prop and open sky. Judge whole frames and native-size crops of each crossing.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
           "statement": "The seam is documented for the modules that will use it, the cost of the refraction copy and the pass break is recorded on both native recipes, and the maturity ledger has a row for the seam.",
           "ask": "Could the SEA or CLOUDS planner write their passes from the public documentation and this design alone? Are the copy and pass-break costs recorded as paired rows with the load, and does the ledger keep implementation, correctness and device results apart?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.8",

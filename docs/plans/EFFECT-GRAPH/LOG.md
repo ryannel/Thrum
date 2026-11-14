@@ -1,41 +1,5 @@
 # EFFECT-GRAPH log
 
-- 2026-11-14 The rebased `50e9063f` batch passes native M3.1–M3.4, including quality invalidations and named
-  not-run timing. Chrome's submitted inputs pass; its fixed capture refused the diagnostic route's rounded
-  initial eye. Corrected the fixture to the exact authored eye and orientation and checked both keys against
-  that camera. [Retained proof](../../evidence/EFFECT-GRAPH/M3-proof.md) records the passes and actual refusal;
-  full Chrome inspection, exact baselines, repository gate and integration remain pending.
-
-- 2026-11-14 Rebased the private M3 branch onto main `145cadb2` before final qualification. Incoming changes
-  affect documentation and Mac qualification scripts. Git confirms native-proof source `9096b368` has the
-  same crates, V1 game, M3 checker/campaign and engine-capture drivers. Replaced the still-queued individual
-  reservations with one audited batch of unchanged checks and the official full milestone check.
-
-- 2026-11-14 Resumed at implementation checkpoint `9096b368`. The submitted slab command passes on both
-  Metal recipes; four fixed native noon/night images and twelve paired cost arms completed. The builder
-  inspected every whole frame and native-size crossing strip. [Partial target proof](../../evidence/EFFECT-GRAPH/M3-proof.md)
-  separates those verified results from queued metadata/cadence, Chrome and exact checks. Cost brackets are
-  descriptive, with load retained; no isolated transfer cost or speedup is claimed. The
-  [continuation](../../evidence/EFFECT-GRAPH/M3-handoff.md) names live jobs. Integration remains pending.
-
-- 2026-11-14 The first native slab and cadence/quality runs pass on both recipes. Chrome's functional slab
-  script completed before its fixed capture refused a checkpoint within four ticks of the route origin;
-  the route is corrected. A preliminary native noon/night campaign recorded images, then refused its next
-  cost arm below 16 GiB free. Those images exposed additive tint brightening night sky; the diagnostic now
-  applies bounded transmission and rejects foreground refraction samples. These are preliminary proofs only.
-- 2026-11-14 A [read-only code audit](../../evidence/EFFECT-GRAPH/M3-code-audit.md) found the missing compute
-  form of the approved late stage. Added local access declarations and opaque reads, late compute callbacks,
-  shared compute-visible view inputs and the external trace/history/compose/epilogue witness. Refraction now has
-  submitted scene-linear pixel assertions and slab motion has a discarded-displacement assertion. Native
-  Clippy, shader validation and preparation refusal tests pass; final target and exact proofs remain pending.
-
-- 2026-11-14 M3 implementation checkpoint: late render passes request depth independently of one shared
-  refraction source, with prepared input bindings, contribution-list dispatch and temporal outputs from the
-  diagnostic slab. Added async eligibility metadata, discoverable staged quality controls and named not-run
-  timing outcomes. [Consumer documentation](../../EFFECTS.md) describes ownership and bindings. Native all-target
-  Clippy, the CPU history/async-order test and documentation checks pass. Metal, Chrome runtime, fixed visual
-  inspection, paired costs, full exact baselines and integration remain unqualified while the shared GPU queues.
-
 - 2026-11-11 Planned from the owner's task, quoted in the design, and the brief in the module list. Three
   milestones: texture kinds in the graph (after `APPLE-TILE:M2`), persistent state and cadence through a diagnostic
   effect, and the stage after opaque (after `APPLE-TILE:M3` and `APPLE-PRESENTATION:M2`). The port's graph condition
