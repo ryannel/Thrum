@@ -1,5 +1,13 @@
 # ATMOSPHERE log
 
+- 14 November, M9.1 and M9.2 passed on the M3 Max at renderer source `daf606ad`:
+  [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md). The largest deciding
+  allowance share was 0.34534 for solar in-scatter; the unchanged-volume byte and
+  continuation invariants passed. The ledger separates these Metal results from
+  the still-unqualified independent solar reference and sea-level look. Candidate
+  captures, consecutive ABBA costs and Chrome handoff checks are queued in durable
+  job `20261114-220537-78348`; no reference has been promoted yet.
+
 - 14 November, M9 continuation checkpoint `daf606ad`. The aerial pass now integrates
   below ground using signed altitude and the density laws, and dims the direct Sun
   with the chart's 0–50 m optical-depth slope. Diffuse and night sources use the
