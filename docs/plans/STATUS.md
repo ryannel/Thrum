@@ -234,7 +234,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - REPO-RULES's design: Design Changes Requested · [design](REPO-RULES/DESIGN.md) · [plan](REPO-RULES/PLAN.md)
 - REVIEW-ENGINE's design: Design Changes Requested · [design](REVIEW-ENGINE/DESIGN.md) · [plan](REVIEW-ENGINE/PLAN.md)
 - TEST-SUPPORT's design: Design Ready for Review · [design](TEST-SUPPORT/DESIGN.md) · [plan](TEST-SUPPORT/PLAN.md)
-- REVIEW-RENDER's design: Design Ready for Review · [design](REVIEW-RENDER/DESIGN.md) · [plan](REVIEW-RENDER/PLAN.md)
+- REVIEW-RENDER's design: Design Changes Requested · [design](REVIEW-RENDER/DESIGN.md) · [plan](REVIEW-RENDER/PLAN.md)
 - HOST's design: Design Changes Requested · [design](HOST/DESIGN.md) · [plan](HOST/PLAN.md)
 - GAME-SPLIT's design: Design Changes Requested · [design](GAME-SPLIT/DESIGN.md) · [plan](GAME-SPLIT/PLAN.md)
 
@@ -296,6 +296,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Design Changes Requested |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | Design Changes Requested |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | Design Ready for Review |
-| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Design Ready for Review |
+| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Design Changes Requested |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Design Changes Requested |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 to start; TEST-SUPPORT M1, REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Design Changes Requested |
