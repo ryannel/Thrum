@@ -1,5 +1,14 @@
 # PLATFORM-RUNTIME-MAC log
 
+14 November post-APPLE-TILE M3 qualification. Verified merged source `145cadb2` and all 538 release inputs,
+then ran the fresh real-time motion, actual-window correspondence/replacement/OFF probes and all three
+matched observer arms under the shared GPU lock. Both permitted Deferred traces qualify all 490 marked
+submissions with validated conversion and no unmatched marked rows. Builder inspection passes both items;
+M3 stays in_progress for the script. The evidence records two marked OFF missed refreshes, three under
+capture, viewer drops, startup gaps and the source pan hold, keeping observed facts apart from the
+backpressure inference. Exact native/Chrome baselines and the merged full real-Metal check pass. Independent
+M3 review remains the lead's work. [Proof and limits](../../evidence/PLATFORM-RUNTIME-MAC/M3-proof.md).
+
 13 November current-build M2 qualification. Merged collector provenance fix `7a791b20`, rebuilt the release,
 and recollected the denied-permission elapsed-time pan, live-window pattern/valley replacement, OFF probe
 and all three matched arms. The fresh OFF/ON traces use recordings five/six and qualify all 488 marked
