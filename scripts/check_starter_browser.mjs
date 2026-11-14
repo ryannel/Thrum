@@ -277,6 +277,11 @@ try {
     for(const key of ['resolves','maps','pairs']) assert(settled[key] === results.off.work[key], `off kept doing timestamp ${key}`);
     assert(settled.submits > results.off.work.submits, 'frames stopped submitting while profiler off');
     if(supported) assert(results.off.work.resolves > 0 && results.off.work.maps > 0 && results.off.work.pairs > 0, 'observer did not see real timestamp work while on');
+    await capture('profiler-off-submitted'); // also asserts the real sample's presented=true
+    const offSubmission = Number(/submission=(\d+)/.exec(results['profiler-off-submitted'].identity)?.[1]);
+    assert(offSubmission > oldNewest, 'off capture reused a pre-switch submission');
+    const offCaptured = await evaluate('__timingWork');
+    for(const key of ['resolves','maps','pairs']) assert(offCaptured[key] === settled[key], `off presentation resumed timestamp ${key}`);
     await set(true);
     const immediate = await rows();
     assert(!numeric(immediate.filter(([label])=>label.startsWith('GPU '))), 'switch-on reused pre-switch numbers');
