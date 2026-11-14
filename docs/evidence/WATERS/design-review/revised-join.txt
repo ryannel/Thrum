@@ -1,0 +1,9 @@
+Mouth edge: matched mean levels and depth; joined raw swell gain = 1 on both sides
+Sea swash depth: 0.989949494 m; chart own swash depth: 0.000000000 m
+depth(m) sea crest(m) chart crest(m) jump(m)
+    4.00  0.500000000    0.500000000 0.000000000
+    1.00  0.422132034    0.212132034 0.210000000
+    0.25  0.263033009    0.053033009 0.210000000
+    0.00  0.210000000    0.000000000 0.210000000
+The 0.25 m mouth has a 0.21 m step despite identical joined raw gains.
+A pointwise rule for swash depth/support at joins would change this result; none is specified.

@@ -1,0 +1,82 @@
+Part H: interaction waves at depth, as the selected operator
+  the update, 2 m wave on 0.25 m of water, one tick:
+    eWave eq. 19 and 20 with only omega replaced: determinant 1.002941180, amplitude x1.0921 a second
+    with D = k tanh(kd) in the height row:          determinant 1.000000000
+  uniform depth, each wave vector, weights linear in the square root of depth
+  level  depths             wavelengths    step      phase speed       group speed       loss a second   growth
+  near   0.25 m and deeper   0.5 to  16.0 m  1 tick    within  1.96 %    within  4.30 %     0.000 %        1.0000000
+  near   0.25 m and deeper   0.5 to  16.0 m  8 ticks   within  2.03 %    within  4.38 %     0.154 %        1.0000000
+  far    1.00 m and deeper  12.0 to 256.0 m  1 tick    within  1.96 %    within  4.31 %     0.000 %        1.0000000
+  far    1.00 m and deeper  12.0 to 256.0 m  8 ticks   within  1.97 %    within  4.32 %     0.006 %        1.0000000
+  far    0.25 m and deeper  12.0 to 256.0 m  1 tick    within  3.94 %    within 11.21 %     0.000 %        1.0000000
+  far    0.25 m and deeper  12.0 to 256.0 m  8 ticks   within  4.20 %    within 11.93 %     0.015 %        1.0000000
+  fields over a bed that varies (height and potential stepped as the design's step does)
+    near level, 6 m wave packet up a 1 in 10 beach from 6 m of water (ray: the true group speed integrated):
+      t   10 s  packet at  29.35 m, ray at  29.30 m, depth there 6.00 m, sum of h^2  17.73
+      t   20 s  packet at  44.77 m, ray at  44.61 m, depth there 4.52 m, sum of h^2  17.78
+      t   30 s  packet at  60.63 m, ray at  60.02 m, depth there 2.94 m, sum of h^2  18.59
+      t   40 s  packet at  76.57 m, ray at  76.49 m, depth there 1.34 m, sum of h^2  19.18
+      t   50 s  packet at  83.64 m, ray at  90.58 m, depth there 0.64 m, sum of h^2   6.08
+      t   60 s  after the shore: sum of h^2  0.43, 2.4 % of what arrived, travelling back
+    the same run in steps of 8 ticks, height at the 2 m depth gauge: differs by 0.29 % of its RMS
+    far level, a window holding 0.125 m shallows and 10 m of water, packets crossing the 10 m part:
+         30 m wave: packet speed 3.936 m/s, true group speed 3.799 m/s, +3.61 %   (depths solved: 1.0, 2.0, 4.0, 8.0, 16.0 m)
+         60 m wave: packet speed 6.262 m/s, true group speed 6.516 m/s, -3.89 %   (depths solved: 1.0, 2.0, 4.0, 8.0, 16.0 m)
+        100 m wave: packet speed 8.041 m/s, true group speed 8.291 m/s, -3.02 %   (depths solved: 1.0, 2.0, 4.0, 8.0, 16.0 m)
+    rough beds, 0 to 9 m deep with dry patches, no damping, 120 s: largest sum of h^2 in each 20 s, over the initial
+      bed 3, 0 dry cells of 512, steps of 1 tick: 0.996, 0.752, 0.882, 0.792, 0.805, 0.893
+      bed 7, 197 dry cells of 512, steps of 1 tick: 0.997, 0.842, 0.858, 0.861, 0.872, 0.874
+      bed 7, 197 dry cells of 512, steps of 8 ticks: 0.821, 0.741, 0.629, 0.637, 0.533, 0.505
+
+Part I: band gains for a wind of 10 m/s (amplitude share of the open sea's field)
+  open sea: significant height 2.14 m, peak wavelength 83 m
+  fetch   0.2 km: height 0.07 m, peak   1.0 m, gains 0.00, 0.00, 1.00, 1.00
+  fetch   1.0 km: height 0.16 m, peak   2.8 m, gains 0.00, 0.25, 1.00, 1.00
+  fetch   5.0 km: height 0.36 m, peak   8.3 m, gains 0.00, 0.76, 1.00, 1.00
+  fetch  50.0 km: height 1.14 m, peak  38.3 m, gains 0.49, 1.00, 1.00, 1.00
+  depth limit, significant height at most 0.6 of the depth (Thornton and Guza 1983):
+    depth 10.00 m: a 2.1 m sea is held to 1.00 of its height
+    depth  3.00 m: a 2.1 m sea is held to 0.84 of its height
+    depth  1.00 m: a 2.1 m sea is held to 0.28 of its height
+    depth  0.30 m: a 2.1 m sea is held to 0.08 of its height
+    depth  0.05 m: a 2.1 m sea is held to 0.01 of its height
+
+Part J: dry ground in a 64 m window of 0.25 m cells, a pulse 4 m from the land, 10 s
+  (largest height reached in the water beyond the land, over the pulse's initial peak)
+  no land, 4 m deep:                                        0.235890
+  2 m bar, 4 m deep to its foot, one transform:             0.031940   (the design review's case)
+  the same bar, each side its own solve:                    0.000000
+  thin land inside one connected region, which one transform still spans:
+       2 m of land, 1 m deep to its foot:                    0.002789
+       4 m of land, 4 m deep to its foot:                    0.014152
+       8 m of land, 4 m deep to its foot:                    0.000290
+      16 m of land, 4 m deep to its foot:                    0.000000
+    2 m of land with beaches of 1 in 4 each side:              0.001145
+    2 m of land with beaches of 1 in 10 each side:              0.001752
+
+Part K: a channel from a lake to the sea; cells of 1 m; steps in the surface between neighbouring wet cells
+  a 0.5 m swell crest stands at the mouth; the surface is the level plus the long-wave gain times the crest
+  lake stage  tide    hard precedence, one stage a chart        joins in the map
+                      step between bodies   chart over its bank   step between bodies   chart over its bank   largest step inside a body
+   +0.0 m    +0.0 m    0.500 m               0.000 m               0.004 m               0.000 m              0.176 m
+   +1.0 m    +0.0 m    1.004 m               0.000 m               0.009 m               0.000 m              0.296 m
+   -0.5 m    +0.0 m    0.500 m               0.000 m               0.001 m               0.000 m              0.120 m
+   +0.0 m    +1.0 m    1.500 m               0.000 m               0.004 m               0.000 m              0.176 m
+   +0.0 m    -1.0 m    0.500 m               0.950 m               0.004 m               0.000 m              0.176 m
+   +1.0 m    +1.0 m    1.500 m               0.000 m               0.009 m               0.000 m              0.296 m
+   -0.5 m    -1.0 m    0.500 m               0.950 m               0.001 m               0.000 m              0.120 m
+   +1.0 m    -1.0 m    1.004 m               0.950 m               0.009 m               0.000 m              0.296 m
+  (a step between bodies under joins is the 1 m cell: the blend weight is 1 on the end's edge and the
+   sample is half a cell inside it. 1 mm either side of each end, lake +1 m and tide -1 m:)
+    source end: lake 6.0000 m, chart 6.0000 m
+    mouth:      sea -0.5000 m at the crest, chart -0.5000 m
+
+Part L: a regular wave on a 1 in 10 beach at a fixed stage; the still waterline is at 0
+  each layer's significant height is held to 0.6 of (depth + swash depth); swash depth = 0.7 of the body's
+  significant height; a regular wave of amplitude A has significant height 2 sqrt(2) A
+  sea height   swash depth   waterline's highest and lowest, as height on the beach      along the beach   closed form
+   2.14 m       0.00 m       -0.001 m and -0.001 m                                0.00 m          +0.000 and -0.000 m
+   0.16 m       0.11 m       +0.019 m and -0.031 m                                0.50 m          +0.020 and -0.030 m
+   1.00 m       0.70 m       +0.122 m and -0.189 m                                3.11 m          +0.123 and -0.188 m
+   2.14 m       1.50 m       +0.262 m and -0.404 m                                6.66 m          +0.262 and -0.403 m
+  (first row: the limit with no swash depth, as first designed: the waterline does not move)
