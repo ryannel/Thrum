@@ -135,7 +135,11 @@ async fn sequence(
     assert_eq!(report.discarded, 3);
     assert_eq!(report.completed, 8);
     assert_eq!(report.encoded, 11);
-    assert_eq!(host.submitted_capture_omissions(), 0);
+    assert_eq!(
+        host.submitted_capture_omissions(),
+        3,
+        "only the three deliberate candidate discards omit a capture"
+    );
     frames
 }
 
