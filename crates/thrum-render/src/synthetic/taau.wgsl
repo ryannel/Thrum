@@ -34,6 +34,14 @@ fn reconstruction_filter(distance: f32) -> f32 {
     if x < 2.0 { return (((-7.0/3.0*x+12.0)*x-20.0)*x+32.0/3.0)/6.0; }
     return 0.0;
 }
+fn clip_history(value: vec3<f32>, low: vec3<f32>, high: vec3<f32>) -> vec3<f32> {
+    if all(value >= low) && all(value <= high) { return value; }
+    let centre = (low+high)*0.5;
+    let radius = max((high-low)*0.5,vec3(1e-20));
+    let offset = value-centre;
+    let normalized = abs(offset/radius);
+    return centre+offset/max(1.0,max(max(normalized.x,normalized.y),normalized.z));
+}
 fn history_at(p: vec2<f32>) -> vec4<f32> {
     let base = vec2<i32>(floor(p));
     let f = fract(p);
@@ -91,6 +99,9 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     var low = vec3(1e30);
     var high = vec3(-1e30);
     let centre = textureLoad(colour,p,0).rgb;
+    let centre_ycocg = ycocg(centre);
+    var first_moment = vec3(0.0);
+    var second_moment = vec3(0.0);
     var source = vec3(0.0);
     var source_weight = 0.0;
     for (var y = -1; y <= 1; y++) {
@@ -105,11 +116,21 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
             source_weight += filter_weight;
             let c = ycocg(sample);
             low = min(low,c); high = max(high,c);
+            let difference = c-centre_ycocg;
+            first_moment += difference;
+            second_moment += difference*difference;
         }
     }
     // The jittered raster samples p-jitter. Reconstruct at the output pixel
     // centre, including when disocclusion leaves no usable temporal history.
-    let current = max(vec3(0.0),centre+source/source_weight);
+    let filtered = max(vec3(0.0),centre+source/source_weight);
+    // A neighbourhood outlier must not give a stale history colour the whole
+    // min/max range. Centre-relative moments preserve constant colours exactly.
+    let delta_mean = first_moment/9.0;
+    let sigma = sqrt(max(vec3(0.0),second_moment/9.0-delta_mean*delta_mean));
+    let mean = centre_ycocg+delta_mean;
+    low = max(low,mean-sigma);
+    high = min(high,mean+sigma);
     let velocity = textureLoad(motion,nearest,0).xy;
     let previous = vec2<f32>(p)+velocity;
     let uv = (vec2<f32>(p)+vec2(0.5)-params.jitter.xy)/vec2<f32>(extent);
@@ -121,14 +142,19 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let old_depth = depth_at(previous+params.jitter.zw-params.jitter.xy,expected);
     let sky = textureLoad(depth,p,0) == 0.0;
     let depth_ok = depth_matches(old_depth,expected,sky);
-    var weight = 0.97*(1.0-textureLoad(reactive,p,0).r);
+    let nominal_history_weight = 0.97;
+    var weight = nominal_history_weight*(1.0-textureLoad(reactive,p,0).r);
     if params.state.x == 0.0 || !depth_ok || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
         weight = 0.0;
     }
+    // With usable history, retain the raw jittered sample for the temporal box
+    // estimate. Spatial reconstruction supplies pixels without that support;
+    // applying it again to converged history broadens the reference footprint.
+    let current = mix(filtered,centre,weight/nominal_history_weight);
     let retained = history_at(previous);
     let rescaled = retained.rgb*(exposure.values.x/max(previous_exposure.values.x,1e-20));
     let retained_ycocg = ycocg(rescaled);
-    let bounded_ycocg = clamp(retained_ycocg,low,high);
+    let bounded_ycocg = clip_history(retained_ycocg,low,high);
     // Preserve the exact value when clipping is unnecessary. A YCoCg round trip
     // and weighted sum can otherwise lose a half-precision ULP on every frame.
     let clipped = select(rgb(bounded_ycocg),rescaled,all(retained_ycocg == bounded_ycocg));
