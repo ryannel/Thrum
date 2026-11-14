@@ -1,6 +1,28 @@
 {
   "module": "WATERS",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/WATERS/design-review.md",
+    "commit": "b2d0778af38e5f685e9291d68486aab5cbc98e0c",
+    "hash": "d614dc980fa88b10a14fddc33c6f20b67870ca8d2f8cf6a6184fe8a29f2dbe0a",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "path": "headless",
+    "usage": {
+      "input": 119453,
+      "cached": 1763968,
+      "output": 10722,
+      "turns": 1
+    },
+    "at": "2026-11-14T02:43:04Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "87a32024fbe7141c10b92ba32946092bff51c72458101cbbbb8cd377a9f472a2",

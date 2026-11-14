@@ -1,0 +1,13 @@
+Join: equal mean levels, swell crest 0.5 m at the mouth.
+  sea long-wave swell gain 1 -> height +0.5 m; chart swell gain 0 -> height 0 m
+  hard chart-over-sea ownership leaves a 0.5 m displacement jump.
+Shore: one regular wave, spectral significant height 4*sigma = 2*sqrt(2)*A, limited to 0.6*d.
+  A/d <= 0.212132 < 1; surface remains above the bed at every wet point.
+  At d=0, A=0; outside the mean shore the map supplies no water. No run-up or recession.
+Six factor-two depth bins from 0.125 m: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]; cannot bracket 10 m water.
+Finite-depth extension using unchanged eWave equations 19/20 and replacing omega only:
+  2 m wave at 0.25 m depth: determinant=1.002941180; amplitude multiplier/sec=1.092104
+  This is NOT an exact rotation. A finite-depth operator needs its coefficients specified too.
+Part H instead blends scalar exp(-i*omega*dt), not h/phi update matrices or spatial fields.
+dry bar=False: max |height| in opposite water over 10 s / initial peak = 0.235890
+dry bar=True: max |height| in opposite water over 10 s / initial peak = 0.031940
