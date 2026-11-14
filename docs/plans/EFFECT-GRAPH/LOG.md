@@ -1,5 +1,12 @@
 # EFFECT-GRAPH log
 
+- 2026-11-14 M3 implementation checkpoint: late render passes request depth independently of one shared
+  refraction source, with prepared input bindings, contribution-list dispatch and temporal outputs from the
+  diagnostic slab. Added async eligibility metadata, discoverable staged quality controls and named not-run
+  timing outcomes. [Consumer documentation](../../EFFECTS.md) describes ownership and bindings. Native all-target
+  Clippy, the CPU history/async-order test and documentation checks pass. Metal, Chrome runtime, fixed visual
+  inspection, paired costs, full exact baselines and integration remain unqualified while the shared GPU queues.
+
 - 2026-11-11 Planned from the owner's task, quoted in the design, and the brief in the module list. Three
   milestones: texture kinds in the graph (after `APPLE-TILE:M2`), persistent state and cadence through a diagnostic
   effect, and the stage after opaque (after `APPLE-TILE:M3` and `APPLE-PRESENTATION:M2`). The port's graph condition

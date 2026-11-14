@@ -1,5 +1,7 @@
 //! Opt-in integer diagnostic for EFFECT-GRAPH. It is never installed by default.
+pub mod after_opaque;
 pub mod qualification;
+mod slab;
 mod visual;
 
 use std::sync::{Arc, Mutex};
@@ -13,7 +15,6 @@ use thrum_render::{
 
 /// Field width and height in integer texels.
 pub const SIZE: u32 = 32;
-const BOUND: u64 = 8;
 
 /// Runtime controls, sampled only at a frame boundary.
 #[derive(Clone, Copy, Debug)]
@@ -26,6 +27,12 @@ pub struct EffectControls {
     pub anchor: [i64; 2],
     /// Ground witness height in world metres.
     pub ground_height: f32,
+    /// Horizontal displacement of the late slab in world metres.
+    pub slab_offset: f32,
+    /// Invalidate the slab's temporal correspondence for this frame.
+    pub slab_reset: bool,
+    /// Slab world origin and scale, fixed for a diagnostic capture.
+    pub slab_origin_scale: [f32; 4],
 }
 impl Default for EffectControls {
     fn default() -> Self {
@@ -34,12 +41,17 @@ impl Default for EffectControls {
             source: true,
             anchor: [0; 2],
             ground_height: 0.0,
+            slab_offset: 0.0,
+            slab_reset: false,
+            slab_origin_scale: [0., 0., 0., 1.],
         }
     }
 }
 
 /// Submitted state and physical resources, lent read-only to qualification code.
 pub struct EffectWitness {
+    /// Reset flag delivered to the effect in the latest recording.
+    pub history_reset: bool,
     /// Runtime controls for the next frame.
     pub controls: EffectControls,
     /// Independently committed history clock and anchor.
@@ -61,6 +73,8 @@ pub struct DiagnosticEffect {
     runs: [bool; 7],
     scripted: bool,
     generation: u64,
+    quality: thrum_render::contribution::QualitySettings,
+    slab: Option<slab::Slab>,
 }
 
 struct Prepared {
@@ -72,6 +86,12 @@ struct Prepared {
 }
 
 impl DiagnosticEffect {
+    /// Add the late slab witness, optionally requesting the shared refraction copy.
+    #[must_use]
+    pub fn with_slab(mut self, refraction: bool) -> Self {
+        self.slab = Some(slab::Slab::new(refraction));
+        self
+    }
     /// Enable the capture's world-clock stop and cadence transition, off by default.
     #[must_use]
     pub fn scripted(mut self) -> Self {
@@ -80,6 +100,8 @@ impl DiagnosticEffect {
     }
 
     /// Make an unattached diagnostic and its qualification handle.
+    /// # Panics
+    /// Panics if the fixed diagnostic quality defaults are malformed.
     #[cfg_attr(
         target_arch = "wasm32",
         expect(
@@ -89,6 +111,7 @@ impl DiagnosticEffect {
     )]
     pub fn new() -> (Self, EffectHandle) {
         let witness = Arc::new(Mutex::new(EffectWitness {
+            history_reset: false,
             controls: EffectControls::default(),
             state: EffectState::new(2),
             generation: 0,
@@ -102,6 +125,29 @@ impl DiagnosticEffect {
                 runs: [false; 7],
                 scripted: false,
                 generation: 0,
+                slab: None,
+                quality: thrum_render::contribution::QualitySettings::new(vec![
+                    thrum_render::contribution::QualityKnob {
+                        name: "cache interval".into(),
+                        value: 3,
+                        range: 1..=16,
+                        invalidation: thrum_render::contribution::QualityInvalidation::None,
+                    },
+                    thrum_render::contribution::QualityKnob {
+                        name: "volume slices".into(),
+                        value: 1,
+                        range: 1..=4,
+                        invalidation:
+                            thrum_render::contribution::QualityInvalidation::EffectHistory,
+                    },
+                    thrum_render::contribution::QualityKnob {
+                        name: "catch-up ticks".into(),
+                        value: 8,
+                        range: 1..=8,
+                        invalidation: thrum_render::contribution::QualityInvalidation::ViewHistory,
+                    },
+                ])
+                .expect("diagnostic quality defaults"),
             },
             witness,
         )
@@ -141,11 +187,37 @@ fn pass(name: &str, cadence: C, accesses: Vec<EffectAccess>) -> EffectPass {
     EffectPass {
         name: name.into(),
         cadence,
+        async_eligible: true,
         accesses,
     }
 }
 
 impl SceneContribution for DiagnosticEffect {
+    fn quality_knobs(&self) -> Vec<thrum_render::contribution::QualityKnob> {
+        self.quality.knobs().to_vec()
+    }
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
+        self.quality.set(name, value)
+    }
+    fn commit_quality_knobs(&mut self) -> thrum_render::contribution::QualityInvalidation {
+        let before = self.quality.knobs()[0].value;
+        let reset = self.quality.commit();
+        if before != self.quality.knobs()[0].value {
+            self.witness
+                .lock()
+                .expect("diagnostic witness")
+                .controls
+                .cadence = u64::from(self.quality.knobs()[0].value);
+        }
+        if reset != thrum_render::contribution::QualityInvalidation::None {
+            self.witness
+                .lock()
+                .expect("diagnostic witness")
+                .state
+                .invalidate();
+        }
+        reset
+    }
     fn effect_graph(&self) -> EffectGraph {
         let mut field = descriptor(K::D2, SIZE, 1);
         if let D::Texture { layers, .. } = &mut field {
@@ -293,7 +365,14 @@ impl SceneContribution for DiagnosticEffect {
                 history: None,
             });
         }
-        EffectGraph { resources, passes }
+        EffectGraph {
+            resources,
+            passes,
+            after_opaque: self
+                .slab
+                .as_ref()
+                .map_or_else(Vec::new, |slab| vec![slab.declaration()]),
+        }
     }
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
@@ -440,6 +519,9 @@ impl SceneContribution for DiagnosticEffect {
             groups.push(variants);
         }
         let visual = visual::Visual::new(surface, &params, &textures[0], &textures[1]);
+        if let Some(slab) = &mut self.slab {
+            slab.rebuild(surface, &textures)?;
+        }
         witness.generation = surface.generation;
         witness.textures = textures;
         witness.state.rebuild(surface.generation, 1);
@@ -454,14 +536,28 @@ impl SceneContribution for DiagnosticEffect {
     }
     fn encode_upload(&mut self, _encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         let mut witness = self.witness.lock().expect("diagnostic witness");
+        witness.history_reset = frame.history_reset;
         if self.scripted {
             witness.controls.source = frame.time.tick < 270;
             witness.controls.cadence = if frame.time.tick < 300 { 2 } else { 4 };
             witness.controls.anchor = [snap_anchor(frame.camera[0]), snap_anchor(frame.camera[2])];
         }
         let controls = witness.controls;
-        self.step = witness.state.begin(frame.time, BOUND, controls.anchor);
+        self.step = witness.state.begin(
+            frame.time,
+            u64::from(self.quality.knobs()[2].value),
+            controls.anchor,
+        );
         let full = self.step == EffectStep::Reset;
+        if let Some(slab) = &mut self.slab {
+            slab.update(
+                frame,
+                EffectControls {
+                    slab_reset: controls.slab_reset || full,
+                    ..controls
+                },
+            );
+        }
         let advance = matches!(self.step, EffectStep::Advance { .. });
         let cache = full || (advance && frame.time.tick.is_multiple_of(controls.cadence.max(1)));
         self.runs = [
@@ -484,7 +580,7 @@ impl SceneContribution for DiagnosticEffect {
             u32::from(controls.source),
             u32::from(full),
             u32::try_from(frame.time.tick % 4).unwrap_or(0),
-            0,
+            self.quality.knobs()[1].value,
             0,
             0,
             0,
@@ -557,6 +653,9 @@ impl SceneContribution for DiagnosticEffect {
     fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
     fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
+        if self.slab.is_some() {
+            return;
+        }
         if let Some(gpu) = &self.gpu {
             let witness = self.witness.lock().expect("diagnostic witness");
             gpu.visual.draw(
@@ -567,11 +666,19 @@ impl SceneContribution for DiagnosticEffect {
     }
     fn submitted(&mut self, history_advanced: bool) {
         if history_advanced {
+            if let Some(slab) = &mut self.slab {
+                slab.submitted();
+            }
             self.witness
                 .lock()
                 .expect("diagnostic witness")
                 .state
                 .submitted();
+        }
+    }
+    fn draw_after_opaque(&self, _: usize, pass: &mut wgpu::RenderPass<'_>, _: &ContributionFrame) {
+        if let Some(slab) = &self.slab {
+            slab.draw(pass);
         }
     }
 }
@@ -596,7 +703,7 @@ fn shader(index: usize) -> String {
         }
         3 => {
             r"@group(0) @binding(1) var result:texture_storage_3d<r32uint,write>;
-        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(p.full==0u && (p.ticks==0u || id.z!=p.slice)){return;} textureStore(result,vec3<i32>(id),vec4<u32>(select(p.tick,0u,p.reset!=0u)+id.x+16u*id.y+256u*id.z));}"
+        @compute @workgroup_size(8,8) fn main(@builtin(global_invocation_id) id:vec3<u32>) {if(p.full==0u && (p.ticks==0u || (id.z+4u-p.slice)%4u>=p.pad0)){return;} textureStore(result,vec3<i32>(id),vec4<u32>(select(p.tick,0u,p.reset!=0u)+id.x+16u*id.y+256u*id.z));}"
         }
         _ => {
             r"@group(0) @binding(1) var result:texture_storage_2d_array<r32uint,write>;

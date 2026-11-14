@@ -64,6 +64,12 @@ pub struct EffectState {
 }
 
 impl EffectState {
+    /// Invalidate owned history at a frame boundary. The next submitted full frame seeds it.
+    pub fn invalidate(&mut self) {
+        self.committed = None;
+        self.pending = None;
+        self.ran.fill(false);
+    }
     /// Allocate the bookkeeping once for a fixed number of history pairs.
     pub fn new(histories: usize) -> Self {
         Self {

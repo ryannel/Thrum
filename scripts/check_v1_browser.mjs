@@ -16,6 +16,7 @@ const repo = fileURLToPath(new URL('../', import.meta.url));
 const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
 const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 cases.push('lent-products');
+cases.push('effect-after-opaque');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -1928,7 +1929,7 @@ async function main() {
     for (const mode of modes) {
       if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'temporal') results.push(await qualifyTemporal(cdp, serving.origin, output, args['timeout-ms'], assetsOrigin, waitFor, files, directory));
-      else if (mode === 'effect-state') {
+      else if (mode === 'effect-state' || mode === 'effect-after-opaque') {
         const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
         const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
         try {
@@ -1938,10 +1939,11 @@ async function main() {
             const r = await cdp.call('Runtime.evaluate', { expression: `document.querySelector('#status')?.textContent?.startsWith('Running')`, returnByValue: true }, sessionId);
             return r.result.value;
           }, args['timeout-ms'], 'effect page startup');
-          const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const game=await import('/v1_game.js');return await game.qualify_effect_state();})()`, awaitPromise: true, returnByValue: true }, sessionId);
+          const method = mode === 'effect-state' ? 'qualify_effect_state' : 'qualify_effect_after_opaque';
+          const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const game=await import('/v1_game.js');return await game.${method}();})()`, awaitPromise: true, returnByValue: true }, sessionId);
           if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
           const record = { case: mode, target: 'chrome-webgpu', exact: r.result.value };
-          await fs.writeFile(path.join(output, 'effect-state.json'), JSON.stringify(record, null, 2));
+          await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
           results.push(record);
         } finally { await cdp.call('Target.closeTarget', { targetId }); }
       } else if (mode === 'environment-off-parity') {

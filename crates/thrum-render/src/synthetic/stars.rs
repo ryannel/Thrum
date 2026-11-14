@@ -349,6 +349,9 @@ impl PreparedSynthetic {
 
 impl SceneContext<'_> {
     pub(super) fn stars(&mut self, compiled: &CompiledPass) -> Result<(), RenderError> {
+        if !self.target.draw_stars {
+            return Ok(());
+        }
         let (stars, target) = self
             .prepared
             .stars

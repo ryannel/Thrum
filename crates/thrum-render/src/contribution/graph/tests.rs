@@ -9,7 +9,8 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
         view: None,
         history: Some(history),
     };
-    let effect = EffectGraph {
+    let mut effect = EffectGraph {
+        after_opaque: Vec::new(),
         resources: vec![(
             ResourceDescriptor::Buffer {
                 bytes: 4,
@@ -25,6 +26,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
             EffectPass {
                 name: "producer".into(),
                 cadence: EffectCadence::Skippable,
+                async_eligible: false,
                 accesses: vec![
                     access(AccessKind::StorageRead, HistoryBinding::Previous),
                     access(AccessKind::StorageWrite, HistoryBinding::Next),
@@ -33,6 +35,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
             EffectPass {
                 name: "consumer".into(),
                 cadence: EffectCadence::EveryFrame,
+                async_eligible: false,
                 accesses: vec![access(AccessKind::StorageRead, HistoryBinding::Result)],
             },
         ],
@@ -72,4 +75,23 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
         compiled.pass_names().collect::<Vec<_>>(),
         ["effect 0: producer", "effect 1: consumer"]
     );
+    effect.passes[0].async_eligible = true;
+    let mut flagged = FrameGraph::default();
+    effect
+        .append(
+            &mut flagged,
+            PipelineKey {
+                device_generation: 1,
+                revision: 1,
+                role: 0,
+            },
+            &mut keys,
+        )
+        .expect("flagged graph");
+    let flagged = flagged.compile(1, &keys).expect("flagged compile");
+    assert_eq!(
+        flagged.pass_names().collect::<Vec<_>>(),
+        compiled.pass_names().collect::<Vec<_>>()
+    );
+    assert_eq!(flagged.async_eligible, ["effect 0: producer"]);
 }

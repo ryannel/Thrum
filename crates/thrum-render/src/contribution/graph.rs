@@ -39,6 +39,8 @@ pub struct EffectPass {
     pub name: String,
     /// Runtime scheduling class.
     pub cadence: EffectCadence,
+    /// Eligible for a future compute queue. This never changes scheduling today.
+    pub async_eligible: bool,
     /// Real resource hazards, never placeholder token resources.
     pub accesses: Vec<EffectAccess>,
 }
@@ -50,6 +52,8 @@ pub struct EffectGraph {
     pub resources: Vec<(ResourceDescriptor, ResourceScope)>,
     /// Ordered simulate passes.
     pub passes: Vec<EffectPass>,
+    /// Render passes after the sky and stars, in contribution order.
+    pub after_opaque: Vec<super::AfterOpaquePass>,
 }
 
 impl EffectGraph {
@@ -67,12 +71,28 @@ impl EffectGraph {
             }
         }
         let mut names = BTreeSet::new();
+        for pass in &self.after_opaque {
+            if !names.insert(&pass.name) {
+                return Err(format!("DuplicateEffectPass: {}", pass.name));
+            }
+        }
         let mut producers = vec![None; self.resources.len()];
         for (index, pass) in self.passes.iter().enumerate() {
             if !names.insert(&pass.name) {
                 return Err(format!("DuplicateEffectPass: {}", pass.name));
             }
             for access in &pass.accesses {
+                if pass.async_eligible
+                    && matches!(
+                        access.kind,
+                        AccessKind::AttachmentLoad
+                            | AccessKind::AttachmentClear
+                            | AccessKind::CopyRead
+                            | AccessKind::CopyWrite
+                    )
+                {
+                    return Err(format!("AsyncRequiresCompute: {}", pass.name));
+                }
                 let (_, scope) = self
                     .resources
                     .get(access.resource)
@@ -165,7 +185,7 @@ impl EffectGraph {
                 ..base
             };
             keys.insert(key);
-            graph.pass(Pass {
+            let id = graph.pass(Pass {
                 name: format!("effect {index}: {}", pass.name),
                 scope: PassScope::View(1),
                 pipeline: Some(key),
@@ -189,6 +209,9 @@ impl EffectGraph {
                     .collect(),
                 external_side_effect: true,
             });
+            if pass.async_eligible {
+                graph.mark_async_eligible(id);
+            }
         }
         let mut reads = Vec::new();
         for ((descriptor, _), (_, result)) in self.resources.iter().zip(&resources) {

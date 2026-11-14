@@ -430,7 +430,11 @@ impl BrowserGame {
     /// reported in [`Self::cooked_status`] errors. A later attach replaces a held one.
     /// # Errors
     /// Returns an invalid embedded recipe or the scene's refusal of the contribution.
-    pub fn attach_cooked_valley(&mut self, valley: &CookedValley) -> Result<(), JsValue> {
+    pub fn attach_cooked_valley(
+        &mut self,
+        valley: &CookedValley,
+        effect_slab: Option<bool>,
+    ) -> Result<(), JsValue> {
         let source = CookedSource::Remote(valley.feed.clone());
         let (camera, assets) = if self.temporal_inputs {
             crate::showcase::prepare_temporal_showcase(source)
@@ -441,8 +445,19 @@ impl BrowserGame {
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
+        let contribution: Box<dyn thrum_render::contribution::SceneContribution> =
+            if let Some(refraction) = effect_slab {
+                let (effect, witness) = crate::effect::DiagnosticEffect::new();
+                witness.lock().map_err(js_error)?.controls.slab_origin_scale = [0., 240., 0., 2.];
+                Box::new(thrum_render::contribution::SceneContributions::new(vec![
+                    Box::new(assets),
+                    Box::new(effect.with_slab(refraction)),
+                ]))
+            } else {
+                Box::new(assets)
+            };
         self.shell
-            .set_scene_contribution(Box::new(assets))
+            .set_scene_contribution(contribution)
             .map_err(js_error)?;
         game::set_scene_camera(&mut self.shell, camera).map_err(js_error)?;
         self.demo
@@ -914,6 +929,28 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
         .map_err(js_error)?;
     let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
     Box::pin(crate::effect::qualification::run(
+        &device, &queue, &caps, &instance,
+    ))
+    .await
+    .map_err(js_error)
+}
+
+/// Run the late slab's submitted-input script on Chrome's hardware WebGPU device.
+/// # Errors
+/// Returns a graph, depth, refraction or motion mismatch from the target.
+#[wasm_bindgen]
+pub async fn qualify_effect_after_opaque() -> Result<String, JsValue> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .map_err(js_error)?;
+    let (device, queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .map_err(js_error)?;
+    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    Box::pin(crate::effect::after_opaque::run(
         &device, &queue, &caps, &instance,
     ))
     .await

@@ -46,11 +46,15 @@
 //! [`EffectTime::capture`] and run no state producer. Physical ping-pong addressing remains the
 //! effect's shader responsibility; the diagnostic uses a world-addressed periodic integer field.
 
+mod after_opaque;
 mod graph;
 mod list;
+mod quality;
 mod state;
+pub use after_opaque::AfterOpaquePass;
 pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 pub use list::SceneContributions;
+pub use quality::{QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
 
 /// The scene forward shader's material hook point: the fragment's one read of its material
@@ -237,6 +241,32 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Runtime controls available to a caller without effect-specific knowledge.
+    fn quality_knobs(&self) -> Vec<QualityKnob> {
+        Vec::new()
+    }
+    /// Stage a named control for the next frame boundary.
+    /// # Errors
+    /// Refuses unknown names and values outside the declared range.
+    fn set_quality_knob(&mut self, _name: &str, _value: u32) -> Result<(), String> {
+        Err("UnknownQualityKnob".into())
+    }
+    /// Apply staged values before frame preparation. Effects reset their own state here.
+    /// A view-history result also asks the host to invalidate reconstruction.
+    fn commit_quality_knobs(&mut self) -> QualityInvalidation {
+        QualityInvalidation::None
+    }
+    /// Draw a declared late pass. The renderer binds the view at group 0 and requested
+    /// inputs at group 1. Write scene-linear colour, unjittered pixel motion (previous
+    /// minus current), and reactive coverage to the three scene targets. Invalid motion
+    /// is `(65504, 65504)`; honour `frame.history_reset` and the effect's own reset.
+    fn draw_after_opaque(
+        &self,
+        _index: usize,
+        _pass: &mut wgpu::RenderPass<'_>,
+        _frame: &ContributionFrame,
+    ) {
+    }
     /// Real resources and named simulate passes, prepared before the first frame.
     fn effect_graph(&self) -> EffectGraph {
         EffectGraph::default()

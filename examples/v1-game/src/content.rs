@@ -139,17 +139,30 @@ fn attach_selected(
     };
     let assets = configure(assets)?;
     let stats = assets.stats();
-    if std::env::var("THRUM_EFFECT_GRAPH").as_deref() == Ok("1") {
+    if let Ok(selection) = std::env::var("THRUM_EFFECT_GRAPH") {
+        if !matches!(selection.as_str(), "1" | "slab" | "depth-only") {
+            return Err("unknown effect diagnostic".into());
+        }
         let (effect, witness) = crate::effect::DiagnosticEffect::new();
         witness
             .lock()
             .map_err(|error| error.to_string())?
             .controls
             .ground_height = 240.0;
+        let effect = if selection == "1" {
+            effect.scripted()
+        } else {
+            witness
+                .lock()
+                .map_err(|error| error.to_string())?
+                .controls
+                .slab_origin_scale = [0., 240., 0., 2.];
+            effect.with_slab(selection == "slab")
+        };
         host.set_scene_contribution(Box::new(
             thrum_render::contribution::SceneContributions::new(vec![
                 Box::new(assets),
-                Box::new(effect.scripted()),
+                Box::new(effect),
             ]),
         ))?;
     } else {

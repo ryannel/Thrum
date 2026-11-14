@@ -333,6 +333,7 @@ struct PassSchedule {
 /// retain the plan across frames with the same resource and pipeline closure.
 #[derive(Default)]
 pub struct FrameGraph {
+    async_eligible: BTreeSet<usize>,
     resources: Vec<Resource>,
     passes: Vec<Pass>,
     native_passes: BTreeSet<usize>,
@@ -486,6 +487,8 @@ pub struct Lifetime {
 /// Validated execution order, hazards and logical allocation plan.
 #[derive(Clone, Debug)]
 pub struct CompiledGraph {
+    /// Compute-only passes admitted for a future second queue. Execution is unchanged.
+    pub async_eligible: Vec<String>,
     pub(crate) pre_acquire_passes: Option<usize>,
     surface_resource: Option<ResourceId>,
     /// Device generation used to validate the closure. Recompile after loss.
@@ -853,6 +856,9 @@ impl CompiledGraph {
 }
 
 impl FrameGraph {
+    pub(crate) fn mark_async_eligible(&mut self, pass: usize) {
+        self.async_eligible.insert(pass);
+    }
     pub(crate) fn compile_surface_variant(
         &mut self,
         readback: Option<Pass>,
@@ -1492,6 +1498,11 @@ impl FrameGraph {
             }
         }
         Ok(CompiledGraph {
+            async_eligible: order
+                .iter()
+                .filter(|index| self.async_eligible.contains(index))
+                .map(|&index| self.passes[index].name.clone())
+                .collect(),
             pre_acquire_passes: None,
             surface_resource: None,
             device_generation: generation,

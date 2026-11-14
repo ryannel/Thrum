@@ -25,6 +25,7 @@ use glam::Vec3;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
+mod after_opaque;
 mod air_shadow;
 mod buckets;
 pub(crate) mod camera_culling;
@@ -1854,6 +1855,7 @@ impl PreparedSynthetic {
             + u32::from(self.cluster_compute.is_some())
             + u32::from(self.contribution_passes.compute)
             + u32::try_from(self.effect_graph.passes.len()).unwrap_or(u32::MAX)
+            + u32::try_from(self.effect_graph.after_opaque.len()).unwrap_or(u32::MAX)
             + self
                 .atmosphere
                 .as_ref()
@@ -2406,6 +2408,7 @@ const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 struct TargetResources {
     native: Option<native_witness::graph::Resources>,
+    refraction: Option<ResourceId>,
     pre_tone: PreToneInput,
     temporal: temporal::TemporalResources,
     taau: Option<taau::TaauResources>,
@@ -2429,6 +2432,7 @@ struct SceneGraphs<G> {
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
     pub(crate) native: Option<Arc<native_witness::Binding>>,
+    late_groups: Vec<wgpu::BindGroup>,
     capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
@@ -2542,6 +2546,7 @@ impl OffscreenTarget {
         let scene_view = texture_view(&ids.scene)?;
         let motion_view = texture_view(&ids.motion)?;
         let reactive_view = texture_view(&ids.reactive)?;
+        let late_groups = prepared.late_bindings(device, &textures, &ids, &depth)?;
         let temporal = prepared.temporal.target(
             device,
             &textures,
@@ -2663,6 +2668,7 @@ impl OffscreenTarget {
         Ok(Self {
             native,
             capture_source,
+            late_groups,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             day_graphs,

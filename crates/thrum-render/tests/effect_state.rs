@@ -89,6 +89,7 @@ use thrum_render::{
 };
 fn declaration(scope: S, cadence: C) -> EffectGraph {
     EffectGraph {
+        after_opaque: Vec::new(),
         resources: vec![(
             D::Buffer {
                 bytes: 4,
@@ -99,6 +100,7 @@ fn declaration(scope: S, cadence: C) -> EffectGraph {
         passes: vec![EffectPass {
             name: "producer".into(),
             cadence,
+            async_eligible: false,
             accesses: vec![EffectAccess {
                 resource: 0,
                 range: 0..4,
@@ -229,4 +231,30 @@ fn a_second_declaration_cannot_hide_a_second_producer_of_the_same_pair() {
             .expect_err("logical pair identities must be unique"),
         "DuplicateEffectOwner"
     );
+}
+
+#[test]
+fn async_eligibility_refuses_non_compute_accesses() {
+    let mut graph = declaration(
+        S::Persistent {
+            owner: 1,
+            epoch: 1,
+            initialized: true,
+        },
+        C::EveryFrame,
+    );
+    graph.passes[0].async_eligible = true;
+    graph.validate().expect("compute eligible");
+    for kind in [
+        A::AttachmentLoad,
+        A::AttachmentClear,
+        A::CopyRead,
+        A::CopyWrite,
+    ] {
+        graph.passes[0].accesses[0].kind = kind;
+        assert_eq!(
+            graph.validate().expect_err("compute only"),
+            "AsyncRequiresCompute: producer"
+        );
+    }
 }

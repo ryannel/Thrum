@@ -417,6 +417,22 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.timing_requested
     }
 
+    /// List contribution quality controls with committed values and declared invalidations.
+    #[must_use]
+    pub fn quality_knobs(&self) -> Vec<crate::contribution::QualityKnob> {
+        self.contribution
+            .as_ref()
+            .map_or_else(Vec::new, |entry| entry.quality_knobs())
+    }
+    /// Stage a quality value for the next frame boundary.
+    /// # Errors
+    /// Refuses an absent contribution, unknown name or out-of-range value.
+    pub fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
+        self.contribution
+            .as_mut()
+            .ok_or("NoSceneContribution")?
+            .set_quality_knob(name, value)
+    }
     /// Attach an engine module that draws into the scene's forward pass with the scene's
     /// lighting. It is rebuilt on every visual or device republication.
     ///
@@ -860,6 +876,29 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .collect::<Vec<_>>()
             .join("\n")
     }
+    /// Inspect the prepared slot's graph without encoding or allocating GPU work.
+    /// # Errors
+    /// Refuses a stale target during an incomplete scene transition.
+    pub fn scene_graph(&self) -> Result<crate::graph::CompiledGraph, FrameError> {
+        self.prepared
+            .graph(&self.slots[0].target, false)
+            .map_err(|error| FrameError::Gpu(format!("graph inspection: {error:?}")))
+    }
+    /// Read-only reconstruction witness of the latest submitted frame, before report retirement.
+    /// This texture is queue ordered after that frame; it is absent when temporal sampling is off.
+    #[must_use]
+    pub fn submitted_temporal_witness(&self) -> Option<&wgpu::Texture> {
+        self.slots
+            .iter()
+            .filter_map(|slot| match &slot.state {
+                SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
+                    Some((sample.submission_order, &slot.target))
+                }
+                SlotState::Free => None,
+            })
+            .max_by_key(|(order, _)| *order)
+            .and_then(|(_, target)| target.temporal_witness())
+    }
 
     /// Outcomes of the optional labelled native copy/select diagnostic.
     #[must_use]
@@ -1224,6 +1263,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.restore_upload_slots()?;
         self.last_extracted = frame.extracted;
         let lighting = frame_scene.lighting;
+        if self.contribution.as_mut().is_some_and(|entry| {
+            entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
+        }) {
+            self.history_reset_pending = true;
+        }
         self.scene.view = self.view_with_history_reset(&frame_scene.view);
         self.prepared
             .synchronize_history(&self.queue, authority.epoch, authority.timeline);
@@ -1819,6 +1863,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                             if let Some((mut scene, present, contribution)) =
                                 pass_durations(passes, sample.surface_presented, slot.timing_layout)
                             {
+                                scene.effect_passes(slot.target.effect_pass_names());
                                 scene.unmeasured(slot.target.untimed_pass_names(
                                     slot.timing_readback,
                                     sample.surface_presented,

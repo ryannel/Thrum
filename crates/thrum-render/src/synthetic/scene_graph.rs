@@ -183,15 +183,10 @@ impl PreparedSynthetic {
         .collect()
     }
 
-    pub(super) fn compile_graph(
+    fn instance_material_resources(
         &self,
-        width: u32,
-        height: u32,
-        row_bytes: u32,
-        capture_source: CaptureSource,
-        profile: Option<crate::present::SurfaceProfile>,
-    ) -> Result<CompiledScene, RenderError> {
-        let mut graph = FrameGraph::default();
+        graph: &mut FrameGraph,
+    ) -> Result<(ResourceId, ResourceId), RenderError> {
         let material = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes: self.material_bytes,
@@ -206,9 +201,18 @@ impl PreparedSynthetic {
             },
             ResourceScope::Imported { initialized: true },
         )?;
-        let (history_read, history_write, history_bytes) = self.history_resources(&mut graph)?;
-        let mesh = self.mesh_arena_reads(&mut graph)?;
-        let route = self.bucket_route_reads(&mut graph)?;
+        Ok((material, instance))
+    }
+
+    fn geometry_accesses(
+        &self,
+        material: ResourceId,
+        instance: &ResourceId,
+        history_read: ResourceId,
+        history_bytes: u64,
+        mesh: &[Access; 2],
+        route: &[Access],
+    ) -> Vec<Access> {
         let mut accesses = vec![
             Access::new(material, 0..self.material_bytes, AccessKind::StorageRead),
             Access::new(
@@ -218,12 +222,36 @@ impl PreparedSynthetic {
             ),
             Access::new(history_read, 0..history_bytes, AccessKind::StorageRead),
         ];
-        accesses.extend_from_slice(&mesh);
+        accesses.extend_from_slice(mesh);
         // Direct's bucket draws read the member list; the culled draws read
         // the visible list the compaction writes from it.
         if self.visibility.is_none() {
             accesses.extend(route.first().cloned());
         }
+        accesses
+    }
+
+    pub(super) fn compile_graph(
+        &self,
+        width: u32,
+        height: u32,
+        row_bytes: u32,
+        capture_source: CaptureSource,
+        profile: Option<crate::present::SurfaceProfile>,
+    ) -> Result<CompiledScene, RenderError> {
+        let mut graph = FrameGraph::default();
+        let (material, instance) = self.instance_material_resources(&mut graph)?;
+        let (history_read, history_write, history_bytes) = self.history_resources(&mut graph)?;
+        let mesh = self.mesh_arena_reads(&mut graph)?;
+        let route = self.bucket_route_reads(&mut graph)?;
+        let mut accesses = self.geometry_accesses(
+            material,
+            &instance,
+            history_read,
+            history_bytes,
+            &mesh,
+            &route,
+        );
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
         if let Some(cloud) = &self.cloud {
@@ -298,6 +326,28 @@ impl PreparedSynthetic {
             history_write,
             history_bytes,
         )?;
+        // Late writers need a stable colour predecessor. Prepare the optional star
+        // pass before them; it records only when this frame selects stars. Empty
+        // effect declarations retain the original day/night graph variants below.
+        let early_stars = if self.effect_graph.after_opaque.is_empty() {
+            None
+        } else {
+            self.append_optional_stars(
+                &mut graph,
+                &mut prepared_keys,
+                forward,
+                atmosphere_inputs.as_ref(),
+                (&depth, &scene, &motion, &reactive, &exposure_sample),
+            )?
+        };
+        let late = self.append_after_opaque(
+            &mut graph,
+            &mut prepared_keys,
+            [&depth, &scene, &motion, &reactive],
+            [width, height],
+            &contribution_reads,
+            early_stars.unwrap_or(forward),
+        )?;
         let temporal = self.append_temporal(
             &mut graph,
             &mut prepared_keys,
@@ -325,6 +375,12 @@ impl PreparedSynthetic {
             [width, height],
         )?;
         let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
+        if late.first.is_some() {
+            graph.dependency(late.last, display_pass)?;
+            if let Some(pass) = temporal.witness_pass {
+                graph.dependency(late.last, pass)?;
+            }
+        }
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
@@ -337,16 +393,20 @@ impl PreparedSynthetic {
             readback.clone(),
             generation,
             &prepared_keys,
-            (capture_source == CaptureSource::SceneLinear).then_some(forward),
+            (capture_source == CaptureSource::SceneLinear).then_some(late.last),
             surface.as_ref(),
         )?;
-        let stars = self.append_optional_stars(
-            &mut graph,
-            &mut prepared_keys,
-            forward,
-            atmosphere_inputs.as_ref(),
-            (&depth, &scene, &motion, &reactive, &exposure_sample),
-        )?;
+        let stars = if early_stars.is_some() {
+            None
+        } else {
+            self.append_optional_stars(
+                &mut graph,
+                &mut prepared_keys,
+                forward,
+                atmosphere_inputs.as_ref(),
+                (&depth, &scene, &motion, &reactive, &exposure_sample),
+            )?
+        };
         let night = if let Some(stars) = stars {
             if let Some(native) = &native {
                 graph.dependency(stars, native.pass)?;
@@ -376,6 +436,7 @@ impl PreparedSynthetic {
             night,
             ids: TargetResources {
                 native,
+                refraction: late.copy,
                 pre_tone,
                 temporal,
                 taau,
@@ -444,6 +505,16 @@ impl PreparedSynthetic {
         [width, height]: [u32; 2],
         source: CaptureSource,
     ) -> Result<[ResourceId; 4], RenderError> {
+        let source = if self
+            .effect_graph
+            .after_opaque
+            .iter()
+            .any(|pass| pass.refraction)
+        {
+            CaptureSource::SceneLinear
+        } else {
+            source
+        };
         let mut attachment = |format, role, sampled| {
             Self::view_attachment(
                 (width, height, graph, accesses),
@@ -458,7 +529,9 @@ impl PreparedSynthetic {
             attachment(
                 DEPTH_FORMAT,
                 AttachmentUse::Depth,
-                self.stars.is_some() || self.temporal_inputs,
+                self.stars.is_some()
+                    || self.temporal_inputs
+                    || self.effect_graph.after_opaque.iter().any(|pass| pass.depth),
             )?,
             attachment(SCENE_FORMAT, AttachmentUse::Scene, false)?,
             attachment(MOTION_FORMAT, AttachmentUse::Motion, false)?,
@@ -900,6 +973,18 @@ impl PreparedSynthetic {
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
                 Some(key)
+                    if key.role >= 3000
+                        && key.role
+                            < 3000
+                                + u32::try_from(self.effect_graph.after_opaque.len())
+                                    .unwrap_or(0) =>
+                {
+                    let index = (key.role - 3000) as usize;
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
+                        frame.after_opaque(index, pass)
+                    })
+                }
+                Some(key)
                     if key.role >= 2000
                         && key.role
                             < 2000 + u32::try_from(self.effect_graph.passes.len()).unwrap_or(0) =>
@@ -1072,6 +1157,13 @@ impl PreparedSynthetic {
                 Some(key) if key == self.contribution_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
                         frame.contribution_compute(pass)
+                    })
+                }
+                None if pass.kind == Some(PassKind::Copy)
+                    && pass.name == super::after_opaque::COPY =>
+                {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
+                        frame.refraction_copy()
                     })
                 }
                 None if pass.kind == Some(PassKind::Copy) => {

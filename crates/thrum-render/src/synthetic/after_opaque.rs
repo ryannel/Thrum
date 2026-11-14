@@ -1,0 +1,212 @@
+//! Late effects share one refraction source and independently request scene depth.
+use super::{PreparedSynthetic, RenderError, SceneContext, TargetResources};
+use crate::graph::{
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
+    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+};
+use std::collections::BTreeSet;
+
+pub(super) const COPY: &str = "effect refraction copy";
+pub(super) struct LateGraph {
+    pub(super) copy: Option<ResourceId>,
+    pub(super) first: Option<usize>,
+    pub(super) last: usize,
+}
+
+impl PreparedSynthetic {
+    pub(super) fn late_key(&self, index: usize) -> PipelineKey {
+        PipelineKey {
+            role: 3000 + u32::try_from(index).unwrap_or(u32::MAX),
+            ..self.key
+        }
+    }
+
+    pub(super) fn append_after_opaque(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        targets: [&ResourceId; 4],
+        extent: [u32; 2],
+        reads: &[Access],
+        forward: usize,
+    ) -> Result<LateGraph, RenderError> {
+        let [depth, scene, motion, reactive] = targets;
+        let refracts = self
+            .effect_graph
+            .after_opaque
+            .iter()
+            .any(|pass| pass.refraction);
+        let mut first = None;
+        let mut last = forward;
+        let mut previous_render = forward;
+        let copy = if refracts {
+            let id = graph.resource(
+                ResourceDescriptor::Texture {
+                    dimension: crate::graph::TextureKind::D2,
+                    width: extent[0],
+                    height: extent[1],
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: super::SCENE_FORMAT,
+                    usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+                },
+                ResourceScope::Transient,
+            )?;
+            let pass = graph.pass(Pass {
+                name: COPY.into(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: vec![
+                    Access::new(scene.clone(), 0..1, AccessKind::CopyRead),
+                    Access::new(id.clone(), 0..1, AccessKind::CopyWrite),
+                ],
+                external_side_effect: false,
+            });
+            graph.dependency(last, pass)?;
+            first = Some(pass);
+            last = pass;
+            Some(id)
+        } else {
+            None
+        };
+        for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
+            let key = self.late_key(index);
+            keys.insert(key);
+            let mut accesses = reads.to_vec();
+            accesses.extend(
+                [scene, motion, reactive]
+                    .map(|id| Access::new(id.clone(), 0..1, AccessKind::AttachmentLoad)),
+            );
+            if declaration.depth {
+                accesses.push(Access::new(depth.clone(), 0..1, AccessKind::SampledRead));
+            }
+            if declaration.refraction {
+                accesses.push(Access::new(
+                    copy.clone().ok_or(RenderError::GraphPassMismatch)?,
+                    0..1,
+                    AccessKind::SampledRead,
+                ));
+            }
+            let pass = graph.pass(Pass {
+                name: format!("effect after {index}: {}", declaration.name),
+                scope: PassScope::View(1),
+                pipeline: Some(key),
+                accesses,
+                external_side_effect: true,
+            });
+            graph.dependency(last, pass)?;
+            if last != previous_render {
+                graph.dependency(previous_render, pass)?;
+            }
+            first.get_or_insert(pass);
+            last = pass;
+            previous_render = pass;
+        }
+        Ok(LateGraph { copy, first, last })
+    }
+
+    pub(super) fn late_bindings(
+        &self,
+        device: &wgpu::Device,
+        textures: &crate::graph::GraphTextures,
+        ids: &TargetResources,
+        depth: &wgpu::TextureView,
+    ) -> Result<Vec<wgpu::BindGroup>, RenderError> {
+        let copy = ids
+            .refraction
+            .as_ref()
+            .map(|id| {
+                textures
+                    .texture(id)
+                    .ok_or(RenderError::GraphPassMismatch)
+                    .map(|texture| texture.create_view(&wgpu::TextureViewDescriptor::default()))
+            })
+            .transpose()?;
+        self.effect_graph
+            .after_opaque
+            .iter()
+            .map(|declaration| {
+                let layout = declaration.input_layout(device);
+                let mut entries = Vec::new();
+                if declaration.depth {
+                    entries.push(wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(depth),
+                    });
+                }
+                if declaration.refraction {
+                    entries.push(wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(
+                            copy.as_ref().ok_or(RenderError::GraphPassMismatch)?,
+                        ),
+                    });
+                }
+                Ok(device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(&declaration.name),
+                    layout: &layout,
+                    entries: &entries,
+                }))
+            })
+            .collect()
+    }
+}
+
+impl SceneContext<'_> {
+    pub(super) fn refraction_copy(&mut self) -> Result<(), RenderError> {
+        let source = self
+            .target
+            .textures
+            .texture(&self.target.ids.scene)
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let dest = self
+            .target
+            .ids
+            .refraction
+            .as_ref()
+            .and_then(|id| self.target.textures.texture(id))
+            .ok_or(RenderError::GraphPassMismatch)?;
+        self.encoder.copy_texture_to_texture(
+            source.as_image_copy(),
+            dest.as_image_copy(),
+            source.size(),
+        );
+        Ok(())
+    }
+    pub(super) fn after_opaque(
+        &mut self,
+        index: usize,
+        compiled: &CompiledPass,
+    ) -> Result<(), RenderError> {
+        let mut pass = compiled
+            .begin_render(
+                self.encoder,
+                [
+                    (&self.target.ids.scene, &self.target.scene_view),
+                    (&self.target.ids.motion, &self.target.motion_view),
+                    (&self.target.ids.reactive, &self.target.reactive_view),
+                ]
+                .map(|(resource, view)| {
+                    Some(GraphColorAttachment {
+                        resource,
+                        view,
+                        range: 0..1,
+                        clear: wgpu::Color::BLACK,
+                    })
+                }),
+                None,
+                self.generation,
+                self.timings.as_deref_mut(),
+            )?
+            .ok_or(RenderError::GraphPassMismatch)?;
+        let view_offset =
+            self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
+        pass.set_bind_group(0, &self.target.view_bind_group, &[view_offset]);
+        pass.set_bind_group(1, &self.target.late_groups[index], &[]);
+        if let Some(contribution) = self.contribution.as_deref() {
+            contribution.draw_after_opaque(index, &mut pass, &self.contribution_frame);
+        }
+        Ok(())
+    }
+}

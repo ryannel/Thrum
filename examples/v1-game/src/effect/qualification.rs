@@ -1,6 +1,7 @@
 //! Scripted target qualification shared by the native runner and browser case.
 use super::{DiagnosticEffect, EffectHandle, SIZE};
 mod oracle;
+mod quality;
 use oracle::{Expected, seeded_kinds};
 use std::{
     sync::{Arc, Mutex},
@@ -19,7 +20,7 @@ use thrum_render::{
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
 };
 
-struct World(SourceTick);
+pub(super) struct World(pub(super) SourceTick);
 impl FrameWorld for World {
     type Page = SourceTick;
     fn source(&self) -> SourceTick {
@@ -93,6 +94,27 @@ pub async fn read_texture(
     texture: &wgpu::Texture,
     mip: u32,
 ) -> Result<Vec<u32>, String> {
+    Ok(read_texture_bytes(device, queue, texture, mip, 4)
+        .await?
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|value| u32::from_le_bytes(*value))
+        .collect())
+}
+
+/// Read tightly packed submitted texture bytes for a known uncompressed pixel format.
+/// # Errors
+/// Returns a GPU mapping or device progress error.
+/// # Panics
+/// Panics if a private readback callback mutex is poisoned.
+pub async fn read_texture_bytes(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
+    mip: u32,
+    bytes_per_pixel: u32,
+) -> Result<Vec<u8>, String> {
     let width = (texture.width() >> mip).max(1);
     let height = (texture.height() >> mip).max(1);
     let depth = if texture.dimension() == wgpu::TextureDimension::D3 {
@@ -100,7 +122,7 @@ pub async fn read_texture(
     } else {
         texture.depth_or_array_layers()
     };
-    let row = (width * 4).div_ceil(256) * 256;
+    let row = (width * bytes_per_pixel).div_ceil(256) * 256;
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("effect exact readback"),
         size: u64::from(row * height * depth),
@@ -160,9 +182,7 @@ pub async fn read_texture(
     let mapped = buffer.get_mapped_range(..).map_err(error)?;
     let mut values = Vec::new();
     for bytes in mapped.chunks_exact(row as usize) {
-        for value in bytes[..(width * 4) as usize].as_chunks::<4>().0 {
-            values.push(u32::from_le_bytes(*value));
-        }
+        values.extend_from_slice(&bytes[..(width * bytes_per_pixel) as usize]);
     }
     drop(mapped);
     buffer.unmap();
@@ -498,6 +518,7 @@ pub async fn run(
     }
     // The last frame reset at tick 100. Every texel of all kinds has a literal expected value.
     reset_kinds(device, queue, &handle).await?;
+    records.push(quality::run(&mut host, device, queue, &handle).await?);
     Box::pin(replace_device(
         &mut host,
         instance,

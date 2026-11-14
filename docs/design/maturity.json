@@ -68,6 +68,18 @@
         "../evidence/CLOUDS/M1.md"
       ]
     },
+    "EFFECT_GRAPH_seam": {
+      "implementation": "M3_work_in_progress_after_opaque_requests_async_metadata_quality_controls",
+      "functional_validation": "CPU_graph_history_and_async_order_test_passed_target_qualification_pending",
+      "experienced_quality": "M3_fixed_native_and_Chrome_slab_inspection_pending",
+      "platform_performance": {
+        "mac": "paired_copy_and_pass_break_costs_pending_on_both_recipes",
+        "browser": "WebGPU_build_passed_runtime_pending",
+        "ios": "not_targeted"
+      },
+      "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate.",
+      "evidence": ["docs/EFFECTS.md"]
+    },
     "G0_boundary": {
       "implementation": "complete_boundary_and_integrity_cleanup",
       "functional_validation": "Mac_dev_check_no_SKIP_negative_Metal_and_verified_baseline_inventory_passed",

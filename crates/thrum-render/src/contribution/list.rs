@@ -7,6 +7,7 @@ use super::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurfa
 pub struct SceneContributions {
     entries: Vec<Box<dyn SceneContribution>>,
     pass_counts: Vec<usize>,
+    after_counts: Vec<usize>,
 }
 
 impl SceneContributions {
@@ -15,11 +16,39 @@ impl SceneContributions {
         Self {
             entries,
             pass_counts: Vec::new(),
+            after_counts: Vec::new(),
         }
     }
 }
 
 impl SceneContribution for SceneContributions {
+    fn quality_knobs(&self) -> Vec<super::QualityKnob> {
+        self.entries
+            .iter()
+            .enumerate()
+            .flat_map(|(member, entry)| {
+                entry.quality_knobs().into_iter().map(move |mut knob| {
+                    knob.name = format!("{member}/{}", knob.name);
+                    knob
+                })
+            })
+            .collect()
+    }
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
+        let (member, local) = name.split_once('/').ok_or("UnknownQualityKnob")?;
+        let member: usize = member.parse().map_err(|_| "UnknownQualityKnob")?;
+        self.entries
+            .get_mut(member)
+            .ok_or("UnknownQualityKnob")?
+            .set_quality_knob(local, value)
+    }
+    fn commit_quality_knobs(&mut self) -> super::QualityInvalidation {
+        self.entries
+            .iter_mut()
+            .map(|entry| entry.commit_quality_knobs())
+            .max()
+            .unwrap_or_default()
+    }
     fn effect_graph(&self) -> super::EffectGraph {
         let mut graph = super::EffectGraph::default();
         for (member, entry) in self.entries.iter().enumerate() {
@@ -42,6 +71,10 @@ impl SceneContribution for SceneContributions {
             }
             graph.resources.extend(declaration.resources);
             graph.passes.extend(declaration.passes);
+            for pass in &mut declaration.after_opaque {
+                pass.name = format!("effect {member}: {}", pass.name);
+            }
+            graph.after_opaque.extend(declaration.after_opaque);
         }
         graph
     }
@@ -53,6 +86,20 @@ impl SceneContribution for SceneContributions {
             index -= count;
         }
         false
+    }
+    fn draw_after_opaque(
+        &self,
+        mut index: usize,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        for (entry, count) in self.entries.iter().zip(self.after_counts.iter().copied()) {
+            if index < count {
+                entry.draw_after_opaque(index, pass, frame);
+                return;
+            }
+            index -= count;
+        }
     }
     fn encode_effect(
         &mut self,
@@ -85,9 +132,12 @@ impl SceneContribution for SceneContributions {
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         self.pass_counts.clear();
+        self.after_counts.clear();
         for entry in &mut self.entries {
             entry.rebuild(surface)?;
             self.pass_counts.push(entry.effect_graph().passes.len());
+            self.after_counts
+                .push(entry.effect_graph().after_opaque.len());
         }
         Ok(())
     }

@@ -25,6 +25,18 @@ pub struct PassTiming {
 pub struct SceneGpuTimings {
     passes: Vec<PassTiming>,
     unmeasured: Vec<String>,
+    not_run: Vec<String>,
+}
+
+/// Named pass execution, preserving the difference between a skip and a zero timestamp delta.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PassExecution {
+    /// Executed and measured in nanoseconds.
+    Timed(f64),
+    /// Declared in this graph but skipped at runtime.
+    NotRun,
+    /// Executed transfer without timestamp counters.
+    Unmeasured,
 }
 
 impl SceneGpuTimings {
@@ -32,6 +44,7 @@ impl SceneGpuTimings {
         Self {
             passes: passes.to_vec(),
             unmeasured: Vec::new(),
+            not_run: Vec::new(),
         }
     }
 
@@ -39,6 +52,26 @@ impl SceneGpuTimings {
         self.unmeasured.extend(names);
         self.unmeasured
             .push("timestamp query resolve/readback".to_owned());
+    }
+    pub(crate) fn effect_passes(&mut self, names: impl Iterator<Item = String>) {
+        for name in names {
+            if self.get(&name).is_none() {
+                self.not_run.push(name);
+            }
+        }
+    }
+    /// Execution of a named pass, absent only when it is outside this frame's graph.
+    #[must_use]
+    pub fn execution(&self, name: &str) -> Option<PassExecution> {
+        if let Some(value) = self.get(name) {
+            Some(PassExecution::Timed(value))
+        } else if self.not_run.iter().any(|n| n == name) {
+            Some(PassExecution::NotRun)
+        } else if self.unmeasured.iter().any(|n| n == name) {
+            Some(PassExecution::Unmeasured)
+        } else {
+            None
+        }
     }
 
     /// Actual executed, timed graph passes (including the surface consumer).

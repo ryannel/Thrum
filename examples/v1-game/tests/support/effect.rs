@@ -18,7 +18,13 @@ pub(super) fn run(record_name: &str) {
                 .await
                 .expect("real target adapter");
             let (device, queue) = adapter
-                .request_device(&wgpu::DeviceDescriptor::default())
+                .request_device(&wgpu::DeviceDescriptor {
+                    required_features:
+                        thrum_render::capabilities::DeviceCapabilities::requested_timing_features(
+                            &adapter,
+                        ),
+                    ..Default::default()
+                })
                 .await
                 .expect("real target device");
             let caps =

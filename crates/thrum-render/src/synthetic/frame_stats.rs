@@ -2,6 +2,35 @@
 
 use super::{CullMode, OffscreenTarget, PreparedSynthetic, history_gpu};
 
+impl OffscreenTarget {
+    pub(crate) fn effect_pass_names(&self) -> impl Iterator<Item = String> + '_ {
+        self.graph(false)
+            .plan()
+            .pass_bindings()
+            .filter(|(_, pass)| {
+                pass.pipeline
+                    .is_some_and(|key| (2000..3000).contains(&key.role))
+            })
+            .map(|(_, pass)| pass.name.clone())
+    }
+    pub(crate) fn untimed_pass_names(
+        &self,
+        readback: bool,
+        presented: bool,
+    ) -> impl Iterator<Item = String> + '_ {
+        let plan = self.graph(readback).plan();
+        let executed = if presented {
+            usize::MAX
+        } else {
+            plan.pre_acquire_passes.unwrap_or(usize::MAX)
+        };
+        plan.pass_bindings()
+            .take(executed)
+            .filter(|(_, pass)| pass.kind == Some(crate::graph::PassKind::Copy))
+            .map(|(_, pass)| pass.name.clone())
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct SceneTimingLayout {
     shadows: Shadows,

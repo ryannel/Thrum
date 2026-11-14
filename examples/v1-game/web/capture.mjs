@@ -55,7 +55,10 @@ try {
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau');
   window.captureGame = game;
-  game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')));
+  const effect = query.get('effect') ?? 'off';
+  if (!['off','slab','depth-only'].includes(effect)) fail('Unknown effect diagnostic');
+  record.effect = effect;
+  game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')), effect === 'off' ? undefined : effect === 'slab');
   game.set_visible(true, 0);
   if (witness === 'off') {
     // Fixed-time preparation stops at the ordinary route installation barrier.
