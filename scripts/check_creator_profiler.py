@@ -173,6 +173,8 @@ fn main() -> Result<(), String> {
         return
     binary = ROOT / "target/release/creator-profile-proof"
     result = {"revision":subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(), "binary_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(), "load":"V1 valley, 10,000 entities, 1920x1080, ordinary Game/FrameHost, compact observer equal in every arm", "mode":"window" if args.window else "elapsed offscreen output and AppKit panel; no OS present or display-link claim", "order":[], "pairs":[], "world":[], "material":[]}
+    result["source_sha256"] = {name:hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in ["scripts/check_creator_profiler.py", "scripts/creator_profile_probe.rs", "crates/thrum-app/src/profile/window.rs", "crates/thrum-controls/src/macos.rs", "examples/starter/src/main.rs"]}
+    result["cooked_heads_sha256"] = {name:hashlib.sha256((output / f"{name}-store/HEAD").read_bytes()).hexdigest() for name in ["valley", "starter"]}
     valley_env = {"THRUM_SCENE":"valley", "THRUM_ASSET_STORE":str(output / "valley-store")}
     if args.window:
         valley_env["THRUM_PROFILE_WINDOW"] = "1"
