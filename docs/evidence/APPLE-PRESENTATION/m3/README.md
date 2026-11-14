@@ -1,6 +1,8 @@
 # M3 builder evidence
 
-Implementation checkpoint, 14 November 2026. No item is qualified yet.
+Implementation checkpoint, 14 November 2026. No item is qualified yet. The last
+clean-source oracle (`9c1349f2`) proves exact reference repeatability and camera-cut
+reset, but four still comparisons fail. The next clean-source proof is queued.
 
 The portable registry selects TAAU. Its compute pass reads jittered forward colour,
 reversed-Z depth, dilated motion, reactive and GPU-resolved exposure; it writes linear
@@ -16,12 +18,12 @@ the two cycles, and includes history-disabled and suppressed-cut-reset controls.
 `scripts/reconstruction_difference.py` compares every SDR pixel in D65 CIELAB using
 CIEDE2000; its published supplementary-pair checks pass.
 
-Verified so far: focused native Clippy, both WGSL modules' Naga validation, native
-compilation and pinned-toolchain Wasm compilation. These establish no target image
-quality, motion quality or GPU cost.
+Verified for the changed kernel: strict native and pinned-toolchain Wasm Clippy,
+both WGSL modules' Naga validation, native release and Wasm builds. These establish
+no target image quality, motion quality or GPU cost.
 The real Metal alternating-slot/reset execution test now passes, as do the
 authoritative tick-60 replacement and sampled moving-light fixture tests. The
-game-reference proof is queued under the shared `gpu` lock. Chrome execution, motion sequences, timing,
+changed-kernel game-reference proof is queued under the shared `gpu` lock. Chrome execution, motion sequences, timing,
 exact baselines, the full gate and integration remain unqualified.
 
 Technique source: [Karis, High-Quality Temporal Supersampling, SIGGRAPH 2014](https://advances.realtimerendering.com/s2014/index.html).
@@ -34,7 +36,7 @@ and the cut equals its independently reset render while the suppressed-reset con
 differs. These are historical results, not passes for the changed kernel.
 The follow-up corrects depth-history jitter addressing, preserves exact unchanged
 colour during clipping/blending, and rescales from full-precision retained exposure.
-Its target rerun remains pending.
+That follow-up was tested in the second attempt below.
 
 Second target attempt at `9c1349f2`: [complete metrics](attempt-2/run.json).
 All six independent scene-linear cycle means agree bit for bit. Sunrise and
