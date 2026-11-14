@@ -5,8 +5,6 @@ struct Params {
     lengths: vec4<f32>,
     levels: array<vec4<f32>, 8>, // local origin x/z, texel width, max k
 }
-struct Mode { k: vec2<f32>, amplitude: f32, phase: f32, cycles: u32, pad: vec3<u32> }
-// Mode is explicitly 48 bytes because vec3 alignment is 16. Use vec4 pairs instead.
 struct Bin { physical: vec4<f32>, clock: vec4<u32> }
 struct Long { physical: vec4<f32>, rate: vec4<f32> }
 struct Field { displacement: vec4<f32>, slope: vec4<f32>, velocity: vec4<f32> }
@@ -24,7 +22,6 @@ const TAU: f32 = 6.283185307179586;
 const N: u32 = 256u;
 const PIXELS: u32 = 65536u;
 const CHANNELS: u32 = 11u;
-const MIP_PIXELS: u32 = 87381u;
 fn mul(x: vec2<f32>, y: vec2<f32>) -> vec2<f32> {
     return vec2(x.x*y.x-x.y*y.y, x.x*y.y+x.y*y.x);
 }
@@ -108,19 +105,23 @@ fn unpack(@builtin(global_invocation_id) id: vec3<u32>) {
     field[i]=Field(vec4(channel(band,0u,pixel),channel(band,1u,pixel),channel(band,2u,pixel),jac),
         vec4(sx,sz,dx,cross),vec4(channel(band,8u,pixel),channel(band,9u,pixel),channel(band,10u,pixel),dz));
     // Raw second moments filter linearly; covariance is second - outer(mean).
-    moments[band*MIP_PIXELS+pixel]=Moments(vec4(sx,sz,sx*sx,sx*sz),vec4(sz*sz,jac,jac*jac,0.0));
+    moments[band*PIXELS+pixel]=Moments(vec4(sx,sz,sx*sx,sx*sz),vec4(sz*sz,jac,jac*jac,0.0));
 }
 // Mips use a separate small uniform at group 1: parent offset, child offset, width.
 @group(1) @binding(0) var<uniform> mip: vec4<u32>;
+fn parent_moment(index: u32) -> Moments {
+    let i=index*4u;
+    return Moments(vec4(b[i],b[i+1u]),vec4(b[i+2u],b[i+3u]));
+}
 @compute @workgroup_size(64)
 fn reduce(@builtin(global_invocation_id) id: vec3<u32>) {
     let width=mip.z; let count=width*width;
     if id.x>=3u*count { return; }
     let band=id.x/count; let pixel=id.x%count;
-    let base=band*MIP_PIXELS+mip.x+(pixel/width)*4u*width+(pixel%width)*2u;
-    let v0=moments[base]; let v1=moments[base+1u];
-    let v2=moments[base+2u*width]; let v3=moments[base+2u*width+1u];
-    moments[band*MIP_PIXELS+mip.y+pixel]=Moments((v0.slope+v1.slope+v2.slope+v3.slope)*0.25,
+    let base=band*4u*count+(pixel/width)*4u*width+(pixel%width)*2u;
+    let v0=parent_moment(base); let v1=parent_moment(base+1u);
+    let v2=parent_moment(base+2u*width); let v3=parent_moment(base+2u*width+1u);
+    moments[band*count+pixel]=Moments((v0.slope+v1.slope+v2.slope+v3.slope)*0.25,
         (v0.extra+v1.extra+v2.extra+v3.extra)*0.25);
 }
 // Shared body-query/cache evaluator: invert horizontal displacement at the world point.

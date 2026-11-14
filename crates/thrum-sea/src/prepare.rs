@@ -1,32 +1,60 @@
-use crate::{
-    Ambient, CACHE_SIZE, CHANNELS, CacheLevel, LEVELS, MAX_QUERIES, MIP_PIXELS, PIXELS, Profile,
-};
+use crate::{Ambient, CACHE_SIZE, CHANNELS, CacheLevel, LEVELS, MAX_QUERIES, PIXELS, Profile};
 use thrum_render::runtime::DeviceSite;
 
-pub(super) const NAMES: [&str; 9] = [
+pub(super) const NAMES: [&str; 17] = [
     "sea parameters",
-    "sea spectrum bins",
+    "sea spectrum / final transform",
     "sea long components",
     "sea query points",
     "sea transform A",
     "sea transform B",
     "sea cascades",
-    "sea moments",
+    "sea moments base",
     "sea long field",
+    "sea moments mip 1",
+    "sea moments mip 2",
+    "sea moments mip 3",
+    "sea moments mip 4",
+    "sea moments mip 5",
+    "sea moments mip 6",
+    "sea moments mip 7",
+    "sea moments mip 8",
 ];
 
-pub(super) fn sizes() -> [u64; 9] {
+pub(super) fn upload_sizes() -> [u64; 4] {
     [
         176,
         3 * u64::from(PIXELS) * 32,
         192 * 32,
         u64::from(MAX_QUERIES) * 8,
-        3 * CHANNELS * u64::from(PIXELS) * 8,
-        3 * CHANNELS * u64::from(PIXELS) * 8,
-        3 * u64::from(PIXELS) * 48,
-        3 * u64::from(MIP_PIXELS) * 32,
-        u64::from(MAX_QUERIES + LEVELS * CACHE_SIZE * CACHE_SIZE) * 48,
     ]
+}
+
+pub(super) fn sizes() -> Vec<u64> {
+    let work = 3 * CHANNELS * u64::from(PIXELS) * 8;
+    let mut sizes = vec![
+        176,
+        work,
+        192 * 32,
+        u64::from(MAX_QUERIES) * 8,
+        work,
+        work,
+        3 * u64::from(PIXELS) * 48,
+        3 * u64::from(PIXELS) * 32,
+        u64::from(MAX_QUERIES + LEVELS * CACHE_SIZE * CACHE_SIZE) * 48,
+    ];
+    for level in 1..=8 {
+        sizes.push(3 * u64::from(PIXELS >> (2 * level)) * 32);
+    }
+    sizes
+}
+
+pub(super) fn usage(index: usize) -> wgpu::BufferUsages {
+    if index == 0 {
+        wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
+    } else {
+        wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC
+    }
 }
 
 pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, String> {
@@ -135,30 +163,38 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(name),
                 size,
-                usage: if i == 0 {
-                    wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
-                } else {
-                    wgpu::BufferUsages::STORAGE
-                        | wgpu::BufferUsages::COPY_DST
-                        | wgpu::BufferUsages::COPY_SRC
-                },
+                usage: usage(i),
                 mapped_at_creation: false,
             })
         })
         .collect();
-    let entries: Vec<_> = buffers
-        .iter()
-        .enumerate()
-        .map(|(i, b)| wgpu::BindGroupEntry {
-            binding: u32::try_from(i).expect("nine bindings"),
-            resource: b.as_entire_binding(),
-        })
-        .collect();
-    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("sea"),
-        layout: &layout,
-        entries: &entries,
-    });
+    let mut groups = Vec::new();
+    // The uploaded mode allocation is reused for the final transform after evolve.
+    // Each moment mip has one producer and its own physical allocation.
+    for variant in 0..10 {
+        let indices: [usize; 9] = if variant == 0 {
+            [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        } else if variant == 1 {
+            [0, 2, 2, 3, 1, 5, 6, 7, 8]
+        } else {
+            let child = variant + 7;
+            let parent = if variant == 2 { 7 } else { child - 1 };
+            [0, 1, 2, 3, 4, parent, 6, child, 8]
+        };
+        let entries: Vec<_> = indices
+            .into_iter()
+            .enumerate()
+            .map(|(binding, index)| wgpu::BindGroupEntry {
+                binding: u32::try_from(binding).expect("nine bindings"),
+                resource: buffers[index].as_entire_binding(),
+            })
+            .collect();
+        groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("sea"),
+            layout: &layout,
+            entries: &entries,
+        }));
+    }
     let mut mip_uniforms = Vec::new();
     let mut mip_groups = Vec::new();
     let mut parent = 0_u32;
@@ -194,7 +230,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
         child += width * width;
         width /= 2;
     }
-    let staging_size = sizes()[..4].iter().sum();
+    let staging_size = upload_sizes().iter().sum();
     let staging = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("sea upload staging"),
         size: staging_size,
@@ -205,7 +241,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
         profile,
         buffers,
         pipelines,
-        group,
+        groups,
         mip_groups,
         mip_uniforms,
         staging,
