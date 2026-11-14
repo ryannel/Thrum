@@ -155,6 +155,25 @@ fn linear_cycle(
     sum.fill([0.0; 3]);
 }
 
+fn select_checkpoint(host: &mut FrameHost, preset: &serde_json::Value) {
+    host.set_time_of_day(
+        serde_json::from_value::<f32>(preset["sky.solar_time"].clone()).unwrap() / 24.0,
+    )
+    .unwrap();
+    host.set_camera_yaw(
+        serde_json::from_value::<f32>(preset["camera.yaw"].clone())
+            .unwrap()
+            .to_radians(),
+    )
+    .unwrap();
+    host.set_camera_pitch(
+        serde_json::from_value::<f32>(preset["camera.pitch"].clone())
+            .unwrap()
+            .to_radians(),
+    )
+    .unwrap();
+}
+
 async fn host(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
@@ -190,6 +209,10 @@ async fn host(
         .unwrap()
         .expect("cooked valley");
     host.pause().unwrap();
+    let early_preset = std::env::var_os("THRUM_RECONSTRUCTION_EARLY_PRESET").is_some();
+    if early_preset {
+        select_checkpoint(&mut host, preset);
+    }
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
         drop(host.capture_pixels().unwrap());
@@ -200,22 +223,9 @@ async fn host(
         }
         assert!(Instant::now() < deadline, "cooked residency");
     }
-    host.set_time_of_day(
-        serde_json::from_value::<f32>(preset["sky.solar_time"].clone()).unwrap() / 24.0,
-    )
-    .unwrap();
-    host.set_camera_yaw(
-        serde_json::from_value::<f32>(preset["camera.yaw"].clone())
-            .unwrap()
-            .to_radians(),
-    )
-    .unwrap();
-    host.set_camera_pitch(
-        serde_json::from_value::<f32>(preset["camera.pitch"].clone())
-            .unwrap()
-            .to_radians(),
-    )
-    .unwrap();
+    if !early_preset {
+        select_checkpoint(&mut host, preset);
+    }
     host.enable_submitted_capture_from(
         1,
         if mode == "reference" {
