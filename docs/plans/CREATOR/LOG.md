@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Corrected World tick's coarse-timer reason: committed work rounded to zero no
+  longer says no tick occurred. The regression fails before the change; five window tests and
+  workspace Clippy pass at `3519a535`. All 3,000 retained native frames in 25 windows select the
+  same reason before and after, preserving those measured values and panel captures.
+  [M2 evidence](../../evidence/CREATOR/M2.md) records the correction and compatibility scope.
+
 - 2026-11-14 Repeated both native exact-image matrices and all four Chrome sets after the SEA
   rebase: exact in 942.78 seconds at `2b4d6589`. The full gate then found one unit-test Clippy
   assertion style error. The equivalent diagnostic assertion at `480a6436` passes full workspace
