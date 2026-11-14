@@ -493,12 +493,13 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - Rebased through the canonical merge workflow, retaining both APPLE-TILE log entries.
   Upstream renderer/capture changes require fresh target checks; no atmosphere producer
   or preserved numerical referee changed upstream. Documentation checks pass on `51b01406`.
-- Durable verifier job `20261114-230918-12573` waits for GPU exclusivity. Dependent job
-  `20261114-234220-65643` requires that verifier to pass, copies its rebuilt native
-  binary, repeats ABBA costs, then runs all canonical M9 checks with the 198-row output.
+- Durable batch job `20261114-234751-87109` waits for GPU exclusivity. It runs M9.5
+  first through the canonical check runner, then fresh paired costs and the other
+  unchanged M9 check commands, retaining the 198-row output and referee diagnostics.
   No merge or final repository pass is claimed by this checkpoint.
-- The earlier dependent job `20261114-231215-14011` was stopped before any proof ran.
-  Its replacement retains one outer GPU lease and uses the canonical check runner,
-  avoiding repeated queue waits and recursive locks. It refuses the ordinary final
-  milestone check unless every command already has a canonical saved pass.
+- Earlier jobs `20261114-230918-12573`, `20261114-231215-14011` and
+  `20261114-234220-65643` were replaced before any of their proofs ran. The batch
+  avoids a second verifier and repeated queue waits. It refuses the ordinary final
+  milestone check unless every command already has a canonical saved pass. Its
+  `--checks-only` option supports a final evidence-only commit without repeating costs.
 
