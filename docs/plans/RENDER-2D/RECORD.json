@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/RENDER-2D/design-review.md",
-    "commit": "e119993ac1c087014571ad0862668d33b912841a",
-    "hash": "a546ce89a68d6fe1aee858f90a4ee36bacfea84f7566681ae387b2c3fa00566a",
+    "commit": "68348f1ee65693c4287f33232c60e7b8581cc934",
+    "hash": "ce0d0bcc7a9f18276e24dd54457031cae248675809d9cbe2f35c2528cc44feeb",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 95415,
-      "cached": 1016064,
-      "output": 6950,
+      "input": 84702,
+      "cached": 1007232,
+      "output": 7337,
       "turns": 1
     },
-    "at": "2026-11-13T18:22:11Z"
+    "at": "2026-11-14T21:34:11Z"
   },
   "milestones": {
     "M1": {
@@ -111,6 +111,29 @@
         "turns": 1
       },
       "at": "2026-11-13T17:50:31Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/RENDER-2D/design-review-2.md",
+      "commit": "e119993ac1c087014571ad0862668d33b912841a",
+      "hash": "a546ce89a68d6fe1aee858f90a4ee36bacfea84f7566681ae387b2c3fa00566a",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 95415,
+        "cached": 1016064,
+        "output": 6950,
+        "turns": 1
+      },
+      "at": "2026-11-13T18:22:11Z"
     }
   ]
 }
