@@ -16,18 +16,19 @@
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion, and its governor and MetalFX milestones to close |
-| 16 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
-| 17 | RIVERS | Rivers, streams and waterfalls that run down the land, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream |
-| 18 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 |
-| 19 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
-| 20 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
-| 21 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
-| 22 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones |
-| 23 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 |
-| 24 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-UI M5 for the game alone; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land and seen from beneath, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M1 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
+| 17 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 |
+| 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
+| 23 | SESSION | Two to four players share one run and keep seeing the same crowd | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame | RENDER-2D M5 |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 for the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-UI M5 for the game alone; SESSION M4 for a rehearsed match and SESSION M6, with TRANSPORT M2, for co-op on sockets |
 
-Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 18 are water and clouds, and 19 to 24 are
+Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, and 20 to 25 are
 the goal after V1. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
 its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
 loop writes.
@@ -78,8 +79,8 @@ closed before the loop. Nothing in track 2 gates it.
 **Track 2, water and clouds.** Water is one system built by four engine modules, `SEA`, `WATERS`, `RIVERS` and
 `PUDDLES` ([water as one system](#water-as-one-system)), and `CLOUDS` is one, all built in Thrum on the foundation
 track 1 lays. They are finished here, not in Broadsides; [the reasons](#where-sea-and-clouds-are-finished) are below.
-Track 2 adds one foundation module, `EFFECT-GRAPH`, and asks track 1 for three things it was already going to
-build. `SEA`, `WATERS` and `CLOUDS` are planned and start under their plans' assumptions on the owner's words of 13
+Track 2 adds two foundation modules, `EFFECT-GRAPH` and, for water's mirrored scenery, `SCENE-VIEWS`
+([brief](#scene-views)), and asks track 1 for three things it was already going to build. `SEA`, `WATERS` and `CLOUDS` are planned and start under their plans' assumptions on the owner's words of 13
 November ([SEA](SEA/PLAN.md#open-for-the-human), [WATERS](WATERS/PLAN.md#open-for-the-human),
 [CLOUDS](CLOUDS/PLAN.md#open-for-the-human)); `RIVERS` and `PUDDLES` have [briefs](#rivers-and-puddles).
 
@@ -106,7 +107,8 @@ the road to the exit.
 | `SHOWCASE` | G7 | The exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
 | `SEA` | track 2 | The wave model and its f64 oracle (`thrum-sea-model`); the wave field on the GPU: long-wave phases, spectral cascades and the field cache, evaluated each frame (`thrum-sea`). After its last milestone both crates are `WATERS`' to extend | [Design](SEA/DESIGN.md); [brief](SEA/BRIEF.md) |
-| `WATERS` | track 2 | The water map and its one sampling function, gains, the f64 surface model and the interaction and foam references (`thrum-water-model`); the map on the GPU, the surface and its frame contract, optics and the gather, interaction waves, foam stocks, the body-query ring (`thrum-water`); the water example scene (`examples/water`) | [Design](WATERS/DESIGN.md) |
+| `WATERS` | track 2 | The water map and its one sampling function, gains, the shore transform and the breaker section, the f64 surface model and the interaction and foam references (`thrum-water-model`); the map on the GPU, the surface from both sides and its frame contract, optics and the gather, the mirror lookup, the view from under water, interaction waves, foam stocks, the body-query ring (`thrum-water`); the water example scene (`examples/water`) | [Design](WATERS/DESIGN.md) |
+| `SCENE-VIEWS` | track 2 | Secondary views of the scene: a view's record, its culling, its forward draw with the scene's lights, shadows and air, its targets, and which contributions draw in it | [Brief](#scene-views) |
 | `RIVERS` | track 2 | The flow solver that prepares a chart (level, current, loss); fall records, their sheets and plunges; the flow's roughness gains | [Brief](#rivers-and-puddles) |
 | `PUDDLES` | track 2 | The hollows rain fills and each one's fill; the rain rate's use; rain rings; the wetness of ground and the forward material's reading of it | [Brief](#rivers-and-puddles) |
 | `CLOUDS` | track 2 | The weather field, its state's step and the f64 references (`thrum-cloud-model`); the weather map, cloud density and noise, the Sun-path optical-depth product, the cloud layer and its history, the sky overlay, placed-volume sampling (`thrum-clouds`); the cloud selection in `examples/v1-game` and `examples/water` | [Design](CLOUDS/DESIGN.md); [brief](CLOUDS/BRIEF.md) |
@@ -169,12 +171,14 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    are met. Their closing milestones need the governor. Water is built in the order
    [water as one system](#water-as-one-system) gives: the wave field, then still water with the shared system,
    then running water, then rain. `RIVERS`' flow solver is CPU work in files of its own and can run beside
-   `WATERS` once `WATERS:M1` is Done.
+   `WATERS` once `WATERS:M1` is Done. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, so it
+   can be built at any point after `CULLING:M3`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`.
 
 **The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
 `APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)).
 `CONTENT-LOOP`, `SHOWCASE`, `SEA`, `WATERS` and `CLOUDS` are planned. `RIVERS` is planned from
-[its brief](#rivers-and-puddles) before `WATERS` reaches M9, and `PUDDLES` before it reaches M8. Each waits on `APPLE-TILE`, on a milestone
+[its brief](#rivers-and-puddles) before `WATERS` reaches M9, `PUDDLES` before it reaches M8, and `SCENE-VIEWS`
+from [its brief](#scene-views) before `WATERS` reaches M10. Each waits on `APPLE-TILE`, on a milestone
 that itself waits on `APPLE-TILE`, or on the owner's port timing, so each is planned before a builder could reach it.
 
 ## Where the port's readiness conditions are met
@@ -226,7 +230,8 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
 | **Body query**: one batched asynchronous GPU query for all water, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (the body of water with its depth and current, or dry ground; height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `WATERS` → games and P3 | C09, [WATERS](WATERS/DESIGN.md#bodies-and-the-query) |
 | **Wave field**: the wind's waves as analytic long-wave components and spectral cascades with their slope and Jacobian moments, evaluated every frame at the display's time and keeping nothing between frames; an f64 evaluator of the same waves; the spectrum's energy in each layer's band for a given fetch | `SEA` → `WATERS` | [SEA](SEA/DESIGN.md#the-ambient-sea) |
-| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support. A chart is what a flow solver writes, and a basin whose stage moves is what a puddle is | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map) |
+| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support, and, where a profile has surf, a shore transform that turns, shortens and raises its long waves over the bed. A chart is what a flow solver writes, and a basin whose stage moves is what a puddle is | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map) |
+| **Mirror view**: water asks for a view of the scene from the camera's mirror image in a horizontal plane, at an extent and a widened field of view it names, up to its profile's count each frame. The view holds the scene's opaque geometry above the plane, lit as the main view lights it, in the scene target's encoding for that view (radiance through the air from the mirrored camera, pre-exposed), with depth and coverage, and no sky, water or after-opaque effect. Water reads it in its surface pass. A scene that asks for none compiles and draws as before | `SCENE-VIEWS` → `WATERS`; `PUDDLES` through `WATERS` | C07, [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see), [brief](#scene-views) |
 | **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted | games, `RIVERS` (a fall's plunge), `PUDDLES` (drops) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
@@ -296,6 +301,12 @@ that ticks.
    `CREATOR` M2 and M3 edit the same crate; the `WATERS` builder integrates on top of what has landed.
    [`SWARM`'s ruling 2](#track-3-the-swarm-survival-game-after-v1) then covers only what a 2D game with no sky
    still needs.
+
+4. **A mirror view is `SCENE-VIEWS`' to draw** (`WATERS` M14). Water mirrors scenery the camera cannot see by
+   reading a second draw of the scene, from the camera's mirror image. That draw needs the scene's culling,
+   lights, shadows and air for another view, which no effect may reach, so it is a module of its own with the
+   [mirror-view interface](#interfaces) and not work the `WATERS` builder does in the renderer's files. Every
+   other `WATERS` milestone is built without it.
 
 Once built, rulings 1 and 2 belong to `EFFECT-GRAPH`'s seam and ruling 3 to the shell's owners: later work there
 keeps their tests passing, and `CLOUDS` uses the same accesses and adds none.
@@ -454,7 +465,8 @@ branches are frozen references at the commits the briefs pin. Reasons:
 In one line each:
 - **Sea** (widened on 14 November to all water, [below](#water-as-one-system)): an open sea from waterline to horizon across calm to gale, bodies that float on it through one
   asynchronous query, a wake that persists and moves another body, transported foam from breaking waves and hull
-  contact, and sea optics through the shared light contract, at full refresh with governor knobs.
+  contact, and sea optics through the shared light contract, at full refresh with governor knobs. The owner
+  added three things the same day: surf, reflection of scenery that is off screen, and a camera under water.
 - **Clouds:** one provider that draws a weather-driven sky from clear to overcast and placed cloud volumes from
   the baked library with the same march and light, shades the world through one optical depth, lights correctly
   from noon to sunset under G3s, and runs shadow-only, at full refresh with governor knobs.
@@ -479,7 +491,7 @@ state, each kind with one owner:
 | Module | Owns | Why it is its own |
 |---|---|---|
 | `SEA` | The wind's wave field and its oracle | It depends on nothing about where water lies, every body reads it, and its first two milestones were planned and under way. They are unchanged |
-| `WATERS` | The map, the surface, optics, interaction waves, foam and the query, proved on a sea, a beach, a lake, a pond and a hand-made channel | The shared system has to exist once, and it is proved on still water, where a bed and a shore first appear, before running water is drawn on it |
+| `WATERS` | The map, the surface, optics, interaction waves, foam and the query, with surf, mirrored scenery and the view from under water, proved on a sea, a beach, a lake, a pond and a hand-made channel | The shared system has to exist once, and it is proved on still water, where a bed and a shore first appear, before running water is drawn on it |
 | `RIVERS` | The flow solver that writes charts, and waterfalls | A prepared flow is a different kind of work, on the CPU and in files of its own, and falls are a new kind of geometry |
 | `PUDDLES` | Rain's hollows and their fill, and the wetness of ground | It reaches into the forward pass's materials, which no other water module touches |
 
@@ -488,9 +500,20 @@ would share its evidence folder's name with the 1 November `docs/evidence/water`
 the module is `WATERS`. The older water designs and [the water decision](../design/decisions/E1-GPU-WATER.md) are
 evidence `WATERS`' design judged; where they differ, that design holds.
 
-**Build order.** `SEA` M1 and M2; `WATERS` M1 beside `SEA` M2; `WATERS` M2 to M9; `RIVERS` from `WATERS:M9`, with
-its solver earlier; `PUDDLES` from `WATERS:M8`; `WATERS` M10 and M11 close the shared system. `CLOUDS` M11 needs
-`WATERS:M8`.
+**Build order.** `SEA` M1 and M2; `WATERS` M1 and M12 (surf on the CPU) beside `SEA` M2; `WATERS` M2 to M7, M13
+(surf drawn), M8, M9 and M15 (under water); `RIVERS` from `WATERS:M9`, with its solver earlier; `PUDDLES` from
+`WATERS:M8`; `WATERS` M10, M14 (mirrored scenery, on `SCENE-VIEWS:M1`) and M11 close the shared system. `CLOUDS`
+M11 needs `WATERS:M8`. `WATERS`' milestones keep the numbers other plans name, so its file order, and not its
+numbering, is its build order.
+
+**The owner's three additions, 14 November 2026.** "Scenery reflections we must have, that's a main stay in high
+quality modern games. That's the standard we're after. Camera being able to go under water we need to support
+as well. Breaking waves is something we'd like to have as well." [WATERS](WATERS/DESIGN.md#the-request) settles
+each: surf comes from the sea's own long waves, carried over the bed by a prepared phase lag, so `SEA` is
+unchanged and asked for nothing; the view from under water is water's own work; and scenery that is off screen
+is read from a second draw of the scene, which is the one thing here water cannot own and is why `SCENE-VIEWS`
+exists. `CLOUDS` is unchanged: clouds still reach a reflection, and the window overhead from under water,
+through the environment product.
 
 ## Module briefs
 
@@ -544,6 +567,32 @@ cloud frame needs its last milestone, M3.
 `CLOUDS` was planned on 13 November: [design](CLOUDS/DESIGN.md), [plan](CLOUDS/PLAN.md), from
 [its brief](CLOUDS/BRIEF.md). It takes from `WATERS`' design that water writes scene depth and comes first in a
 scene's contribution list, and it puts clouds into the environment reflection product water reads.
+
+### SCENE-VIEWS
+
+A second view of the scene, drawn in the same frame into a texture another module reads. `WATERS` is its first
+consumer, with [the mirror-view interface](#interfaces); a probe, a portal or a split screen would be later
+ones. It is its own module because the state it needs has owners no effect may reach: the view record
+(`APPLE-PRESENTATION`), visibility (`CULLING`), the forward draw, its lights and shadows, and the air
+(`ATMOSPHERE`), under [C07](../design/CONTRACTS.md).
+
+Finished means, on `mac-metal` and `chrome-webgpu`: a scene with a mirror view asked for draws its opaque
+geometry a second time, from a camera and a clip plane the consumer gives, culled for that view, lit by the
+same Sun, sky and local lights, shadowed, with that view's own air, into colour, depth and coverage at the
+extent asked for; reduced detail and a shorter view distance are offered as knobs; a scene that asks for no
+view compiles to the same passes and storage and draws the same bytes as before; and what a view costs is on
+record beside the main view. Mechanisms to settle: how one frame carries more than one view through extraction,
+culling and the graph; whether a view culls with its own lists or draws a reduced set chosen on the CPU; what a
+view shares with the main one and what it must have of its own, the Sun's cascades fitted to another frustum
+and the cluster grid among them; the air for a camera below the water's plane, since the lent aerial product
+is the main camera's; clipping at the plane; whether a view is jittered and carries motion; and its cost on a
+tile GPU, where each view is a pass. Read first: Unreal's planar reflections and scene captures, GTA V's
+reflection passes in Courrèges's frame study, and how this renderer's shadow cascades already draw the scene
+from other views. Needs: `CULLING:M3`, `ATMOSPHERE:M5`, `EFFECT-GRAPH:M3`. Its first milestone, M1, delivers
+the mirror view, and `WATERS` M14 names `SCENE-VIEWS:M1`; if its planner numbers that milestone otherwise, the
+same run rewrites `WATERS` M14's `depends_on`. Ray query against the scene's geometry is a candidate for the
+Apple recipe that its planner judges, since wgpu has it on Metal as an experimental feature and WebGPU does
+not.
 
 ### RIVERS and PUDDLES
 
@@ -1026,7 +1075,10 @@ For [water as one system](#water-as-one-system), each recorded as an assumption 
     for rivers or puddles sooner, or for one module.
 17. **Flow that is prepared, not live.** Rivers do not flood, burst or change level downstream while the game
     runs. This sets aside the water decision's "all water simulation runs on the GPU" for a river's bulk flow.
-18. **No surf, and no reflection of what is off screen.** Each is a large piece of work no module plans.
+18. **Surf, mirrored scenery and the camera under water**, which the owner asked for on 14 November, are planned
+    as the plan's assumptions say: surf from wave theory and not from a baked simulation, with no spray;
+    mirrors for two water levels in a view, through a new module, `SCENE-VIEWS`; and under water with no
+    caustics or shafts of light.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -1061,6 +1113,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - `PUDDLES` assumes a rain rate the game sets until `CLOUDS` has rain, and that changing how ground materials
   shade is allowed behind a selection that leaves the V1 exit scene as it is.
 - The clouds' assumption has moved to [CLOUDS's plan](CLOUDS/PLAN.md#open-for-the-human).
+- `SCENE-VIEWS` assumes a second view may draw less than the main one (coarser detail, a shorter view distance,
+  no water and no clouds), and that it is built for water's mirror first, with probes and portals left for
+  later consumers.
 - The track 3 assumptions have moved to their modules' plans: the readings of "2D support in the engine" to
   [RENDER-2D](RENDER-2D/PLAN.md), [SIM-2D](SIM-2D/PLAN.md) and [GAME-UI](GAME-UI/PLAN.md), "no gamepad" to
   GAME-UI's and [SWARM](SWARM/PLAN.md)'s, and "no sound" and "the simulator proves function, never speed" to
@@ -1206,3 +1261,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   margin. `RIVERS`' brief gains the chart's ends and how a reach answers its source's stage; `PUDDLES`' brief
   gains the seam question of basins that merge, and its wet shore is the sand's darkening under the film
   `WATERS` draws. No contract, seam ruling, exact baseline or other module's item changed.
+- 2026-11-14 The owner overturned three of `WATERS`' assumptions: "Scenery reflections we must have ... Camera
+  being able to go under water we need to support as well. Breaking waves is something we'd like to have as
+  well." `WATERS` re-planned: four milestones added (M12 surf on the CPU, M13 surf drawn, M15 under water, M14
+  mirrored scenery) and its existing numbers kept. `SCENE-VIEWS` added at row 16 with a brief, the mirror-view
+  interface and ruling 4; later rows renumbered. `SEA`, `CLOUDS` and every other module's done-when file are
+  unchanged.
