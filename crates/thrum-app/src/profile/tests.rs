@@ -1,4 +1,5 @@
 use super::*;
+use crate::profile::declare;
 
 fn sample(order: u64) -> FrameSample {
     use thrum_render::synthetic::{CullMode, CullingReason, CullingSelection};
