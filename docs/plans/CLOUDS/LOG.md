@@ -1,5 +1,16 @@
 # CLOUDS log
 
+- 2026-11-14 The unchanged retry on `03a5b1e1` stopped earlier, in native
+  `portable-route-motion`: backend Metal, adapter Apple M3 Max, 960 GPU records, 871 images,
+  90 readback-ring omissions and zero writer omissions. The runtime correctly reported
+  incomplete, so no native baseline pass is claimed for this attempt. The binary hash
+  `ba220134bd42b0b1d20ee084310cdf7de2200539655e92186e4253be77d1e127` and cooked root
+  `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d` are identical to
+  the preceding run that passed both native matrices. This is a capture admission failure,
+  not an observed image mismatch. Its complete diagnostics remain in
+  `tmp/baseline-guard/verify-20261114T222954.571297Z/`; M1.13 stays open. A further unchanged
+  verifier run is needed, with the same GPU lock and strict comparisons.
+
 - 2026-11-14 Baseline attempt on `d360fbcf` passed 38/4 native comparisons and all 481
   records in Chrome day SDR, day linear and night SDR. Night linear failed identity at
   ordinal 170: tick/source_tick 289 and alpha 1 rather than 290 and alpha 0. Its 481
@@ -11,8 +22,8 @@
   two due ticks, which is consistent with this equivalent endpoint; no tick-cost witness
   was exported, so that cause is an inference, not a measured attribution. Chrome was
   157.0.8103.51 (reference .40). The complete failed record is retained at
-  `tmp/baseline-guard/verify-20261114T213410.775605Z/record.json` and in shared check stderr
-  under key `212e9f1f636916305ff19efa`. M1.13 remains open while the unchanged verifier is
+  `tmp/baseline-guard/verify-20261114T213410.775605Z/record.json`. Shared check stderr under
+  key `212e9f1f636916305ff19efa` holds the latest attempt. M1.13 remains open while the unchanged verifier is
   retried; the CPU model is not a renderer input and no rendered cloud is qualified here.
 
 - 2026-11-14 M1 resumed against the planner's revised clear-column convention. Source
