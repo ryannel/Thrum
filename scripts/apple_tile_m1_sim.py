@@ -15,7 +15,7 @@ import sys
 import time
 
 
-def run(output):
+def run(output, native_witness=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     report = {'passed': False, 'target': 'ios-sim', 'scope': 'diagnostic endpoint and lifecycle function only',
@@ -42,6 +42,8 @@ def run(output):
         container = Path(command(['xcrun', 'simctl', 'get_app_container', device, 'org.thrum.v1', 'data']))
         state = container / 'tmp/thrum-v1-ios-state.txt'
         environment = dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE='1')
+        if native_witness:
+            environment['SIMCTL_CHILD_THRUM_NATIVE_WITNESS'] = 'metal'
         environment.pop('SIMCTL_CHILD_THRUM_SCENE', None)
         environment.pop('THRUM_SCENE', None)
         command(['xcrun', 'simctl', 'launch', device, 'org.thrum.v1'], environment)
@@ -55,13 +57,25 @@ def run(output):
         route['identity']()
         current = route['startup']()
         report['initial'] = current
+        if native_witness and current.get('native_selection') != 'Metal':
+            raise ValueError('native Metal witness was not active on the simulator')
         adapter = current.get('adapter', '')
         if 'recipe=Ok(Portable)' not in adapter or 'registry=' not in adapter:
             raise ValueError('missing truthful default registry selection')
-        for step in ['stall', 'hide', 'replace', 'stalled_replace', 'raced_present']:
-            current = route[step](current)
+        if not native_witness:
+            for step in ['stall', 'hide', 'replace', 'stalled_replace', 'raced_present']:
+                current = route[step](current)
         current = route['background'](current, 'm1-background')
+        before_race = current
         current = route['background'](current, 'm1-background-stall', during_stall=True)
+        if native_witness:
+            for counter in ['native_discarded', 'native_resets']:
+                if int(current.get(counter, '0')) <= int(before_race.get(counter, '0')):
+                    raise ValueError(f'encoded-native background race did not advance {counter}')
+            if current.get('native_selection') != 'Metal':
+                raise ValueError('resume lost the native provider')
+            report['race_before'] = before_race
+            report['native_witness'] = True
         route['snapshot']('m1-final', current)
         report['final'] = current
         report['passed'] = True
@@ -80,4 +94,6 @@ def run(output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
-    raise SystemExit(run(parser.parse_args().output))
+    parser.add_argument('--native-witness', action='store_true', help='M10 encoded native background race')
+    args = parser.parse_args()
+    raise SystemExit(run(args.output, args.native_witness))

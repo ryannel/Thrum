@@ -59,6 +59,36 @@ enum AttachmentUse {
 }
 
 impl PreparedSynthetic {
+    fn select_pre_tone(
+        &self,
+        scene: &ResourceId,
+        motion: &ResourceId,
+        exposure_sample: &ResourceId,
+        temporal: &super::temporal::TemporalResources,
+        native: Option<&super::native_witness::graph::Resources>,
+        extent: [u32; 2],
+    ) -> Result<PreToneInput, RenderError> {
+        Ok(PreToneInput {
+            colour: if let Some(native) = native {
+                native.output.clone()
+            } else if self
+                .pending_view
+                .unwrap_or(self.view_sample)
+                .temporal_diagnostic()
+            {
+                temporal
+                    .witness
+                    .clone()
+                    .ok_or(RenderError::GraphPassMismatch)?
+            } else {
+                scene.clone()
+            },
+            motion: motion.clone(),
+            exposure: exposure_sample.clone(),
+            extent,
+        })
+    }
+
     /// Declares one cleared full-view attachment and its forward access.
     fn view_attachment(
         (width, height, graph, accesses): (u32, u32, &mut FrameGraph, &mut Vec<Access>),
@@ -66,6 +96,7 @@ impl PreparedSynthetic {
         role: AttachmentUse,
         sampled_depth: bool,
         capture_source: CaptureSource,
+        native: bool,
     ) -> Result<ResourceId, RenderError> {
         let usage = match role {
             AttachmentUse::Depth => {
@@ -79,7 +110,7 @@ impl PreparedSynthetic {
             AttachmentUse::Scene => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT
                     | wgpu::TextureUsages::TEXTURE_BINDING
-                    | if capture_source == CaptureSource::SceneLinear {
+                    | if capture_source == CaptureSource::SceneLinear || native {
                         wgpu::TextureUsages::COPY_SRC
                     } else {
                         wgpu::TextureUsages::empty()
@@ -304,27 +335,32 @@ impl PreparedSynthetic {
             &exposure_sample,
             [width, height],
         )?;
-        let pre_tone = PreToneInput {
-            colour: if self
-                .pending_view
-                .unwrap_or(self.view_sample)
-                .temporal_diagnostic()
-            {
-                temporal
-                    .witness
-                    .clone()
-                    .ok_or(RenderError::GraphPassMismatch)?
-            } else {
-                scene.clone()
-            },
-            motion: motion.clone(),
-            exposure: exposure_sample.clone(),
-            extent: [width, height],
-        };
+        let native = self
+            .native
+            .as_ref()
+            .map(|_| super::native_witness::graph::append(&mut graph, &scene, [width, height]))
+            .transpose()?;
+        let pre_tone = self.select_pre_tone(
+            &scene,
+            &motion,
+            &exposure_sample,
+            &temporal,
+            native.as_ref(),
+            [width, height],
+        )?;
         let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
         let source = match capture_source {
             CaptureSource::Sdr => &output,
             CaptureSource::SceneLinear => &scene,
+            CaptureSource::NativeOutput => {
+                &native
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?
+                    .output
+            }
+            CaptureSource::NativeHistory => {
+                &native.as_ref().ok_or(RenderError::GraphPassMismatch)?.next
+            }
         };
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
@@ -348,6 +384,9 @@ impl PreparedSynthetic {
             (&depth, &scene, &motion, &reactive, &exposure_sample),
         )?;
         let night = if let Some(stars) = stars {
+            if let Some(native) = &native {
+                graph.dependency(stars, native.pass)?;
+            }
             // Display reads the composite, even though its declaration precedes it.
             graph.dependency(stars, display_pass)?;
             if let Some(pass) = temporal.witness_pass {
@@ -369,6 +408,7 @@ impl PreparedSynthetic {
             day,
             night,
             ids: TargetResources {
+                native,
                 pre_tone,
                 temporal,
                 depth,
@@ -397,6 +437,7 @@ impl PreparedSynthetic {
                 role,
                 sampled,
                 source,
+                self.native.is_some(),
             )
         };
         Ok([
@@ -971,6 +1012,29 @@ impl PreparedSynthetic {
                 Some(key) if key == self.display_key() => {
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, |frame, pass| {
                         frame.tone(pass)
+                    })
+                }
+                None if pass.name == super::native_witness::RESET => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {
+                        frame
+                            .native
+                            .ok_or(RenderError::GraphPassMismatch)?
+                            .reset(frame.encoder);
+                        Ok(())
+                    })
+                }
+                None if pass.name == super::native_witness::PASS => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Native, |frame, _| {
+                        let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
+                        native.encode(
+                            &frame.target.device,
+                            frame.encoder,
+                            frame
+                                .segments
+                                .as_deref_mut()
+                                .ok_or(RenderError::GraphPassMismatch)?,
+                        );
+                        Ok(())
                     })
                 }
                 None if pass.kind == Some(PassKind::Copy)

@@ -197,7 +197,7 @@ fn submitted_colour(
     let mut readback = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     readback
-        .copy_into(&mut encoder, target, None)
+        .copy_into(&mut encoder, target, None, None)
         .expect("submitted colour copy");
     queue.submit([encoder.finish()]);
     device

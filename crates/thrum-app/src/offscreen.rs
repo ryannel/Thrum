@@ -228,6 +228,12 @@ impl<G: Game> Offscreen<G> {
         self.host.pending_frames()
     }
 
+    /// Outcomes of the optional labelled native composition diagnostic.
+    #[must_use]
+    pub fn native_witness_report(&self) -> Option<thrum_render::synthetic::NativeWitnessReport> {
+        self.host.native_witness_report()
+    }
+
     /// Drain one submitted image, without a GPU wait or endpoint redraw.
     /// # Errors
     /// Returns a mapping or old-session error.

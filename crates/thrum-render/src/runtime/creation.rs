@@ -123,12 +123,13 @@ pub enum Instrumentation {
     Untracked,
 }
 
-/// Native objects (G3t tile segments, G4 MetalFX providers) have no producer
-/// yet, so there is nothing to count; this is reported, not assumed zero.
+/// Whether native object creation is covered by this diagnostic ledger.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NativeSites {
     /// No Thrum code creates a native object.
     Absent,
+    /// Native objects exist, but their creation counts are not instrumented.
+    Uninstrumented,
 }
 
 /// The kind of pipeline a site created.
@@ -358,6 +359,12 @@ impl DeviceSite {
             record(ledger, PipelineKind::Compute);
         }
         pipeline
+    }
+
+    pub(crate) fn native_prepared(&self) {
+        if let Some(ledger) = &self.0.ledger {
+            ledger.lock().report.native = NativeSites::Uninstrumented;
+        }
     }
 
     /// Declare a transition on the calling thread until the region drops:

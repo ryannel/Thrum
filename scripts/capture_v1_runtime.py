@@ -105,7 +105,7 @@ def finalize(output, manifest, runtime, verify_only=False):
         manifest.update(complete=True, packaging_pending=False, records=[])
         return
     frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
-    verify_only = verify_only or manifest.get('capture_source') == 'scene-linear'
+    verify_only = verify_only or manifest.get('capture_source', 'sdr') != 'sdr'
     encoding = runtime['spool_encoding']
     report = runtime['writer_result']['Ok']
     source = output / manifest['spool_file']
@@ -220,15 +220,15 @@ def run(args):
     if shutil.disk_usage(output.parent).free < ALLOWANCE:
         raise ValueError("less than declared 16 GiB free space")
     output.mkdir()
-    pixel_bytes = 8 if args.source == 'scene-linear' else 4
+    pixel_bytes = 4 if args.source == 'sdr' else 8
     frame_bytes = FRAME_BYTES * pixel_bytes // 4
-    cpu_buffers = 32 if args.source == 'scene-linear' else 96
+    cpu_buffers = 96 if args.source == 'sdr' else 32
     binary = args.binary.resolve()
     store = args.store.resolve() if args.store else None
     source_names = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
                                            "crates", "examples", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo"], cwd=ROOT).decode().split("\0")
     source_files = {name: digest(ROOT / name) for name in source_names
-                    if name and (ROOT / name).is_file() and Path(name).suffix in (".rs", ".wgsl", ".toml", ".lock", ".json", ".c", ".h")}
+                    if name and (ROOT / name).is_file() and Path(name).suffix in (".rs", ".wgsl", ".metal", ".toml", ".lock", ".json", ".c", ".h")}
     manifest = {
         "source_revision": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "session_id": str(uuid.uuid4()),
@@ -239,7 +239,7 @@ def run(args):
         "build_source_digest": hashlib.sha256(json.dumps(source_files, sort_keys=True).encode()).hexdigest(),
         "script_sha256": digest(Path(__file__)),
         "helper_sha256": {name: digest(ROOT / "scripts" / name) for name in ("t2_load.py", "t2_writer_probe.py", "capture_spool.py")},
-        "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted((ROOT / "crates").rglob("*.wgsl"))},
+        "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted([*(ROOT / "crates").rglob("*.wgsl"), *(ROOT / "crates").rglob("*.metal")])},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
         "timebase": args.mode,
@@ -257,8 +257,8 @@ def run(args):
         "codec_window_bytes_per_worker": 4 * 1024 * 1024,
         "memory_scope": "pixel leases plus finite encoded buffers and codec scratch; allocator/driver/codec overhead measured separately by process RSS",
         "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * pixel_bytes,
-        "encoding": "scene-linear Rgba16Float" if args.source == 'scene-linear' else "SDR sRGB encoded bytes in Rgba8Unorm",
-        "stage": "pre-tone scene-linear composite" if args.source == 'scene-linear' else "final engine output before identity present",
+        "encoding": "SDR sRGB encoded bytes in Rgba8Unorm" if args.source == 'sdr' else f"{args.source} Rgba16Float",
+        "stage": {"sdr": "final engine output before identity present", "scene-linear": "pre-tone scene-linear composite", "native-output": "labelled native copy/select output", "native-history": "labelled native copy/select next submitted history"}[args.source],
         "excluded": ["native controls", "OS composition", "physical output"],
         "gpu_timestamps_required": False, "display_swap_times": None,
         "complete": False,
@@ -345,7 +345,7 @@ def run(args):
             "recipe": runtime["recipe"], "enabled_features": runtime["enabled_features"],
             "shader_hashes": manifest["shader_hashes"]}, sort_keys=True).encode()).hexdigest()
         report = runtime['writer_result'].get('Ok', {})
-        expected_source = 'SceneLinear' if args.source == 'scene-linear' else 'Sdr'
+        expected_source = {'sdr': 'Sdr', 'scene-linear': 'SceneLinear', 'native-output': 'NativeOutput', 'native-history': 'NativeHistory'}[args.source]
         if runtime.get('pixel_source', 'Sdr') != expected_source:
             raise ValueError('engine capture source differs from requested source')
         validate_runtime(runtime, report.get('bytes', 0), frame_bytes)
@@ -393,6 +393,6 @@ if __name__ == "__main__":
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
-    parser.add_argument("--source", choices=["sdr", "scene-linear"], default="sdr",
+    parser.add_argument("--source", choices=["sdr", "scene-linear", "native-output", "native-history"], default="sdr",
                         help="scene-linear keeps exact RGBA16Float sources with verification only")
     run(parser.parse_args())

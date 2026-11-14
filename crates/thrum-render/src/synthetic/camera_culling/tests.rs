@@ -725,6 +725,8 @@ async fn veiled_frames(
                 None,
                 Some(&mut readback),
                 contribution,
+                None,
+                &mut Vec::new(),
             )
             .expect("encode");
         queue.submit([encoder.finish()]);
