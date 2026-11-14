@@ -92,7 +92,12 @@ pub async fn run(
     caps: &DeviceCapabilities,
     instance: &wgpu::Instance,
 ) -> Result<String, String> {
-    let mut record = Vec::new();
+    let mut record = vec![format!(
+        "adapter={:?}; generation={}; recipe={:?}",
+        caps.adapter(),
+        caps.generation(),
+        caps.recipe()
+    )];
     for (temporal, effect, refraction, count) in [
         (false, false, false, 0),
         (true, false, false, 0),
@@ -130,12 +135,16 @@ pub async fn run(
             "temporal={temporal} effect={effect} refraction={refraction}: passes={names:?}; {depth}"
         ));
     }
+    record.push(shared_copy(caps, queue).await?);
     let mut host = host(caps, queue, true).await?;
     let (effect, handle) = DiagnosticEffect::new();
     host.set_scene_contribution(Box::new(effect.with_slab(true)))?;
     let mut frames = Vec::new();
-    for tick in 10..=15 {
+    for tick in 10..=16 {
         host.world_mut().0.tick = tick;
+        if tick == 16 {
+            host.world_mut().0.timeline = 4;
+        }
         {
             let mut state = handle.lock().map_err(error)?;
             state.controls.slab_offset = if tick >= 13 { 0.25 } else { 0. };
@@ -169,7 +178,7 @@ pub async fn run(
             })
             .collect::<Vec<_>>();
         let centre = values[32 * 64 + 32];
-        let invalid = matches!(tick, 10 | 14 | 15);
+        let invalid = matches!(tick, 10 | 14 | 15 | 16);
         if invalid {
             if centre[2..] != [65504., 65504.] || (centre[0] - 1.).abs() > f32::EPSILON {
                 return Err(format!("tick {tick} reset inputs: {centre:?}"));
@@ -211,11 +220,60 @@ pub async fn run(
         ));
     }
     record.push(format!("current-depth cuts: exposed={exposed},hidden={hidden}; unjittered displacement, cut and effect reset pass"));
+    handle.lock().map_err(error)?.controls.slab_reset = false;
     replacement(&mut host, device, instance, caps).await?;
     record.push(
         "replacement device: invalid slab motion and reactive=1 on submitted generation 2".into(),
     );
     Ok(record.join("\n"))
+}
+
+async fn shared_copy(caps: &DeviceCapabilities, queue: &wgpu::Queue) -> Result<String, String> {
+    let mut host = host(caps, queue, false).await?;
+    let (a, _) = DiagnosticEffect::new();
+    let (b, _) = DiagnosticEffect::new();
+    host.set_scene_contribution(Box::new(
+        thrum_render::contribution::SceneContributions::new(vec![
+            Box::new(a.with_slab(true)),
+            Box::new(b.with_slab(true)),
+        ]),
+    ))?;
+    let graph = host.scene_graph().map_err(error)?;
+    let names = graph.pass_names().collect::<Vec<_>>();
+    if names
+        .iter()
+        .filter(|&&name| name == "effect refraction copy")
+        .count()
+        != 1
+    {
+        return Err("two effects failed to share refraction copy".into());
+    }
+    let late = names
+        .iter()
+        .filter(|name| name.starts_with("effect after "))
+        .copied()
+        .collect::<Vec<_>>();
+    if late
+        != [
+            "effect after 0: effect 0: diagnostic slab",
+            "effect after 1: effect 1: diagnostic slab",
+        ]
+    {
+        return Err(format!("contribution order: {late:?}"));
+    }
+    let position = |name: &str| {
+        names
+            .iter()
+            .position(|&value| value == name)
+            .ok_or_else(|| format!("missing pass {name}"))
+    };
+    if !(position("synthetic forward opaque")? < position("effect refraction copy")?
+        && position("effect refraction copy")? < position(late[0])?
+        && position(late[1])? < position("synthetic tone encode")?)
+    {
+        return Err("late effect order".into());
+    }
+    Ok("two refracting effects: one shared copy, stable contribution order before pre-tone".into())
 }
 
 async fn replacement(
@@ -242,8 +300,8 @@ async fn replacement(
         .map_err(error)?;
     let mut prepared = inputs.prepare(&next, &queue, None).await.map_err(error)?;
     host.publish_device(&mut prepared).map_err(error)?;
-    host.world_mut().0.tick = 16;
-    host.advance(Duration::from_secs(16))
+    host.world_mut().0.tick = 17;
+    host.advance(Duration::from_secs(17))
         .map_err(error)?
         .encode_scene()
         .map_err(error)?

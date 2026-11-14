@@ -1943,6 +1943,16 @@ async function main() {
           const r = await cdp.call('Runtime.evaluate', { expression: `(async()=>{const game=await import('/v1_game.js');return await game.${method}();})()`, awaitPromise: true, returnByValue: true }, sessionId);
           if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails));
           const record = { case: mode, target: 'chrome-webgpu', exact: r.result.value };
+          if (mode === 'effect-after-opaque') {
+            await cdp.call('Page.navigate', { url: 'about:blank' }, sessionId);
+            if (args.cook === 'target/debug/thrum-cook') execFileSync('rustup', ['run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+            const fixed = path.join(output, 'effect-after-opaque-fixed');
+            const log = await fs.open(path.join(output, 'effect-fixed.log'), 'w');
+            try {
+              execFileSync(process.execPath, ['scripts/capture_v1_browser.mjs', '--mode', 'fixed', '--scene', 'noon', '--effect', 'slab', '--overlay', 'off', '--route-file', 'examples/v1-game/routes/effect-after-opaque.json', '--output', fixed, '--web-root', directory, '--cook', args.cook, '--chrome', args.chrome, '--assets-source', args['assets-source']], { cwd: repo, stdio: ['ignore', log.fd, log.fd], timeout: 180000 });
+            } finally { await log.close(); }
+            record.fixed_capture = path.relative(repo, path.join(fixed, 'manifest.json'));
+          }
           await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
           results.push(record);
         } finally { await cdp.call('Target.closeTarget', { targetId }); }

@@ -553,6 +553,14 @@ impl SceneContribution for DiagnosticEffect {
             witness.controls.cadence = if frame.time.tick < 300 { 2 } else { 4 };
             witness.controls.anchor = [snap_anchor(frame.camera[0]), snap_anchor(frame.camera[2])];
         }
+        witness.controls.cadence = witness.controls.cadence.clamp(1, 16);
+        self.quality
+            .set(
+                "cache interval",
+                u32::try_from(witness.controls.cadence).expect("bounded diagnostic cadence"),
+            )
+            .expect("declared cadence range");
+        self.quality.commit();
         let controls = witness.controls;
         self.step = witness.state.begin(
             frame.time,
