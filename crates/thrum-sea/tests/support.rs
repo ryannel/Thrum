@@ -188,8 +188,9 @@ impl Harness {
         })
     }
     fn isolated_cost(&mut self, spectrum: &Spectrum, points: &[[f64; 2]]) {
-        // Separate command buffers prevent Metal's neighboring pass samples
-        // coalescing to zero. Sixteen identical dispatches amortize tiny mips.
+        // Stage-boundary samples of tiny mips can be equal on Apple Metal.
+        // Batch tiny passes and wait for each command buffer's completion before
+        // resolving its counters. CPU waiting lies outside the GPU timestamps.
         let graph = self.sea.graph();
         let count = u32::try_from(graph.passes.len()).expect("pass count");
         for round in 0..5 {
@@ -217,6 +218,7 @@ impl Harness {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                 let index = u32::try_from(i).expect("pass index");
+                let dispatches = if i >= 5 { 4096 } else { 16 };
                 {
                     let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some(&pass.name),
@@ -226,11 +228,17 @@ impl Harness {
                             end_of_pass_write_index: Some(2 * index + 1),
                         }),
                     });
-                    for _ in 0..16 {
+                    for _ in 0..dispatches {
                         self.sea.encode_pass(i, &mut compute);
                     }
                 }
-                self.queue.submit([encoder.finish()]);
+                let submission = self.queue.submit([encoder.finish()]);
+                self.device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: Some(submission),
+                        timeout: Some(Duration::from_secs(120)),
+                    })
+                    .expect("complete isolated timing sample");
             }
             let resolve = self.device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("isolated cost resolve"),
@@ -251,10 +259,16 @@ impl Harness {
             {
                 let start = u64::from_le_bytes(bytes[..8].try_into().expect("timestamp"));
                 let end = u64::from_le_bytes(bytes[8..].try_into().expect("timestamp"));
-                let ms = (end - start) as f64 * f64::from(self.queue.get_timestamp_period()) / 16e6;
+                let dispatches = if pass.name.starts_with("sea moments") {
+                    4096
+                } else {
+                    16
+                };
+                let ms = (end - start) as f64 * f64::from(self.queue.get_timestamp_period())
+                    / (f64::from(dispatches) * 1e6);
                 writeln!(
                     self.record,
-                    "isolated round {round} dispatches 16 {}: {ms:.6} ms/dispatch",
+                    "isolated round {round} dispatches {dispatches} {}: {ms:.6} ms/dispatch",
                     pass.name
                 )
                 .expect("cost record");
