@@ -256,7 +256,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
       "findings": [
         {
@@ -268,7 +268,17 @@
           "name": "Legacy culling cost benchmarks silently measure Direct twice",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The planner and APPLE-TILE owner must resolve the helper correction and its baseline qualification before M3 resumes.",
+        "work": {
+          "commit": "fb6afe7d9b3bfcafb444801a856256a9d0e75fb7",
+          "branch": "build/culling",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/CULLING/M3-handoff.md"
+      }
     }
   ]
 }
