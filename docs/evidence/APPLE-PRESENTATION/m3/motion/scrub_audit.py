@@ -1,15 +1,20 @@
 """Inspect every lossless scrub frame; diagnostic lag fit, not an acceptance oracle."""
+import argparse
 import bisect
 import json
 import math
 from pathlib import Path
 import sys
-sys.path.insert(0, 'scripts')
+sys.path.insert(0, str(Path(__file__).resolve().parents[5]/'scripts'))
 from capture_spool import decoded_frames
 from t2_writer_probe import package
 
-root = Path('tmp/apple-presentation-m3/mac-motion-final')
-out = Path('tmp/apple-presentation-m3/scrub-review')
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source',type=Path,default=Path('tmp/apple-presentation-m3/mac-motion-final'))
+parser.add_argument('--output',type=Path,default=Path('tmp/apple-presentation-m3/scrub-review'))
+args = parser.parse_args()
+root = args.source
+out = args.output
 out.mkdir(exist_ok=False)
 report = {'scope': 'All original lossless Mac scrub frames; original submission times; sky RGB diagnostic, no acceptance threshold.', 'arms': {}}
 for mode in ['taau', 'off']:

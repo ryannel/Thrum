@@ -658,11 +658,11 @@
       },
       "M3": {
         "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
-        "functional_validation": "Strict Clippy passes all native workspace targets and the Wasm game; shader validation and Metal alternating-slot/reset execution pass. At c3d052a4 all six 640x360 full-frame CIEDE2000 p99 values are below 3 and improve on no AA; independent linear reference-cycle means agree bit for bit, history-disabled controls are rejected, and both cut controls pass. Motion and integration remain unqualified.",
-        "experienced_quality": "Builder inspected passing noon/night whole-frame pairs at native size. No M3 motion qualification or independent review yet.",
+        "functional_validation": "The reciprocal-depth candidate passes renderer Clippy and production/probe WGSL validation; target execution is pending. Historical range-based kernel at c3d052a4 passes all six 640x360 full-frame CIEDE2000 p99 comparisons below 3 and below no AA, independent reference-cycle equality, history-disabled controls and both cut controls. Those proofs do not qualify the new kernel. Motion and integration remain unqualified.",
+        "experienced_quality": "Builder and a fresh GPT-6.1 Sol medium opinion find a ragged/speckled reveal fringe on both Mac and Chrome. No motion qualification or independent review yet. The reciprocal-depth candidate is not visually qualified; preceding still proofs remain historical.",
         "platform_performance": {
-          "mac": "At 3f896417 the paired moving route at 640x360 on Apple M3 Max/Metal records TAAU resolve p50 0.046709 ms and p95 0.049792 ms over 361 samples; scene p50 is 2.994001 ms on and 2.778083 ms off. Inputs match; arm order, binary digest and shared-host load are retained. No measured 1080p, cadence or speed promotion.",
-          "browser": "Wasm Clippy passes; target reconstruction and motion proof pending.",
+          "mac": "Historical range-based kernel at 3f896417: paired 640x360 Metal moving-route resolve p50/p95 0.046709/0.049792 ms over 361 samples, scene p50 2.994001 ms on and 2.778083 ms off. New reciprocal-depth cost is pending. No measured 1080p, cadence or speed promotion.",
+          "browser": "Chrome 157 real-time capture and packaging pass for all ten on/off arms, with all 2696 source frames verified; reveal fringe is visible. New reciprocal-depth execution and motion qualification are pending. No browser performance claim.",
           "ios": "not_run"
         },
         "evidence": "../evidence/APPLE-PRESENTATION/m3/README.md",

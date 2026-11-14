@@ -32,15 +32,26 @@ fn history_at(p: vec2<f32>) -> vec4<f32> {
     return mix(mix(textureLoad(history,bounded(base),0),textureLoad(history,bounded(base+vec2(1,0)),0),f.x),
                mix(textureLoad(history,bounded(base+vec2(0,1)),0),textureLoad(history,bounded(base+vec2(1,1)),0),f.x),f.y);
 }
-fn depth_range(p: vec2<f32>) -> vec2<f32> {
+fn depth_at(p: vec2<f32>) -> vec3<f32> {
     let base = vec2<i32>(floor(p));
     let a = textureLoad(previous_depth,bounded(base),0).r;
     let b = textureLoad(previous_depth,bounded(base+vec2(1,0)),0).r;
     let c = textureLoad(previous_depth,bounded(base+vec2(0,1)),0).r;
     let d = textureLoad(previous_depth,bounded(base+vec2(1,1)),0).r;
-    // Test the entire bilinear footprint. A nearest sample falsely rejects
-    // sloping surfaces when jitter changes their raster sampling location.
-    return vec2(min(min(a,b),min(c,d)),max(max(a,b),max(c,d)));
+    let depths = vec4(a,b,c,d);
+    let f = fract(p);
+    let weights = vec4((1.0-f.x)*(1.0-f.y),f.x*(1.0-f.y),(1.0-f.x)*f.y,f.x*f.y);
+    let low = min(min(a,b),min(c,d));
+    let high = max(max(a,b),max(c,d));
+    // Reciprocal view depth is affine on a projected plane. Interpolate it
+    // instead of accepting every depth between unrelated foreground/background
+    // taps; the latter admits stale occluder colour at a disocclusion.
+    let projected = 1.0/max(dot(weights,vec4(1.0)/max(depths,vec4(1e-20))),1e-20);
+    return vec3(low,high,select(projected,0.0,high == 0.0));
+}
+fn depth_matches(old: vec3<f32>, expected: f32, sky: bool) -> bool {
+    let tolerance = max(0.01,expected*0.01);
+    return (sky && old.y == 0.0) || (!sky && old.x > 0.0 && abs(expected-old.z) <= tolerance);
 }
 fn history_round(value: f32, seed: u32) -> f32 {
     // Unbiased quantisation keeps a long temporal average from sticking one
@@ -86,10 +97,9 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let linear_depth = abs((params.view*world).z);
     let expected = abs((params.previous_view*world).z);
     // Depth history is a jittered raster, unlike the resolved colour history.
-    let old_depth = depth_range(previous+params.jitter.zw-params.jitter.xy);
+    let old_depth = depth_at(previous+params.jitter.zw-params.jitter.xy);
     let sky = textureLoad(depth,p,0) == 0.0;
-    let tolerance = max(0.01,expected*0.01);
-    let depth_ok = (sky && old_depth.y == 0.0) || (!sky && old_depth.x > 0.0 && expected >= old_depth.x-tolerance && expected <= old_depth.y+tolerance);
+    let depth_ok = depth_matches(old_depth,expected,sky);
     var weight = 0.97*(1.0-textureLoad(reactive,p,0).r);
     if params.state.x == 0.0 || !depth_ok || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
         weight = 0.0;

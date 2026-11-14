@@ -194,7 +194,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.3",
@@ -226,7 +226,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.5",
@@ -236,7 +236,7 @@
       "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#moving-route-timing",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "open"
         }
       ],
       "depends_on": [

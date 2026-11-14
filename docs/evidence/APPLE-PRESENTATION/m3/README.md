@@ -1,5 +1,11 @@
 # M3 builder evidence
 
+The current reciprocal-depth candidate is unqualified. The results below belong
+to the preceding range-based kernel; D3.2, D3.4 and D3.5 are reopened for reruns.
+The visible reveal fringe and the bounded correction experiment are recorded in
+[the depth-candidate evidence](depth-reprojection/README.md). No reference or
+acceptance bound has changed.
+
 Builder evidence, 14 November 2026. D3.2 reconstruction and D3.4 camera-cut reset
 pass on Metal at `c3d052a4`. D3.5 moving-route timing passes at `3f896417`.
 Fresh route execution, both targets' motion, exact baselines, the full gate and
@@ -49,8 +55,12 @@ movie frame. Decoder completion and static source-frame inspection are distinct
 from continuous visual observation. D3.3 remains open because direct 1× viewing
 has not occurred. Chrome motion also remains unqualified, with the edge concern
 above. Fresh route execution remains unqualified.
-Original lossless Mac archives remain locally in owned scratch
-for follow-up, with hashes and retention reasons in [the retention record](motion/mac/retention.json).
+The failed range candidate's full-frame sources were reverified and released
+after selected evidence promotion; [the release record](motion/source-release.json.gz)
+names the exact owned paths and retained hashes. The initial
+[retention record](motion/mac/retention.json) preserves archive identity, not a
+claim that those bulk sources still exist. Movies, source crops, all-frame
+diagnostic atlases, metadata and reproduction code remain committed.
 
 ## Reconstruction and cut
 

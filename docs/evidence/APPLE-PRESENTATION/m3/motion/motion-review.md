@@ -43,8 +43,9 @@ visual observation. The builder therefore leaves D3.3 open: its instruction to
 watch each pair at 1× and say that motion was watched has not been fulfilled.
 No such observation is claimed for Chrome either.
 
-The original lossless archives remain in owned scratch for follow-up, as listed
-in `mac/retention.json`; they have no durable-store claim. Selected movies,
-compressed manifests/runtime records, source crops, all-frame diagnostic atlases
-and the audit scripts are retained for another observer. Do not infer display
+The initial archive identities are listed in `mac/retention.json`. The failed
+candidate's full-frame archives were subsequently reverified and released as
+`source-release.json.gz` records; they have no remaining recovery claim.
+Selected movies, compressed manifests/runtime records, source crops, all-frame
+diagnostic atlases and audit scripts remain retained. Do not infer display
 swaps, panel cadence or photons from these engine captures or decoder records.

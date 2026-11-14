@@ -1,15 +1,20 @@
 """Stage compact motion review artifacts; keep raw source archives in owned scratch."""
+import argparse
 import gzip
 import hashlib
 import json
 from pathlib import Path
 import shutil
-import sys
 
-target = sys.argv[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('target',choices=['mac','chrome'])
+parser.add_argument('--source',type=Path)
+parser.add_argument('--output',type=Path)
+args = parser.parse_args()
+target = args.target
 root = Path('tmp/apple-presentation-m3')
-source = root / (target + '-motion-final')
-out = root / 'selected-motion' / target
+source = args.source or root / (target + '-motion-final')
+out = args.output or root / 'selected-motion' / target
 out.mkdir(parents=True, exist_ok=False)
 campaign = json.loads((source/'campaign.json').read_text())
 assert campaign['complete']

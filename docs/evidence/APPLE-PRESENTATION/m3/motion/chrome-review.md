@@ -5,8 +5,12 @@ on/off, 1280×720, source `3f896417`, on the Apple M3 Max host. The ten arms
 complete, with matching prepared reconstruction reports, no renderer omissions,
 and per-frame gzip source hashes verified by packaging and the independent CPU
 audit. The [campaign](chrome/campaign.json), movies and compressed manifests/runtime
-records retain actual source and Wasm identity. Original source frames remain in
-owned scratch as listed in [retention](chrome/retention.json).
+records retain actual source and Wasm identity. The original frame identities
+are listed in the initial [retention record](chrome/retention.json). After this
+candidate failed the reveal quality bar, all original frame hashes were checked
+again and the bulk sources released; [the release record](source-release.json.gz)
+names the exact paths. Selected evidence remains committed; whole-frame source
+recovery is not claimed.
 
 The builder and a fresh GPT-6.1 Sol medium agent inspected whole-frame temporal
 sheets, consecutive native-pixel crops and all-frame star atlases. The exact

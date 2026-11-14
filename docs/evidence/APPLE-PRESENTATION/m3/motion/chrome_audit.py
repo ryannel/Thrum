@@ -1,4 +1,5 @@
 """Original Chrome source verification, ordered inspection crops and diagnostics."""
+import argparse
 import bisect
 import gzip
 import hashlib
@@ -8,11 +9,15 @@ from pathlib import Path
 import statistics
 import subprocess
 import sys
-sys.path.insert(0, 'scripts')
+sys.path.insert(0, str(Path(__file__).resolve().parents[5]/'scripts'))
 from t2_writer_probe import package
 
-root = Path('tmp/apple-presentation-m3/chrome-motion-final')
-out = Path('tmp/apple-presentation-m3/chrome-review')
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source',type=Path,default=Path('tmp/apple-presentation-m3/chrome-motion-final'))
+parser.add_argument('--output',type=Path,default=Path('tmp/apple-presentation-m3/chrome-review'))
+args = parser.parse_args()
+root = args.source
+out = args.output
 out.mkdir(exist_ok=False)
 report = {'scope':'Original gzip RGBA frames, SHA-256 checked. Native-pixel crops are row-major. Flux and lag fits are diagnostics without acceptance thresholds.', 'arms':{}}
 linear = [v/255/12.92 if v/255 <= .04045 else ((v/255+.055)/1.055)**2.4 for v in range(256)]

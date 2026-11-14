@@ -1,5 +1,14 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 The range-based candidate at `959ada11` passes all 1,966 exact
+  comparisons in 939.25 seconds. The observed reveal fringe remains a failure of
+  the visual bar. A bounded candidate now interpolates reciprocal view depth
+  instead of accepting the whole foreground/background depth interval; shader
+  validation, strict renderer Clippy and `./dev check-web` pass. A test-only Metal probe includes
+  a projected plane and the former range test as a negative control. GPU and
+  visual execution are pending, so D3.2, D3.4 and D3.5 are reopened alongside
+  both motion items. [Hypothesis, cost and runner](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/README.md).
+
 - 2026-11-14 Chrome's ten real-time arms pass capture/packaging on `3f896417`.
   The CPU audit verifies all 2,696 original frames. A fresh GPT-6.1 Sol medium
   opinion and the builder find a fine ragged fringe on revealed blocks and the

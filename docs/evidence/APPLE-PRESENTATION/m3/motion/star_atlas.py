@@ -1,16 +1,21 @@
 """Every verified held-star source frame, native-pixel atlases and diagnostic flux traces."""
+import argparse
 import hashlib
 import json
 import math
 from pathlib import Path
 import statistics
 import sys
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts'))
+sys.path.insert(0,str(Path(__file__).resolve().parents[5]/'scripts'))
 from capture_spool import decoded_frames
 from t2_writer_probe import package
 
-root=Path('tmp/apple-presentation-m3/mac-motion-final')
-out=Path('tmp/apple-presentation-m3/star-review');out.mkdir(exist_ok=False)
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source',type=Path,default=Path('tmp/apple-presentation-m3/mac-motion-final'))
+parser.add_argument('--output',type=Path,default=Path('tmp/apple-presentation-m3/star-review'))
+args=parser.parse_args()
+root=args.source
+out=args.output;out.mkdir(exist_ok=False)
 boxes=[(1712,176,64,64),(640,32,64,64),(1024,256,64,64),(224,96,64,64)]
 linear=[(x/255/12.92 if x/255<=.04045 else ((x/255+.055)/1.055)**2.4) for x in range(256)]
 report={'scope':'All original lossless held-star frames; row-major native 64x64 crops, 32 atlas columns; trailing empty cells are padding. Flux traces are diagnostic, not acceptance thresholds.','arms':{}}
