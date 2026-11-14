@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 D3.5 passes at `3f896417`: the paired 640×360 moving route on
+  Metal has 361 matching-input samples per arm, TAAU resolve p50/p95
+  0.046709/0.049792 ms and scene p50 2.994001 ms on versus 2.778083 ms off.
+  Build, arm order and shared-host load are retained. The 0.420381 ms pixel-ratio
+  heuristic is within the 1080p estimate, with no measured 1080p or cadence claim.
+  [Target timing](../../evidence/APPLE-PRESENTATION/m3/README.md#moving-route-timing).
+
 - 2026-11-14 Resumed at `8fa5592d` and retained all ten Mac motion arms, native
   source crops and independently decoded all-frame star/scrub diagnostics. The
   scrub trace's best-fit lag is zero milliseconds; sampled spawn/reveal frames

@@ -661,7 +661,7 @@
         "functional_validation": "Strict Clippy passes all native workspace targets and the Wasm game; shader validation and Metal alternating-slot/reset execution pass. At c3d052a4 all six 640x360 full-frame CIEDE2000 p99 values are below 3 and improve on no AA; independent linear reference-cycle means agree bit for bit, history-disabled controls are rejected, and both cut controls pass. Motion and integration remain unqualified.",
         "experienced_quality": "Builder inspected passing noon/night whole-frame pairs at native size. No M3 motion qualification or independent review yet.",
         "platform_performance": {
-          "mac": "Paired held-checkpoint resolve medians are 0.0465-0.0520 ms at 640x360 on Apple M3 Max; supplementary only. Actual moving-route timing is queued; no measured 1080p, cadence or speed promotion.",
+          "mac": "At 3f896417 the paired moving route at 640x360 on Apple M3 Max/Metal records TAAU resolve p50 0.046709 ms and p95 0.049792 ms over 361 samples; scene p50 is 2.994001 ms on and 2.778083 ms off. Inputs match; arm order, binary digest and shared-host load are retained. No measured 1080p, cadence or speed promotion.",
           "browser": "Wasm Clippy passes; target reconstruction and motion proof pending.",
           "ios": "not_run"
         },

@@ -233,10 +233,10 @@
           "statement": "TAAU's GPU time on the route is recorded at M3's own 640x360 extent, kept apart from the design's 1080p estimate, with build, load and order; a departure from the estimate is recorded as a tripwire, not a failure.",
           "ask": "Is the timing a paired on/off record on the route at the stated extent, labelled for load, and is it kept from being read as the 1080p figure the design estimates?",
           "target": "mac-metal",
-          "evidence": "",
+      "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#moving-route-timing",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+      "builder_result": "pass"
         }
       ],
       "depends_on": [

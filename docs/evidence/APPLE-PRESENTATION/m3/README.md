@@ -1,8 +1,31 @@
 # M3 builder evidence
 
 Builder evidence, 14 November 2026. D3.2 reconstruction and D3.4 camera-cut reset
-pass on Metal at `c3d052a4`. Route execution, both targets' motion, moving-route
-timing, exact baselines, the full gate and integration remain unqualified.
+pass on Metal at `c3d052a4`. D3.5 moving-route timing passes at `3f896417`.
+Fresh route execution, both targets' motion, exact baselines, the full gate and
+integration remain unqualified.
+
+## Moving-route timing
+
+`python3 scripts/apple_presentation_m3_timing.py --output tmp/apple-presentation-m3/route-timing --store tmp/apple-presentation-m3/valley`
+passes under the shared GPU lock on Apple M3 Max / Metal, portable recipe,
+at 640×360. The 361 submitted samples in each arm have identical world/camera/solar
+and alpha inputs. Order is TAAU then off, with capture only at the same route
+checkpoints; shared-host load and exact executable digest are in the [report](route-timing/run.json.gz).
+The [route](route-timing/route.json) differs from the canonical route only in extent.
+The complete [TAAU](route-timing/taau.log.gz) and [off](route-timing/off.log.gz)
+records retain per-frame GPU pass times.
+
+| GPU time at 640×360 | Median | p95 |
+| --- | ---: | ---: |
+| TAAU resolve | 0.046709 ms | 0.049792 ms |
+| Scene with TAAU | 2.994001 ms | 3.210628 ms |
+| Scene with reconstruction off | 2.778083 ms | 3.036457 ms |
+
+No resolve executes in the off arm. Scene sums exclude surface presentation.
+The nine-times-pixel-count heuristic is 0.420381 ms, within the design's 0.2–0.5 ms
+1080p estimate, so the departure tripwire is false. This is not a measured 1080p
+time, display cadence or photon measurement.
 
 ## Motion review in progress
 
@@ -18,8 +41,8 @@ These measurements introduce no acceptance threshold.
 The [1× software-decoder record](motion/software-playback.json.gz) delivers every
 movie frame. Decoder completion and static source-frame inspection are distinct
 from continuous visual observation. D3.3 remains open because direct 1× viewing
-has not occurred. Chrome motion, fresh route execution and moving-route timing
-remain queued. Original lossless Mac archives remain locally in owned scratch
+has not occurred. Chrome motion and fresh route execution remain unqualified.
+Original lossless Mac archives remain locally in owned scratch
 for follow-up, with hashes and retention reasons in [the retention record](motion/mac/retention.json).
 
 ## Reconstruction and cut
@@ -56,7 +79,7 @@ and `[65,64]` respectively. The [cut](proof-c3d052a4/cut.png),
 
 Held-checkpoint resolve timings are 0.0465–0.0520 ms at 640×360, with capture on
 in both paired arms and the first 16 frames excluded. These are supplementary
-held measurements. D3.5's actual moving-route pair is queued separately; no
+held measurements. D3.5's actual moving-route pair is recorded above; no
 measured 1080p time or panel cadence is claimed.
 
 ## Implementation and earlier attempts
@@ -80,8 +103,9 @@ both WGSL modules' Naga validation, native release and Wasm builds. These establ
 no target image quality, motion quality or GPU cost.
 The real Metal alternating-slot/reset execution test now passes, as do the
 authoritative tick-60 replacement and sampled moving-light fixture tests. The
-game-reference proof now passes as recorded above. Chrome execution, motion sequences,
-moving-route timing, exact baselines, the full gate and integration remain unqualified.
+game-reference proof and moving-route timing now pass as recorded above. Chrome
+execution, motion sequences, exact baselines, the full gate and integration remain
+unqualified.
 
 Technique source: [Karis, High-Quality Temporal Supersampling, SIGGRAPH 2014](https://advances.realtimerendering.com/s2014/index.html).
 
