@@ -230,7 +230,9 @@ impl Volume {
 fn above_ground_bytes_record() {
     pollster::block_on(async {
         let fixture = Fixture::new().await;
-        std::fs::create_dir_all(ROOT).expect("M9 fixture directory");
+        let output = std::env::var_os("THRUM_M9_RECORD_DIR")
+            .map_or_else(|| Path::new(ROOT).to_path_buf(), std::path::PathBuf::from);
+        std::fs::create_dir_all(&output).expect("M9 fixture directory");
         for h in [3, 245] {
             for pitch in [0, -30] {
                 let v = fixture.volume(
@@ -239,11 +241,8 @@ fn above_ground_bytes_record() {
                     60.0,
                     [5.0, 20.0],
                 );
-                std::fs::write(
-                    Path::new(ROOT).join(format!("h{h}-p{pitch}.bin")),
-                    v.bytes(),
-                )
-                .expect("save pre-change bytes");
+                std::fs::write(output.join(format!("h{h}-p{pitch}.bin")), v.bytes())
+                    .expect("save pre-change bytes");
             }
         }
     });
