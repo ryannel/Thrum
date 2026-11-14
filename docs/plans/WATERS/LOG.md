@@ -144,3 +144,10 @@
 - 2026-11-14 Not read for the second revision: how Sea of Thieves or Subnautica draw caustics and shafts,
   Wallace's article itself (a search summary was read), and any measured caustic contrast. Cox and Munk's
   slope law and Petzold's mean cosine are from memory.
+- 2026-11-14 `RIVERS` was planned ([design](../RIVERS/DESIGN.md)). [Seven rulings](../ARCHITECTURE.md#seam-rulings-for-rivers)
+  say what its builder adds in this module's crates: brink ends, flow samples a gauge reads between, two flow
+  bands, births from a chart's loss and at a plunge, a region's mean current weighted by its waves, a river
+  selection in the example, and a fall's sheet drawn before the gather. Two replace what
+  [this design](DESIGN.md#what-the-later-modules-build-on) expected of `RIVERS`: roughness as a gain on the
+  wind's cascades, and a reach that keeps its prepared flow whatever its source's stage. No item, test or
+  bound here changes, and M9's stand-in channel stays as built.
