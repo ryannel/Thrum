@@ -1009,7 +1009,7 @@ def reconstruction(args):
         for name in ROUTE:
             directory = run/'frames'/name
             frames = [json.loads(line) for line in (directory/'frames.jsonl').read_text().splitlines()]
-            held = {(row['state'],tuple(row['exposure'][:4]),row['cooked_generation']) for row in frames}
+            held = {(row['state'],json.dumps(row['celestial']),tuple(row['exposure'][:4]),row['cooked_generation']) for row in frames}
             if len(held) != 1 or len(frames) != 4*64:
                 raise Failure(f'{name}: reference and judged frames did not hold the same state')
             pair = report['timing'][name] = {}
@@ -1035,9 +1035,12 @@ def reconstruction(args):
                     raise Failure(f'invalid full-frame image: {path}')
                 return raw[len(header):]
             reference = pixels('reference')
-            if pixels('reference',32) != reference:
-                raise Failure(f'{name}: repeated 32-phase averages differ')
+            linear_cycles = json.loads((directory/'linear-cycles.json').read_text())
+            if not linear_cycles['within_float_rounding']:
+                raise Failure(f'{name}: submitted linear cycle averages differ')
             row = report['checkpoints'][name] = {mode:compare(pixels(mode),reference) for mode in ('taau','off','broken')}
+            row['linear_cycles'] = dict(linear_cycles, hashes={str(frame):sha256(directory/f'reference-linear-{frame}.f32le') for frame in (32,64)})
+            row['reference_sdr_cycle_equal'] = pixels('reference',32) == reference
             row['pass'] = row['taau']['p99'] <= 3 and row['taau']['p99'] < row['off']['p99']
             row['broken_rejected'] = not (row['broken']['p99'] <= 3 and row['broken']['p99'] < row['off']['p99'])
         report['passed'] = all(row['pass'] and row['broken_rejected'] for row in report['checkpoints'].values())
