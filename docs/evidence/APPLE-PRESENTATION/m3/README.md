@@ -36,6 +36,17 @@ The follow-up corrects depth-history jitter addressing, preserves exact unchange
 colour during clipping/blending, and rescales from full-precision retained exposure.
 Its target rerun remains pending.
 
+Second target attempt at `9c1349f2`: [complete metrics](attempt-2/run.json).
+All six independent scene-linear cycle means agree bit for bit. Sunrise and
+sunset-sun improve on no AA, but noon, sunset-clear-sun, twilight and night do not.
+Both camera-cut controls still pass. A subsequent uncommitted diagnostic with
+depth rejection disabled improves five checkpoints, isolating false rejection as
+a remaining cause. Rejection is retained in the implementation, using the range
+of the complete reprojected depth footprint instead of one nearest-depth texel.
+The follow-up also uses unbiased half-float history quantisation to avoid a
+long average becoming stuck below a representable value. Target quality remains
+unqualified until a clean-source run passes all checkpoints.
+
 The follow-up also records two independent f32 means from the T2 submitted
 scene-linear RGB16F inputs, comparing all components against a combined 64-epsilon
 summation bound. This strengthens the first run's SDR-only repeat check. Reference

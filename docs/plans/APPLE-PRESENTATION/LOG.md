@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 M3's strengthened reference at `9c1349f2` proves bit-exact repeated
+  linear means and both cut controls, but four still comparisons fail. A diagnostic
+  without depth rejection improves five of six checkpoints. The next implementation
+  retains rejection across the complete reprojected depth footprint and introduces
+  unbiased half-float history rounding; WGSL validation passes, with target quality
+  still pending. [Second attempt](../../evidence/APPLE-PRESENTATION/m3/attempt-2/run.json).
+
 - 2026-11-14 The first M3 Metal reference run at `55ae06ee` fails the firm no-AA
   comparison at all six checkpoints, despite meeting the absolute ΔE 3 bound.
   Reference-cycle equality and both cut controls pass. Follow-up `5cffce8c`

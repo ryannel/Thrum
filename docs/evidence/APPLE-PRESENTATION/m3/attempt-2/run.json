@@ -1,0 +1,374 @@
+{
+  "command": "reconstruction",
+  "target": "mac-metal",
+  "extent": [
+    640,
+    360
+  ],
+  "commit": "9c1349f238d998a9a0d6326ef2877487077abc8b",
+  "passed": false,
+  "cut": false,
+  "metric": "whole-frame submitted 8-bit SDR CIEDE2000, D65, nearest-rank p99",
+  "tolerance": 3,
+  "checkpoints": {
+    "sunrise": {
+      "taau": {
+        "p99": 1.0969718311202823,
+        "maximum": 33.210330394439886,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.1231110752638422,
+        "maximum": 28.119124515204533,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.3526916722090268,
+        "maximum": 35.103893274424415,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "90b9e58368caa2a60a685a9fa42b45bbee0141b7f1913e880af1e2593e5a84f7",
+          "64": "90b9e58368caa2a60a685a9fa42b45bbee0141b7f1913e880af1e2593e5a84f7"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "noon": {
+      "taau": {
+        "p99": 1.3703487424004153,
+        "maximum": 29.07058564359154,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.3698135289889812,
+        "maximum": 17.38182375542482,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.5056348323787376,
+        "maximum": 29.07058564359154,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "77ce108a3e4336d755aa00d2b50ac8d45387fcfb385ce85d97683d13e5d37920",
+          "64": "77ce108a3e4336d755aa00d2b50ac8d45387fcfb385ce85d97683d13e5d37920"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": false,
+      "broken_rejected": true
+    },
+    "sunset-clear-sun": {
+      "taau": {
+        "p99": 1.3208731758779055,
+        "maximum": 15.048146917325782,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.8887479555756362,
+        "maximum": 17.95697739752007,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.6650532411921724,
+        "maximum": 15.048146917325782,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "a43af3c90fad55ee4e0b3401da6de72bcf9a92ed46b43629d9ddeb259cbe8420",
+          "64": "a43af3c90fad55ee4e0b3401da6de72bcf9a92ed46b43629d9ddeb259cbe8420"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": false,
+      "broken_rejected": true
+    },
+    "sunset-sun": {
+      "taau": {
+        "p99": 0.9545299139614847,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.0993601518854126,
+        "maximum": 25.898288723005354,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.0412207444803347,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "78723ef2e9c17f9de428b7dc66ec70ebb49a9d31d201789544a657d174d803ae",
+          "64": "78723ef2e9c17f9de428b7dc66ec70ebb49a9d31d201789544a657d174d803ae"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "twilight": {
+      "taau": {
+        "p99": 0.9773898593632945,
+        "maximum": 38.904259631978896,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9712720989157503,
+        "maximum": 42.86850485892834,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.4485760256307543,
+        "maximum": 32.95848515898119,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "017b6ec702a9a07daac8d6c9441877e485680a02a7adf71d3930e578f82fbda5",
+          "64": "017b6ec702a9a07daac8d6c9441877e485680a02a7adf71d3930e578f82fbda5"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": false,
+      "broken_rejected": true
+    },
+    "night-upslope": {
+      "taau": {
+        "p99": 0.9245245590916956,
+        "maximum": 6.347207016405203,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9245245590916956,
+        "maximum": 8.850288989067561,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.3863371339048776,
+        "maximum": 37.22813795070079,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "b0e1e508c5e9351b9ce8b1b9d8c91bd3c3f09adecd708bcd60a6f5e81bf127f5",
+          "64": "b0e1e508c5e9351b9ce8b1b9d8c91bd3c3f09adecd708bcd60a6f5e81bf127f5"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": false,
+      "broken_rejected": true
+    }
+  },
+  "timing": {
+    "sunrise": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1446019.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 41979.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1269250.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.377811,
+      "tripwire_only_outside_estimate": false
+    },
+    "noon": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1269039.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 43521.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1132333.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.391689,
+      "tripwire_only_outside_estimate": false
+    },
+    "sunset-clear-sun": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1297895.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 44750.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1159208.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.40275,
+      "tripwire_only_outside_estimate": false
+    },
+    "sunset-sun": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1371187.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 44021.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1274707.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.396189,
+      "tripwire_only_outside_estimate": false
+    },
+    "twilight": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1270833.0,
+        "taau_passes": 48,
+        "taau_p50_ns": 43146.5
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1556395.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.3883185,
+      "tripwire_only_outside_estimate": false
+    },
+    "night-upslope": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1240460.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 42312.5
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1121644.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.3808125,
+      "tripwire_only_outside_estimate": false
+    }
+  },
+  "load_start": [
+    2.9375,
+    3.31005859375,
+    3.08984375
+  ],
+  "arm_order": [
+    "reference",
+    "taau",
+    "off",
+    "broken"
+  ],
+  "timing_scope": "640x360 held showcase checkpoints; paused world; capture on in both paired arms; first 16 frames excluded; registered GPU jobs serialized by caller; shared host load",
+  "design_1080p_estimate_ms": [
+    0.2,
+    0.5
+  ],
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "device": {
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "executable": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/release/deps/v1_game-8fe651ee7240a58c",
+    "extent": [
+      640,
+      360
+    ]
+  },
+  "oracle_binaries": {
+    "target/release/deps/v1_game-8fe651ee7240a58c": "516babffc12c7dd7fd0f9d34203201950a4addc93a637409d43f51a1a580b4a4"
+  },
+  "cut_comparison": {
+    "cut_equals_reset": true,
+    "cut_history": [
+      65,
+      0
+    ],
+    "reset_history": [
+      1,
+      0
+    ],
+    "suppressed_differs": true,
+    "suppressed_history": [
+      65,
+      64
+    ]
+  },
+  "error": "reconstruction tolerance or history-disabled negative control failed",
+  "load_end": [
+    2.46044921875,
+    3.17578125,
+    3.04638671875
+  ]
+}
