@@ -220,3 +220,10 @@
   four tests and three further consecutive runs. The cause is unconfirmed; no test threshold or source changed.
   The failure is retained and a complete gate retry is required before merge. D10.5 remains open for access.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+
+- **2026-11-14 — M10 attended continuation.** Rebased to `cc8f25a5`, resolving the handoff conflict.
+  Read-only preflight confirms unlocked Mac and existing Screen Recording access; D10.5 capture remains unrun.
+  The prepared observer and source audit are retained; game/renderer/host sources are unchanged.
+  Fresh baseline/check/merge job `20261114-131328-10588` queues behind an apparent SEA nested GPU lock.
+  D10.1–D10.4 retain their passing proofs. No merge or window pass is claimed.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
