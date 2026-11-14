@@ -92,6 +92,7 @@ impl GameControls {
     /// Returns a declaration refusal; the keys and ranges here are fixed, so none is expected.
     pub fn new() -> Result<Self, ControlError> {
         let mut model = Controls::new();
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
         thrum_app::profile::declare(&mut model)?;
         let solar_time = model
             .slider("sky.solar_time", "Solar time", 0.0..=1.0)
