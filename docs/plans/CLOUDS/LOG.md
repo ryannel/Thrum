@@ -133,6 +133,37 @@
   rendered phase, M5.1 is written again, and Broadsides' `spread` rule is not copied.
 - 2026-11-14 Suggestion S1 taken: M5.1's local-reach check is scoped to a fixture with no detail erosion, where
   the full and the coarse density agree. It cost one clause and removed a check that could not pass as worded.
+- 2026-11-14 Owner, through the lead: "Oh and for clouds we also need to be taking into account mist / fog. We
+  want a plan that's able to deliver on top quality atmosphere." The lead's task: revise the plans so the
+  atmosphere reaches shipped quality as a whole (sky, clouds, haze, mist and fog: ground fog, valley mist, fog
+  banks over water, low cloud the camera can enter), lit consistently and changing with the weather and time of
+  day, with one authority for each kind of state.
+- 2026-11-14 Ownership settled from first principles, in
+  [the module list](../ARCHITECTURE.md#the-atmosphere-as-a-whole). Fog is cloud at the ground, so the weather
+  field owns every condensate and the amount of haze; `ATMOSPHERE` owns the air's optics and a view volume that
+  integrates air, haze and this module's medium coefficients jointly near the camera; this module's trace
+  carries condensate beyond a handover 300 to 500 m out. Not chosen: a separate fog provider below the cloud
+  base, a second fog grid, an analytic height fog, and fog marched per pixel from the camera.
+- 2026-11-14 Replaced, listed in [the design](DESIGN.md#judged-again-for-the-whole-atmosphere): fog as a later
+  provider split from cloud by height; the camera and all geometry below the cloud base; a trace that ignores
+  depth; haze under cloud as one number with no shafts; the Sun's path ending at the cloud base; and the reading
+  that `ATMOSPHERE` is not reopened. The plan's assumption on the camera and geometry was rewritten.
+- 2026-11-14 Added: cues K8 to K11; the surface field, the fog table, pooling, held and drifting rows, the
+  ground cooling that makes mist follow the day, haze as a visual range, the point extinction and visual-range
+  query, the Sun path's ground band with a surface visibility, medium coefficients, the handover, the interval a
+  ray marches and its two stops, and the Ground capability. Milestones M13 (after M1), M14 to M16 (after M10)
+  and items M11.8 to M11.10; M11 renamed. M8.2 now names a scene without the view volume. Rulings 6 to 8 are
+  `ATMOSPHERE`'s own M7 and M8.
+- 2026-11-14 M1's items are unchanged, and it builds what it was building. Its note gained one sentence: ground
+  condensate is M13's. M3's note asks that the trace be written over the general interval.
+- 2026-11-14 Reproduction: [whole_atmosphere_proof.py](../../evidence/CLOUDS/design-proof/whole_atmosphere_proof.py).
+  The handover composes to the exact transmittance and to the in-scatter within 0.002; pooled mist covers 19%
+  to 89% of a 200 m relief with no step; one integrated value forms mist by 22 h and clears it by 8 h, with none
+  under overcast or wind; a ground band of 80 m columns and 9 heights is within 0.011 RMS in transmittance where
+  a level-layer rule is off by up to 0.31; today's fixed haze is a 244 km visual range.
+- 2026-11-14 Read for this: Hillaire 2015 (slide text), Unreal's volumetric fog documentation (whole), and the
+  abstracts of Bauer 2019 and Kovalovs 2020. Not read: Bauer's deck (232 MB), Wronski 2014, the Nubis³ pages on
+  low fog-like cloud beyond one quoted line. The plan's notes were shortened to hold it under its word limit.
 - 2026-11-14 Found while resolving: within 2° of the Sun, part E of `first_principles_proof.py` used the widened
   lobe. Part G gives those figures again: the reference lobe is 60 times too dim at half a degree, not 46. The
   supplemental of Jendersie and d'Eon was read, sections 2 and 3.1. Plan notes were shortened to hold the plan

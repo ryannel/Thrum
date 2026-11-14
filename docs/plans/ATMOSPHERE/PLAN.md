@@ -1,6 +1,6 @@
 # ATMOSPHERE plan
 
-Closes gate G3s. [Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 and M6 · [log](LOG.md) ·
+Closes gate G3s at M6; M7 and M8 are track 2. [Design](DESIGN.md) · [done-when file](DONE.json), which holds M5 to M8 · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
 ## Open for the owner
@@ -10,6 +10,10 @@ Closes gate G3s. [Design](DESIGN.md) · [done-when file](DONE.json), which holds
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
 - Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan.
 - Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step (at most 0.1% of the value), because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image for no visible gain.
+- Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, M7 and M8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
+- Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
+- Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
+- Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
 
 ## M1 The valley remains legible at moonless midnight: done
@@ -49,38 +53,8 @@ Work left:
 
 - [ ] Review at most one representation with a distinct source-side reuse mechanism and explicit producer, receiver and caster work caps fixed before running. Run it once against the frozen witnesses. Park it if it exceeds the cap or fails admission, retain the failure and stop. M3 and other V1 gates can proceed independently.
 
-## M5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
-
-Read [Environment identity and products](DESIGN.md#environment-identity-and-products) first. This is the first of [the port's readiness conditions](../ARCHITECTURE.md#where-the-ports-readiness-conditions-are-met).
-
-- [x] Record the base commit and the per-pipeline sampled-texture counts before changing the light group.
-      [Rebased base record](../../evidence/ATMOSPHERE/m5/base.json).
-- [x] The environment identity, with the true Sun kept apart from the apparent surface light, lent to
-      contributions each frame.
-- [x] The lent layout and WGSL library with the five operations, reflection included, each documented with the
-      support and limits the design's table gives it.
-- [x] The handoff referees H1–H5 of [the numerical acceptance](DESIGN.md#numerical-acceptance) on Metal, run
-      from a contribution's own pipeline; the preserved referees P1–P11 untouched.
-- [x] For H2 and H4, the f64 filtered decode written apart from the library, its live and known-field arms, and
-      the wrong lookups that must fail; one case of each row repeated at a non-unit exposure scale. The bound
-      carries the stored-step term `Q`; the known fields step by at least 32 stored steps; the Metal run keeps
-      the 257-position precision record.
-- [x] The browser page and the `environment` case of `scripts/check_v1_browser.mjs` that run H1–H5 in Chrome,
-      with the same filtered decode, wrong lookups and exposure control.
-- [x] The Sun-path optical-depth product, the one cloud-factor function, and the shader variant in which the
-      shared direct-Sun term calls it; the factor is exactly 1 outside the field's support; no provider composes
-      today's shader.
-- [x] The cooked volume's march calls the same cloud-factor function at each lit march sample's world position.
-      With no provider its shader text and lighting are today's.
-- [x] GPU tests for M5.6 on every receiver kind, including a field that differs between two world points.
-- [x] `scripts/environment_products.py`: the off-parity arm against the base on Mac and Chrome, and the paired
-      cost arm on Mac and Chrome.
-- [x] The labelled diagnostic provider in `examples/v1-game`, opt-in, and its captures at noon and low Sun.
-
-The light group and forward pipelines are also edited by `APPLE-PRESENTATION:M2` (the third forward target).
-Whichever lands second rebases; neither waits on the other.
-The cooked volume's shader is in `thrum-asset-gpu`, which the same `APPLE-PRESENTATION:M2` work also touches; M5
-changes only the Sun term of its march.
+## M5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once: done
+[review](../../evidence/ATMOSPHERE/M5-review.md)
 
 ## M6 The valley's sky and sunlight pass the route in motion on Mac and Chrome, and G3s closes
 
@@ -93,3 +67,24 @@ Read [Closing G3s](DESIGN.md#closing-g3s) first.
 - [ ] Record the commit M6 starts from, and rerun it beside the final build for the cost comparison; quote the
       M1 and M2 records as history.
 - [ ] Maturity rows and the brief's G3s line, naming solar sky and aerial accuracy as not qualified.
+
+## M7 Haze thickens from crisp air to murk under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome
+
+Read [The view volume](DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) first. The aerial
+producer is `crates/thrum-render/src/atmosphere/aerial.wgsl` with `AERIAL_EXTENT` in `gpu.rs`; the aerosol's
+constants are written into shader source by `spectrum.rs`; the forward decoders are the `synthetic_aerial*.wgsl`
+files, one of which splits solar in-scatter by the surface's shadow, which the volume must not repeat. The
+volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
+default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
+builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
+present make sure the volume does not take it. Record M7.1's base before changing anything, and measure M7.3's
+bound before asserting it. `scripts/view_volume.py` is created here.
+
+## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
+
+The cloud-factor function and its field are in `crates/thrum-render/src/atmosphere/cloud.rs` and `cloud.wgsl`,
+and the labelled test cloud field in `examples/v1-game/src/host/scene_source/cloud.rs`; the test medium sits
+beside it and is replaced by `CLOUDS` M14. The joint reference is written here, in
+`scripts/reference/atmosphere/`, apart from the shader. What a provider's coefficients mean is in
+[CLOUDS' design](../CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud). If a forward pipeline cannot take the ground band inside
+WebGPU's sampled-texture limit, write the proposal in the log and end `BLOCKED`.
