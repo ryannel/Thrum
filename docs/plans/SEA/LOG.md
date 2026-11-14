@@ -11,6 +11,11 @@ on source `b0e08412fa39471b272d260f43a177e302977d43`. The unchanged verifier pas
 and all four 481-record Chrome sets. [Evidence](../../evidence/SEA/M1.md) keeps the numerical proof,
 baseline identities and limits together. Sea rendering and GPU cost remain later milestones.
 
+Integration brought in main's CULLING renderer changes and the revised SEA plan, whose M1 items are
+unchanged. Rechecked all ten model tests and the complete native/Chrome baseline verifier on
+`43caeacc430f8c0de2d96cc7a42a8ee729b5890c`; all passed. The selected baseline record now names this
+combined source. The merge gate runs the full repository check again.
+
 - 2026-11-13 Owner, through the lead, when asked whether SEA and CLOUDS planning could start now: "On 2 use the
   fable planner like normal but you can bring that across when it makes sense." The lead's reading, recorded as
   an assumption in the plan: planning starts now, and this plan decides when the Broadsides Rust work is brought
