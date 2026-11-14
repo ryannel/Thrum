@@ -21,6 +21,18 @@ private target directory, refusing a linked target. Do not edit the worktree
 while the helper is active: it can rebase HEAD. Its terminal result and report
 are the next evidence needed.
 
+The helper now keeps its GPU slot for the final evidence and integration phase.
+Wait with `wait <job> --worktree . --until AWAIT_EVIDENCE:` to observe that phase
+without waiting for the whole job to end. On that marker, read
+`tmp/sea-m2/qualification-ready.json`. Inspect and copy `proof_file` exactly to
+`retained_proof_file`, update M2.8 and the evidence/log, and commit those changes.
+Then write JSON to `ticket_file` with the ready file's `token` and the current
+Git HEAD as `commit`. This is a builder phase handshake, not a human approval.
+The helper waits at most 900 seconds, verifies the committed record and builder
+fields, then invokes the official gated merge under the same lock. It releases
+the resource on an error or timeout. Its terminal merge result must still be
+checked before ending with DONE.
+
 These earlier jobs are terminal:
 
 - `20261114-054946-45357`, the old complete check, was stopped while waiting with
