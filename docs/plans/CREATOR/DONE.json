@@ -110,10 +110,10 @@
           "lock": "gpu",
           "ask": "Read the profiler-switch case. Does it count real resolve and readback work, not a UI flag, and would it fail if a number from before the switch were shown after it?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-switch/run.json; docs/evidence/CREATOR/m2/browser-switch/profiler-off-submitted.png",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
