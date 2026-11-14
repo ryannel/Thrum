@@ -1,6 +1,7 @@
 # Waters: one water system for every body of water
 
-14 November 2026, revised the same day for surf, mirrored scenery and the view from under water.
+14 November 2026, revised the same day for surf, mirrored scenery and the view from under water, and again
+for light under water.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -37,6 +38,12 @@ a shore. The three mechanisms are [surf](#surf-the-shore-transform-and-the-break
 [mirror views](#mirror-views-scenery-the-camera-cannot-see) and [the view from under water](#under-water);
 [judged from first principles](#judged-from-first-principles) says what each replaces.
 
+The first version of that revision drew the view from under water without caustics, without shafts of light
+and with an exposure metered from the sky. The lead's task of the same day, on the bar the owner's words set:
+"The WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under
+water, which are standard in high-end underwater views; bring the underwater view up to that bar". All three
+are [light under water](#light-under-water-caustics-shafts-and-the-meter), and they are one mechanism.
+
 Until 14 November `SEA` planned an open sea and nothing else, and inland water lived in designs no module was planned
 from. This design starts again from what a game needs of water, settles one system that every body of water is
 data for, and says which module builds each part. It keeps what the sea design of 13 and 14 November settled
@@ -67,7 +74,7 @@ material it carries, and one optics. A kind of water is a row of data for those 
 | Wet ground | No body: a wetness the ground's material reads | | | `PUDDLES`. The sheen and foam on sand the waves wash are this module's [film](#the-surface-and-the-frame-contract) |
 
 **Commissioned in this module:** the shared system, and still open water on it: the sea, the shore, and lakes,
-ponds and pools. Cues S1 to S7 of the sea brief and W1 to W9 below, on `mac-metal` and `chrome-webgpu`, lit only by
+ponds and pools. Cues S1 to S7 of the sea brief and W1 to W12 below, on `mac-metal` and `chrome-webgpu`, lit only by
 `ATMOSPHERE`'s products. The wave field is `SEA`'s, built by its M1 and M2 and unchanged by this design.
 
 **Planned as later modules**, from [their briefs](../ARCHITECTURE.md#rivers-and-puddles): `RIVERS` (rivers,
@@ -80,8 +87,9 @@ streams and waterfalls) and `PUDDLES` (rain, puddles and wet ground).
   the currents surf drives: set-up of the mean level, the longshore drift and rips.
 - Bulk water that moves while the game runs: a flood, a dam break, a level change that travels downstream. Flow is
   prepared once. A live solver would write the same map, so it can come later without changing a reader.
-- Caustics and shafts of light under water, drops on a lens that has surfaced, water above water in one column
-  (a pool on a bridge over a river), and water in a vessel.
+- Drops on a lens that has surfaced, and particles and bubbles drifting in the water: the engine has no
+  particle owner. Light the surface throws up onto a hull's side or the underside of a bridge. Water above
+  water in one column (a pool on a bridge over a river), and water in a vessel.
 - The three sea cues the 10 November spikes left open (spray leaving a hull at chase distance, the attached sheet
   at the hull, a rising gas cloud), planing trim from tow-tank data, fleets, ray-traced reflection (a later
   provider for [the reflection slot](#optics) on devices that have it), multiplayer
@@ -98,9 +106,11 @@ its kernels are a resource, and its frame is not.
 ## Cues
 
 S1 to S7 are the sea brief's, and each is something a user above needs. W1 to W6 are what water as a whole adds,
-and W7 to W9 are the owner's of 14 November. The bar for the sea is the sea and wakes of Sea of Thieves; for
+and W7 to W9 are the owner's of 14 November. W10 to W12 bring the view from under water to the bar the owner
+set that day. The bar for the sea is the sea and wakes of Sea of Thieves; for
 inland water and for mirrored scenery it is the lakes, shores and streams of Red Dead Redemption 2; for surf it
-is the beaches of Horizon Forbidden West; for the view from under water it is Sea of Thieves again. All in
+is the beaches of Horizon Forbidden West; for the view from under water it is Sea of Thieves again, and for
+the light in it the shallows of Subnautica. All in
 words, at the display's full refresh.
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
@@ -121,6 +131,9 @@ words, at the display's full refresh.
 | **W7** Surf: a swell meets a shore as surf. Its lines turn to face the beach, close up and rise; the largest of a set break furthest out; a crest steepens, pitches forward and breaks into a white front that runs in to the swash | Trade wind to gale with a swell of 6 s to 14 s; beaches of 1 in 30 to 1 in 5; swell square on and 60° off the beach; a headland and a lee shore; the tide through its range; from the sand at 2 m, from 40 m up and from 1 km off | A wave train drawn along the shore, apart from the sea's own waves, or a wave that only fades. Rejected by one swell crest followed from deep water to the sand, its spacing and height against wave theory at three depths, and by a float that must rise on the crest the viewer sees break |
 | **W8** Scenery the camera cannot see: water mirrors what stands round it, the far shore, hills, trees and the craft, each joined to its foot at the waterline and blurring as the water roughens | Calm to a breeze on the lake and the pond, calm to a trade wind on the sea under the island; camera 1 m to 40 m up, looking down so the source is above the frame and panning so it leaves the side; two levels in one view; dawn to night | A trace of what is on screen, or a probe at the camera. Rejected by a view whose reflected hill is wholly off screen, and by a tree's reflection that must meet its trunk at the waterline, which a probe's parallax misses |
 | **W9** Under water: the waterline crosses the lens; below it the water has its colour and murk and darkens with depth, the bed and hulls show through it, and the surface overhead shows the sky through a bright window with the deep mirrored round it | Every body; the lens from 0.1 m to 20 m under; calm to gale; half in, crossing both ways, and in the swash; looking up, level and down; dawn to night | A tint over the whole frame once the camera's centre is under. Rejected by a lens half under, where each pixel is judged alone, by the window's edge at 48.6° from the surface's normal, and by a panel of known radiance seen through known lengths of water |
+| **W10** Caustics: under a rippled surface the Sun draws a moving net of light on the bed, on hulls and on whatever else is under water. The net is fine and sharp in the shallows and wider and softer deeper, it travels with the waves, and it shows from above through clear shallows as it does from below | Every body; receivers from 0.1 m to 16 m under; glassy calm to a trade wind; the Sun from 10° up to overhead; the lake's water and the sea's | A played texture projected down the Sun's direction. Rejected by a glassy calm, where there is no net, by the net's contrast at two depths and two winds against the model, by the mean light over a patch, which focusing cannot change, and by a hull's shadow, which holds no net |
+| **W11** Shafts: looking up toward the Sun from under water, beams of light stand in the water round its direction. They lean with the refracted Sun, never more than 48.6° from the vertical, sweep as the waves pass, and are missing beneath a hull | The lens from 0.5 m to 20 m under; a breeze to a trade wind; the Sun from 10° up to overhead; the sea and the lake | Streaks blurred outward from the Sun's place on the screen. Rejected by beams that stand with the Sun's direction out of frame, by the dark water under a hull seen from the side, and by a calm, where the water's light is even |
+| **W12** The camera follows the light down: the picture stays readable from the surface to the deep, deeper water is darker by a share and never black, and crossing the surface makes no jump | The sea to 20 m under and the lake to its bed; dawn, noon and twilight; half in, and crossing both ways | An exposure metered from the sky, which leaves deep water black, or a gain taken from the picture, which pumps as pale sand comes into view. Rejected by the descent, and by the resolved exposure against the model's light at the lens |
 
 ## Research and selection
 
@@ -264,11 +277,43 @@ Read for the revision of 14 November, for surf, mirrored scenery and the view fr
   abstract, and any shipped game's surf other than Horizon's. A search for surf talks at GDC or SIGGRAPH in
   2024 and 2025 found none.
 
+Read for the second revision of 14 November, for light under water:
+
+- **Caustics from the simulated surface.** [HDRP](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.0/manual/water-caustics-in-the-water-system.html)
+  (as summarised by fetch) computes caustics from one band of its wave simulation, the ripples by default,
+  into a buffer at a resolution it names, and projects them at one "virtual plane distance" that the author
+  raises "until the caustics look right". They do not fall on things above the water or on transparent
+  things, and they ignore current maps. The page does not say whether a shadow holds them or whether the
+  water's volume shows them. Taken: the net is computed from the waves. Not taken: one plane for every depth.
+- **A played texture.** [Crest 4.23](https://crest.readthedocs.io/en/4.23.0/user/water-appearance.html) (as
+  summarised by fetch) projects a caustics texture with a scale, a strength, a focal depth, a depth of field
+  and a distortion texture. Its underwater section has no shafts and says nothing of exposure.
+- **Carrying the surface's light down.** Evan Wallace's WebGL Water (2011) and
+  [his write-up of 2016](https://medium.com/@evanwallace/rendering-realtime-caustics-in-webgl-2a99a29a0b2c),
+  which refused a fetch and was read as a search summary, with Renou's 2020 extension: a mesh of the surface
+  is moved along its refracted rays, and brightness is the ratio of a triangle's area before to its area
+  after, so light spread out dims and light gathered brightens. This is the mechanism selected, on a ladder
+  of depths.
+- **Shafts from the same pattern.** CryEngine 2 (Sousa, GDC 2008, by search summary): underwater god rays
+  were "essentially the same procedural caustics shader, based on the sun's direction". NVIDIA's ray-traced
+  water caustics (Gruen, GDC 2019, session abstract by search) trace surface caustics and volumetric
+  caustics with shadows. Evidence that the net, the beams and the shadows in them are one light; its method
+  is not portable.
+- **Exposure under water.** No shipped system's account was found. Unreal's forums (by search summary)
+  handle it with a post-process volume that narrows the auto-exposure range. Thrum's meter is a physical
+  incident meter ([C07](../../design/CONTRACTS.md)), so the first-principles answer is the light at the lens.
+- **From memory, not re-read:** Cox and Munk's mean square slope, `0.003 + 0.00512 U`, which part R's
+  surface uses; and Petzold's phase function for sea water, whose mean cosine is about 0.92.
+- **Not read for the second revision:** how Sea of Thieves or Subnautica draw their caustics and shafts (no
+  talk or frame study was found), Wallace's article itself, and any measurement of caustic contrast in the
+  sea. Part R's reference is this design's own ray count.
+
 Reproductions A to G were run for the sea design and are kept with their output in
 [the sea's evidence folder](../../evidence/SEA/design-proof/). Parts H to M were run for this design and are in
 [this module's](../../evidence/WATERS/design-proof/): H the interaction step at depth, I shelter, J dry ground,
 K joins, L the swash and M foam in the swash. Parts N to Q were run for the revision and are in
-`surf_view_proof.py` there: N the shore transform, O breaking, P the mirror lookup and Q light under water. Two design reviews of 14 November are kept in
+`surf_view_proof.py` there: N the shore transform, O breaking, P the mirror lookup and Q light under water. Parts R to T were run for the second revision and are in
+`under_light_proof.py` there: R caustics, S shafts and T the meter. Two design reviews of 14 November are kept in
 [the evidence folder](../../evidence/WATERS/), each with its own reproduction. After the first, H was run again
 and J to L added. The second found a step at a shallow mouth and no carriage for foam up a beach: K now
 assembles the surface after its depth limit and reproduces that review's case, and M was added.
@@ -293,6 +338,7 @@ against the users and cues above. "Keep" means it would be chosen again with the
 | Water reflects only what is on screen; no module plans the probe that the rest needs (this design's first version) | **Change**, on the owner's words | A lake under a hill is a mirror of the hill, and the camera looks down at it with the hill above the frame. A screen trace has nothing to read there. The scene is drawn again from the camera's mirror image, by [a new module](#what-waters-asks-of-other-modules), and the water reads that |
 | The camera stays above the water (the sea brief, and this design's first version) | **Change**, on the owner's words | A camera that follows a craft, a swimmer or a wave goes under. The surface is drawn from both sides and the water between the lens and what it sees is composed as a medium |
 | Waves fade at a shore and do not shoal, turn or plunge; surf is not planned (this design's first version) | **Change**, on the owner's words | The first version held that a height field cannot overturn and that shipped surf is baked. Both are true and neither stops it: the long waves are few and analytic, so each can carry a phase solved over the bed, and a displaced sheet can lean past the vertical. The depth limit and the swash are kept: they are the surf zone's own energy law |
+| Under water without caustics or shafts of light, on an exposure metered from the sky (this design's first revision) | **Change**, on the bar the owner set | Each is what a viewer of a shipped game expects on going under, and leaving them out made risk 24, deep water that is black, a declared defect. The waves the surface is drawn from already hold the net: it is their focusing of the Sun |
 | One sea, all of it or none; then capabilities a scene leaves out | **Keep** the capabilities | A sunset demo and a puddle need neither wake, foam nor query |
 | Rigid bodies integrated by the game | **Keep** | Thrum has no physics owner, and the engine must hold no hull |
 | Whitewater, optics and dynamics as separate providers with packets, charts, ray-traced regional optics and a work ledger (the older appearance, optics and integration designs) | **Not selected** | They specify a larger product than any cue here asks for, none was run, and their costs were never counted against a frame. Their rejection cases are kept as items |
@@ -356,6 +402,16 @@ Neither stops the milestones after it.
 | W8 | **A mirror view: the scene drawn again from the camera's mirror image in the water's plane, read with its depth** | **Selected.** Exact on flat water for everything above the plane, on screen or off; what Unreal and GTA V ship; one more view, whose cost its owner controls |
 | W9 | A tint and fog once the camera's centre is under | Fails a lens half under |
 | W9 | **A per-pixel lens test against the surface's own function, the surface drawn two-sided, and the water composed as a medium from the gather** | **Selected** |
+| W10 | A played caustic texture projected along the Sun (Crest; the bar's own, as far as is known) | Fails: the same net in a calm and in a gale, a repeat, and a brightness that is not the light's |
+| W10 | One map made at one depth and read at every depth (HDRP) | Fails the range. A map made at 1 m and read at 0.25 m has nearly three times the contrast of the net there, and read at 4 m and 16 m it correlates 0.30 and 0.07 with the net there (part R5) |
+| W10 | A backward lookup: from the receiver, one sheet's brightness from the surface's curvature above it | Fails past the first focus, where sheets cross and the net's bright lines are. It does not conserve light (a mean of 1.30 at 1 m) and correlates 0.29 there (part R5) |
+| W10 | Rays traced from the Sun through the surface (NVIDIA) | Right. Not portable |
+| W10 | **The surface's light carried down its refracted rays onto a ladder of depths, each cell spread over where it lands** | **Selected.** It conserves light by construction, crossing sheets add, it is made from the waves the surface is drawn from, and it is what Wallace's and HDRP's methods do at one depth |
+| W11 | Streaks blurred outward from the Sun's place on screen | Fails with the Sun out of frame, and knows nothing of a hull |
+| W11 | The water as a medium in `ATMOSPHERE`'s view volume | Not selected. C08 gives water a declared boundary and this design composes the water's segments in its own pass; the volume's Sun path is straight where the water's bends at the surface; and a lens half under would put two media in one volume |
+| W11 | **The beam's once-scattered light, marched through the caustic field and the scene's Sun visibility in the water's own composition** | **Selected** |
+| W12 | A meter on the rendered picture | Not selected: V4's meter is a physical incident meter, and a picture meter pumps |
+| W12 | **The incident meter reads the light at the lens: the game gives its camera the water's factor there** | **Selected** |
 
 ## Mechanisms
 
@@ -1122,12 +1178,18 @@ scene is drawn a second time, from the camera's mirror image in the water's plan
   itself: `L_reflected = max(colour / E − S_cs, 0) / T_cs`, where `(T_cs, S_cs)` is the lent aerial lookup
   from the camera to the surface point. What remains is the body's radiance with the air between the body and
   the water on it, which the screen-space rays leave out.
-- **Roughness.** The image carries mips of premultiplied radiance and coverage, and a pixel reads the level
+- **Roughness.** The view lends one level. The water filters it into mips of premultiplied radiance and
+  coverage in a resource of its own, and a pixel reads the level
   its slope covariance and its ray's length cover, as it reads the environment product. A reflection
   therefore softens and stretches as the wind rises, and at its edge it blends onto the sky's. Past the
   coarsest level the scenery's share fades into the environment.
 - **With the other readers.** A registered body is geometry and is in the image, so water with a view casts
   no screen-space ray for reflection. The rays through the water are unchanged.
+- **The request.** [`SCENE-VIEWS`](../SCENE-VIEWS/DESIGN.md#slots-and-requests) takes a camera: the water
+  gives it a rigid camera at the mirror image of the main one, the plane as its clip plane and as the fold
+  height of its air, and reads the image by projecting points through the view's own matrix, jitter
+  included, so nothing is flipped. The view holds the plane at least 5 cm from its camera, so a lens at the
+  waterline still has a mirror.
 
 In a vertical section of a lake 60 m across under a bank, a tree and a hill, from cameras 2 m and 10 m up,
 the lookup on flat water returns the scenery point the true ray meets. Under ripples of 2 cm and waves of
@@ -1179,11 +1241,98 @@ reach, which the CPU tests from the model each frame, none of its work is done.
   so a cloud march still stops at the water. Crossing the surface is not a reset: each pixel changes side by
   itself. The meniscus writes reactive coverage.
 
-Declared approximations: no caustics and no shafts of light, so the bed is lit evenly through the surface.
-The exposure scale is the sky's, so deep water is dark and stays dark. Sunlight's path down is taken
-vertically. Under a crest that overhangs, the highest surface decides, so inside the hollow of a pitching
+Declared approximations: in a profile without [caustics](#light-under-water-caustics-shafts-and-the-meter)
+the bed is lit evenly through the surface, and without shafts the water's light is even. The exposure scale
+is the camera's, and follows the light down only where the game gives its camera the water's factor.
+Sunlight's path down to a body in the gather is taken vertically. Under a crest that overhangs, the highest surface decides, so inside the hollow of a pitching
 wave the lens reads as under water. Anything transparent that a scene draws after the water takes none of
 the water's murk.
+
+### Light under water: caustics, shafts and the meter
+
+Sunlight under water is not even. The waves focus it into a moving net on whatever lies below, the net
+stands in the water as shafts, and all of it dims with depth, which the camera has to follow. One field
+carries the first two and one number the third.
+
+- **The beam and the rest.** Sunlight below the surface falls off as `exp(−K z)`. The share of it that has
+  not yet been scattered, `D(z) = exp(−(c − K) z / μ)`, with `μ` the cosine of the refracted Sun from the
+  vertical, is still a beam: waves focus it and a hull shadows it. The rest has been scattered and is even.
+  So nets and shafts fade with depth by the water type alone. With `c` = 0.25 and `K` = 0.08 a metre and the Sun 30° from
+  the zenith, the beam is 0.83 of the Sun's light at 1 m, 0.40 at 5 m and 0.03 at 20 m.
+- **The caustic field `C`.** The beam's irradiance at a place and a depth, as a ratio to its irradiance
+  under flat water. It is made each frame in `simulate`, by carrying the surface's light down. Over a
+  **window** of the water's plane, each cell of a grid is moved along the Sun's rays as the surface refracts
+  them there, by the slope of the function the surface is drawn from (the wave field at the body's gains
+  and the interaction waves), to a level plane at one depth. It is drawn there with additive blending, and
+  each cell spreads its own light over the area it lands on. Light gathered brightens, light spread out
+  dims, sheets that cross add, and the total is the light that entered. One draw is one **rung**; rungs are
+  a factor of √2 apart from 0.25 m to 16 m, thirteen in the first profile. Each is then blurred by its depth
+  times the slope of the waves the cells do not resolve, which the wave field keeps as a variance, and by
+  the Sun's disc. A rung is addressed along the Sun's mean refracted ray, so a beam keeps its place from
+  rung to rung.
+- **Reading it.** At a depth between two rungs the field is their mix in the logarithm of depth. Shallower
+  than the first rung its departure from 1 scales with depth, so it is exactly 1 at the surface. Deeper
+  than the last it is the last. Outside the window it is 1, reached across a border. The window follows the
+  lens, snapped to its cells so the net never swims, and lies ahead of the lens where its view meets the
+  water. The first profile has one window 18 m across with the finest cascade's cell, 3.5 cm. With the
+  field goes one texture of the water's level and its beam rate `(c − K)/μ` in each column of the window,
+  from the map.
+- **On what lies under water.** The water registers a **Sun-path factor**, `1 + D(z) · (C − 1)`, for a
+  receiver `z` below the water's level in its column. The forward pass multiplies the receiver's direct
+  Sun by it, beside the cloud factor ([a ruling](#what-waters-asks-of-other-modules)). So the net is on the
+  bed, a hull and a sunk float as the Sun's own light is: none inside a shadow, none on a face turned from
+  the Sun, and none above the water, where the factor is exactly 1. It reaches the gather inside the
+  receiver's colour, so it shows from above through clear shallows as it does from below, and no water pass
+  applies it a second time. The depth's own dimming, `exp(−K z)`, stays where the gather applies it.
+- **The Sun's path bends once.** Under water the Sun's rays run along its refracted direction, for every
+  reader. The field is addressed along it. A receiver under water reads its Sun visibility at the point
+  where its refracted ray leaves the water, which the same ruling gives the forward pass. The shafts read
+  theirs there too. So a hull's shadow on the bed, the dark water under the hull and the lean of the beams
+  agree, and none of them leans past 48.6°.
+- **Shafts.** The water between the lens and what it sees ([under water](#under-water)) scatters `J₀`
+  evenly. Of that, the part `J_s` that the Sun's light under the surface supplies is, while it is still a
+  beam, scattered by the water type's phase function `p` of the angle `γ` between the view path and the
+  refracted Sun, normalised so that even scattering is 1, and it carries the field and the Sun's
+  visibility `V`. The source on a path is `exp(−K z) · (J₀ + J_s · D(z) · (p(γ) · C · V − 1))`. Its even
+  part is the closed form the view from under water already has. With `κ = (c − K)/μ`, the part that
+  depends on direction alone is a second closed form,
+  `J_s (p(γ) − 1) exp(−(K + κ) z₀) (1 − exp(−(c − (K + κ) m) s)) / (c − (K + κ) m)`, which brightens the
+  water round the Sun's direction. What is left, `J_s p(γ) D (C V − 1)`, is zero in a calm with nothing
+  overhead and is **marched**: a bounded count of steps along the path, each read at the level of the
+  field's mips that covers the stretch of the map the step crosses, so a path across the beams reads their
+  mean and only a path along them resolves them. The march runs at a reduced resolution with a jittered
+  offset, is joined to the full picture by depth, and writes no history of its own. `V` is the scene's Sun
+  visibility, lent as one tap ([a ruling](#what-waters-asks-of-other-modules)), at the point where the
+  sample's refracted ray leaves the water.
+- **The meter.** V4's exposure is a level incident meter at the camera. Under water the light at the lens
+  is the light above times `f = t · exp(−K z)` in each channel, with `z` the lens's depth below the surface
+  the model evaluates at the display's time and `t` the surface's transmission of light from above, mixed
+  toward 1 by the share of the lens that is above water. `thrum-water-model` gives `f` for a camera, the
+  game raises it to its camera's **adaptation share** and puts it in its camera request as the meter's
+  medium factor ([a ruling](#what-waters-asks-of-other-modules)), and the meter multiplies the incident
+  light it reads by it. A share of 1 holds mid-grey whatever the depth, 0 is the sky's meter, and between
+  them deeper water is darker by the rest. The example starts at 0.75, a value to be tuned, which leaves a clear sea
+  0.6 of a stop darker at 20 m and a murky lake 0.6 darker at 3 m (part T's water types). The meter's own low-light key and
+  its limits apply as they do at dusk.
+
+In a vertical section under a rippled surface, with the Sun 30° from the zenith and winds of 1, 4 and
+8 m/s, the map's mean stays within 2.3% of 1 at every depth to 16 m. Its contrast is within 20% of a
+reference that carries every wave down to 2 cm on a grid sixteen times finer, from 1 m down; shallower it
+is between half and nine tenths of the reference's, because ripples shorter than 7 cm make a net finer than
+the cells. Without the blur it is 60% to 85% over from 4 m down. Read midway between rungs √2 apart the field keeps
+94% of the contrast of a map made at that depth and correlates 0.98 with it; a factor of 2 apart, 85% and
+0.95. Looking up along the refracted Sun from 3 m down, the beam's scattered light varies by 14% from ray
+to ray across a 6° fan, by 8% at 5° off it, 1.2% at 10° and not at all level, so shafts stand round the
+Sun's direction and nowhere else. A march of 16 steps is within 1.4% of a fine integral along the beams,
+and within 3% off them and across them once each step reads the mean of what it crosses, where point
+samples across them are 10% off (parts R and S).
+
+Declared approximations: the net is no finer than the waves the wave field resolves, 7 cm, and ripples
+below that only soften it. Beyond the window the bed is evenly lit. A blocker shadows the water where its
+light enters, so the part of a hull below the waterline shadows nothing its waterline shape does not. A
+receiver under water is shaded with the Sun's direction above the water; only where its shadow falls
+follows the bend. The Moon makes no net. Seen from above the water, the water's own light stays even: the
+net on the bed shows, shafts do not. The meter's depth takes the wave field and not the interaction waves.
 
 ### Capabilities, recipes, limits and knobs
 
@@ -1204,6 +1353,8 @@ the water's murk.
   | Body optics | The gather and the rays for registered bodies | Body records |
   | Scene mirror | Mirror views and their lookup | `SCENE-VIEWS` |
   | Underwater view | The lens test, the underside of the surface and the water between | See-through water |
+  | Caustics | The caustic field, and the Sun-path factor on what lies under water | Waves or interaction waves |
+  | Shafts | The beam's scattered light in the view from under water | Underwater view; caustics |
 
   Open water alone is a still pond under the sky. With waves it is the sea of a sunset demo.
 - **One physical profile on every recipe.** The map and its joins, the gains, the swash ratio and margin height, component count, cascade layout and loop, the shore transform's wavelengths, stage spacing and floor, the breaker ratio and the breaker section, the interaction levels, their depth ladders and their count of solves, and query
@@ -1216,14 +1367,14 @@ the water's murk.
   different transform layout) is promoted only by a paired measured win with the oracle still inside tolerance.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: surface mesh
   density; field-cache reach; the cadence of the field cache and of cascades below the profile's smallest force
-  wavelength; foam cadence and level size; reflection steps, reach, slope allowance and mirror limit; the count of mirror views and their extent; the gather's resolution and the sight depth. A layer evaluated less
+  wavelength; foam cadence and level size; reflection steps, reach, slope allowance and mirror limit; the count of mirror views and their extent; the gather's resolution and the sight depth; the caustic window's size and cell, its count of rungs and its cadence; the shafts' steps and resolution. A layer evaluated less
   often than every frame is carried between evaluations by its rate of change, with its slopes held. None changes
   what a query returns.
 
 ### What the later modules build on
 
-Nothing in this section is built here beyond the seam it names. Mirror views and the view from under water
-are the shared system's, so a river and a puddle have them with no work of their own; surf needs long waves
+Nothing in this section is built here beyond the seam it names. Mirror views, the view from under water
+and the light in it are the shared system's, so a river and a puddle have them with no work of their own; surf needs long waves
 and a still body, so neither has it. Each module is planned by its own `plan-module`
 run from [its brief](../ARCHITECTURE.md#rivers-and-puddles), with the research and reproductions its mechanisms
 need. A cue of theirs that a seam cannot carry is settled in the module list, with this module.
@@ -1308,6 +1459,15 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 - **W9.** Part Q: Snell's window and the Fresnel split from beneath, and the scattered light's closed form
   against a numerical integral. The lens test reads the function the surface is drawn from, so the line on
   the lens and the drawn surface cannot part. The look is unrun; M15 is the first.
+- **W10.** Part R, reported under [light under water](#light-under-water-caustics-shafts-and-the-meter):
+  light conserved, contrast by depth and wind against a reference, the ladder between its rungs, and the
+  substitutes. One sinusoid is brightest 12% deeper than the paraxial focus its curvature gives. It is a
+  vertical section in f64, so a net of lines and not of cells. That the net reads as sunlight on sand is
+  unrun; M16 is the first look.
+- **W11.** Part S: where shafts stand, and the march against a fine integral. A section with one water
+  type and no hull. The look, and noise under reconstruction, are unrun; M16 and M10 are the first.
+- **W12.** Part T: the light at the lens by depth for three water types, and how far the picture darkens
+  for each share. Arithmetic; the descent is unrun.
 - **Cost.** Unrun. M2 is the first measurement.
 
 ## The system as it runs
@@ -1316,20 +1476,23 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 |---|---|
 | Spectrum, components, cascades and their f64 evaluators; the wave field's GPU passes | `SEA`: `thrum-sea-model`, `thrum-sea`. After `SEA`'s last milestone is Done they are this module's to extend, with their tests kept passing |
 | The map and its function, joins, shore margins and what preparation refuses; gains and the swash depth; the shore transform's lags and exposures and the breaker section; the labels of a window's regions; the f64 surface model, the interaction and foam references, the conformance model | `thrum-water-model` (this module), no GPU dependency |
-| The map on the GPU, the surface from both sides, optics, the mirror lookup, the view from under water, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
+| The map on the GPU, the surface from both sides, optics, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
 | Mirror views: the second draw of the scene, its culling, light, air and targets | `SCENE-VIEWS` |
 | Body declarations, the bed, presets, water types, the craft and floats, hull footprints, foam pattern, body integration, controls | The example scene `examples/water` (package `water-scene`); never in engine crates or their tests |
 | Stages, state commit, cadence, knob list | `EFFECT-GRAPH` |
-| Sky, Sun, aerial, reflection product, cloud factor | `ATMOSPHERE` |
+| Sky, Sun, aerial, reflection product, cloud factor, the direct-Sun path a Sun-path factor joins, the lent Sun visibility | `ATMOSPHERE` |
+| The exposure meter and the camera request's medium factor | `APPLE-PRESENTATION` (V4) |
+| The light factor at a camera, and the caustic reference | `thrum-water-model` (this module) |
 | Motion and reactive targets, history, reconstruction, the governor | `APPLE-PRESENTATION` |
 | The foam pattern's residency | `CONTENT-LOOP` |
 | The shell, typed controls, parameter files | `CREATOR` |
 
 **A frame, in order.** `upload` takes the page's body records, query points, impulses, stages and wind, and the
 long-wave phases and loop time for the frame's `t`. `simulate`, every frame: the cascades and the field cache at
-`t`. `simulate`, only on a frame that advances the tick: the interaction step with its sources, region by region; foam births and
-transport; the query dispatch and its copy to the ring. Forward, sky and stars draw, and `SCENE-VIEWS` draws
-the mirror views the water asked for. `after-opaque`: the gather, where a reader needs it; the composition of
+`t`, then the caustic field's rungs. `simulate`, only on a frame that advances the tick: the interaction step with its sources, region by region; foam births and
+transport; the query dispatch and its copy to the ring. `SCENE-VIEWS` draws
+the mirror views the water asked for. Forward, sky and stars draw, and what lies under water takes the
+Sun-path factor. `after-opaque`: the gather, where a reader needs it; the shafts' march and the composition of
 pixels under water; the surface, body by body. Reconstruction, tone and present follow. On submission the
 water commits its tick and each endpoint's tick. A scene without a capability runs none of its steps.
 
@@ -1362,6 +1525,17 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built 
    [above](#mirror-views-scenery-the-camera-cannot-see): what water asks for, and what the view holds. The
    rest of the design does not wait for it: M14 is the only milestone that needs it.
 
+5. A Sun-path factor from the water on the forward pass's direct Sun, read at a receiver's own position
+   beside the cloud factor, with the point at which a receiver under water reads its Sun visibility (M16).
+6. The scene's Sun visibility at a world point, lent with the environment products as one tap, for the
+   shafts' samples (M16).
+7. A medium factor on the incident light the camera's meter reads, which the camera request carries, 1 by
+   default (M16).
+
+5 and 6 are settled with `ATMOSPHERE` and 7 with `APPLE-PRESENTATION`, as
+[rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters). With no water provider and a factor of 1,
+every scene composes the shader text and draws the bytes it does today.
+
 `SEA` is asked for nothing. The shore transform extends `thrum-sea`'s field cache and `thrum-sea-model`
 after `SEA`'s last milestone, when both crates are this module's, with `SEA`'s tests kept passing.
 
@@ -1387,6 +1561,9 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. M14 records it with no view, one and two | |
 | The mirror lookup | Frame, inside the surface pass | Water pixels of a body with a view: three reads of the image and its depth | Less than the screen-space march it replaces there | |
 | Under water | Frame, only while a pixel of the lens is under | The lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; M15 records it half under and wholly under | |
+| The caustic field | Frame, while water with caustics is in the window | 13 rungs of an 18 m window at 3.5 cm cells; the rungs from 2 m down are drawn from coarser grids, since their blur is wider than a cell | About 1.8 million vertices and 13 small passes a frame, then a blur of each. Unmeasured; M16 records it, and the rung count, the window and the cadence are knobs | |
+| The Sun-path factor | Frame, inside the forward pass | One read of the level for every opaque fragment in a scene with caustics, and two rungs for one under water | One texture more in the forward fragment stage, counted against the capability record | |
+| Shafts | Frame, only while a pixel of the lens is under | Pixels under water at half the render extent each way: 16 steps, each two rung reads and one Sun-visibility tap | Unmeasured; M16 records it | |
 | Surface | Frame | Water pixels at the render extent, about 200 k vertices for the sea and tiles for each other body in view; one read set for the map and each wave layer, two for interaction waves and foam | The largest term; M2 measures it | 10.5 ms at 1440p after the copy |
 | Memory | | Interaction, foam, the query ring, the map | About 20 MiB and the map, and the gather target, whose layout is the builder's: addressed by screen position at 2560×1440 it is about 44 MiB | |
 
@@ -1481,8 +1658,25 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 23. **The line on the lens flickers, or a gap shows where the near plane cuts the surface.** Early sign:
     M15's crossing. The designed remedies are the meniscus's width and a lens test at each pixel's own point.
     The wrong fix is a camera that is kept from touching the surface.
-24. **Deep water is black**, because the exposure is metered from the sky. Early sign: M15's views at depth.
-    It is declared; a meter that knows the camera is under water is a proposal to `ATMOSPHERE` in the log.
+24. **Deep water is black**, because the exposure is metered from the sky. Early sign: M15's views at depth,
+    which are built before the meter follows the light. [The meter](#light-under-water-caustics-shafts-and-the-meter),
+    in M16, is the remedy; the wrong fix is brightening the water's own light.
+25. **The caustic field costs too much**: thirteen draws of a fine grid every frame. Early sign: M16's
+    record. The designed remedies are coarser grids for the deep rungs, rungs a factor of 2 apart, a smaller
+    window, and a cadence below the frame's with the field carried between. The wrong fixes are one plane
+    for every depth and a played texture.
+26. **The net reads as a pattern laid on the bed and not as light**: too even, too sharp at depth, or
+    crawling under reconstruction. Early sign: M16's first captures. The blur by depth and the beam's share
+    are the mechanism; the look is tuned against the inspected items, and three failed looks on one cue go
+    to the log.
+27. **Shafts boil or band**, because the march is a few jittered steps. Early sign: M16's stills and M10's
+    sequences. The designed remedies are more steps, each step's read of the field's mean, and a march
+    resolution nearer the picture's. The wrong fix is a blur of the finished frame.
+28. **The forward pass will not take another texture in Chrome.** Early sign: M16's preparation against the
+    capability record. The designed remedy is the level packed into a layer of the field's array.
+29. **The picture pumps or steps as the lens crosses the surface**, because the light at the lens changes
+    faster than a viewer's eye would. Early sign: M16's crossing. The designed remedies are the mix by the
+    lens's share and the adaptation share; the wrong fix is a gain taken from the picture.
 
 ## Proof and builder handoff
 
@@ -1497,8 +1691,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Cost records.** Each milestone that adds frame work takes [the paired record](#cost-account) again, beside
   the last record for the same view. A tripped wire is investigated and written up there. It never ends a
   session `BLOCKED`.
-- **Looks.** Where a milestone's inspected items judge a look that is tuned, the foam of M7 and the breaker
-  section of M13 above all, tune it against those items with a fresh opinion before review. After three looks
+- **Looks.** Where a milestone's inspected items judge a look that is tuned, the foam of M7, the breaker
+  section of M13 and the net and shafts of M16 above all, tune it against those items with a fresh opinion before review. After three looks
   that fail the same cue, record them in the log and end `BLOCKED`.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/waters-<milestone>/`, selected evidence in
   `docs/evidence/WATERS/`.
@@ -1530,7 +1724,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | M13; [risk 20](#risks) |
 | What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13 measures first, then asserts the recorded bound |
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; M14 records the water's share |
-| Does exposure need to know the camera is under water? | M15; [risk 24](#risks) |
+| Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in M16 |
+| What do the caustic field and the shafts cost, and how many rungs does the look need? | M16 records it; [risk 25](#risks) |
+| What adaptation share reads right from the shallows to 20 m? | M16.7; the example's 0.75 is a starting value |
 | How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
 | How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
 | Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on M9's channel |

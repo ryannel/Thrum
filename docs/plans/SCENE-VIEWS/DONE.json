@@ -1,0 +1,296 @@
+{
+  "module": "SCENE-VIEWS",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "CULLING:M3",
+        "ATMOSPHERE:M5",
+        "EFFECT-GRAPH:M3"
+      ],
+      "quality_bar": "A reflection capture as a shipped engine makes one, as Unreal's planar reflection does: the same scene from another camera, in the same light, with nothing borrowed from the main view that belongs to a view. Held to something stricter and checkable: equality with the main view drawn from that camera.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "A secondary view of a camera holds what the main view draws from that camera. For a scene of entities on meshes with the Sun, the sky and local lights, at the main view's extent and at a quarter of it each side, with temporal sampling off, the view's colour and depth at every covered pixel are the main view's from the same camera at the same extent. The difference is measured first and then asserted, and where it is not zero the cause is named.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_equal_gpu",
+          "ask": "Is the reference a main view drawn from the view's camera by the scene's ordinary path, and would a view that reused the main camera's cluster table, aerial volume or cascades fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "A view shows what the main camera cannot see. A view that faces away from the main camera, and one whose subject stands behind a wall the main view's Occlusion hides it by, draw their instances, in Direct, Frustum and Occlusion and on both of the cube route and the bucket route. In each mode the main view's submitted bytes are the same with the view asked for and idle.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_offscreen_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "A view's image depends on its own request and the scene, and not on where the main camera looks. With a request held and the main camera turned through 180 degrees about its own position, the view's colour and depth do not change by a bit: in a scene with shadows, a lamp and a hill 3 km off.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_independent_gpu",
+          "ask": "Does the scene put shadowed receivers, a lit lamp and hazed geometry inside the view and outside the main frustum in at least one of the two orientations?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "A view has the Sun's shadows of its own cascades and the scene's height map beyond them. A caster and its receiver that both stand outside the main frustum show the shadow in the view, inside the view's shadow reach from a cascade and beyond it from the height map. With the view's cascade count set to none, only the height map's shadow remains.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_shadow_gpu",
+          "ask": "Is the expected Sun visibility at each receiver worked out on the CPU from the casters, and would a view that sampled the main view's cascades fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "With a fold height, a view's air is the air of the path unfolded about it. For a view camera 2 m and 40 m below the fold and a panel 20 m and 3 km off above it, the view's aerial pair at the panel is the atmosphere reference's transport along the unfolded path, to the bound `ATMOSPHERE`'s aerial product meets against that reference. With no fold height the aerial pass draws the main view's bytes as before.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_gpu",
+          "ask": "Is the expected pair integrated by the atmosphere's CPU reference along the folded path, and would taking each sample's altitude as it stands fail at 40 m?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.6",
+          "statement": "A clip plane cuts a view cleanly. An entity that crosses the plane is cut at it to within a pixel of the view, nothing wholly below it draws, and a view whose camera stands under the ground beneath the plane still sees what is above the plane. A plane asked for nearer the camera than 5 cm is held at 5 cm. A world point rebuilt from the view's depth and its record's inverse matrix is within the bound measured first of the true point, at 20 m and at 3 km.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_clip_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.7",
+          "statement": "Absent means absent. A scene that declares no view compiles to the same shader text, passes, pipelines and resources as before this module, and submits the same bytes. A declared slot that is idle in a frame records no pass, and its pass names are missing from that frame's timing. Asking for a slot, changing its camera and leaving it idle again create no pipeline and no resource.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_absent_gpu",
+          "ask": "Is the comparison with a scene prepared with no declaration, and does it cover the compiled pass list and the creation counters as well as the frame?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.8",
+          "statement": "A view is of the frame it is read in and keeps nothing. Its colour is the scene target's encoding with the frame's exposure sample, coverage is 1 where geometry drew and 0 elsewhere, and it holds no sky, star or effect. With temporal sampling selected it is rasterised with the frame's jitter phase at its own extent, and its record carries that matrix. A discarded frame, a capture, a cut, a resize and a device replacement each leave the next asked view whole in its first frame.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_frame_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.9",
+          "statement": "A contribution declares slots, asks in its upload and reads its own slot's colour, depth and record in its own pass, through the public seam alone. A declaration over the profile's count or the capability record's limits is refused when the scene is prepared, by name. An improper camera is refused when it is asked for.",
+          "check": "cargo test --locked --offline -p thrum-render --test scene_view_seam",
+          "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this milestone?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "A planar reflection in a shipped game, as GTA V's water and Unreal's planar reflections show one: every object whole in the mirror with its foot meeting its reflection, lit, shadowed and hazed as the object itself is, and steady as the camera moves.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera holds what the main view draws of the cooked scene from that camera, to the bound measured first, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
+          "check": "cargo test --locked --offline -p thrum-asset-gpu --features thrum-render/creation-counters --test cooked_view_gpu",
+          "ask": "Is the reference the main view from the view's camera, on the same cooked path? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "A contribution that does not opt in is in no view and is unchanged: it is given no view, records nothing more and builds no pipeline for one.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_optin_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view. On the flat mirror a marker of known radiance standing above the frame shows in the pool at the pixel geometry gives, with the stored colour the marker has through the air of the reflected path, to the bound measured first, at exposure scales sixteen times apart.",
+          "check": "cargo test --locked --offline -p mirror-scene --test pool_gpu",
+          "ask": "Is the expected pixel and colour worked out on the CPU from the marker, the pool's plane and the lent aerial values, without the pool's shader? Is the pool the example's own effect, with no type or file of it in an engine crate?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "Each thing round the pool meets its reflection. The tower, the rocks at the pool's edge and the post standing in the water join their reflections at the waterline with no gap, overlap or sliver of the ground below, from 1.5 m and from 10 m, and stay whole in the pool when the camera looks down so that they leave the frame.",
+          "inspect": "`fixed` stills from 1.5 m and 10 m at noon with the tower in frame and with the camera tilted down until it is out of frame, and a `realtime` tilt between the two: each waterline, the post, and the pool's edge.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "The reflection is in the scene's light. In the pool the tower shows its Sun-lit and shaded sides, the shadows on the ground and on the tower lie where the direct view shows them, the lamp lights the ground round it at dusk and at night, and the far hill carries its haze: at dawn, noon, dusk and night.",
+          "inspect": "`fixed` stills at the four hours from 1.5 m, each with the direct view of the same things in frame: lit and shaded sides, each shadow, the lamp's pool of light and the hill, in the scene and in the mirror.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "The reflection is steady and of its frame. As the camera pans, tilts and orbits, as the Sun is scrubbed through an hour and as a mover crosses behind the pool, nothing in the mirror flickers, pops or trails its source by a frame, and no shadow in it appears or changes as its caster comes on screen.",
+          "inspect": "`realtime` sequences of a pan, a tilt, an orbit, the time scrub and the mover, with temporal sampling off: consecutive frames at the waterlines and at the shadows in the mirror.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "The mirror pool draws in Chrome, what a view costs is on record beside the main view with the knobs that cut it, and the module is closed",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "The same reflection in Chrome as on the Mac, and a cost a game can plan for: a view priced beside the main view's own draw, with each knob's saving on record.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "In Chrome the mirror scene draws its view with no validation error, a view of entities and of cooked placements holds M1.1's and M2.1's bounds against Chrome's own main view, and the marker holds M2.3's.",
+          "check": "node scripts/check_mirror_browser.mjs --case view",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "In Chrome the pool passes M2.4's, M2.5's and M2.6's lists at noon and at dusk.",
+          "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon and dusk, judged by their lists and against the Mac's portable recipe.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "A view's extent, far distance, least size and the count and reach of its cascades are named runtime values with a range and a declared effect. Setting each to both ends of its range while the scene runs changes the view as declared, creates no pipeline, and leaves the main view's submitted bytes as they were.",
+          "check": "cargo test --locked --offline -p mirror-scene --features thrum-render/creation-counters --test view_knobs_gpu",
+          "ask": "Can a caller that knows nothing of views list these knobs and set one, as the governor will?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "On the mirror scene, and on a scene of 100,513 entity instances with one view (the count of the V1 field flythrough), on both of the Mac's recipes at 2560\u00d71440 with capture off, the paired cost record is taken with no view asked, one and two, and with each knob at both ends: each view pass's GPU time by name beside the main view's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/scene_view_cost.py check",
+          "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "An effect author can use secondary views from the public documentation: declaring slots, the request, what a view holds and leaves out, what is read and when, the limits, the knobs and what each costs.",
+          "ask": "Could the builder of `WATERS` M14 write the mirror lookup's reads from the documentation and this design alone? Does it say that a view has no sky, fog, water or history, and what a consumer must compose itself?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "The maturity ledger has a row for secondary views with implementation, correctness, visuals and device kept apart, and it claims nothing for a recipe or a target that was not run.",
+          "ask": "Does the row match what M1 to M3 ran, and is the Apple recipe's result recorded apart from the portable one's?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.7",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}

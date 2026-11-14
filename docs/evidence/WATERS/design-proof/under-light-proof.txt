@@ -1,0 +1,88 @@
+PART R  caustics
+  Sun 30 degrees from the zenith; a ray travels 0.405 m a metre of depth, and 0.347 m more
+  for each unit of slope. Map cell 3.52 cm.
+R1  one sinusoid: where its light is brightest, against 1 / (shift x a k^2)
+    wavelength 0.5 m, amplitude 0.01 m: brightest at 2.05 m, predicted 1.82 m
+    wavelength 2.0 m, amplitude 0.05 m: brightest at 6.56 m, predicted 5.83 m
+R2  light conserved, and contrast (rms about the mean) by depth: reference, map, map with no blur
+    wind 1.0 m/s: rms slope 0.064, of which unresolved 0.029
+       0.25 m  mean 1.000 / 1.000   contrast 0.162 / 0.086 / 0.086   map to reference r = 0.72 (no blur 0.72)
+       0.50 m  mean 1.001 / 1.000   contrast 0.267 / 0.182 / 0.182   map to reference r = 0.78 (no blur 0.78)
+       1.00 m  mean 1.002 / 1.001   contrast 0.406 / 0.358 / 0.363   map to reference r = 0.82 (no blur 0.82)
+       2.00 m  mean 1.002 / 1.001   contrast 0.512 / 0.416 / 0.625   map to reference r = 0.79 (no blur 0.71)
+       4.00 m  mean 1.004 / 1.004   contrast 0.503 / 0.423 / 0.823   map to reference r = 0.84 (no blur 0.66)
+       8.00 m  mean 1.007 / 1.008   contrast 0.441 / 0.397 / 0.809   map to reference r = 0.86 (no blur 0.62)
+      16.00 m  mean 1.014 / 1.015   contrast 0.406 / 0.378 / 0.722   map to reference r = 0.90 (no blur 0.66)
+    wind 4.0 m/s: rms slope 0.108, of which unresolved 0.049
+       0.25 m  mean 1.000 / 1.000   contrast 0.233 / 0.155 / 0.155   map to reference r = 0.79 (no blur 0.79)
+       0.50 m  mean 1.001 / 1.000   contrast 0.371 / 0.307 / 0.307   map to reference r = 0.81 (no blur 0.81)
+       1.00 m  mean 1.001 / 1.001   contrast 0.493 / 0.439 / 0.553   map to reference r = 0.80 (no blur 0.77)
+       2.00 m  mean 1.003 / 1.003   contrast 0.521 / 0.441 / 0.796   map to reference r = 0.81 (no blur 0.64)
+       4.00 m  mean 1.006 / 1.008   contrast 0.474 / 0.422 / 0.814   map to reference r = 0.83 (no blur 0.61)
+       8.00 m  mean 1.011 / 1.012   contrast 0.435 / 0.396 / 0.752   map to reference r = 0.88 (no blur 0.66)
+      16.00 m  mean 1.021 / 1.023   contrast 0.367 / 0.365 / 0.643   map to reference r = 0.93 (no blur 0.69)
+    wind 8.0 m/s: rms slope 0.148, of which unresolved 0.067
+       0.25 m  mean 1.000 / 1.000   contrast 0.304 / 0.219 / 0.219   map to reference r = 0.79 (no blur 0.79)
+       0.50 m  mean 1.000 / 1.000   contrast 0.420 / 0.392 / 0.403   map to reference r = 0.78 (no blur 0.78)
+       1.00 m  mean 1.001 / 1.001   contrast 0.536 / 0.445 / 0.679   map to reference r = 0.76 (no blur 0.68)
+       2.00 m  mean 1.005 / 1.005   contrast 0.524 / 0.444 / 0.823   map to reference r = 0.80 (no blur 0.62)
+       4.00 m  mean 1.007 / 1.009   contrast 0.459 / 0.406 / 0.784   map to reference r = 0.83 (no blur 0.59)
+       8.00 m  mean 1.016 / 1.017   contrast 0.417 / 0.384 / 0.677   map to reference r = 0.86 (no blur 0.61)
+      16.00 m  mean 1.018 / 1.022   contrast 0.307 / 0.307 / 0.569   map to reference r = 0.91 (no blur 0.70)
+R3  the ladder read midway between two rungs, against the map made at that depth
+    wind 1.0 m/s, rungs a factor of 2 apart: worst r = 0.95, contrast kept 0.86
+    wind 1.0 m/s, rungs root 2 apart: worst r = 0.98, contrast kept 0.94
+    wind 4.0 m/s, rungs a factor of 2 apart: worst r = 0.95, contrast kept 0.85
+    wind 4.0 m/s, rungs root 2 apart: worst r = 0.99, contrast kept 0.94
+    wind 8.0 m/s, rungs a factor of 2 apart: worst r = 0.95, contrast kept 0.87
+    wind 8.0 m/s, rungs root 2 apart: worst r = 0.98, contrast kept 0.94
+R4  shallower than the first rung: the first rung scaled by depth, against the map made there
+    0.030 m  contrast 0.036 made, 0.019 scaled, r = 0.67
+    0.060 m  contrast 0.048 made, 0.037 scaled, r = 0.84
+    0.125 m  contrast 0.082 made, 0.077 scaled, r = 0.95
+R5  substitutes, against the map made at each depth (wind 4 m/s)
+    one plane made at 1 m, read at  0.25 m: contrast 0.439 for 0.155, r = 0.61
+    one plane made at 1 m, read at  4.00 m: contrast 0.439 for 0.422, r = 0.30
+    one plane made at 1 m, read at 16.00 m: contrast 0.439 for 0.365, r = 0.07
+    backward, one sheet, at 0.25 m: mean 1.02 for 1.00, contrast 0.21 for 0.15, r = 0.58
+    backward, one sheet, at 1.00 m: mean 1.30 for 1.00, contrast 1.51 for 0.55, r = 0.29
+    backward, one sheet, at 4.00 m: mean 1.25 for 1.01, contrast 1.84 for 0.81, r = 0.05
+    the 1 m/s surface at 0.3 of its height (rms slope 0.0191): the map's contrast at 1 m is 0.095; a played texture keeps its own
+    the 1 m/s surface at 0.05 of its height (rms slope 0.0032): the map's contrast at 1 m is 0.014; a played texture keeps its own
+PART S  shafts (wind 4 m/s, lens 3 m down)
+S1  ray-to-ray variation of the Sun's scattered light over a 6 degree fan (rms about its mean)
+    up along the refracted Sun   mean 0.796, rms 0.140, range 0.59 to 1.16
+    up, 5 degrees off it         mean 0.972, rms 0.084, range 0.81 to 1.16
+    up, 10 degrees off it        mean 0.926, rms 0.012, range 0.91 to 0.94
+    up, 20 degrees off it        mean 0.974, rms 0.001, range 0.97 to 0.98
+    level                        mean 0.988, rms 0.000, range 0.99 to 0.99
+S2  a march through the ladder against the fine integral through the exact field
+    up along the refracted Sun   16 steps, point samples: rms error 0.013 against a shaft contrast of 0.140
+    up along the refracted Sun   16 steps, each sample averaged over its step: rms error 0.014 against a shaft contrast of 0.140
+    up along the refracted Sun   32 steps, each sample averaged over its step: rms error 0.008 against a shaft contrast of 0.140
+    up, 10 degrees off it        16 steps, point samples: rms error 0.023 against a shaft contrast of 0.012
+    up, 10 degrees off it        16 steps, each sample averaged over its step: rms error 0.029 against a shaft contrast of 0.012
+    up, 10 degrees off it        32 steps, each sample averaged over its step: rms error 0.009 against a shaft contrast of 0.012
+    level                        16 steps, point samples: rms error 0.103 against a shaft contrast of 0.000
+    level                        16 steps, each sample averaged over its step: rms error 0.024 against a shaft contrast of 0.000
+    level                        32 steps, each sample averaged over its step: rms error 0.030 against a shaft contrast of 0.000
+PART T  the meter under water
+  the light at the lens as a share of the light above (surface passes 0.97), in stops,
+  and how far the picture darkens when the camera follows that light by a share
+    clear sea   0.1 m  light  9.58e-01  ( -0.06 stops)   picture: share 0.0:  -0.06, share 0.5:  -0.03, share 0.75:  -0.02, share 1.0:  -0.00
+    clear sea   1.0 m  light  8.59e-01  ( -0.22 stops)   picture: share 0.0:  -0.22, share 0.5:  -0.11, share 0.75:  -0.05, share 1.0:  -0.00
+    clear sea   3.0 m  light  6.97e-01  ( -0.52 stops)   picture: share 0.0:  -0.52, share 0.5:  -0.26, share 0.75:  -0.13, share 1.0:  -0.00
+    clear sea  10.0 m  light  3.98e-01  ( -1.33 stops)   picture: share 0.0:  -1.33, share 0.5:  -0.67, share 0.75:  -0.33, share 1.0:  -0.00
+    clear sea  20.0 m  light  2.03e-01  ( -2.30 stops)   picture: share 0.0:  -2.30, share 0.5:  -1.15, share 0.75:  -0.58, share 1.0:  -0.00
+    coast       0.1 m  light  9.49e-01  ( -0.08 stops)   picture: share 0.0:  -0.08, share 0.5:  -0.04, share 0.75:  -0.02, share 1.0:  -0.00
+    coast       1.0 m  light  7.80e-01  ( -0.36 stops)   picture: share 0.0:  -0.36, share 0.5:  -0.18, share 0.75:  -0.09, share 1.0:  -0.00
+    coast       3.0 m  light  5.21e-01  ( -0.94 stops)   picture: share 0.0:  -0.94, share 0.5:  -0.47, share 0.75:  -0.24, share 1.0:  -0.00
+    coast      10.0 m  light  1.52e-01  ( -2.72 stops)   picture: share 0.0:  -2.72, share 0.5:  -1.36, share 0.75:  -0.68, share 1.0:  -0.00
+    coast      20.0 m  light  2.96e-02  ( -5.08 stops)   picture: share 0.0:  -5.08, share 0.5:  -2.54, share 0.75:  -1.27, share 1.0:  -0.00
+    lake        0.1 m  light  9.13e-01  ( -0.13 stops)   picture: share 0.0:  -0.13, share 0.5:  -0.07, share 0.75:  -0.03, share 1.0:  -0.00
+    lake        1.0 m  light  5.36e-01  ( -0.90 stops)   picture: share 0.0:  -0.90, share 0.5:  -0.45, share 0.75:  -0.22, share 1.0:  -0.00
+    lake        3.0 m  light  1.75e-01  ( -2.51 stops)   picture: share 0.0:  -2.51, share 0.5:  -1.26, share 0.75:  -0.63, share 1.0:  -0.00
+    lake       10.0 m  light  4.72e-03  ( -7.73 stops)   picture: share 0.0:  -7.73, share 0.5:  -3.86, share 0.75:  -1.93, share 1.0:  -0.00
+    lake       20.0 m  light  3.15e-05  (-14.95 stops)   picture: share 0.0: -14.95, share 0.5:  -7.48, share 0.75:  -3.74, share 1.0:  -0.00
+  across the surface: the lens's share under water w takes the factor as mix(1, f, w), so a
+  lens half under at 0 m reads 0.985 and no step is larger than 0.044 stops

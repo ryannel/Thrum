@@ -1,0 +1,20 @@
+PART A  an edge in a half-size view, read by projection and averaged over 16 jitter phases
+  no jitter in the view                    edge placed +0.00 px from true, wandering 1.95 px as it slides; ramp 2 to 2 px wide
+  a jitter of the view's own               edge placed +0.03 px from true, wandering 0.33 px as it slides; ramp 3 to 4 px wide
+  the frame's phase at the view's extent   edge placed +0.02 px from true, wandering 0.19 px as it slides; ramp 2 to 4 px wide
+PART B  the air below a mirror plane: optical depth of the part of the path under the plane
+  molecules, 8 km  camera    2 m up: taken as it stands, 0.03% too dense; the camera itself would stand 2 m below the plane
+  molecules, 8 km  camera   10 m up: taken as it stands, 0.13% too dense; the camera itself would stand 10 m below the plane
+  molecules, 8 km  camera   40 m up: taken as it stands, 0.50% too dense; the camera itself would stand 40 m below the plane
+  aerosol, 1.2 km  camera    2 m up: taken as it stands, 0.17% too dense; the camera itself would stand 2 m below the plane
+  aerosol, 1.2 km  camera   10 m up: taken as it stands, 0.84% too dense; the camera itself would stand 10 m below the plane
+  aerosol, 1.2 km  camera   40 m up: taken as it stands, 3.39% too dense; the camera itself would stand 40 m below the plane
+PART C  world distance spanned by one step of a 32-bit depth, along a ray 10 degrees above the plane
+  camera   0.1 m from the plane,     20 m out: standard    0.0019 mm, oblique         0.24 mm
+  camera   0.1 m from the plane,    300 m out: standard    0.0262 mm, oblique        53.64 mm
+  camera   0.1 m from the plane,   3000 m out: standard    0.3274 mm, oblique      5364.42 mm
+  camera   2.0 m from the plane,     20 m out: standard    0.0019 mm, oblique         0.01 mm
+  camera   2.0 m from the plane,    300 m out: standard    0.0262 mm, oblique         2.68 mm
+  camera   2.0 m from the plane,   3000 m out: standard    0.3274 mm, oblique       268.22 mm
+  camera  40.0 m from the plane,    300 m out: standard    0.0262 mm, oblique         0.13 mm
+  camera  40.0 m from the plane,   3000 m out: standard    0.3274 mm, oblique        13.41 mm
