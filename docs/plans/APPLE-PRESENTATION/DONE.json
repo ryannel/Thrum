@@ -245,8 +245,18 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
-      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
+      "status": "blocked",
+      "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words.",
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The lead must arrange release of SEA\u2019s nested GPU lock (parent PID 99959, checker PID 4501) so queued M3 job `20261114-131328-10597` can proceed.",
+        "work": {
+          "commit": "2f44190e80181666d6992cf6a30473efc9afc21b",
+          "branch": "build/apple-presentation",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/APPLE-PRESENTATION/M3-handoff.md"
+      }
     }
   ]
 }
