@@ -1,5 +1,5 @@
 // Browser view of a thrum-controls model: builds labelled sliders, toggles, text fields and
-// readouts from `Controls::describe_json`, and applies `Controls::changes_json`. The model
+// readouts and tables from `Controls::describe_json`, and applies `Controls::changes_json`. The model
 // owns every value, unit and label; this file only draws them and reports edits.
 //
 //   import { mountControls } from "./thrum-controls.js";

@@ -9,9 +9,10 @@ impl Controls {
     /// Every declared control as JSON for a view to build widgets from.
     ///
     /// Each entry has `key`, `group`, `label`, `kind` (`slider`, `toggle`, `text` or
-    /// `readout`), the current `value` and `text`, and for numbers a `display` object with
+    /// `readout` or `table`), the current `value` and `text`, and for numbers a `display` object with
     /// `scale`, `decimals`, `unit` and `clock`. Slider `min`, `max` and `step` are in display
-    /// units, so a view never converts anything except through `display.scale`.
+    /// units, so a view never converts anything except through `display.scale`. A table's
+    /// value is an ordered array of `[label, text]` pairs, replaced as a whole.
     #[must_use]
     pub fn describe_json(&self) -> String {
         let entries: Vec<Json> = self

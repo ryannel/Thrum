@@ -1,9 +1,9 @@
-//! Typed demo controls: one model of sliders, toggles, text fields and readouts that native
+//! Typed demo controls: one model of sliders, toggles, text fields, readouts and tables that native
 //! and browser views present identically, so a demo can expose its mechanism.
 //!
 //! A game declares controls once, with a stable dotted key (`sky.solar_time`), a display label,
 //! a canonical engine value and a [`Display`] mapping. It gets back typed handles
-//! ([`Slider`], [`Toggle`], [`Text`], [`Readout`]) and reads values through them. Views and
+//! ([`Slider`], [`Toggle`], [`Text`], [`Readout`], [`Table`]) and reads values through them. Views and
 //! files edit the same model, and the game applies what changed since its last look:
 //!
 //! ```
