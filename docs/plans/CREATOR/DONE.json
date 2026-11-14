@@ -77,8 +77,8 @@
           "ask": "Does every CPU and GPU number come from the frame host's completed samples through the profile window, and every interval row from the shell's callback record, with no second timer and no row named as display cadence? Do tests in ./dev check cover the window, the median and the refresh rate?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/world/before-0.json.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -89,8 +89,8 @@
           "ask": "Read the profiler case and the tests. Does the case change the load only after frame 600 and fail when a row is fed from the shell's first-600 report buffer or shows a number while the adapter reports no timestamp-query feature? Do tests cover each reason, and the window emptying on a device replacement?",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-profiler/run.json; docs/evidence/CREATOR/m2/browser-profiler/profiler-load.png; docs/evidence/CREATOR/m2/native/profile-window-tests.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -99,8 +99,8 @@
           "ask": "Read the thrum-render diff and its device tests in ./dev check. Do the tests switch both ways with frames in flight and across a replacement, and does a host that never touches the switch behave as before? Does the diff change anything else in the frame lifecycle?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/timing-switch-test.log; docs/evidence/CREATOR/m2/native/timing-switch-test.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -111,8 +111,8 @@
           "ask": "Read the profiler-switch case. Does it count real resolve and readback work, not a UI flag, and would it fail if a number from before the switch were shown after it?",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-switch/run.json; docs/evidence/CREATOR/m2/browser-switch/profiler-off-submitted.png",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -121,8 +121,8 @@
           "ask": "Do THRUM_REPORT, the Mac qualification command and the V1 page's 600-sample report still run timed from their first frame, with their output unchanged? Are the paired figures recorded as observations, with no budget claimed?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/pair-0.json.gz; docs/evidence/CREATOR/m2/native/pair-1.json.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -131,8 +131,8 @@
           "inspect": "With the profiler on, repeat each change and a no-change control at least three times, capturing the panel offscreen before and after. Does the named row move the named way beyond its no-change spread each time, does no row outside the design's coupled list move beyond its spread without a recorded cause, and can every row be read without resizing?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/native/summary.json; docs/evidence/CREATOR/m2/native/row-audit.json; docs/evidence/CREATOR/m2/native/world/; docs/evidence/CREATOR/m2/native/material/",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -141,8 +141,8 @@
           "inspect": "Open the starter's URL in Chrome with the profiler on and screenshot the page at the default size and at 480 px wide, then again after switching it off. Are the rows the same set as on the Mac, readable, labelled by their source, and honest about step size or the reason a number is missing?",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CREATOR/M2.md; docs/evidence/CREATOR/m2/browser-ui/selection.json; docs/evidence/CREATOR/m2/browser-ui/profiler-wide.png; docs/evidence/CREATOR/m2/browser-ui/profiler-narrow.png; docs/evidence/CREATOR/m2/browser-ui/profiler-off.png",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M2-review.md",
           "builder_result": "pass"
         }
       ],
@@ -152,7 +152,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off."
     },
     {

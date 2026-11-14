@@ -112,7 +112,38 @@
     },
     "M2": {
       "definitions": "f35214290aeaaf4462db94949622c4396f951b7824e334ff4a2c1cdf244a813b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "2771bec5104c0eeec83efd5051a83c1965d530b5",
+          "review": "docs/evidence/CREATOR/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 165979,
+            "cached": 12717824,
+            "output": 24034,
+            "turns": 1
+          },
+          "at": "2026-11-14T16:28:28Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise CREATOR's design and plan as docs/evidence/CREATOR/design-review.md asks",
@@ -148,6 +179,13 @@
           "output": 582505,
           "turns": 7
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "2771bec5104c0eeec83efd5051a83c1965d530b5",
+        "review": "docs/evidence/CREATOR/M2-review.md",
+        "checked": "d12c4c1e944fcc671a6281d50536aaf8f0eab1a3",
+        "at": "2026-11-14T16:28:28Z"
       }
     },
     "M3": {
