@@ -10,8 +10,9 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## Open for the human
 
-- Assumption: the owner's words of 14 November, "it should start from first principles", govern. The 13 November design, the brief and the port decision were judged as inputs: six choices changed, and the rest are kept for reasons the design gives. "Atmospheric system" is read as clouds, weather and how they shade and light the world; `ATMOSPHERE`'s own sky, which is in the V1 exit, is not reopened.
-- Assumption: "a flexible set of cloud capabilities" is taken up. The engine has no sky types: a sky of weather alone, of cooked shapes alone or of both is the game's data, and shade, the visible sky, the world's light and shapes are each left out at no cost. It costs one item, M8.9.
+- Assumption: the owner's words of 14 November, "it should start from first principles", govern. The 13 November design, the brief and the port decision were judged as inputs; the design lists what changed and why the rest is kept. "Atmospheric system" is read as clouds, weather and how they shade and light the world; `ATMOSPHERE`'s own sky, which is in the V1 exit, is not reopened.
+- Assumption: "a flexible set of cloud capabilities" is taken up. The engine has no sky types: a sky of weather alone, of cooked shapes alone or of both is the game's data, and shade, the visible sky, the world's light and shapes are each left out at no cost. It costs two items, M6.12 and M8.9.
+- Assumption: "visible clouds off releases presentation resources and keeps shade" keeps a shape library loaded. A scene that shows no sky but wants the shade of cooked shapes holds their volumes, 27 MiB for the example's twelve, because a footprint cannot give a shape's shade under a slanting Sun.
 - Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; a sunset demo needs it, and a cloud-formation demo would build on it. It costs three items: M1.12, M6.9 and M6.10.
 - Assumption: cloud light takes its first-order phase from the droplets, not the retained reference's lobe. Near the Sun and away from it the sky will differ from Broadsides' accepted stills: a tighter silver lining, and brighter clouds with the Sun behind the viewer.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the twelve volumes and growth track included. They enter this repository as the example's content with their licence record, which grants nothing to third parties; their terms if Thrum's source is published are the owner's to say. Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
@@ -24,12 +25,12 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly
 
-Nothing exists yet. This milestone creates `thrum-cloud-model`, with no dependency on the renderer, and registers
-it in `.config/architecture.toml`. `docs/evidence/CLOUDS/design-proof/` holds working sketches: of the cell
-process, the deck and the Sun-path reference, of a placed shape's footprint and the coarse density, and of the
-droplet phase. Their constants are a first profile and their shapes are not the look. Broadsides' `scatter.rs`
-already holds the droplet phase as the design states it. The optics oracle is `scripts/reference/cloud/`, which
-needs NumPy.
+This creates `thrum-cloud-model`, with no dependency on the renderer, and registers it in
+`.config/architecture.toml`. `docs/evidence/CLOUDS/design-proof/` holds working sketches of the field, the Sun's
+path, placed shapes and the phase with its disc average and table; their constants are a first profile and
+their shapes are not the look. Broadsides' `scatter.rs` holds the point-Sun phase and its fit; its Sun-disc
+`spread` loses energy and is not the design's. The optics oracle is `scripts/reference/cloud/`, which needs
+NumPy.
 
 ## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn
 
@@ -38,8 +39,8 @@ holds the trait and `examples/v1-game/src/effect` a working effect to read. The 
 `cloud.wgsl` beside it, and the diagnostic provider in `examples/v1-game/src/host/scene_source/cloud.rs`.
 Ruling 1 extends that path in those files; `ATMOSPHERE` M6 edits the same module, so integrate on top of what
 has landed. `examples/v1-game` is `SHOWCASE`'s: add the selection and leave its generator, routes and exit
-configuration alone. M2.2's and M2.3's bounds are measured first and then asserted. `scripts/cloud_cost.py` is
-created here, to the design's cost account. If the seam cannot declare the Sun-path
+configuration alone. `scripts/cloud_cost.py` is
+created here. If the seam cannot declare the Sun-path
 product's time-sliced levels as built, or cannot give a frame that shows a tick again its interpolation alpha,
 write the proposal in the log and end `BLOCKED`.
 
@@ -57,22 +58,21 @@ launch needs a run outside the Codex sandbox.
 
 ## M5 Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars
 
-M5.1's bound is measured first and then asserted. If low-Sun relief fails M5.3, try the design's fallbacks for
+If low-Sun relief fails M5.3, try the design's fallbacks for
 its fourth risk first and record what each cost. If the aureole fails M5.8, its seventh risk says where the fix
 lies.
 
 ## M6 A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys
 
 `examples/v1-game/src/lent` is a working lease consumer, and `thrum-cook`'s demo writes a `TVOL` source. The
-design's Broadsides table says where each part of the library is. The twelve volumes are Git LFS objects at
+twelve volumes are Git LFS objects at
 Broadsides `79637f789`; `git show` piped through `git lfs smudge` reads them and leaves that checkout as it is.
 The growth track's eleven key volumes are not in Git: they are in the Broadsides folder at
 `tmp/evidence-store/cloud-route-2026-11-08/m2-authored-growth-v2/source-keys-replay.tar.gz`, with each key's hash
-in the track's manifest, and `factory/clouds/heaped-fair/coherent_growth.py` makes them again from its recipe. If
-neither gives keys that match the manifest, end `BLOCKED` with `needs_context`. Engine tests still cook their own
-shapes. If the scene's residency cannot take
-the volumes as a second source folder, write the proposal in `CONTENT-LOOP`'s log; do not add them to the valley's
-source without a ruling.
+in the track's manifest, and `factory/clouds/heaped-fair/coherent_growth.py` makes them again. If
+neither gives keys that match the manifest, end `BLOCKED` with `needs_context`. Engine tests cook their own
+shapes. If the scene's residency cannot take the volumes as a second source folder, write the proposal in
+`CONTENT-LOOP`'s log; do not add them to the valley's source without a ruling.
 
 ## M7 The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin
 

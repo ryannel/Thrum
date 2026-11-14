@@ -1,0 +1,95 @@
+G. The first order's phase, averaged over the Sun's disc (angular radius 0.2667 degrees)
+   integral over the sphere and mean cosine; the closed form is the point Sun's mean cosine times
+   (1 + cos rho) / 2, the disc's own mean cosine
+   diameter   refuted rule   disc average   mean cosine   closed form   point Sun
+       5 um      0.996605       1.000000      0.843420      0.843420    0.843424
+      10 um      0.981129       1.000000      0.864159      0.864159    0.864164
+      20 um      0.926592       1.000000      0.879306      0.879306    0.879310
+      40 um      0.810888       1.000000      0.889023      0.889023    0.889028
+      50 um      0.767690       1.000000      0.891189      0.891189    0.891194
+   50 um at 750 and 3000 angles: 1.000000, 1.000000
+   at the Sun's centre, sr^-1: point Sun, disc average by quadrature, by closed form, refuted rule
+       5 um      101.1       99.3       99.3       99.3
+      20 um     2742.5     1792.0     1792.0     1709.1
+      50 um    18673.4     4324.7     4324.7     2759.9
+   where the disc matters: disc average over point Sun, and two closed forms over the disc average
+   (the refuted rule, and the same lobe scaled to unit energy, which is a lobe of lower g)
+   diameter  theta    disc/point   refuted/disc   rescaled/disc
+      20 um   0.00       0.6534         0.9537          1.1171
+      20 um   0.10       0.7138         0.9076          1.0631
+      20 um   0.27       0.9666         0.7746          0.9073
+      20 um   0.50       1.1228         0.7692          0.9008
+      20 um   1.00       1.0649         0.8955          1.0475
+      20 um   2.00       1.0179         0.9705          1.1264
+      20 um   5.00       1.0016         0.9973          1.0842
+      20 um  20.00       1.0000         1.0000          1.0051
+      50 um   0.00       0.2316         0.6382          1.2080
+      50 um   0.10       0.4967         0.5112          0.9677
+      50 um   0.27       1.7672         0.3350          0.6340
+      50 um   0.50       1.3573         0.6099          1.1525
+      50 um   1.00       1.0808         0.8798          1.6448
+      50 um   2.00       1.0168         0.9728          1.6935
+      50 um   5.00       1.0007         0.9987          1.2210
+      50 um  20.00       1.0000         1.0000          1.0095
+   part E of first_principles_proof.py again, with the disc average in place of the refuted rule:
+   reference = HG(0.86); droplet = a 20 um droplet's phase averaged over the Sun's disc, sr^-1
+   theta   reference    droplet   reference/droplet
+     0.0      7.5517  1792.0052         0.004
+     0.5      7.5140   450.1094         0.017
+     2.0      6.9843    10.6610         0.655
+     5.0      4.9017     1.2755         3.843
+    10.0      2.1189     0.6267         3.381
+    20.0      0.4784     0.3492         1.370
+    45.0      0.0547     0.0630         0.869
+    90.0      0.0090     0.0011         7.872
+   140.0      0.0039     0.0078         0.495
+   180.0      0.0032     0.0109         0.295
+   a table over u = sin(theta/2)^(1/2), read with linear interpolation, for a 50 um droplet:
+       1025 entries: integral 1.000135, largest relative error at the midpoints 1.78e-03
+        257 entries: integral 1.002158, largest relative error at the midpoints 2.74e-02
+         65 entries: integral 1.038340, largest relative error at the midpoints 3.77e-01
+
+H. The Sun's path over a placed shape
+   the review's two shapes: equal footprints, a 45 degree Sun, the ray through their middles
+      shape A: footprint columns 2.0 and 2.0, 0 to 400 m; the volume's Sun path 3.959767, transmittance 0.019068
+      shape B: footprint columns 2.0 and 2.0, 0 to 400 m; the volume's Sun path 0.565681, transmittance 0.567973
+      a path made from the footprint is one number for both: 1.414203, transmittance 0.243119
+   a cumulus of 20 m voxels with a dense core, a shelf and a hollow, extruded across the Sun, with hard
+   edges and with edges softened over about 100 m. Three products of 80 m columns: filled from the volume
+   at its finest level along each column's ray, from the volume averaged to 80 m, and from the column
+   form. Each against a 5 m march of the volume itself averaged over a column's width: differences in
+   transmittance on the ground and at points inside the cloud, as RMS / largest
+   hard edges, thin, extinction 0.004 1/m, Sun 45 deg
+      finest level      ground 0.013 / 0.12   inside 0.012 / 0.10
+      averaged to 80 m  ground 0.039 / 0.25   inside 0.027 / 0.16
+      column form       ground 0.060 / 0.29   inside 0.130 / 0.41
+   hard edges, thin, extinction 0.004 1/m, Sun 20 deg
+      finest level      ground 0.007 / 0.07   inside 0.009 / 0.03
+      averaged to 80 m  ground 0.042 / 0.25   inside 0.039 / 0.13
+      column form       ground 0.139 / 0.52   inside 0.153 / 0.48
+   hard edges, the type's own, 0.06 1/m, Sun 45 deg
+      finest level      ground 0.053 / 0.37   inside 0.048 / 0.22
+      averaged to 80 m  ground 0.154 / 0.95   inside 0.137 / 0.57
+      column form       ground 0.052 / 0.53   inside 0.163 / 0.69
+   hard edges, the type's own, 0.06 1/m, Sun 20 deg
+      finest level      ground 0.041 / 0.42   inside 0.078 / 0.31
+      averaged to 80 m  ground 0.180 / 0.96   inside 0.166 / 0.74
+      column form       ground 0.098 / 0.67   inside 0.163 / 0.81
+   soft edges, thin, extinction 0.004 1/m, Sun 45 deg
+      finest level      ground 0.010 / 0.06   inside 0.004 / 0.02
+      averaged to 80 m  ground 0.029 / 0.16   inside 0.017 / 0.09
+      column form       ground 0.041 / 0.15   inside 0.085 / 0.21
+   soft edges, thin, extinction 0.004 1/m, Sun 20 deg
+      finest level      ground 0.002 / 0.02   inside 0.005 / 0.02
+      averaged to 80 m  ground 0.026 / 0.13   inside 0.025 / 0.08
+      column form       ground 0.062 / 0.19   inside 0.094 / 0.25
+   soft edges, the type's own, 0.06 1/m, Sun 45 deg
+      finest level      ground 0.040 / 0.36   inside 0.014 / 0.08
+      averaged to 80 m  ground 0.115 / 0.59   inside 0.062 / 0.33
+      column form       ground 0.103 / 0.55   inside 0.063 / 0.26
+   soft edges, the type's own, 0.06 1/m, Sun 20 deg
+      finest level      ground 0.014 / 0.10   inside 0.035 / 0.19
+      averaged to 80 m  ground 0.112 / 0.61   inside 0.072 / 0.39
+      column form       ground 0.066 / 0.37   inside 0.075 / 0.42
+   The product is filled from the forms the weather map names, with their weights, whether or not the
+   trace is declared, so the two profiles compute the same numbers from the same lent volume.
