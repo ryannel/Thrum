@@ -116,7 +116,7 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
         else:
             client = start([ROOT / "target/release/link-proof", "client", ticket, seconds, controller, case], output / "client.jsonl")
         began = time.monotonic()
-        if case == "expiry":
+        if case in ["expiry","idle","kill-peer"] and identity == "correct":
             deadline = time.monotonic()+15
             while True:
                 if target == "chrome-webgpu":
@@ -126,8 +126,9 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
                 if ready:
                     break
                 if time.monotonic()>deadline:
-                    raise RuntimeError("expiry client did not open")
+                    raise RuntimeError(f"{case} client did not open")
                 time.sleep(0.01)
+        if case == "expiry":
             (output / "control").write_text("cut")
             time.sleep(2.8)
             (output / "before-heal.json").write_text(json.dumps({"cut": True, "elapsed": time.monotonic() - began}))
