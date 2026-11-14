@@ -799,6 +799,7 @@ def moving_controls(run, source, route_file, wasm, native, origin, last):
 
 
 def moving(args):
+    os.environ.setdefault('THRUM_RECONSTRUCTION', 'taau')
     route_file = json.loads(MOVING_ROUTE.read_text())
     origin, last = route_file['origin_tick'], route_file['origin_tick'] + route_file['keys'][-1]['tick']
     names = [checkpoint['name'] for checkpoint in route_file['checkpoints']]
@@ -972,10 +973,64 @@ def culling(args):
         print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
 
 
+def reconstruction(args):
+    """Independent held-state reference on the submitted portable game path."""
+    from reconstruction_difference import compare, self_check
+    self_check()
+    run = new_run('reconstruction')
+    report = {'command': 'reconstruction', 'target': args.target, 'extent': [640,360],
+              'commit': git('rev-parse','HEAD'), 'passed': False, 'cut': args.cut,
+              'metric': 'whole-frame submitted 8-bit SDR CIEDE2000, D65, nearest-rank p99',
+              'tolerance': 3, 'checkpoints': {}}
+    try:
+        if not args.no_build:
+            build(run, web=False)
+        with open(run/'cook.log','w') as log:
+            if bounded([str(COOK),'cook',str(SOURCE),str(run/'store')],log,120):
+                raise Failure('valley cook failed')
+        report['cooked_root'] = store_root(run/'store')
+        env = dict(os.environ, THRUM_SCENE='valley', THRUM_RECIPE='portable',
+                   THRUM_ASSET_STORE=str(run/'store'), THRUM_RECONSTRUCTION_OUTPUT=str(run/'frames'))
+        with open(run/'oracle.log','w') as log:
+            if bounded(['cargo','test','--locked','--offline','--release','-p','v1-game','--lib',
+                        'reconstruction_reference_on_submitted_game_frames','--','--ignored'],log,1800,
+                       env=env,cwd=REPO/'examples/v1-game'):
+                raise Failure(f'game reconstruction oracle failed: {run / "oracle.log"}')
+        report['oracle_binaries'] = {str(p.relative_to(REPO)):sha256(p) for p in (REPO/'target/release/deps').glob('v1_game-*')
+                                     if p.is_file() and os.access(p,os.X_OK)}
+        for name in ROUTE:
+            directory = run/'frames'/name
+            def pixels(mode, frame=64):
+                path = directory/f'{mode}-{frame}.ppm'
+                raw = path.read_bytes()
+                # The oracle writes a fixed three-line P6 header.
+                header = f'P6\n640 360\n255\n'.encode()
+                if not raw.startswith(header) or len(raw)-len(header) != 640*360*3:
+                    raise Failure(f'invalid full-frame image: {path}')
+                return raw[len(header):]
+            reference = pixels('reference')
+            if pixels('reference',32) != reference:
+                raise Failure(f'{name}: repeated 32-phase averages differ')
+            row = report['checkpoints'][name] = {mode:compare(pixels(mode),reference) for mode in ('taau','off','broken')}
+            row['pass'] = row['taau']['p99'] <= 3 and row['taau']['p99'] < row['off']['p99']
+            row['broken_rejected'] = not (row['broken']['p99'] <= 3 and row['broken']['p99'] < row['off']['p99'])
+        report['passed'] = all(row['pass'] and row['broken_rejected'] for row in report['checkpoints'].values())
+        report['cut_comparison'] = json.loads((run/'frames/cut.json').read_text())
+        report['passed'] &= report['cut_comparison']['cut_equals_reset'] and report['cut_comparison']['suppressed_differs']
+        if not report['passed']:
+            raise Failure('reconstruction tolerance or history-disabled negative control failed')
+    except Exception as error:
+        report['error'] = str(error)
+        raise
+    finally:
+        write_json(run/'run.json',report)
+        print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling'):
+    for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling', 'reconstruction'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
         if name in ('mac', 'chrome'):
@@ -983,6 +1038,8 @@ def main():
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
     commands.choices['culling'].add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
     commands.choices['culling'].add_argument('--meshes', action='store_true')
+    commands.choices['reconstruction'].add_argument('--target', required=True, choices=['mac-metal'])
+    commands.choices['reconstruction'].add_argument('--cut', action='store_true')
     commands.choices['check'].add_argument('--save-baseline', action='store_true',
                                            help='write the baseline after a passing run (a reviewed, recorded act); '
                                                 'drift from the old baseline alone does not block it')
@@ -1000,7 +1057,8 @@ def main():
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
-        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling}[args.command](args)
+        {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling,
+         'reconstruction': reconstruction}[args.command](args)
     except Failure as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)

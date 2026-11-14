@@ -10,6 +10,18 @@ use super::{
 pub(super) const VIEW_BYTES: usize = 240;
 pub(super) const AUX_BYTES: usize = 144;
 
+/// Reconstruction selection fixed at generation preparation.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum Reconstruction {
+    /// Spatial output with no temporal history consumer.
+    #[default]
+    Off,
+    /// Registry-selected portable temporal resolve.
+    Taau,
+    /// Independent 32-offset box reference for held-state qualification.
+    Reference,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum Projection {
     OrthographicFixture,
@@ -26,7 +38,7 @@ pub(super) enum Projection {
 /// V2 view packet owns the broader identity and history contract.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SyntheticView {
-    projection: Projection,
+    pub(super) projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
     exposure: Option<ExposurePolicy>,
@@ -39,6 +51,7 @@ pub struct SyntheticView {
     jitter_sample: Option<(u32, [u32; 2])>,
     raster_jitter: bool,
     temporal_inputs: bool,
+    reconstruction: Reconstruction,
     output_extent: Option<[u32; 2]>,
 }
 
@@ -67,6 +80,7 @@ impl Default for SyntheticView {
             jitter_sample: None,
             raster_jitter: false,
             temporal_inputs: false,
+            reconstruction: Reconstruction::Off,
             output_extent: None,
         }
     }
@@ -156,6 +170,7 @@ impl SyntheticView {
             jitter_sample: None,
             raster_jitter: false,
             temporal_inputs: false,
+            reconstruction: Reconstruction::Off,
             output_extent: None,
         })
     }
@@ -280,6 +295,37 @@ impl SyntheticView {
     pub fn with_temporal_inputs(mut self, enabled: bool) -> Self {
         self.temporal_inputs = enabled;
         self
+    }
+
+    /// Select the registry's portable temporal reconstructor at scene preparation.
+    #[must_use]
+    pub fn with_reconstruction(mut self, enabled: bool) -> Self {
+        self.reconstruction = if enabled {
+            Reconstruction::Taau
+        } else {
+            Reconstruction::Off
+        };
+        self.temporal_inputs |= enabled;
+        self.raster_jitter = enabled;
+        self
+    }
+
+    pub(super) fn reconstruction(&self) -> bool {
+        self.reconstruction != Reconstruction::Off
+    }
+
+    /// Select the independent, held-state 32-sample linear reference accumulator.
+    #[must_use]
+    pub fn with_reconstruction_reference(mut self, enabled: bool) -> Self {
+        if enabled {
+            self = self.with_reconstruction(true);
+            self.reconstruction = Reconstruction::Reference;
+        }
+        self
+    }
+
+    pub(super) fn reconstruction_reference(&self) -> bool {
+        self.reconstruction == Reconstruction::Reference
     }
 
     pub(super) fn temporal_diagnostic(&self) -> bool {

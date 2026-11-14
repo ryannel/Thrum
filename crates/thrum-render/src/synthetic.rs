@@ -44,11 +44,13 @@ mod scene_graph;
 mod scene_source;
 mod shadow;
 pub(crate) mod stars;
+mod taau;
 mod target_storage;
 mod temporal;
 mod upload;
 mod view;
 pub use readback::{CaptureSource, PixelReadback};
+pub use view::Reconstruction;
 
 pub(crate) use air_shadow::AIR_SHADOW_PASS;
 
@@ -553,6 +555,7 @@ pub struct PreparedSynthetic {
     culling_selection: CullingSelection,
     temporal_inputs: bool,
     temporal: temporal::TemporalInputs,
+    taau: Option<taau::Taau>,
     cloud: Option<CloudPrepared>,
     capabilities: DeviceCapabilities,
     classes: TextureClasses,
@@ -1712,12 +1715,21 @@ impl PreparedSynthetic {
             None
         };
         let temporal = temporal::TemporalInputs::new(device);
+        let taau = scene
+            .view
+            .reconstruction()
+            .then(|| match capabilities.reconstructor() {
+                crate::capabilities::Reconstructor::Taau => {
+                    taau::Taau::new(device, scene.view.reconstruction_reference())
+                }
+            });
         if let Some(error) = scope.pop().await {
             return Err(RenderError::Validation(error.to_string()));
         }
         Ok(Self {
             temporal_inputs: scene.view.temporal_inputs(),
             temporal,
+            taau,
             capabilities: capabilities.clone(),
             culling_selection,
             classes,
@@ -1816,6 +1828,7 @@ impl PreparedSynthetic {
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
         5 + u32::from(self.temporal_inputs)
+            + u32::from(self.taau.is_some())
             + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + u32::from(self.caster_culling.is_some())
             + camera_culling::pass_count(self.camera_culling())
@@ -1929,6 +1942,15 @@ impl PreparedSynthetic {
         });
         self.history
             .prepare_sample(queue, presentation_alpha, view.history_reset());
+        if let Some(taau) = &target.taau {
+            taau.update(
+                queue,
+                &view,
+                &self.view_sample,
+                self.history.candidate_identity(view.history_reset())[1] != 0,
+                target.extent(),
+            );
+        }
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         queue.write_buffer(
@@ -2007,6 +2029,7 @@ impl PreparedSynthetic {
         scene: &wgpu::TextureView,
         motion: &wgpu::TextureView,
         temporal: &temporal::TemporalTarget,
+        taau: Option<&taau::TaauTarget>,
     ) -> Result<PreparedPreToneInput, RenderError> {
         self.sdr_tone_stage().prepare_input(
             device,
@@ -2018,6 +2041,8 @@ impl PreparedSynthetic {
                         .as_ref()
                         .ok_or(RenderError::GraphPassMismatch)?
                         .0
+                } else if let Some(taau) = taau {
+                    &taau.output
                 } else {
                     scene
                 },
@@ -2369,6 +2394,7 @@ const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 struct TargetResources {
     pre_tone: PreToneInput,
     temporal: temporal::TemporalResources,
+    taau: Option<taau::TaauResources>,
     depth: ResourceId,
     scene: ResourceId,
     motion: ResourceId,
@@ -2401,6 +2427,7 @@ pub struct OffscreenTarget {
     motion_view: wgpu::TextureView,
     reactive_view: wgpu::TextureView,
     temporal: temporal::TemporalTarget,
+    taau: Option<taau::TaauTarget>,
     display: PreparedPreToneInput,
     view_bind_group: wgpu::BindGroup,
     aux_buffer: wgpu::Buffer,
@@ -2471,6 +2498,8 @@ impl OffscreenTarget {
                         .as_ref()
                         .ok_or(RenderError::GraphPassMismatch)?
                         .0
+                } else if let Some(taau) = &self.taau {
+                    &taau.output
                 } else {
                     &self.scene_view
                 },
@@ -2512,30 +2541,7 @@ impl OffscreenTarget {
         height: u32,
         capture_source: CaptureSource,
     ) -> Result<Self, RenderError> {
-        if !prepared.capabilities.matches(device) {
-            return Err(RenderError::StaleTarget);
-        }
-        let limits = prepared.capabilities.limits();
-        if width == 0
-            || height == 0
-            || width > limits.max_texture_dimension_2d
-            || height > limits.max_texture_dimension_2d
-            || (prepared.shadow.is_some() && shadow::SIZE > limits.max_texture_dimension_2d)
-        {
-            return Err(RenderError::TargetExtent);
-        }
-        let row_bytes = width
-            .checked_mul(capture_source.bytes_per_pixel())
-            .and_then(|value| value.checked_add(255))
-            .map(|value| value / 256 * 256)
-            .ok_or(RenderError::TargetExtent)?;
-        if u64::from(row_bytes)
-            .checked_mul(u64::from(height))
-            .and_then(|bytes| bytes.checked_add(exposure::SAMPLE_BYTES))
-            .is_none_or(|bytes| bytes > limits.max_buffer_size)
-        {
-            return Err(RenderError::TargetExtent);
-        }
+        let row_bytes = prepared.target_row_bytes(device, [width, height], capture_source)?;
         let compiled = prepared.compile_graph(width, height, row_bytes, capture_source, None)?;
         let recipe = prepared
             .capabilities
@@ -2543,11 +2549,7 @@ impl OffscreenTarget {
             .map_err(RenderError::Recipe)?;
         let day_depth = compiled.prepare_day_depth(device, recipe, width, height);
         let scene_graph::CompiledScene { day, night, ids } = compiled;
-        // The night capture adds buffer inputs and extends depth, scene and output lifetimes.
-        let recipe = prepared
-            .capabilities
-            .recipe()
-            .map_err(RenderError::Recipe)?;
+        // The night capture extends scene and output lifetimes.
         let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback, recipe);
         let texture_view = |id: &ResourceId| {
             textures
@@ -2568,8 +2570,20 @@ impl OffscreenTarget {
             &prepared.exposure.samples,
         )?;
         let (stars, draw_stars) = prepared.prepare_star_target(device, &depth, [width, height]);
-        let display =
-            prepared.prepare_target_display(device, &ids, &scene_view, &motion_view, &temporal)?;
+        let taau = prepared.prepare_taau_target(
+            device,
+            &textures,
+            &ids,
+            [&scene_view, &depth, &motion_view, &reactive_view],
+        )?;
+        let display = prepared.prepare_target_display(
+            device,
+            &ids,
+            &scene_view,
+            &motion_view,
+            &temporal,
+            taau.as_ref(),
+        )?;
         let aux = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic target view aux"),
             contents: &prepared
@@ -2684,6 +2698,7 @@ impl OffscreenTarget {
             motion_view,
             reactive_view,
             temporal,
+            taau,
             display,
             view_bind_group,
             aux_buffer: aux,

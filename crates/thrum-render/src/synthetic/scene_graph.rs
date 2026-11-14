@@ -304,23 +304,19 @@ impl PreparedSynthetic {
             &exposure_sample,
             [width, height],
         )?;
-        let pre_tone = PreToneInput {
-            colour: if self
-                .pending_view
-                .unwrap_or(self.view_sample)
-                .temporal_diagnostic()
-            {
-                temporal
-                    .witness
-                    .clone()
-                    .ok_or(RenderError::GraphPassMismatch)?
-            } else {
-                scene.clone()
-            },
-            motion: motion.clone(),
-            exposure: exposure_sample.clone(),
-            extent: [width, height],
-        };
+        let taau = self.append_taau(
+            &mut graph,
+            &mut prepared_keys,
+            [&scene, &depth, &motion, &reactive],
+            &exposure_sample,
+            [width, height],
+        )?;
+        let pre_tone = self.pre_tone_input(
+            (&scene, &motion, &exposure_sample),
+            &temporal,
+            taau.as_ref(),
+            [width, height],
+        )?;
         let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
         let source = match capture_source {
             CaptureSource::Sdr => &output,
@@ -353,6 +349,9 @@ impl PreparedSynthetic {
             if let Some(pass) = temporal.witness_pass {
                 graph.dependency(stars, pass)?;
             }
+            if let Some(taau) = &taau {
+                graph.dependency(stars, taau.pass)?;
+            }
             graph.validate_capabilities(&self.capabilities)?;
             Some(SceneGraphs::compile(
                 &mut graph,
@@ -371,6 +370,7 @@ impl PreparedSynthetic {
             ids: TargetResources {
                 pre_tone,
                 temporal,
+                taau,
                 depth,
                 scene,
                 motion,
@@ -380,6 +380,35 @@ impl PreparedSynthetic {
                 air_shadow,
                 prepass_depth: camera.prepass_depth,
             },
+        })
+    }
+
+    fn pre_tone_input(
+        &self,
+        (scene, motion, exposure): (&ResourceId, &ResourceId, &ResourceId),
+        temporal: &super::temporal::TemporalResources,
+        taau: Option<&super::taau::TaauResources>,
+        extent: [u32; 2],
+    ) -> Result<PreToneInput, RenderError> {
+        let colour = if self
+            .pending_view
+            .unwrap_or(self.view_sample)
+            .temporal_diagnostic()
+        {
+            temporal
+                .witness
+                .clone()
+                .ok_or(RenderError::GraphPassMismatch)?
+        } else if let Some(taau) = taau {
+            taau.output.clone()
+        } else {
+            scene.clone()
+        };
+        Ok(PreToneInput {
+            colour,
+            motion: motion.clone(),
+            exposure: exposure.clone(),
+            extent,
         })
     }
 
@@ -956,6 +985,11 @@ impl PreparedSynthetic {
                     let witness = key == self.temporal_key(true);
                     RecordBinding::<SceneFamily>::new(id, PassKind::Render, move |frame, pass| {
                         frame.temporal(pass, witness)
+                    })
+                }
+                Some(key) if key == self.taau_key() => {
+                    RecordBinding::<SceneFamily>::new(id, PassKind::Compute, |frame, pass| {
+                        frame.taau(pass)
                     })
                 }
                 Some(key) if key == self.exposure_key() => {

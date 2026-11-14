@@ -37,6 +37,8 @@ pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GameSetup {
+    /// Admit portable temporal reconstruction at native scale.
+    pub reconstruction: thrum_render::synthetic::Reconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
     pub display_overlay: DisplayOverlay,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
@@ -59,6 +61,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
             content: GameContent::Grid,

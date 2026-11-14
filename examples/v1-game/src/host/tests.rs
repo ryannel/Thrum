@@ -4,6 +4,8 @@ use std::time::Duration;
 mod gpu_support;
 #[cfg(not(target_arch = "wasm32"))]
 mod lifecycle_gpu;
+#[cfg(target_os = "macos")]
+mod reconstruction_gpu;
 #[cfg(not(target_arch = "wasm32"))]
 mod recovery_gpu;
 

@@ -1,5 +1,11 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 M3 implementation checkpoint adds the portable temporal resolve, shared
+  submitted history, pre-tone integration, an independent linear reference accumulator
+  and the submitted game-host oracle. Focused native Clippy, shader validation and
+  pinned Wasm compilation pass. Target image quality, motion, timing, full checks and
+  integration remain unqualified. [Builder evidence](../../evidence/APPLE-PRESENTATION/m3/README.md).
+
 - 2026-11-10 Revised after [the design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4`
   (changes requested, one Must Fix), under the task "Revise APPLE-PRESENTATION's design and plan as
   docs/evidence/APPLE-PRESENTATION/design-review.md asks".

@@ -90,9 +90,9 @@ pub(super) fn prepare_capture_slots(
     source: CaptureSource,
 ) -> Result<Vec<FrameSlot>, FrameError> {
     let capabilities = prepared.capabilities();
-    let mut slots = Vec::with_capacity(IN_FLIGHT);
+    let mut slots: Vec<FrameSlot> = Vec::with_capacity(IN_FLIGHT);
     for _ in 0..IN_FLIGHT {
-        let target = OffscreenTarget::with_capture_source(
+        let mut target = OffscreenTarget::with_capture_source(
             capabilities.device(),
             prepared,
             extent[0],
@@ -100,6 +100,9 @@ pub(super) fn prepare_capture_slots(
             source,
         )
         .map_err(|error| FrameError::Gpu(format!("scene target: {error:?}")))?;
+        if let Some(first) = slots.first() {
+            target.share_reconstruction_history(prepared, &first.target);
+        }
         let timing_layout = SceneTimingLayout::from((prepared, &target));
         slots.push(FrameSlot {
             target,

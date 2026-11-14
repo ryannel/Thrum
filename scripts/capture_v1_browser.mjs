@@ -10,7 +10,7 @@ import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead
 const compress = promisify(gzip);
 const decompress = promisify(gunzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const args = { mode: 'realtime', source: 'sdr', scene: 'day', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
+const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -121,7 +121,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(serving.origin)}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (args.control === 'loss' && !destroyed) {
