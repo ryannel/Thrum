@@ -7,6 +7,83 @@ use objc2_metal::{
     MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLComputeCommandEncoder,
     MTLComputePipelineState, MTLDevice, MTLLibrary, MTLOrigin, MTLSize,
 };
+use thrum_render::graph::{
+    Access, AccessKind, FrameGraph, Pass, PassScope, ResourceDescriptor, ResourceScope, TextureKind,
+};
+
+fn fixture_graph() -> thrum_render::graph::CompiledGraph {
+    let mut graph = FrameGraph::default();
+    let mut texture = |scope| {
+        graph
+            .resource(
+                ResourceDescriptor::Texture {
+                    dimension: TextureKind::D2,
+                    width: 32,
+                    height: 4,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: wgpu::TextureFormat::Rgba16Float,
+                    usage: wgpu::TextureUsages::COPY_SRC
+                        | wgpu::TextureUsages::COPY_DST
+                        | wgpu::TextureUsages::TEXTURE_BINDING
+                        | wgpu::TextureUsages::STORAGE_BINDING,
+                },
+                scope,
+            )
+            .expect("fixture graph texture")
+    };
+    let scene = texture(ResourceScope::Transient);
+    let previous = texture(ResourceScope::Imported { initialized: true });
+    let output = texture(ResourceScope::Persistent {
+        owner: 1,
+        epoch: 1,
+        initialized: true,
+    });
+    let next = texture(ResourceScope::History {
+        owner: 2,
+        epoch: 1,
+        initialized: true,
+    });
+    let access = |resource, kind| Access {
+        resource,
+        kind,
+        range: 0..1,
+        store: true,
+        view: None,
+    };
+    let pass = |name: &str, accesses| Pass {
+        name: name.into(),
+        scope: PassScope::Shared,
+        pipeline: None,
+        accesses,
+        external_side_effect: true,
+    };
+    graph.pass(pass(
+        "wgpu producer",
+        vec![access(scene.clone(), AccessKind::CopyWrite)],
+    ));
+    graph.native_pass(pass(
+        "whole raw copy/select",
+        vec![
+            access(scene, AccessKind::CopyRead),
+            access(previous.clone(), AccessKind::CopyRead),
+            access(previous, AccessKind::SampledRead),
+            access(output.clone(), AccessKind::StorageWrite),
+            access(next.clone(), AccessKind::StorageWrite),
+        ],
+    ));
+    graph.pass(pass(
+        "wgpu readback consumer",
+        vec![
+            access(output, AccessKind::CopyRead),
+            access(next, AccessKind::CopyRead),
+        ],
+    ));
+    graph
+        .compile(1, &std::collections::BTreeSet::new())
+        .expect("declared native fixture")
+}
 
 const EXTENT: wgpu::Extent3d = wgpu::Extent3d {
     width: 32,
@@ -299,6 +376,15 @@ fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
 
 fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
     pollster::block_on(async {
+        let graph = fixture_graph();
+        assert_eq!(
+            graph.pass_names().collect::<Vec<_>>(),
+            [
+                "wgpu producer",
+                "whole raw copy/select",
+                "wgpu readback consumer"
+            ]
+        );
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::METAL,
             ..wgpu::InstanceDescriptor::new_without_display_handle()
@@ -390,7 +476,17 @@ fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
         }
         let buffers = [&native.output, &native.next, &twin.output, &twin.next]
             .map(|t| readback(&device, &mut consumer, t));
-        queue.submit([producer.finish(), raw.finish(), consumer.finish()]);
+        let mut commands = [
+            Some(producer.finish()),
+            Some(raw.finish()),
+            Some(consumer.finish()),
+        ];
+        queue.submit(
+            graph
+                .pass_order
+                .iter()
+                .map(|&pass| commands[pass].take().expect("one encoder per graph pass")),
+        );
         let result = buffers
             .iter()
             .map(|b| bytes(&device, b))

@@ -25,6 +25,7 @@ impl PartialEq for ResourceId {
 }
 impl Eq for ResourceId {}
 
+mod native;
 mod texture;
 pub use texture::TextureKind;
 
@@ -272,6 +273,7 @@ pub(crate) enum PassKind {
     Render,
     Compute,
     Copy,
+    Native,
 }
 
 fn pass_kind(pass: &Pass) -> Option<PassKind> {
@@ -333,6 +335,7 @@ struct PassSchedule {
 pub struct FrameGraph {
     resources: Vec<Resource>,
     passes: Vec<Pass>,
+    native_passes: BTreeSet<usize>,
     explicit_dependencies: Vec<(usize, usize)>,
     owner: Arc<()>,
 }
@@ -340,6 +343,17 @@ pub struct FrameGraph {
 /// Why a declaration cannot execute safely.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GraphError {
+    /// Native writes require preinitialized, externally retained resources and
+    /// cannot declare render-attachment operations.
+    NativeResource {
+        /// Offending native pass.
+        pass: usize,
+    },
+    /// A native segment must never access the platform surface.
+    NativeSurface {
+        /// Offending native pass.
+        pass: usize,
+    },
     /// A volume has array layers or multisampling.
     InvalidVolume,
     /// A cube must have six square, single-sampled faces.
@@ -890,6 +904,7 @@ impl FrameGraph {
         surface: &ResourceId,
         post: &BTreeSet<usize>,
     ) -> Result<CompiledGraph, GraphError> {
+        self.validate_native_surface(surface)?;
         let mut plan = self.compile(generation, prepared)?;
         let mut dependent = BTreeSet::new();
         for &id in &plan.pass_order {
@@ -1203,6 +1218,7 @@ impl FrameGraph {
     }
 
     fn validate_declarations(&self) -> Result<(), GraphError> {
+        self.validate_native_resources()?;
         for (index, pass) in self.passes.iter().enumerate() {
             for (a_index, access) in pass.accesses.iter().enumerate() {
                 if !Arc::ptr_eq(&access.resource.owner, &self.owner) {
@@ -1502,7 +1518,11 @@ impl FrameGraph {
                         .collect(),
                     name: self.passes[index].name.clone(),
                     pipeline: self.passes[index].pipeline,
-                    kind: pass_kind(&self.passes[index]),
+                    kind: if self.native_passes.contains(&index) {
+                        Some(PassKind::Native)
+                    } else {
+                        pass_kind(&self.passes[index])
+                    },
                     attachments: self.passes[index]
                         .accesses
                         .iter()
