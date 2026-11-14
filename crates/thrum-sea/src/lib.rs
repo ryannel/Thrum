@@ -19,6 +19,25 @@ const SHADER: &str = concat!(
 #[cfg(test)]
 mod tests {
     #[test]
+    fn initial_display_clock_has_no_extra_tick() {
+        let mut time = thrum_render::contribution::EffectTime {
+            epoch: 1,
+            timeline: 1,
+            tick: 0,
+            tick_duration: std::time::Duration::from_millis(20),
+            alpha: 1.0,
+            capture: false,
+        };
+        assert_eq!(super::display_seconds(time), 0.0);
+        time.alpha = 0.5;
+        assert_eq!(super::display_seconds(time), -0.01);
+        time.tick = 1;
+        time.alpha = 0.0;
+        assert_eq!(super::display_seconds(time), 0.0);
+        time.alpha = 0.5;
+        assert_eq!(super::display_seconds(time), 0.01);
+    }
+    #[test]
     fn graph_compiles_with_no_ambient_history_or_uninitialized_reads() {
         use thrum_render::graph::{Access, FrameGraph, Pass, PassScope};
         let declaration = super::declaration(&super::prepare::sizes());
@@ -84,9 +103,10 @@ pub const MAX_QUERIES: u32 = 4096;
 const CHANNELS: u64 = 11;
 
 /// Display seconds under C02: committed tick minus one plus interpolation alpha.
-/// The initial tick is clamped to time zero. Captures supply their own clock.
+/// Captures supply their own clock. At tick zero the analytic field can be
+/// sampled before zero; alpha one samples exactly zero, without a tick of advance.
 pub fn display_seconds(time: thrum_render::contribution::EffectTime) -> f64 {
-    (time.tick.saturating_sub(1) as f64 + f64::from(time.alpha)) * time.tick_duration.as_secs_f64()
+    (time.tick as f64 - 1.0 + f64::from(time.alpha)) * time.tick_duration.as_secs_f64()
 }
 
 /// Physical profile, independent of quality or selected recipe.

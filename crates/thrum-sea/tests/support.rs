@@ -514,6 +514,9 @@ fn frame_script(portable: bool) {
         (903, 0.8, false, false, 0),
         (8, 0.2, false, false, 0),
         (8, 0.8, false, false, 1),
+        (0, 1.0, false, false, 2),
+        (0, 0.5, true, false, 2),
+        (1, 0.0, false, false, 2),
     ];
     let mut previous = None;
     let mut first = None;
@@ -527,8 +530,7 @@ fn frame_script(portable: bool) {
             capture,
         };
         let time = thrum_sea::display_seconds(clock);
-        let expected =
-            (tick.saturating_sub(1) as f64 + f64::from(alpha)) * clock.tick_duration.as_secs_f64();
+        let expected = (tick as f64 - 1.0 + f64::from(alpha)) * clock.tick_duration.as_secs_f64();
         assert_eq!(time, expected);
         let out = h.frame(&s, time, &p, !discard);
         if let Some(out) = out {
