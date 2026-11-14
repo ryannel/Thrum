@@ -85,9 +85,11 @@ class Scene:
     def settle(self, params=None, capture=None):
         if params is not None:
             self.params.write_text(json.dumps(params))
-        boundary = latest(self.directory)["elapsed"]
+        previous = latest(self.directory)
+        boundary = previous["elapsed"]
+        last_submission = max(frame["submission"] for frame in previous["frames"])
         # Replace all 120 recent frames and allow hot reload to settle before sampling.
-        record = wait_for(lambda: (r if (r := latest(self.directory)) and r["elapsed"] > boundary + 3 else None), "settled recent window")
+        record = wait_for(lambda: (r if (r := latest(self.directory)) and r["elapsed"] > boundary + 3 and min(frame["submission"] for frame in r["frames"]) > last_submission else None), "settled recent window")
         if capture:
             (self.directory / "capture").write_text(capture)
             wait_for(lambda: (self.directory / f"{capture}.png").exists(), "offscreen native panel")
