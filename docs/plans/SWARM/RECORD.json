@@ -34,21 +34,21 @@
       }
     },
     "M2": {
-      "definitions": "acd8803e8cfc59c5491db2d0cbf8fe38946d63bbe06549d37226bdb5313dfa0c",
+      "definitions": "b73217ee768213bf9168a69cf0577edba46d8b6445af23a7f9b02390a4a26cf2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
-        "at": "2026-11-13T20:28:50Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M3": {
-      "definitions": "3e6850f5dd30f692e511c2f704b1571ec348371b05f5ca52a51f379b3452ab79",
+      "definitions": "757dd586fca9eb329c03dea347f5d6b67288e93a41d8f339ab2e33416cc1b2f3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in",
-        "at": "2026-11-13T20:58:55Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M4": {
@@ -70,12 +70,12 @@
       }
     },
     "M6": {
-      "definitions": "6ca9c1bca7e8184fec2f484e8d7e820524f500d044db681f7c745b5e487e09ff",
+      "definitions": "040be5750c4ec6068f9cec05b30b0e0b4f388137bce3425acd0eea236a0626f5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 5 Must Fix findings in",
-        "at": "2026-11-13T20:28:50Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M7": {
@@ -109,11 +109,15 @@
     {
       "task": "The design review of SWARM at docs/evidence/SWARM/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T20:58:55Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Dependency audit. The owner (14 Nov 2026) says development is far behind pace: Codex quota use is about 5% a day against a target near 15%, because only 4 milestones can start at once. Go through every milestone dependency in docs/plans/*/PLAN.md and DONE.json, and remove each edge that only sets an order, keeping only those where a milestone needs another milestone's actual output (code, interface, data or a verified baseline it builds on). Where a milestone needs only part of another, depend on the earliest milestone that provides that part. Owner decision: keep the swarm-game modules (SIM-2D, SWARM, TRANSPORT, RENDER-2D, GAME-UI, SESSION) gated on SHOWCASE:M8 as they are now. Contention for the shared GPU lock and disk is not a reason for an edge; the script queues GPU work. List each edge you removed or kept with a one-line reason in the evidence folder, and say how many milestones can start once the running ones finish.\n2) ATMOSPHERE's latest design review (docs/evidence/ATMOSPHERE/design-review.md) found 1 Must Fix after the horizon-haze re-plan. Resolve it, keeping SCENE-VIEWS, WATERS and CLOUDS consistent.",
+      "at": "2026-11-14T16:54:40Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T20:58:55Z"
+    "at": "2026-11-14T16:54:40Z"
   },
   "design_history": [
     {

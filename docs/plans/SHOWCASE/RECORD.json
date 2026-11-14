@@ -43,21 +43,21 @@
       }
     },
     "M7": {
-      "definitions": "6126c50ca0af22e5746891b4c822d5038e4961ebc3a6872556004a80b7cd0f15",
+      "definitions": "10c10cffbc632768bcde9d1a04de8a6851884f5973af951b7def38e3148f911e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
-        "at": "2026-11-13T14:21:37Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M8": {
-      "definitions": "713af1e05791f8d6aadf9a63c537609b0c28820ff7cec1ec5555037665f24d71",
+      "definitions": "4294c0e9f825b0a5d1bf8cf24856126757c17efd379d2d647167eb80aa1d85b7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, revie",
-        "at": "2026-11-13T14:21:37Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     }
   },
@@ -65,10 +65,14 @@
     {
       "task": "Plan module SHOWCASE (row 13 in docs/plans/ARCHITECTURE.md: the V1 exit, the showcase valley on Mac and in Chrome, reviewed, with its closing record). It needs: The last milestone of modules 1 to 10 and 12.",
       "at": "2026-11-13T14:21:37Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Dependency audit. The owner (14 Nov 2026) says development is far behind pace: Codex quota use is about 5% a day against a target near 15%, because only 4 milestones can start at once. Go through every milestone dependency in docs/plans/*/PLAN.md and DONE.json, and remove each edge that only sets an order, keeping only those where a milestone needs another milestone's actual output (code, interface, data or a verified baseline it builds on). Where a milestone needs only part of another, depend on the earliest milestone that provides that part. Owner decision: keep the swarm-game modules (SIM-2D, SWARM, TRANSPORT, RENDER-2D, GAME-UI, SESSION) gated on SHOWCASE:M8 as they are now. Contention for the shared GPU lock and disk is not a reason for an edge; the script queues GPU work. List each edge you removed or kept with a one-line reason in the evidence folder, and say how many milestones can start once the running ones finish.\n2) ATMOSPHERE's latest design review (docs/evidence/ATMOSPHERE/design-review.md) found 1 Must Fix after the horizon-haze re-plan. Resolve it, keeping SCENE-VIEWS, WATERS and CLOUDS consistent.",
+      "at": "2026-11-14T16:54:40Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T14:21:37Z"
+    "at": "2026-11-14T16:54:40Z"
   }
 }

@@ -204,7 +204,9 @@
           "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.2",
@@ -225,7 +227,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.4",
@@ -234,7 +238,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.5",
@@ -255,7 +261,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.7",
@@ -276,7 +284,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.9",
@@ -309,7 +319,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
@@ -441,7 +453,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M8.12",
@@ -449,7 +463,9 @@
           "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"M7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"M6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"milestones\"]) and bool((L(m,\"RECORD.json\")[\"milestones\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,

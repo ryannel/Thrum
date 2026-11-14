@@ -25,13 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "de43034dead5045dfaca7d63d2e2a938750ea4e588ae9938029ec871209baac1",
+      "definitions": "6805d7998910b06c6884befe28c9188675ab740477714178ac0c0cd234fdd563",
       "reviews": [],
       "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/SCENE-VIEWS/design-review.md",
-        "commit": "5ca7ea13077386cab8a113663a48f1e0d0d18500",
-        "at": "2026-11-14T14:37:23Z"
+        "by": "plan",
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M2": {
@@ -61,11 +60,15 @@
     {
       "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/design-review.md) each found 1 Must Fix. Resolve both in the designs and plans, keeping them consistent with WATERS, PUDDLES and ATMOSPHERE. Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T13:57:36Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Dependency audit. The owner (14 Nov 2026) says development is far behind pace: Codex quota use is about 5% a day against a target near 15%, because only 4 milestones can start at once. Go through every milestone dependency in docs/plans/*/PLAN.md and DONE.json, and remove each edge that only sets an order, keeping only those where a milestone needs another milestone's actual output (code, interface, data or a verified baseline it builds on). Where a milestone needs only part of another, depend on the earliest milestone that provides that part. Owner decision: keep the swarm-game modules (SIM-2D, SWARM, TRANSPORT, RENDER-2D, GAME-UI, SESSION) gated on SHOWCASE:M8 as they are now. Contention for the shared GPU lock and disk is not a reason for an edge; the script queues GPU work. List each edge you removed or kept with a one-line reason in the evidence folder, and say how many milestones can start once the running ones finish.\n2) ATMOSPHERE's latest design review (docs/evidence/ATMOSPHERE/design-review.md) found 1 Must Fix after the horizon-haze re-plan. Resolve it, keeping SCENE-VIEWS, WATERS and CLOUDS consistent.",
+      "at": "2026-11-14T16:54:40Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T13:57:36Z"
+    "at": "2026-11-14T16:54:40Z"
   },
   "design_history": [
     {

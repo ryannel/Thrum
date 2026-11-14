@@ -75,12 +75,12 @@
       }
     },
     "M6": {
-      "definitions": "45206b2658bf3c4b2af555e47a47d03bf08d8744fa44b0e97ae0ac1807036261",
+      "definitions": "a9cdd86b471cf9dddd783f1a0f1d1244073769447f7b6fdb33130c6116e02082",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
       }
     },
     "M7": {
@@ -92,17 +92,30 @@
         "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
         "at": "2026-11-14T13:32:41Z"
       }
+    },
+    "M8": {
+      "definitions": "bebc132dda6c115308df5fa21c131a69b3397dc76f7a2d1a4bca167cdfb72b4b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T16:54:40Z"
+      }
     }
   },
   "briefs": [
     {
       "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
       "at": "2026-11-14T12:06:54Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Dependency audit. The owner (14 Nov 2026) says development is far behind pace: Codex quota use is about 5% a day against a target near 15%, because only 4 milestones can start at once. Go through every milestone dependency in docs/plans/*/PLAN.md and DONE.json, and remove each edge that only sets an order, keeping only those where a milestone needs another milestone's actual output (code, interface, data or a verified baseline it builds on). Where a milestone needs only part of another, depend on the earliest milestone that provides that part. Owner decision: keep the swarm-game modules (SIM-2D, SWARM, TRANSPORT, RENDER-2D, GAME-UI, SESSION) gated on SHOWCASE:M8 as they are now. Contention for the shared GPU lock and disk is not a reason for an edge; the script queues GPU work. List each edge you removed or kept with a one-line reason in the evidence folder, and say how many milestones can start once the running ones finish.\n2) ATMOSPHERE's latest design review (docs/evidence/ATMOSPHERE/design-review.md) found 1 Must Fix after the horizon-haze re-plan. Resolve it, keeping SCENE-VIEWS, WATERS and CLOUDS consistent.",
+      "at": "2026-11-14T16:54:40Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T12:06:54Z"
+    "at": "2026-11-14T16:54:40Z"
   },
   "design_history": [
     {
