@@ -1,5 +1,17 @@
 # SEA M2 recovery note
 
+Update at 09:44 local time, 14 November: the eight passed items remain passed;
+M2.8 is still open. The original complete check below remains live. Direct M2.8
+verifier job `20261114-074918-88657` is also queued. Job
+`20261114-094322-25542` runs [the integration-source helper](qualify_m2_baselines.py)
+under the GPU lock: it updates this branch to current main, then reuses a proof
+only if the repository's gate accepts it, otherwise runs the verifier. Wait for
+these existing jobs instead of launching further duplicates. The helper may
+rebase HEAD. At this update the GPU owner was CLOUDS' merge; a successful merge
+could change covered source before the direct verifier starts. Neither newer
+verifier has reported a pass or a failure yet. The latest implementation remains
+unchanged; `6f1f53f6` adds only the scoped helper, and documentation checks pass.
+
 Finish SEA M2 with every item passed from its target and the work merged through
 `agent_loop.py merge --worktree .`. Leave M2 `in_progress`; the lead's script owns
 the later status and review. This note preserves a long-running qualification,
