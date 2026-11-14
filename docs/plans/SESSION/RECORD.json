@@ -1,10 +1,10 @@
 {
   "module": "SESSION",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/SESSION/design-review.md",
-    "commit": "5ea9bc40a25dbad865d50b47d374de4435fa5567",
-    "hash": "d66b5cd73fd0b15ba31792e7e1fb23cb76fd144dfbada3787325a873e3bb9311",
+    "commit": "598bbd74841b40416ea736ef4fda5fa08e757279",
+    "hash": "19dcf5552ef441598ced8a2caac5a0400026dd6133ac119450d9ef7222ea8f3b",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 103868,
-      "cached": 1277184,
-      "output": 6937,
+      "input": 96545,
+      "cached": 1149056,
+      "output": 6433,
       "turns": 1
     },
-    "at": "2026-11-14T21:38:26Z"
+    "at": "2026-11-14T23:23:49Z"
   },
   "milestones": {
     "M1": {
@@ -34,12 +34,13 @@
       }
     },
     "M2": {
-      "definitions": "8f8c31ac643caf81d4b8c243dcac7e74d4524b3917674b10774dd8cc2a519796",
+      "definitions": "d7b5a6433919ecf6d2f832e7fa4488f06180cdaa2a97c8f7ffa6a8a148a78d55",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
-        "at": "2026-11-13T19:29:49Z"
+        "by": "design review",
+        "review": "docs/evidence/SESSION/design-review.md",
+        "commit": "598bbd74841b40416ea736ef4fda5fa08e757279",
+        "at": "2026-11-14T23:23:49Z"
       }
     },
     "M3": {
@@ -79,12 +80,13 @@
       }
     },
     "M7": {
-      "definitions": "d13ea127b0f85e350e88c9b76f05d7c7e4115ec9f1a0a2bb0d863c7f2d6113cf",
+      "definitions": "664de9e646bae854d632e0c65f4ca6964a99afcb7910c2a3a058be0984d95bd7",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "by": "design review",
+        "review": "docs/evidence/SESSION/design-review.md",
+        "commit": "598bbd74841b40416ea736ef4fda5fa08e757279",
+        "at": "2026-11-14T23:23:49Z"
       }
     }
   },
@@ -152,6 +154,29 @@
         "turns": 1
       },
       "at": "2026-11-13T19:33:33Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/SESSION/design-review-3.md",
+      "commit": "5ea9bc40a25dbad865d50b47d374de4435fa5567",
+      "hash": "d66b5cd73fd0b15ba31792e7e1fb23cb76fd144dfbada3787325a873e3bb9311",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 103868,
+        "cached": 1277184,
+        "output": 6937,
+        "turns": 1
+      },
+      "at": "2026-11-14T21:38:26Z"
     }
   ]
 }
