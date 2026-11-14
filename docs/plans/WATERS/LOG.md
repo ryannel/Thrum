@@ -110,3 +110,37 @@
 - 2026-11-14 Not read for the revision: a frame study of Red Dead Redemption 2 or Sea of Thieves, and Abreu
   2010. Ruessink 2012, Komar and Gaughan's formula and McCowan's ratio are from memory or abstracts; part O
   holds the second.
+- 2026-11-14 The lead, on the bar the owner's words of that day set ("Scenery reflections we must have ...
+  That's the standard we're after. Camera being able to go under water we need to support as well."): "The
+  WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under water,
+  which are standard in high-end underwater views; bring the underwater view up to that bar in WATERS (or the
+  owning module), and plan the new module SCENE-VIEWS that WATERS M14 depends on. Choose methods from first
+  principles and current practice. Do not change WATERS M1, which is being built."
+- 2026-11-14 Re-planned on that task. Replaced: "no caustics and no shafts of light", "the exposure scale is
+  the sky's, so deep water is dark" and risk 24 as a declared defect. Cues W10 to W12 added, with their
+  research and reproductions R to T in [the evidence folder](../../evidence/WATERS/design-proof/)
+  (`under_light_proof.py`). Still not built, and now an assumption: drops on the lens, particles and bubbles.
+- 2026-11-14 Light under water, decided: one caustic field. The surface's light is carried down its refracted
+  rays onto thirteen depths a factor of √2 apart, each cell spread over where it lands, blurred by depth times
+  the slope the cells do not resolve. What lies under water takes it on its direct Sun in the forward pass,
+  so a shadow holds no net. Not chosen: a played texture, one plane for every depth (part R5: r = 0.30 at
+  4 m), a backward one-sheet lookup (does not conserve light), ray tracing (not portable).
+- 2026-11-14 Shafts, decided: the beam's once-scattered light, with the water type's phase function, as a
+  closed form plus a march of what the field and the scene's Sun visibility change, in the water's own
+  composition. Not chosen: screen streaks from the Sun, and `ATMOSPHERE`'s view volume, whose Sun path is
+  straight. Under water the Sun's path bends once for every reader, so shadows on the bed, the dark under a
+  hull and the beams agree.
+- 2026-11-14 The meter, decided: V4's incident meter reads the light at the lens. The model gives the factor
+  and the game puts it, raised to an adaptation share, in its camera request. Not chosen: a meter on the
+  picture. The share starts at 0.75 and is tuned in M16; it is an assumption in the plan.
+- 2026-11-14 Milestones. M16 added after M15 with thirteen items. Written again where the task's words reach:
+  M15's quality bar, M10.12, M10.14 and M11.9. M14 now waits for `SCENE-VIEWS:M3`, the milestone with cooked
+  placements and Chrome, in place of its M1. M1's items and its note are unchanged, word for word, and M16
+  asks nothing of the crate M1 builds beyond new functions.
+- 2026-11-14 Asks of other modules: [rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters), a Sun-path
+  factor and a lent Sun visibility with `ATMOSPHERE`, and a medium factor on the meter with
+  `APPLE-PRESENTATION`. No item of either changes. The mirror section now says the water filters the view's
+  one level itself and asks for a rigid camera, as [SCENE-VIEWS](../SCENE-VIEWS/DESIGN.md) lends it.
+- 2026-11-14 Not read for the second revision: how Sea of Thieves or Subnautica draw caustics and shafts,
+  Wallace's article itself (a search summary was read), and any measured caustic contrast. Cox and Munk's
+  slope law and Petzold's mean cosine are from memory.

@@ -301,8 +301,14 @@ denoising provider for it, whatever the device's default, and a request that nam
 scene is prepared: never accepted and ignored, and never fed fabricated inputs. The frame runtime owns the
 declaration and V4 owns the refusal
 ([seam ruling 1 for RENDER-2D](../plans/ARCHITECTURE.md#seam-rulings-for-render-2d)).
+A **secondary view** is a second draw of a 3D scene's geometry from another camera, asked for by a contribution
+of a presented view, as a Sun cascade is a product of that view. It publishes no frame contract, has no history
+key, is never given to a reconstruction provider and is not a camera instance: it takes its presenting view's
+jitter phase at its own extent and that view's exposure sample
+([seam ruling 4 for SCENE-VIEWS](../plans/ARCHITECTURE.md#seam-rulings-for-scene-views)).
 Exposure distinguishes the CPU camera request from its GPU-resolved sample. The request selects fixed gain or a
-declared physical incident meter; SDR display-operator selection is independent. The resolved resource carries storage scale,
+declared physical incident meter, which may carry a declared transmission of the medium the camera is in
+([seam ruling 7 for WATERS](../plans/ARCHITECTURE.md#seam-rulings-for-waters)); SDR display-operator selection is independent. The resolved resource carries storage scale,
 inverse gain, actual metered lux, operator identity, validity and submitted identity. A fixed fallback is not a
 host-known metered result. SDR colour is relative to display white; retain scene-linear colour for later HDR transforms.
 Retain an immutable

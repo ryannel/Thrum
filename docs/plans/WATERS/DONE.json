@@ -1416,7 +1416,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "Under water as in Sea of Thieves: a clean waterline across the lens with each side right at once, colour that deepens and darkens with depth, hulls and the bed fading into the water's own colour, and overhead a bright disc of sky ringed by the mirrored deep, moving with the waves. Without caustics or shafts of light, which the plan leaves out.",
+      "quality_bar": "Under water as in Sea of Thieves: a clean waterline across the lens with each side right at once, colour that deepens and darkens with depth, hulls and the bed fading into the water's own colour, and overhead a bright disc of sky ringed by the mirrored deep, moving with the waves. The net of light on the bed, the shafts and the meter that follows the light down are M16's, so here the bed is evenly lit and the exposure is the sky's.",
       "items": [
         {
           "id": "M15.1",
@@ -1514,6 +1514,157 @@
         },
         {
           "id": "M15.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M16",
+      "name": "Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "Light under water as in the shallows of Subnautica and under the hull in Sea of Thieves: a net of sunlight that moves with the waves over sand and timber, fine in the shallows and soft in the deep, with none in a shadow; beams that stand round the Sun and sweep as the swell passes, dark beneath the hull; and a picture a player can read from the waterline to 20 m down, darker with depth and never black.",
+      "items": [
+        {
+          "id": "M16.1",
+          "statement": "The caustic field is the surface's own light, carried down. On Metal each rung is the field `thrum-water-model` gives for the same surface and Sun, to the bound measured first. Its mean over the window is within that bound of 1 at every rung, it is exactly 1 under flat water, and its contrast (rms about its mean) at the rungs nearest 0.5 m, 2 m and 8 m, in a breeze and in a trade wind, is the model's to that bound.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test caustic_field_gpu",
+          "ask": "Does the model carry each cell's light down the refracted rays of the model's own surface, with no call into the water's shaders? Would a fixed pattern, and a map made at one depth and read at every depth, each fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.2",
+          "statement": "What lies under water takes the net as sunlight. A matte panel facing up at 0.1 m, 0.5 m, 2 m and 8 m under a rippled surface stores, texel by texel, its colour under flat water with its direct Sun multiplied by `1 + D (C - 1)` from the model, to the bound measured first, at exposure scales sixteen times apart. A panel in a caster's shadow, a panel facing down and a panel above the water store what they store with caustics left out, the last to the bit. Seen from above through the surface and from under water the panel carries the net once.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test caustic_receivers_gpu",
+          "ask": "Is the expected colour worked out on the CPU from the panel, the water table, the lent Sun and sky values and the model's field? Would multiplying the panel's whole colour, sky light included, fail it?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.3",
+          "statement": "Under water the Sun's path bends once for every reader. The shadow of a box floating over a level bed 2 m and 6 m down, with the Sun 20 and 60 degrees up, falls on the bed where the refracted ray from the box's waterline shape lands, to within the bound measured first, and the water's scattered sunlight is missing along the same rays.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_sun_path_gpu",
+          "ask": "Is the expected place worked out by Snell's law on the CPU, and would a shadow looked up along the Sun's direction above the water fail at 6 m with the Sun 20 degrees up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.4",
+          "statement": "The water's scattered light is the design's source. In a calm with nothing overhead, a path through open water stores the two closed forms, the even one and the one the phase function adds round the Sun's direction, to within the half-float step. Under a rippled surface the marched part, averaged over the frames of one jitter cycle, is within the bound measured first of the model's integral through its own field along paths toward the Sun, 10 degrees off it and level. With shafts left out the frame is M15's.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test shafts_gpu",
+          "ask": "Is the expected light integrated on the CPU through the model's field, at a step fine enough to be its own reference? Does the level path show that a step reads the mean of what it crosses?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.5",
+          "statement": "The camera's meter follows the light at the lens. `thrum-water-model` gives the light factor for a camera from the lens's depth and the body's water type, the example puts it, raised to its adaptation share, in its camera request, and the resolved exposure is the meter's value for the incident light times that factor, to f32 rounding. With a factor of 1 the resolved sample is today's, to the bit. As the lens goes from 0.5 m above the surface to 0.5 m under it in steps of a centimetre, no step changes the factor by more than a twentieth of a stop.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_meter_gpu",
+          "ask": "Is the factor a function of the model alone, the same for a given camera on every device? Does anything read the rendered picture to set the exposure?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.6",
+          "statement": "On the bed, the hull and a sunk float the Sun draws a moving net of light. It is fine and sharp in the shallows and wider and softer in deeper water, it travels with the waves, there is none in a glassy calm, at night or under a cloud's shade, and none inside the hull's shadow. It never repeats, never swims with the camera, and has no edge where the window ends.",
+          "inspect": "`fixed` stills and `realtime` sequences at noon and low Sun, in a calm, a breeze and a trade wind: from 0.5 m and 3 m under the lake and the sea looking down and level, and from 2 m above the pond and the beach's shallows looking down through the water. The bed near and far, the hull's side and its shadow, the float, and the place the window ends.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.7",
+          "statement": "Looking up toward the Sun from under water, beams of light stand in the water round its direction and sweep as the waves pass. They lean with the Sun and stay steep when it is low, the water beneath the hull is dark between them, and away from the Sun's direction and in a calm the water's light is even, with no banding or grain in a still.",
+          "inspect": "`fixed` stills and `realtime` sequences from 1 m, 3 m and 10 m under the sea and 1 m under the lake, in a breeze and a trade wind at noon and with the Sun 15 degrees up: looking up toward the Sun, 45 degrees off it and level, and from beside the craft at its keel's depth.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.8",
+          "statement": "As the camera sinks from the surface to 20 m in the sea and to the lake's bed, the picture stays readable: the bed, the hull and the open water keep their detail, deeper water is darker and bluer or greener and never flat black, and nothing jumps as the lens crosses the surface either way or hangs half under, at dawn, noon and twilight.",
+          "inspect": "`realtime` sequences of the descent and the return in the sea and the lake at the three hours, with stills at 0.5 m, 3 m, 10 m and 20 m, and a lens held half under in a trade wind: the brightness of the bed, the hull and the open water at each depth, and both sides of the waterline.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.9",
+          "statement": "Caustics and shafts are capabilities, and the caustic window's size and cell, its count of rungs, its cadence and the shafts' steps and resolution are named knobs with a declared invalidation. A profile without caustics composes the forward shader's text and draws the bytes of a scene with no water provider, and creates none of the field's resources. Setting each knob to both ends of its range while the scene runs applies its invalidation and creates no pipeline.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_light_capability_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M16.10",
+          "statement": "In Chrome the caustic field, the receivers, the bent Sun path, the shafts and the meter hold as M16.1 to M16.5 hold them, with no validation error.",
+          "check": "node scripts/check_water_browser.mjs --case under-light",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M16.11",
+          "statement": "In Chrome the lake and the sea pass M16.6's, M16.7's and M16.8's lists at noon.",
+          "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views at noon, judged by their lists and against the Mac's portable recipe.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.12",
+          "statement": "From 3 m under the sea and the lake in a trade wind, and from 2 m above the beach's shallows, the paired cost record is taken again at 2560\u00d71440, beside M15's record for the same places, with the caustic field's and the shafts' passes by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene under-light",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.13",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -1652,7 +1803,7 @@
         },
         {
           "id": "M10.12",
-          "statement": "A water profile that leaves out the waves, surf, the body query, interaction waves, whitewater, see-through water, scene reflection, body optics or the underwater view declares none of that capability's passes and creates none of its resources, and the surface's shader makes none of its reads. On a sea with no body and no foam, a profile with open water and waves alone submits the frame the full profile does, to within one step of the 8-bit output.",
+          "statement": "A water profile that leaves out the waves, surf, the body query, interaction waves, whitewater, see-through water, scene reflection, body optics, the underwater view, caustics or shafts declares none of that capability's passes and creates none of its resources, and the surface's shader makes none of its reads. On a sea with no body and no foam, a profile with open water and waves alone submits the frame the full profile does, to within one step of the 8-bit output.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test capabilities_gpu",
           "ask": "Is each capability left out of the compiled graph, or is its work still done and its output hidden?",
           "lock": "gpu",
@@ -1664,8 +1815,8 @@
         },
         {
           "id": "M10.14",
-          "statement": "Under TAAU on the Mac's portable recipe the surf and the lens are stable: no ghost behind a breaking crest or its foam, no crawl on the swell's lines as they close up, no smear along the waterline on the lens or round the window overhead, and going under and coming up resets nothing.",
-          "inspect": "`realtime` sequences with temporal sampling selected: the beach from 2 m and 40 m in a trade wind, and the camera sinking through the lake's surface, looking up, and rising.",
+          "statement": "Under TAAU on the Mac's portable recipe the surf, the lens and the light under water are stable: no ghost behind a breaking crest or its foam, no crawl on the swell's lines as they close up, no smear along the waterline on the lens or round the window overhead, no crawl or smear in the net of light on the bed as it moves, no boil or banding in the shafts, and going under and coming up resets nothing.",
+          "inspect": "`realtime` sequences with temporal sampling selected: the beach from 2 m and 40 m in a trade wind; the camera sinking through the lake's surface, looking up, and rising; and from 3 m under the sea in a breeze at noon, looking down at the bed and up toward the Sun.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1693,7 +1844,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SCENE-VIEWS:M1"
+        "SCENE-VIEWS:M3"
       ],
       "quality_bar": "The lakes of Red Dead Redemption 2 at dawn: the far shore, the ridge and each tree whole in the water whatever the camera does, joined to its foot at the waterline, softening and stretching as a breeze rises, and never cut off at the edge of the screen.",
       "items": [
@@ -1913,7 +2064,7 @@
         },
         {
           "id": "M11.9",
-          "statement": "A game maker can add water to a scene from the public documentation: the profile and its capabilities, bodies and the bed, stages, surf and its breaker section, mirror views, the view from under water, body records, impulses, the query and its mailbox, the limits, counters and knobs.",
+          "statement": "A game maker can add water to a scene from the public documentation: the profile and its capabilities, bodies and the bed, stages, surf and its breaker section, mirror views, the view from under water, caustics and shafts, the light factor a camera's meter takes, body records, impulses, the query and its mailbox, the limits, counters and knobs.",
           "ask": "Could a game maker, and the planners of `CLOUDS`, `RIVERS` and `PUDDLES`, use the water from the documentation and the design alone? Does the documentation say what the water writes to scene depth and where an effect after it must stop?",
           "target": "mac-metal",
           "builder_result": "open",

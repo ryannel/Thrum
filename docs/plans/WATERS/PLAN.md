@@ -1,7 +1,7 @@
 # WATERS plan
 
 One water system for every body of water, built here on the sea, the shore and lakes. [Design](DESIGN.md) ·
-[done-when file](DONE.json), which owns the criteria · [log](LOG.md) · [module list](../ARCHITECTURE.md)
+[done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines). Milestones are built in the order below, not in number order.
@@ -10,14 +10,14 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 
 - Assumption: "thinking about water as a whole ... built cohesively" (the owner, 14 November) is met by one design for all water, built by four modules: `SEA` (the wind's waves), this module (the shared system on the sea, the shore and lakes), then `RIVERS` and `PUDDLES`.
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
-- Assumption: "breaking waves" (the owner, 14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is not a baked simulation or a live solver. Nothing leaves the surface as spray or a splash, no camera rides inside a barrel, and surf drives no current.
+- Assumption: "breaking waves" (the owner, 14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
 - Assumption: as part of surf an island shelters its lee from the swell, so a lee beach laps with short waves only.
-- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen. A new module, `SCENE-VIEWS`, not yet planned, owns that draw. Ray-traced reflection is left for Apple devices later.
-- Assumption: "camera being able to go under water" is built without caustics, shafts of light or drops on the lens, and the exposure does not adapt, so deep water is dark. One water surface in any column still holds.
-- Assumption: only the mirror (M14) and the close wait for `SCENE-VIEWS`: surf's model is built straight after M1, surf after foam, and the view from under water after the channel.
+- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
+- Assumption: the view from under water has no drops on the lens, particles or bubbles, and its picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
+- Assumption: only M14 and the close wait for `SCENE-VIEWS`: surf's model follows M1, surf follows foam, the view from under water follows the channel, then its light.
 - Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) means milestones start when their dependencies are Done, which can be before G7.
 - Assumption: "you can copy that code out and reuse as is if it's useful" is the owner's licence for what Broadsides' authors wrote; third-party material keeps its own, and nothing GPL or share-alike is copied.
-- Assumption: every part beyond open water, surf, the mirror and the view from under water among them, is a capability a scene can leave out at no cost.
+- Assumption: every part beyond open water (surf, the mirror, the view from under water) is a capability a scene can leave out at no cost.
 - Assumption: the three sea cues the 10 November spikes left open stay parked.
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind it, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists, and no timing figure decides an item (brief decision 3).
@@ -67,13 +67,17 @@ The channel's chart is written by hand in the example: a level that falls from t
 
 ## M15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 
+## M16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
+
+[Rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters) are built here, in `ATMOSPHERE`'s and `APPLE-PRESENTATION`'s files.
+
 ## M10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
 
-A defect in `APPLE-PRESENTATION`'s reconstructor, and not in the water's inputs, goes to that module's log.
+A defect in `APPLE-PRESENTATION`'s reconstructor, not the water's inputs, goes to that module's log.
 
 ## M14 Still water mirrors the hills, trees and far shore that the camera cannot see, on the Mac and in Chrome
 
-The mirror view is `SCENE-VIEWS`' to draw: ask through its interface, and put what it lacks in its log as a proposal.
+Ask `SCENE-VIEWS` through [its interface](../SCENE-VIEWS/DESIGN.md#what-the-consumer-reads), and log what it lacks there as a proposal.
 
 ## M11 On the Mac's Apple recipe the water runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed
 
