@@ -84,7 +84,7 @@ fn depth_probe_texture(device: &wgpu::Device, format: wgpu::TextureFormat) -> wg
         label: None,
         size: wgpu::Extent3d {
             width: 2,
-            height: 8,
+            height: 10,
             depth_or_array_layers: 1,
         },
         mip_level_count: 1,
@@ -115,13 +115,14 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
         // Independent scene model: reciprocal view depth is the affine plane
         // 0.031*x + 0.019*y + 0.12. Evaluate the requested ray directly.
         let expected = 1.0 / (0.031 * 0.31 + 0.019 * 0.73 + 0.12);
-        let cases: [[f32; 4]; 4] = [
+        let cases: [[f32; 4]; 5] = [
             [expected, 0.31, 0.73, 0.0],
             [8.0, 0.5, 0.5, 0.0],
             [0.0, 0.5, 0.5, 1.0],
             [12.0, 0.5, 0.5, 0.0],
+            [12.0, 0.5, 0.5, 0.0],
         ];
-        let depths: [f32; 16] = [
+        let depths: [f32; 20] = [
             1.0 / 0.12,
             1.0 / (0.12 + 0.031),
             1.0 / (0.12 + 0.019),
@@ -138,6 +139,10 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             0.0,
             12.0,
             12.0, // Sky/geometry boundary.
+            4.0,
+            4.0,
+            12.0,
+            12.0, // Only half the footprint supports the requested surface.
         ];
         let colour = depth_probe_texture(&device, wgpu::TextureFormat::Rgba16Float);
         let depth = depth_probe_texture(&device, wgpu::TextureFormat::R32Float);
@@ -150,7 +155,7 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(8),
-                rows_per_image: Some(8),
+                rows_per_image: Some(10),
             },
             depth.size(),
         );
@@ -165,13 +170,13 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
         });
         let output = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: 128,
+            size: 160,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
         let readback = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: 128,
+            size: 160,
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -204,9 +209,9 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &group, &[]);
-            pass.dispatch_workgroups(1, 1, 1);
+            pass.dispatch_workgroups(5, 1, 1);
         }
-        encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 128);
+        encoder.copy_buffer_to_buffer(&output, 0, &readback, 0, 160);
         let (send, receive) = std::sync::mpsc::channel();
         encoder.map_buffer_on_submit(&readback, wgpu::MapMode::Read, .., move |result| {
             send.send(result).unwrap();
@@ -236,13 +241,18 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
                 .step_by(2)
                 .map(|row| row[3].to_bits())
                 .collect::<Vec<_>>(),
-            [1.0_f32, 0.0, 1.0, 0.0].map(f32::to_bits),
-            "accept the projected plane and sky; reject mixed surfaces"
+            [1.0_f32, 0.0, 1.0, 0.0, 0.5].map(f32::to_bits),
+            "accept plane and sky, reject unrelated surfaces, retain partial footprint support"
         );
         assert_eq!(
             values[3][0].to_bits(),
             1.0_f32.to_bits(),
             "old range control accepts stale foreground"
+        );
+        assert_eq!(
+            values[9][0].to_bits(),
+            1.0_f32.to_bits(),
+            "old range fully accepts a mixed footprint"
         );
     });
 }

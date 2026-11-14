@@ -56,13 +56,19 @@ fn depth_at(p: vec2<f32>, expected: f32) -> vec4<f32> {
     // taps; the latter admits stale occluder colour at a disocclusion.
     let projected = 1.0/max(dot(weights,vec4(1.0)/max(depths,vec4(1e-20))),1e-20);
     let errors = abs(depths-vec4(expected));
-    // At a discontinuity, a matching surface tap is also a valid witness.
-    // Interpolation alone invents a depth between surfaces and rejects both.
-    return vec4(low,high,select(projected,0.0,high == 0.0),min(min(errors.x,errors.y),min(errors.z,errors.w)));
-}
-fn depth_matches(old: vec4<f32>, expected: f32, sky: bool) -> bool {
     let tolerance = max(0.01,expected*0.01);
-    return (sky && old.y == 0.0) || (!sky && old.x > 0.0 && min(abs(expected-old.z),old.w) <= tolerance);
+    // At a discontinuity, the matching taps support only their share of the
+    // footprint. One matching tap must not fully admit mixed colour history.
+    let support = dot(weights,select(vec4(0.0),vec4(1.0),errors <= vec4(tolerance)));
+    return vec4(low,high,select(projected,0.0,high == 0.0),support);
+}
+fn depth_confidence(old: vec4<f32>, expected: f32, sky: bool) -> f32 {
+    if sky { return select(0.0,1.0,old.y == 0.0); }
+    if old.x <= 0.0 { return 0.0; }
+    let tolerance = max(0.01,expected*0.01);
+    // A projected plane has continuous reciprocal depth even when no corner
+    // has the queried depth. Preserve its full temporal support.
+    return select(old.w,1.0,abs(expected-old.z) <= tolerance);
 }
 fn history_round(value: f32, seed: u32) -> f32 {
     // Unbiased quantisation keeps a long temporal average from sticking one
@@ -120,10 +126,10 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     // Depth history is a jittered raster, unlike the resolved colour history.
     let old_depth = depth_at(previous+params.jitter.zw-params.jitter.xy,expected);
     let sky = textureLoad(depth,p,0) == 0.0;
-    let depth_ok = depth_matches(old_depth,expected,sky);
+    let support = depth_confidence(old_depth,expected,sky);
     let nominal_history_weight = 0.97;
-    var weight = nominal_history_weight*(1.0-textureLoad(reactive,p,0).r);
-    if params.state.x == 0.0 || !depth_ok || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
+    var weight = nominal_history_weight*support*(1.0-textureLoad(reactive,p,0).r);
+    if params.state.x == 0.0 || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
         weight = 0.0;
     }
     // With usable history, retain the raw jittered sample for the temporal box
