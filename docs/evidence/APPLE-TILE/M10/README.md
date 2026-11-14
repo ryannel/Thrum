@@ -3,7 +3,7 @@
 14 November 2026. Initial boundary checkpoint: `1d21de31` (on top of `d9ca8c13`).
 This is an incomplete builder record, not milestone acceptance. All five items remain open.
 
-The resumed implementation checkpoint is `57e70e7c`. Three integrated Metal lifecycle tests pass at
+The resumed implementation checkpoint is `fe809c7f`. Three integrated Metal lifecycle tests pass at
 `d29d2667`: exact two-slot submitted history, retention until old-generation completion delivery, and
 failure/loss/extent replacement with exact output against a fresh WGSL twin.
 [Actual selected output and executable identity](lifecycle-d29d2667.txt) state their scope.

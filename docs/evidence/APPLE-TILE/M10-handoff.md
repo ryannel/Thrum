@@ -4,9 +4,13 @@ This is a resumable checkpoint while target proofs wait for the shared GPU. M10
 remains in_progress and every item remains open. Three integrated Metal lifecycle
 tests pass, but no complete item, repository gate or merge is claimed. Continue the
 existing worktree, not a new implementation. The latest code checkpoint is
-`57e70e7c`; later commits retain continuation and proof records. That last code
-change restricts the Metal-only device-test module to macOS, matching its target;
-it does not change the simulator implementation or Mac runtime behavior.
+`fe809c7f`; later commits retain continuation and proof records. `57e70e7c`
+restricts the Metal-only device-test module to macOS. `fe809c7f` ends the native
+qualification hold once both backgrounding and lease revocation are observed,
+so the harness can observe cancellation while still backgrounded. Ordinary
+eight-second stall witnesses retain their existing behavior. Simulator-target
+Clippy and the rebuilt app pass after that change; actual simulator function is
+still pending.
 
 The small same-submit fixture passed on the Apple M3 Max at `cdede389`; its
 [retained result](M10/fixture-cdede389.txt) permits the route integration now in
@@ -57,13 +61,13 @@ Existing work to resume, using the configured `agent_loop.py`:
   `scripts/exact_baselines.py verify` and the official M10 check, with the full
   repository gate. It requires a clean tree. Both jobs survive turn interruption.
 - Release builds have finished. The latest simulator build job is
-  `20261114-065550-71424`; the latest Mac game build is
+  `20261114-080040-90655`; the latest Mac game build is
   `20261114-064231-69171`. The shared input store is
   `tmp/g7-showcase/runs/moving-20261114-033128/store`, validated by the proof runner.
 
 The original long Mac presentation holder exited. At the latest observation the
-GPU holder was another builder's exact-baseline verification, child PID 85789
-under lock owner PID 65983; it was actively running, not diagnosed stuck. There
+GPU holder was the Apple-presentation motion proof, child PID 88998 under lock
+owner PID 66291; it was actively running, not diagnosed stuck. There
 are other queued builders ahead of the corrected M10 diagnostic job. If a queued proof fails,
 diagnose its saved result and preserve the failure; never widen exact equality or
 replace target proof with unit tests. A native copying/ordering mechanism failure
