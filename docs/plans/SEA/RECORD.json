@@ -31,6 +31,36 @@
         "by": "plan",
         "task": "Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now rather t",
         "at": "2026-11-13T21:50:42Z"
+      },
+      "ready_for_review": {
+        "commit": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
+        "checked": "d0b8c06ef11e41f615bdad9c43c55a30603f06f4",
+        "at": "2026-11-14T01:25:04Z",
+        "reused": [
+          "Test command",
+          "M1.2"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.4.1",
+        "path": "headless",
+        "usage": {
+          "input": 167629,
+          "cached": 30022016,
+          "output": 124827,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 167629,
+          "cached": 30022016,
+          "output": 124827,
+          "turns": 2
+        }
       }
     },
     "M2": {

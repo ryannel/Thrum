@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
