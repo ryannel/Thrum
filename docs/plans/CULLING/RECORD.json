@@ -1,10 +1,10 @@
 {
   "module": "CULLING",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/CULLING/design-review.md",
-    "commit": "43523943da4bd39e859708c6bd22110fa23cb108",
-    "hash": "4cd24f7e82ffa607ee72aaee14ae0c27f6ce32c88c88f354fae59c2e66d6e55b",
+    "commit": "33968a448af0b999cee529c12643b48a89852a2f",
+    "hash": "1c408c023e9bd38b8a70428098ead1e46a198de8a0313f9ed394fe41c1359ce1",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 99082,
-      "cached": 1164800,
-      "output": 5210,
+      "input": 76385,
+      "cached": 887168,
+      "output": 6511,
       "turns": 1
     },
-    "at": "2026-11-14T23:35:55Z"
+    "at": "2026-11-14T23:44:11Z"
   },
   "milestones": {
     "M1": {
@@ -387,6 +387,29 @@
         "turns": 1
       },
       "at": "2026-11-14T23:23:40Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/CULLING/design-review-4.md",
+      "commit": "43523943da4bd39e859708c6bd22110fa23cb108",
+      "hash": "4cd24f7e82ffa607ee72aaee14ae0c27f6ce32c88c88f354fae59c2e66d6e55b",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 99082,
+        "cached": 1164800,
+        "output": 5210,
+        "turns": 1
+      },
+      "at": "2026-11-14T23:35:55Z"
     }
   ]
 }
