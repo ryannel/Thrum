@@ -61,6 +61,56 @@ impl SceneSource<SourceTick> for Policy {
 
 type Host = FrameHost<StaticWorld, Policy>;
 
+#[cfg(target_os = "macos")]
+#[test]
+fn timing_demand_switches_with_both_slots_in_flight_and_survives_replacement() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let mut host = host(&capabilities, &queue, Policy::default()).await;
+        assert!(host.timing_requested());
+        pending_slots(&mut host);
+        host.set_timing_requested(false);
+        for sample in metal::drain_samples(&mut host) {
+            assert!(sample.timing_requested && sample.gpu_pass_ns.is_some());
+        }
+        assert!(
+            host.slots
+                .iter()
+                .all(|slot| matches!(slot.state, super::super::SlotState::Free))
+        );
+        pending_slots(&mut host);
+        host.set_timing_requested(true);
+        for sample in metal::drain_samples(&mut host) {
+            assert!(!sample.timing_requested && sample.gpu_pass_ns.is_none());
+            assert!(!sample.timing_fault);
+        }
+        pending_slots(&mut host);
+        for sample in metal::drain_samples(&mut host) {
+            assert!(sample.timing_requested && sample.gpu_pass_ns.is_some());
+        }
+        host.set_timing_requested(false);
+        let inputs = host.device_prepare_inputs().expect("replacement inputs");
+        let (replacement, new_queue) = gpu(&instance, 8).await;
+        let mut candidate = inputs
+            .prepare(&replacement, &new_queue, Some(surface()))
+            .await
+            .expect("replacement");
+        host.publish_device(&mut candidate).expect("publish");
+        assert!(!host.timing_requested());
+        pending_slots(&mut host);
+        host.set_timing_requested(true);
+        for sample in metal::drain_samples(&mut host) {
+            assert!(!sample.timing_requested && sample.gpu_pass_ns.is_none());
+        }
+        pending_slots(&mut host);
+        for sample in metal::drain_samples(&mut host) {
+            assert!(sample.timing_requested && sample.gpu_pass_ns.is_some());
+        }
+        assert_eq!(host.pending_frames(), 0);
+    });
+}
+
 pub(super) async fn gpu(
     instance: &wgpu::Instance,
     generation: u64,

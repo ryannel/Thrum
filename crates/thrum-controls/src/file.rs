@@ -90,6 +90,9 @@ impl Controls {
                 }
                 self.edit_value(id, Value::Text(text.clone()))
             }
+            (Kind::Table, _) => Err(invalid(
+                "is a read-only table the app publishes; remove it from the file".to_owned(),
+            )),
             (Kind::Readout { .. }, _) => Err(invalid(
                 "is a readout the game publishes; remove it from the file".to_owned(),
             )),

@@ -26,6 +26,8 @@ use winit::event_loop::EventLoopProxy;
 /// Completed GPU samples polled per job; the runtime retains at most this many frames.
 pub(super) const SAMPLE_SLOTS: usize = 2;
 pub(super) struct FrameRequest<E> {
+    pub(super) profile_revision: u64,
+    pub(super) timing_requested: bool,
     pub(super) sequence: u64,
     pub(super) device_generation: u64,
     pub(super) target_media_seconds: f64,
@@ -100,6 +102,8 @@ pub(super) struct Finished {
     pub(super) lost_device: bool,
 }
 pub(super) struct RenderReply<R> {
+    pub(super) profile_revision: u64,
+    pub(super) profile_minimum: u64,
     pub(super) sequence: u64,
     pub(super) device_generation: u64,
     pub(super) outcome: RenderOutcome,
@@ -124,6 +128,8 @@ struct Actor<G: Game> {
     origin: Instant,
     wake: EventLoopProxy<UserEvent>,
     observer: Option<super::qualification::Observer>,
+    profile_minimum: u64,
+    profile_revision: u64,
 }
 pub(super) type RenderWorker<G> =
     FrameWorker<RenderJob<<G as Game>::Edits>, RenderReply<<G as Game>::Readback>>;
@@ -148,6 +154,8 @@ pub(super) fn start<G: Game + 'static>(
     let observer = super::qualification::Observer::start(&mut host, origin)?;
     let mut actor = Actor::<G> {
         observer,
+        profile_minimum: 0,
+        profile_revision: 0,
         host,
         gpu,
         recipe,
@@ -171,6 +179,8 @@ impl<G: Game> Actor<G> {
     fn work(&mut self, job: RenderJob<G::Edits>) -> RenderReply<G::Readback> {
         let start = Instant::now();
         let mut reply = RenderReply {
+            profile_revision: self.profile_revision,
+            profile_minimum: self.profile_minimum,
             sequence: 0,
             device_generation: self.gpu.watch.generation,
             outcome: RenderOutcome::DeviceLost,
@@ -232,6 +242,8 @@ impl<G: Game> Actor<G> {
             reply.outcome = RenderOutcome::Frame(Err(error));
         }
         reply.device_generation = self.gpu.watch.generation;
+        reply.profile_minimum = self.profile_minimum;
+        reply.profile_revision = self.profile_revision;
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
         reply.counters = FrameCounters::read(&self.host);
         reply.readback = G::readback(&self.host);
@@ -247,6 +259,14 @@ impl<G: Game> Actor<G> {
             return Err(FrameError::InvalidState("stale frame device generation"));
         }
         // CPU policy errors remain fatal even when a loss is concurrent.
+        if request.profile_revision != self.profile_revision {
+            self.profile_minimum = self.host.last_submission().map_or(0, |order| order + 1);
+            self.profile_revision = request.profile_revision;
+        }
+        if request.timing_requested != self.host.timing_requested() {
+            self.profile_minimum = self.host.last_submission().map_or(0, |order| order + 1);
+            self.host.set_timing_requested(request.timing_requested);
+        }
         G::apply(&mut self.host, request.edits).map_err(FrameError::Scene)?;
         ensure_device(&self.gpu.watch)?;
         ensure_running(&self.stopped)?;

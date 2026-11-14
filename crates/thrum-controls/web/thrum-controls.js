@@ -27,6 +27,11 @@ const STYLE = `
 .tc-row input[type=checkbox] { justify-self: start; width: 1.1rem; height: 1.1rem; }
 .tc-row input[type=text] { font: inherit; }
 .tc-row.tc-readout output { grid-column: 2 / span 2; }
+.tc-row.tc-table { display: block; max-width: 100%; }
+.tc-table table { width: 100%; font-size: .8rem; font-variant-numeric: tabular-nums; border-collapse: collapse; }
+.tc-table th { text-align: left; font-weight: normal; overflow-wrap: anywhere; }
+.tc-table td { text-align: right; padding-left: .6rem; }
+@media (max-width: 540px) { .tc-group { min-width: 0; width: 100%; } .tc-row { grid-template-columns: 6rem minmax(4rem, 1fr) 4rem; } }
 `;
 
 const heading = (group) => group.replaceAll("_", " ").replace(/^./, (first) => first.toUpperCase());
@@ -82,7 +87,7 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
       groups.set(control.group, group);
       panel.append(group);
     }
-    const row = document.createElement(control.kind === "readout" ? "div" : "label");
+    const row = document.createElement(["readout", "table"].includes(control.kind) ? "div" : "label");
     row.className = `tc-row tc-${control.kind}`;
     row.dataset.control = control.key;
     const name = document.createElement("span");
@@ -109,6 +114,12 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
       input.addEventListener("change", () => send(control.key, input.value));
       row.append(input);
       widget.input = input;
+    } else if (control.kind === "table") {
+      const output = document.createElement("table");
+      output.id = id;
+      drawRows(output, control.value);
+      row.append(output);
+      widget.output = output;
     } else {
       const output = document.createElement("output");
       Object.assign(output, { id, textContent: control.text });
@@ -130,7 +141,8 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
       if (control.kind === "slider" && input.valueAsNumber !== value) input.value = value;
       if (control.kind === "toggle") input.checked = value;
       if (control.kind === "text" && document.activeElement !== input) input.value = value;
-      if (output && output.textContent !== text) output.textContent = text;
+      if (control.kind === "table") drawRows(output, value);
+      else if (output && output.textContent !== text) output.textContent = text;
     }
   };
   function send(key, value) {
@@ -149,4 +161,17 @@ export function mountControls(container, described, { edit, changes, ids = {}, o
     /** The input or output element for a control key. */
     element(key) { const widget = widgets.get(key); return widget?.input ?? widget?.output ?? null; },
   };
+}
+
+function drawRows(table, rows) {
+  table.replaceChildren(...rows.map(([label, text]) => {
+    const row = document.createElement("tr");
+    const name = document.createElement("th");
+    name.scope = "row";
+    name.textContent = label;
+    const value = document.createElement("td");
+    value.textContent = text;
+    row.append(name, value);
+    return row;
+  }));
 }

@@ -263,3 +263,31 @@ fn a_repeated_person_edit_is_still_reported() {
     );
     assert_eq!(controls.changed_since(seen).count(), 0);
 }
+#[test]
+fn table_rows_replace_together_are_shared_with_views_and_refuse_all_edits() {
+    let mut controls = Controls::new();
+    let table = controls.table("profile.rows", "Frame stages").unwrap();
+    let rows = vec![("GPU forward".into(), "profiler off".into())];
+    assert!(controls.show_rows(table, rows.clone()));
+    let revision = controls.revision();
+    assert!(!controls.show_rows(table, rows));
+    assert_eq!(controls.revision(), revision);
+    let described: serde_json::Value = serde_json::from_str(&controls.describe_json()).unwrap();
+    assert_eq!(described["controls"][0]["kind"], "table");
+    assert_eq!(described["controls"][0]["value"][0][1], "profiler off");
+    assert!(controls.edit_display(table.id(), 1.0).is_err());
+    assert!(
+        controls
+            .edit_value(table.id(), Value::Text("edit".into()))
+            .is_err()
+    );
+    assert_eq!(
+        controls
+            .apply_file(r#"{"profile.rows":[]}"#)
+            .unwrap()
+            .problems
+            .len(),
+        1
+    );
+    assert_eq!(controls.revision(), revision);
+}

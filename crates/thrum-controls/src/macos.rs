@@ -61,7 +61,7 @@ define_class!(
                 Some(Kind::Slider { .. }) => Edit::Number(id, sender.doubleValue()),
                 Some(Kind::Toggle) => Edit::Value(id, Value::Flag(sender.integerValue() != 0)),
                 Some(Kind::Text) => Edit::Value(id, Value::Text(sender.stringValue().to_string())),
-                Some(Kind::Readout { .. }) | None => return,
+                Some(Kind::Readout { .. } | Kind::Table) | None => return,
             };
             ivars.edits.borrow_mut().push(edit);
             if let Some(wake) = &ivars.wake {
@@ -489,6 +489,19 @@ fn build_row(
                     field.clone().into_super().into_super(),
                 ],
                 Widget::Text(field),
+            )
+        }
+        (Kind::Table, _) => {
+            let readout = NSTextField::wrappingLabelWithString(&shown, mtm);
+            readout.setFont(Some(&NSFont::monospacedSystemFontOfSize_weight(11.0, 0.0)));
+            fixed_width(&readout, 540.0);
+            readout
+                .heightAnchor()
+                .constraintEqualToConstant(500.0)
+                .setActive(true);
+            (
+                vec![readout.clone().into_super().into_super()],
+                Widget::Readout(readout),
             )
         }
         (Kind::Readout { .. } | Kind::Slider { .. } | Kind::Toggle, _) => {

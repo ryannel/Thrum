@@ -6,7 +6,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import zlib from 'node:zlib';
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['scene', 'controls', 'edit', 'journey'].includes(mode)) throw Error('use --case scene|controls|edit|journey');
+if (!['scene', 'controls', 'edit', 'journey', 'profiler', 'profiler-switch'].includes(mode)) throw Error('use --case scene|controls|edit|journey|profiler|profiler-switch');
 const output = path.resolve(`tmp/creator-m1/${mode}-${Date.now()}`);
 await fs.mkdir(output, { recursive:true });
 const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -117,6 +117,39 @@ try {
   sid=(await cdp.call('Target.attachToTarget',{ targetId,flatten:true })).sessionId;
   await cdp.call('Page.enable',{},sid);
   await cdp.call('Page.addScriptToEvaluateOnNewDocument', {source: `
+    globalThis.__timingWork = { resolves: 0, maps: 0, pairs: 0, submits: 0, supported: false };
+    const resolve = GPUCommandEncoder.prototype.resolveQuerySet;
+    GPUCommandEncoder.prototype.resolveQuerySet = function(...args) {
+      if (args[0].label === 'thrum pass timestamps') __timingWork.resolves++;
+      return resolve.apply(this, args);
+    };
+    const map = GPUBuffer.prototype.mapAsync;
+    GPUBuffer.prototype.mapAsync = function(...args) {
+      if (this.label === 'thrum timestamp readback') __timingWork.maps++;
+      return map.apply(this, args);
+    };
+    for (const method of ['beginRenderPass', 'beginComputePass']) {
+      const begin = GPUCommandEncoder.prototype[method];
+      GPUCommandEncoder.prototype[method] = function(descriptor) {
+        if (descriptor.timestampWrites) __timingWork.pairs++;
+        return begin.call(this, descriptor);
+      };
+    }
+    const submit = GPUQueue.prototype.submit;
+    GPUQueue.prototype.submit = function(...args) {
+      __timingWork.submits++;
+      return submit.apply(this, args);
+    };
+    const requestDevice = GPUAdapter.prototype.requestDevice;
+    GPUAdapter.prototype.requestDevice = async function(descriptor = {}) {
+      if (location.search.includes('without-timestamps')) descriptor = {
+        ...descriptor, requiredFeatures: [...(descriptor.requiredFeatures ?? [])].filter(f => !f.startsWith('timestamp-query')),
+      };
+      const device = await requestDevice.call(this, descriptor);
+      __timingWork.supported = device.features.has('timestamp-query');
+      (globalThis.__creatorDevices ??= []).push(device);
+      return device;
+    };
     const originalRequestAdapter = GPU.prototype.requestAdapter;
     GPU.prototype.requestAdapter = async function(...arguments_) {
       const adapter = await originalRequestAdapter.apply(this, arguments_);
@@ -162,6 +195,74 @@ try {
   };
   const before=await capture('drawn');
   await screenshot('page');
+  if(mode === 'profiler' || mode === 'profiler-switch') {
+    const rows = () => evaluate('JSON.parse(game.controls_json()).controls.find(c=>c.key==="profiler.rows").value');
+    const set = on => evaluate(`game.edit_control('profiler.enabled', ${on})`);
+    const latest = async () => Number(/newest #(\d+)/.exec((await rows()).find(([label])=>label==='Window')?.[1])?.[1] ?? 0);
+    const gpuRows = async () => (await rows()).filter(([label])=>label.startsWith('GPU '));
+    await set(true);
+    await until(async()=> (await latest()) > 650, 'live completed frame after 600', 180000);
+    results.after600 = { newest:await latest(), rows:await rows(), work:await evaluate('__timingWork') };
+    const supported = results.after600.work.supported;
+    const numeric = rows => rows.some(([,text]) => /\d.*ms/.test(text));
+    assert(supported ? numeric(await gpuRows()) : (await gpuRows()).every(([,text])=>text.includes('no timestamp queries')), 'GPU values contradict adapter features');
+    await screenshot('profiler-wide');
+    if(mode === 'profiler') {
+      // A real load change, only after 600 completed frames: 16x the fragment pixels.
+      const baseline = await gpuRows();
+      const boundary = await latest();
+      await evaluate('(()=>{const c=document.querySelector("canvas");c.width=3840;c.height=2160;})()');
+      await until(async()=> (await latest()) > boundary + 150, 'recent window replaced after load change', 180000);
+      const loaded = await gpuRows();
+      results.load = { baseline, loaded, boundary, newest:await latest() };
+      if(supported) {
+        const number = text => Number(/([\d.]+) ms/.exec(text)?.[1] ?? NaN);
+        const forward = rows => number(rows.find(([name])=>/forward/.test(name))?.[1] ?? '');
+        assert(forward(loaded) > forward(baseline), `forward pass did not respond to 16x pixels: ${JSON.stringify(results.load)}`);
+      }
+      await evaluate('(()=>{const c=document.querySelector("canvas");c.width=960;c.height=540;})()');
+    }
+    await cdp.call('Emulation.setDeviceMetricsOverride',{ width:480,height:900,deviceScaleFactor:1,mobile:false },sid);
+    await delay(500);
+    await screenshot('profiler-narrow');
+    assert(await evaluate('document.documentElement.scrollWidth<=480'), 'profiler table overflows narrow page');
+    const oldNewest = await latest();
+    await set(false);
+    await delay(1500); // more than the two in-flight batches and the readout refresh
+    results.off = { rows:await rows(), work:await evaluate('__timingWork') };
+    assert((await gpuRows()).every(([,text])=>text==='profiler off'), 'off rows retained numeric GPU values');
+    await screenshot('profiler-off');
+    await delay(1000);
+    const settled = await evaluate('__timingWork');
+    for(const key of ['resolves','maps','pairs']) assert(settled[key] === results.off.work[key], `off kept doing timestamp ${key}`);
+    assert(settled.submits > results.off.work.submits, 'frames stopped submitting while profiler off');
+    if(supported) assert(results.off.work.resolves > 0 && results.off.work.maps > 0 && results.off.work.pairs > 0, 'observer did not see real timestamp work while on');
+    await set(true);
+    const immediate = await rows();
+    assert(!numeric(immediate.filter(([label])=>label.startsWith('GPU '))), 'switch-on reused pre-switch numbers');
+    await until(async()=> (await latest()) > oldNewest + 10, 'only post-switch completed samples');
+    results.onAgain = { rows:await rows(), newest:await latest(), work:await evaluate('__timingWork') };
+    if(supported) assert(results.onAgain.work.resolves > settled.resolves, 'switch-on did not resume real timestamp work');
+    if(mode === 'profiler') {
+      await evaluate('game.set_visible(false, performance.now())');
+      results.hidden = await rows();
+      assert((await gpuRows()).every(([,text])=>text.includes('no recent completed frame')), 'hidden page kept old GPU values');
+      await evaluate('game.set_visible(true, performance.now())');
+      await until(async()=> (await latest()) > results.onAgain.newest + 10, 'live frames after visibility restore');
+      await evaluate('__creatorDevices.at(-1).destroy()');
+      await until(()=>evaluate('__creatorDevices.length > 1'), 'replacement WebGPU device');
+      results.replaced = await rows();
+      await until(async()=> numeric(await gpuRows()), 'fresh replacement GPU timings');
+      await cdp.call('Page.navigate', {url:url+'?without-timestamps'}, sid);
+      await drawn();
+      await set(true);
+      await until(async()=> (await latest()) > 30, 'no-timestamp device completed frames');
+      results.unsupported = { rows:await rows(), work:await evaluate('__timingWork') };
+      assert(!results.unsupported.work.supported, 'no-timestamp device still enabled queries');
+      assert((await gpuRows()).every(([,text])=>text.includes('no timestamp queries')), 'no-feature device showed numeric GPU time');
+      assert(results.unsupported.work.resolves===0 && results.unsupported.work.maps===0 && results.unsupported.work.pairs===0, 'no-feature device wrote timestamps');
+    }
+  }
   if(mode==='scene') {
     await evaluate('(()=>{const input=document.querySelector("#sun-elevation");input.value=3;input.dispatchEvent(new Event("input",{bubbles:true}));})()');
     await delay(500);

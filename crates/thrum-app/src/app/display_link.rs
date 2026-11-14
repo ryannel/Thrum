@@ -37,7 +37,7 @@ define_class!(
         #[unsafe(method(displayFrame:))]
         fn display_frame(&self, link: &CADisplayLink) {
             let target = link.targetTimestamp();
-            let _ = self.ivars().wake.send_event(UserEvent::DisplayTarget(target));
+            let _ = self.ivars().wake.send_event(UserEvent::DisplayTarget { target, callback: link.timestamp() });
         }
     }
 );

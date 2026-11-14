@@ -2242,7 +2242,7 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         encoder: &mut wgpu::CommandEncoder,
         surface: LateSurface<'_>,
-        timings: &mut GpuTimings,
+        timings: Option<&mut GpuTimings>,
         readback: bool,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
@@ -2253,7 +2253,7 @@ impl PreparedSynthetic {
                 prepared: self,
                 target,
                 encoder,
-                timings: Some(timings),
+                timings,
                 generation: self.key.device_generation,
                 readback: None,
                 contribution: None,

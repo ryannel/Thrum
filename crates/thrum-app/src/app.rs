@@ -5,6 +5,7 @@ mod device;
 mod display_link;
 mod edit_flow;
 mod pause;
+mod profile_recording;
 mod qualification;
 mod qualification_signpost;
 mod recovery;
@@ -52,10 +53,18 @@ const RETAINED_PROFILES: usize = 36_000;
 /// The first device's generation; recovery owns later ones.
 const DEVICE_GENERATION: u64 = 1;
 
+enum TimingPolicy {
+    Report,
+    Profiler,
+}
+
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
     WorldAdvanced,
-    DisplayTarget(f64),
+    DisplayTarget {
+        target: f64,
+        callback: f64,
+    },
     RenderDone,
     DeviceLost(u64),
     ControlsEdited,
@@ -119,6 +128,9 @@ struct App<G: Game> {
     worker_walls: Vec<Duration>,
     acquire_walls: Vec<Duration>,
     samples: Vec<FrameSample>,
+    profile: crate::profile::ProfileWindow,
+    profile_recording: Option<profile_recording::Recording>,
+    timing_policy: TimingPolicy,
     profiler_title_at: Duration,
     adapter_name: String,
     error: Option<String>,
@@ -128,6 +140,12 @@ struct App<G: Game> {
 }
 
 impl<G: Game + 'static> App<G> {
+    fn timing_requested(&self) -> bool {
+        let reports =
+            matches!(self.timing_policy, TimingPolicy::Report) || self.qualification.is_some();
+        reports || crate::profile::enabled(self.game.controls()).unwrap_or(true)
+    }
+
     /// `target_frames` of `None` runs until the window closes.
     fn new(
         config: Config,
@@ -192,6 +210,9 @@ impl<G: Game + 'static> App<G> {
             worker_walls: Vec::with_capacity(reserved * 4),
             acquire_walls: Vec::with_capacity(reserved * 4),
             samples: Vec::with_capacity(reserved * 2),
+            profile: crate::profile::ProfileWindow::new(),
+            profile_recording: profile_recording::Recording::from_environment(),
+            timing_policy: TimingPolicy::Report,
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
@@ -221,6 +242,11 @@ impl<G: Game + 'static> App<G> {
     /// Take edits from keys, the panel or a parameter file. Presentation edits ride the next
     /// frame request; the pause toggle takes the same path as the P key.
     fn controls_edited(&mut self) -> Result<(), String> {
+        self.profile.configure(
+            crate::profile::enabled(self.game.controls()).unwrap_or(false),
+            self.recovery.active,
+            u64::MAX,
+        );
         let (presentation, paused) = self.game.take_edits();
         if let Some(paused) = paused
             && self.pause.request(paused)
@@ -589,6 +615,21 @@ impl<G: Game + 'static> App<G> {
         }
         let request = self.render_in_flight.take();
         self.counters = reply.counters;
+        let enabled = crate::profile::enabled(self.game.controls()).unwrap_or(false);
+        self.profile
+            .configure(enabled, reply.device_generation, reply.profile_minimum);
+        if reply.profile_revision == crate::profile::revision(self.game.controls()) {
+            for sample in reply.samples.iter().flatten() {
+                self.profile.push(sample, self.origin.elapsed());
+            }
+        }
+        self.profile.publish(
+            self.game.controls_mut(),
+            self.origin.elapsed(),
+            self.display_link_callbacks as u64,
+            self.presented as u64,
+            false,
+        );
         self.samples.extend(reply.samples.into_iter().flatten());
         self.surface_extent = reply.surface_extent;
         if request.is_some_and(|request| self.edits.admits(request)) {
@@ -596,6 +637,14 @@ impl<G: Game + 'static> App<G> {
         }
         self.sync_panel();
         self.worker_walls.push(reply.worker_wall);
+        if let Some(recording) = &mut self.profile_recording {
+            recording.observe(
+                self.origin.elapsed(),
+                &self.samples,
+                self.game.controls(),
+                self.panel.as_ref(),
+            )?;
+        }
         if let Some(acquire_wall) = reply.acquire_wall {
             self.acquire_walls.push(acquire_wall);
         }
@@ -724,6 +773,8 @@ impl<G: Game + 'static> App<G> {
             )?;
         }
         let job = RenderJob::Frame(FrameRequest {
+            profile_revision: crate::profile::revision(self.game.controls()),
+            timing_requested: self.timing_requested(),
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
             target_media_seconds: self.display_target.ok_or("display target missing")?,
@@ -1008,7 +1059,7 @@ fn profiler_title(
     gpu_status: &str,
 ) -> String {
     let gpu = sample.gpu_pass_ns.as_ref().map_or_else(
-        || "GPU timestamps unavailable".to_owned(),
+        || if sample.timing_requested { "GPU timestamps unavailable" } else { "GPU timing off" }.to_owned(),
         |passes| {
             let present = sample.gpu_present_ns.unwrap_or(0.0) / 1e6;
             format!(
@@ -1109,7 +1160,19 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                     return;
                 }
             }
-            UserEvent::DisplayTarget(target) => {
+            UserEvent::DisplayTarget { target, callback } => {
+                self.profile.set_available(self.recovery.ready());
+                if let Ok(timestamp) = Duration::try_from_secs_f64(callback) {
+                    self.profile.callback(timestamp);
+                }
+                self.profile.publish(
+                    self.game.controls_mut(),
+                    self.origin.elapsed(),
+                    self.display_link_callbacks as u64,
+                    self.presented as u64,
+                    false,
+                );
+                self.sync_panel();
                 if let Some(pan) = &mut self.qualification {
                     let result = self
                         .panel
@@ -1279,6 +1342,22 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        let now = self.origin.elapsed();
+        self.profile.publish(
+            self.game.controls_mut(),
+            now,
+            self.display_link_callbacks as u64,
+            self.presented as u64,
+            false,
+        );
+        self.sync_panel();
+        let refresh = self
+            .profile
+            .is_enabled()
+            .then_some(now + Duration::from_millis(250));
+        event_loop.set_control_flow(refresh.map_or(ControlFlow::Wait, |at| {
+            ControlFlow::WaitUntil(self.origin + at)
+        }));
         if self.window.is_some()
             && self.render.is_some()
             && let Some(deadline) = self.run_deadline
@@ -1287,7 +1366,9 @@ impl<G: Game + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.error = Some(self.deadline_error());
                 event_loop.exit();
             } else {
-                event_loop.set_control_flow(ControlFlow::WaitUntil(self.origin + deadline));
+                event_loop.set_control_flow(ControlFlow::WaitUntil(
+                    self.origin + refresh.map_or(deadline, |at| at.min(deadline)),
+                ));
             }
         }
     }
@@ -1356,6 +1437,12 @@ fn run_with<G: Game + 'static>(
             std::process::exit(2);
         }
     };
+    app.timing_policy =
+        if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
+            TimingPolicy::Report
+        } else {
+            TimingPolicy::Profiler
+        };
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }

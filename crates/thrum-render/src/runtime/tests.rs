@@ -42,6 +42,7 @@ fn sample(tick: u64) -> FrameSample {
         gpu_contribution_ns: None,
         surface_presented: false,
         timing_fault: false,
+        timing_requested: true,
         culling_mode: crate::synthetic::CullMode::Direct,
         culling_selection: crate::synthetic::CullingSelection {
             requested: crate::synthetic::CullMode::Direct,

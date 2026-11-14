@@ -137,6 +137,7 @@ impl BrowserScene {
     /// # Errors
     /// Reports asset, input, clock or graphics failures with their cause.
     pub fn frame(&mut self, now: f64) -> Result<(), JsValue> {
+        self.shell.update_profiler(&mut self.game.controls, false);
         if let Some(sky) = self.game.update().0 {
             self.shell.source_mut().sky = sky;
         }
@@ -147,7 +148,9 @@ impl BrowserScene {
     /// # Errors
     /// Reports asset, input, clock or graphics failures with their cause.
     pub fn set_visible(&mut self, visible: bool, now: f64) -> Result<(), JsValue> {
-        self.shell.set_visible(visible, now).map_err(js)
+        self.shell.set_visible(visible, now).map_err(js)?;
+        self.shell.update_profiler(&mut self.game.controls, false);
+        Ok(())
     }
     /// Model description used by the DOM view.
     pub fn controls_json(&self) -> String {
@@ -169,7 +172,7 @@ impl BrowserScene {
     pub fn edit_control(&mut self, key: &str, value: &JsValue) -> Result<bool, JsValue> {
         let model = &mut self.game.controls;
         let id = model.lookup(key).map_err(js)?;
-        if let Some(number) = value.as_f64() {
+        let changed = if let Some(number) = value.as_f64() {
             model.edit_display(id, number).map_err(js)
         } else if let Some(on) = value.as_bool() {
             model
@@ -183,7 +186,9 @@ impl BrowserScene {
             Err(js(
                 "browser control input needs a number, boolean or string",
             ))
-        }
+        }?;
+        self.shell.update_profiler(&mut self.game.controls, false);
+        Ok(changed)
     }
 
     /// Apply display values through the same checked parameter path as the native panel.

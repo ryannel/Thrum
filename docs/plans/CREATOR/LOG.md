@@ -1,5 +1,9 @@
 # CREATOR log
 
+- 2026-11-14 Implemented M2's shared table and profile window, shell bindings and the frame-host
+  timing-demand switch. CPU unit tests and native/Wasm compilation and linting passed; device,
+  browser and panel proofs remain unverified at this checkpoint. [Builder evidence](../../evidence/CREATOR/M2.md).
+
 - 2026-11-10 Planned from [the module list](../ARCHITECTURE.md). The earlier G6 slices were built before the loop and
   are recorded in the G6 decision and its evidence; this plan covers only what closes the gate.
 - 2026-11-10 [Design review 1 at `4bbe44a4`](../../evidence/CREATOR/design-review-1.md): DESIGN CHANGES, one Must

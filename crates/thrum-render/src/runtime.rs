@@ -219,6 +219,8 @@ pub struct FrameSample {
     pub surface_presented: bool,
     /// The GPU frame completed but its optional timing batch was unusable.
     pub timing_fault: bool,
+    /// Whether this frame requested GPU timestamps when it was encoded.
+    pub timing_requested: bool,
     /// The camera culling mode the prepared renderer ran this frame with.
     pub culling_mode: CullMode,
     /// Preparation-time request and capability reason for this frame's generation.
@@ -374,6 +376,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
+    timing_requested: bool,
     dropped_views: u64,
     dropped_stale_views: u64,
     dropped_reports: u64,
@@ -390,6 +393,18 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Request timestamps for subsequently encoded frames. In-flight frames finish as
+    /// encoded; prepared query resources are retained. Survives device replacement.
+    pub fn set_timing_requested(&mut self, requested: bool) {
+        self.timing_requested = requested;
+    }
+
+    /// Current demand; defaults to true for report and offscreen consumers.
+    #[must_use]
+    pub fn timing_requested(&self) -> bool {
+        self.timing_requested
+    }
+
     /// Attach an engine module that draws into the scene's forward pass with the scene's
     /// lighting. It is rebuilt on every visual or device republication.
     ///
@@ -624,6 +639,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             slots: gpu.slots,
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
+            timing_requested: true,
             dropped_views: 0,
             dropped_stale_views: 0,
             dropped_reports: 0,
@@ -1232,6 +1248,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_contribution_ns: None,
                 surface_presented: false,
                 timing_fault: false,
+                timing_requested: self.timing_requested,
                 culling_mode: self.prepared.camera_culling(),
                 culling_selection: self.prepared.culling_selection(),
                 camera_culling: None,
@@ -1310,7 +1327,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             &mut encoder,
             self.generation,
             &slot.target,
-            Some(&mut slot.timings),
+            self.timing_requested.then_some(&mut slot.timings),
             capture.map(|(_, readback)| readback),
             self.contribution.as_deref_mut(),
         ) {
@@ -1394,7 +1411,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         &slot.target,
                         &mut encoder,
                         (presenter, binding, surface.view, surface.extent),
-                        &mut slot.timings,
+                        sample.timing_requested.then_some(&mut slot.timings),
                         capture_slot.is_some(),
                     )
                     .is_ok()
@@ -1403,7 +1420,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.dropped_surface = self.dropped_surface.saturating_add(1);
             report.dropped_view = true;
         }
-        if let Err(error) = slot.timings.finish_render(self.generation, &encoder) {
+        if let Err(error) = if sample.timing_requested {
+            slot.timings.finish_render(self.generation, &encoder)
+        } else {
+            Ok(())
+        } {
             drop(encoder);
             if let Some(index) = capture_slot
                 && let Some(tap) = self.submitted_capture.as_mut()
@@ -1675,7 +1696,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     sample.camera_culling = sample
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts());
-                    if !slot.timings.is_enabled() {
+                    if !sample.timing_requested || !slot.timings.is_enabled() {
                         retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
                         continue;
                     }

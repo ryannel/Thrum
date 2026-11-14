@@ -118,6 +118,9 @@ pub struct WebShell<W: WebWorld, V: SceneSource<W::Page>> {
     refused_ticks: u64,
     needs_reconfigure: bool,
     samples: Vec<FrameSample>,
+    profile: crate::profile::ProfileWindow,
+    profile_minimum: u64,
+    profile_enabled: bool,
     held_contribution: Option<Box<dyn SceneContribution>>,
     attach_error: Option<String>,
 }
@@ -186,12 +189,42 @@ where
         refused_ticks: 0,
         needs_reconfigure: false,
         samples: Vec::with_capacity(SAMPLES),
+        profile: crate::profile::ProfileWindow::new(),
+        profile_minimum: 0,
+        profile_enabled: false,
         held_contribution: None,
         attach_error: None,
     })
 }
 
 impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
+    /// Bind a declared profiler to this page. Report pages retain timing demand.
+    pub fn update_profiler(
+        &mut self,
+        controls: &mut thrum_controls::Controls,
+        writes_report: bool,
+    ) {
+        let Some(enabled) = crate::profile::enabled(controls) else {
+            return;
+        };
+        if enabled != self.profile_enabled {
+            self.profile_minimum = self.host.last_submission().map_or(0, |order| order + 1);
+            self.profile_enabled = enabled;
+        }
+        self.host.set_timing_requested(writes_report || enabled);
+        self.profile
+            .set_available(self.clock.visible() && !self.graphics.is_lost());
+        self.profile
+            .configure(enabled, self.recovery.generation, self.profile_minimum);
+        self.profile.publish(
+            controls,
+            self.clock.last(),
+            self.callbacks,
+            self.presented,
+            true,
+        );
+    }
+
     /// Advance the world and, with a healthy device, encode before acquiring the canvas
     /// drawable, submit and present. After loss it only advances authority.
     /// # Errors
@@ -203,6 +236,12 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         }
         self.callbacks += 1;
         self.clock.mark(now);
+        self.profile.configure(
+            self.profile_enabled,
+            self.recovery.generation,
+            self.profile_minimum,
+        );
+        self.profile.callback(now);
         let extent = [self.canvas.width(), self.canvas.height()];
         if let Some((gpu, reconfigure)) = self.recovery.poll(&mut self.host, extent) {
             self.adapter_name = gpu.adapter_name;
@@ -331,6 +370,7 @@ impl<W: WebWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             .poll_completed()
             .map_err(|error| error.to_string())?
         {
+            self.profile.push(&sample, self.clock.last());
             if self.samples.len() < SAMPLES {
                 self.samples.push(sample);
             }

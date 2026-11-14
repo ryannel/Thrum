@@ -42,6 +42,9 @@ impl Controls {
                     Kind::Text => {
                         fields.insert("kind".into(), "text".into());
                     }
+                    Kind::Table => {
+                        fields.insert("kind".into(), "table".into());
+                    }
                     Kind::Readout { display } => {
                         fields.insert("kind".into(), "readout".into());
                         fields.insert("display".into(), display_json(*display));
@@ -77,6 +80,7 @@ impl Controls {
             (_, Value::Number(number)) => tidy(f64::from(*number)).into(),
             (_, Value::Flag(on)) => (*on).into(),
             (_, Value::Text(text)) => text.clone().into(),
+            (_, Value::Rows(rows)) => json!(rows),
         };
         fields.insert("value".into(), value);
         if let Ok(index) = u16::try_from(index) {

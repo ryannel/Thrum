@@ -379,11 +379,14 @@ impl SkyGame {
     /// the default ground. `update` runs before every frame (and after every control edit) to
     /// map the controls onto the [`Sky`]; a value the renderer cannot draw is reported and the
     /// previous sky kept.
+    /// # Panics
+    /// Panics if the supplied controls already use the kit's reserved `profiler` keys.
     pub fn new(
-        controls: Controls,
+        mut controls: Controls,
         camera: Camera,
         update: impl FnMut(&Controls, &mut Sky) + 'static,
     ) -> Self {
+        crate::profile::declare(&mut controls).expect("kit reserves the profiler group");
         #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
         drop((controls, camera, update));
         Self {

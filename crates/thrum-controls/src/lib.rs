@@ -70,6 +70,9 @@ pub struct Text(ControlId);
 /// Typed handle to a read-only value the game or engine publishes, such as a field's reading.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Readout(ControlId);
+/// Typed handle to a read-only, replaceable ordered table.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Table(ControlId);
 
 macro_rules! handle_id {
     ($($handle:ident),*) => {$(
@@ -82,7 +85,7 @@ macro_rules! handle_id {
         }
     )*};
 }
-handle_id!(Slider, Toggle, Text, Readout);
+handle_id!(Slider, Toggle, Text, Readout, Table);
 
 /// What kind of control a declaration is, with its static shape.
 #[derive(Clone, Debug, PartialEq)]
@@ -102,6 +105,8 @@ pub enum Kind {
     Toggle,
     /// A bounded single-line string.
     Text,
+    /// Ordered label/text rows, published by the app; never editable.
+    Table,
     /// A value shown but never edited by a person.
     Readout {
         /// How the value is shown.
@@ -118,6 +123,8 @@ pub enum Value {
     Flag(bool),
     /// Text field contents.
     Text(String),
+    /// Ordered label/text rows of a read-only table.
+    Rows(Vec<(String, String)>),
 }
 
 /// One declared control.
@@ -301,6 +308,35 @@ impl SliderBuilder<'_> {
 }
 
 impl Controls {
+    /// Declare a read-only table. Rows are replaced together with [`Self::show_rows`].
+    /// # Errors
+    /// Refuses an invalid or duplicate key or an invalid label.
+    pub fn table(&mut self, key: &str, label: &str) -> Result<Table, ControlError> {
+        self.declare(
+            key.to_owned(),
+            label.to_owned(),
+            Kind::Table,
+            Value::Rows(Vec::new()),
+        )
+        .map(Table)
+    }
+
+    /// Replace the ordered rows of a table, advancing the revision only when changed.
+    pub fn show_rows(&mut self, table: Table, rows: Vec<(String, String)>) -> bool {
+        self.store(table.0, Value::Rows(rows))
+    }
+
+    /// Publish rows by a dynamically discovered table identity. Refuses other kinds.
+    pub fn replace_rows(&mut self, id: ControlId, rows: Vec<(String, String)>) -> bool {
+        if !matches!(
+            self.specs.get(id.index()).map(Spec::kind),
+            Some(Kind::Table)
+        ) {
+            return false;
+        }
+        self.store(id, Value::Rows(rows))
+    }
+
     /// An empty set of controls.
     #[must_use]
     pub fn new() -> Self {
@@ -602,6 +638,7 @@ impl Controls {
             (_, Value::Flag(_)) => return Err(wrong_kind(spec, "true or false")),
             (_, Value::Text(_)) => return Err(wrong_kind(spec, "text")),
             (_, Value::Number(_)) => return Err(wrong_kind(spec, "a number")),
+            (_, Value::Rows(_)) => return Err(wrong_kind(spec, "table rows")),
         }
         Ok(self.store_edit(id, value))
     }
@@ -650,6 +687,11 @@ impl Controls {
             (_, Value::Flag(on)) => if *on { "On" } else { "Off" }.to_owned(),
             (_, Value::Text(text)) => text.clone(),
             (_, Value::Number(value)) => value.to_string(),
+            (_, Value::Rows(rows)) => rows
+                .iter()
+                .map(|(label, text)| format!("{label}: {text}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
         }
     }
 
@@ -681,6 +723,7 @@ fn wrong_kind(spec: &Spec, given: &str) -> ControlError {
         Kind::Toggle => "is a toggle; give true or false",
         Kind::Text => "is a text field; give one line of text",
         Kind::Readout { .. } => "is a readout and cannot be edited",
+        Kind::Table => "is a read-only table and cannot be edited",
     };
     ControlError::InvalidValue {
         key: spec.key.clone(),

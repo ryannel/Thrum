@@ -152,7 +152,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As readable as Unreal's stat unit and stat gpu: after an edit a creator can tell which stage or pass got slower. A number is current, or its row says why there is none; the profiler costs what its paired run records while on, and one branch a frame while off."
     },
     {
