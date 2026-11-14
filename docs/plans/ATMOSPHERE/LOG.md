@@ -1,5 +1,19 @@
 # ATMOSPHERE log
 
+- 14 November, M9 continuation checkpoint `daf606ad`. The aerial pass now integrates
+  below ground using signed altitude and the density laws, and dims the direct Sun
+  with the chart's 0–50 m optical-depth slope. Diffuse and night sources use the
+  ground point above. The sky charts and decoders are unchanged. Native and Wasm
+  builds pass; numerical and changed-image qualification remain open. Metal proof
+  job `20261114-213944-66488` is queued under the shared GPU lock.
+  Before the shader change, the complete exact verifier passed at `976788ab`:
+  [record](../../evidence/ATMOSPHERE/M9-prechange-baselines/record.json).
+  The [four night-enabled Metal volumes](../../evidence/ATMOSPHERE/M9-volumes/identity.json)
+  were recorded there. First cost arms and their limits are in
+  [the cost record](../../evidence/ATMOSPHERE/M9-cost.md). The earlier verifier was
+  interrupted by a broken stdout pipe after its captures; its durable replacement
+  passed, without changing the verifier or its comparisons.
+
 - 14 November, M9 preparation from `91cf8eae7587d811ee6ac2783df6385af3bc1aee`.
   Added the production-column referee and unchanged-volume recorder; scoped Clippy passes.
   The native and Wasm builds of the unchanged pass are retained in owned scratch with hashes.
