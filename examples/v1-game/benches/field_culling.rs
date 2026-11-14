@@ -150,6 +150,7 @@ fn main() {
                         surface: None,
                     },
                     GameSetup {
+                        reconstruction: thrum_render::synthetic::Reconstruction::Off,
                         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,
                         content: GameContent::Field,
