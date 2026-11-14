@@ -214,8 +214,8 @@
           "statement": "Each cascade bin in `thrum-sea-model` turns a whole number of times in the profile's loop, with a frequency within half a cycle per loop of the deep-water value, so the cascades at a time and one loop later are equal. The long waves keep the exact deep-water relation and do not repeat.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test cascade_loop",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SEA/M2.md",
           "verdict": "",
           "review": ""
         }

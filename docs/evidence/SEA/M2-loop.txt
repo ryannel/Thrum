@@ -1,0 +1,12 @@
+source: d5da530be61db9f2e75ca0fabe0849e7b4c04140
+target: mac-metal (CPU reference)
+command: cargo test --locked --offline -p thrum-sea-model --test cascade_loop
+
+running 1 test
+test cascade_loop_preserves_dispersion_and_long_waves_do_not_loop ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+   Compiling thrum-sea-model v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sea/crates/thrum-sea-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.61s
+     Running tests/cascade_loop.rs (target/debug/deps/cascade_loop-e8dc132f25435073)
