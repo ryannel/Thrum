@@ -3,6 +3,7 @@
 
 Build the native and web products first. Full lossless source archives remain;
 verified PNG derivatives are reduced to selected native-size frames after encoding.
+Complete native-size 1x playback is recorded for subsequent temporal self-review.
 """
 import argparse
 import hashlib
@@ -87,6 +88,9 @@ def main():
     finally:
         report['load_end'] = os.getloadavg()
         (output/'campaign.json').write_text(json.dumps(report,indent=2)+'\n')
+    if report['complete']:
+        subprocess.run(['node','scripts/review_v1_playback.mjs',str(output),str(output/'playback')],
+                       cwd=ROOT,check=True,timeout=300)
 
 
 if __name__ == '__main__':
