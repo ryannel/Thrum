@@ -69,11 +69,13 @@ class Runner:
         self.artifact_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
         self.device = simulator() if target == "ios-sim" else None
         self.user_agent = None
+        self.isolated = None
 
     def invoke(self, method, args):
         if self.target == "chrome-webgpu":
             packet = json.loads(command(["node", "scripts/sim2d_browser.mjs", self.program, json.dumps({"method": method, "args": args})]))
             self.user_agent = packet["userAgent"]
+            self.isolated = packet["crossOriginIsolated"]
             return packet["result"]
         if method == "vectors":
             arguments = ["vectors"]
@@ -182,7 +184,8 @@ def costs(target):
     for repeat in range(2):
         rows = [runner.invoke("costs", [count]) for count, _ in SIZES]
         for row in rows:
-            assert row["samples"] == 240 and row["neighbours_per_tick"] > 0
+            expected_ticks = dict(SIZES)[row["bodies"]]
+            assert row["ticks"] == expected_ticks and row["samples"] == expected_ticks - 120 and row["neighbours_per_tick"] > 0
             for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
                 assert isinstance(row[key], (float, int)) and row[key] >= 0, f"missing timing {key}"
             prior = next((old for run in runs for old in run["rows"] if old["bodies"] == row["bodies"]), None)
@@ -191,7 +194,7 @@ def costs(target):
             row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > previous["tick_ms_per_neighbour"]
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
-    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "timings_are_baselines": True}
+    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "timings_are_baselines": True}
 
 
 def main():

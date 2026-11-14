@@ -21,7 +21,8 @@ pub fn costs(count: u32) -> String {
     let mut index_times = Vec::new();
     let mut digest_times = Vec::new();
     let mut neighbours = 0;
-    for tick in 1..=360 {
+    let ticks = if count == 10_000 { 36_000 } else { 3_600 };
+    for tick in 1..=ticks {
         let input = frames(tick, true);
         let start = Instant::now();
         sim.history
@@ -62,7 +63,7 @@ pub fn costs(count: u32) -> String {
     assert_eq!(sim.digest(), expected);
     let tick = median(&mut tick_times);
     let visited = neighbours as f64 / tick_times.len() as f64;
-    json!({ "bodies": count, "warmup_ticks": 120, "samples": tick_times.len(), "tick_median_ms": tick,
+    json!({ "bodies": count, "ticks": ticks, "warmup_ticks": 120, "samples": tick_times.len(), "tick_median_ms": tick,
         "index_median_ms": median(&mut index_times), "digest_median_ms": median(&mut digest_times),
         "rewind_eight_ms": rewind, "replay_eight_ms": replay, "neighbours_per_tick": visited,
         "tick_ms_per_neighbour": tick / visited, "clock_tripwire": tick > 1000.0 / 60.0 }).to_string()

@@ -10,7 +10,10 @@ const request = JSON.parse(requestJson);
 const scratch = await fs.mkdtemp(path.resolve('tmp/sim2d/chrome-'));
 const server = createServer(async (req, res) => {
   try {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     const name = path.basename(new URL(req.url, 'http://localhost').pathname);
+    if (!name) { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Crowd conformance</title>'); return; }
     const bytes = await fs.readFile(path.join(webRoot, name));
     res.setHeader('Content-Type', name.endsWith('.wasm') ? 'application/wasm' : 'text/javascript');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,8 +41,11 @@ try {
   await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
   let sequence = 0;
   const pending = new Map();
+  let loaded;
+  const pageLoaded = new Promise(resolve => { loaded = resolve; });
   socket.onmessage = event => {
     const message = JSON.parse(event.data);
+    if (message.method === 'Page.loadEventFired') loaded();
     const entry = pending.get(message.id);
     if (!entry) return;
     pending.delete(message.id);
@@ -51,13 +57,16 @@ try {
     socket.send(JSON.stringify({ id, method, params }));
   });
   const url = `http://127.0.0.1:${server.address().port}/crowd_2d_run.js`;
+  await call('Page.enable', {});
+  await call('Page.navigate', { url: new URL('/', url).href });
+  await pageLoaded;
   // Import from an HTTP origin to keep the generated Wasm loader's fetch local.
   const expression = `(async () => {
     const module = await import(${JSON.stringify(url)});
     await module.default();
     const request = ${JSON.stringify(request)};
     const result = module[request.method](...request.args);
-    return { result: JSON.parse(result), userAgent: navigator.userAgent };
+    return { result: JSON.parse(result), userAgent: navigator.userAgent, crossOriginIsolated };
   })()`;
   const evaluated = await call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, timeout: 1800000 });
   if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
