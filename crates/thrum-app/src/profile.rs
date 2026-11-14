@@ -196,12 +196,18 @@ impl ProfileWindow {
         rows.push((
             "Callback interval".into(),
             reason.map_or_else(
-                || format_ms(median(self.intervals.iter().copied()), None),
+                || {
+                    format!(
+                        "{} (latest {} callbacks)",
+                        format_ms(median(self.intervals.iter().copied()), None),
+                        self.intervals.len()
+                    )
+                },
                 str::to_owned,
             ),
         ));
         rows.push((
-            "Present calls / missed callbacks".into(),
+            "Present calls / missed callbacks (total)".into(),
             format!("{presented} / {}", callbacks.saturating_sub(presented)),
         ));
         let stages: [CpuStage; 4] = [
@@ -321,6 +327,10 @@ fn format_ms(value: Option<f64>, step: Option<f64>) -> String {
             format!("< {} ms (observed step)", step.unwrap_or_default())
         }
         Some(0.0) => "below timer resolution".into(),
+        Some(value) if value < 0.001 => step.map_or_else(
+            || "< 0.001 ms (readout precision)".into(),
+            |step| format!("< 0.001 ms (step {step} ms)"),
+        ),
         Some(value) => step.map_or_else(
             || format!("{value:.3} ms"),
             |step| format!("{value:.3} ms (step {step} ms)"),
