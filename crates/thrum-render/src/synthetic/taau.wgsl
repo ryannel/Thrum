@@ -32,6 +32,33 @@ fn history_at(p: vec2<f32>) -> vec4<f32> {
     return mix(mix(textureLoad(history,bounded(base),0),textureLoad(history,bounded(base+vec2(1,0)),0),f.x),
                mix(textureLoad(history,bounded(base+vec2(0,1)),0),textureLoad(history,bounded(base+vec2(1,1)),0),f.x),f.y);
 }
+fn depth_range(p: vec2<f32>) -> vec2<f32> {
+    let base = vec2<i32>(floor(p));
+    let a = textureLoad(previous_depth,bounded(base),0).r;
+    let b = textureLoad(previous_depth,bounded(base+vec2(1,0)),0).r;
+    let c = textureLoad(previous_depth,bounded(base+vec2(0,1)),0).r;
+    let d = textureLoad(previous_depth,bounded(base+vec2(1,1)),0).r;
+    // Test the entire bilinear footprint. A nearest sample falsely rejects
+    // sloping surfaces when jitter changes their raster sampling location.
+    return vec2(min(min(a,b),min(c,d)),max(max(a,b),max(c,d)));
+}
+fn history_round(value: f32, seed: u32) -> f32 {
+    // Unbiased quantisation keeps a long temporal average from sticking one
+    // half-float ULP away from its mean. Exactly representable values stay exact.
+    let bounded_value = clamp(value,0.0,65504.0);
+    let nearest_bits = pack2x16float(vec2(bounded_value,0.0)) & 65535u;
+    let nearest_value = unpack2x16float(nearest_bits).x;
+    if nearest_value == bounded_value { return nearest_value; }
+    let lower_bits = select(nearest_bits,nearest_bits-1u,nearest_value > bounded_value);
+    let lower = unpack2x16float(lower_bits).x;
+    let upper = unpack2x16float(lower_bits+1u).x;
+    var hash = seed;
+    hash = (hash ^ (hash >> 16u))*2246822519u;
+    hash = (hash ^ (hash >> 13u))*3266489917u;
+    hash = hash ^ (hash >> 16u);
+    let random = f32(hash >> 8u)*(1.0/16777216.0);
+    return select(lower,upper,random < (bounded_value-lower)/(upper-lower));
+}
 @compute @workgroup_size(8,8)
 fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let extent = textureDimensions(colour);
@@ -59,11 +86,11 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let linear_depth = abs((params.view*world).z);
     let expected = abs((params.previous_view*world).z);
     // Depth history is a jittered raster, unlike the resolved colour history.
-    let depth_at = previous+params.jitter.zw-params.jitter.xy;
-    let old_depth = textureLoad(previous_depth,bounded(vec2<i32>(round(depth_at))),0).r;
+    let old_depth = depth_range(previous+params.jitter.zw-params.jitter.xy);
     let sky = textureLoad(depth,p,0) == 0.0;
-    let depth_ok = (sky && old_depth == 0.0) || (!sky && abs(expected-old_depth) <= max(0.01,expected*0.01));
-    var weight = 0.95*(1.0-textureLoad(reactive,p,0).r);
+    let tolerance = max(0.01,expected*0.01);
+    let depth_ok = (sky && old_depth.y == 0.0) || (!sky && old_depth.x > 0.0 && expected >= old_depth.x-tolerance && expected <= old_depth.y+tolerance);
+    var weight = 0.97*(1.0-textureLoad(reactive,p,0).r);
     if params.state.x == 0.0 || !depth_ok || any(previous < vec2(0.0)) || any(previous > vec2<f32>(extent)-vec2(1.0)) {
         weight = 0.0;
     }
@@ -79,6 +106,8 @@ fn reconstruct(@builtin(global_invocation_id) id: vec3<u32>) {
     let b = weight/(1.0+max(0.0,ycocg(clipped).x/luminance_scale));
     let resolved = max(vec3(0.0),current+(clipped-current)*(b/max(a+b,1e-20)));
     textureStore(output,p,vec4(resolved,1.0));
-    textureStore(next_colour,p,vec4(resolved,exposure.values.x));
+    let seed = id.x+id.y*extent.x+bitcast<u32>(params.jitter.x)*1664525u+bitcast<u32>(params.jitter.y)*1013904223u;
+    let retained_colour = vec3(history_round(resolved.r,seed),history_round(resolved.g,seed+374761393u),history_round(resolved.b,seed+668265263u));
+    textureStore(next_colour,p,vec4(retained_colour,exposure.values.x));
     textureStore(next_depth,p,vec4(select(linear_depth,0.0,sky)));
 }
