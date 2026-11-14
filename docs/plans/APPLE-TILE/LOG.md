@@ -253,3 +253,10 @@
   Repaired unavailable upstream handoff links; documentation checks pass. No engine source or threshold changed.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 merged target evidence preserved.** Promoted the actual `a9ac2a2b` native/twin,
+  half-texel and simulator proofs plus official gate/merge records. Verified all 125 selected source hashes.
+  Portable OS Sun/noon/night observations match their T2 references; interactive input, resize, recovery and
+  Apple-tile window proof remain open after interrupted Computer Use. Rebuilt the missing cooked store with an
+  exact route-root match. Verified hard links retain all source bytes while sharing 17.10 GB of duplicate spools.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Continuation](../../evidence/APPLE-TILE/M10-handoff.md).
+
