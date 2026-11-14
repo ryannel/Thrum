@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -80,6 +81,31 @@ def run(name, command, seconds=600):
         raise RuntimeError(f'{name} failed; inspect {sitting / (name + ".log")}')
 
 
+def retain_native_selections(directory):
+    manifest = json.loads((directory / 'window-manifest.json').read_text())
+    records = manifest['records']
+    if not manifest['continuous'] or not records:
+        raise RuntimeError('cannot reclaim an incomplete continuous sequence')
+    initial = max((row for row in records if row['accepted_yaw_degrees'] <= 0), key=lambda row: row['submit_ns'])
+    chosen = [initial, *(min(records, key=lambda row: abs(row['accepted_yaw_degrees'] - yaw))
+                         for yaw in (9, 18, 27)), records[-1]]
+    selected = directory / 'native-selections'
+    selected.mkdir(exist_ok=True)
+    for row in chosen:
+        name = f"{row['submission_id']:06}.png"
+        shutil.copy2(directory / 'png' / name, selected / name)
+    (selected / 'selected.json').write_text(json.dumps(chosen, indent=2) + '\n')
+    source = directory / 'frames.zst'
+    expanded = list((directory / 'png').iterdir())
+    if len(expanded) != len(records) or any(not p.is_file() or p.suffix != '.png' for p in expanded):
+        raise RuntimeError('unexpected PNG expansion contents; preserve for inspection')
+    receipt = {'source': str(source), 'sha256': digest(source), 'verified_originals': len(records),
+               'verification': 'package_mac_m2_window independently decoded every original hash before playback',
+               'reclaimed_png_bytes': sum(p.stat().st_size for p in expanded), 'native_selections': len(chosen)}
+    (directory / 'source-archive.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    shutil.rmtree(directory / 'png')
+
+
 def wait_for(name, stage):
     save('state.json', {'stage': stage, 'unix_ns': time.time_ns()})
     until = min(time.monotonic() + 900, deadline)
@@ -125,6 +151,7 @@ try:
                                str(window / 'on-untraced-current')])
     run('window-pan-playback', ['node', playback, str(window / 'on-untraced-current/preview-1x.mp4'),
                                str(sitting / 'playback-window-pan')], 90)
+    retain_native_selections(window / 'on-untraced-current')
     acceptance = wait_for('window-acceptance.json', 'await-window-builder-inspection')
     if acceptance.get('M2.3') != 'pass' or acceptance.get('binary_sha256') != build['binary_sha256']:
         raise RuntimeError('same-build window inspection has not passed')
@@ -141,6 +168,7 @@ try:
             run('package-' + name, ['python3', 'scripts/package_mac_m2_window.py', '--output', str(presented / name)])
             run('playback-' + name, ['node', playback, str(presented / name / 'preview-1x.mp4'),
                                      str(sitting / ('playback-' + name))], 90)
+            retain_native_selections(presented / name)
     run('analysis', ['python3', 'docs/evidence/render/mac-m2-20261113/analyse.py', '--motion',
                     str(root / 'motion/session'), '--window', str(window), '--presented', str(presented),
                     '--output', str(root / 'analysis.json')], 60)
