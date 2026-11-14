@@ -1,0 +1,370 @@
+{
+  "commit": "3f896417b985c6af30ba7e521778b35ec5906b31",
+  "target": "chrome-webgpu",
+  "mode": "realtime",
+  "load_start": [
+    3.392578125,
+    3.63671875,
+    6.14501953125
+  ],
+  "arms": [
+    {
+      "case": "pan",
+      "reconstruction": "taau",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/pan-taau",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "pan",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/pan-taau"
+      ],
+      "load": [
+        3.392578125,
+        3.63671875,
+        6.14501953125
+      ],
+      "prepared_reconstruction": "Taau",
+      "complete": true,
+      "manifest_sha256": "07acaf4b52e2c2b8e78fc28fd282568f7031aef5fcb0125e8270438e07552cd4",
+      "records": 270
+    },
+    {
+      "case": "pan",
+      "reconstruction": "off",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/pan-off",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "pan",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/pan-off"
+      ],
+      "load": [
+        3.60791015625,
+        3.65185546875,
+        6.07666015625
+      ],
+      "prepared_reconstruction": "Off",
+      "complete": true,
+      "manifest_sha256": "c42adceb2db1d17e4cc9f77048a3a8c4e362a5de8d47ad42839f79e9162d75d3",
+      "records": 270
+    },
+    {
+      "case": "reveal",
+      "reconstruction": "taau",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/reveal-taau",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "reveal",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/reveal-taau"
+      ],
+      "load": [
+        3.29248046875,
+        3.576171875,
+        5.99267578125
+      ],
+      "prepared_reconstruction": "Taau",
+      "complete": true,
+      "manifest_sha256": "c4b44de50cb6a1891eeff726f98f76178919c786986f1d7cb44c8980d190423c",
+      "records": 270
+    },
+    {
+      "case": "reveal",
+      "reconstruction": "off",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/reveal-off",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "reveal",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/reveal-off"
+      ],
+      "load": [
+        3.11376953125,
+        3.51220703125,
+        5.8994140625
+      ],
+      "prepared_reconstruction": "Off",
+      "complete": true,
+      "manifest_sha256": "af1d469f4d6328881effadbd4abe13d59e95656a6088bd69284c106627487c30",
+      "records": 270
+    },
+    {
+      "case": "spawn",
+      "reconstruction": "taau",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/spawn-taau",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "spawn",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/spawn-taau"
+      ],
+      "load": [
+        4.0439453125,
+        3.7080078125,
+        5.90087890625
+      ],
+      "prepared_reconstruction": "Taau",
+      "complete": true,
+      "manifest_sha256": "a8f64181cf87f7930972a992bb4f2bd4b898e3637847eabd01409458d5cc31b0",
+      "records": 266
+    },
+    {
+      "case": "spawn",
+      "reconstruction": "off",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/spawn-off",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "spawn",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/spawn-off"
+      ],
+      "load": [
+        3.66064453125,
+        3.64453125,
+        5.82666015625
+      ],
+      "prepared_reconstruction": "Off",
+      "complete": true,
+      "manifest_sha256": "c7bf25652ab52d63a1598ab92bdc595c2b4843bd39db725147639952a1908a7a",
+      "records": 270
+    },
+    {
+      "case": "stars",
+      "reconstruction": "taau",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/stars-taau",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "stars",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/stars-taau"
+      ],
+      "load": [
+        3.37158203125,
+        3.576171875,
+        5.73828125
+      ],
+      "prepared_reconstruction": "Taau",
+      "complete": true,
+      "manifest_sha256": "0b815edcfa1e1799ed7cfd47674bdf583a3749f711cf17eec460cab1f3eb05c0",
+      "records": 270
+    },
+    {
+      "case": "stars",
+      "reconstruction": "off",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/stars-off",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "stars",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/stars-off"
+      ],
+      "load": [
+        3.3076171875,
+        3.5400390625,
+        5.673828125
+      ],
+      "prepared_reconstruction": "Off",
+      "complete": true,
+      "manifest_sha256": "c01ba82d2b00bdb1b04ce5489ef0b08611bdccea43182a21b4138860227f618f",
+      "records": 270
+    },
+    {
+      "case": "scrub",
+      "reconstruction": "taau",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/scrub-taau",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "scrub",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/scrub-taau"
+      ],
+      "load": [
+        2.81689453125,
+        3.408203125,
+        5.57568359375
+      ],
+      "prepared_reconstruction": "Taau",
+      "complete": true,
+      "manifest_sha256": "3c439c9488ea26d27689179e39383aeb9c75e6a1fec7dd65595b122404743778",
+      "records": 270
+    },
+    {
+      "case": "scrub",
+      "reconstruction": "off",
+      "command": [
+        "node",
+        "scripts/capture_v1_browser.mjs",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/scrub-off",
+        "--mode",
+        "realtime",
+        "--cook",
+        "target/release/thrum-cook",
+        "--web-root",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/web",
+        "--witness",
+        "scrub",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/package_v1_browser.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/chrome-motion-final/scrub-off"
+      ],
+      "load": [
+        3.16552734375,
+        3.439453125,
+        5.5234375
+      ],
+      "prepared_reconstruction": "Off",
+      "complete": true,
+      "manifest_sha256": "a3e3e162ecd2307c79875c5b8d9d7d7c5107806071fe00704caefc96382f47d0",
+      "records": 270
+    }
+  ],
+  "comparison": "capture on in both arms; TAAU on/off; native 1920x1080, Chrome route extent",
+  "complete": true,
+  "product_sha256": "95807fcb61fd5d750f0f2ffaa9b03f204d0fa17c67fe85c262bf0d95a287c564",
+  "load_end": [
+    3.09912109375,
+    3.40234375,
+    5.44921875
+  ]
+}

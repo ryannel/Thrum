@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 Chrome's ten real-time arms pass capture/packaging on `3f896417`.
+  The CPU audit verifies all 2,696 original frames. A fresh GPT-6.1 Sol medium
+  opinion and the builder find a fine ragged fringe on revealed blocks and the
+  moving cube, also visible on Mac. Both motion items remain open for repair;
+  stable star-core traces and zero-lag scrub fits are supporting diagnostics,
+  not substitutes for the visual bar. [Target observations](../../evidence/APPLE-PRESENTATION/m3/motion/chrome-review.md).
+
 - 2026-11-14 D3.5 passes at `3f896417`: the paired 640×360 moving route on
   Metal has 361 matching-input samples per arm, TAAU resolve p50/p95
   0.046709/0.049792 ms and scene p50 2.994001 ms on versus 2.778083 ms off.

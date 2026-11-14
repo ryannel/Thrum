@@ -38,10 +38,17 @@ The four all-frame star-core flux traces and the all-frame scrub sky trace suppo
 the sampled review; the scrub diagnostic's minimum-error lag is zero milliseconds.
 These measurements introduce no acceptance threshold.
 
+The [Chrome motion evidence](motion/chrome-review.md) retains all ten Chrome
+real-time arms at `3f896417`. A fresh GPT-6.1 Sol medium opinion and the builder
+both find a ragged/speckled fringe around the revealed small blocks and the
+moving cube, also visible in Mac counterparts. Both motion items stay open;
+the reconstruction path needs a disocclusion-edge diagnosis and repair.
+
 The [1× software-decoder record](motion/software-playback.json.gz) delivers every
 movie frame. Decoder completion and static source-frame inspection are distinct
 from continuous visual observation. D3.3 remains open because direct 1× viewing
-has not occurred. Chrome motion and fresh route execution remain unqualified.
+has not occurred. Chrome motion also remains unqualified, with the edge concern
+above. Fresh route execution remains unqualified.
 Original lossless Mac archives remain locally in owned scratch
 for follow-up, with hashes and retention reasons in [the retention record](motion/mac/retention.json).
 

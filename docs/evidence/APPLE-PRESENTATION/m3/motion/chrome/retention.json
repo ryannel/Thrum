@@ -1,0 +1,236 @@
+{
+  "pan-taau": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/pan-taau",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "pan-off": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/pan-off",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "reveal-taau": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/reveal-taau",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "reveal-off": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/reveal-off",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "spawn-taau": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/spawn-taau",
+    "source_records": 266,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "spawn-off": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/spawn-off",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "stars-taau": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/stars-taau",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "stars-off": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/stars-off",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "scrub-taau": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/scrub-taau",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "scrub-off": {
+    "lossless_source_directory": "tmp/apple-presentation-m3/chrome-motion-final/scrub-off",
+    "source_records": 270,
+    "source_layout": "One gzip RGBA source per manifest record.file; decoded SHA-256 is record.rgba_sha256.",
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "campaign.json": {
+    "sha256": "75ab60678f9f2abefcd36cd3a06cfd004a59662d31a37e5493eee1fc10212b68",
+    "bytes": 12281
+  },
+  "scrub-taau/manifest.json.gz": {
+    "sha256": "e510f26594e255ddbb708840d0992a9bed91e3ea8f156027c02ad9a4f484502f",
+    "bytes": 55375
+  },
+  "scrub-taau/preview-1x.mp4": {
+    "sha256": "0fadaa1c34f921173c4af73ecc429d566b0bca1f7002b5b02d72f98be6abea4f",
+    "bytes": 1587979
+  },
+  "scrub-taau/selected.json": {
+    "sha256": "d05f0ce8e74fdbb5664799ebb011b15b3dbaf671f61cb46020f147d107f12d98",
+    "bytes": 586
+  },
+  "scrub-taau/runtime.json.gz": {
+    "sha256": "736bc8b6d271b1de6cab0f36acdb0df66d364ca5a9f8d59706aab916f22787d4",
+    "bytes": 20454
+  },
+  "spawn-taau/manifest.json.gz": {
+    "sha256": "c43616c288be4c2ed9110fc3f708b9ee4a9c3e73d9f6ad482857443e68dc70e9",
+    "bytes": 58821
+  },
+  "spawn-taau/preview-1x.mp4": {
+    "sha256": "edc7c3fd8ce5f69e52d615efe9ff98cc77070439a7ee1fa3bd0b0db7ba195f30",
+    "bytes": 528262
+  },
+  "spawn-taau/selected.json": {
+    "sha256": "c8e78f69cec562a740fdad73654193240dff707caa81a4ce69369fbaa64d925c",
+    "bytes": 1102
+  },
+  "spawn-taau/runtime.json.gz": {
+    "sha256": "2b6254ec4ec9d6448fb268994134c97f0e9a8ec4b7d66c03bffa8276f30825b7",
+    "bytes": 29428
+  },
+  "stars-taau/manifest.json.gz": {
+    "sha256": "a4fce678c3dcba5eec1a4541b14c9f967d9315d7368e372361505eb2163c8b17",
+    "bytes": 52510
+  },
+  "stars-taau/preview-1x.mp4": {
+    "sha256": "2f2046033dbac5c953e2af7d3a533ed7847dab186eb6653939ce367bd2caf310",
+    "bytes": 317921
+  },
+  "stars-taau/selected.json": {
+    "sha256": "94e394133a64a129adb43d432d12fcfa127ac21858fdfe06f689a6497e0788a6",
+    "bytes": 586
+  },
+  "stars-taau/runtime.json.gz": {
+    "sha256": "3a9e0f92d4c7bcd130453fff5f04e5ab13fecbf5b6f5a813c44176c19243aa30",
+    "bytes": 16446
+  },
+  "scrub-off/manifest.json.gz": {
+    "sha256": "fe0e7e961c7d238040cc0bf56660ea26ce3589ee93440dbb9eab0f689949d8fd",
+    "bytes": 48773
+  },
+  "scrub-off/preview-1x.mp4": {
+    "sha256": "7f3ea499766744c9ffa680650fb51c520f95e9fc8f456d947664f7d983333baa",
+    "bytes": 1187656
+  },
+  "scrub-off/selected.json": {
+    "sha256": "369ab08f4d80c1da41f97a4907cf4a3d5313a246c8170dcf63c9012878358eec",
+    "bytes": 586
+  },
+  "scrub-off/runtime.json.gz": {
+    "sha256": "6798e98377cc7ee816d1eba7723efd010fe5080125da8cf56b19ca3859d96bcb",
+    "bytes": 20484
+  },
+  "spawn-off/manifest.json.gz": {
+    "sha256": "4f85f2467fb862e992cb294c07a1ae61dd9830a252c56e89ccc4791a82792ada",
+    "bytes": 56158
+  },
+  "spawn-off/preview-1x.mp4": {
+    "sha256": "d099da431b3e94bdeae9142b8f4723275f34bcd391316d2263d1ed722d6ea3c4",
+    "bytes": 600234
+  },
+  "spawn-off/selected.json": {
+    "sha256": "f8eabef271bf064212a33dc8755250f29bf28be85b95d0dd84fef685d0387982",
+    "bytes": 1102
+  },
+  "spawn-off/runtime.json.gz": {
+    "sha256": "7db7ebc4257393ddd54dd29001ad65f165d217c1274dfc5798e7048ee63b2dcd",
+    "bytes": 29433
+  },
+  "reveal-off/manifest.json.gz": {
+    "sha256": "0b9766d2cff09c239ab9310365cb50f2265897b6f2c2cc627e83bdc409ac4b27",
+    "bytes": 56187
+  },
+  "reveal-off/preview-1x.mp4": {
+    "sha256": "81a675bc8cacddd2454dea06defb3036a0b726b227dd08683f202af13fce87ec",
+    "bytes": 610325
+  },
+  "reveal-off/selected.json": {
+    "sha256": "cc4f2af0b6eb299247529496626b5458342fdccc49c3c459266a2cf6d95aafbd",
+    "bytes": 1102
+  },
+  "reveal-off/runtime.json.gz": {
+    "sha256": "ca496d16f7548e4e98f10a88163b431d2c51628b453fa94994ec79e6df8d0e6a",
+    "bytes": 29603
+  },
+  "stars-off/manifest.json.gz": {
+    "sha256": "a1d1ad7765eec05f814a5be7e15ab298cfc3ce3c2bb374e42055712cdbe6cf21",
+    "bytes": 41385
+  },
+  "stars-off/preview-1x.mp4": {
+    "sha256": "cc57f39c98b86086c7c8c408c4b6a865adc7105bd787ba47171ad38ad0bb09c6",
+    "bytes": 289998
+  },
+  "stars-off/selected.json": {
+    "sha256": "261bb494aeec9a7a0a4040bd08e5f8489e16794b4e926859ad5129523cbbc879",
+    "bytes": 586
+  },
+  "stars-off/runtime.json.gz": {
+    "sha256": "52461f201f17b0d3df8ba5dbc26a4c685afa6192de0144fdff5714ad704f177f",
+    "bytes": 16497
+  },
+  "reveal-taau/manifest.json.gz": {
+    "sha256": "93b83b4854633459d7aa09c8ef00d66c84f2db020d0497fcf741876fa739df63",
+    "bytes": 59116
+  },
+  "reveal-taau/preview-1x.mp4": {
+    "sha256": "0982e9e9df8c355e94d2c941ac2e46ac1a080c744c0fbe394cb20bdb2eaba2bf",
+    "bytes": 541736
+  },
+  "reveal-taau/selected.json": {
+    "sha256": "619e348302ec2d5322a57d8373cb8a93592d232d81d6244c977cb8551c2bfd14",
+    "bytes": 1102
+  },
+  "reveal-taau/runtime.json.gz": {
+    "sha256": "ef4e0519370fd274a3265fc4d65b6f1cdd59ce8db51a2bc032474685c404eff2",
+    "bytes": 29513
+  },
+  "pan-off/manifest.json.gz": {
+    "sha256": "a41df5547698ffa93cf41b67c8c095be3d40c1d3a177e90defe7aa60f70e04bb",
+    "bytes": 56390
+  },
+  "pan-off/preview-1x.mp4": {
+    "sha256": "26e769bf0c752649b161c5c2e47089b0b16b963c19d50cfb5e9cdca52c6a05e5",
+    "bytes": 1359842
+  },
+  "pan-off/selected.json": {
+    "sha256": "cd9b247be3d081e50f1dd96215ebbb21cefc93dcbbc87d5e2fffa9d269d389da",
+    "bytes": 1102
+  },
+  "pan-off/runtime.json.gz": {
+    "sha256": "4ecf7f3ab2beac88e034da2c86c3295ca6c38d22a0f3b338cc51ef43dbbfa808",
+    "bytes": 29791
+  },
+  "pan-taau/manifest.json.gz": {
+    "sha256": "e3cc3f3827f8bc029b5b2415705199a9ca439b3c69f74e6267baadb50c435c99",
+    "bytes": 59364
+  },
+  "pan-taau/preview-1x.mp4": {
+    "sha256": "4693090a49bc67b2cb307e05c31ddcfc32e7b76f8bed3c545390ec3fb3d0f0b0",
+    "bytes": 1088377
+  },
+  "pan-taau/selected.json": {
+    "sha256": "056b4ea35fdc7c1eccac25d99ac2093b60ef33f795af5bb53b406e754193240b",
+    "bytes": 1102
+  },
+  "pan-taau/runtime.json.gz": {
+    "sha256": "55a6ab5d58fc447e50c86d2fbf73469e80cc6679b6efb3449b95de0a06d9e849",
+    "bytes": 29756
+  }
+}
