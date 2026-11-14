@@ -176,11 +176,11 @@ impl Field {
         let mut age = 0.0;
         for di in -1..=1 {
             for dj in -1..=1 {
-                let i = site[0] + di;
-                let j = site[1] + dj;
+                let i = site[0].wrapping_add(di);
+                let j = site[1].wrapping_add(dj);
                 let generation =
                     (time / self.profile.period - self.random(i, j, 0, 1)).floor() as i64;
-                for g in [generation - 1, generation] {
+                for g in [generation.wrapping_sub(1), generation] {
                     let cell = self.cell(i, j, g);
                     let phase = (time - cell.birth) / cell.life;
                     let envelope = if (0.0..1.0).contains(&phase) {
@@ -376,7 +376,12 @@ impl Field {
                     sum += w(0, x)
                         * w(1, y)
                         * w(2, z)
-                        * self.random(index[0] + x, index[1] + y, index[2] + z, stream);
+                        * self.random(
+                            index[0].wrapping_add(x),
+                            index[1].wrapping_add(y),
+                            index[2].wrapping_add(z),
+                            stream,
+                        );
                 }
             }
         }

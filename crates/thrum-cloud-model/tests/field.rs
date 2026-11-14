@@ -36,3 +36,17 @@ fn coverage_is_monotone_at_both_ends_and_middle_of_type_axis() {
         }
     }
 }
+
+#[test]
+fn extreme_finite_coordinates_do_not_overflow_lattice_neighbours() {
+    let field = field(7, 0.3);
+    for x in [-1e300, -1e22, 1e22, 1e300] {
+        for coverage in [0.0, 1.0] {
+            let c = field.column([x, -x], 1e25, parameters(coverage, 1.0));
+            assert!(c.optical_depth.is_finite() && c.top.is_finite());
+            if coverage == 0.0 {
+                assert_eq!(c, Column::default());
+            }
+        }
+    }
+}
