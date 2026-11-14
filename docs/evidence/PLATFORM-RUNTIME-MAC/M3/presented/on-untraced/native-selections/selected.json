@@ -1,0 +1,57 @@
+[
+  {
+    "submission_id": 451,
+    "submit_ns": 3992254625,
+    "rgba_sha256": "4cb4b083e9216a59ab941ac50e48a451f572aebb61ce1bd339bdb126725123fa",
+    "sequence": 479,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 0.0,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 511,
+    "submit_ns": 4492818917,
+    "rgba_sha256": "e00e383a4296e9766e806793412ecfbfcf9a8e31f665e3bfa5503e0398d1a71b",
+    "sequence": 539,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 8.999990463,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 571,
+    "submit_ns": 4992856459,
+    "rgba_sha256": "7cc96ee1427454d59e874a1a49d98c8bd54949a6e49e426134a36fc1fb81593f",
+    "sequence": 599,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 17.999994278,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 631,
+    "submit_ns": 5492907209,
+    "rgba_sha256": "aef7f6c7ce1953516d34a0adc16d31d24ca3f15ce5f7a12aef05a5c3514b6437",
+    "sequence": 659,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 26.999998093,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 823,
+    "submit_ns": 7092227250,
+    "rgba_sha256": "4a0549d499f522f314a63e7a03a2ee21337635f34fc4775ba24261d8f8d639cc",
+    "sequence": 851,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 35.999988556,
+    "tick": 3,
+    "device_generation": 1,
+    "presenter_generation": 1
+  }
+]

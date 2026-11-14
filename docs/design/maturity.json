@@ -512,15 +512,15 @@
     "V1_bounded_frame_host": {
       "implementation": "partial_engine_runtime_lifecycle_Metal_and_browser_gpu_reconstruction_retry",
       "functional_validation": "Mac_live_held_drawable_Metal_recovery_preserves_authority_with_zero_old_queue_calls;_Mac_overload_drain_resume_and_Chrome_reconstruction_and_real_tab_switches_pass;_iOS_simulator_off_main_input_surface_replacement_rotation_and_injected_device_loss_recovery_pass",
-      "experienced_quality": "Mac_live_recovery_and_camera_response_independently_reviewed_at_1x;_paused_1080p_pixels_exact;_M2_13Nov_current_build_elapsed_pan_and_real_window_motion_builder_inspected;_480_851_846_continuous_originals_verified;_independent_M2_review_pending",
+      "experienced_quality": "Mac_M1_and_M2_independently_reviewed;_post_APPLE_TILE_M3_runtime_and_window_motion_builder_agent_reviewed_at_1x;_481_824_843_originals_verified;_independent_M3_review_pending",
       "platform_performance": {
-        "mac": "M3Max_13Nov_current_release_488_marked_OFF_submissions_join_OS_presented_rows;_four_long_intervals_investigated;_capture_observer_costs_recorded;_physical_scanout_and_input_latency_unmeasured",
+        "mac": "M3Max_14Nov_release_490_marked_OFF_submissions_join_OS_presented_rows;_two_marked_two_refresh_intervals_investigated;_capture_trace_and_viewer_observer_costs_recorded;_physical_scanout_and_input_latency_unmeasured",
         "windows": "not_run",
         "browser": "Chrome156_M3Max_Metal_real_tabs_with_input_release_and_manual_pause_pass;_physical_cadence_unqualified",
         "ios": "iPhone18Pro_iOS27.2_simulator_function_only;_physical_device_pending",
         "android": "not_run"
       },
-      "diagnostic_measurement": "The historical quiet baseline and Mac recovery evidence remain separate. Fresh M2 evidence on merged 7a791b20 release joins all 488 marked capture-OFF submissions to OS-reported presented times with full coverage and 7.996 ns conversion error. Four long intervals and all strict over-period intervals retain game calls, yaw, neighboring named GPU queries and host load. OFF median host render duration is 1.275 ms and named graph-query sum is 3.946 ms. Matched ON arms retain content and observer costs. Physical scan-out and input-to-photon remain unmeasured.",
+      "diagnostic_measurement": "Fresh post-APPLE-TILE M3 uses verified merged source 145cadb2 and executable 5ee819346927e2e48def9c0e4ddf701a6d9617cfc873640242ca40033b48f1ea. Both traces join all 490 marked submissions with validated conversion (6.496 ns OFF, 7.012 ns ON). Two OFF two-refresh intervals retain calls, yaw, neighboring GPU queries and host load. OFF/ON traced/ON untraced median host durations are 1.299/1.404/0.962 ms; named GPU sums are 4.017/3.796/3.859 ms. A later 17.181 ms neighboring host duration suggests presentation backpressure; cause is unresolved. Shared load and run order confound causal observer percentages. Viewer drops and startup gaps remain distinct from complete capture sources and marked cadence.",
       "evidence": [
         "../evidence/render/V1-BOUNDED-FRAMES-2026-11-04.md",
         "../evidence/render/G3B-IOS-SIM-ROTATION-LOSS-2026-11-08.md",
@@ -529,9 +529,10 @@
         "../evidence/render/mac-m2-20261110/README.md",
         "../evidence/render/mac-m2-20261111/README.md",
         "../evidence/render/mac-m2-presented-20261111/README.md",
-        "../evidence/render/mac-m2-20261113/README.md"
+        "../evidence/render/mac-m2-20261113/README.md",
+        "../evidence/PLATFORM-RUNTIME-MAC/M3-proof.md"
       ],
-      "scope": "Core owns clock/lane; renderer owns FrameHost. Browser old-device work stops on loss; detached GPU reconstruction/retry preserves authority/input/pause/solar state. The simulator exercises the iOS render owner and lease through rotation and injected loss. The Mac game resumes live presentation in the same window after an injected Metal destroy with a drawable held. Fresh 13 November Mac M2 builder proof uses release source 7a791b20 and executable 688f378f96d33c61f5f21b70582610ff9673c63e7f3c5af6b5eb859e6b4f8422 for the permission-denied elapsed pan, actual CAMetalLayer channel/row oracle, pending-readback replacement, stale-image refusal, capture-OFF direct path and three matched cadence/content arms. Both fresh Deferred traces span the full marked interval and join every marked submission. The OFF arm supplies OS-reported drawable presentation cadence with four long intervals investigated. Kernel display tables remain empty. All six recordings of the separate 11 November commission are now used. Source frames, movie PTS, callback targets, present calls, GPU queries and OS presented times retain separate meanings. Independent M2 review is pending. Physical panel scan-out, input-to-photon and physical iPhone qualification remain open. Mac M2 depends on T2-CAPTURE M0. Mac M3 repeats motion, window-tap and cadence qualification after APPLE-TILE M3 changes the surface path. Historical recordings qualify their own builds only."
+      "scope": "Core owns clock/lane; renderer owns FrameHost and the AppKit actor owns the surface. Historical Mac M1 recovery and independently accepted M2 qualify their recorded builds. Fresh M3 requalifies the post-APPLE-TILE assembly through denied-permission elapsed motion, actual-window channel/row correspondence, pending-readback replacement, stale-image refusal, OFF direct output and matched observer arms. All 538 build inputs agree with the merged assembly. Both Deferred traces span the marked interval; one ON startup row is unmatched outside it. Exactly one recording per traced arm exhausts M3's commission. OFF supplies OS-reported drawable cadence; ON intervals are under capture. Kernel display tables remain empty. Both items pass builder inspection; independent M3 review remains required before final Mac V1 qualification. Callback targets, opportunities, present calls, GPU queries, image time, movie PTS and OS presented times remain distinct. Kernel swaps, scan-out, photons, input-to-photon and physical iPhone qualification remain unmeasured."
     },
     "V1_cooked_constant_light": {
       "implementation": "partial_native_accepted_source_product_and_offscreen_visual_publication",

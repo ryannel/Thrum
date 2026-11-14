@@ -138,23 +138,23 @@
           "id": "M3.1",
           "statement": "After APPLE-TILE M3 lands, fresh elapsed-time engine motion qualifies its integrated surface/present path using the full Mac M2.1 protocol; pre-G3t evidence remains valid only for its earlier build.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-proof.md",
           "inspect": "Rerun the implemented M2.1 command on the post-APPLE-TILE-M3 release assembly: 1920x1080 paused-world noon pan, 120 Hz requested opportunities, normal semantic input, one-second holds and full two-second 0-to-36-degree sweep. Apply M2.1's denied launcher/driver Screen Recording preflights and console witness policy, accepting either console state and transitions. Apply every M2.1 timing, coverage, provenance and worded visual criterion to fresh full-resolution frames, native-size crops and host-time-preserving 1x motion. A pre-change run or fixed-step movie cannot pass.",
           "ask": "Join source/build/shader/content/recipe identity to the integrated APPLE-TILE M3 path. Are the complete M2.1 proof and observer limits retained, with no reuse of an earlier verdict for changed output?",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.2",
           "statement": "ATTENDED SETUP: after APPLE-TILE M3 lands, fresh built-in-panel cadence and matched capture observer arms qualify the changed path under the full Mac M2.2 protocol, with the windowed tap and trace tooling revalidated on that build.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-proof.md",
           "inspect": "On the unlocked active built-in panel, rerun all three M2.2 arms on the same post-G3t build/content/recipe/extent as M3.1: ON untraced, ON traced and OFF traced. Require the complete pan and holds, normal AppKit controls and fresh presented times from Mac M2's qualified witness, covering the full interval with the validated conversion and stated error. Review full-resolution ON sequences at 1x; cadence comes only from OFF. Apply every M2.2 attribution, completeness, overhead and clock-separation criterion. No earlier trace or functional-window-only run can pass.",
           "ask": "Revalidate the M2.3 known-pattern correspondence, lease, pending-readback loss and capture-OFF direct-path proofs on the changed graph/present path. Rerun Mac M2's qualified recording configuration and witness command; M3 grants one recording per traced arm and no diagnostic recordings. If trace tooling regresses, record it blocked and require a scoped re-plan before further diagnostic attempts. Does fresh M3.1 motion match this build, and are both post-change items independently reviewed before claiming final Mac qualification for V1?",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [

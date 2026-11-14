@@ -1,0 +1,57 @@
+[
+  {
+    "submission_id": 478,
+    "submit_ns": 3993338292,
+    "rgba_sha256": "f543634baa6edaf6e4ff562ed363bbd6abcc343959c6a440358e945832eb16e7",
+    "sequence": 482,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 0.0,
+    "tick": 2,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 538,
+    "submit_ns": 4493668334,
+    "rgba_sha256": "56d4c401c93b516243c8c3840c8fe2934872b58e956eff6bf3e3eecf392e67d5",
+    "sequence": 542,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 9.049986839,
+    "tick": 2,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 598,
+    "submit_ns": 4993607292,
+    "rgba_sha256": "738161a0ce6964fa0793cc3f79d34b2dfd8b27a580f8f52ee62278544c160398",
+    "sequence": 602,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 18.049991608,
+    "tick": 2,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 658,
+    "submit_ns": 5493817209,
+    "rgba_sha256": "52f987bdca6efbab935e2af465e9bd2a348f4a59cf704dc575b6c6b488d96cc1",
+    "sequence": 662,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 27.049995422,
+    "tick": 2,
+    "device_generation": 1,
+    "presenter_generation": 1
+  },
+  {
+    "submission_id": 849,
+    "submit_ns": 7084708584,
+    "rgba_sha256": "f497512e6989c0ef9bc6ba7a02e88bf73a465fefa22bc851d52672a2247822a0",
+    "sequence": 853,
+    "lease_generation": 2,
+    "accepted_yaw_degrees": 35.999988556,
+    "tick": 2,
+    "device_generation": 1,
+    "presenter_generation": 1
+  }
+]
