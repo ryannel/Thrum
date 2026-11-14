@@ -1,0 +1,84 @@
+PART 1  Hollows that fill, spill, merge and part
+  bed 64 x 64 cells of 5 cm; 20 hollows, 30 nodes in the tree
+  the five deepest hollows (depth to sill, litres to sill): 17 mm 3.6 l, 14 mm 2.0 l, 3 mm 0.1 l, 2 mm 0.1 l, 2 mm 0.0 l
+  rain of 30 mm/h for 2,600 s, then none and a loss of 40 mm/h from every water surface
+  t=  600 s  puddles  10  water surface  3.69 m2  held   36.7 l
+  t= 1300 s  puddles  10  water surface  4.66 m2  held   58.2 l
+  t= 2599 s  puddles  10  water surface  4.66 m2  held   58.2 l
+  t= 3300 s  puddles   2  water surface  2.90 m2  held   30.0 l
+  t= 4200 s  puddles   2  water surface  1.34 m2  held    9.8 l
+  t= 5200 s  puddles   2  water surface  0.34 m2  held    1.3 l
+  merges 10, partings 10, steps with either 19
+  point test against a flood from the pits, worst count of cells that differ: 0
+  water account: in 198.878 l = held 1.299 + lost 56.917 + over the edge 140.661; residual -1.53e-12 l
+  steps of 1.0000 s: largest change of any hollow's level in one step 0.7619 mm with no merge or parting, 1.7606 mm in a step with one (10 merges, 10 partings)
+  steps of 0.2500 s: largest change of any hollow's level in one step 0.3820 mm with no merge or parting, 0.8542 mm in a step with one (10 merges, 10 partings)
+  steps of 0.0625 s: largest change of any hollow's level in one step 0.4117 mm with no merge or parting, 0.2098 mm in a step with one (10 merges, 10 partings)
+  as basins with a seed each, 10 pairs of fills would overlap at some level and be refused
+PART 2  How long a puddle takes
+  a pothole 0.5 m2 at its sill, 20 mm deep at its deepest, 4.0 l to its sill
+  paving, no soak              minutes to fill at 2, 10, 50 mm/h (catchment 1x, 6x its area):    240     40     48      8     10      2
+  packed earth, soaks 5 mm/h   minutes to fill at 2, 10, 50 mm/h (catchment 1x, 6x its area):   none   none     96     16     11      2
+  sand, soaks 60 mm/h          minutes to fill at 2, 10, 50 mm/h (catchment 1x, 6x its area):   none   none   none   none   none   none
+  20 mm of water gone in   4000.0 minutes at evaporation 0.3 mm/h
+  20 mm of water gone in    226.4 minutes at evaporation and soak 5 mm/h
+  20 mm of water gone in      2.0 minutes at a demo's drying rate 600 mm/h
+PART 3  Rain rings
+  depth   1000 mm: least group speed  17.8 cm/s at a wavelength of  4.4 cm; least phase speed  23.1 cm/s at  1.7 cm
+  depth     20 mm: least group speed  18.1 cm/s at a wavelength of  3.9 cm; least phase speed  23.1 cm/s at  1.7 cm
+  depth     10 mm: least group speed  19.9 cm/s at a wavelength of  3.1 cm; least phase speed  23.1 cm/s at  1.7 cm
+  depth      5 mm: least group speed  21.9 cm/s at a wavelength of  4.6 cm; least phase speed  22.0 cm/s at  3.5 cm
+  depth      2 mm: least group speed  14.1 cm/s at a wavelength of 31.4 cm; least phase speed  14.0 cm/s at 31.4 cm
+  a 3 mm drop: 14.1 mg at 7.95 m/s, momentum 112.4 uN s, energy 446 uJ
+  deep water, 0.2 s after: calm inside  0.8 cm ( 4.0 cm/s), rings out to  6.0 cm, 1 crests, highest 0.303 mm at 3.2 cm
+  deep water, 0.4 s after: calm inside  4.8 cm (12.0 cm/s), rings out to 10.8 cm, 3 crests, highest 0.204 mm at 8.0 cm
+  deep water, 0.8 s after: calm inside 12.8 cm (16.0 cm/s), rings out to 21.6 cm, 3 crests, highest 0.141 mm at 15.2 cm
+  footprint 1 drop radii: the rings carry  29.5% of the drop's energy
+  footprint 2 drop radii: the rings carry   3.7% of the drop's energy
+  footprint 3 drop radii: the rings carry   1.1% of the drop's energy
+  footprint 4 drop radii: the rings carry   0.5% of the drop's energy
+  a 1.5 mm drop at 0.4 s: highest ring 0.029 mm, 3.0 m per N s, calm inside 6.0 cm
+  a 3.0 mm drop at 0.4 s: highest ring 0.204 mm, 1.8 m per N s, calm inside 4.8 cm
+  a 5.0 mm drop at 0.4 s: highest ring 0.515 mm, 0.9 m per N s, calm inside 4.0 cm
+  depth   50 mm, 0.4 s after: highest ring 0.204 mm (  0.7% of 0.6 of the depth)
+  depth   20 mm, 0.4 s after: highest ring 0.213 mm (  1.8% of 0.6 of the depth)
+  depth   10 mm, 0.4 s after: highest ring 0.202 mm (  3.4% of 0.6 of the depth)
+  depth    5 mm, 0.4 s after: highest ring 0.155 mm (  5.2% of 0.6 of the depth)
+  depth    2 mm, 0.4 s after: highest ring 0.083 mm (  7.0% of 0.6 of the depth)
+  depth    1 mm, 0.4 s after: highest ring 0.051 mm (  8.5% of 0.6 of the depth)
+  rain    2 mm/h:   2144 drops a m2 a second (  14 of 2 mm and over),   2.4 mm/h of water, mean square slope 0.0010 (rms 1.8 deg)
+  rain   10 mm/h:   4449 drops a m2 a second ( 152 of 2 mm and over),  11.6 mm/h of water, mean square slope 0.0089 (rms 5.4 deg)
+  rain   50 mm/h:   8787 drops a m2 a second ( 918 of 2 mm and over),  54.2 mm/h of water, mean square slope 0.0650 (rms 14.6 deg)
+   16 rings a m2 a second, each drawn for 1.0 s out to 0.20 m:   1.0 rings over a point on average (a ring's disc grows from nothing, so half its last area)
+   64 rings a m2 a second, each drawn for 1.0 s out to 0.20 m:   4.0 rings over a point on average (a ring's disc grows from nothing, so half its last area)
+  256 rings a m2 a second, each drawn for 1.0 s out to 0.20 m:  16.1 rings over a point on average (a ring's disc grows from nothing, so half its last area)
+PART 4  Why wet ground is dark
+  wet over dry albedo, by dry albedo and the share of light the film returns to the ground:
+  share 0.47: albedo 0.05 0.1 0.2 0.4 0.6 0.8 -> 0.53 0.55 0.57 0.64 0.72 0.83
+  share 0.60: albedo 0.05 0.1 0.2 0.4 0.6 0.8 -> 0.40 0.42 0.45 0.52 0.61 0.75
+  share 0.70: albedo 0.05 0.1 0.2 0.4 0.6 0.8 -> 0.30 0.32 0.34 0.41 0.51 0.67
+  share 0.80: albedo 0.05 0.1 0.2 0.4 0.6 0.8 -> 0.20 0.21 0.23 0.29 0.38 0.54
+  a brown of (0.3, 0.22, 0.14) at share 0.47: (0.181, 0.127, 0.078); saturation 0.53 -> 0.57
+  a brown of (0.3, 0.22, 0.14) at share 0.7: (0.112, 0.076, 0.046); saturation 0.53 -> 0.59
+PART 5  Wet ground through a shower of 10 mm/h for ten minutes, then drying at 6 mm/h (nothing dries while it rains)
+  paving: pores 0.3 mm, relief holds 1.0 mm
+    reach 1.00: sheen from 125 s; at 600 s film 1.00 mm, pores 1.00; film gone at 1199 s; pores half dry at 1323 s
+    reach 0.50: sheen from 251 s; at 600 s film 0.53 mm, pores 1.00; film gone at 920 s; pores half dry at 1044 s
+    reach 0.25: sheen from 504 s; at 600 s film 0.12 mm, pores 1.00; film gone at 669 s; pores half dry at 793 s
+    reach 0.40 read between the stores for 0.25 and 0.5: off by 0.100 mm of film and 0.227 of the pores at worst; as 0.4 of the open store it is off by 0.60 of the pores
+  packed earth: pores 3 mm, relief holds 0.5 mm
+    reach 1.00: sheen from None s; at 600 s film 0.00 mm, pores 0.56; film gone at 600 s; pores half dry at 1847 s
+    reach 0.50: sheen from None s; at 600 s film 0.00 mm, pores 0.28; film gone at 600 s; pores half dry at 1847 s
+    reach 0.25: sheen from None s; at 600 s film 0.00 mm, pores 0.14; film gone at 600 s; pores half dry at 1847 s
+    reach 0.40 read between the stores for 0.25 and 0.5: off by 0.000 mm of film and 0.000 of the pores at worst; as 0.4 of the open store it is off by 0.00 of the pores
+PART 6  Rings from a footfall: a fine interaction level
+  steps of 1 tick(s): phase speed within 2.0% (worst at a 26 cm wave on 56 mm of water); never grows; loses at most 0.2% a second; 0 cases where the wave does not travel
+  steps of 2 tick(s): phase speed within 2.0% (worst at a 14 cm wave on 28 mm of water); never grows; loses at most 1.9% a second; 0 cases where the wave does not travel
+  steps of 8 tick(s): phase speed within 2.2% (worst at a 16 cm wave on 28 mm of water); never grows; loses at most 41.6% a second; 4 cases where the wave does not travel
+  a 8 cm wave on 30 mm: 36 cm/s, a blend of two ticks misstates it by 2.7% of its height at most
+  a 20 cm wave on 30 mm: 48 cm/s, a blend of two ticks misstates it by 0.8% of its height at most
+  a 50 cm wave on 50 mm: 66 cm/s, a blend of two ticks misstates it by 0.2% of its height at most
+  a 256 x 256 level of 2 cm cells is a window 5.12 m across
+  a footfall of 0.6 N s over 7 cm on 30 mm of water: rings 3.4 mm high near 0.25 m after 0.5 s
+  a footfall of 0.6 N s over 7 cm on 30 mm of water: rings 2.2 mm high near 0.50 m after 1.0 s
+  a footfall of 0.6 N s over 7 cm on 30 mm of water: rings 1.3 mm high near 1.00 m after 2.0 s

@@ -151,3 +151,10 @@
   [this design](DESIGN.md#what-the-later-modules-build-on) expected of `RIVERS`: roughness as a gain on the
   wind's cascades, and a reach that keeps its prepared flow whatever its source's stage. No item, test or
   bound here changes, and M9's stand-in channel stays as built.
+- 2026-11-14 `PUDDLES` planned. [Seven rulings](../ARCHITECTURE.md#seam-rulings-for-puddles) say what its
+  builder adds in this module's crates: a hollows body in the map, a fine interaction level, rain bands, and
+  the film drawn over standing rain water. Three replace what
+  [this design](DESIGN.md#what-the-later-modules-build-on) expected of `PUDDLES`: a puddle as a basin whose
+  stage rain raises, a drop as an impulse record, and a film only on a shore. The question this design left
+  it, how basins that overflow merge and part, is settled without changing a basin: two basins that would
+  merge are still refused. No item, test or bound here changes.

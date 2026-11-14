@@ -20,7 +20,7 @@
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M6 for the valley; WATERS M10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
@@ -82,7 +82,7 @@ track 1 lays. They are finished here, not in Broadsides; [the reasons](#where-se
 Track 2 adds two foundation modules, `EFFECT-GRAPH` and, for water's mirrored scenery, `SCENE-VIEWS`
 ([design](SCENE-VIEWS/DESIGN.md)), and asks track 1 for three things it was already going to build. `SEA`, `WATERS` and `CLOUDS` are planned and start under their plans' assumptions on the owner's words of 13
 November ([SEA](SEA/PLAN.md#open-for-the-human), [WATERS](WATERS/PLAN.md#open-for-the-human),
-[CLOUDS](CLOUDS/PLAN.md#open-for-the-human)); `RIVERS` is planned too ([plan](RIVERS/PLAN.md#open-for-the-human)), and `PUDDLES` has [a brief](#rivers-and-puddles).
+[CLOUDS](CLOUDS/PLAN.md#open-for-the-human)); `RIVERS` and `PUDDLES` are planned too ([RIVERS](RIVERS/PLAN.md#open-for-the-human), [PUDDLES](PUDDLES/PLAN.md#open-for-the-human)).
 
 **Track 3, the goal after V1.** An original swarm-survival game that proves 2D and online multiplayer, set by the
 owner in [the brief](../design/NEXT-GOAL-SWARM-GAME.md). Six new modules, none of which starts before the exit or gates
@@ -110,7 +110,7 @@ the road to the exit.
 | `WATERS` | track 2 | The water map and its one sampling function, gains, the shore transform and the breaker section, the f64 surface model, the interaction, foam and caustic references and the light factor at a camera (`thrum-water-model`); the map on the GPU, the surface from both sides and its frame contract, optics and the gather, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam stocks, the body-query ring (`thrum-water`); the water example scene (`examples/water`) | [Design](WATERS/DESIGN.md) |
 | `SCENE-VIEWS` | track 2 | Secondary views of the scene: slots and requests, a view's record, its pass and fragment entry, its targets, and which contributions draw in it; a view's culling, Sun cascades, cluster table and aerial volume, built in their owners' files by [ruling](#seam-rulings-for-scene-views); the mirror example (`examples/mirror`) | [Design](SCENE-VIEWS/DESIGN.md) |
 | `RIVERS` | track 2 | The flow solver, its brink rule and energy account, and the river file's writer (`thrum-river-model`); a river's flow samples and gauge, brink ends, fall records and the sheet's reference, the plunge's births and impulses, the flow bands and their gains, as files of its own and [ruled changes](#seam-rulings-for-rivers) in `thrum-water-model`, `thrum-water` and `thrum-sea`; the river selection and its ground in `examples/water` | [Design](RIVERS/DESIGN.md) |
-| `PUDDLES` | track 2 | The hollows rain fills and each one's fill; the rain rate's use; rain rings; the wetness of ground and the forward material's reading of it | [Brief](#rivers-and-puddles) |
+| `PUDDLES` | track 2 | The tree of hollows, the fill step and its account, the canopy grid and exposure, the ground's stores and the wetness function, the ring response, and the rain state a game keeps (`thrum-rain-model`); the hollows kind in the map, the rain bands, the fine interaction level, the film over standing rain water and the wetness provider, as files of its own and [ruled changes](#seam-rulings-for-puddles) in `thrum-water-model`, `thrum-water`, `thrum-sea` and the forward shader; the rain selection and its ground in `examples/water` and `examples/v1-game` | [Design](PUDDLES/DESIGN.md) |
 | `CLOUDS` | track 2 | The weather field, its state's step and the f64 references (`thrum-cloud-model`): every condensate from the cloud tops to mist, fog and low cloud on the ground, and how much haze the air holds; the weather map, cloud density and noise, the Sun-path optical-depth product in its cloud and ground bands, the cloud layer and its history, the sky overlay, placed-volume sampling, the medium coefficients it writes for the view volume (`thrum-clouds`); the cloud selection in `examples/v1-game` and `examples/water` | [Design](CLOUDS/DESIGN.md); [brief](CLOUDS/BRIEF.md) |
 
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
@@ -171,7 +171,7 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    are met. Their closing milestones need the governor. Water is built in the order
    [water as one system](#water-as-one-system) gives: the wave field, then still water with the shared system,
    then running water, then rain. `RIVERS`' flow solver is CPU work in files of its own and can run beside
-   `WATERS` once `WATERS:M1` is Done. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, on its M3, so it
+   `WATERS` once `WATERS:M1` is Done, and so can `PUDDLES`' two CPU milestones. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, on its M3, so it
    can be built at any point after `CULLING:M3`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`.
 9. **The atmosphere as a whole** ([below](#the-atmosphere-as-a-whole)). `CLOUDS` M13 (mist, fog and low cloud
    on the CPU) follows its M1 and needs nothing. `ATMOSPHERE` M7 (the view volume, haze and shafts) and M8 (a
@@ -181,8 +181,7 @@ reasoning behind those entries. The project settings allow one Codex builder, so
 
 **The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
 `APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)).
-`CONTENT-LOOP`, `SHOWCASE`, `SEA`, `WATERS`, `CLOUDS`, `SCENE-VIEWS` and `RIVERS` are planned. `PUDDLES` is planned from
-[its brief](#rivers-and-puddles) before `WATERS` reaches M8. Each waits on `APPLE-TILE`, on a milestone
+`CONTENT-LOOP`, `SHOWCASE`, `SEA`, `WATERS`, `CLOUDS`, `SCENE-VIEWS`, `RIVERS` and `PUDDLES` are planned. Each waits on `APPLE-TILE`, on a milestone
 that itself waits on `APPLE-TILE`, or on the owner's port timing, so each is planned before a builder could reach it.
 
 ## Where the port's readiness conditions are met
@@ -237,14 +236,16 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
 | **Body query**: one batched asynchronous GPU query for all water, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (the body of water with its depth and current, or dry ground; height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `WATERS` → games and P3 | C09, [WATERS](WATERS/DESIGN.md#bodies-and-the-query) |
 | **Wave field**: the wind's waves as analytic long-wave components and spectral cascades with their slope and Jacobian moments, evaluated every frame at the display's time and keeping nothing between frames; an f64 evaluator of the same waves; the spectrum's energy in each layer's band for a given fetch | `SEA` → `WATERS` | [SEA](SEA/DESIGN.md#the-ambient-sea) |
-| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support, and, where a profile has surf, a shore transform that turns, shortens and raises its long waves over the bed. A chart is what a flow solver writes, and a basin whose stage moves is what a puddle is | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map) |
+| **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth, and, by [ruling 1 for `PUDDLES`](#seam-rulings-for-puddles), hollows by a rectangle with its own bed, a label for each cell and a level for each hollow) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support, and, where a profile has surf, a shore transform that turns, shortens and raises its long waves over the bed. A chart is what a flow solver writes, and a hollows body is where puddles stand | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map), [PUDDLES](PUDDLES/DESIGN.md#hollows-the-tree-and-the-point-test) |
 | **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names, with an optional clip plane, a fold height for the air and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before | `SCENE-VIEWS:M3` (entities from its M1, cooked placements from its M2) → `WATERS:M14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
 | **Sun-path factor**: a water provider's factor on a receiver's direct Sun, read at the receiver's own position beside the cloud factor: `1 + D (C − 1)`, the beam's share times the caustic field's departure from even light, and exactly 1 at or above the water's level and outside the provider's window. With it goes the point at which a receiver under water reads its Sun visibility, where its refracted Sun ray leaves the water. This is C08's caustics, an illumination contribution whose owner is `WATERS`, applied once by V3's direct-Sun path | `WATERS:M16` → `ATMOSPHERE`'s direct-Sun receivers in the forward pass, and every contribution that compiles the scene's shader | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), [ruling 5](#seam-rulings-for-waters) |
 | **Lent Sun visibility**: with the environment products, the scene's Sun visibility at a world point as one tap of its cascades and height map, for an effect's own volume samples; 1 in a scene with no shadows | `ATMOSPHERE` (built by `WATERS:M16`, [ruling 6](#seam-rulings-for-waters)) → `WATERS`' shafts | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **Meter medium factor**: a camera request may carry three numbers that multiply the incident light the camera's meter reads, for a camera inside a medium; 1 by default, and with 1 the resolved exposure sample is unchanged to the bit. `thrum-water-model` gives the factor for a camera under water, and the game sets it | `APPLE-PRESENTATION` (V4; built by `WATERS:M16`, [ruling 7](#seam-rulings-for-waters)) → games | C07, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **River**: everything one steady solve of the map's bed writes, as a stored file with a key: one chart for each reach, each holding one or more flow samples (level, current, loss and flow gains) and the gauge level of each; brink ends where the ground drops away; and a fall record for each fall. A chart's loss is the power that breaks the surface, in watts a square metre. A game declares a river's rectangle, sources, bodies and flow samples; a build step or a native game's preparation solves it, and a page only loads it | `RIVERS:M1` (one sample), `RIVERS:M2` (falls), `RIVERS:M3` (samples and gains) → games, and `WATERS`' map through [rulings 1 to 3](#seam-rulings-for-rivers) | [RIVERS](RIVERS/DESIGN.md#what-a-solve-writes) |
 | **Fall record**: along a fall's lip, for each flow sample, the water's path with the time it takes, its discharge for each metre of lip and its launch speed; the reach above and the body below; stable IDs for its segments; and so the fall's power, which a later mist may read | `RIVERS:M2` → `WATERS`' pass (the sheet, by ruling 7), games | [RIVERS](RIVERS/DESIGN.md#the-falls-sheet) |
-| **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted | games, `RIVERS` (a fall's plunge), `PUDDLES` (drops) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
+| **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted. A footfall in a puddle is one; a raindrop is not, since rain's rings are [wave layers](PUDDLES/DESIGN.md#rain-rings) | games, `RIVERS` (a fall's plunge) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
+| **Rain record**: the rain's flux and the drying rate, in kilograms a square metre a second, uniform over a scene and held over a tick, which a game sets in its tick page; with it the triangles that shelter, each with the share of rain it lets through, as prepared content. `CLOUDS` may set the record once it has rain | games → `PUDDLES`, and through it `WATERS`' rain bands | C09, [PUDDLES](PUDDLES/DESIGN.md#rain-and-what-it-reaches) |
+| **Ground wetness**: the pores' fill and the surface water with its cover at a world point, one function in f64 and in WGSL of prepared fields (exposure, slope, relief) and the rain state a game steps, reading no camera. A forward surface reads it before it is lit, composed as the cloud factor is; with no provider a scene compiles the shader text and draws the bytes it does today | `PUDDLES:M2` (the function), `PUDDLES:M5` (the provider) → the scene's shader and the cooked material, `WATERS`' film, games | C09, [PUDDLES](PUDDLES/DESIGN.md#wet-ground), [ruling 5](#seam-rulings-for-puddles) |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
@@ -391,6 +392,66 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
 
 Once built, the changes inside `WATERS`' own files belong to `WATERS`: later work there keeps their tests
 passing. The files `RIVERS` adds stay its own.
+
+### Seam rulings for PUDDLES
+
+Rain's water is a body in `WATERS`' map, wave layers in its field, a level of its interaction waves and its
+film, and wet ground is a read in the forward shader, so most of what `PUDDLES` builds at run time lies in
+other modules' files. Each ruling is built by the `PUDDLES` builder there, with the behaviour
+[PUDDLES](PUDDLES/DESIGN.md#mechanisms) defines. No item, test, bound or reference of `WATERS`, `SEA`,
+`RIVERS`, `ATMOSPHERE`, `COOKED-DRAW`, `CONTENT-LOOP` or `SHOWCASE` changes, and all keep passing. A scene with
+no hollows body, no rain capability and no wetness provider compiles to the same shader text, passes and
+storage and draws the same bytes, and `thrum-water-model` gives it the same answers to the bit. `WATERS`' and
+`RIVERS`' builders edit the same crates; whichever lands second integrates on top. Three of these replace what
+[WATERS' design](WATERS/DESIGN.md#what-the-later-modules-build-on) and the interface table expected of this
+module: a puddle is not a basin with a seed (ruling 1), a raindrop is not an impulse record (ruling 3), and
+the film is drawn off the shore (ruling 4). [PUDDLES' design](PUDDLES/DESIGN.md#judged-from-first-principles)
+gives the reasons.
+
+1. **A hollows body in the map** (`PUDDLES` M1 in `thrum-water-model`, M3 in `thrum-water`). Beside the sea,
+   the basin and the chart, a game may declare hollows: a rectangle with a bed of its own, a label for each
+   cell and a level for each hollow, which the game sets with the tick as it sets a stage. A point's water is
+   its cell's hollow's level where that stands above the bed. Inside the rectangle the map's bed is the
+   body's own; its row has no current and no wind gain. Its identity and generation do not change as its
+   puddles join and part, and a change of its levels relabels the interaction waves' regions and resets no
+   state. Preparation refuses a hollows body with a cell in another body's water or shore margin anywhere in
+   that body's stage range, so this settles how puddles merge without changing what preparation refuses of a
+   basin: two basins that would merge are still refused.
+2. **A fine interaction level** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-water`). A profile may name
+   a third level, of 2 cm cells with a depth ladder from 5 mm and surface tension in its frequency, which
+   takes the waves under 1 m and steps one tick at a time. With none, the two levels hold and step what they
+   did.
+3. **Rain bands** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-sea` and `thrum-water`). The world's wave
+   field gains two layers that are a function of time and hold no state, generated only where a scene's
+   profile names them. Every body's row has a rain gain, exposure times the depth response at the point, and
+   every reader of the wave layers reads them through the one sum, with the rules a cascade has. They are
+   layers beside [`RIVERS`' flow bands](#seam-rulings-for-rivers) and share nothing with them.
+4. **The film over standing rain water** (`PUDDLES` M5; the water's contribution in `thrum-water`). The film
+   `WATERS` draws on sand the waves wash is also drawn over a hollows body's ground, wherever the wetness
+   function gives surface water and no puddle stands, with the cover as its weight. It stays a declared
+   residual: no depth, no query, no optical depth.
+5. **A wetness provider on the forward surface** (`PUDDLES` M5; `synthetic/scene_source.rs` and
+   `synthetic.wgsl` in `thrum-render`, and the cooked material in `thrum-asset-gpu`). A scene may register a
+   provider of ground wetness with its textures, composed into the scene's shader as the cloud factor is and
+   read by every contribution that compiles it. A surface's base colour and roughness take the wet look
+   before it is lit, after any material hook. The light, the shadows, the air, the cloud factor and
+   `WATERS`' Sun-path factor are applied as they were. `WATERS` M16 adds to the same shader; whichever lands
+   second integrates.
+6. **A rain selection in two games** (`PUDDLES` M3 in `WATERS`' `examples/water`, M6 in `SHOWCASE`'s
+   `examples/v1-game`). Each game gains a selection that is off by default. With it off, the game's ground,
+   bodies, world, tick page, compiled graph and frames are what they were. With it on, the game keeps a rain
+   state in its world and steps it, registers the wetness provider, and adds ground with hollows: a yard on
+   the island, and in the valley a patch of ground beside the terrain, with the water's contribution.
+   `PUDDLES` does not edit the showcase's terrain, generator, routes or exit configuration, and adds its cases
+   to `scripts/check_water_browser.mjs`, `scripts/check_v1_browser.mjs` and `scripts/water_cost.py` and changes
+   none of theirs. Putting rain in the V1 exit scene by default would change the exit, which is the owner's.
+7. **The Sun's shadow on the film** (`PUDDLES` M7). [`RIVERS`' ruling 7](#seam-rulings-for-rivers) gives the
+   surface's Sun lobe the lent Sun visibility once `WATERS:M16` has built it; the film's Sun lobe takes it
+   too. Whichever of `RIVERS` M7 and `PUDDLES` M7 lands first builds the surface's.
+
+Once built, rulings 1 to 4 belong to `WATERS`, ruling 5 to the owners of the files it is in (`ATMOSPHERE` for
+the scene's composed shader, `COOKED-DRAW` for the cooked material) and ruling 6 to each game's owner: later
+work there keeps their tests passing. The files `PUDDLES` adds stay its own.
 
 ### Seam rulings for SCENE-VIEWS
 
@@ -653,7 +714,7 @@ state, each kind with one owner:
 | `SEA` | The wind's wave field and its oracle | It depends on nothing about where water lies, every body reads it, and its first two milestones were planned and under way. They are unchanged |
 | `WATERS` | The map, the surface, optics, interaction waves, foam and the query, with surf, mirrored scenery and the view from under water, proved on a sea, a beach, a lake, a pond and a hand-made channel | The shared system has to exist once, and it is proved on still water, where a bed and a shore first appear, before running water is drawn on it |
 | `RIVERS` | The flow solver that writes charts, and waterfalls | A prepared flow is a different kind of work, on the CPU and in files of its own, and falls are a new kind of geometry |
-| `PUDDLES` | Rain's hollows and their fill, and the wetness of ground | It reaches into the forward pass's materials, which no other water module touches |
+| `PUDDLES` | Rain's hollows and their fill, rain's rings, and the wetness of ground | Its state is a game's own, stepped on the CPU, and it reaches into the forward pass's surfaces, which no other water module touches |
 
 `SEA`'s old M3 to M10 became `WATERS`' M2 to M11, written again for every body of water. A module called `WATER`
 would share its evidence folder's name with the 1 November `docs/evidence/water` on this Mac's file system, so
@@ -662,7 +723,7 @@ evidence `WATERS`' design judged; where they differ, that design holds.
 
 **Build order.** `SEA` M1 and M2; `WATERS` M1 and M12 (surf on the CPU) beside `SEA` M2; `WATERS` M2 to M7, M13
 (surf drawn), M8, M9, M15 (under water) and M16 (light under water); `RIVERS` from `WATERS:M9`, with its solver earlier; `PUDDLES` from
-`WATERS:M8`; `WATERS` M10, M14 (mirrored scenery, on `SCENE-VIEWS:M3`) and M11 close the shared system. `CLOUDS`
+`WATERS:M8`, with its CPU milestones earlier; `WATERS` M10, M14 (mirrored scenery, on `SCENE-VIEWS:M3`) and M11 close the shared system. `CLOUDS`
 M11 needs `WATERS:M8`. `WATERS`' milestones keep the numbers other plans name, so its file order, and not its
 numbering, is its build order.
 
@@ -747,8 +808,8 @@ consumers (a probe, a portal, a monitor in the world) ask through the same reque
 ### RIVERS and PUDDLES
 
 Both build on [the water system](WATERS/DESIGN.md#what-the-later-modules-build-on) and add no second surface,
-optics, foam or query. `PUDDLES` is planned by a `plan-module` run from this brief, with full research into shipped
-and published practice and reproductions of its own mechanisms, as `RIVERS` was. A cue that a seam of `WATERS` cannot carry is
+optics, foam or query. Each was planned by a `plan-module` run from its brief, with research into shipped
+and published practice and reproductions of its own mechanisms. A cue that a seam of `WATERS` cannot carry is
 settled here, with `WATERS`.
 
 **`RIVERS`** was planned on 14 November 2026: [design](RIVERS/DESIGN.md), [plan](RIVERS/PLAN.md). Seven
@@ -759,20 +820,17 @@ carried, foam where it loses height and at rocks, and a waterfall with its sheet
 planner settled the brief's open mechanisms, and [seven rulings](#seam-rulings-for-rivers) say what that asks of
 `WATERS`. Mist at a fall is not planned and is [the owner's](#owner-decisions).
 
-**`PUDDLES`: rain, puddles and wet ground.** Finished means: rain that wets the ground it can reach and leaves
-shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under drops
-and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have run, under
-the sheen and foam `WATERS` draws there as [its film](WATERS/DESIGN.md#the-surface-and-the-frame-contract), read
-from the same wave support; and the same
-on the island and in the V1 valley behind a selection, in Chrome too. Mechanisms to settle: how puddles that overflow
-into each other merge and part again, keeping each body's identity, stage and the rings and foam on it with no
-visible rebuild or reset, which is a seam question settled here with `WATERS`, whose map refuses basins that
-overlap; finding hollows and
-their sills from the bed at the scale of a puddle; fill and loss from a rain rate; rain rings as a wave layer;
-the wetness of ground as a field and how the forward pass's materials read it, which needs a seam ruling with
-that pass's owner; micro-puddles that live in a material's own height. Needs: `WATERS:M8`; a rain rate, which is
-the game's control until `CLOUDS` has rain. Read first: Lagarde's wet-surface series and the older
-[appearance design](../design/modules/WATER-APPEARANCE.md).
+**`PUDDLES`** was planned on 14 November 2026: [design](PUDDLES/DESIGN.md), [plan](PUDDLES/PLAN.md). Seven
+milestones: puddles, then wet ground and rings, on the CPU after `WATERS:M1`; the yard's puddles, the rain's
+rings and the wet ground on the island after `WATERS:M8`; the V1 valley after `SHOWCASE:M6`; and the close,
+after `WATERS:M10`, `M14` and `M16`. Its brief asked for rain that wets the ground it can reach and leaves
+shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under
+drops and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have
+run, under the sheen and foam `WATERS` draws there as [its film](WATERS/DESIGN.md#the-surface-and-the-frame-contract);
+and the same on the island and in the V1 valley behind a selection, in Chrome too. Its planner settled the
+brief's open mechanisms, the first of them how puddles merge and part, and
+[seven rulings](#seam-rulings-for-puddles) say what that asks of `WATERS`, the forward shader and the two
+games. Rain seen falling is not planned and is [the owner's](#owner-decisions).
 
 ## Track 3: the swarm-survival game, after V1
 
@@ -1250,6 +1308,17 @@ For `RIVERS`, each recorded as an assumption in [its plan](RIVERS/PLAN.md#open-f
 26. **Rivers behind a selection.** The island shows the solved rivers only when the selection is on, until
     `WATERS` closes, so `WATERS`' reviews see the island they were written for.
 
+For `PUDDLES`, each recorded as an assumption in [its plan](PUDDLES/PLAN.md#open-for-the-human):
+
+27. **No rain in the air.** Rain is seen by what it does to the ground and the water: no streaks, splashes,
+    drops on the lens or sound. Those need an owner for particles and a seam with the weather, which `CLOUDS`
+    does not plan. The owner can ask for it; the rain record and the exposure field hold what it would read.
+28. **Rain and drying are the game's two rates**, uniform over a scene, falling straight, and tied to neither
+    the clouds nor the Sun.
+29. **Puddles only where a game marks ground for them.** Elsewhere ground wets and shines and holds no puddle.
+    Rain feeds no lake or river, and wet ground keeps no tracks.
+30. **Rain behind a selection in the V1 valley**, off by default, so the exit scene is unchanged.
+
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
 7. **When track 3 starts.** The brief says after V1, and this plan holds every track 3 module until `SHOWCASE` is
@@ -1279,8 +1348,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - The sea's assumptions have moved to [SEA's](SEA/PLAN.md#open-for-the-human) and
   [WATERS'](WATERS/PLAN.md#open-for-the-human) plans.
 - The `RIVERS` assumptions have moved to [its plan](RIVERS/PLAN.md#open-for-the-human).
-- `PUDDLES` assumes a rain rate the game sets until `CLOUDS` has rain, and that changing how ground materials
-  shade is allowed behind a selection that leaves the V1 exit scene as it is.
+- The `PUDDLES` assumptions have moved to [its plan](PUDDLES/PLAN.md#open-for-the-human).
 - The clouds' assumption has moved to [CLOUDS's plan](CLOUDS/PLAN.md#open-for-the-human).
 - The `SCENE-VIEWS` assumptions have moved to [its plan](SCENE-VIEWS/PLAN.md#open-for-the-human).
 - The track 3 assumptions have moved to their modules' plans: the readings of "2D support in the engine" to
@@ -1461,3 +1529,12 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   and a river is solved at several levels of its source in place of one prepared flow. `WATERS`' design, plan
   and items are unchanged; its log records the rulings. No contract text, no exact baseline and no other
   module's item changed.
+- 2026-11-14 `PUDDLES` planned from [its brief](#rivers-and-puddles): [design](PUDDLES/DESIGN.md), seven
+  milestones. Rows for the rain record and ground wetness were added, the water-map row names the hollows
+  kind, and the impulse-records row no longer lists rain's drops. [Seven rulings](#seam-rulings-for-puddles)
+  settle what it builds in `WATERS`' crates, the forward shader and the two games. Three replace what
+  `WATERS`' design expected: all the hollows of a stretch of ground are one body in place of a basin for each
+  puddle, which is how puddles merge with nothing rebuilt; rain's rings are wave layers in place of impulse
+  records; and the shore's film is also drawn over standing rain water. `WATERS`' design, plan and items are
+  unchanged; its log records the rulings. No contract text, no exact baseline and no other module's item
+  changed.
