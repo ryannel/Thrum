@@ -157,7 +157,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): In Progress · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
-- The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md)
+- The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): Ready for Review · [plan](CULLING/PLAN.md)
 - SEA's design: Design Ready for Review · [design](SEA/DESIGN.md) · [plan](SEA/PLAN.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
@@ -197,7 +197,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Ready for Review |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
