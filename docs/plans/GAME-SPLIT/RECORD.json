@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": "docs/evidence/GAME-SPLIT/design-review.md",
-    "commit": "837467483f1e43292357e58e9084dc363870b80c",
-    "hash": "1a7ce4c3a630b2dffea656e22e69000335e145916e2d8466ecc082704f15ceed",
+    "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+    "hash": "22be991fdd856c8accc8dfdc452fa836d041e29359096a48fb19496a4e10f8c2",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 108390,
-      "cached": 1054464,
-      "output": 7024,
+      "input": 95725,
+      "cached": 946944,
+      "output": 5355,
       "turns": 1
     },
-    "at": "2026-11-14T22:19:39Z"
+    "at": "2026-11-14T23:30:32Z"
   },
   "milestones": {
     "M1": {
@@ -83,5 +83,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-14T23:26:02Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/GAME-SPLIT/design-review-1.md",
+      "commit": "837467483f1e43292357e58e9084dc363870b80c",
+      "hash": "1a7ce4c3a630b2dffea656e22e69000335e145916e2d8466ecc082704f15ceed",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 108390,
+        "cached": 1054464,
+        "output": 7024,
+        "turns": 1
+      },
+      "at": "2026-11-14T22:19:39Z"
+    }
+  ]
 }
