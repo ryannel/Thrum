@@ -215,7 +215,12 @@ impl ProfileWindow {
         for (label, field) in stages {
             let text = reason.map_or_else(
                 || {
-                    if label == "World tick" && self.samples.iter().all(|s| s.tick_cpu.is_zero()) {
+                    if label == "World tick"
+                        && self
+                            .samples
+                            .iter()
+                            .all(|s| s.completed_ticks == 0 && s.tick_cpu.is_zero())
+                    {
                         "no world tick in window".into()
                     } else {
                         format_ms(

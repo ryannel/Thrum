@@ -43,6 +43,35 @@ fn sample(order: u64) -> FrameSample {
 }
 
 #[test]
+fn coarse_active_ticks_are_not_reported_as_an_idle_world() {
+    let mut window = ProfileWindow::new();
+    window.configure(true, 1, 1);
+    let mut frame = sample(1);
+    frame.tick_cpu = Duration::ZERO;
+    window.push(&frame, Duration::ZERO);
+    assert_eq!(
+        window.rows(Duration::ZERO, 1, 1, true)[3].1,
+        "below timer resolution"
+    );
+
+    frame.completed_ticks = 0;
+    for order in 2..=121 {
+        frame.submission_order = order;
+        window.push(&frame, Duration::ZERO);
+    }
+    assert_eq!(
+        window.rows(Duration::ZERO, 121, 121, true)[3].1,
+        "no world tick in window"
+    );
+
+    window.configure(true, 2, 122);
+    frame.submission_order = 122;
+    frame.tick_cpu = Duration::from_micros(100);
+    window.push(&frame, Duration::ZERO);
+    assert_eq!(window.rows(Duration::ZERO, 1, 1, true)[3].1, "0.100 ms");
+}
+
+#[test]
 fn late_completions_roll_the_bounded_window_and_every_unavailable_reason_replaces_numbers() {
     let mut window = ProfileWindow::new();
     window.configure(true, 1, 5);
