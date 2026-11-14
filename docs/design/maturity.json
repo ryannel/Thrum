@@ -635,7 +635,7 @@
         "implementation": "generation-owned labelled native copy/select witness and prepared WGSL twin implemented in a builder checkpoint; ordinary scenes disable the witness",
         "functional_validation": "small same-submit fixture and all four integrated Metal lifecycle tests pass, including exact coordinator parity and five negative controls; both recipes pass 3856 paired T2 frames, complete half-texel validation and realtime source accounting; simulator encoded-native background refusal/reset passes; full repository gate passes on 07282556; integration is gated by the official merge command",
         "experienced_quality": "builder inspected full-size diagnostic stills, realtime contacts and cut-adjacent frames on both recipes plus simulator endpoints; D10.5 attended actual-window function and independent milestone review remain open",
-        "real_window_function": "D10.5 remains open for an unlocked active Mac session and existing Screen Recording permission for the OS-window observer",
+        "real_window_function": "D10.5 remains open for actual-window execution and inspection after official merge; read-only preflight confirmed an unlocked Mac and the existing Screen Recording grant, with no grant changes",
         "platform_performance": {
           "mac": "unmeasured; composition and lifecycle proof only, no MetalFX, speed or panel claim",
           "browser": "Wasm compilation/lint and 1924 exact ordinary day/night SDR/linear frame comparisons pass; no performance claim",

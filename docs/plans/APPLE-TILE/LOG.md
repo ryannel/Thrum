@@ -246,3 +246,10 @@
   Verified 172 committed M3 artifacts and 157 source matches before releasing 6.27 GB of expired bulk spools;
   selected originals and M10 diagnostic sources remain intact. The failure and scoped receipt are retained.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+- **2026-11-14 — M10 strict qualification continuation.** Both native matrices and all 1,924 Chrome frames
+  pass a fresh strict campaign. A prior one-frame Chrome mismatch and exact retry are retained; its cause is
+  unconfirmed. The default official-check budget expired waiting for the GPU before any test binary ran.
+  A surviving retry queues outside that timer, then runs official check and merge. D10.5 remains unrun.
+  Repaired unavailable upstream handoff links; documentation checks pass. No engine source or threshold changed.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
