@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 Independent GPT-6.1 Sol medium research separates the depth-rejection
+  failure from night's broad one-code green-channel p99 plateau. It finds no evidence
+  requiring a foundational design change and recommends evaluating the queued
+  half-float correction before another runtime edit; if it fails, capture the
+  pre-tone/history/validity values at plateau pixels. The reference and firm bound
+  remain unchanged. [Diagnosis](../../evidence/APPLE-PRESENTATION/m3/reconstruction-research.md).
+
 - 2026-11-14 M3's strengthened reference at `9c1349f2` proves bit-exact repeated
   linear means and both cut controls, but four still comparisons fail. A diagnostic
   without depth rejection improves five of six checkpoints. The next implementation
