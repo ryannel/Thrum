@@ -1,0 +1,821 @@
+{
+  "module": "PUDDLES",
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M1"
+      ],
+      "quality_bar": "Standing water a hydrologist would accept, held to brute force as Barnes's fill-spill-merge is held to a flood: every puddle level in its own hollow, and every litre accounted for through each spill, merge and parting. Nothing in it needs a graphics device.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`thrum-rain-model` cuts a bed grid into its tree of hollows. On a bed the test makes, with three bowls, a rut, a slope and small relief: every pit is a hollow; each cell is reached from its hollow's pit by a path that never descends; each pair's sill is the lowest pass between them; a hollow shallower than the profile's least depth is filled; a hollow under four cells across is reported; and the same bed gives the same bytes.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test tree",
+          "ask": "Read the test. Are the expected hollows, sills and paths worked out there from the bed by brute force, without the code under test?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "The point test is exact. Over 200 seeded beds and fills, the cells where a hollow's level stands above the cell's bed are the cells a flood from the pits reaches under the same levels: no cell differs, with puddles that span one hollow and several.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test point_test",
+          "ask": "Is the flood in the test written apart from the tree's code, and does it start from pits only? Would a point test that read one level for the whole body fail it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "Puddles fill, spill, merge and part. Under steady rain a full hollow's excess goes to the hollow across its sill; two that are full to one sill become one puddle at one level; under a loss they part at the sill, each keeping its own side's water. A hollow beyond a ridge stays dry until water spills into it. In every tick, a merge's and a parting's included, a hollow's level moves by no more than the water that entered or left its puddle's hollows in that tick over the smallest water surface any of those puddles had before or after it, taken as at least one cell.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test fill",
+          "ask": "Does the test take its bound on a level's change from the tick's own volumes and surfaces, and does it cover a merge of two puddles that are each already several hollows? Would a fill that set both levels to their mean at a merge fail it?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "The water account closes. Over 10,000 ticks with merges and partings, the rain on the body equals the change in the puddles plus what dried, soaked, was withheld by canopy and left over the edge, within 1e-9 of the rain. A pothole with six times its area draining to it fills in a sixth of the time; on ground that soaks faster than the rain no puddle forms.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test account",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "Shelter is content. From triangles the test gives, each with the share of rain it lets through, exposure is 0 under a roof, the crown's share under a tree, 1 under open sky, on the roof's own top and outside the grid, and passes between them over the profile's edge width. A hollow under a roof fills only by what drains to it from open ground, and one with no open ground stays dry.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test exposure",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.6",
+          "statement": "Ruling 1 is built on the CPU: `thrum-water-model`'s map takes a hollows body (a rectangle, its own bed, a label for each cell, a level for each hollow) and gives the body, level, bed and depth at any point by the point test, with no current and no wind gain. Its identity and generation are the same before and after its puddles merge. Refused by name: a hollows body with a cell in another body's water or shore margin anywhere in that body's stage range, and one over the profile's count of cells or hollows. A table that stands two levels in wet cells that touch is held at the last table and counted.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test map && cargo test --locked --offline -p thrum-water-model",
+          "ask": "Is the change to the map confined to the new kind, so that no body an existing test or the example declares is prepared or answered differently? Was any existing test of `thrum-water-model` changed?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.7",
+          "statement": "The rain state is plain data a game keeps in its world. It encodes and decodes to the same bytes, and stepping it from the same state and inputs gives the same bytes on one thread and on eight.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test state",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.8",
+          "statement": "`WATERS`' conformance model answers on a hollows body: a point in a puddle gives the body and its depth, a point on dry ground between two puddles gives dry, and the answers either side of a merge differ only by the level's change.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.9",
+          "statement": "`scripts/rain_cost.py` records, on this Mac in a release build, the preparation of a bed of 640,000 cells (seconds, hollows, nodes, bytes) and a fill step with every hollow holding water, with the commit and the load on the machine. `check` fails only when either cannot be measured or the committed record lacks a field.",
+          "check": "python3 scripts/rain_cost.py check",
+          "ask": "Was the record taken on this milestone's code, in a release build, and does it give the bytes a node's curve of level for volume takes?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.10",
+          "statement": "`thrum-rain-model` builds and its tests run with no graphics device and no dependency on `thrum-render` or `wgpu`, it is registered in `.config/architecture.toml`, and it holds no island, yard, preset or ground table.",
+          "check": "cargo tree --locked --offline -p thrum-rain-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
+          "ask": "Does any file in the crate or its tests name a place, a preset or a ground class that belongs to a game?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.11",
+          "statement": "Every file in this milestone that is copied or translated from elsewhere is listed in `docs/evidence/PUDDLES/PROVENANCE.md` with its source and licence. None is GPL or share-alike, and none is Barnes's code.",
+          "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "Wet ground and rain rings a physics text would accept: two stores that keep their water, darkening that follows from the film's optics, and rings that follow from water's dispersion, each held to the test's own arithmetic as part 3 to 6 of the design proof hold them.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "The ground's two stores step with the tick for each ground class, in the open and where a half and a quarter of the rain reaches. Through a shower on paving the pores fill, then surface water stands up to what the relief holds and the rest is runoff; after it the surface water goes at the drying rate and the pores' fill falls only once it has gone. Ground whose pores drink faster than the rain takes no surface water. With the stores in it, M1.4's account still closes within 1e-9.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
+          "ask": "Are the expected times and fills worked out in the test from the rates, as part 5 of `docs/evidence/PUDDLES/design-proof/puddle_proof.py` does, and not read from the model?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "The wetness function gives the pores' fill and the surface water with its cover at a world point, from prepared fields and the rain state alone. It reads the stores by exposure, and is nothing under a roof; a wall takes a quarter of the ground's and an underside none; relief on a slope holds less, down to none at the class's steepest slope; where a class has a pattern, surface water covers its lows first. On the paving and the earth of part 5 of the design proof, ground that 0.4 of the rain reaches differs from that ground stepped by itself by no more than 0.3 of the pores and 0.15 mm of surface water.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test wetness",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "A shrinking puddle leaves a damp margin whose height is the rate its level has lately fallen over the rate its ground dries, so a slow fall leaves a thin band and a fast one a wide band, and a rising puddle leaves none. Inside a body's wave support the pores are full, and above it they fall off over that body's margin as its stage falls. A margin and a shore's band add no water to the account.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test margins",
+          "ask": "Does the shore's case read the wave support from `thrum-water-model`'s own function, so that it is the support `WATERS`' film reads?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The wet look's reference darkens a base colour channel by channel by `(1 - R)(1 - p) a / (1 - p a)`, mixed in by the pores' fill times porosity: 0.55 of an albedo of 0.1 and 0.83 of 0.8 at `p` = 0.47, within 0.01; a brown's saturation rises; a metal is unchanged; a material with no porosity of its own takes the rule on roughness and metalness.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test wet_look",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "A drop's rings follow from water's dispersion with surface tension, depth and viscosity. The least group speed is 17.8 cm/s within 0.3. For a 3 mm drop over a crater three drop radii across, the rings' energy is the closed form's for a Gaussian impulse on deep water within 2%, and between 0.8% and 1.4% of the drop's; 0.8 s after, the highest ring is 0.14 mm within a fifth and the water within 11 cm of the drop's place stands under a tenth of that; and the height on 5 mm, 2 mm and 1 mm of water over the height on deep water is 0.76, 0.41 and 0.25 within 0.05.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test rings",
+          "ask": "Does the test integrate the response itself, with its own Bessel function, and take the energy's closed form from its own algebra?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.6",
+          "statement": "Ruling 3 is built on the CPU: `thrum-water-model`'s surface model sums two rain bands through the one sum, with the depth limit and moments a wave layer has. The bands are a function of time: the same time gives the same field whatever was evaluated before. Scheduled rings over a patch follow the rain rate up to the profile's count, and the drops below the cut add their squared slope to the moments. The gain at a point is exposure times the depth response, on every body, the sea included, and none under a roof. With no rain bands every answer of the model is the same to the bit.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test rain_bands && cargo test --locked --offline -p thrum-water-model",
+          "ask": "Do the bands hold any state between evaluations, or any power that depends on the wind? Was any existing test of `thrum-water-model` changed?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "Ruling 2 is built on the CPU: the interaction reference takes a fine level with a ladder of 5, 10, 20, 40, 80 and 160 mm, the deep operator from 320 mm, and surface tension in its frequency. Over waves of 8 cm to 1 m on uniform depths from 5 mm to deep and midway between ladder depths, a step of one tick and of two has a phase speed within 3% of the true speed, never grows, and loses under 0.5% of a wave's height a second at one tick and under 3% at two. A frame more than two ticks ahead takes two steps and counts the rest as dropped. With a fine level the near level holds no wave under 1 m; with none, the reference's answers are the same to the bit.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level && cargo test --locked --offline -p thrum-water-model --test interaction",
+          "ask": "Does the test show steps of eight ticks failing the loss, as part 6 of the design proof does? Were `WATERS`' interaction tests left as they were?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.8",
+          "statement": "On the fine level a footfall's rings cross 30 mm of water at the speed that depth gives within 5%, and slower on 10 mm. With two puddles a dry sill apart, a ring raised in one leaves the other exactly at rest. After the two merge, the same height and potential are still in the level, and a ring then crosses the drowned sill.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.9",
+          "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands and a fine level, reports nothing for the model against itself, and reports a provider that ignores exposure, by the points and the differences.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M8"
+      ],
+      "quality_bar": "Puddles as on the streets of The Last of Us Part II's Seattle and the trails of Red Dead Redemption 2 after rain: water lying level in the ground's own dips, a clean waterline that follows the ground, the ground seen through clear shallows and lost under muddy water, with no stair of cells, sliver, curtain or pop.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "Ruling 6 is built for `examples/water`: a rain selection, off by default. With it off the island's ground, bodies, tick page and compiled graph are what they were. With it on the island has a yard by the lake, with paving that dips, a track of packed earth with ruts, a roof on posts, a wall and a post standing in a hollow, as a hollows body with its ground classes, and the game keeps a rain state in its world and steps it.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_selection_gpu",
+          "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this milestone? Is the yard's ground reached only with the selection on?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "`WATERS`' own body and stage tests pass unchanged with the selection off.",
+          "check": "cargo test --locked --offline -p water-scene --test bodies_gpu && cargo test --locked --offline -p water-scene --test stage_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "Ruling 1 is built on the GPU. For a bed the test makes, at five fills that include the ticks before and after a merge, the body, level, bed and depth the GPU's map gives at 4,096 scattered points and along every puddle's waterline are `thrum-water-model`'s, within the bound `WATERS` M4.1 recorded. A scene with no hollows body compiles to the shader text, passes and storage it had before this milestone.",
+          "check": "cargo test --locked --offline -p thrum-water --features thrum-render/creation-counters --test hollows_gpu",
+          "ask": "Is a hollows body reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one level for the whole body?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "Each puddle is drawn level and whole. Seen from above, each pixel's water or ground is what the CPU model gives for that place, except within a cell of a waterline; the depth the water writes over each puddle is its level within M4.1's bound; and no triangle of the surface joins two levels over water.",
+          "check": "cargo test --locked --offline -p water-scene --test puddles_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "A merge and a parting rebuild and reset nothing. Through both, the water creates no pipeline or resource, its history is marked invalid no more often than `WATERS`' reset rule gives, the body's identity and generation hold, and a float's query answers follow the level with no step.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test puddles_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "A float released in a puddle sits at its level and rises as it fills; a query on the dry ground beside it and under the roof answers dry.",
+          "check": "cargo test --locked --offline -p water-scene --test puddles_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.7",
+          "statement": "The puddles read as water lying in the ground: each level, meeting the paving and the earth in a clean line that follows the ground, with no stair of cells, no sliver on dry ground and no edge hanging in the air. The paving shows through its shallow puddles and the track's puddles are muddy and hide their bed. The sky lies in them. The film and the wet ground are not built until M5 and are not judged here.",
+          "inspect": "`fixed` stills of the yard from 1.7 m at three places and from 15 m above, at three fills from first water to the brim, at noon and at a low Sun; crops at native size of four waterlines, one of them at a sill between two puddles.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.8",
+          "statement": "As it rains the puddles grow, the one below the slope before the one on the rise, a full one spills into the next, and two become one with no pop, step or flicker. As the yard dries they shrink from their edges and part again.",
+          "inspect": "`realtime` sequences from 1.7 m and from 15 m above while the yard fills from dry to the brim and dries again, with the rates the sequence names; consecutive frames across one merge and one parting, at native size.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.9",
+          "statement": "In Chrome the yard's puddles draw, two of them merge and part, and the float sits at its puddle's level.",
+          "check": "node scripts/check_water_browser.mjs --case rain-puddles",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.10",
+          "statement": "With the yard in view at three fills the paired cost record is taken at 2560x1440, beside the island's record, with the puddle tiles' vertices and pixels, the bytes of the hollows' textures and the yard's preparation time. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene rain-puddles && python3 scripts/rain_cost.py check --scene yard",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.11",
+          "statement": "The maturity ledger has a row for `E1.rain` with implementation, correctness, visuals and device apart, and it claims no more than this milestone proved.",
+          "ask": "Does the row keep the four apart, and does any entry claim visuals or device results that no item here judged?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and a footfall in a puddle sends rings to its edges",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "Rain on water as on the lakes of Red Dead Redemption 2 and the street puddles of The Last of Us Part II, and past both in that each ring is the water's own wave: it starts small and sharp, spreads leaving calm water inside it, gains crests and fades, with no grid, repeat or stamped circle.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "Ruling 3 is built on the GPU. The two rain bands, evaluated at the display's time, differ from `thrum-water-model`'s at three times by no more than the bound this milestone first measures and records. A repeated frame at one time draws the same bands, and a capture at a tick draws that tick's. A scene without the capability compiles to the shader text, passes and storage it had before.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Do the bands keep any texture from one frame to the next?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "The bands' gain is the model's. Under the roof the drawn surface carries no ring and in the open it carries them; a ring on 2 mm of water is the depth response's share of one on a deep puddle; the lake and the sea carry them; the rings counted over a patch follow the rain at 2, 10 and 50 mm/h; and with no rain the bands' passes do not run.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "A ring is water's own wave on the GPU: with one drop scheduled, the edge of the calm water inside its rings and its highest crest stand where the reference puts them 0.4 s and 0.8 s after, within the bound M4.1 recorded and a texel.",
+          "check": "cargo test --locked --offline -p water-scene --test rain_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "From 0.5 m and from 1.7 m the rings read as rain on water: each starts small and sharp, spreads leaving calm water inside it, gains crests and fades. Light rain is a few rings, heavy rain a crowded, roughened surface. No grid, repeat or pair of like rings shows across a puddle 6 m long. Under the roof's edge the rings stop along a soft line, and on the thinnest water they are faint.",
+          "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 2, 10 and 50 mm/h, one framed on the roof's edge and one on a puddle's shallow margin; `fixed` stills cropped at native size of single rings at three ages.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "From a distance rained-on water dulls and its reflections soften, more as the rain grows, on the lake and the sea as on the puddles, with no line where the rings end and no shimmer.",
+          "inspect": "`realtime` sequences from 30 m above the lake and from the beach looking out to sea, at no rain, 10 and 50 mm/h, in a calm and in a breeze.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.6",
+          "statement": "Ruling 2 is built on the GPU. The fine level follows the reference for a scripted set of footfalls within the bound this milestone first measures and records; a ring raised in one puddle leaves the next exactly at rest across a dry sill and crosses it once the two have merged; and `WATERS`' interaction tests pass unchanged with the fine level in the profile and without it.",
+          "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Does the fine level take one tick at a time and never more than two in a frame?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.7",
+          "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
+          "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.8",
+          "statement": "The rain bands' cadence is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation. Lowering it changes no query answer.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.9",
+          "statement": "In Chrome rain rings the puddles and the lake and not the water under the roof, and a footfall's rings cross a puddle.",
+          "check": "node scripts/check_water_browser.mjs --case rain-rings",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.10",
+          "statement": "With rain at 50 mm/h on the yard and the lake and the marker walking, the paired cost record is taken again at 2560x1440, beside M3's, with the count of regions and solves in the fine level's step and the CPU time of labelling regions as the puddles fill. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene rain-rings",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "Wet ground as on the streets of The Last of Us Part II's Seattle and in Red Dead Redemption 2's Saint Denis: deeper, darker colour where the ground drinks, a sheen where it cannot, reflections at a grazing view, a dry floor under every roof, and drying that goes in the order real ground dries, with no tint laid over the scene and nothing that pops.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "Ruling 5 is built. With a wetness provider registered, the scene's shader and the cooked material read the wetness function before a surface is lit. With none, the scene's shader text, pipelines and storage are what they were. With one and a dry rain state, every submitted pixel of the example and of the V1 game's default scene is what it was with none.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test wet_provider_gpu && cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test wet_provider_gpu",
+          "ask": "Is the read composed into the shader as the cloud factor is, with no change to the light, the shadows, the air or the cloud factor? Does a material hook run before the wetness, so that a hook's colours are wetted too?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "On the GPU the wetness function is the model's: at 4,096 scattered points of a scene the test makes, with a roof's edge, a slope, a wall, a puddle's margin and a shore among them, the pores' fill and the surface water differ from `thrum-rain-model`'s by no more than the bound this milestone first measures and records.",
+          "check": "cargo test --locked --offline -p thrum-water --test wetness_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "The wet look is the reference's. Matte panels of albedo 0.1, 0.4 and 0.8 with full pores store the reference's colour within a half-float step, a metal panel stores what it did dry, a panel under the roof stores what it did dry, and a wet panel's roughness is lower. This holds for an entity's material and for a cooked placement.",
+          "check": "cargo test --locked --offline -p water-scene --test wet_look_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "Ruling 4 is built: the film is drawn over the hollows body's ground wherever the function gives surface water and no puddle stands, with the cover as its weight, and follows the class's pattern where it has one. It writes no depth, a query under it answers dry, and it mirrors through the water's reflection slot. `WATERS`' film on the beach is unchanged, and a scene without the capability draws no film off a shore.",
+          "check": "cargo test --locked --offline -p water-scene --test standing_film_gpu && cargo test --locked --offline -p water-scene --test foam_scene_gpu",
+          "ask": "Is the film the pass `WATERS` built, given a second support, and not a second pass or a term in the ground's material?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.5",
+          "statement": "As a shower starts the paving and the earth darken and their colour deepens, the earth more than the pale paving. On the paving a sheen gathers in the joints first and then across the slabs, and at a grazing view it mirrors the post, the wall and the roof's edge. The earth takes no sheen until its puddles form. The ground under the roof stays dry to a soft edge, the roof's top is wet, rocks and the wall darken, the wall less than the ground, and metal does not.",
+          "inspect": "`realtime` sequences of the yard from 1.7 m at three places through a shower from dry, with the rates the sequence names, one framed on the roof's edge; `fixed` stills at 0.5 m and 1.7 m, looking down and at a grazing view, dry, damp and with a full sheen, at noon and at a low Sun.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.6",
+          "statement": "After the rain it dries in order: the sheen goes first, from the slope before the level slabs and from the slabs' faces before their joints; the darkness lingers and lifts last; and each shrinking puddle leaves a dark margin that fades. Nothing pops, and no edge of a cell or a texture's tile shows.",
+          "inspect": "`realtime` sequences from 1.7 m and from 15 m above while the yard dries from soaked to dry, with the rate the sequence names; `fixed` stills at four stages, cropped at native size on the joints and on a puddle's margin.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.7",
+          "statement": "On the beach the sand is dark where the waves have run: inside the wave support the pores are full, and the dark edge is the film's edge. In a calm it lies at the waterline and in a gale it lies up the beach; as the tide ebbs it leaves a dark band that lightens.",
+          "check": "cargo test --locked --offline -p water-scene --test wet_shore_gpu",
+          "inspect": "`fixed` stills of the beach from 2 m in a calm, a trade wind and a gale, and a `realtime` sequence as the tide falls through its range.",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.8",
+          "statement": "In Chrome the yard darkens in a shower, the film gathers on the paving, the floor under the roof stays dry, and it dries again.",
+          "check": "node scripts/check_water_browser.mjs --case rain-ground",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M5.9",
+          "statement": "With the yard soaked and filling the view the paired cost record is taken again at 2560x1440, beside M4's, with the forward pass's time with the provider and without it, and the sampled textures the forward stage and the surface use against the capability record on the Mac and in Chrome. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene rain-ground",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "SHOWCASE:M6"
+      ],
+      "quality_bar": "A desert after a cloudburst as in Red Dead Redemption 2's New Austin: a darker, richer floor, rocks wet on top and dry beneath their overhangs, level puddles that hold the sky, in the valley's own light. The exit scene itself is untouched.",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "Ruling 6 is built for `examples/v1-game`: a rain selection, off by default. With it off the game's world, tick page, compiled graph and frames are what they were. With it on the game keeps a rain state, registers the wetness provider, and adds the water with a hollows body over a patch of ground the selection adds. The showcase's generator, routes and exit configuration are not edited.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test rain_selection_gpu",
+          "ask": "With the selection off, does any code path of the game differ from before this milestone? Is anything of `SHOWCASE`'s (the generator, a route, the exit configuration, a retained reference) changed?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.2",
+          "statement": "In the valley the wetness on the cooked terrain and on entity rows is the model's within M5.2's bound, and the patch's puddles are the model's within the bound `WATERS` M4.1 recorded.",
+          "check": "cargo test --locked --offline -p v1-game --test rain_valley_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.3",
+          "statement": "Through a shower the valley's floor and rocks darken and their colour deepens, the patch's hollows fill with level puddles that hold the sky and ring with the rain, and afterward it dries back to the desert it was. Nothing changes the valley's light, haze or shadows.",
+          "inspect": "`realtime` sequences at two of the route's stops and at the patch from 1.7 m, through a shower and its drying with the rates the sequence names; `fixed` stills dry, soaked and half dry at noon and at a low Sun, whole and cropped at native size on the floor, a rock and a puddle's edge.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.4",
+          "statement": "In Chrome, with the selection on, the valley darkens in a shower and the patch's puddles fill; with it off the page draws the exit scene as before.",
+          "check": "node scripts/check_v1_browser.mjs --case rain",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M6.5",
+          "statement": "With the selection on and the valley soaked, a paired cost record of the valley is taken at the showcase's extent, with the selection off as its pair. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/rain_cost.py check --scene valley",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M6.6",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "A visitor starts and stops the rain, sets how fast things dry and takes the day from dawn to night, and the puddles and the wet ground mirror the scenery round them and hold up in motion, on the Mac and in Chrome",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M10",
+        "WATERS:M14",
+        "WATERS:M16"
+      ],
+      "quality_bar": "Rain's water as it passes in a shipped high-end game: the puddles and wet streets of The Last of Us Part II and Red Dead Redemption 2, mirroring what stands round them, stable under reconstruction, lit only by the engine's sky, and of one piece with the lake and the sea beside them.",
+      "items": [
+        {
+          "id": "M7.1",
+          "statement": "The rain selection, the rain and the drying rate are typed controls in both games on the Mac and in Chrome, saved in each game's parameter file. Moving the rain or the drying rate rebuilds nothing and resets no wake, foam or ring.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_controls_gpu && node scripts/check_water_browser.mjs --case rain-controls",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.2",
+          "statement": "With `WATERS`' mirror view, the puddles and the film mirror the post, the wall, the roof and the tree on the lake's bank where their tops are off the screen, each joined to its foot at the waterline, sharp on still water and softened by the rain.",
+          "inspect": "`fixed` stills of the yard from 0.5 m and 1.7 m looking down at puddles and at wet paving so that the reflected things' tops are out of frame, with no rain, at 10 mm/h and just after it; a `realtime` pan across the yard at 1.7 m.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.3",
+          "statement": "Ruling 7 is built. On the film and on a puddle the direct Sun is multiplied by the scene's lent Sun visibility at the surface point: with half a puddle and half the wet paving in the wall's shadow, the shadowed half's Sun lobe is nothing and the lit half's is unchanged.",
+          "check": "cargo test --locked --offline -p water-scene --test rain_shade_gpu",
+          "ask": "Is the visibility read through the lent operation `WATERS` M16 built, once for each direct-Sun term, with no shadow map sampled by the water itself? If `RIVERS` or `WATERS` had already built it for the surface, was only the film's added?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.4",
+          "statement": "Under reconstruction the rain's water holds up in motion: no shimmer in the rings near or far, no crawl along a waterline as a puddle grows, no ghost behind the marker or its rings, no swim in the film's reflections as the camera pans, and a clean reset on a cut.",
+          "inspect": "`realtime` sequences under TAAU on the Mac and in Chrome: a walk across the yard at 1.7 m in rain at 10 mm/h, a still camera on a filling puddle, a pan over wet paving at a grazing view, and a cut between two of them.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.5",
+          "statement": "From dawn to night the puddles and the wet ground are lit only by the engine's sky: at a waterline their light joins the ground's, wet paving glares toward a low Sun and nowhere else, and at night nothing glows.",
+          "inspect": "`fixed` stills of the soaked yard at dawn, noon, sunset and night, toward the Sun and away from it, each whole and cropped at native size at a waterline and on the film.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.6",
+          "statement": "A water profile that leaves out hollows, rain bands, fine rings, wet ground or the standing film declares none of that capability's passes and creates none of its resources, and no shader makes its reads.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_capabilities_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.7",
+          "statement": "In Chrome the yard's puddles, rings, film and wet ground and the controls all run together from one command.",
+          "check": "node scripts/check_water_browser.mjs --case rain-all",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M7.8",
+          "statement": "With everything this module adds in view the paired cost record is taken at 2560x1440 on tick frames and repeat frames, beside M5's, and the valley's again. Each tripwire tripped has its investigation beside it. No figure in either record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene rain-all && python3 scripts/rain_cost.py check --scene valley",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.9",
+          "statement": "The creator docs say how a game declares a hollows body and its ground classes, gives the triangles that shelter, keeps and steps a rain state, sets the rain and the drying rate, names the capabilities in its profile and posts a footfall, with what is refused and why.",
+          "ask": "Could an agent that has read only the public docs add a yard with puddles and a roof to a scene that already has water? Do the docs say that puddles stand only inside a hollows body and that ground elsewhere only wets?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.10",
+          "statement": "The ledger's `E1.rain` row, the provenance file and the log are current, and the log lists what this module does not build: rain in the air and its splashes, slanted rain, runoff seen running, rain that feeds other water, tracks, and drying that knows shade.",
+          "ask": "Does the ledger claim no more than the items proved, with visuals and device apart? Does the log name each thing not built?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}
