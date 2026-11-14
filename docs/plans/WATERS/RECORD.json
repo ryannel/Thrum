@@ -124,30 +124,30 @@
       }
     },
     "M12": {
-      "definitions": "9fc6968aeb1d8306c1534c66726a99f6bd03e2b001837cd718ddcf00b74c9549",
+      "definitions": "d680bfcea247938212bc3614cb6da3926212c6e57264356ab4a0ec4d1887a76c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
+        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
+        "at": "2026-11-14T17:36:17Z"
       }
     },
     "M13": {
-      "definitions": "c90f9095875c86b2d2852ed221f3e16625ca7d083dba237773efb4ad0de1b6ac",
+      "definitions": "e8ff742a8980ce4560b703869e4df58d0c99d27412caaeb1cc8bf4feb714be13",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
+        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
+        "at": "2026-11-14T17:36:17Z"
       }
     },
     "M15": {
-      "definitions": "9cc1a3779d02b219ea5573ca54dad72ed391379af39eef31fc049426a1619925",
+      "definitions": "c68032c79147a3822eec1dfc0649d72d6867a44b25a0e2ccf69c769825e4ed96",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
+        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
+        "at": "2026-11-14T17:36:17Z"
       }
     },
     "M14": {
@@ -197,11 +197,15 @@
     {
       "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design-review.md, 3 Must Fix) asked for changes. Resolve every Must Fix in both designs and plans, keeping them consistent with each other and with ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES. Builders hold CLOUDS M1 and WATERS M1, so don't change those milestones' items unless a finding requires it. Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T16:17:06Z"
+    },
+    {
+      "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zero, including top, while M1.4 says top never steps, so top jumps at clear/cloud transitions (docs/evidence/CLOUDS/M1-review.md finding top-continuity-proof-substitutes-depth; the builder's question is in docs/evidence/CLOUDS/M1-handoff.md on branch build/clouds). Decide the top and thickness semantics that the renderer and fog work actually need, and restate M1.2 and M1.4 so they agree. 2) WATERS' latest design review (docs/evidence/WATERS/design-review.md) found 1 Must Fix; resolve it. Keep CLOUDS, WATERS, ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES consistent.",
+      "at": "2026-11-14T17:36:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T16:17:06Z"
+    "at": "2026-11-14T17:36:17Z"
   },
   "design_history": [
     {

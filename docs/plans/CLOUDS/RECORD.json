@@ -25,7 +25,7 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "e363c5e8a4a3b78ea1cf971809c953a9f111cd93b426ec20963e0aec6f0f4398",
+      "definitions": "6595069d84ab20d47179f35e67625db8c9bf235611ea8d74b5affb11c2f2766b",
       "reviews": [
         {
           "verdict": "fail",
@@ -80,34 +80,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T02:31:18Z"
-      },
-      "ready_for_review": {
-        "commit": "076be3a94ba98e6c48184567de9d4719d133a26c",
-        "checked": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
-        "at": "2026-11-14T14:40:45Z",
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 491894,
-          "cached": 204688000,
-          "output": 355574,
-          "turns": 4
-        },
-        "session_usage": {
-          "input": 491894,
-          "cached": 204688000,
-          "output": 355574,
-          "turns": 4
-        }
+        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
+        "at": "2026-11-14T17:36:17Z"
       }
     },
     "M2": {
@@ -274,11 +248,15 @@
     {
       "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design-review.md, 3 Must Fix) asked for changes. Resolve every Must Fix in both designs and plans, keeping them consistent with each other and with ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES. Builders hold CLOUDS M1 and WATERS M1, so don't change those milestones' items unless a finding requires it. Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T16:17:06Z"
+    },
+    {
+      "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zero, including top, while M1.4 says top never steps, so top jumps at clear/cloud transitions (docs/evidence/CLOUDS/M1-review.md finding top-continuity-proof-substitutes-depth; the builder's question is in docs/evidence/CLOUDS/M1-handoff.md on branch build/clouds). Decide the top and thickness semantics that the renderer and fog work actually need, and restate M1.2 and M1.4 so they agree. 2) WATERS' latest design review (docs/evidence/WATERS/design-review.md) found 1 Must Fix; resolve it. Keep CLOUDS, WATERS, ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES consistent.",
+      "at": "2026-11-14T17:36:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T16:17:06Z"
+    "at": "2026-11-14T17:36:17Z"
   },
   "design_history": [
     {
