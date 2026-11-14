@@ -1,7 +1,9 @@
 # Waters: one water system for every body of water
 
-14 November 2026, revised the same day for surf, mirrored scenery and the view from under water, and again
-for light under water.
+14 November 2026, revised the same day for surf, mirrored scenery and the view from under water, again for
+light under water, and after the review of those revisions for
+[a lake's own waves](#surf-the-shore-transform-and-the-breaker) and
+[the highest surface under a crest](#bodies-and-the-query).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -594,21 +596,36 @@ It keeps its frequency. Its local wave vector is `k₀ + |k₀|∇λ`, and its h
 that.
 
 - *The lag* solves the eikonal equation `|k₀ + |k₀|∇λ| = k(d)`, where `k tanh(k d) = |k₀|`, as the first
-  arrival from the bed's edge, where the lag is zero. Ground above the shore margin is closed to it, so a
-  wave reaches the lee of an island round its sides and never through it. The depth is floored at the
-  profile's lag floor, 0.5 m in the first profile, so the lag stays finite across the swash. Over a border at
-  the bed's edge, an eighth of its width, the depth the solve sees rises smoothly to deep water, so a wave
-  meets the bed with no step in its length.
+  arrival from the wave's **source**, where the lag is zero. Ground above the shore margin is closed to it, so
+  a wave reaches the lee of an island round its sides and never through it. The depth is floored at the
+  profile's lag floor, 0.5 m in the first profile, so the lag stays finite across the swash.
+- *Where a wave starts.* The source depends on where the water's waves come from, and is decided for each
+  connected piece of a body's water at each stage.
+  - **Water that reaches the bed's edge** takes its waves across that edge: its swell and its wind sea arrive
+    from outside. Its source is the bed's edge. Over a border there, an eighth of the bed's width, the depth
+    the solve sees rises smoothly to deep water, so a wave meets the bed with no step in its length.
+  - **Water that land encloses**, a lake in its hollow or a part of the sea cut off at that stage, has no
+    path to the bed's edge, and its long waves are the ones the wind raises over its own fetch. They start
+    at its own shore. A point's **sector fetch** is the longest stretch of open water upwind of it over the
+    directions of the component's 45° sector. The source is the water where the sector fetch is zero: the
+    waterline that faces the wave, where the wave leaves the land with the plain wave's phase. A shore the
+    wave runs along has a long sector fetch and is no source, so the wave turns in toward it as it does at
+    sea, and a downwind shore is never one, so nothing runs back out of a beach.
 - *What is prepared.* The wave lattice has eight directions. For each, `thrum-water-model` solves the lag on
   the bed's grid at wavelengths a factor of two apart from 20 m to 640 m, and at stages a set spacing apart
   across the body's declared range, 0.5 m in the first profile. A component reads its own direction's lag,
   blended linearly in the logarithm of its wavelength and in the stage. Components longer than 640 m are not
   transformed. The lags are content, as the map is: they change only when the bed or the declared bodies do.
-- *Exposure.* A component stands for a 45° sector of directions. Its exposure at a point is the share of
-  that sector's directions along which a straight line upwind reaches the bed's edge without crossing ground
-  that stands above the body's highest stage, and the component's energy is scaled by it. So a windward
-  beach takes a train whole, a lee beach takes none of it and laps with the short waves alone, and far
-  downwind of an island the shadow closes as the sector opens.
+- *Exposure.* A component stands for a 45° sector of directions, and its energy at a point is scaled by its
+  exposure there: the mean, over the sector's directions, of how much of the wave each lets arrive. For water
+  that reaches the bed's edge a direction counts 1 if a straight line upwind reaches the bed's edge without
+  crossing ground that stands above the body's highest stage, and 0 if not. So a windward beach takes a
+  train whole, a lee beach takes none of it and laps with the short waves alone, and far downwind of an
+  island the shadow closes as the sector opens. For enclosed water a direction counts the open water upwind
+  along it over the body's declared fetch, and at most 1: the share of that fetch the wind has had, since a
+  fetch-limited sea's energy grows in proportion to its fetch. So a lake is calm under its upwind shore,
+  where the wave leaves the land with nothing in it, and carries the whole energy of its gain where the
+  open water upwind is as long as the fetch the game declared.
 - *Height.* `K = Ks(|k₀| d) · √exposure`, where `Ks = √(Cg₀/Cg)` is linear theory's shoaling coefficient at
   the point's depth, floored as the lag's is. The depth limit of [the last section](#waves-on-a-body-gains)
   then holds the long layer's significant height, which is now the transformed components' at the point,
@@ -619,12 +636,27 @@ form at 0°, 30° and 60° of incidence (0.69 rad on 4 m cells: the scheme is fi
 2 m of water lie 10.9° and 19.1° off the shore's normal against Snell's 11.1° and 19.5°. Blending wavelengths
 a factor of two apart misstates the local wavenumber by at most 2.0%; a factor of four would misstate it by
 7.6%. Blending stages 0.5 m apart misstates it by at most 2.6% in a metre of water or more and by up to 7.9%
-between the floor and a metre; a spacing of 1 m would give 11.5% and 13.8%. Round an island, a wave from the
+between the floor and a metre; a spacing of 1 m would give 11.5% and 13.8%. A component between two
+wavelengths at a stage between two samples takes both blends at once, and together they misstate it by up
+to 4.1% in a metre of water or more and 9.3% between the floor and a metre, at incidences from 0° to 60°. On
+the grid solve's own lags at 2 m cells, against a lag solved for that wavelength and stage itself, the two
+blends are 5.0% and 8.0% out, and a component given its nearest wavelength and stage with no blend is 35%
+out (part W). Round an island, a wave from the
 west meets the windward shore square on, the windward quarter 26° off the shore's normal, the side 45° and
 the lee quarter 57°, where the untransformed wave runs 45°, 90° and 135° off and, in the lee, straight out
 of the land. Its exposure at those places is 1, 1, 1, 0.47 and, in the lee, 0. Wherever the exposure is above
 zero the transformed wave runs at most 60° off the shore's normal in 4 m of water, 39° in 2 m and 28° in
 1 m (part N).
+
+In a lake that land encloses, 1.4 km across and 20 m deep, no cell has a path across water to the bed's edge,
+so the bed's edge alone gives it no lag at all. With its own waterline as the source every cell has one. On
+the 2 m contour a 40 m wave meets the downwind shore square on, and 30°, 60° and 90° round from there it runs
+11°, 20° and 33° off the shore's normal where the plain wave runs 30°, 60° and 90° off. Its exposure at
+those four places is 0.95, 0.83, 0.52 and 0.19 for a declared fetch of the lake's width, and 0.03 at the
+upwind shore, where the wave leaves the land. In the lake's deep water a 20 m and a 40 m wave keep the plain
+wave's length within 0.9% and 1.3% and run at most 11° and 9° off its direction, bent by the shelf they left;
+a run of deep water in the solve's depth at the source, four wavelengths long, brings that to 9° and 6°, and
+is not taken (part U).
 
 **A crest and its breaking index.** The transformed long waves are summed as a complex field, `Z = Σ a K e^{iθ}`, whose
 real part is the plain surface. Its modulus `A` is the envelope, its argument `Θ` is the phase of the crest
@@ -662,15 +694,21 @@ height, and is tuned against the inspected items of M13.
 **Readers.** The transform and the section are one function, in `thrum-water-model` in f64 and in WGSL, read
 by the field cache, the query, the foam's births and the conformance model. On the GPU the lags are one array
 texture and the exposures another. Where a crest overhangs, a column holds more than one surface: the query
-answers the highest, and the surface is drawn as the displaced sheet it is. Inside a chart's join the
+answers the highest, by [a bounded scan of the throw](#bodies-and-the-query), and the surface is drawn as the
+displaced sheet it is. Inside a chart's join the
 transform is the joined body's, taken at the join's weight, so it follows from the row as the swash depth
 does and the surface still meets across an end.
 
 **Declared approximations.** Linear ray theory up to the break: no set-up of the mean level, no longshore or
 rip current, no reflection from a steep shore and no diffraction, so energy neither gathers on a headland nor
 leaks into a lee. The first arrival leaves a crease where two fronts meet behind an island, in water the
-exposure has already calmed. A bore travels at the linear speed of the floored depth. In less than a metre of
-water the wavenumber is off by up to 8%. Nothing leaves the sheet as spray.
+exposure has already calmed. A bore travels at the linear speed of the floored depth. The blends misstate the
+wavenumber by up to 4% in a metre of water or more and 9% between the floor and a metre, and the first-order
+solve adds its own: 6% in a metre of water and 3% in two on a beach of 1 in 10 at 2 m cells, a third of that
+on 1 in 30 (part W). An enclosed lake's waves start at its upwind shore with the plain wave's phase, so the
+shelf they cross first bends them by up to about 11° in its deep water; their energy grows in proportion to
+the open water upwind and not by a growth law of their own; and an island in a lake starts them again in
+its lee. Nothing leaves the sheet as spray.
 
 ### Carriage by the current
 
@@ -799,8 +837,30 @@ the answer will be used at, and the body's ID and generation. One compute dispat
 - the wake, read from its windows, with **the body's own static dent added back** (below).
 
 Crests sharpen because displacement is horizontal as well as vertical, so the surface above a world point is
-found by fixed-point iteration on the horizontal displacement; the oracle iterates to convergence. Under a
-breaking crest that overhangs, the answer is the highest surface in the column.
+found by inverting that displacement. Where no crest is thrown, a fixed-point iteration on the horizontal
+displacement does it, a contraction, and the oracle iterates to convergence.
+
+**The highest surface.** Under a thrown crest the map from rest place to world place is many to one. That
+iteration then settles on one of the surfaces in the column and not on the highest: on part O's section it
+stops in the trough under the lip at 52 of 501 points across a wave, up to 0.92 m low, with no residual to
+show for it (part V). So where a crest may be thrown the inversion is a **bounded scan of the throw**. A
+surface in the column over a point was thrown some distance `τ` along the crest's direction of travel to get
+there, and `τ` lies between zero and the **throw bound**, the section's largest throw at the envelope there,
+which is known before the search. For a trial `τ`, the plain iteration gives the rest place that the unthrown
+surface carries to the point less `τ` along that direction; it is a surface in the column exactly when its
+own throw equals `τ`. The scan samples `τ` across the range at the profile's scan steps, 16 in the first
+profile, refines every change of sign of that difference, and answers the highest surface it finds, with that
+surface's slope and velocity. Where the throw bound is zero, which is everywhere but under a crest whose
+breaking index is in the thrown range, the scan is the plain iteration. The model in f64 and the dispatch on
+the GPU run the same scan.
+
+What a scan can miss is a fold thinner than one of its steps: the tip of a lip. Its answer is then the
+highest surface at a point no more than one step away along the crest's travel, 0.26 m of a 4.2 m throw in
+the first profile, and never the water under a lip longer than that. Against a cut of the section made
+without the scan, it is within that at every point at 8, 16, 32 and 64 steps, at 35 to 91 evaluations of the
+surface a point (part V). M12.6 holds the model to such a cut, written in the test, so the GPU is compared
+with a model whose branch is established. The lens test of [the view from under water](#under-water) reads
+the same function.
 
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
 velocity (the current and the waves' together) and the time derivative of height, with one support flag per
@@ -1008,7 +1068,7 @@ With no wind and no current, parcels laid between the draw-back line and the sti
 of the run-up line in three waves, on beaches of 1 in 4 and 1 in 10 and in seas of 0.16 to 2.1 m; on a beach
 of 1 in 30, where the bound holds the drift, they are 92% of the way there. Under two wave trains a parcel
 ends 1 cm from the waterline's highest reach. On 0.25 m foam cells a patch laid at the still waterline
-moves 3 m up a beach of 1 in 10 in three waves and keeps all its foam, in steps of 1 tick and of 8. With the
+moves 3 m up a beach of 1 in 10 in three waves and keeps all its foam, in steps of 1 tick and of 8, while its cover stays under the cap; where carriage piles foam past full cover the cap is a sink, as it is everywhere. With the
 drift of the current and the wind alone it does not move (part M). Declared approximations: the carriage runs
 across the lines of equal thickness, so waves that arrive at an angle carry no foam along the shore; the
 backwash carries none back; on a step of several ticks the sheet's drift is taken once, at the step's middle;
@@ -1284,7 +1344,10 @@ carries the first two and one number the third.
   receiver `z` below the water's level in its column. The forward pass multiplies the receiver's direct
   Sun by it, beside the cloud factor ([a ruling](#what-waters-asks-of-other-modules)). So the net is on the
   bed, a hull and a sunk float as the Sun's own light is: none inside a shadow, none on a face turned from
-  the Sun, and none above the water, where the factor is exactly 1. It reaches the gather inside the
+  the Sun, and none above the water's level, where the factor is exactly 1. The level is the map's and not
+  the displaced surface, a declared approximation: under a trough a receiver below the level and above the
+  water still takes the net, and under a crest one above the level takes none. M16 judges it on a receiver
+  that crosses the waterline. It reaches the gather inside the
   receiver's colour, so it shows from above through clear shallows as it does from below, and no water pass
   applies it a second time. The depth's own dimming, `exp(−K z)`, stays where the gather applies it.
 - **The Sun's path bends once.** Under water the Sun's rays run along its refracted direction, for every
@@ -1454,8 +1517,13 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   between wavelengths and between stages, and an island, where the transformed wave meets every shore from
   the sea and the exposure calms the lee. Part O: the break point against Komar and Gaughan, sets, a thrown
   section that overhangs without crossing itself, and the swash's closed form with the transform on. All are
-  f64 arithmetic on sections and small grids. That the section reads as a breaking wave and not as a
-  marching ridge is unrun; M13 is the first look ([risk 20](#risks)).
+  f64 arithmetic on sections and small grids. Part U: a lake that land encloses, with no path to the bed's
+  edge, takes its lag from its own waterline and its exposure from the fetch upwind. Part V: the bounded scan
+  for the highest surface against a cut of the section, beside the plain iteration's misses. Part W: the two
+  blends together against the dispersion relation and against the solve itself. That the section reads as a
+  breaking wave and not as a marching ridge is unrun; M13 is the first look ([risk 20](#risks)). Surf on a
+  lake is unrun by eye and stays so: the example's lake is too small to raise long waves, so M12 and M13
+  prove it in the model and on the GPU against the model.
 - **W8.** Part P: the mirror lookup against exact reflected rays in a vertical section. A second draw of the
   scene is what Unreal and GTA V ship for water. `SCENE-VIEWS`' own design owes the proof that Thrum's
   renderer can draw one; nothing here runs it.
@@ -1555,10 +1623,10 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
-| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
+| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
 | Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which M6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
-| Query | Tick | Up to 2,048 points, 48 B each | Under 0.1 ms; 96 KiB back | 0.03 ms |
+| Query | Tick | Up to 2,048 points, 48 B each. A point under a crest in the thrown range costs the scan, about 40 evaluations of the long waves where a plain point costs a few | Under 0.1 ms with no point in surf; M13 records a tick with every float in the breakers; 96 KiB back | 0.03 ms |
 | Gather | Frame | The rectangles its readers need: nothing on an open sea with no body, the screen where see-through or mirror-still water fills it | Proportional to the pixels copied; a whole-screen copy is one pass ended on a tile GPU | A whole-scene copy and a 3 ms trace |
 | Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; M8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. M14 records it with no view, one and two | |
@@ -1644,7 +1712,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
     the throw out everywhere.
 19. **The lag shows**: a step in the swell where the bed begins, or a jump as the tide crosses a sampled
     stage. Early sign: M13's tide sequence. The designed remedies are a wider border at the bed's edge and
-    closer stage samples. The wrong fix is holding the lag at one stage.
+    closer stage samples. The wrong fix is holding the lag at one stage. In a lake the same sign is a crease
+    downwind of a point on its upwind shore; the designed remedy is the run of deep water at the source that
+    part U measures.
 20. **Surf reads as ridges marching ashore and not as waves breaking.** Early sign: M13's first captures. The
     mechanism gives the place, the timing and the set; the look is the section's table, tuned against the
     inspected items, and three failed looks on one cue go to the log. If the table cannot reach it, a section
@@ -1725,6 +1795,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | What tolerance do the map, the interaction waves and the foam meet against their f64 references on Metal and in Chrome? | M4, M6 and M7 measure first, then assert the recorded bound |
 | Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | M4 and M7, for a profile without surf; [risks 12 and 17](#risks) |
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | M13; [risk 20](#risks) |
+| What does the scan for the highest surface cost in a tick with every float in the breakers? | M13 records it |
 | What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13 measures first, then asserts the recorded bound |
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; M14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in M16 |

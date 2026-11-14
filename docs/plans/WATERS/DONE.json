@@ -163,7 +163,7 @@
       "items": [
         {
           "id": "M12.1",
-          "statement": "For a still body over a bed, preparation gives each of the wave lattice's eight directions a lag at wavelengths a factor of two apart from 20 m to 640 m and at stages 0.5 m apart across the body's declared range. The lag is zero on the bed's edge and beyond it. On a plane beach of 1 in 10 on 2 m cells, an 80 m wave's phase at 0\u00b0, 30\u00b0 and 60\u00b0 of incidence is within 0.5 rad of Snell's closed form, where the design measured 0.34, and its crests in 2 m of water lie within 1\u00b0 of Snell's angle.",
+          "statement": "For a still body over a bed, preparation gives each of the wave lattice's eight directions a lag at wavelengths a factor of two apart from 20 m to 640 m and at stages 0.5 m apart across the body's declared range. For water that reaches the bed's edge the lag is zero on that edge and beyond it. On a plane beach of 1 in 10 on 2 m cells, an 80 m wave's phase at 0\u00b0, 30\u00b0 and 60\u00b0 of incidence is within 0.5 rad of Snell's closed form, where the design measured 0.34, and its crests in 2 m of water lie within 1\u00b0 of Snell's angle.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_transform",
           "ask": "Read the test. Is the expected phase the integral of Snell's law, worked out in the test without the model's solver? Would a wave that keeps its deep-water phase fail it, and one given the local depth's wavenumber at each point with no integral along its path?",
           "target": "mac-metal",
@@ -174,8 +174,9 @@
         },
         {
           "id": "M12.2",
-          "statement": "A component whose wavelength lies between two of those, and a stage between two samples, take the blend. On plane beaches of 1 in 10 and 1 in 30, for wavelengths from 20 m to 640 m and every stage in a 2 m range, the gradient of the blended phase is within 3% of the dispersion relation's wavenumber in a metre of water or more, where the design measured 2.0% and 2.6%, and within 10% between the 0.5 m floor and a metre, where it measured 7.9%. Moving the stage through a sample leaves no step in the phase.",
+          "statement": "A component whose wavelength lies between two of those, at a stage between two samples, takes both blends at once. On plane beaches of 1 in 10 and 1 in 30 on 2 m cells, for wavelengths from 20 m to 640 m and every stage in a 2 m range, the gradient of the blended phase is within 7% of the gradient of a lag solved for that wavelength and that stage themselves in a metre of water or more, where the design measured 5.0%, and within 13% between the 0.5 m floor and a metre, where it measured 8.0%. A component given its nearest wavelength and stage with no blend fails the same assertion. Moving the stage through a sample leaves no step in the phase.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_blend",
+          "ask": "Read the test. Does it vary the wavelength and the stage together, between the samples of both, and include a wave of about 113 m in a metre of water halfway between two stages? Is the comparison lag solved in the test's run for the component's own wavelength and stage, on the same grid, so that only the blend's error is left, with M12.1 holding the solve itself to Snell?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -185,6 +186,17 @@
           "statement": "Ground above the shore margin is closed to the lag, so round an island a wave reaches every shore from the sea: wherever a component's exposure is above zero and the water is under 4 m deep, its direction of travel lies within 75\u00b0 of the shore's inward normal, where the design measured 60\u00b0 at most and the untransformed wave runs out of the land on the lee side. A component's exposure is the share of its 45\u00b0 sector with open water behind it, 1 on the windward shore and 0 in the lee, its energy is scaled by it, and far downwind of the island it returns toward 1.",
           "check": "cargo test --locked --offline -p thrum-water-model --test shore_island",
           "ask": "Does the test's island have a lee the deep-water wave leaves through, and are the expected exposures worked out in the test from the island's outline?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M12.11",
+          "statement": "A lake that land encloses takes its own waves. For a bowl the test makes inside ground that stands above its highest stage, whose bed falls to half a wavelength of depth within a fifth of its width, with a declared fetch that gives it a long-wave gain above zero: every wet cell has a finite lag at every direction, wavelength and stage; in water deeper than half a wavelength the wave's length is within 3% of the plain wave's and its direction within 15\u00b0 of it, where the design measured 0.9% and 11\u00b0; in 2 m of water on the downwind shore, 30\u00b0 and 60\u00b0 round from where the wave meets it square on, the wave's direction of travel lies at least 10\u00b0 closer to the shore's normal than the plain wave's, and on the shore the wave runs along it turns in toward the land; and the transformed long waves' energy at a point is the gain's times the share of the declared fetch that lies upwind, under a tenth at the upwind shore and whole where the open water upwind is as long as the declared fetch. With the bed's edge as the only source the same bowl has no finite lag anywhere, which the test shows.",
+          "check": "cargo test --locked --offline -p thrum-water-model --test shore_basin",
+          "ask": "Read the test. Is no wet cell of its basin joined to the bed's edge by water, and is the basin's long-wave gain above zero? Are the expected fetch shares worked out in the test from the basin's outline, and does the long-wave surface the model gives there have a height above zero at the downwind shore? A model and a test that agree on a flat lake prove nothing.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -215,8 +227,9 @@
         },
         {
           "id": "M12.6",
-          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, the highest surface where a crest overhangs, and says where a point is dry. Without surf every answer is M1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
+          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, and says where a point is dry. Where a crest overhangs it gives the highest surface in the column, by the design's bounded scan of the throw: across a breaking crest thrown as far as the first profile's table throws one, its height lies between the least and the greatest height that a cut of the section, made in the test without the model's inversion, gives within one scan step of the point along the crest's travel. The plain iteration on horizontal displacement, run through the same assertion, fails it under the lip. Without surf every answer is M1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_surface",
+          "ask": "Read the test. Is the reference a fine polyline of the thrown section cut by the vertical line over each point, written without the scan? Do its points include columns that hold three surfaces, as x = 3.8 m does in part V of `docs/evidence/WATERS/design-proof/surf_revision_proof.py`, and does the plain iteration fail there by most of the crest's height?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -1045,7 +1058,7 @@
       "items": [
         {
           "id": "M13.1",
-          "statement": "On Metal the long waves over a bed are the model's. For a bed the test makes, with surf in the profile, the field cache's displaced surface and the query's answers at 4,096 points from deep water to the swash, on tick frames and repeat frames and at stages between two samples, match `thrum-water-model`. The largest differences are recorded, and the test holds those recorded bounds.",
+          "statement": "On Metal the long waves over a bed are the model's. For a bed the test makes, with surf in the profile, with open water and a lake that land encloses whose long-wave gain is above zero, the field cache's displaced surface and the query's answers at 4,096 points from deep water to the swash, on tick frames and repeat frames and at stages between two samples, match `thrum-water-model`. The largest differences are recorded, and the test holds those recorded bounds.",
           "check": "cargo test --locked --offline -p thrum-water --test surf_gpu",
           "ask": "Were the bounds written from a measurement on this Mac, in the record with its date and commit, and are they small beside a wave's height where it breaks? Does the test fail when the lag is left out, and when the section is?",
           "lock": "gpu",
@@ -1066,9 +1079,9 @@
         },
         {
           "id": "M13.3",
-          "statement": "A float rides the crest the surface shows. In the surf on a plane beach the test makes, a float's answers are the model's at its use tick, the highest surface where a crest overhangs, and a float carried into the swash reads dry between waves and wet under each.",
+          "statement": "A float rides the crest the surface shows. In the surf on a plane beach the test makes, a float's answers are the model's at its use tick, the highest surface where a crest overhangs, and a float carried into the swash reads dry between waves and wet under each. At a point under a thrown lip, where the plain iteration settles on the trough, the float's height is the lip's.",
           "check": "cargo test --locked --offline -p water-scene --test surf_floating_gpu",
-          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, and would a query that left the transform out fail?",
+          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface M12.6 holds to a cut of the section, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1423,7 +1436,7 @@
       "items": [
         {
           "id": "M15.1",
-          "statement": "A pixel is under water exactly when its own point on the near plane lies below the displaced surface there. With the lens half under in a swell, the pixels composed as under water in submitted frames are those `thrum-water-model` gives for that camera, to within a pixel of the line, on the sea, on the lake and in the swash. While the whole lens is above the water none of the capability's passes runs.",
+          "statement": "A pixel is under water exactly when its own point on the near plane lies below the displaced surface there, which under a crest that overhangs is the highest surface in its column. With the lens half under in a swell, the pixels composed as under water in submitted frames are those `thrum-water-model` gives for that camera, to within a pixel of the line, on the sea, on the lake, in the swash and under a thrown lip. While the whole lens is above the water none of the capability's passes runs.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test lens_gpu",
           "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail?",
           "lock": "gpu",

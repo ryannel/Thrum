@@ -10,7 +10,10 @@ Broadsides may be reused. This design replaces the implementation target in
 [CLOUDS.md](../../design/modules/CLOUDS.md); that page's ownership and transport rules stay in force and are
 restated where they bind. Revised again on 14 November for the atmosphere as a whole:
 [mist, fog and low cloud](#condensate-that-meets-the-ground-mist-fog-and-low-cloud) are this module's, and
-[what that replaces](#judged-again-for-the-whole-atmosphere) is listed.
+[what that replaces](#judged-again-for-the-whole-atmosphere) is listed. Revised once more that day after the
+review of that revision: [a stop at every pixel's depth and the air in parts](#the-visible-layer), the frames
+of a ground row and the headless query, and
+[ceilings that decide](#numerical-acceptance-for-ground-condensate).
 
 ## The request
 
@@ -262,7 +265,7 @@ this revision replaces.
 | The camera and all solid geometry stay below the lowest cloud base; partial immersion is not modelled ([plan](PLAN.md#open-for-the-human), until now) | The ground and the camera may stand in condensate or above it | "Low cloud the camera can enter" |
 | A view ray's media are split by height: air below, cloud above | They are split by distance, at a handover: `ATMOSPHERE`'s view volume integrates air, haze and condensate jointly near the camera, and this module's trace carries condensate beyond | Near the camera fog meets geometry, water and moving props, where a grid aligned to the view is the shipped answer; far off it is a soft shape on the land, which the trace already draws at a finer grain |
 | Haze under cloud is one number a frame, with no shafts | Inside the view volume the air is lit sample by sample through the cloud factor and the scene's shadows, so shafts stand in haze. The one number remains for a scene without the view volume | Shafts are what broken cloud over haze looks like |
-| The trace ignores depth except to skip covered rays | A ray stops at the scene's depth and keeps two stops | Far mist lies against hillsides and water |
+| The trace ignores depth except to skip covered rays | A ray stops at the scene's depth and keeps a stop at each pixel's depth | Far mist lies against hillsides and water |
 | "Atmospheric system" means clouds and weather; `ATMOSPHERE` is not reopened ([plan](PLAN.md#open-for-the-human), until now) | `ATMOSPHERE` gains the view volume and a haze it takes from the weather, as milestones after G3s closes | The owner's words. The V1 exit scene does not change |
 | The Sun's path ends at the cloud layer's base, and a receiver below it reads one plane | It continues to the ground in a ground band, read at the receiver's own position | Land inside fog must lose its Sun, and a bank must shade the water beside it |
 
@@ -366,7 +369,9 @@ is the frame's committed tick and `α` its interpolation alpha (C02):
 `travel(t) = travel(C) − (1 − α) · (travel(C) − travel(C − 1))`, formed on the CPU in f64 from the state.
 
 Travel enters a frame only through the anchors that place the air frame in the world: the trace's, the mapping of
-the ground field that `ATMOSPHERE` reads, the overlay's, and the motion a cloud writes. So a frame that shows the
+the ground field and of the ground band that `ATMOSPHERE` reads, the overlay's, and the motion a cloud writes. What
+belongs to the ground takes no travel: the [surface field](#condensate-that-meets-the-ground-mist-fog-and-low-cloud)'s
+texture is anchored to the world. So a frame that shows the
 same tick again moves every cloud and its shade by the wind's travel since the last frame, and rewrites no texel:
 the weather map, the Sun's path and everything that evolves stay at the committed tick, as `EFFECT-GRAPH`'s state
 rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most 0.2% of
@@ -406,6 +411,12 @@ form. Compute passes in `simulate` evaluate the same cell and deck rules as the 
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
 air.
+
+**The map holds nothing of the ground.** With ground condensate a texel also holds each ground row's **air
+factors**, and only those: its extent and the cut of its noise. A row's
+[world factors](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), its height over the surface, its datum
+and its shore, are read from the surface texture at the sample's own world point, and the density multiplies the
+two there. So wind still costs nothing, and no texel that drifts holds a shoreline or a height.
 
 **Age.** Each part of the map holds the field at the tick it was last written, and the map keeps that tick for
 each part. The cadence is a bound on a part's age in **weather time** and in the camera's travel through the
@@ -520,16 +531,19 @@ The cloud layer is traced at part of the render extent and reconstructed over fr
 
 1. **Trace.** Each frame, one texel in each block of the layer is marched (a 2×2 block of a half-extent layer in
    the first profile: one ray for every sixteen render pixels). A ray steps across empty air on the coarse map,
-   takes steps that lengthen with distance inside cloud, and stops when it is opaque. It yields the segment's
-   scattered radiance `S`, transmittance `T` and a front distance averaged by transmittance.
+   takes steps that lengthen with distance inside cloud, and stops when it is opaque. It yields, at each stop
+   below, the segment's transmittance `T`, its scattered radiance `S` already composed with the air in parts,
+   and a front distance averaged by transmittance.
 2. **Resolve.** Every texel of the layer's history is written each frame: the fresh sample where one was traced,
    otherwise the previous frame's value, reprojected through the cloud's own position and wind drift and clamped
    to the fresh samples around it. The history is a ping-pong pair whose producer runs every frame. On a reset
    the layer is filled from the frame's trace alone and is sharp again within one refresh cycle (four frames in
-   the first profile).
-3. **Compose.** At render extent, for sky pixels: `colour = colour·T + T_air·S + (1 − T)·S_air`, where
-   `(T_air, S_air)` is the lent aerial transport to the front distance. This applies aerial perspective to the
-   cloud once and removes the part of the sky's own in-scatter the cloud hides.
+   the first profile). A stop that ends on a surface follows the stricter rule under **Carried stops** below.
+3. **Compose.** At render extent: `colour = colour·T + S`. For a ray whose condensate lies in one part, which
+   is every ray through one cloud, that is `colour·T + T_air·S_c + (1 − T)·S_air`, where `S_c` is the cloud's own
+   scattered radiance and `(T_air, S_air)` is the lent aerial transport to the front distance. This applies
+   aerial perspective to the cloud once and removes the part of the background's own in-scatter the cloud
+   hides.
 
 **Not a private upscaler.** The port decision forbids a cloud path from render extent to display extent, and
 lists the march's refresh fraction and resolution among its knobs. The layer ends at render extent; the engine's
@@ -542,24 +556,48 @@ condensate, a camera below the lowest base and geometry below it, that interval 
 meets cloud before geometry or not at all, so M3 to M10 build and judge it there. The trace is written over the
 general interval from M3, so that M15 changes what it is given and not how it marches.
 
-**Geometry.** A layer texel stands for several pixels that may lie at different depths. Its ray is marched once,
-to the farthest of them, and keeps the pair it had reached at the nearest of them as well: **two stops**. A pixel
-takes its pair between the two by its own depth, so a ridge in front of far mist has a clean edge and no pixel
-takes fog from behind the surface it shows. Where every pixel of a texel is beyond the condensate, as under a
-cloud band that clears the land, the two stops are one and the compose is the depth test it was. Water writes
-depth and is geometry here.
+**Geometry: a stop at every pixel's depth.** A layer texel stands for a block of render pixels, four in the first
+profile, that may lie at different depths. Its ray is marched once, to the farthest of them, and as it passes
+each pixel's depth it keeps the pair it has reached there, with that distance: one **stop** for each pixel. A
+stop is the whole transport along the texel's ray from the start of the interval to that pixel's own surface. It
+holds everything in front of the surface and nothing behind it, wherever the condensate lies along the ray, and
+nothing is interpolated between stops. A pixel composes its own stop, so a ridge in front of far mist has a clean
+edge. The nearest and farthest pairs alone cannot do this: a bank just in front of a middle surface and the same
+bank just behind it leave the same two pairs, and blending them gives the middle pixel a transmittance of 0.77
+or 0.67 where the truth is 0.30 and 1 (part VII). The ray is the texel's and not the pixel's, under a pixel's
+width to the side, as it is for the sky. In a profile without Ground every pixel of a texel is beyond the
+condensate or is sky, a texel keeps one stop, and the compose is the depth test it was. Water writes depth and
+is geometry here.
+
+**Carried stops.** A stop traced in an earlier frame is carried with the surface it ended on, by the scene's
+motion for that pixel; a stop that ended in the sky is carried by the cloud's own, as above. A pixel composes a
+carried stop only if it was taken on the pixel's own surface: its distance agrees with that surface's distance
+in the frame it was traced, within the profile's **stop tolerance**, a share of the distance. Where no carried
+stop passes, at a disocclusion, at a mover's edge and after a cut, the texel is traced in that frame; a stop
+that ends on a surface is never filled from a neighbour's. A carried stop is then wrong only by the fog the
+camera's own travel has crossed since it was traced, at most one refresh cycle before: 0.27 m at 8 m/s, which is
+0.8% of the stop's transmittance in fog of a 130 m visual range and 2% at 50 m (part VII).
 
 **Frame contract.** Clouds write no depth. Where a cloud holds most of a pixel it writes motion from its front
 point, with wind drift, at unjittered positions; elsewhere the sky's motion stays. It writes reactive coverage
 by opacity where the cloud changed beyond what motion explains. A cut, a weather seek, a profile change and a
 library change mark the layer's history invalid; a knob applies the invalidation it declares.
 
-**Segments.** The trace's segment is `(T, S)` over its interval, which begins at or beyond the handover. Nearer
-than that, condensate is in `ATMOSPHERE`'s view volume, integrated jointly with the air; the two are ordered
-along the ray and their weights sum to one (C08). Air inside the trace's interval is not integrated jointly: the
-segment takes the air once, at its front distance. The error is bounded by the air's optical depth across the
-interval, which haze makes larger for a deep bank of far mist; M15 measures it against the joint reference
-before it asserts a bound.
+**Segments, and the air in parts.** The trace's segment is `(T, S)` over its interval, which begins at or beyond
+the handover. Nearer than that, condensate is in `ATMOSPHERE`'s view volume, integrated jointly with the air;
+the two are ordered along the ray and their weights sum to one (C08). The air inside the trace's interval is
+`ATMOSPHERE`'s lent transport, and the trace takes it **in parts**. A part of a ray ends where the air's own
+optical depth across it, read from the lent transmittance, reaches the profile's **part bound**, 0.25 in the
+first profile. Each part's condensate is composed with the air at that part's own front distance,
+`T_air·S_part + (1 − T_part)·S_air`, and the parts are composed in order, so each stretch of condensate meets
+the air in front of it once. A part with no condensate costs nothing. In clear air a part is 15 km long, so a
+ray through one cloud is one part.
+
+One part for a whole ray is the approximation this replaces. Its error grows with the air's optical depth
+between the condensate nearest the camera and the furthest: for a thin bank at 600 m with a thick one at 5 km
+behind it, the near one in shadow, it is 2.6 times [the ceiling](#numerical-acceptance-for-ground-condensate)
+in haze of 8 km and 2.1 times at 20 km. With the part bound at 0.25 the same rays, a deep bank and thin mist to
+the horizon are all within a quarter of the ceiling, in haze from 3 to 244 km (part X).
 
 ### The sky the world sees
 
@@ -664,7 +702,8 @@ near the camera and this module's trace beyond it.
 - **The surface field.** Ground condensate needs to know where the ground is. A game that declares the Ground
   capability gives the field a **surface field**, as it gives the type table: the height of the ground and, where
   there is water, the water's level, on a grid over the weather's extent in the world's frame. The model reads it
-  on the CPU and the GPU reads a texture of it; the engine never reads terrain meshes. From it the model derives
+  on the CPU and the GPU reads a texture of it, anchored to the world and written once; the engine never reads
+  terrain meshes. From it the model derives
   the **datum**: the surface averaged over a wide window, a profile constant (3 km in the first profile), which
   is the level that cold air pools to. A hollow is ground below the datum and a ridge is ground above it.
 - **Ground sources.** A **fog table** is game data like the type table. Each row is one kind of ground
@@ -677,10 +716,20 @@ near the camera and this module's trace beyond it.
   holds an **amount** from 0 to 1 for each row, a parameter with a target like any other. Amount raises the
   top and lowers the threshold the row's noise is cut at, together, so mist swells in from the deepest hollows
   and the densest patches and never switches on (part II).
-- **Held and drifting.** A drifting row is a function of `world point − travel` like every cloud, so a bank moves
-  with the wind exactly. A held row takes its place from the surface field, which does not move, and its wisps
-  from noise in the air frame: the mist stays in its valley while its wisps cross it, as valley mist does in a
-  light wind.
+- **What stays with the world and what rides the wind.** A row's density at a point is a product of two kinds of
+  factor, and each keeps its own frame. Its **world factors** are functions of the world point and the surface
+  field and never move: the point's height over the surface there, in which the row's depth and soft top are
+  measured; the datum, for a pooled row; and the affinity for land or water, with its fade across the shore
+  margin. Its **air factors** are functions of `world point − travel` and weather time, like every cloud: a
+  drifting row's **extent**, the pattern that says where its banks stand, and every row's noise. A **held** row
+  has no extent. It stands wherever its world factors put it and only its wisps cross it, as valley mist does
+  in a light wind. A **drifting** row is its extent times its world factors, so a bank moves with the wind
+  exactly while its foot follows the ground it crosses and its edge stays at the shore: a bank over water comes
+  up to the beach, thins across the margin and goes no further inland, at any travel. As one identity, which
+  M13.3 tests: a row under a travel, over a surface field, equals the row with no travel at `point − travel`
+  over the same surface field moved by that travel, bit for bit (part VIII). A row that carried its shore with
+  it would put fog 100 m inland after 200 m of travel, which is what a row made of the air-frame point alone
+  does.
 - **Low cloud is the deck.** A layered type's base may lie anywhere down to the ground. Where the ground stands
   above the base, the ground is in cloud. The field's density is a function of a world point and does not know
   where the camera or the ground is, so this adds no source; what it changes is the
@@ -698,14 +747,31 @@ near the camera and this module's trace beyond it.
   module takes.
 - **The query.** A point query also answers, for any world point at any height: the condensate's extinction in
   m⁻¹, the visual range there (3.912 over the extinction of condensate and haze together), and through the
-  model's f64 reference the optical depth between any two points. A game asks whether one point can see another
-  with no graphics device. Column optical depth includes the ground sources and keeps
+  model's f64 reference the optical depth between any two points, which is the integral of that extinction
+  along the segment. A game asks whether one point can see another with no graphics device. The extinction is
+  the [coarse density](#one-density-in-m¹) at the point, which the model evaluates in f64 with no texture.
+  Cells, the deck and ground sources are functions the model holds whole, so through them the answer is that
+  density exactly. A [placed shape](#placed-volumes) is content, and the answer depends on what the model was
+  given of it. Given the shape's voxels, as M1's Sun-path reference takes them, it is the volume form: the
+  shape itself. Given its footprint alone, as a headless server usually is, it is the column form. That is
+  exact in the column's sum, in its lowest and highest heights and in its outline, so it is zero outside the
+  silhouette and above and below the shape, and it is an estimate of how the density lies between those
+  heights, with no bound. Two shapes of one footprint, one dense at 15 m and the other empty there, have level
+  sight lines of 0.05 and 1 through their voxels, and one answer, 0.17, from their footprint (part IX). So
+  every answer says which it is: **exact**, or **from a footprint** when any part of it crossed a placed shape
+  the model knows only by its footprint. A game for which sight through a placed cloud matters gives the
+  voxels. Column optical depth includes the ground sources and keeps
   [what a query promises](#one-weather-field-in-the-air-frame).
 - **One density, one Sun's path.** Ground sources add to the one density, in its full and coarse forms, before
   attenuation. The Sun's path gains a **ground band**: levels of camera-following windows over the surface
   field, each holding optical depth toward the Sun at a few heights above the surface, filled by marching the
   coarse density along the path direction from each node to where the ray leaves the band, plus the cloud band's
-  value there. A point's `tau` is then one read: the ground band below its top, the cloud band above. A band of
+  value there. The band's columns are in the air frame and move with the display's travel, as the cloud band's
+  do, because most of what they hold rides the wind: banks, and the clouds above. Its heights are measured
+  over the surface at the receiver's own place, which is the world's. So what a held row adds to a node is
+  carried downwind until the node is next written, by at most the travel inside the band's age bound: 20 m
+  in a 40 m/s wind in the first profile, a quarter of a column. A point's `tau` is then one read: the ground
+  band below its top, the cloud band above. A band of
   80 m columns and 9 heights holds a bank's Sun path to 0.01 RMS in transmittance where a level-layer rule is
   off by 0.04 to 0.31 and casts no shadow beside the bank (part V). While it marches, the fill also records
   where the surface field itself blocks the Sun, as a **surface visibility** kept apart from `tau`. Only medium
@@ -722,8 +788,8 @@ near the camera and this module's trace beyond it.
   `ATMOSPHERE` never evaluates a density, a phase or a self-shadow.
 - **Beyond it: the trace.** The trace marches every condensate, ground sources included, weighted by the **far
   weight**, lit by cloud light with the surface visibility on its Sun term, stopping at the scene's depth with
-  [two stops](#the-visible-layer). A far bank is then drawn at the layer's grain, a texel for every four
-  pixels, where the view volume's cells are sixteen pixels across.
+  [a stop at every pixel's depth](#the-visible-layer) and taking the air in parts. A far bank is then drawn at
+  the layer's grain, a texel for every four pixels, where the view volume's cells are sixteen pixels across.
 - **The handover.** The near weight is 1 from the camera to the start of a ramp and falls to 0 at its end; the
   far weight is one minus it. The ramp is a profile value, 300 to 500 m from the camera in the first profile.
   Two integrators that each take a share of one extinction compose as ordered segments to the exact
@@ -749,12 +815,14 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
 | **Shade** | The weather map, the shape noise and the Sun's path, with the ground field `ATMOSPHERE` applies | Weather |
 | **Sky** | The visible layer: the trace, the layer's history, the detail noise, the compose and the far-aerial use | Shade |
 | **World light** | The sky overlay and the haze scale | Sky |
-| **Shapes** | The library: its footprints, which the field's query reads, and its leased volumes, which the Sun's path reads for a shape's shade and the trace, with Sky, for its picture. By the field's hash or by the game | Shade |
+| **Shapes** | The library: its footprints, which the field's query reads (its voxels too, where a game gives them to the model), and its leased volumes, which the Sun's path reads for a shape's shade and the trace, with Sky, for its picture. By the field's hash or by the game | Shade |
 | **Ground** | Condensate that meets the ground: the surface field and the fog table, which the field's query reads; the ground sources in the weather map; the Sun path's ground band; the medium coefficients `ATMOSPHERE`'s view volume integrates. With Sky, the trace carries the same condensate beyond the handover and the overlay includes it; without Sky it ends at the handover | Shade, and a scene that declares `ATMOSPHERE`'s view volume |
 
 - **Headless** is Weather alone: a server answers point queries, and needs a library's footprints and never its
-  volumes. With ground sources it needs the surface field and the fog table, and answers extinction, visual
-  range and the optical depth between two points.
+  leased volumes. With ground sources it needs the surface field and the fog table, and answers extinction,
+  visual range and the optical depth between two points, each marked exact or from a footprint as
+  [the query](#condensate-that-meets-the-ground-mist-fog-and-low-cloud) defines. A server that wants exact
+  sight through placed shapes gives the model their voxels as plain data; it still needs no graphics device.
 - **Shadow-only** is Weather and Shade, with Shapes if the sky has them. Leaving Sky out releases what only
   the picture uses: the trace, the layer and its history, the detail noise, the compose and the overlay. The
   library is not among them, because [a shape's shade is its volume's](#placed-volumes); a shadow-only scene
@@ -782,6 +850,42 @@ and costs nothing; changing the set rebuilds the effect and starts a new epoch.
   fixed allocation, so no knob creates a resource or pipeline. None changes the weather field, the columns the
   weather map holds or what a query returns; the placed range changes only the map's presentation values, the
   slot and the volume form's weight, and through them which form of a placed cell is drawn and shaded.
+
+### Numerical acceptance for ground condensate
+
+M13.6, M13.7, M14.2 to M14.4 and M15.1 to M15.3 each compare a product with an f64 reference written apart from
+it. What decides and what is recorded are kept apart, as
+[`ATMOSPHERE` keeps them for its view volume](../ATMOSPHERE/DESIGN.md#numerical-acceptance-for-the-view-volume),
+and the ceiling has that module's form, so the two integrators of one medium are held alike.
+
+- **The ceiling decides.** At every probe a quantity is within `0.05 × expected + 0.005 × F` of its reference.
+  `F` is 1 for a transmittance; for any other quantity it is the largest expected value among the case's
+  probes. The ceiling is fixed here, before any build measures anything. A gain error of a tenth fails it, and
+  so does an extinction counted twice: 0.135 where 0.368 is expected is 0.233 out against a ceiling of 0.023.
+- **A product on a grid places an edge within a node.** The ground band and the weather map hold values at
+  nodes. For them a probe passes when the product is within the ceiling of the reference's value somewhere
+  within one node's spacing of the probe, along each of the product's axes. At the probe itself part X's band
+  is outside the plain ceiling at 1, 6 and 16 of 400 probes at a 30°, 10° and 4° Sun, all at the foot of a
+  bank's shade; with a node's allowance it is outside at none.
+- **A wrong substitute fails in the same test.** Each item names its substitutes below. The test runs each
+  through the same assertion, in a case chosen so that it lies outside the ceiling, and shows it fail. A
+  substitute that passes there means the test proves nothing.
+- **The measurement is a record.** The worst and the RMS error are written beside the planner's figures. They
+  decide nothing.
+- **A miss is a plan change.** If a product the builder believes correct misses the ceiling, the builder
+  records where and by how much and ends `BLOCKED`. The ceiling is not widened in a build, and no bound an
+  earlier milestone measured stands in for it.
+
+| Item | Held to | Wrong substitutes that must fail | Where they do, from part X unless said |
+|---|---|---|---|
+| M13.6, the ground band on the CPU | The model's Sun-path reference, with a node's allowance | A level-layer rule; the band's value counted twice | The level rule at 24 and 54 of 400 probes at a 10° and a 4° Sun, beside the bank on its far side from the Sun. At 30° it is inside, so 30° alone proves nothing. Counted twice: 184 probes at 30° |
+| M13.7, the handover on the CPU | One integration of the whole ray | Both shares taken whole; the far share not dimmed by the near | Transmittance 0.12 out against 0.012. In-scatter 0.39 out against 0.048 under uniform light and 0.12 against 0.037 with a shadow edge in the ramp, where the design's is 0.011 |
+| M14.2, ground condensate on the GPU | The model at world points after a travel, with a node's allowance | A shore mask that the map holds and drifts | The row's whole extinction inland of the margin, where zero is expected (part VIII) |
+| M14.3, the ground band on the GPU | As M13.6 | The cloud band's value added again; a level-layer rule | An upper cloud of optical depth ln 2 gives 0.25 for 0.5 (`ATMOSPHERE`'s part I); the level rule as in M13.6 |
+| M14.4, the medium coefficients | The model's references at the volume's sample points | A kernel without the medium's own optical depth toward the Sun; an extinction without the near weight | In a bank whose Sun path is 1 or more, the first order is 2.7 times out; inside the ramp the extinction is out by the far share |
+| M15.1, the stops | The model's pair at each pixel's own depth | The nearest and farthest stops blended to the pixel's depth, as pairs and as optical depth | Transmittance 0.77 and 0.67 where the two banks give 0.30 and 1.00 (part VII) |
+| M15.2, the handover on the GPU | The model for the whole ray | The far share not dimmed by the near | As M13.7 |
+| M15.3, the far air | A joint integration of air, haze and condensate | The segment as one part; the segment with no air in front of it | One part: 2.6 times the ceiling at 8 km for two banks with the near one in shadow. No air: 3 to 6 times at 8 km. At 60 km and clearer both are inside, so those hazes prove nothing |
 
 ### Check that it can work
 
@@ -865,8 +969,9 @@ From `whole_atmosphere_proof.py`, run for the revision of 14 November for mist, 
   as ordered segments to the exact transmittance at any share. Their in-scatter is exact under uniform light.
   With a shadow edge or a tenfold fall of light inside a ramp 1 km long, at visual ranges of 400 m to 40 km, it
   is within 0.002 of a radiance near 1; with a 200 m ramp, within 0.0001.
-- **II, pooling.** On relief of about 200 m with a datum averaged over 3 km, mist covers 19% of the ground at amount
-  0, 47% at 0.4 and 89% at 1; ridges 40 m above the datum stay clear until 0.8. Depth changes by 0.14 m for an
+- **II, pooling.** On relief of about 200 m with a datum averaged over 3 km, the mist top stands over 19% of the
+  ground at amount 0, 47% at 0.4 and 89% at 1; ridges 40 m above the datum stay clear until 0.8. That is depth,
+  where mist may stand, and not density: part XI below composes it with the cut of the noise. Depth changes by 0.14 m for an
   amount step of 0.001 and by half that for half the step. The top's steepest slope is 12% where the ground's
   is 71%.
 - **III, the day.** With one integrated value, a moist clear calm night gives no mist at 18 h, 0.39 at 20 h, full
@@ -882,8 +987,33 @@ From `whole_atmosphere_proof.py`, run for the revision of 14 November for mist, 
   ground beside it.
 - **VI, haze.** `ATMOSPHERE`'s fixed aerosol is a visual range of 244 km. A range of 20 km needs 42 times that
   aerosol and 3 km needs 294 times.
-- **Unrun:** the view volume's look and stability, which `ATMOSPHERE` M7 and M8 see first; the two stops at a
-  geometry edge under reconstruction, first seen in M15; the far segment's air error in haze, measured in M15.
+- **Unrun:** the view volume's look and stability, which `ATMOSPHERE` M7 and M8 see first; carried stops at a
+  geometry edge under reconstruction, first seen in M15.
+
+From `ground_revision_proof.py`, run on 14 November after
+[the review of the ground revision](../../evidence/CLOUDS/design-review.md), on its counterexamples:
+
+- **VII, stops.** In one texel with surfaces at 600, 700 and 900 m, a bank at 650 to 690 m and the same bank at
+  810 to 850 m leave the same pairs at 600 and 900 m. A stop at 700 m gives 0.301 and 1.000, the truth; the two
+  end pairs blended give 0.767 as pairs and 0.670 as optical depth, for both banks. In a uniform slab a stop at
+  the middle is the closed form. A carried stop is 0.15% to 2.1% out after four frames of a camera moving at
+  1.5 to 8 m/s through fog of 130 to 50 m visual range.
+- **VIII, frames.** A drifting water row over a shore and uneven ground, through 1.3 km of travel: its density
+  equals its density with no travel at the point minus the travel over the surface field moved by the travel,
+  bit for bit at every probe; it is zero inland of the margin and below the surface throughout, and full over
+  the water. A shore mask that drifts with the row gives the row's whole extinction 100 m inland.
+- **IX, the query.** The review's two shapes of one footprint: with voxels, extinctions of 0.03 and 0 at 15 m
+  and level sight lines of 0.0498 and 1; from the footprint, one column form for both, 0.0176 and 0.172, whose
+  whole column is the footprint's 0.5 and which is zero above the shape.
+- **X, ceilings.** The figures in [numerical acceptance](#numerical-acceptance-for-ground-condensate): the
+  ground band with a node's allowance, the handover with a bank across a 300 to 500 m ramp, and the far air in
+  one part and in parts bounded at 0.5 and 0.25, over hazes of 3, 8, 20, 60 and 244 km, two sources and four
+  rays. One part is at worst 2.6 times the ceiling, a bound of 0.5 is 0.93 of it and a bound of 0.25 a quarter.
+- **XI, amount zero.** With the row's noise cut at a threshold that the amount lowers from 1, mist has depth
+  under its top over 19% of the ground at amount 0 and density nowhere; at 0.1 it has density over 0.4% of the
+  ground and at 0.4 over 16%. So zero amount is absent mist, as M13.1 and M16.1 require.
+- **Unrun:** the stop tolerance, and how many texels a pan through far mist traces out of turn; M15 records
+  both.
 
 ## The system as it runs
 
@@ -973,11 +1103,11 @@ there, not here.
 | Resolve | Frame | 1280×720 texels | 0.1–0.2 ms | 0.9 ms |
 | Compose | Frame | Sky pixels at render extent; a pass that loads scene colour | 0.2–0.4 ms and a tile pass break | |
 | Sky overlay | An eighth a frame | 6 × 48² rays, coarse density | Under 0.05 ms | 15 ms capture |
-| Ground sources in the weather map | With the map | The surface field and datum (two more channels a level), the fog amounts | Within the map's line | |
+| Ground sources | With the map; the surface texture once | In the map, each ground row's air factors: its extent and the cut of its noise. Apart from it, one world-anchored texture of the surface field and the datum | Within the map's line, and one more read a sample for the surface | |
 | Ground band of the Sun's path | With the Sun's path | 3 levels × 256² columns × 8 to 12 heights, with one visibility bit a node | As the cloud band, about a quarter of its samples | |
 | Medium coefficients | Frame | One sample for each view-volume cell inside the handover (about 0.7 M of 0.9 to 1.4 M cells): the map, the shape noise, the Sun's path | Unmeasured; Frostbite's write and lighting of a like grid took 2.5 ms on a PlayStation 4. M14 records it | |
-| Far condensate in the trace | Frame | The same rays, longer where mist lies between the handover and the land | Unmeasured; M15 records it beside M9's | |
-| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72 | About 47 MiB plus the library, and about 14 more with Ground | 62 MiB plus history |
+| Far condensate in the trace | Frame | The same rays, longer where mist lies between the handover and the land; a stop for each pixel of a texel, kept as the ray passes its depth; one lent aerial read for each part of a ray that holds condensate, one for a ray through a cloud and up to tens through thin mist in thick haze; and the texels traced out of turn where no carried stop passes | Unmeasured; M15 records it beside M9's, with the rays traced out of turn | |
+| Memory | | Weather 4 MiB, noise 2, Sun's path 13, ground 2, layer history and trace 25, footprints about 1, library 27 MiB as R8 or 14 as BC4, growth track the same again; the library is held by every scene that declares Shapes, shadow-only included. With Ground: the surface field and datum about 2 MiB, the ground band about 4, the medium coefficients about 8 at 160×90×72, and four stops a texel in the layer and its history where there was one, about 52 | About 47 MiB plus the library, and about 66 more with Ground | 62 MiB plus history |
 
 **Records and tripwires, never gates** ([brief](../BRIEF.md), decision 3). `scripts/cloud_cost.py`, created in
 M2, takes a paired record of one scene at one view, capture off: the scene with clouds and with them absent,
@@ -1026,12 +1156,13 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 9. **Mist reads as a flat grey slab**, without the glow, the soft top and the wisps of the shipped bar. Early
    sign: M14's first stills. The look is in the fog table, the noise and the phase, and is tuned against M14's
    list with a fresh opinion; three failed looks on one cue go to the log and end `BLOCKED`.
-10. **The two stops leave a halo at geometry edges** in far mist, or history ghosts where a mover crosses it.
-   Early sign: M15's stills of a ridge against mist. Fallback: refresh every texel of the layer every frame
-   where the two stops differ.
+10. **Carried stops ghost or cost too much.** A ghost follows a mover across far mist, or a fast pan traces so
+   many texels out of turn that the frame is late. Early sign: M15's sequences and its record of rays traced
+   out of turn. The fixes, in order: a tighter stop tolerance for a ghost; for cost, a coarser layer where
+   stops end on surfaces. Never a stop filled from a neighbour or blended between two depths.
 11. **Far mist in thick haze takes its air wrongly**, as a bank too bright or too blue against the land behind
-   it. Early sign: M15's record. Fallback: the trace takes the lent aerial transport at several depths along
-   its interval and not at one.
+   it. Early sign: M15.3's record against the ceiling. The fix is a smaller part bound, never one part for the
+   ray.
 12. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -1059,6 +1190,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from M2, with implementation, correctness, visuals
   and device apart.
+- **Ceilings.** The items of M13 to M15 that name the design's ceiling are held to
+  [numerical acceptance for ground condensate](#numerical-acceptance-for-ground-condensate). A miss ends
+  `BLOCKED`; a build never widens the ceiling or measures its own.
 
 ## Open questions
 
@@ -1078,6 +1212,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Is an Apple-tile kernel variant a measured win? | M12 |
 | How wide a datum window pools mist as the valley's relief wants? | M13 sets the profile's value on the valley's heights; M14 judges it |
 | What do the ground band and the medium coefficients cost, on the Mac and in Chrome? | M14 records |
-| How far is the far segment's air from a joint integration, in haze of 8, 20 and 60 km? | M15 measures first |
+| How far is the far segment's air from a joint integration, in haze of 8, 20 and 60 km? | M15.3 records it against the ceiling, beside part X's quarter of it at a part bound of 0.25 |
+| What stop tolerance keeps a surface's own stop through a walk and rejects its neighbour's, and how many texels does a pan trace out of turn? | M15 sets the profile's value and records the count |
 | Does the handover show at 300 to 500 m, and at what ramp? | M15 |
 | Can `examples/water` give a surface field from its water map without a change to `WATERS`? | M11; if not, the proposal goes to `WATERS`' log |

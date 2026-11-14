@@ -189,3 +189,16 @@
   judge the horizon and the far sea's haze from 2 m and 40 m, where the old stop took up to 72% of the sea's
   in-scatter, in bands that moved with the camera. No text, item or bound here changed. The note above for
   M14's builder holds only until M9 is Done.
+- 2026-11-14 [The design review of the surf, mirror and underwater revisions](../../evidence/WATERS/design-review.md)
+  asked for changes, three Must Fix. Re-planned; M1 is untouched. (1) Water that land encloses has no path to
+  the bed's edge, so its long waves now start at its own waterline where that faces the wave, and their
+  exposure is the share of the declared fetch upwind; the sea's rule and its lee shelter stand. M12.1 says
+  which water its edge rule covers, M12.11 is new, and M13.1's bed gains such a lake. (2) Under a thrown
+  crest the query, the model and the lens find the highest surface by a bounded scan of the throw, held to
+  a cut of the section made in the test; M12.6, M13.3 and M15.1 rewritten. Continued below.
+- 2026-11-14 The same re-plan, continued. (3) The two blends together are 4.1% and 9.3% out against the
+  dispersion relation, and the first-order solve adds up to 6%, so M12.2 now holds the blend to a lag solved
+  for the component's own wavelength and stage, within 7% and 13% where the design measured 5.0% and 8.0%,
+  and a component with no blend must fail. Suggestions taken: the foam's conservation is scoped to cover
+  under the cap, and the caustic mask's use of the level is declared. The figures are parts U to W of
+  [the design proof](../../evidence/WATERS/design-proof/README.md).

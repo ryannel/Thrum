@@ -211,3 +211,18 @@
   and the module list: the band holds the whole path and a receiver makes one read. Ruling 7's summary, the
   Sun's-path section's first paragraph and M14.3's second sentence now say so; the fill is unchanged. The
   handover's in-scatter figure is qualified by that review's bank at the ramp. No other item changed.
+
+- 2026-11-14 [The design review of the ground revision](../../evidence/CLOUDS/design-review.md) asked for
+  changes, four Must Fix. Re-planned; M1 is untouched. (1) The trace keeps a stop at every pixel's depth in
+  place of two stops, and a carried stop is used only on its own surface; M15.1 and M15.7 rewritten. (2) A
+  ground row's world factors (height over the surface, datum, shore) stay with the world and its air factors
+  (extent, noise) ride the wind; the weather map holds only the latter; M13.3, M14.2 and M11.8 rewritten.
+  (3) The headless point query is the coarse density, exact except through a placed shape known only by its
+  footprint, where it is the column form and says so; M13.5 rewritten. Continued below.
+- 2026-11-14 The same re-plan, continued. (4) One ceiling, `ATMOSPHERE`'s form, decides M13.6, M13.7, M14.2
+  to M14.4 and M15.1 to M15.3, each with wrong substitutes that must fail; no item sets its own bound. Measuring
+  it showed the far segment's single front distance 2.6 times outside the ceiling in 8 km haze, so the trace
+  now takes the lent air in parts (a quarter of the ceiling); M3.6's form holds for a ray through one cloud.
+  Suggestions taken: Chrome motion in M14.9, M15.9, M16.6 and M11.10, mist under MetalFX in M12.2, M11.1's
+  owner, M11.2's water exclusion, and depth against density at amount zero. The figures are parts VII to XI of
+  [the design proof](../../evidence/CLOUDS/design-proof/README.md).

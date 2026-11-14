@@ -5,7 +5,7 @@
 
 Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-clouds) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Their limits hold for every milestone.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human
 
@@ -13,6 +13,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "taking into account mist / fog" and "top quality atmosphere" (the owner, 14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its M7 and M8, after G3s closes) and this module's trace beyond. It adds M13 to M16 and three items to M11, and replaces the assumption that the camera and all geometry stay below the cloud base.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops M13.4 and M16.1.
 - Assumption: "low cloud the camera can enter" includes coming out above it on a summit. The camera stays 2 to 40 m over the ground; flying is not planned. Only a layered deck on the hills is inspected.
+- Assumption: a headless game asking whether it can see through a placed cloud gets a marked estimate unless it gives the cloud's voxels.
 - Assumption: "a flexible set of cloud capabilities" is taken up: shade, the visible sky, the world's light, shapes and ground condensate are each left out by a scene at no cost.
 - Assumption: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB).
 - Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; it costs M1.12, M6.9 and M6.10.
@@ -36,7 +37,7 @@ NumPy. Ground condensate is M13's: build nothing for it here.
 ## M13 Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see
 
 This extends M1's crate and changes none of its answers where no surface field or fog table is given.
-`whole_atmosphere_proof.py` in the design-proof folder sketches it. Tests make their own relief.
+The design-proof folder's `whole_atmosphere_proof.py` and `ground_revision_proof.py` sketch it. Tests make their own relief.
 
 ## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn
 
@@ -98,8 +99,7 @@ the same cue of M14.5 or M14.6, record them in the log and end `BLOCKED`.
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
-Take M15.3's record before choosing between the front-distance rule and the eleventh risk's fallback. If the
-handover shows in M15.4, the eighth risk gives the fixes in order.
+If the handover shows in M15.4, the eighth risk gives the fixes in order.
 
 ## M16 Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome
 

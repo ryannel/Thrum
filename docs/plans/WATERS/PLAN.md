@@ -1,7 +1,6 @@
 # WATERS plan
 
-One water system for every body of water, built here on the sea, the shore and lakes. [Design](DESIGN.md) ·
-[done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
+[Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
 Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 [Exact baselines](../ARCHITECTURE.md#exact-baselines). Milestones are built in the order below, not in number order.
@@ -11,7 +10,8 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: "thinking about water as a whole ... built cohesively" (the owner, 14 November) is met by one design for all water, built by four modules: `SEA` (the wind's waves), this module (the shared system on the sea, the shore and lakes), then `RIVERS` and `PUDDLES`.
 - Assumption: a river's flow is worked out once and stored. Floods, dam breaks and levels that travel downstream are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
 - Assumption: "breaking waves" (the owner, 14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
-- Assumption: as part of surf an island shelters its lee from the swell, so a lee beach laps with short waves only.
+- Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
+- Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
 - Assumption: the view from under water has no drops on the lens, particles or bubbles, and its picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
 - Assumption: only M14 and the close wait for `SCENE-VIEWS`: surf's model follows M1, surf follows foam, the view from under water follows the channel, then its light.
@@ -29,7 +29,7 @@ This creates `thrum-water-model`, registered in `.config/architecture.toml`, on 
 
 ## M12 On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee
 
-Surf is a capability: without it M1's answers and tests stay as they are. Parts N and O of `docs/evidence/WATERS/design-proof/surf_view_proof.py` sketch the solve, the blends, the exposure, the break point and a section that meets M12.5.
+Surf is a capability: without it M1's answers and tests stay as they are. `surf_view_proof.py` and `surf_revision_proof.py` in `docs/evidence/WATERS/design-proof/` sketch the solve, a lake's source, the highest-surface scan and a section that meets M12.5.
 
 ## M2 An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh
 
