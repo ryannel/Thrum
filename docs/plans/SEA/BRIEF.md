@@ -1,5 +1,9 @@
 # Sea module brief (E1.water)
 
+**14 November 2026: this brief is history.** Water is now planned as one system in
+[`WATERS`](../WATERS/DESIGN.md). `SEA` keeps the wave field (M1 and M2), and the cues, ranges and scope below are
+carried, widened to every body of water, by `WATERS`.
+
 10 November 2026. Brief for the `SEA` module in [the module list](../ARCHITECTURE.md). A `plan-module` run turns it
 into this folder's `DESIGN.md`, `PLAN.md` and done-when file. It finishes the Broadsides Rust sea in Thrum under
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) and [the water decision](../../design/decisions/E1-GPU-WATER.md).

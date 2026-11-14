@@ -53,7 +53,7 @@ the Broadsides procedural notes at `b4d8250e6` (`THRUM-PORT`, `RUNTIME-DESIGN`, 
 `bw_core/src/medium/scatter.rs`, `bw_render_clouds/src/phase.rs`, `cloud_lighting.ron` and the list of its cloud
 shaders); the baked path at `79637f789` (the library's README, licence record and `B3-HANDOFF`, the growth proof
 and its motion review, the first sections of `PIPELINE-DESIGN`); and in this repository the designs of
-`EFFECT-GRAPH`, `ATMOSPHERE` (environment products), `CONTENT-LOOP` (leases) and `SEA`, with
+`EFFECT-GRAPH`, `ATMOSPHERE` (environment products), `CONTENT-LOOP` (leases) and `WATERS`, with
 `atmosphere/cloud.rs`, `cloud.wgsl` and the diagnostic provider in `examples/v1-game`.
 
 ## Purpose and scope
@@ -66,12 +66,12 @@ A reusable engine sky. Thrum's first outlet is teaching demos on the owner's web
 | A teaching demo, often in Chrome: a sunset, how weather changes a landscape's light, later how a cloud forms | A sky that is right as well as good-looking, composed for the shot, under a visitor's sliders, with only the parts the demo shows | Mechanisms with an oracle; light from the droplets' own optics; a cloud the demo can place; every part beyond the weather optional, at no cost when left out |
 | The showcase on this Mac | Skies at the bar of shipped games, smooth at the display's refresh | The work a ray does bounded by design; drift shown at the display's time |
 | A game | Weather it can read with no graphics device, the same on every device, and shade on a world that may show no sky at all | One deterministic field with a CPU query; one weather profile on every recipe; shade as a capability by itself |
-| `SEA` and `ATMOSPHERE` | Sunlight dimmed once, and clouds in ambient light and reflections | No private sky, exposure or reconstruction; one optical depth |
+| `WATERS` and `ATMOSPHERE` | Sunlight dimmed once, and clouds in ambient light and reflections | No private sky, exposure or reconstruction; one optical depth |
 
 A game adds the cloud contribution to a scene with the [capabilities](#capabilities-shadow-only-and-headless) it
 wants, keeps a weather state in its world, and gets clouds, their shade on everything the Sun lights, and their
 light in the world's ambient and reflections. Consumers built now are the V1 valley and the sea scene (both behind
-a selection) and `SEA`.
+a selection) and `WATERS`.
 
 **Commissioned:** cues K1 to K7 on `mac-metal` and `chrome-webgpu`, lit only by `ATMOSPHERE`'s products.
 
@@ -194,7 +194,7 @@ against the users and cues above. "Keep" means it would be chosen again with Bro
 | 2D fields with a vertical profile and noise, not a voxel sky | **Keep** | Every commissioned camera is below the cloud base, which is where the method shipped. Nubis³ measured a dense voxel sky at over 30 ms and built voxels for flying through cloud. A shape gives a true volume where one is wanted |
 | Light from one summed Sun-path product and a few local samples | **Keep** | Already a departure from Broadsides, whose cone taps and ambient rays were 86% of its work. One product also gives ground shade and long-distance shadow |
 | The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 46 times too dim inside the aureole, and two to three times too dim looking away from the Sun (part E). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
-| Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time, as `SEA` does its waves. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
+| Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time, as `WATERS` does its waves. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
 | A placed volume stands for one cell of the field | **Keep** | It is why the query, the picture and the shade agree on a shape's outline at any distance, and why a shape forms, drifts and thins like any cloud. It does not rest on the library existing |
 | Shapes are placed only by the field's hash | **Change** | A demo composes its sky: a tower beside the Sun at sunset. A profile places shapes by the hash or by the game's own list of [directed shapes](#placed-volumes), which are cells whose place, shape and life the game sets |
 | Shadow-only as the one reduced profile | **Change** | Shade, the visible sky, the world's light and shapes are each a capability, and a scene declares only those it uses. A sunset demo needs no library; a top-down game needs only shade |
@@ -629,7 +629,7 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
 | The weather field, its state and step, the density function, the f64 references | `thrum-cloud-model` (this module), no GPU dependency |
 | The weather map, noise, the Sun's path, the layer and its history, the overlay, placed-volume sampling | `thrum-clouds` (this module), an effect on `EFFECT-GRAPH`'s seam |
 | The committed weather state, with any directed shapes | The game's world; it travels in the tick page |
-| Presets, the type table, looks, the library and its placement data, controls | The game (`examples/v1-game` behind its cloud selection; `examples/sea` behind its own); never in engine crates or their tests |
+| Presets, the type table, looks, the library and its placement data, controls | The game (`examples/v1-game` behind its cloud selection; `examples/water` behind its own); never in engine crates or their tests |
 | Sky, Sun, aerial, reflection and diffuse products; applying the cloud factor, the overlay and the haze scale | `ATMOSPHERE` |
 | Stages, state commit, cadence, the knob list | `EFFECT-GRAPH` |
 | Motion and reactive targets, history acceptance, reconstruction, the governor | `APPLE-PRESENTATION` |
@@ -670,7 +670,7 @@ from a scene with no cloud provider: the same shader text, passes, storage and b
 3. **A sky overlay in the reflection and diffuse products** (`ATMOSPHERE`, M8). If the incident-light meter has a
    Sun term without the cloud factor, it gains it at its metering point.
 4. **A haze scale on solar in-scatter** (`ATMOSPHERE`, M8).
-5. **A cloud selection in two games** (`SHOWCASE`'s `examples/v1-game` from M2; `SEA`'s `examples/sea` in M11),
+5. **A cloud selection in two games** (`SHOWCASE`'s `examples/v1-game` from M2; `WATERS`'s `examples/water` in M11),
    off by default, leaving each game unchanged when off.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace

@@ -1,5 +1,9 @@
 # Water — commission and wider-provider design
 
+**14 November 2026: retained as research.** Thrum's water is now designed as one system in
+[WATERS' design](../../plans/WATERS/DESIGN.md), which judged this document as evidence and is the authority for
+how water works. Nothing below is commissioned.
+
 1 November 2026. **D2 alignment plus reviewed bounded-provider design; full-family B/C remains open.**
 This refines `E1.water` within [Environment](ENVIRONMENT.md), under [C4](../CONTRACTS.md).
 The [initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river) remain selected for their

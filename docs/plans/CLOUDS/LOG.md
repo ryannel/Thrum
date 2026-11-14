@@ -110,3 +110,6 @@
 - 2026-11-14 [The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md)'s cloud half now summarises this
   design in place of the 6 November profile. The module list's row, its licence line and its consolidation
   paragraph were brought into step. No seam ruling, contract, exact baseline or other module's item changed.
+- 2026-11-14 Water was re-planned as one system: the sea's surface, optics and example now belong to `WATERS`, and
+  `SEA` keeps only the wave field. M11 waits on `WATERS:M8` in place of `SEA:M8`, and its example is
+  `examples/water` (package `water-scene`, `scripts/check_water_browser.mjs`). Nothing else of this module changed.

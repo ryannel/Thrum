@@ -15,8 +15,10 @@ Broadsides whatever serves them. What this record says of how Broadsides did som
 designs and never a constraint on them. It still fixes what both modules owe Thrum's contracts and the
 [hardware-native decision](HARDWARE-NATIVE-ENGINE.md), below.
 
-- **The sea** was judged this way on 14 November. Its methods are [SEA's design](../../plans/SEA/DESIGN.md), and
-  the section below summarises them.
+- **The sea** was judged this way on 14 November, and later that day water was designed as one system for every
+  body of water. Its methods are [WATERS' design](../../plans/WATERS/DESIGN.md), with the wave field in
+  [SEA's](../../plans/SEA/DESIGN.md). The section below summarises the sea as it stood that morning; where it
+  differs from `WATERS`' design, that design holds.
 - **The clouds** were judged this way on 14 November. Their methods are
   [CLOUDS' design](../../plans/CLOUDS/DESIGN.md), and the section below summarises them.
 
@@ -30,8 +32,9 @@ and does not replace it or [WATER.md](../modules/WATER.md)'s inland designs.
 
 The [water decision](E1-GPU-WATER.md) owns where water runs, body forces, replay and multiplayer sharing. In short:
 all water simulation runs on the GPU, the network carries causes rather than water state, and water needs no exact
-replay. [SEA's design](../../plans/SEA/DESIGN.md) owns the methods, with
-[the verdict on each choice](../../plans/SEA/DESIGN.md#judged-from-first-principles) this record used to make:
+replay. [WATERS' design](../../plans/WATERS/DESIGN.md) owns the methods, and [SEA's](../../plans/SEA/DESIGN.md) the wave
+field's, with [the verdict on each choice](../../plans/WATERS/DESIGN.md#judged-from-first-principles) this record
+used to make:
 
 * **Authority.** The GPU sea is the authority: analytic long waves (at most 192 components, wavelength at least
   20 m) plus FFT short-wave cascades with LEAN slope moments. Both are functions of time, **evaluated every
@@ -52,8 +55,9 @@ replay. [SEA's design](../../plans/SEA/DESIGN.md) owns the methods, with
   resets on rebuild or profile change.
 * **Capabilities.** The query, the wake, whitewater and body optics are each left out by a scene at no cost. The
   open sea alone is a complete sea.
-* **Inland water.** Rivers, lakes and pools stay with WATER-DYNAMICS' selected shallow-water and
-  generalised-heightfield methods, and are not part of `SEA`.
+* **Inland water.** Lakes, ponds and shores are `WATERS`'; rivers, waterfalls and puddles are `RIVERS`' and
+  `PUDDLES`', on the same system ([module list](../../plans/ARCHITECTURE.md#water-as-one-system)). A river's flow is
+  prepared once and not simulated live, which sets WATER-DYNAMICS' generalised-heightfield selection aside.
 * **Optics.** Optics follow C08: water supplies ordered medium segments `(T,S)` and a reflection provider. The sea
   reflects and refracts the bodies a scene registers, from a gather of their own screen rectangles, with the
   environment product everywhere else and no whole-scene copy on any recipe. Ray query on desktop high is a later
@@ -94,7 +98,7 @@ None of the game-owned content appears in engine crates or tests.
 
   The WebGPU defaults (256-point f32 FFT, 16 KiB workgroup memory, 16 sampled textures) become the portable recipe, not the design.
 * **Recipes.**
-  * **Apple tile:** f16 arithmetic and tile-friendly passes. The sea takes no full scene copy on any recipe ([SEA](../../plans/SEA/DESIGN.md#optics)).
+  * **Apple tile:** f16 arithmetic and tile-friendly passes. Water copies the scene only where it is thin enough to see through or still enough to mirror, and an open sea copies nothing ([WATERS](../../plans/WATERS/DESIGN.md#optics)).
   * **Desktop high:** async-compute overlap for cascades, wake, foam, weather and shadow work, plus the later ray-query provider.
   * **Every recipe:** compute replaces fragment marching where measured faster.
 * **Governor knobs.** Every cadence and step budget is a runtime setting that the quality governor owns: weather update rate, march refresh fraction, Sun-path and sky-overlay cadence, cascade and foam rate, and resolution. Each knob declares its history invalidation, and none changes physical profiles.
@@ -143,7 +147,9 @@ The owner's words at the top of this record. `SEA` was judged on them the same d
 ([log](../../plans/SEA/LOG.md)): the layering, the query, the wake, the foam stocks and the optics are kept for
 reasons its design gives, and two things changed. The ambient sea is evaluated at the display's time each frame in
 place of tick copies blended in the surface pass, and every part beyond the open sea is a capability a scene can
-leave out.
+leave out. Later the same day the owner asked that the sea work think about water as a whole, and `SEA` was
+narrowed to the wave field with the rest designed for every body of water in `WATERS`
+([log](../../plans/WATERS/LOG.md)).
 
 `CLOUDS` was judged on them the same day ([log](../../plans/CLOUDS/LOG.md)). Kept, for reasons its design gives:
 the deterministic weather field with its CPU query, the air frame, 2D fields with a vertical profile, one Sun-path
