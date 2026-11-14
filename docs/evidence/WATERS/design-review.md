@@ -1,104 +1,78 @@
 # WATERS design review
 
-14 November 2026. Reviewed checkout `f3c0021c8b361702c2d29048e8bfd8b59f17b477`, against the previous review at `b2d0778af38e5f685e9291d68486aab5cbc98e0c`.
+14 November 2026. Reviewed checkout `def29817814c836c63ebbd616669c1a3c77c3107` against the previous review at `f3c0021c8b361702c2d29048e8bfd8b59f17b477`.
 
-**Design Changes Requested: two Must Fix findings.** The module split and shared water system address the human's request. The revision resolves disconnected-water isolation, the finite-depth update and its bounded depth ladder, and the pinned beach waterline. Two parts of the previous findings remain: joins do not include the new body-specific swash depth, and the commissioned shoreward foam motion still has no transport mechanism.
+**Design OK. Both previous Must Fix findings are resolved at design level.** The design answers the human's request for cohesive water through one shared map, surface, optics, foam and query, with explicit ownership for the later river, waterfall and puddle work. There is one Suggestion about the scope of a numerical evidence claim. No Must Fix remains.
 
-This judges the design, not implementation, visual quality or device performance. I read and judged it independently, without delegates. No GPU, screenshots, motion or panel cadence were inspected.
+This is an independent design review, performed without delegates. It does not qualify implementation, rendered appearance or device performance. No GPU output, screenshots, motion or panel cadence were inspected.
 
 ## Previous Must Fix findings
 
-| Previous finding | Result against this revision |
-|---|---|
-| **Body precedence does not produce a continuous join** | **Partly resolved; still Must Fix.** The map now mixes levels, currents, gains and water types, and the ends follow their neighbours' stages. That resolves the old raw-field and stage examples. The new per-body swash depth is outside the mix, so the assembled, depth-limited surface can still step at a shallow mouth. Finding 1 below retains this name. |
-| **Zeroing dry cells does not stop this FFT operator transmitting across land** | **Resolved for disconnected wet regions.** Each region is transformed with other regions at rest and retains only its own output. Part J reproduces zero cross-region transmission. Leakage around thin obstacles inside one connected region is now an explicitly declared approximation. M6.4 reads the water beyond the bar and exercises refusal at the solve cap. |
-| **The beach mechanism pins the waterline that the items require to run up and recede** | **Partly resolved; still Must Fix for its foam-transport portion.** The shore margin and swash depth move the waterline, shared wet-now support reaches the query and births, and the film supplies the missing drawing route for exposed lace. Part L demonstrates the moving line. However, the previous finding also identified the missing wave-driven foam wash; the revision expressly omits shoreward transport while M7.9 retains it. Finding 2 below retains the previous name for tracking; the waterline itself is no longer pinned. |
-| **The bounded finite-depth solver is not the solver its proof measures** | **Resolved at design level.** The height update now uses `D = k tanh(kd)` as well as the finite-depth frequency. The two explicit ladders end in a deep operator and define interpolation below their first depth. Part H advances height and potential fields over varying beds, checks long packets in a mixed-depth window and compares one- and eight-tick steps. M6.2 follows those cases; M6.12 includes region/solve counts and CPU labelling cost. |
+### Body precedence does not produce a continuous join — resolved
 
-## Must Fix findings
+The [map rule](../../plans/WATERS/DESIGN.md#the-water-map), lines 311–331, now makes the complete surface calculation consume the mixed row. Swash depth and wave support follow the row's gains at the point; neither is retained separately per body. The bed and wave field are shared. At an endpoint whose weight is one, the limiter consequently receives the same inputs on both sides. Shore-margin points inherit the adjoining water's row too. M1.4 no longer forbids the swell admitted by the mouth's join.
 
-### 1. Body precedence does not produce a continuous join
+Part K now includes the limited surface at shallow ends and the prior review's no-wind, 0.5 m swell case. My independent calculation reproduces its old heights, 0.263033009 m and 0.053033009 m, and the 0.21 m step. The revised row rule makes the step zero. A further 1,000 endpoint cases with four layers and varied phases, depths and levels also agree. This checks the specification's endpoint arithmetic; it does not establish the rasterised join. [Independent source](design-review/check_third_revision.py) and [results](design-review/third-independent-check.txt).
 
-**Must Fix — verified specification/composition gap, with an independent calculation.** Repeat of previous finding 1. Affects W6, M1.5, M1.12, M9.1, M9.3 and M10.4.
+M1.12 now requires the surface **after** the depth limit at both deep and shallow ends. M9.1 requires a low-tide mouth where the test confirms that the limit actually binds, and M9.3 inspects that mouth in motion. These reject the former shortcut of testing only a deep end or an unbounded raw wave.
 
-The revised [join rule](../../plans/WATERS/DESIGN.md#the-water-map), lines 309–318, mixes level, current, four gains and water type. At weight 1 it claims that matching this row also matches the displaced surface. But the revised [limiter](../../plans/WATERS/DESIGN.md#waves-on-a-body-gains), lines 377–381, depends on another input: swash depth, explicitly **one number per body each tick**, derived from that body's waves before limiting. A chart's own waves exclude swell; a mouth admits it through the spatial join. No rule makes the chart's swash depth or wave support follow the joined body's at the end. One constant per chart cannot generally represent the differing conditions at both its ends and through its reach.
+Backwater now includes the regular-wave reach. The design also declares the remaining approximation beside banks where simultaneous crests exceed that reach, and beside the source's shore margin (lines 355–362). Endpoint equality is established; these lateral shore contacts are not a universal continuity proof. The retained visual join criteria remain responsible for their appearance in the example. I found no demonstrated new blocker in that declared approximation.
 
-Take no wind, a regular sea swell of amplitude 0.5 m, and a shallow chart mouth with 0.25 m depth on both sides. Choose a margin height of at least 1 m. At the end the join makes both raw swell gains 1 and both mean levels equal. The sea's significant height is `2√2 × 0.5`, giving swash depth `0.989949494 m`; the chart's own waves have zero height, giving zero swash depth. Applying the specified limiter gives:
+### The beach mechanism pins the waterline that the items require to run up and recede — resolved
 
-| Side | Limited crest above the common mean level |
-|---|---:|
-| Sea | 0.263033009 m |
-| Chart | 0.053033009 m |
-| **Step** | **0.210000000 m** |
+This is the previous review's tracking name. Its remaining defect was foam transport; the moving waterline and residual film had already been repaired.
 
-The same calculation gives no step at 4 m depth, so a deep-mouth example can conceal it. This is an admissible local shallow-mouth case, not a GPU measurement. [Source](design-review/check_revised_join.py) and [output](design-review/revised-join.txt) are retained.
+The new [swash transport](../../plans/WATERS/DESIGN.md#whitewater), lines 728–765, adds drift from the rising sheet's thickness rate and gradient, bounded by `sqrt(g × swash depth)`, only on wet support and weighted through the swash band. Transport retains material arriving at the edge; exposed material remains and ages. The design explicitly limits this to uprush, with no backwash transport and no resolved carriage on the coarse far level. There is now a mechanism that moves existing material, rather than relying on births at successive positions.
 
-[Part K](design-proof/water_proof.py), lines 425–460, compares only `level + gain × crest`. It never applies the swash-dependent depth limiter, so its agreeing end heights do not establish the revised surface's continuity. Computing swash depth from the locally mixed row could change this result, but that is a further design rule, inconsistent with leaving it as one constant per body; it is not specified or exercised by K.
+I independently evaluated the single-wave height with analytic derivatives and transported a 10%-cover patch on 0.25 m cells, with no wind, current, births, ageing or spreading. After three waves on a 1:10 beach, its centre was 2.550 m with one-tick steps and 2.591 m with eight-tick steps, against a 2.622 m run-up line. Both retained all material and stayed below full cover. With the old drift the centre stayed at −0.500 m. The source and output are linked above.
 
-**What resolves it:** make the complete physical surface calculation, including its depth limit and wave support, agree across both chart ends. Qualify the assembled calculation at a shallow end under swell and stage changes, rather than just the unbounded raw field. Reconcile M1.4's unchanged absolute “Swell enters no basin and no chart” with the join exception too. Keep the one map/query authority; the already-correct raw-row mix need not be discarded.
+M7.16 supplies the independent parcel comparison and stationary controls; M7.2 carries the comparison onto Metal. Both can be judged within M7 using the existing surface model. M7.9 still requires the carried foam and exposed lace to look right in motion. Risk 17 explicitly covers excessive gathering into a hard line. The numerical result makes the mechanism credible; it is not a visual pass.
 
-### 2. Wave-driven shoreward foam wash still has no transport
+The earlier disconnected-region and finite-depth findings remain resolved as recorded in the previous review. Their mechanisms and acceptance items were not weakened by this revision.
 
-**Must Fix — verified specification/item mismatch.** The tracking name remains **“The beach mechanism pins the waterline that the items require to run up and recede”**, previous finding 3. Only its foam-transport portion remains. Affects S4 and M7.9.
+## Suggestion
 
-M7.9 still requires foam to **ride the sheet of water up the sand**, then remain as lace when it draws back. The revised [transport rule](../../plans/WATERS/DESIGN.md#whitewater), lines 693–699, carries stocks with the map's current and wind drift, spreads them by diffusion, and explicitly says: “Nothing carries foam shoreward”. Instead, new foam is born at successive places covered by the advancing sheet. That supplies foam coverage at the top of the swash and leaves a persistent residue; it does not carry the existing material there.
+### Scope the foam conservation claim to unsaturated cover
 
-An ordinary discriminating case is a swell approaching the beach with no wind and no mean current. The revised swash moves the waterline several metres, but the prescribed foam drift is zero. A pre-existing patch may spread and age; it has no wave-driven shoreward displacement. Newly born cover farther up the beach cannot establish that the patch rode the sheet. Wind drift, when present, is not coupled to the incoming and retreating waves either.
+**Suggestion — verified evidence-description mismatch.** [DESIGN.md](../../plans/WATERS/DESIGN.md#whitewater), lines 754–756, says the grid patch keeps all its foam. However, [part M](design-proof/water_proof.py), lines 658–677, starts with full cover and never applies the declared saturation sink. Its output reports peaks of 3.00 and 3.47, although cover is bounded by one. The output's final note acknowledges this; the prose summary does not.
 
-The new film fixes the old rendering omission: exposed foam can now be seen. The swash fixes the old pinned shoreline. Those are substantive repairs, but neither supplies this remaining motion. This finding comes from the declared operator and the retained inspection requirement; I have not judged whether the substitute could look convincing in a rendered sequence.
+In my independent run, applying the declared cap to that full-cover initial patch retained 37.75% with one-tick steps and 29.58% with eight-tick steps. A thin 10%-cover patch retained 100% in both cases and still reached the run-up line. These figures exclude ageing and spreading, as part M does.
 
-**What resolves it:** reconcile the commissioned foam wash with a mechanism that carries the material with the swash, including how it is left on exposed ground. If the intended scope is instead foam born locally beneath an advancing sheet with no wave-driven transport, make that change explicit in the assumptions and acceptance wording so a builder and reviewer are not asked for conflicting outcomes. This does not require overturning surf or a general live flow solver.
+Describe the retained result as uncapped transport conservation, or use an unsaturated patch for that claim. M7.16 already specifies a thin patch, and the design already names saturation loss, so this does not prevent building or make the acceptance item impossible. The later implementation should account for the named sink when judging a converging dense patch.
 
 ## Changed-item review
 
-I read all 118 current items, their proofs and milestone quality bars. The following accounts for each of the 21 planner-item changes named in the task. These are judgments of whether the items can fairly accept the proposed work, not milestone verdicts.
+I read all 119 current items, their proof fields and milestone quality bars, and compared the planner fields with `f3c0021c8b36`. These are design judgments, not milestone verdicts.
 
-| Item | Assessment against the previous findings |
+| Changed item | Assessment |
 |---|---|
-| M1.2 | Stage-range and bank/end admission now make the permitted topology explicit. Basin merging is deliberately left to the named PUDDLES seam discussion. |
-| M1.3 | Bounded stages, counted clamping and reversible fills are judgeable on the CPU in M1. |
-| M1.5 | The swash remainder fixes the isolated shoreline limit; its per-body input still needs composition with joins, finding 1. |
-| M1.6 | Wet-now answers connect the moving surface to physical support and are judgeable without a GPU. |
-| M1.12 | The raw-row and stage comparisons reject old precedence. The full surface claim needs the missing limiter composition, finding 1. |
-| M1.13 | The independent closed form rejects the pinned shoreline and is available in M1. |
-| M4.2 | Rest-place ownership states how overlapping meshes select one displaced sheet; the waves-off classification is judgeable in M4. |
-| M4.5 | Run-up and recession now have a mechanism. The gale/trade-wind inspection remains responsible for whether it reads as a beach. |
-| M4.10 | Submitted depth compared with the CPU moving line adds a meaningful guard against a merely animated edge. See suggestion 1 concerning the later film. |
-| M5.1 | Query wet/dry classification now includes swash at the use tick; M1's model and M4's surface precede it. |
-| M6.2 | Tests the selected finite-depth update and bounded ladder, including varying fields and long waves. Resolves the old proof mismatch. |
-| M6.4 | Tests state beyond dry land and solve-cap refusal, which rejects the old masked global solve. |
-| M6.10 | The lake/pond/sea inspection makes disconnected-water isolation visible, in addition to the numeric check. |
-| M6.12 | Counts the newly multiplied solves and region-labelling CPU work; timing remains a baseline, as the brief requires. |
-| M7.5 | Births now use wet-now support and lost power; the lake comparison is proportional rather than an unjustified absolute zero. |
-| M7.9 | Lace and sheen now have a drawing route, but riding the swash still contradicts the selected transport, finding 2. |
-| M7.15 | Film is explicitly residual, physically dry and without births; query/birth inspection can reject a cosmetic layer masquerading as water. |
-| M9.1 | Swell and endpoint stages strengthen the join check. A shared CPU/GPU limiter defect must not be accepted merely because the two agree, finding 1. |
-| M9.3 | The temporal join inspection is appropriate, but the specified assembly still permits a shallow-end step. |
-| M9.4 | Crossing to the sea without a level/current step is judgeable from the existing query and example integration. |
-| M10.4 | Both controls now exercise connected endpoints, but rely on resolution of finding 1. |
+| M1.4 | The body's own fetch-limited energy is distinguished from the joined row. The no-wind and added-swell checks are judgeable on the CPU and no longer contradict the mouth's swell. |
+| M1.5 | Swash depth is local to the row, including inside a join; the limiter no longer retains the missing body-specific input. |
+| M1.12 | Tests the assembled limited surface, swash depth and support at shallow and deep ends through stage changes. Its reviewer question explicitly rejects the previous per-body shortcut. |
+| M4.10 | The sheet alone writes depth. This resolves the previous suggestion about identifying physical water after M7 adds a film; M4 itself needs only the sheet. |
+| M7.2 | Adds GPU swash transport against the CPU reference while preserving wind drift and window-shift checks. M7 builds both sides of this comparison. |
+| M7.15 | Adds a direct depth read under the residual film, alongside the dry query and zero births. It cannot pass solely on the film's appearance. |
+| M7.16, new | Requires actual movement of pre-existing foam with no wind/current, an independently computed path, conservation for a thin patch, and stationary controls. The independent calculation above demonstrates a viable case. |
+| M9.1 | Adds a mouth whose limiter demonstrably binds at low tide. The prior M1 model, surface, query and optics exist by this milestone. |
+| M9.3 | Adds swell and held low tide to the temporal join inspection, covering the regime that concealed the former defect. |
 
-The other items retain a sensible proof order: CPU authority, first frame and cost, Chrome, inland water, queries, interactions, foam, optics, a stand-in channel, temporal controls, and Apple qualification. The governor and MetalFX gate remains explicit. The revision does not require a new physical device or move numeric performance into acceptance gates.
+Both previous Suggestions were taken: sheet and film depth are explicitly separated in the design and items, and the thin-obstacle leakage figures are now scoped to their 1D pulse, geometry and ten-second observation (design lines 628–635), rather than asserted as a universal bound.
 
-## Suggestions
+The plan still reaches a first Mac frame in M2 and Chrome in M3, then adds inland water, queries, interaction waves, foam, optics and the stand-in channel before final temporal and Apple qualification. Numeric performance remains a measured baseline with investigation tripwires. No physical iPhone or new external approval is introduced by these changes.
 
-1. **Distinguish sheet depth from residual-film depth in M4.10 — verified wording risk.** The moving-waterline test identifies water by written depth in front of terrain. M7 later adds a depth-biased film on physically dry terrain. State how that test distinguishes the sheet from the film so the new residual cannot be counted as physical water or make the earlier test fail. This is a proof clarification; C07 support and M7.15 already state the intended distinction.
-2. **Keep the thin-obstacle leakage figures scoped to their measured cases — verified evidence limit.** Lines 596–600 describe a spit, pier or rock as leaking “at most a few percent”. Part J establishes values for specified 1D barriers, depths, one pulse and a ten-second run. It supports that approximation as a design example, not a universal bound for every obstacle, source and duration. Preserve those conditions when describing the figures; no additional broad experiment campaign is required by this review.
+## Request coverage and review scope
 
-Both previous suggestions were taken: the module list explicitly gives PUDDLES the merge/separation question, the plan now has RIVERS planned before M9, and M7.5/M7.9 allow the lake's physically smaller foam contribution.
+I read the approved [project brief](../../plans/BRIEF.md) and all three verbatim tasks in [RECORD.json](../../plans/WATERS/RECORD.json), oldest first. The two re-plan tasks ask for repairs; they do not supersede the human's request or the project brief.
 
-## Request coverage and scope
+The human asks that sea work consider puddles, rivers, waterfalls, streams, lakes and more as a cohesive system. WATERS supplies the common system and proves its seams on still and running water. SEA supplies the wave field; RIVERS owns the prepared flow solver and falls; PUDDLES owns rain-filled hollows and wet ground, including the explicit merge/separation seam question. This remains a reasonable division of the requested work. It does not claim those later experiences already exist. Prepared flow, no overturning surf, no underwater camera, no stacked water and screen-space reflection limits remain declared assumptions. Water remains outside the V1 exit.
 
-I read the approved [project brief](../../plans/BRIEF.md) and both verbatim tasks under `briefs` in [RECORD.json](../../plans/WATERS/RECORD.json), oldest first. The second task asks the planner to resolve the previous review; it does not replace the human's request or the approved project brief.
-
-The human asks for cohesive water covering puddles, rivers, waterfalls, streams, lakes and more. The design assigns one shared map, wave composition, query, foam and optics to WATERS; SEA supplies the wave field; RIVERS and PUDDLES have explicit future ownership and seam requirements. This division remains a reasonable answer. Prepared flow, no underwater camera, no stacked surfaces, no overturning surf and screen-space reflection limits remain explicit assumptions. I found no new reason to reject that scope or require all later modules to be built inside WATERS. Water stays outside the V1 exit.
-
-The review covered the full revised design and plan, the prior review, the changed proof source and retained results, relevant C02/C04/C06–C09/C12 clauses, the module-list seams and later-module briefs, and the SEA/EFFECT-GRAPH interface descriptions relevant to this revision. I did not independently requalify predecessor implementations, Broadsides, the inherited A–G reproductions or external research claims. The numerical evidence below proves only the stated specification cases.
+The review covered the current design and plan, every changed design line and item, the previous review, revised proof sections K and M and retained results, the module-list ownership and seam rulings, and relevant C02/C04/C06–C09/C12 requirements. I did not requalify predecessor implementations, Broadsides or external research claims, or independently re-derive the unchanged H–J and inherited SEA proofs. No glossary exists in the plans folder.
 
 ## Validation
 
-- `python3 -B docs/evidence/WATERS/design-proof/water_proof.py` completed successfully. Its [rerun output](design-review/revised-proof-rerun.txt) is byte-for-byte identical to the retained `water-proof.txt`; H–L were read before rerunning them.
-- `python3 -B docs/evidence/WATERS/design-review/check_revised_join.py` passed its assertion and produced the retained [shallow-mouth calculation](design-review/revised-join.txt).
-- `./dev check-docs` passed: 838 Markdown files, 5,959 local links, 30 module records, crate policy and current design hashes. Existing source-size notes reported no errors. Output is in [check-docs.txt](design-review/check-docs.txt). `git diff --check` also passed.
-- Only this review and files inside its `design-review/` evidence folder were changed. Plans, DONE.json, records and implementation were left untouched; no commit was made.
+- `python3 -B docs/evidence/WATERS/design-proof/water_proof.py` completed successfully. Its [rerun output](design-review/third-proof-rerun.txt) is byte-for-byte identical to the retained output.
+- `python3 -B docs/evidence/WATERS/design-review/check_third_revision.py` passed its assertions. This independent specification check imports neither engine code nor the planner's proof.
+- `./dev check-docs` passed: 839 Markdown files, 5,978 local links, 30 module records, crate policy and current design hashes. Existing source-size notes reported no errors. [Check output](design-review/third-check-docs.txt). `git diff --check` also passed.
+- Only this review and new files inside `docs/evidence/WATERS/design-review/` were changed. Existing captures, plans, DONE.json, records and implementation were preserved. No commit was made.
 
-DESIGN CHANGES: 2 must_fix findings
+DESIGN OK

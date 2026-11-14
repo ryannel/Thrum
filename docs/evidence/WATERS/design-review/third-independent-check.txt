@@ -1,0 +1,12 @@
+Previous shallow mouth: sea=0.263033009, old chart=0.053033009, step=0.210000000 m; revised step=0.000000000 m
+1000 endpoint rows, four layers, varied phase/depth/stage: worst height/swash difference=0 m
+Foam: one regular wave, 1:10 beach, no wind/current/births/ageing/spreading.
+cover=0.1, ticks=1, drift=False, capped=True: centre=-0.500000 m, run-up error=3.121610 m, retained=100.000%, peak before cap=0.100000
+cover=0.1, ticks=1, drift=True, capped=True: centre=2.550342 m, run-up error=0.071268 m, retained=100.000%, peak before cap=0.299757
+cover=1, ticks=1, drift=True, capped=False: centre=2.550342 m, run-up error=0.071268 m, retained=100.000%, peak before cap=2.997565
+cover=1, ticks=1, drift=True, capped=True: centre=2.523718 m, run-up error=0.097892 m, retained=37.753%, peak before cap=1.150731
+cover=0.1, ticks=8, drift=False, capped=True: centre=-0.500000 m, run-up error=3.121610 m, retained=100.000%, peak before cap=0.100000
+cover=0.1, ticks=8, drift=True, capped=True: centre=2.591047 m, run-up error=0.030564 m, retained=100.000%, peak before cap=0.347281
+cover=1, ticks=8, drift=True, capped=False: centre=2.591047 m, run-up error=0.030564 m, retained=100.000%, peak before cap=3.472812
+cover=1, ticks=8, drift=True, capped=True: centre=2.585071 m, run-up error=0.036539 m, retained=29.584%, peak before cap=1.929209
+Assertions passed. Full-cover loss is the declared saturation sink; thin-patch transport conserves.
