@@ -2,7 +2,7 @@
 //! never a second implementation of atmospheric transport.
 use super::super::{AtmospherePrepared, EXTENTS};
 use crate::{atmosphere::AtmosphereFrame, synthetic::SyntheticView};
-use std::{path::Path, sync::mpsc, time::Duration};
+use std::{io::Write as _, path::Path, sync::mpsc, time::Duration};
 
 const ROOT: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -23,13 +23,13 @@ impl Fixture {
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
-            .unwrap();
+            .expect("M9 hardware adapter");
         assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        eprintln!("M9 device {:?}", adapter.get_info());
+        writeln!(std::io::stdout(), "M9 device {:?}", adapter.get_info()).expect("report device");
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
-            .unwrap();
+            .expect("M9 Metal device");
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: crate::synthetic::LIGHT_BYTES as u64,
@@ -41,7 +41,7 @@ impl Fixture {
             &queue,
             1,
             AtmosphereFrame::new([1.0, 0.0, 0.0], 1.0, [1.0; 3], 3.0, 1)
-                .unwrap()
+                .expect("valid M9 frame")
                 .with_nightglow(),
             &SyntheticView::default(),
             &directional,
@@ -58,6 +58,10 @@ impl Fixture {
         Self { device, queue, air }
     }
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "production uniforms use f32"
+    )]
     fn volume(&self, height: f64, pitch: f64, fov: f64, sun: [f64; 2]) -> Volume {
         let t = (fov.to_radians() * 0.5).tan();
         let (s, c) = pitch.sin_cos();
@@ -124,7 +128,7 @@ fn read(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture) -> 
     );
     let (send, receive) = mpsc::channel();
     encoder.map_buffer_on_submit(&buffer, wgpu::MapMode::Read, .., move |result| {
-        send.send(result).unwrap()
+        send.send(result).expect("M9 receiver alive");
     });
     let submission = queue.submit([encoder.finish()]);
     device
@@ -132,12 +136,15 @@ fn read(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture) -> 
             submission_index: Some(submission),
             timeout: Some(Duration::from_secs(30)),
         })
-        .unwrap();
-    receive.recv().unwrap().unwrap();
+        .expect("M9 GPU completes");
+    receive
+        .recv()
+        .expect("mapping callback")
+        .expect("M9 mapped");
     buffer
         .slice(..)
         .get_mapped_range()
-        .unwrap()
+        .expect("mapped M9 bytes")
         .as_chunks::<8>()
         .0
         .iter()
@@ -223,7 +230,7 @@ impl Volume {
 fn above_ground_bytes_record() {
     pollster::block_on(async {
         let fixture = Fixture::new().await;
-        std::fs::create_dir_all(ROOT).unwrap();
+        std::fs::create_dir_all(ROOT).expect("M9 fixture directory");
         for h in [3, 245] {
             for pitch in [0, -30] {
                 let v = fixture.volume(
@@ -236,7 +243,7 @@ fn above_ground_bytes_record() {
                     Path::new(ROOT).join(format!("h{h}-p{pitch}.bin")),
                     v.bytes(),
                 )
-                .unwrap();
+                .expect("save pre-change bytes");
             }
         }
     });
@@ -254,8 +261,8 @@ fn above_ground_bytes_preserved() {
                     60.0,
                     [5.0, 20.0],
                 );
-                let before =
-                    std::fs::read(Path::new(ROOT).join(format!("h{h}-p{pitch}.bin"))).unwrap();
+                let before = std::fs::read(Path::new(ROOT).join(format!("h{h}-p{pitch}.bin")))
+                    .expect("retained pre-change bytes");
                 let after = v.bytes();
                 let field_bytes = CELLS * 33 * 8;
                 let mut unchanged = 0;
@@ -303,9 +310,9 @@ fn above_ground_bytes_preserved() {
                         }
                     }
                 }
-                eprintln!(
+                writeln!(std::io::stdout(),
                     "M9.2 h{h} pitch{pitch}: {unchanged} unchanged texels, {descending} continued columns"
-                );
+                ).expect("report preservation");
             }
         }
     });
@@ -317,7 +324,7 @@ fn cases() -> Vec<(f64, f64, f64, bool)> {
         let horizon = -(height * (12_742_000.0 + height)).sqrt().atan2(6_371_000.0);
         for d in [3000.0, 10_000.0, 30_000.0] {
             for elevation in [0.05_f64, 0.2] {
-                cases.push((height, d, horizon + elevation.to_radians(), d == 30_000.0));
+                cases.push((height, d, horizon + elevation.to_radians(), d > 29_999.0));
             }
         }
     }
@@ -330,7 +337,7 @@ fn cases() -> Vec<(f64, f64, f64, bool)> {
             // A point on the ground at the declared camera-to-point distance.
             let sine =
                 -(height * (12_742_000.0 + height) + d * d) / (2.0 * (6_371_000.0 + height) * d);
-            cases.push((height, d, sine.asin(), d == 10_000.0));
+            cases.push((height, d, sine.asin(), (d - 10_000.0).abs() < 1.0));
         }
     }
     cases
@@ -350,7 +357,7 @@ fn near_ground_reads_match_their_own_column() {
                 [2.0, 10.0],
                 [0.5, 0.0],
             ] {
-                let decides = fov == 60.0 && sun[0] >= 2.0;
+                let decides = fov < 61.0 && sun[0] >= 2.0;
                 let mut worst = [[0.0_f64; 4]; 2];
                 let mut stop_worst = 0.0_f64;
                 for (h, d, angle, must_reject_stop) in cases() {
@@ -397,13 +404,13 @@ fn near_ground_reads_match_their_own_column() {
                     }
                     stop_worst = stop_worst.max(stop_case);
                 }
-                eprintln!(
+                writeln!(std::io::stdout(),
                     "M9.1 fov={fov} Sun={sun:?} decides={decides} worst [S,T+night]={worst:?}; stop={stop_worst}"
-                );
+                ).expect("report reads");
             }
         }
         for row in failed.iter().take(32) {
-            eprintln!("FAIL {row}");
+            writeln!(std::io::stdout(), "FAIL {row}").expect("report failure");
         }
         assert!(
             failed.is_empty(),
