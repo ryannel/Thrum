@@ -182,7 +182,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/current-route/README.md#route-execution",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D3.2",
@@ -236,7 +236,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/current-route/README.md#moving-route-timing",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
