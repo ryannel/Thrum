@@ -50,10 +50,16 @@ def main():
     if not output.is_relative_to(ROOT/'tmp') or output.exists():
         raise ValueError('use a new output directory under this repository tmp/')
     output.mkdir(parents=True)
+    pinned = output/('v1-game' if args.target == 'mac-metal' else 'web')
+    if args.target == 'mac-metal':
+        shutil.copy2(ROOT/'target/release/v1-game',pinned)
+    else:
+        shutil.copytree(ROOT/'target/v1-game-web',pinned)
     report = {'commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
               'target':args.target,'mode':'realtime','load_start':os.getloadavg(),'arms':[],
               'comparison':'capture on in both arms; TAAU on/off; native 1920x1080, Chrome route extent',
               'complete':False}
+    report['product_sha256'] = sha(pinned if args.target == 'mac-metal' else pinned/'v1_game_bg.wasm')
     cases = {'pan':'reconstruction-pan','reveal':'running','spawn':'running',
              'stars':'reconstruction-stars','scrub':'reconstruction-scrub'}
     try:
@@ -63,14 +69,14 @@ def main():
                 if args.target == 'mac-metal':
                     preset = 'night-upslope' if case == 'stars' else 'noon'
                     command = [sys.executable,'scripts/capture_mac_m2_ungranted.py','--output',str(directory),
-                               '--binary','target/release/v1-game','--store',str(args.store.resolve()),
+                               '--binary',str(pinned),'--store',str(args.store.resolve()),
                                '--case',native_case,'--params',f'examples/v1-game/params/showcase-{preset}.params.json',
                                '--recipe','portable','--overlay','reconstruction','--reconstruction',mode]
                     session = directory/'session'
                     package = [sys.executable,'scripts/capture_v1_runtime.py','--output',str(session),'--finalize']
                 else:
                     command = ['node','scripts/capture_v1_browser.mjs','--output',str(directory),'--mode','realtime',
-                               '--cook','target/release/thrum-cook','--witness',case,'--reconstruction',mode]
+                               '--cook','target/release/thrum-cook','--web-root',str(pinned),'--witness',case,'--reconstruction',mode]
                     session = directory
                     package = [sys.executable,'scripts/package_v1_browser.py','--output',str(session)]
                 row = {'case':case,'reconstruction':mode,'command':command,'package':package,'load':os.getloadavg()}
