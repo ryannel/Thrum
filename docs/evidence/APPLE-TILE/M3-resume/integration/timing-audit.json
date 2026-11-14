@@ -1,0 +1,108 @@
+{
+  "revision": "8bf0515a40309ea61b058a40145a51c690e644ae",
+  "native": {
+    "portable-route": {
+      "complete": true,
+      "samples": 958,
+      "star_present": 958,
+      "star_absent": 0,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    },
+    "portable-variants": {
+      "complete": true,
+      "samples": 480,
+      "star_present": 240,
+      "star_absent": 240,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    },
+    "portable-render-stall": {
+      "complete": true,
+      "samples": 449,
+      "star_present": 0,
+      "star_absent": 449,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    },
+    "apple-tile-route": {
+      "complete": true,
+      "samples": 963,
+      "star_present": 963,
+      "star_absent": 0,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    },
+    "apple-tile-variants": {
+      "complete": true,
+      "samples": 480,
+      "star_present": 240,
+      "star_absent": 240,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    },
+    "apple-tile-render-stall": {
+      "complete": true,
+      "samples": 449,
+      "star_present": 0,
+      "star_absent": 449,
+      "unavailable": [
+        "contribution upload",
+        "output readback",
+        "timestamp query resolve/readback"
+      ]
+    }
+  },
+  "chrome": {
+    "chrome-day": {
+      "complete": true,
+      "images": 481,
+      "presenter_generations": [
+        1
+      ],
+      "history_epochs": [
+        1,
+        2
+      ]
+    },
+    "chrome-night": {
+      "complete": true,
+      "images": 475,
+      "presenter_generations": [
+        1
+      ],
+      "history_epochs": [
+        1,
+        2
+      ]
+    },
+    "chrome-resize": {
+      "complete": true,
+      "images": 481,
+      "presenter_generations": [
+        1,
+        2,
+        3
+      ],
+      "history_epochs": [
+        1,
+        2
+      ]
+    }
+  }
+}

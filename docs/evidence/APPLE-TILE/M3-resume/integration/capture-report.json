@@ -1,0 +1,1276 @@
+{
+  "revision": "8bf0515a40309ea61b058a40145a51c690e644ae",
+  "binary_sha256": "6866a296645dff4a70f64942565d1810c19b5c8b38f880ad54fdddc7357f22a6",
+  "exact_content_key": "cd206e937b398b54ce891846d019ab228499139d5228bd002ad570a6c25fbe14",
+  "commands": [
+    [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--scene",
+      "day",
+      "--control",
+      "ordinary",
+      "--source",
+      "sdr",
+      "--cook",
+      "target/release/thrum-cook",
+      "--output",
+      "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/chrome-day"
+    ],
+    [
+      "node",
+      "scripts/capture_v1_browser.mjs",
+      "--mode",
+      "realtime",
+      "--scene",
+      "night",
+      "--control",
+      "ordinary",
+      "--source",
+      "sdr",
+      "--cook",
+      "target/release/thrum-cook",
+      "--output",
+      "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/chrome-night"
+    ],
+    [
+      "node",
+      "docs/evidence/APPLE-TILE/M3-review/chrome-resize-observer.mjs",
+      "--mode",
+      "realtime",
+      "--scene",
+      "day",
+      "--control",
+      "resize",
+      "--source",
+      "sdr",
+      "--cook",
+      "target/release/thrum-cook",
+      "--output",
+      "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/chrome-resize"
+    ]
+  ],
+  "native": {
+    "portable-route": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/portable-route",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "route",
+        "route": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/route.json"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 30983471104,
+      "complete": true,
+      "manifest_sha256": "78049890cc190595a082f254e1b0a2d22ea51d57f22d976eb4cce2a7d8863f78",
+      "images": 959,
+      "selected": [
+        {
+          "file": "png/000252.png",
+          "sha256": "c6a04dfa73d5f4c5f30a69e784eb8b3ee8dd31b3ff8f33f314a5bfcd1ec480a9",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 179,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167762785,
+              1094723611,
+              1176573685,
+              0,
+              253,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4787125,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": 178,
+            "readback_copy_gpu_bracket_ns": 1592500.0,
+            "submission_id": 252,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 179,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000769.png",
+          "sha256": "f777983e55c4111bbf989bea577c42dce48281a3018c163846177027a873021f",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 379,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160361520,
+              1093815666,
+              1169213555,
+              0,
+              770,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4369022166,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5618917,
+            "previous_endpoint_tick": 378,
+            "readback_copy_gpu_bracket_ns": 2975292.0,
+            "submission_id": 769,
+            "submit_ns": 4353723083,
+            "surface_generation": 1,
+            "tick": 379,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000770.png",
+          "sha256": "f777983e55c4111bbf989bea577c42dce48281a3018c163846177027a873021f",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 379,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160361520,
+              1093815666,
+              1169213555,
+              0,
+              771,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4379220250,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6107916,
+            "previous_endpoint_tick": 378,
+            "readback_copy_gpu_bracket_ns": 3013083.0,
+            "submission_id": 770,
+            "submit_ns": 4361120000,
+            "surface_generation": 1,
+            "tick": 379,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000771.png",
+          "sha256": "763d9738108d7bb732700353578e82a546039adbe75b2246b242b168fab1d5b6",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 380,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160320476,
+              1093810073,
+              1169170802,
+              0,
+              772,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4386369166,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7109792,
+            "previous_endpoint_tick": 379,
+            "readback_copy_gpu_bracket_ns": 2428500.0,
+            "submission_id": 771,
+            "submit_ns": 4368851250,
+            "surface_generation": 1,
+            "tick": 380,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000772.png",
+          "sha256": "bc4202425ad4db229f0bd889e9b910e819083d9581860fc28a81e91da4bae230",
+          "image": {
+            "alpha": 0.5644049644470215,
+            "current_endpoint_tick": 381,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160297419,
+              1093806922,
+              1169146785,
+              0,
+              773,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4395168833,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5333583,
+            "previous_endpoint_tick": 380,
+            "readback_copy_gpu_bracket_ns": 2896125.0,
+            "submission_id": 772,
+            "submit_ns": 4379026000,
+            "surface_generation": 1,
+            "tick": 381,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000773.png",
+          "sha256": "3a8e5456174e1e06ec9fba107ab69bfbeae0c620889906ab509be0693470bd74",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 381,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160279532,
+              1093804473,
+              1169128151,
+              0,
+              774,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4401797208,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6266291,
+            "previous_endpoint_tick": 380,
+            "readback_copy_gpu_bracket_ns": 2872125.0,
+            "submission_id": 773,
+            "submit_ns": 4386183958,
+            "surface_generation": 1,
+            "tick": 381,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/001210.png",
+          "sha256": "cfbebf802febdb7c8ed64ee3efe2bf1abcf4320e540e48fa065b3ebb2bf3c6f6",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 599,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1148128263,
+              1092236729,
+              1157169636,
+              0,
+              1211,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 8038121625,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6038583,
+            "previous_endpoint_tick": 598,
+            "readback_copy_gpu_bracket_ns": 2949791.0,
+            "submission_id": 1210,
+            "submit_ns": 8027845291,
+            "surface_generation": 1,
+            "tick": 599,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000731.png",
+          "sha256": "0583560c5e622cc1158b66c279a90c719fcf0be86baf1e26e2dae341aa74a197",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 360,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161149140,
+              1093919170,
+              1170033995,
+              0,
+              732,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4053351125,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5590375,
+            "previous_endpoint_tick": 359,
+            "readback_copy_gpu_bracket_ns": 2683500.0,
+            "submission_id": 731,
+            "submit_ns": 4037325916,
+            "surface_generation": 1,
+            "tick": 360,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 959,
+      "inspection_strips": [
+        "inspection-01.png",
+        "inspection-02.png"
+      ]
+    },
+    "portable-variants": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/portable-variants",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "variants"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 30641438720,
+      "complete": true,
+      "manifest_sha256": "baf007c631cd9462aa5917b852f25a71531af8aa6d2cbc212d9edb023bb74578",
+      "images": 481,
+      "selected": [
+        {
+          "file": "png/000236.png",
+          "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              237,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 5609041,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 914167.0,
+            "submission_id": 236,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000716.png",
+          "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              717,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 4014536375,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 7619083,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1214833.0,
+            "submission_id": 716,
+            "submit_ns": 4001187166,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000476.png",
+          "sha256": "304b88f67c76be8d83729f9118640e42d0d3043e65d96bcd6c4a54ccd511b1c5",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              1111085850,
+              1010206234,
+              3235383541,
+              976275536,
+              0,
+              477,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 2019844208,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6422917,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1804833.0,
+            "submission_id": 476,
+            "submit_ns": 2002603875,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 481,
+      "inspection_strips": [
+        "inspection-01.png"
+      ]
+    },
+    "portable-render-stall": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/portable-render-stall",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "render-stall"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 30106628096,
+      "complete": true,
+      "manifest_sha256": "b5f4055c2b5d524b757d2ef6f96dd0453aeffec99313dc68e7f260cf509db8ad",
+      "images": 450,
+      "selected": [
+        {
+          "file": "png/000234.png",
+          "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              235,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 6467875,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 982250.0,
+            "submission_id": 234,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000683.png",
+          "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              684,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 4012509042,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5084458,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1151125.0,
+            "submission_id": 683,
+            "submit_ns": 4003739250,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000459.png",
+          "sha256": "a4193161e0f686c3914ba9d5fddab9d732809421225b44ddf06d06b7df9a6a50",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              460,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 2153272709,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6174291,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1174875.0,
+            "submission_id": 459,
+            "submit_ns": 2136233834,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 450,
+      "inspection_strips": [
+        "inspection-01.png"
+      ]
+    },
+    "apple-tile-route": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/apple-tile-route",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "route",
+        "route": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/route.json"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 28384296960,
+      "complete": true,
+      "manifest_sha256": "93bc246d56a5987aa09e85604ec41bc3566ba364b0c166f194ce0a8c90a9b6b3",
+      "images": 964,
+      "selected": [
+        {
+          "file": "png/000232.png",
+          "sha256": "c6a04dfa73d5f4c5f30a69e784eb8b3ee8dd31b3ff8f33f314a5bfcd1ec480a9",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 179,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1167762785,
+              1094723611,
+              1176573685,
+              0,
+              233,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 7291875,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": 178,
+            "readback_copy_gpu_bracket_ns": 1294333.0,
+            "submission_id": 232,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 179,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000714.png",
+          "sha256": "c5bee11c2db438e9a74de00030122ddf49cb412e08e2c6b94d0bf13edfbe8148",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 359,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1161191397,
+              1093924528,
+              1170078014,
+              0,
+              715,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4037285875,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5941709,
+            "previous_endpoint_tick": 358,
+            "readback_copy_gpu_bracket_ns": 2924792.0,
+            "submission_id": 714,
+            "submit_ns": 4019833916,
+            "surface_generation": 1,
+            "tick": 359,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/001195.png",
+          "sha256": "f9e297de7f3b22b0353d0e86cd4048a4bac442a88e1261d8d9a99a47858f50ac",
+          "image": {
+            "alpha": 0.8826875686645508,
+            "current_endpoint_tick": 600,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1148046911,
+              1092228853,
+              1157084897,
+              0,
+              1196,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 8037678416,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5697667,
+            "previous_endpoint_tick": 599,
+            "readback_copy_gpu_bracket_ns": 2887959.0,
+            "submission_id": 1195,
+            "submit_ns": 8028526583,
+            "surface_generation": 1,
+            "tick": 600,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000754.png",
+          "sha256": "12d25efcbbab3b50bdf118d12fe48c0754b4fe2f5e33eef4b5a168056541c083",
+          "image": {
+            "alpha": 0.3826850652694702,
+            "current_endpoint_tick": 380,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160345769,
+              1093813522,
+              1169197151,
+              0,
+              755,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4370040125,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5855875,
+            "previous_endpoint_tick": 379,
+            "readback_copy_gpu_bracket_ns": 2970000.0,
+            "submission_id": 754,
+            "submit_ns": 4353501958,
+            "surface_generation": 1,
+            "tick": 380,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000755.png",
+          "sha256": "9486b3d489704ace0f344ebf5173f02cee893c9df4c34c51b243aa502b740aad",
+          "image": {
+            "alpha": 0.8826850056648254,
+            "current_endpoint_tick": 380,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160325421,
+              1093810748,
+              1169175953,
+              0,
+              756,
+              0,
+              1
+            ],
+            "history_epoch": 1,
+            "map_observed_ns": 4378846833,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5990750,
+            "previous_endpoint_tick": 379,
+            "readback_copy_gpu_bracket_ns": 2958584.0,
+            "submission_id": 755,
+            "submit_ns": 4361409750,
+            "surface_generation": 1,
+            "tick": 380,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000756.png",
+          "sha256": "763d9738108d7bb732700353578e82a546039adbe75b2246b242b168fab1d5b6",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 380,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160320476,
+              1093810073,
+              1169170802,
+              0,
+              757,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4386864625,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5798292,
+            "previous_endpoint_tick": 379,
+            "readback_copy_gpu_bracket_ns": 2902459.0,
+            "submission_id": 756,
+            "submit_ns": 4369872291,
+            "surface_generation": 1,
+            "tick": 380,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000757.png",
+          "sha256": "e25666b316eac03e1653fc58235c9ba82c5a2d8cbd10b8f75f6b5ff231281311",
+          "image": {
+            "alpha": 0.8826875686645508,
+            "current_endpoint_tick": 381,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160284393,
+              1093805139,
+              1169133217,
+              0,
+              758,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4393868416,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5848542,
+            "previous_endpoint_tick": 380,
+            "readback_copy_gpu_bracket_ns": 2910250.0,
+            "submission_id": 757,
+            "submit_ns": 4378668875,
+            "surface_generation": 1,
+            "tick": 381,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000758.png",
+          "sha256": "3a8e5456174e1e06ec9fba107ab69bfbeae0c620889906ab509be0693470bd74",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 381,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1160279532,
+              1093804473,
+              1169128151,
+              0,
+              759,
+              0,
+              1
+            ],
+            "history_epoch": 2,
+            "map_observed_ns": 4402617208,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 6085916,
+            "previous_endpoint_tick": 380,
+            "readback_copy_gpu_bracket_ns": 3245208.0,
+            "submission_id": 758,
+            "submit_ns": 4386245958,
+            "surface_generation": 1,
+            "tick": 381,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 964,
+      "inspection_strips": [
+        "inspection-01.png",
+        "inspection-02.png"
+      ]
+    },
+    "apple-tile-variants": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/apple-tile-variants",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "variants"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 28041134080,
+      "complete": true,
+      "manifest_sha256": "27ec1884219369c874cd47230f63fc89668a2136eab0880d386045271d0f9087",
+      "images": 481,
+      "selected": [
+        {
+          "file": "png/000239.png",
+          "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              240,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 6665708,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 901292.0,
+            "submission_id": 239,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000719.png",
+          "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              720,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 4010685875,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5519875,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1226000.0,
+            "submission_id": 719,
+            "submit_ns": 4003351875,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000479.png",
+          "sha256": "304b88f67c76be8d83729f9118640e42d0d3043e65d96bcd6c4a54ccd511b1c5",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              1111085850,
+              1010206234,
+              3235383541,
+              976275536,
+              0,
+              480,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 2020084500,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5641375,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1795000.0,
+            "submission_id": 479,
+            "submit_ns": 2003385875,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 481,
+      "inspection_strips": [
+        "inspection-01.png"
+      ]
+    },
+    "apple-tile-render-stall": {
+      "directory": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-integrated/captures/apple-tile-render-stall",
+      "capture_complete": true,
+      "options": {
+        "mode": "realtime",
+        "case": "render-stall"
+      },
+      "stars": "on",
+      "disk_free_after_bytes": 27511205888,
+      "complete": true,
+      "manifest_sha256": "f4e8a4f4c1fe49a639eddb988e7bafda6af1037679168abef28430c0cc82e51a",
+      "images": 450,
+      "selected": [
+        {
+          "file": "png/000236.png",
+          "sha256": "afd01f719bc9c2ddb83a2d57ccadddfa67280e5daec122e5b113adef15b08489",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              237,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 6590000,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 0,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1003833.0,
+            "submission_id": 236,
+            "submit_ns": 0,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000685.png",
+          "sha256": "5df466e13be254637f72531013b29e3ae8025201e4974de443329f82516dad42",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              686,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 4012269583,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 5556250,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 1224958.0,
+            "submission_id": 685,
+            "submit_ns": 4003279541,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        },
+        {
+          "file": "png/000461.png",
+          "sha256": "ad0798ab42959bb1719266d0a06e108b82dd6a939a67d40817d5ca6bc09ee01e",
+          "image": {
+            "alpha": 1.0,
+            "current_endpoint_tick": 0,
+            "device_generation": 1,
+            "epoch": 1,
+            "exposure_gpu_words": [
+              981467136,
+              1192782339,
+              1097847347,
+              1201587145,
+              0,
+              462,
+              0,
+              1
+            ],
+            "history_epoch": 0,
+            "map_observed_ns": 2153594166,
+            "pixel_source": "Sdr",
+            "presentation_lead_ns": 8036500,
+            "previous_endpoint_tick": null,
+            "readback_copy_gpu_bracket_ns": 848250.0,
+            "submission_id": 461,
+            "submit_ns": 2134517125,
+            "surface_generation": 1,
+            "tick": 0,
+            "timeline": 0,
+            "visual_revision": null
+          }
+        }
+      ],
+      "exposure_packets": 450,
+      "inspection_strips": [
+        "inspection-01.png"
+      ]
+    }
+  },
+  "chrome": {
+    "chrome-day": {
+      "complete": true,
+      "images": 481,
+      "presenter_generations": [
+        1
+      ],
+      "history_epochs": [
+        1,
+        2
+      ],
+      "retained_pngs": [
+        "000179.png",
+        "000419.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000443.png",
+        "000659.png"
+      ],
+      "manifest_sha256": "9ea532d38af3a7e087bbb718e74a790056f7ba1a56de26b12203aa5a37a8b855",
+      "inspection_strips": [
+        "inspection-01.png",
+        "inspection-02.png"
+      ]
+    },
+    "chrome-night": {
+      "complete": true,
+      "images": 475,
+      "presenter_generations": [
+        1
+      ],
+      "history_epochs": [
+        1,
+        2
+      ],
+      "retained_pngs": [
+        "000179.png",
+        "000416.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000443.png",
+        "000653.png"
+      ],
+      "manifest_sha256": "61bbbec51b00e44dcc417ae961ebedda131ffaab3925449dc125ad8de3a3507d",
+      "inspection_strips": [
+        "inspection-01.png",
+        "inspection-02.png"
+      ]
+    },
+    "chrome-resize": {
+      "complete": true,
+      "images": 481,
+      "presenter_generations": [
+        1,
+        2,
+        3
+      ],
+      "history_epochs": [
+        1,
+        2
+      ],
+      "retained_pngs": [
+        "000179.png",
+        "000267.png",
+        "000268.png",
+        "000269.png",
+        "000270.png",
+        "000271.png",
+        "000272.png",
+        "000273.png",
+        "000419.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000443.png",
+        "000659.png"
+      ],
+      "manifest_sha256": "46a891508ecf59f68a29ef8f304904e94e0d6e77c3118951feac96f857bbe8ac",
+      "inspection_strips": [
+        "inspection-01.png",
+        "inspection-02.png",
+        "inspection-03.png"
+      ]
+    }
+  },
+  "passed": true,
+  "wrapper_sha256": [
+    "2a3bd78cebcfaa4623ef4b6768bda7134bf4981060569b12e5bff425139ed2cf"
+  ],
+  "tests": [
+    {
+      "name": "input-tests",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-render",
+        "--lib",
+        "synthetic::display::tests::input",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "timing-tests",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-render",
+        "--lib",
+        "timing::tests",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "frame-stats-tests",
+      "command": [
+        "rustup",
+        "run",
+        "1.99.1",
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-render",
+        "--lib",
+        "synthetic::frame_stats::tests",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0
+    }
+  ],
+  "native_target_audit": {
+    "portable-route": {
+      "recipe": "Ok(Portable)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        1,
+        2
+      ]
+    },
+    "portable-variants": {
+      "recipe": "Ok(Portable)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        0
+      ]
+    },
+    "portable-render-stall": {
+      "recipe": "Ok(Portable)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        0
+      ]
+    },
+    "apple-tile-route": {
+      "recipe": "Ok(AppleTile)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        1,
+        2
+      ]
+    },
+    "apple-tile-variants": {
+      "recipe": "Ok(AppleTile)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        0
+      ]
+    },
+    "apple-tile-render-stall": {
+      "recipe": "Ok(AppleTile)",
+      "adapter": "Apple M3 Max",
+      "backend": "Metal",
+      "history_epochs": [
+        0
+      ]
+    }
+  }
+}

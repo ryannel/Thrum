@@ -4,6 +4,10 @@ This resumes the existing implementation after the owner's [scope decision](../.
 moved the attended D3.5 window check to a later milestone. D3.1–D3.4 have fresh target proofs. M3 remains
 `in_progress`; the loop owns its final merged/check record and independent review.
 
+The [integrated follow-up](integration/README.md) qualifies merged source `8bf0515a` after the merge brought
+in CULLING/SEA changes. It supersedes the motion and artifact identities below for current-source claims;
+the earlier records remain attributed history. Both native recipes, Chrome and focused tests pass again.
+
 The clean proof source is `e41686a0f4164cd164fed403dd0e75c63946937b`, Rust 1.99.1 on the Apple M3 Max.
 Native executable SHA-256 is `b8a331bb6646a72ae4b7fc4e6632de0a5eb47c5af269044f9b5d6b96e271c6e3`.
 The [registered verifier record](exact/record.json) pins compiler, host, cooked root, native/Wasm artifacts,
