@@ -53,9 +53,15 @@ def run(args):
                         save(args.output / 'manifest.json', report)
                     left, right = runs
                     hashes = [r['writer_result']['Ok']['frame_sha256'] for r in runs]
-                    identities = [[{k: row[k] for k in (
-                        'submission_id', 'tick', 'history_epoch', 'exposure_gpu_words') if k in row}
-                        for row in r['images']] for r in runs]
+                    # Warmup has variable host-time submission counts. Retain
+                    # absolute serials in runtime.json; pair reset-relative
+                    # sample indices, world/history and numerical exposure.
+                    identities = [[{
+                        'measurement_frame': index, 'tick': row['tick'],
+                        'history_epoch': row['history_epoch'],
+                        'exposure': (row['exposure_gpu_words'][:5] + row['exposure_gpu_words'][7:])
+                            if row.get('exposure_gpu_words') else None,
+                    } for index, row in enumerate(r['images'])] for r in runs]
                     if hashes[0] != hashes[1] or identities[0] != identities[1]:
                         raise ValueError(f'{recipe}/{mode}/{source}: native/twin exact mismatch')
                     report['comparisons'][f'{recipe}-{mode}-{source}'] = {

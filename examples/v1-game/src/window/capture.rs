@@ -395,6 +395,11 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         [1920, 1080],
     )?;
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
+    if driver.native_witness_report().is_some() {
+        // Warmup duration is host-time, so its submission count is variable.
+        // Begin the labelled diagnostic at a reset, submission-relative phase.
+        driver.invalidate_history();
+    }
     let capture = scenario != "off";
     if capture {
         driver.enable_capture_from(

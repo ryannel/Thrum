@@ -78,6 +78,7 @@ pub(super) struct Provider {
     reserved: AtomicBool,
     valid: AtomicBool,
     side: AtomicUsize,
+    phase: AtomicU64,
     encoded: AtomicU64,
     submitted: AtomicU64,
     discarded: AtomicU64,
@@ -105,6 +106,7 @@ pub(crate) struct NativeFrame {
     side: usize,
     reset: bool,
     select_history: bool,
+    phase: u64,
     committed: bool,
 }
 
@@ -280,6 +282,7 @@ impl Provider {
             reserved: AtomicBool::new(false),
             valid: AtomicBool::new(false),
             side: AtomicUsize::new(0),
+            phase: AtomicU64::new(0),
             encoded: AtomicU64::new(0),
             submitted: AtomicU64::new(0),
             discarded: AtomicU64::new(0),
@@ -313,13 +316,18 @@ impl Binding {
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| RenderError::Validation("native candidate already encoded".into()))?;
         let reset = cut || !provider.valid.load(Ordering::Acquire);
-        let order = provider.submitted.load(Ordering::Relaxed);
+        let phase = if reset {
+            0
+        } else {
+            provider.phase.load(Ordering::Relaxed)
+        };
         provider.encoded.fetch_add(1, Ordering::Relaxed);
         Ok(NativeFrame {
             binding: Arc::clone(self),
             side: provider.side.load(Ordering::Relaxed),
             reset,
-            select_history: !reset && order % 2 == 1,
+            select_history: !reset && phase % 2 == 1,
+            phase,
             committed: false,
         })
     }
@@ -432,6 +440,7 @@ impl NativeFrame {
             provider.side.store(1 - self.side, Ordering::Relaxed);
         }
         provider.submitted.fetch_add(1, Ordering::Relaxed);
+        provider.phase.store(self.phase + 1, Ordering::Relaxed);
         provider.valid.store(true, Ordering::Release);
         provider.reserved.store(false, Ordering::Release);
         self.committed = true;
