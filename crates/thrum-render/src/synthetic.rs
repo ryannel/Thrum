@@ -1827,7 +1827,7 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        5 + u32::from(self.temporal_inputs)
+        5 + u32::from(self.temporal_witness_enabled())
             + u32::from(self.taau.is_some())
             + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + u32::from(self.caster_culling.is_some())
@@ -2020,36 +2020,6 @@ impl PreparedSynthetic {
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
         Ok(())
-    }
-
-    fn prepare_target_display(
-        &self,
-        device: &wgpu::Device,
-        ids: &TargetResources,
-        scene: &wgpu::TextureView,
-        motion: &wgpu::TextureView,
-        temporal: &temporal::TemporalTarget,
-        taau: Option<&taau::TaauTarget>,
-    ) -> Result<PreparedPreToneInput, RenderError> {
-        self.sdr_tone_stage().prepare_input(
-            device,
-            ids.pre_tone.clone(),
-            PreToneViews {
-                colour: if ids.temporal.witness.as_ref() == Some(&ids.pre_tone.colour) {
-                    &temporal
-                        .witness
-                        .as_ref()
-                        .ok_or(RenderError::GraphPassMismatch)?
-                        .0
-                } else if let Some(taau) = taau {
-                    &taau.output
-                } else {
-                    scene
-                },
-                motion,
-                exposure: &self.exposure.samples,
-            },
-        )
     }
 
     /// Carry submitted CPU view metadata across GPU-resource replacement. The

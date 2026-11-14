@@ -73,7 +73,7 @@ pub(crate) fn camera_orientation(shell: &Shell) -> [f32; 2] {
 /// Refuses a nonfinite pitch outside the supported scene range.
 pub(crate) fn set_camera_pitch(shell: &mut Shell, radians: f32) -> Result<(), String> {
     if let Some(pitch) = camera_pitch_edit(shell.host().source(), radians)? {
-        shell.source_mut().camera_pitch = pitch;
+        shell.continuous_source_mut().camera_pitch = pitch;
     }
     Ok(())
 }
@@ -83,7 +83,7 @@ pub(crate) fn set_camera_pitch(shell: &mut Shell, radians: f32) -> Result<(), St
 /// Refuses a nonfinite yaw or one outside ±π radians.
 pub(crate) fn set_camera_yaw(shell: &mut Shell, radians: f32) -> Result<(), String> {
     if let Some(yaw) = camera_yaw_edit(shell.host().source(), radians)? {
-        shell.source_mut().camera_yaw = yaw;
+        shell.continuous_source_mut().camera_yaw = yaw;
     }
     Ok(())
 }

@@ -48,7 +48,10 @@ async fn host(
     caps: &DeviceCapabilities,
     mode: &str,
     preset: &serde_json::Value,
-) -> FrameHost {
+) -> (
+    FrameHost,
+    std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>,
+) {
     let mut setup = crate::selected_setup().unwrap();
     setup.reconstruction = match mode {
         "reference" => thrum_render::synthetic::Reconstruction::Reference,
@@ -101,7 +104,7 @@ async fn host(
     )
     .unwrap();
     host.enable_submitted_capture(1).unwrap();
-    host
+    (host, stats)
 }
 
 async fn checkpoint(
@@ -120,7 +123,7 @@ async fn checkpoint(
     std::fs::create_dir_all(&directory).unwrap();
     let mut log = std::fs::File::create(directory.join("frames.jsonl")).unwrap();
     for mode in ["reference", "taau", "off", "broken"] {
-        let mut host = host(device, queue, caps, mode, &preset).await;
+        let (mut host, stats) = host(device, queue, caps, mode, &preset).await;
         let identity = (
             host.tick(),
             host.time_of_day().to_bits(),
@@ -140,13 +143,16 @@ async fn checkpoint(
                 host.scene_camera().unwrap().eye().map(f32::to_bits),
             );
             assert_eq!(state, identity, "held world/camera/solar state");
+            let content = stats.lock().unwrap();
+            assert_eq!(content.drawn, Some(1), "held cooked generation");
+            assert!(content.errors.is_empty(), "{:?}", content.errors);
             let metering = exposure[..4].to_vec();
             assert_eq!(
                 *held_exposure.get_or_insert_with(|| metering.clone()),
                 metering,
                 "held exposure and storage p"
             );
-            writeln!(log,"{}",serde_json::json!({"mode":mode,"frame":frame,"state":format!("{state:?}"),"exposure":exposure,"history":sample.history_identity,"passes":sample.gpu_pass_ns.as_ref().map(|t|t.passes().iter().map(|p|serde_json::json!({"name":p.name.as_ref(),"ns":p.nanoseconds})).collect::<Vec<_>>())})).unwrap();
+            writeln!(log,"{}",serde_json::json!({"mode":mode,"frame":frame,"state":format!("{state:?}"),"cooked_generation":content.drawn,"exposure":exposure,"history":sample.history_identity,"passes":sample.gpu_pass_ns.as_ref().map(|t|t.passes().iter().map(|p|serde_json::json!({"name":p.name.as_ref(),"ns":p.nanoseconds})).collect::<Vec<_>>())})).unwrap();
             if frame == 31 || frame == 63 {
                 ppm(&directory.join(format!("{mode}-{}.ppm", frame + 1)), &bytes);
             }
@@ -224,13 +230,13 @@ async fn cut(
 ) {
     let preset: serde_json::Value =
         serde_json::from_str(include_str!("../../../params/showcase-noon.params.json")).unwrap();
-    let mut actual = host(device, queue, caps, "taau", &preset).await;
-    let mut suppressed = host(device, queue, caps, "taau", &preset).await;
+    let (mut actual, _) = host(device, queue, caps, "taau", &preset).await;
+    let (mut suppressed, _) = host(device, queue, caps, "taau", &preset).await;
     for _ in 0..64 {
         submitted(&mut actual, device, surface);
         submitted(&mut suppressed, device, surface);
     }
-    let mut reset = host(device, queue, caps, "taau", &preset).await;
+    let (mut reset, _) = host(device, queue, caps, "taau", &preset).await;
     let camera = actual.scene_camera().unwrap();
     let mut eye = camera.eye();
     eye[0] += 0.1;
@@ -238,7 +244,11 @@ async fn cut(
     actual.set_scene_camera(camera).unwrap();
     reset.set_scene_camera(camera).unwrap();
     // Fault injection stays in this test: bypass only the host's cut invalidation.
-    suppressed.inner.source_mut().select_camera(camera).unwrap();
+    suppressed
+        .inner
+        .continuous_source_mut()
+        .select_camera(camera)
+        .unwrap();
     let (actual, a, _) = submitted(&mut actual, device, surface);
     let (reset, r, _) = submitted(&mut reset, device, surface);
     let (suppressed, s, _) = submitted(&mut suppressed, device, surface);

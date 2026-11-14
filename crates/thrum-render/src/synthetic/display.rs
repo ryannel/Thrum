@@ -57,6 +57,38 @@ pub(crate) struct SdrToneStage {
     layout: wgpu::BindGroupLayout,
 }
 
+impl super::PreparedSynthetic {
+    pub(super) fn prepare_target_display(
+        &self,
+        device: &wgpu::Device,
+        ids: &super::TargetResources,
+        scene: &wgpu::TextureView,
+        motion: &wgpu::TextureView,
+        temporal: &super::temporal::TemporalTarget,
+        taau: Option<&super::taau::TaauTarget>,
+    ) -> Result<PreparedPreToneInput, RenderError> {
+        self.sdr_tone_stage().prepare_input(
+            device,
+            ids.pre_tone.clone(),
+            PreToneViews {
+                colour: if ids.temporal.witness.as_ref() == Some(&ids.pre_tone.colour) {
+                    &temporal
+                        .witness
+                        .as_ref()
+                        .ok_or(RenderError::GraphPassMismatch)?
+                        .0
+                } else if let Some(taau) = taau {
+                    &taau.output
+                } else {
+                    scene
+                },
+                motion,
+                exposure: &self.exposure.samples,
+            },
+        )
+    }
+}
+
 /// Graph-bound colour, motion and matching exposure for the retained SDR stage.
 /// Colour is pre-exposed scene-linear RGBA16F at `extent`, with the existing
 /// source-pixel coordinate convention. Motion shares that grid. The exposure

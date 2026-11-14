@@ -1000,6 +1000,10 @@ def reconstruction(args):
                                      if p.is_file() and os.access(p,os.X_OK)}
         for name in ROUTE:
             directory = run/'frames'/name
+            frames = [json.loads(line) for line in (directory/'frames.jsonl').read_text().splitlines()]
+            held = {(row['state'],tuple(row['exposure'][:4]),row['cooked_generation']) for row in frames}
+            if len(held) != 1 or len(frames) != 4*64:
+                raise Failure(f'{name}: reference and judged frames did not hold the same state')
             def pixels(mode, frame=64):
                 path = directory/f'{mode}-{frame}.ppm'
                 raw = path.read_bytes()

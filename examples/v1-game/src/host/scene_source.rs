@@ -230,7 +230,10 @@ fn apply_route_overlay(scene: &mut SyntheticScene, overlay: scene::RouteOverlay)
         instance.current[3][..3].copy_from_slice(&position);
         instance.previous[3][..3].copy_from_slice(&position);
     }
-    if overlay == scene::RouteOverlay::Motion {
+    if matches!(
+        overlay,
+        scene::RouteOverlay::Motion | scene::RouteOverlay::Reconstruction
+    ) {
         let instance = &mut scene.instances[scene::MOTION_SUBJECT_SLOT];
         scale_basis(instance, 0.35);
         instance.current[3][..3].copy_from_slice(&scene::MOTION_SUBJECT_POSITION);
@@ -512,6 +515,24 @@ impl super::FrameHost {
 }
 
 impl SceneSource<PublishedPage> for GameScene {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "bounded sinusoidal fixture position is converted from game-clock f64 to renderer f32"
+    )]
+    fn sample_local_lights(
+        &self,
+        source: SourceTick,
+        alpha: f32,
+        lights: &mut [SyntheticPointLight],
+    ) {
+        if self.route_overlay == scene::RouteOverlay::Reconstruction {
+            let time =
+                DayCycle::sample(source.tick, alpha, self.day_phase_offset).simulation_time_seconds;
+            if let Some(light) = lights.first_mut() {
+                light.position[0] = (time * 1.5).sin() as f32 * 3.0;
+            }
+        }
+    }
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
         #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
         if self.omit_mirror {
@@ -600,6 +621,27 @@ mod tests {
     use crate::{camera::SceneCamera, environment::DayCycle};
     use thrum_core::StableId;
     use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
+
+    #[test]
+    fn reconstruction_light_follows_the_sampled_game_endpoint_and_holds_when_paused() {
+        let policy = GameScene::new(crate::GameSetup {
+            route_overlay: scene::RouteOverlay::Reconstruction,
+            ..crate::GameSetup::default()
+        });
+        let mut lights = [super::ROUTE_OVERLAY_LIGHT];
+        let source = |tick| SourceTick {
+            epoch: 1,
+            timeline: 0,
+            tick,
+        };
+        policy.sample_local_lights(source(0), 1.0, &mut lights);
+        let initial = lights[0].position;
+        policy.sample_local_lights(source(61), 0.5, &mut lights);
+        let moved = lights[0].position;
+        assert!(moved[0] - initial[0] > 2.0);
+        policy.sample_local_lights(source(61), 0.5, &mut lights);
+        assert_eq!(lights[0].position, moved);
+    }
 
     #[test]
     fn installed_route_moves_the_authored_camera_and_refuses_edits() {

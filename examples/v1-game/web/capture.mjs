@@ -7,6 +7,7 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
+const witness = query.get('witness') ?? 'off';
 if (!['day', 'night', 'noon'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -43,6 +44,7 @@ try {
   await init();
   let text = await (await fetch('/'+(query.get('route') ?? 'moving-v1.json'))).text();
   const route = JSON.parse(text);
+  if (witness !== 'off') { route.overlay = 'reconstruction'; text = JSON.stringify(route); }
   if (scene === 'night' || scene === 'noon') {
     route.start.solar_hours = scene === 'night' ? 0 : 12;
     text = JSON.stringify(route);
@@ -61,7 +63,11 @@ try {
     game.frame(game.route_step_ms(0.5));
     await wait(1);
   }
-  game.install_route(text);
+  if (witness === 'off') game.install_route(text);
+  else {
+    game.set_time_of_day(witness === 'stars' ? 0 : 0.5);
+    if (witness === 'stars') game.set_camera_pitch(7*Math.PI/180);
+  }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
   record.initial_report = JSON.parse(game.route_report(0));
@@ -84,6 +90,7 @@ try {
   record.start_after_ms = performance.now();
   record.base_world_ms = base;
   record.mode = mode;
+  record.witness = witness;
   record.extent = route.render_extent;
   record.ui = { included: 'canvas scene and engine route overlay', excluded: 'DOM, browser and native UI' };
   record.device_pixel_ratio = devicePixelRatio;
@@ -138,7 +145,7 @@ try {
   let ordinal = 0;
   let acted = false;
   let released = false;
-  while (mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 : performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
+  while (witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 : performance.now() - start < duration || game.committed_tick() < route.origin_tick + route.keys.at(-1).tick + 59) {
     if (hidden) fail('page became hidden during capture');
     const due = start + ordinal * 1000 / 60;
     if (mode === 'fixed') {
@@ -158,7 +165,13 @@ try {
       acted = true;
     }
     const timestamp = mode === 'fixed'  ? base + (ordinal + 1) * 1000 / 60 : base + performance.now() - start;
-    if (!released && timestamp - base >= 1000) {
+    if (witness === 'pan') game.set_camera_yaw(36*Math.PI/180*Math.max(0,Math.min(1,(timestamp-base-1000)/2000)));
+    if (witness === 'scrub' && timestamp-base >= 1000) {
+      const solar = 6+12*Math.max(0,Math.min(1,(timestamp-base-1000)/2000));
+      game.set_time_of_day(solar/24);
+      record.actions.push({kind:'solar-scrub',frame_ms:timestamp,solar_hours:solar});
+    }
+    if (!released && timestamp - base >= 1000 && !['stars','scrub'].includes(witness)) {
       game.set_paused(false, timestamp);
       record.hold_release = { page_ms: performance.now(), frame_ms: timestamp };
       released = true;

@@ -19,7 +19,9 @@ CIEDE2000; its published supplementary-pair checks pass.
 Verified so far: focused native Clippy, both WGSL modules' Naga validation, native
 compilation and pinned-toolchain Wasm compilation. These establish no target image
 quality, motion quality or GPU cost. The real Metal and game-reference proofs are
-queued under the shared `gpu` lock. Chrome execution, motion sequences, timing,
+The real Metal alternating-slot/reset execution test now passes, as do the
+authoritative tick-60 replacement and sampled moving-light fixture tests. The
+game-reference proof is queued under the shared `gpu` lock. Chrome execution, motion sequences, timing,
 exact baselines, the full gate and integration remain unqualified.
 
 Technique source: [Karis, High-Quality Temporal Supersampling, SIGGRAPH 2014](https://advances.realtimerendering.com/s2014/index.html).

@@ -245,14 +245,14 @@ impl ThreadedFrameHost {
         self.inner.controlled_position()
     }
 
-    /// Change the game camera elevation and reset GPU history on the next draw.
+    /// Change the game camera elevation continuously.
     /// # Errors
     /// Refuses an unsupported or nonfinite pitch.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), String> {
         self.inner.set_camera_pitch(radians)
     }
 
-    /// Turn the game camera and reset GPU history on the next draw.
+    /// Turn the game camera continuously.
     /// # Errors
     /// Refuses a nonfinite yaw or one outside ±π radians.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
@@ -544,14 +544,14 @@ impl FrameHost {
         DayCycle::rendered_time_of_day(self.tick(), alpha, self.inner.source().day_phase_offset)
     }
 
-    /// Change the game camera elevation and reset presentation history.
+    /// Change the game camera elevation continuously.
     /// # Errors
     /// Refuses a nonfinite pitch outside the supported scene range.
     pub fn set_camera_pitch(&mut self, radians: f32) -> Result<(), String> {
         set_camera_pitch(&mut self.inner, radians)
     }
 
-    /// Turn the game camera and reset presentation history.
+    /// Turn the game camera continuously.
     /// # Errors
     /// Refuses a nonfinite yaw or one outside ±π radians.
     pub fn set_camera_yaw(&mut self, radians: f32) -> Result<(), String> {
@@ -827,20 +827,18 @@ pub(crate) fn time_of_day(runtime: &Runtime) -> f32 {
     DayCycle::time_of_day(runtime.world().tick(), runtime.source().day_phase_offset)
 }
 
-/// Change the game camera elevation and reset presentation history.
+/// Change the game camera elevation continuously.
 pub(crate) fn set_camera_pitch(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
     if let Some(pitch) = camera_pitch_edit(runtime.source(), radians)? {
-        runtime.source_mut().camera_pitch = pitch;
-        runtime.invalidate_history();
+        runtime.continuous_source_mut().camera_pitch = pitch;
     }
     Ok(())
 }
 
-/// Turn the game camera and reset presentation history.
+/// Turn the game camera continuously.
 pub(crate) fn set_camera_yaw(runtime: &mut Runtime, radians: f32) -> Result<(), String> {
     if let Some(yaw) = camera_yaw_edit(runtime.source(), radians)? {
-        runtime.source_mut().camera_yaw = yaw;
-        runtime.invalidate_history();
+        runtime.continuous_source_mut().camera_yaw = yaw;
     }
     Ok(())
 }

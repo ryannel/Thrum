@@ -33,6 +33,9 @@ pub(super) fn run(output: &Path, scenario: &str) -> Result<(), String> {
             | "input-stall"
             | "off"
             | "writer-slow"
+            | "reconstruction-pan"
+            | "reconstruction-stars"
+            | "reconstruction-scrub"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -450,7 +453,10 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             break;
         }
         let work = WorkClock::start().map_err(|e| e.to_string())?;
-        let active_world = matches!(scenario, "running" | "writer-slow" | "route");
+        let active_world = matches!(
+            scenario,
+            "running" | "writer-slow" | "route" | "reconstruction-pan"
+        );
         if active_world && t >= 1.0 && (scenario == "route" || t < 3.0) && !running {
             trace.world_state(&mut driver, false, origin)?;
             running = true;
@@ -458,19 +464,18 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             trace.world_state(&mut driver, true, origin)?;
             running = false;
         }
-        if scenario == "variants" {
-            let night = (1.0..3.0).contains(&t);
-            if night != night_variant {
-                let solar = if night { 0.0 } else { 12.0 };
-                driver.parameters(&json!({"sky.solar_time":solar}).to_string())?;
-                trace.controls.push(json!({"kind":"prepared-star-variant-switch", "scenario_ns":opportunity.scenario_time.as_nanos(),
-                    "accepted_ns":origin.elapsed().as_nanos(), "solar_hours":solar}));
-                night_variant = night;
-            }
-        }
+        lighting_edits(
+            &mut driver,
+            scenario,
+            opportunity.scenario_time,
+            &mut night_variant,
+            &mut trace,
+            origin,
+        )?;
         let yaw = ((t - 1.0) / 2.0).clamp(0.0, 1.0) * 36.0;
-        let control_dispatched =
-            !active_world && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
+        let control_dispatched = (!active_world || scenario == "reconstruction-pan")
+            && !matches!(scenario, "reconstruction-stars" | "reconstruction-scrub")
+            && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
         let accepted = origin.elapsed();
         let accepted_yaw = accepted_yaw(&driver)?;
         if scenario == "render-stall" && t >= 1.8 && !stalled {
@@ -597,6 +602,31 @@ async fn metal_device()
     Ok((adapter, device, queue, capabilities))
 }
 
+fn lighting_edits<G: Game>(
+    driver: &mut Offscreen<G>,
+    scenario: &str,
+    scenario_time: Duration,
+    night_variant: &mut bool,
+    trace: &mut Trace,
+    origin: Instant,
+) -> Result<(), String> {
+    let t = scenario_time.as_secs_f64();
+    let night = (1.0..3.0).contains(&t);
+    let solar = if scenario == "variants" && night != *night_variant {
+        *night_variant = night;
+        Some(if night { 0.0 } else { 12.0 })
+    } else if scenario == "reconstruction-scrub" && t >= 1.0 {
+        Some(6.0 + 12.0 * ((t - 1.0) / 2.0).clamp(0.0, 1.0))
+    } else {
+        None
+    };
+    if let Some(solar) = solar {
+        driver.parameters(&json!({"sky.solar_time":solar}).to_string())?;
+        trace.controls.push(json!({"kind":if scenario == "variants" {"prepared-star-variant-switch"} else {"solar-scrub"},"scenario_ns":scenario_time.as_nanos(),"accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}));
+    }
+    Ok(())
+}
+
 fn capture_mode(scenario: &str) -> Result<String, String> {
     let mode = std::env::var("THRUM_CAPTURE_MODE").unwrap_or_else(|_| "realtime".to_owned());
     if !matches!(mode.as_str(), "realtime" | "fixed" | "still") {
@@ -612,6 +642,9 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
     }
     if mode != "realtime" && scenario == "off" {
         return Err("capture-off observer row requires elapsed time".to_owned());
+    }
+    if mode != "realtime" && scenario.starts_with("reconstruction-") {
+        return Err("reconstruction motion witnesses require actual elapsed time".to_owned());
     }
     Ok(mode)
 }

@@ -6,6 +6,13 @@
   pinned Wasm compilation pass. Target image quality, motion, timing, full checks and
   integration remain unqualified. [Builder evidence](../../evidence/APPLE-PRESENTATION/m3/README.md).
 
+- 2026-11-14 M3 preparation follow-up separates continuous camera edits from cuts,
+  samples local lights from the same game endpoint as the view, and adds an opt-in
+  reconstruction witness with an authoritative tick-60 prop replacement. The
+  real Metal alternating-slot/reset execution test and both CPU fixture tests pass.
+  Native/Chrome motion drivers now expose the five required scenarios; their
+  output quality, the full reference oracle and integration remain unqualified.
+
 - 2026-11-10 Revised after [the design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4`
   (changes requested, one Must Fix), under the task "Revise APPLE-PRESENTATION's design and plan as
   docs/evidence/APPLE-PRESENTATION/design-review.md asks".

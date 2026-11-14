@@ -128,6 +128,16 @@ pub trait SceneSource<P> {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String>;
+    /// Sample positions/intensities into the prepared local-light slice using
+    /// the same committed endpoint and alpha as the view. Keep the prepared
+    /// capacity and valid photometric values; the source remains their owner.
+    fn sample_local_lights(
+        &self,
+        _source: SourceTick,
+        _alpha: f32,
+        _lights: &mut [crate::synthetic::SyntheticPointLight],
+    ) {
+    }
 }
 
 /// One sampled camera/lighting input; resource updates belong to the executor.
@@ -513,6 +523,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.extractor.invalidate_history();
         self.last_view_source = None;
         self.history_reset_pending = true;
+        &mut self.source
+    }
+    /// Edit a continuous presentation parameter, such as camera orientation,
+    /// without changing entity mapping or retiring the submitted predecessor.
+    /// Cuts and mapping changes must use [`Self::source_mut`] instead; a source
+    /// may also express a cut with the view's history epoch/reset flag.
+    pub fn continuous_source_mut(&mut self) -> &mut V {
         &mut self.source
     }
     /// Reset correspondence on the next successful scene submission.
@@ -1156,6 +1173,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.visual_lighting(),
             )
             .map_err(FrameError::Scene)?;
+        self.source.sample_local_lights(
+            frame.source,
+            frame.presentation_alpha,
+            &mut self.scene.local_lights,
+        );
         let SceneApplyReport {
             moving,
             dropped_invalid,
@@ -1521,6 +1543,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // A capture describes the current committed endpoint, regardless of
         // the last display sample.
         let capture_alpha = 1.0;
+        self.source.sample_local_lights(
+            self.world.source(),
+            capture_alpha,
+            &mut self.scene.local_lights,
+        );
         let frame_scene = self
             .source
             .frame(
