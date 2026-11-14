@@ -22,6 +22,8 @@ const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chro
   '--headless=new', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0',
   `--user-data-dir=${scratch}`, 'about:blank',
 ], { stdio: ['ignore', 'ignore', 'ignore'] });
+let chromeExited = false;
+const chromeExit = new Promise(resolve => chrome.once('exit', () => { chromeExited = true; resolve(); }));
 let socket;
 try {
   let port;
@@ -61,10 +63,12 @@ try {
   if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));
   process.stdout.write(`${JSON.stringify(evaluated.result.value)}\n`);
 } finally {
+  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ id: 2147483647, method: 'Browser.close' }));
+  let timer;
+  await Promise.race([chromeExit, new Promise(resolve => { timer = setTimeout(resolve, 5000); })]);
+  clearTimeout(timer);
   socket?.close();
-  chrome.kill('SIGTERM');
-  await Promise.race([new Promise(resolve => chrome.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 5000))]);
-  if (chrome.exitCode === null) { chrome.kill('SIGKILL'); await new Promise(resolve => chrome.once('exit', resolve)); }
+  if (!chromeExited) { chrome.kill('SIGKILL'); await chromeExit; }
   await new Promise(resolve => server.close(resolve));
-  await fs.rm(scratch, { recursive: true, force: true });
+  await fs.rm(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
 }
