@@ -1,10 +1,10 @@
 {
   "module": "SCENE-VIEWS",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/SCENE-VIEWS/design-review.md",
-    "commit": "57d100e2469a39db7215ef04c31b961d4fca3b64",
-    "hash": "a27da469c81f858b87b93709269ccbf9dd6ee7b39b028ee885342c6905e23698",
+    "commit": "5ca7ea13077386cab8a113663a48f1e0d0d18500",
+    "hash": "1ab0e5d72945368c9d38b3e9c614dc5777d20bed00d2d009a598dd156c36ee06",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,21 +16,22 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 92591,
-      "cached": 1095168,
-      "output": 7907,
+      "input": 99648,
+      "cached": 1148032,
+      "output": 5661,
       "turns": 1
     },
-    "at": "2026-11-14T14:02:46Z"
+    "at": "2026-11-14T14:37:23Z"
   },
   "milestones": {
     "M1": {
-      "definitions": "6f79076df2d19a90e0f8e4b520c7c264e786580f4cb99fb93c686e9faee98ba9",
+      "definitions": "de43034dead5045dfaca7d63d2e2a938750ea4e588ae9938029ec871209baac1",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
-        "at": "2026-11-14T13:57:36Z"
+        "by": "design review",
+        "review": "docs/evidence/SCENE-VIEWS/design-review.md",
+        "commit": "5ca7ea13077386cab8a113663a48f1e0d0d18500",
+        "at": "2026-11-14T14:37:23Z"
       }
     },
     "M2": {
@@ -112,6 +113,29 @@
         "turns": 1
       },
       "at": "2026-11-14T13:22:32Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/SCENE-VIEWS/design-review-3.md",
+      "commit": "57d100e2469a39db7215ef04c31b961d4fca3b64",
+      "hash": "a27da469c81f858b87b93709269ccbf9dd6ee7b39b028ee885342c6905e23698",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 92591,
+        "cached": 1095168,
+        "output": 7907,
+        "turns": 1
+      },
+      "at": "2026-11-14T14:02:46Z"
     }
   ]
 }
