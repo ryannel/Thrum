@@ -157,14 +157,19 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3): Ready for Review · [plan](APPLE-TILE/PLAN.md) · [latest review](../evidence/APPLE-TILE/M3-review.md)
+- After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3): Not Started · [plan](PLATFORM-RUNTIME-MAC/PLAN.md)
+- A stateful native segment composes inside one submission (APPLE-TILE M10): Not Started · [plan](APPLE-TILE/PLAN.md)
+- The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2): Not Started · [plan](CREATOR/PLAN.md)
+- TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - The valley's 10,000 entities are culled by default with no pixel changed, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
+- A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 - The GPU computes the same sea as the CPU model at every frame's time, after a day of running, through pauses, hitches and a replaced device (SEA M2): Not Started · [plan](SEA/PLAN.md)
 - WATERS's design: Design Changes Requested · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly (CLOUDS M1): Not Started · [plan](CLOUDS/PLAN.md)
 
 ### Recently done
 
+- G4 can replace the pre-tone linear input without changing SDR output (APPLE-TILE M3), 14 Nov · [review](../evidence/APPLE-TILE/M3-review.md)
 - The sea's waves are computed on the CPU alone, from glassy calm to gale, and agree with wave theory (SEA M1), 14 Nov · [review](../evidence/SEA/M1-review.md)
 - A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome (CONTENT-LOOP M1), 13 Nov · [review](../evidence/CONTENT-LOOP/M1-review.md)
 - The cooked valley presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M2), 13 Nov · [review](../evidence/PLATFORM-RUNTIME-MAC/M2-review.md)
@@ -190,16 +195,16 @@ A planner or the lead chose each of these where your words left it open. Each st
 | # | Module | What it's for | Needs | Status |
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
-| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
+| 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M3 of 4 · Not Started |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 7 · Ready for Review |
-| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | Waiting: On Dependency, APPLE-TILE:M3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Waiting: On Dependency, APPLE-TILE:M3 |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Not Started |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M2 of 3 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 3 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Waiting: On Dependency, APPLE-TILE:M3 |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | M2 of 2 · Not Started |
