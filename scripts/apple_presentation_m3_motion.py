@@ -90,7 +90,7 @@ def main():
         (output/'campaign.json').write_text(json.dumps(report,indent=2)+'\n')
     if report['complete']:
         subprocess.run(['node','scripts/review_v1_playback.mjs',str(output),str(output/'playback')],
-                       cwd=ROOT,check=True,timeout=300)
+                       cwd=ROOT,check=True)
 
 
 if __name__ == '__main__':

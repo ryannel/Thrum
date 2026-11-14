@@ -25,6 +25,11 @@ const child = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 await log.close();
 let ended = false, cdp, failure;
 child.once('exit',()=>{ended=true;});
+for (const signal of ['SIGINT','SIGTERM']) process.on(signal,()=>{
+  failure = new Error(`Playback interrupted by ${signal}`);
+  cdp?.socket.close();
+  if (!ended) child.kill('SIGTERM');
+});
 const results = [];
 const sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
 try {
@@ -85,7 +90,7 @@ quality:{totalVideoFrames:video.getVideoPlaybackQuality().totalVideoFrames,dropp
     await fs.writeFile(path.join(folder,'playback.json'),JSON.stringify(result,null,2)+'\n');
     results.push(result);
   }
-} catch (error) {failure=error;}
+} catch (error) {failure=failure?new AggregateError([failure,error]):error;}
 finally {
   try {await cleanup(child,()=>ended,cdp,server,profile);}
   catch (error) {failure=failure?new AggregateError([failure,error]):error;}
