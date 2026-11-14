@@ -630,6 +630,18 @@
           "ios": "simulator_diagnostic_function_only_no_physical_device_or_runtime_motion_claim"
         },
         "evidence": "../evidence/APPLE-TILE/M3-resume/README.md"
+      },
+      "M10": {
+        "implementation": "generation-owned labelled native copy/select witness and prepared WGSL twin implemented in a builder checkpoint; ordinary scenes disable the witness",
+        "functional_validation": "small same-submit fixture passes on Mac Metal; three integrated Metal lifecycle tests pass for two-slot history, replacement parity, failure/loss and completion retention; corrected coordinator capture accounting, simulator function, T2 diagnostic and full repository qualification remain pending",
+        "experienced_quality": "target diagnostic image and sequence inspection pending; no visual acceptance claimed",
+        "real_window_function": "D10.5 remains open for an unlocked active Mac session and existing Screen Recording permission for the OS-window observer",
+        "platform_performance": {
+          "mac": "unmeasured; composition and lifecycle proof only, no MetalFX, speed or panel claim",
+          "browser": "Wasm compilation and lint pass; changed runtime output qualification pending",
+          "ios": "simulator app build and target lint pass; native background-race function pending; physical device unqualified"
+        },
+        "evidence": "../evidence/APPLE-TILE/M10-handoff.md"
       }
     },
     "G4_apple_presentation": {
