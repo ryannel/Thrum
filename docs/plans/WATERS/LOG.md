@@ -172,3 +172,8 @@
 - 2026-11-14 `RIVERS`' design review replaced the weighted mean current of its ruling 5 with a current ladder
   in the interaction step, and gave a chart's samples a wetting gauge (ruling 2). Both are built by `RIVERS`
   behind declarations no scene of this module makes.
+- 2026-11-14 `SCENE-VIEWS`' second design review settled what a mirror view's air is held to: `ATMOSPHERE`'s
+  aerial product for an observer where the line crosses the plane, drawn by the main view from that point
+  ([its design](../SCENE-VIEWS/DESIGN.md#what-a-views-air-is-held-to)). M14.2's water-to-panel stretch can
+  take its expected value the same way. `RIVERS`' second review had the solve write a chart's wetting gauges
+  from each inflow as well as from the lower sample's water (ruling 2). No text, item or bound here changed.

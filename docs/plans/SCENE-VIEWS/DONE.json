@@ -62,9 +62,21 @@
         },
         {
           "id": "M1.5",
-          "statement": "With air from the plane, a view's aerial pair at a point is the transport from where the line of sight crosses the clip plane to that point, and nothing of the stretch before the crossing. For a view camera 2 m and 40 m below the plane and a panel 20 m and 3 km beyond it, with the Sun 45\u00b0 up ahead of and across the line of sight and 10\u00b0 up behind it, the pair the view's shaded fragment uses is the atmosphere reference's transmittance and in-scatter over that stretch, to the bounds `ATMOSPHERE`'s aerial product and its shadowed decoder meet against that reference. A caster that shades only the stretch between the camera and the crossing changes nothing, and one that shades the stretch beyond it darkens the in-scatter as the reference does. With no such request the aerial pass and the decoder write the bytes they wrote before, and the main view's shader text is unchanged.",
+          "statement": "With air from the plane, the air a view stores for a line is `ATMOSPHERE`'s aerial product for an observer standing where that line crosses the clip plane, and nothing of the stretch before the crossing. Each texel's column of the view's volume is the column the unmodified aerial pass stores at the same texel for a camera of the same orientation and projection standing at that texel's crossing, to one stored step in each channel: at every texel whose line crosses a level plane, with the view's camera 2 m and 40 m below it, and at texels across the volume under a plane tilted 20\u00b0. A line that never crosses the plane holds no air. With no such request the aerial pass and the decoder write the bytes they wrote before, and the main view's shader text is unchanged.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_gpu",
-          "ask": "Is the expected pair integrated by the atmosphere's CPU reference from the crossing to the panel, at real positions with the line's own direction, and are transmittance and in-scatter both compared? Would starting the air at the camera, or folding altitudes about the plane, fail with the Sun across the line of sight?",
+          "ask": "Is each reference column stored by `ATMOSPHERE`'s aerial pass as it runs with no request, for a camera the test places at a crossing it works out itself, so that no expected value comes from the view's own path? Would a column laid out from the view's camera, or air that starts there, fail?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.12",
+          "statement": "A fragment in a view is shaded with the air of its own stretch. Under a level plane, with the view's camera 2 m and 40 m below it and a panel 20 m and 3 km beyond the crossing, black and at a known radiance, with the Sun 45\u00b0 up across the line of sight and 10\u00b0 up behind it, the view's stored colour at the panel's pixel is the scene's main view's at that pixel from a camera of the same orientation, projection and extent standing at that pixel's crossing, to the design's rounding allowance. That holds with a caster that shades part of the stretch beyond the crossing, which darkens the black panel's colour in both by more than the allowance, and with a caster that shades only the stretch before the crossing, which changes nothing.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_shaded_gpu",
+          "ask": "Is the reference the scene's ordinary main view from the crossing, in clear air with temporal sampling off, and is the allowance worked out from stored steps as the design's `What a view's air is held to` says and printed beside each difference? Does the test show the view's colour missing that allowance against a main view drawn from the view's own camera, in the three cases part E of `docs/evidence/SCENE-VIEWS/design-proof/air_bound_proof.py` says can tell?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -169,9 +181,9 @@
         },
         {
           "id": "M2.3",
-          "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view with air from the plane. On the flat mirror a marker of known radiance standing above the frame shows in the pool at the pixel geometry gives. The pool's stored colour there is the marker's radiance through both stretches of the reflected path, marker to water in the view and water to camera by the main view's lent aerial pair, each applied once, times the exposure scale. It holds to `ATMOSPHERE`'s bounds for the two lookups, with the Sun off the line of sight, at exposure scales sixteen times apart.",
+          "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view with air from the plane. A black marker and one of known radiance, standing above the frame 100 m beyond the reflection point, show in the pool at the pixel geometry gives, from a camera 30 m from that point. The pool's stored colour there is the two stretches of the reflected path composed once each, times the exposure scale: `B + T_c \u00b7 V`, built as the design's `What a view's air is held to` builds it from the scene's main view with the pool's effect off, to that section's rounding allowance, with the Sun off the line of sight and at exposure scales sixteen times apart. On the black marker the same expectation with the camera's stretch left out, and with that stretch held by the view as well, each miss the allowance.",
           "check": "cargo test --locked --offline -p mirror-scene --test pool_gpu",
-          "ask": "Is the expected pixel and colour worked out on the CPU from the marker, the pool's plane and the atmosphere's reference over the two stretches, without the pool's shader? Would a pool that left out the camera's stretch, or a view that already held it, fail? Is the pool the example's own effect, with no type or file of it in an engine crate?",
+          "ask": "Are `V`, `B` and `W` stored colours of the scene's ordinary main view with the pool's effect off, composed by the test without the pool's shader, with the allowance worked out from stored steps and printed beside the difference? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -232,7 +244,7 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "In Chrome the mirror scene draws its view with no validation error, a view of entities and of cooked placements holds M1.1's and M2.1's bounds against Chrome's own main view, and the marker holds M2.3's.",
+          "statement": "In Chrome the mirror scene draws its view with no validation error, a view of entities and of cooked placements holds M1.1's and M2.1's bounds against Chrome's own main view, and the markers hold M2.3's allowance, with every reference colour Chrome's own.",
           "check": "node scripts/check_mirror_browser.mjs --case view",
           "lock": "gpu",
           "target": "chrome-webgpu",

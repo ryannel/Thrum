@@ -172,6 +172,14 @@ The forward shader is shared text. What it reads splits by whether the quantity 
   the crossing to the point and nothing before it. Every sample is a real point beyond the plane, taken with
   the line's own direction, the Sun's light and the scene's Sun visibility at that point, and bounded by the
   atmosphere's top and the ground as any ray is, so the phase angle and the shadows are the true stretch's.
+  The line's column is laid out from the crossing too. It is the column `ATMOSPHERE`'s pass stores for an
+  observer who stands at the crossing and looks along the line, with its layers at their own distances from
+  that observer, and the decoder addresses it by a point's distance beyond the crossing. So a view adds no
+  integrator, and its air has [an exact reference](#what-a-views-air-is-held-to). Laid out from the camera,
+  the layer the crossing falls in would blend air with none: a panel 20 m beyond a crossing 230 m from the
+  camera would take twice its in-scatter ([part E](../../evidence/SCENE-VIEWS/design-proof/README.md)). A
+  line that never crosses the plane ahead of the camera holds no air, since nothing can draw on it, and a
+  camera on the kept side of the plane has its air from the camera.
   The stretch from the main camera to the plane is the reader's, which has it already: the lent aerial pair
   from its own camera to its own surface point. Each stretch has one owner and is applied once (C08).
   The first version of this design folded altitudes about the plane and kept the line's direction; that put
@@ -257,6 +265,79 @@ mirror through water's knobs.
   surface. Both exist in kind. Whether its buffers can be doubled inside the limits Chrome reports is M2's
   first finding, and the direct path is the declared fallback for a view if they cannot.
 
+### What a view's air is held to
+
+Two things could be asked of a view's air. One is this module's.
+
+**Transport accuracy is `ATMOSPHERE`'s, and stays where it is.** With air from the plane a line's column is,
+by construction, the aerial pass's column for an observer at the crossing. It is as accurate as the air of a
+main camera standing on the water, no more and no less.
+[`ATMOSPHERE`](../ATMOSPHERE/DESIGN.md#numerical-acceptance) bounds that product's storage against its own
+integrator (P10) and its decoding against its own stored texels (H4), and says that no test bounds solar
+aerial transport against an independent reference. A view inherits exactly that. This module promises no
+transport bound, and none of its items compares a view with an independent quadrature. In part E's stand-in
+the pass's quadrature lies about one stored step from a fine one; nobody has measured the real one, and it
+is not measured here.
+
+**This module is held to a view's air being that product, for the right stretch.** The reference is
+`ATMOSPHERE`'s own product, made by its code as it stands with no request, from a camera the test puts at
+the crossing. It exists once `ATMOSPHERE:M5` is Done, which M1 waits for, and in Chrome the reference is
+Chrome's own. Two comparisons keep what is stored apart from how it is read.
+
+- **The stored column** (M1.5): transport and storage. Each texel's column of a view's volume is the column
+  the unmodified aerial pass stores at the same texel for a camera of the same orientation and projection
+  standing where that texel's line crosses the plane. Under a level plane every crossing has the plane's
+  height, so every texel whose line crosses is one such camera's. The allowance is one stored step in each
+  channel: the two runs do the same arithmetic on inputs that differ in their last bits.
+- **The shaded fragment** (M1.12): decoding, shadowed and not. Under a level plane, the stored colour of a
+  fragment at a pixel of the view is the stored colour the scene's main view gives that fragment at the same
+  pixel, from a camera of the same orientation, projection and extent standing where that pixel's line
+  crosses the plane, in a scene with no view volume, with temporal sampling off and a surface whose own
+  radiance does not depend on where along the line the camera stands. Both then run one decoder on equal
+  columns, at one screen position and one distance, over the same world points. So the scene's Sun
+  visibility along the stretch is the same in both, and a caster on the stretch before the crossing is in
+  neither. The allowance is **rounding**: one step of the stored colour, plus `Q` for each filtered read of
+  the volume whose value enters that fragment's colour, four in the plain decoder and eighteen in the
+  shadowed one as they stand. `Q` is one stored step of the volume carried through the decode, as
+  [`ATMOSPHERE`'s handoff](../ATMOSPHERE/DESIGN.md#numerical-acceptance) defines it. The test works the
+  allowance out and prints it beside the difference.
+
+**What that rejects.** Part E, as in-scatter on a black panel, in stored steps of 0.098%, for a line 10° up:
+
+| Wrong path | Camera 2 m below, panel 20 m beyond | 2 m, 3 km | 40 m, 20 m | 40 m, 3 km |
+|---|---|---|---|---|
+| Air that starts at the view's camera, or the first design's folded altitudes (the nearer of the two) | 591 | 5 | 11,622 | 95 |
+| The right stretch lit at the camera's own stretch's angle, Sun across; Sun low behind | 433; 45 | 433; 45 | 433; 45 | 433; 45 |
+| The right stretch in a column laid out from the camera | 1 | 0 | 1,064 | 0 |
+
+A panel 3 km beyond a crossing 11 m from the camera cannot tell where the air starts: the stretch before the
+crossing is 5 steps, inside what rounding allows. The other three cases can, and M1.12 names them. A column
+laid out from the camera can pass the fragment, where the crossing is near the camera or the panel far. It
+fails the stored column in every near layer, where the layer's end is a different distance beyond the
+crossing.
+
+**The composed colour** (M2.3, and M3.1 in Chrome). The pool composes the camera's stretch with the view's.
+The expectation is built from three stored colours of the scene's ordinary main view, with the pool's
+effect off and nothing shading the camera's stretch:
+
+- `V`, the marker from the reflection point, at the pixel its reflected line takes in a camera of the
+  view's orientation, projection and extent. By the rule above it is what the view holds.
+- `B` and `W`, from the main camera, of a panel lying in the pool's plane at the reflection point: black,
+  and at a known radiance `L₀`. So `B = E · S_c` and `T_c = (W − B) / (E · L₀)`: the camera's stretch as the
+  aerial decoder gives it. The lent pair the pool applies is the same read of the same volume at the same
+  point.
+
+The diagnostic pool reflects all of what it reads, so its stored colour is `B + T_c · V`. The allowance is
+rounding again: one step of each of the four stored colours and `Q` for each filtered read behind them,
+carried through that expression. The pool's one read of the view blends the texels round the point, so `V`
+is taken as its range over those pixels. Part E, on a black marker 100 m beyond the reflection point: from
+a camera 30 m from that point, leaving the camera's stretch out is 152 steps off, and a view that holds it
+as well is 265. From 1.5 m they are 9 and 15, which rounding can hide, so M2.3 names 30 m. Its test
+evaluates both wrong compositions, and each must miss the allowance.
+
+**A miss.** A difference over an allowance has a cause to find. It is never recorded as the bound, and a
+builder who cannot close one ends `BLOCKED` with the measurement.
+
 ## The system as it runs
 
 | State | Owner |
@@ -278,8 +359,9 @@ for nothing runs none of the view steps.
 in a pool, a lamp, a far hill, and a flat pool. The pool is the example's own diagnostic effect: it declares
 one slot, asks each frame for the camera's mirror image in the pool's plane, and shades each pool pixel with
 one read of the view where that pixel's surface point projects, which on a flat mirror is exact. It asks for
-air from the plane and applies the lent aerial pair from the main camera to the surface point itself. It is
-a fixture and a demonstration, and no engine crate holds it.
+air from the plane and applies the lent aerial pair from the main camera to the surface point itself. Its
+effect can be left out of a frame, which is how M2.3's references are drawn. It is a fixture and a
+demonstration, and no engine crate holds it.
 
 **Creator journey.** An effect author declares slots with their extents, asks in upload with a camera, reads
 colour, depth and the record in the effect's own pass, and registers the knobs. Changing a request, its
@@ -352,9 +434,10 @@ figure decides whether an item passes.**
 - **Bounds.** An equality item compares like with like: the same camera, extent and shadow profile. Its
   allowance is one step of each stored format, because two pipelines may round the last bit differently;
   for M1.6's rebuilt point it is a few steps of the stored depth and of a 32-bit float at the point's
-  coordinates, which the test works out; for M1.5 and M2.3 it is `ATMOSPHERE`'s own bounds for the lookups. A larger
-  difference has a cause to find and is never recorded as the bound. A builder who cannot close one ends
-  `BLOCKED` with the measurement.
+  coordinates, which the test works out. A view's air (M1.5, M1.12, M2.3) is compared with `ATMOSPHERE`'s
+  own product from the crossing, to [the allowances above](#what-a-views-air-is-held-to), and never with an
+  independent quadrature. A larger difference has a cause to find and is never recorded as the bound. A
+  builder who cannot close one ends `BLOCKED` with the measurement.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
   evidence in `docs/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
@@ -370,3 +453,4 @@ figure decides whether an item passes.**
 | What does a view cost, and what does each knob buy? | M3.4 |
 | Is one cascade to 128 m enough for a reflection? | M2.5; [risk 5](#risks) |
 | Is a clip-distance variant a measured win on the Apple recipe? | After M3, as a recipe proposal in the log |
+| How far is a view's air from true transport? | Not this module's: it is `ATMOSPHERE`'s aerial product from the crossing, unqualified there until that module's own campaign |

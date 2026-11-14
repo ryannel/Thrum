@@ -231,11 +231,13 @@ For each reach, a chart as [the map defines one](../WATERS/DESIGN.md#the-water-m
 
 - **Level**, over the whole footprint. In a cell the sample leaves dry it lies under the bed: it is the level of
   the nearest wet cell where that is under the cell's bed, as on a bank, so the waterline is where the surface
-  meets the ground; and where that level is over the bed, as in a hollow the water has not reached, it is held
-  a margin under the bed. A dry cell is never water, whatever stands beside it.
+  meets the ground; and where that level is over the bed, as in a hollow the water has not reached, or the
+  sample wets no cell of the reach, it is held a margin under the bed. A dry cell is never water, whatever
+  stands beside it.
 - **Current**, the discharge over the depth; none in a dry cell.
 - **Wetting gauge**, where the river has a higher sample: the gauge at which the cell first holds water on
-  the way to that sample ([below](#a-river-answers-its-source)).
+  the way to that sample ([below](#a-river-answers-its-source)). The solve finds it, reach by reach from the
+  river's sources down, because it knows where each reach's water enters.
 - **Loss**: the whitewater power, in watts for each square metre of surface ([below](#whitewater-from-the-flow)).
 - **Flow gains**: one for each flow band ([below](#the-flows-own-waves)).
 
@@ -262,23 +264,56 @@ than 0.3 m apart; for springs, at the discharges the game declares. Each sample 
 moment every chart row of the river (level, current, loss and gains) and every fall record is the mix, linear in
 the gauge, of the two samples whose gauge levels bracket it, in every cell both samples wet.
 
-**Where the two samples differ in what is wet**, a cell holds water only from its **wetting gauge**. A cell's
-own crossing is the gauge at which the mixed level meets its bed. Its wetting gauge is the least gauge at
-which a path of wet cells joins it to the lower sample's water: the larger of its own crossing and the
-smallest wetting gauge among the cells it can be reached through. Preparation finds it by flooding outward
-from the lower sample's wet cells in order of gauge. Below its wetting gauge a cell has no water, no wave
-support and no shore margin, and the level the map gives there lies under its bed. From its wetting gauge to
-the upper sample its level runs linearly from its bed to the upper sample's level, and its current, loss and
-gains from nothing to the upper sample's. For a bank cell, whose wetting gauge is its own crossing, that is
-the linear mix exactly, so the waterline moves up a bank as it did. A hollow behind a ridge waits for the
-ridge: it is dry until the ridge's lowest point wets, then fills from its bed. A cell the lower sample wets
-and the upper leaves dry dries where its mixed level meets its bed.
+**Where the two samples differ in what is wet**, a cell holds water only from its **wetting gauge**, and
+water spreads from where it is. Preparation floods outward in order of gauge from two kinds of place:
 
-[Part 8](../../evidence/RIVERS/design-proof/README.md) runs the design review's case, a channel beside a
-hollow behind a ridge with a notch. The first design's rule, a dry cell at the nearest wet level, puts 0.80 m
-of water in the hollow at the low sample. With wetting gauges the hollow is dry until the notch wets at a
-quarter of the way between the samples and the wet cells are those of a quasi-static flood at every gauge
-tried, each joined to the channel; a bank cell's ramp is the linear mix to 2e-16 m.
+- every cell the lower sample wets, from the lower sample's gauge;
+- every **inflow place** the upper sample feeds and the lower leaves dry, from the gauge its inflow starts:
+  the cell where a spring enters, from the lower sample's gauge, since its discharge rises from nothing
+  there; and the cells where water arrives from the reach above, where a fall's path lands or at an end two
+  reaches share, from the wetting gauge of the cell above that feeds them. A river's reaches are flooded
+  from its sources down, so that gauge is known before the reach below is flooded, and every chart reads
+  the one gauge.
+
+A wet cell passes water to a neighbour that the upper sample wets at the least gauge at which its own level
+stands at or over that neighbour's bed: at once to a neighbour downhill, and to a bank, a notch or a ridge
+when its level has risen that far. A cell's wetting gauge is the least gauge at which any neighbour passes
+it water. A cell the upper sample wets that no neighbour's level ever tops, because the water climbs to it
+by its speed, takes the wetting gauge of the neighbour the upper sample's flow enters it from. Below its
+wetting gauge a cell has no water, no wave support and no shore margin, and the level the map gives there
+lies under its bed. From its wetting gauge to the upper sample its level runs linearly from its bed to the
+upper sample's level, and its current, loss and gains from nothing to the upper sample's.
+
+What follows from the rule:
+
+- **A bank** beside water both samples hold wets where that water's mixed level meets its bed, and from
+  there rises with it, so the waterline moves up a bank as it did.
+- **A hollow behind a ridge** waits for the ridge. It is dry until the water beside the ridge tops the
+  ridge's lowest point, and then fills from its bed as a level pool.
+- **A reach the lower sample leaves dry** is dry until the lip above it runs, and from that gauge is wet
+  from its landing down, deepening from nothing. A part of a fall that only the upper sample runs gives
+  nothing below its lip cell's wetting gauge; from there its discharge and launch depth rise linearly from
+  nothing, along the upper sample's path at the upper sample's launch speed. So a sheet never pours onto a
+  dry reach, and no reach is wet under a dry lip.
+- A cell the lower sample wets and the upper leaves dry dries where its mixed level meets its bed.
+
+[Part 8](../../evidence/RIVERS/design-proof/README.md) runs the first design review's case, a channel beside
+a hollow behind a ridge with a notch. The first design's rule, a dry cell at the nearest wet level, puts
+0.80 m of water in the hollow at the low sample. With wetting gauges the hollow is dry until the notch wets
+at a quarter of the way between the samples, and the wet cells are those of a quasi-static flood at every
+gauge tried, each joined to the channel.
+
+[Part 10](../../evidence/RIVERS/design-proof/README.md) runs the second review's case and the rule as it
+now stands. A sloping reach between two falls, dry in the lower sample, has no wet cell to flood from, and
+a flood seeded from the lower sample's water alone gives none of its 32 cells a gauge. Seeded where the
+fall lands, at the gauge the lip above wets (0.30 of the way), all 32 take that gauge: the reach is dry
+below it, wet and joined to its landing at every gauge above, 0.029 m deep at the half-way gauge, and the
+upper sample's to rounding at the upper sample. Part 8's case gives the same gauges and wet cells as
+before, and the hollow fills level. In a dry reach that ends in a pool, a hollow behind a ridge stays dry
+until the pool tops the ridge's notch, at 0.65. A branch 2 m above a wet channel wets from its own landing
+at its lip's gauge; by the first revision's rule, the crossing of a cell's own two stored levels, it would
+have waited until 0.98, and a ridge in a dry reach would have wetted with the pool beside it 0.075 m under
+its bed. A run that climbs a rise by its speed is reached through the neighbour that feeds it.
 
 The mix is the map's, in `thrum-water-model` and in WGSL alike, so every reader has it and no reader sees a
 river the query does not ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A chart with one sample is
@@ -287,7 +322,10 @@ exactly `WATERS`' chart, and its stage adds to its level as before.
 Part 3: between samples 0.3 m apart the mixed row is within 5.6 mm in depth and 19% in speed of a solve at that
 level; 0.15 m apart, 2.6 mm and 10%. Declared approximations: the mix is not itself a steady flow, so between
 samples discharge is not quite the same through every section; a cell that waits for its connection fills
-linearly from its wetting gauge, not at the rate its inflow would give; and the whole river answers at once.
+linearly from its wetting gauge, not at the rate its inflow would give; a reach that starts to run is wet
+along its whole length at once, and a pool on it fills as the gauge rises, where a steady flow would have it
+full from the first trickle; a cell reached by the water's speed wets with the cell that feeds it, which may
+be early; and the whole river answers at once.
 A rise does not travel. A prepared travel time for each cell, read against a short record of the gauge, would make it
 travel with no change to a reader, and is not built.
 
@@ -406,12 +444,16 @@ is one region, and no one current carries both: with rings on each, any single c
 
 So the step has a **current ladder**, as it has a depth ladder
 ([ruling 5](../ARCHITECTURE.md#seam-rulings-for-rivers)). When a window's regions are labelled, each region
-takes a few **carriage currents** from the currents of its wet cells, four at most in the first profile,
-spread over their range. The step transforms the state once, transforms back once for each carriage current
-in use at each ladder depth, and each cell takes the blend of the outputs carried at the currents that
-bracket its own. The weights are never negative, sum to one and give back the cell's own current; where a
-current lies outside the ladder's it takes the nearest. On still water and on a uniform current the ladder
-has one current, and the step is what `WATERS` built, to the bit.
+takes a few **carriage currents**, four at most in the first profile. A current is a vector. The carriage
+currents are chosen, in the plane of current vectors, so that their span holds the currents of the region's
+wet cells: the line between them where a reach runs straight, and the triangle or quadrilateral between
+them where it turns. A carriage current need not be any cell's own. The step transforms the state once,
+transforms back once for each carriage current in use at each ladder depth, and each cell takes the blend
+of the outputs carried at the two or three carriage currents whose span holds its own, weighted by where
+its current lies between them. Those weights are never negative, sum to one and give back the cell's own
+current. A current the span does not hold takes the nearest point of it, and is carried at a current that
+differs from its own by that distance; the step reports each region's largest such difference. On still
+water and on a uniform current the ladder has one current, and the step is what `WATERS` built, to the bit.
 
 A **solve** is now one region at one ladder depth and one carriage current, inside the profile's same count
 of 16. Where a level would pass it, regions give up carriage currents first, down to the one mean, before a
@@ -423,8 +465,13 @@ region is left at rest, and the step reports what it dropped.
 unmoved when the riffle's source is five times stronger. Declared approximations: a wave on water whose
 current lies between two carriage currents is a blend of two carried copies and loses energy, 0.2% a
 second midway between four currents and 1.3% between two, and never gains; rings that cross from a pool
-into a riffle pass through that blend; and the proof is one section, so currents that turn across a window
-are M6.10's to measure.
+into a riffle pass through that blend.
+
+Part 11 is arithmetic on the span alone, for a pool at 0.2 m/s and a bend that turns a 1.5 m/s current.
+Carriage currents taken from the cells' own, the pool's and three on the bend, leave the bend's cells up to
+0.11 m/s outside their span through a turn of 90°, which is 0.57 m after 5 s, and 0.03 m/s through 45°. Rest
+and three currents on the bend's tangents hold every cell. What a blend of three copies up to 1.6 m/s apart
+costs a wave is unrun: part 9 is one section, and M6.10's turning case measures it.
 
 ### The chart store
 
@@ -473,10 +520,13 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   the shallows' constant is unrun; M5 records it.
 - **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; M6 is the
   first ([risk 4](#risks)).
-- **R6.** Part 3, in section, for cells both samples wet; part 8, in plan, for what is wet between two
-  samples, with a hollow behind a ridge. The solver's own samples of a valley are unrun; M3 tests them.
+- **R6.** Part 3, in section, for cells both samples wet; parts 8 and 10, in plan, for what is wet between
+  two samples: a hollow behind a ridge, and a reach that goes from dry to running. Both work on levels
+  written by hand. The solver's own samples of a valley, and its own lip that starts to run, are unrun; M3
+  tests them.
 - **R8.** Part 7 is arithmetic on part 2's flow. Part 9 steps two ring sets at once on a pool and a riffle in
-  one region, in section. The ladder in plan and on the GPU is unrun; M6 measures the rings.
+  one region, in section. Part 11 is the span of the carriage currents round a bend. The ladder in plan and
+  on the GPU is unrun; M6 measures the rings.
 - **What the looks cover.** The island's fall is about 4 m, and M6 judges it from 2 m to 200 m at three
   gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (M2.4)
   and are not judged by eye: the ledger says so until a game shows one.
@@ -486,7 +536,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 
 | State | Owner |
 |---|---|
-| The solver, the brink rule, the energy account, the river file's writer | `thrum-river-model` (this module), on `thrum-water-model`, no GPU dependency |
+| The solver, the brink rule, the energy account, the wetting gauges, the river file's writer | `thrum-river-model` (this module), on `thrum-water-model`, no GPU dependency |
 | A river's samples and gauge in the map's function; brink ends; fall records and the sheet's f64 reference; the plunge's births and impulses as a function of the tick; the flow bands' spectrum, evaluator and gains; the river file's reader | Files this module adds to `thrum-water-model`, and its changes to the map's function there under [rulings 1 to 3](../ARCHITECTURE.md#seam-rulings-for-rivers) |
 | Samples and wetting gauges in the map on the GPU; the flow bands' passes; births from loss; sheets; plunges; the current ladder | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 2 to 7 |
 | The map, the surface, optics, the query, interaction waves, foam, carriage | `WATERS` |
@@ -590,7 +640,7 @@ dependencies. In addition:
   `docs/evidence/RIVERS/PROVENANCE.md`; none is expected.
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 9 are the source of the bounds in M1 to M3 and M6.10. A bound on the GPU is measured
+- **Bounds.** Parts 1 to 10 are the source of the bounds in M1 to M3 and M6.10. A bound on the GPU is measured
   first, on this Mac, and then asserted, with its date and commit in the record.
 - **Maturity.** A ledger row for `E1.rivers` is added in M4 and kept current.
 

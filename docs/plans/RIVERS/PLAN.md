@@ -30,7 +30,7 @@ Ruling 1 changes the map's preparation in `thrum-water-model`, which `WATERS`' b
 
 ## M3 On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale
 
-Rulings 2 and 3 change the map's function and the surface model in `thrum-water-model`. The flow bands' spectrum and evaluator live there, not in `thrum-sea-model`, which is `SEA`'s until its last milestone. Part 3 gives M3.2's bounds, and part 8 of `revision_proof.py` its hollow and how wetting gauges are found.
+Rulings 2 and 3 change the map's function and the surface model in `thrum-water-model`. The flow bands' spectrum and evaluator live there, not in `thrum-sea-model`, which is `SEA`'s until its last milestone. Part 3 gives M3.2's bounds. Parts 8 and 10 (`revision_proof.py` and `wetting_proof.py` in the same folder) give M3.8's hollow and dry reach and how wetting gauges are found. The solve writes the gauges, because it knows where each reach's water enters, and the map only reads them. M3.8's dry reach needs a lip the lower sample does not reach, such as a second, higher way out of a pool.
 
 ## M4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 

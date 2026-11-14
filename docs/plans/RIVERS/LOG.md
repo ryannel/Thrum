@@ -56,3 +56,26 @@
   M7.11's ledger say that only the island's fall of about 4 m is judged by eye. Short and tall falls for
   the looks alone were not added to the island: they are scenery no cue of the island needs.
 - 2026-11-14 Not run by the planner: the ladder in plan or on the GPU, and wetting gauges on a solved valley.
+- 2026-11-14 Second design review asked for changes: [one Must Fix finding](../../evidence/RIVERS/design-review.md).
+  A reach whose lower sample is wholly dry had no wet cell to flood from, so none of its cells took a
+  wetting gauge and it never wetted.
+- 2026-11-14 Wetting restated: water spreads from where it is. The flood starts from the lower sample's
+  wet cells and from each inflow place the lower sample leaves dry, a spring's cell or where water arrives
+  from the reach above, keyed at the gauge that inflow starts; reaches are flooded from the sources down.
+  A wet cell passes water to a neighbour when its own level stands over that neighbour's bed. A part of a
+  fall that only the upper sample runs starts at its lip cell's wetting gauge.
+  [Part 10](../../evidence/RIVERS/design-proof/README.md): the review's 32 cells all take the lip's gauge,
+  and part 8's answers are unchanged. Not chosen: an extra flow sample at the gauge a lip starts, which
+  costs solves and still needs the seed.
+- 2026-11-14 Replaced in that rule: a cell's own crossing, taken from its two stored levels. Above a wet
+  channel it held a newly fed branch dry until 0.98 of the way, and in a dry reach it depended on the
+  margin a dry level is stored at (part 10). The solve now writes the gauges; the map still only reads them.
+- 2026-11-14 Items. M3.2 keeps the mix and says its depth and speed bound is for cells both samples wet
+  (suggestion 1, taken: the design already said so). New M3.8 holds the wetting: the hollow, and a reach
+  that goes from dry to running. M3.3 and M4.3 gain the lip that starts to run and the dry reach on the GPU.
+- 2026-11-14 Suggestion 2 taken, in the design only: carriage currents are vectors chosen so their span
+  holds a region's currents, not picked from its cells. Part 11: round a 90° bend at 1.5 m/s, three of the
+  cells' own leave cells 0.11 m/s outside the span, 0.57 m after 5 s; rest and three on the bend's tangents
+  hold them all. Ruling 5 says so. M6.10 is unchanged and still measures a turning window.
+- 2026-11-14 Not run by the planner: the solver's own samples with a lip that starts to run, wetting gauges
+  on the GPU, and waves blended between three carriage currents.

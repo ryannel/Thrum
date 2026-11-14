@@ -369,8 +369,10 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    stage. Every chart of one river takes the same gauge. Between two samples each cell also has a prepared
    **wetting gauge**, and holds no water, wave support or shore margin below it: a cell that only the upper
    sample wets, and that is reached through another such cell, stays dry until that cell is wet, so a hollow
-   behind a ridge is never filled from the level beside it. From its wetting gauge a cell's level and current
-   run linearly to the upper sample's, which for a bank cell is the mix it was. A chart with one sample is
+   behind a ridge is never filled from the level beside it. The solve writes the gauges, spreading water from
+   the lower sample's wet cells and from where each inflow enters, so a reach the lower sample leaves dry
+   wets from its landing when the lip above it runs. From its wetting gauge a cell's level and current run
+   linearly to the upper sample's, which for a bank cell is the level of the water beside it. A chart with one sample is
    unchanged, and its stage adds to its level as [the map](WATERS/DESIGN.md#the-water-map) says.
 3. **Flow bands** (`RIVERS` M3 in `thrum-water-model`, M5 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers the wind does not fill, of the cascades' kind, generated only where a scene's profile
@@ -382,8 +384,8 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    the bounded rule the foam's other births use.
 5. **A current ladder in the interaction step** (`RIVERS` M6; the interaction step in `thrum-water` and its
    reference in `thrum-water-model`). A region whose wet cells run at different currents is stepped with a
-   few carriage currents chosen from them, and each cell takes the blend of the outputs carried at the
-   currents that bracket its own, as the depth ladder blends by depth. So two sets of rings raised at once
+   few carriage currents whose span, as vectors, holds them, and each cell takes the blend of the outputs
+   carried at the currents that bracket its own, as the depth ladder blends by depth. So two sets of rings raised at once
    on a pool and on a riffle are each carried by their own water, whatever the other's strength. On still
    water and on a uniform current the ladder has one current and the step is what it was.
 6. **A river selection in `examples/water`** (`RIVERS` M4). The game gains a selection that is off by default.
@@ -495,8 +497,10 @@ before.
    For a view that asks for **air from the plane**, the volume and the decoder that shades it measure each
    line of sight from where it crosses the view's clip plane: the pair at a point is the transport from the
    crossing to the point, sampled at the true positions beyond the plane with the line's own direction and
-   the scene's Sun visibility there, and nothing before the crossing. The reader owns the stretch from its
-   own camera to the plane. With no such request the pass writes what it writes today, and the main view's
+   the scene's Sun visibility there, and nothing before the crossing. Each line's column is laid out from
+   its crossing: it is the column the pass stores for an observer there, so the pass gains no second
+   integrator, and that product drawn from the crossing is what a view's air is held to. The reader owns
+   the stretch from its own camera to the plane. With no such request the pass writes what it writes today, and the main view's
    shader text is unchanged. A view has clear air where a scene declares the view volume.
 4. **A view that is not presented** (`SCENE-VIEWS` M1; `synthetic/view.rs`, `APPLE-PRESENTATION`'s view
    record). [C07](../design/CONTRACTS.md) now names a secondary view: a product of its presenting view that
@@ -1581,3 +1585,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   last second, so stopping the rain lets its rings run out (ruling 3), and shelter is up to two layers in a
   column. No contract text and no exact baseline
   changed, and no item of a module other than these four, `CLOUDS` M14.3 and `WATERS` M14.2 changed.
+- 2026-11-14 `SCENE-VIEWS` and `RIVERS` revised after their second design reviews, one Must Fix each. A
+  view's air is laid out from the crossing and held to `ATMOSPHERE`'s own product drawn from there, with no
+  transport bound of its own ([ruling 3 for `SCENE-VIEWS`](#seam-rulings-for-scene-views)). A chart's
+  wetting gauges are written by the solve from the lower sample's water and from each inflow, so a reach
+  that was dry wets when its lip runs, and carriage currents span a region's currents as vectors
+  ([rulings 2 and 5 for `RIVERS`](#seam-rulings-for-rivers)). No design, item, test or bound of `WATERS`,
+  `PUDDLES` or `ATMOSPHERE` changed, and no contract text.

@@ -50,3 +50,22 @@
 - 2026-11-14 `WATERS` follows: its mirror section asks for air from the plane and its M14.2 composes the
   two stretches. Not run by the planner: any GPU check. Declared: a wave-lifted reflecting point 0.3 m off
   the plane moves a term of 1e-4 of the body's radiance by 3.8%.
+- 2026-11-14 Second design review asked for changes: one Must Fix,
+  [`air-reference-bound`](../../evidence/SCENE-VIEWS/design-review.md). M1.5 and M2.3 held a view's air to
+  bounds `ATMOSPHERE` meets against its own integrator and stored texels, as if they were bounds against
+  an independent CPU integration. `ATMOSPHERE` promises none for solar aerial transport.
+- 2026-11-14 Resolved without a new accuracy promise. With air from the plane a line's column is laid out
+  from its crossing, so it is `ATMOSPHERE`'s own column for an observer there, and the reference for every
+  air item is that product drawn from the crossing by the code as it stands. Allowances: one stored step
+  for a stored column; for a shaded fragment, one step of the stored colour plus `Q` for each filtered read
+  behind it. Transport accuracy stays `ATMOSPHERE`'s and unqualified, and the design says so.
+- 2026-11-14 Items. M1.5 is now the stored column; new M1.12 is the shaded fragment, with the casters on
+  either side of the crossing. M2.3's expected colour is built from three stored colours of the main view
+  with the pool off, on a black and a lit marker from a camera 30 m from the reflection point, and the two
+  wrong compositions must miss. M3.1 says every reference in Chrome is Chrome's own.
+- 2026-11-14 [Part E](../../evidence/SCENE-VIEWS/design-proof/README.md): air from the view's camera is
+  592 to 12,000 stored steps off in three of the four cases and 5 in the fourth, which the design names as
+  one no test can tell; a column laid out from the camera doubles the in-scatter 20 m beyond a crossing
+  230 m away. The pass's own quadrature is about one step from a fine one in a one-band stand-in.
+- 2026-11-14 Not run by the planner: any GPU check, so that a correct view meets the rounding allowance on
+  Metal and in Chrome is unrun. No suggestion was made in this review.
