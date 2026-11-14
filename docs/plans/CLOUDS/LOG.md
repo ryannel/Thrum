@@ -192,13 +192,15 @@
 
 - 2026-11-14 The resumed item check passed all 14 automated commands. Exact baselines on `41362d03`
   passed in 914.51 seconds: 38 and 4 native comparisons, and 481 records in each of four Chrome sets.
-  The verifier used its normal filtered environment. Its covered-content key remains
-  `35ee716d5af06cc0e5cdcbaac1a9fe42ad061651dcdf20136fea84744a3a2fcc`, identical on `6ce3247b`
-  and the incoming main branch: the intervening SCENE-VIEWS, WATERS and RIVERS changes are plans,
-  contracts and design-proof documents, with no runtime or covered-source change. All 13 CPU/dependency
-  commands also passed on `6ce3247b`, under shared Git check key `3d502e1cc2edc60446e8eac2`.
-  A redundant queued image rerun was cancelled because these unaffected proofs still hold.
-  Two dangling links in the upstream APPLE-TILE handoff were changed to explicit worktree paths;
-  `./dev check-docs` passed. Integration retains the canonical `./dev check` gate under GPU exclusivity
-  and removes this worktree's reconstructible development builds before releasing that resource.
+  The covered-content key
+  `35ee716d5af06cc0e5cdcbaac1a9fe42ad061651dcdf20136fea84744a3a2fcc` also matched `6ce3247b`.
+  All 13 CPU/dependency commands passed there, under shared Git check key `3d502e1cc2edc60446e8eac2`.
+  `./dev check-docs` passed after fixing two handoff links; the equivalent upstream fix is now kept.
   No retained baseline, sampling rule, numerical bound or M1 criterion changed.
+
+- 2026-11-14 Rebased onto SEA M2 and dropped the duplicate private handoff-link fix. Covered inputs at
+  `f83c2549` hash to `df6dcdc5e3fca468d0c8a0ae2ea9ad4cfff52c2c3fde8084b2aa2bd86e31293e`, matching
+  [SEA's retained verifier record](../../evidence/SEA/M2-baselines.json): Mac and Chrome passed in
+  965.46 seconds, with 38 and 4 native comparisons and 481 records in each of four Chrome sets.
+  All 13 CPU/dependency commands were refreshed there, under shared Git check key `d82f679aa755f3194b973a13`.
+  Canonical integration keeps GPU exclusivity and removes owned development builds before unlocking.
