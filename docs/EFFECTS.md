@@ -41,6 +41,11 @@ unjittered positions and the last submitted deformation. Invalid correspondence 
 reactive coverage 1. Honour `ContributionFrame::history_reset`, device replacement and owned effect resets.
 This hands inputs to reconstruction; the seam does not reconstruct the effect.
 
+Atmosphere lighting is available through `SceneSurface::environment_products()` during rebuild. Its standalone
+WGSL library declares group 0; when composing it with the scene view, remap that library's group attribute to a
+free group (for example 3), put its unchanged layout at that index and bind its `group(frame.exposure_side)` there.
+Its lighting values are un-pre-exposed: apply `environment_storage_scale()` once to the finished contribution.
+
 `EffectPass::async_eligible` admits compute-only declarations without attachment/copy access and lists them in
 `CompiledGraph::async_eligible`. It does not change order or use another queue. `FrameHost::quality_knobs`
 lists named integer values, inclusive ranges and invalidations. `set_quality_knob` stages a change;

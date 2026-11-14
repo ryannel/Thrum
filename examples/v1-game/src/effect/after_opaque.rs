@@ -68,7 +68,10 @@ async fn host(
         queue,
         FrameConfig {
             render_extent: [64, 64],
-            surface: None,
+            surface: Some(thrum_render::present::SurfaceProfile {
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                extent: [64, 64],
+            }),
         },
         World(SourceTick {
             epoch: 7,
@@ -298,7 +301,17 @@ async fn replacement(
             thrum_render::capabilities::Recipe::AppleTile => "apple-tile",
         })
         .map_err(error)?;
-    let mut prepared = inputs.prepare(&next, &queue, None).await.map_err(error)?;
+    let mut prepared = inputs
+        .prepare(
+            &next,
+            &queue,
+            Some(thrum_render::present::SurfaceProfile {
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                extent: [64, 64],
+            }),
+        )
+        .await
+        .map_err(error)?;
     host.publish_device(&mut prepared).map_err(error)?;
     host.world_mut().0.tick = 17;
     host.advance(Duration::from_secs(17))
