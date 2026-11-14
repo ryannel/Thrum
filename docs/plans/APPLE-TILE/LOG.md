@@ -221,6 +221,13 @@
   The failure is retained and a complete gate retry is required before merge. D10.5 remains open for access.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md).
 
+- **2026-11-14 — M10 second disk refusal.** After 8.66 GB of verified expired M3 bulk release, the retry
+  acquired GPU exclusivity but refused capture below the unchanged 16 GiB floor; observed free space was 15.34 GiB.
+  Both qualification jobs exited before check/merge. D10.1–D10.4 retain their passes; D10.5 is unrun despite
+  successful access preflight. Shared-volume headroom needs lead coordination. The handoff and unrun observer
+  are retained; no image tolerance, OS grant or test threshold changed.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
 - **2026-11-14 — M10 attended continuation.** Rebased to `cc8f25a5`, resolving the handoff conflict.
   Read-only preflight confirms unlocked Mac and existing Screen Recording access; D10.5 capture remains unrun.
   The prepared observer and source audit are retained; game/renderer/host sources are unchanged.
