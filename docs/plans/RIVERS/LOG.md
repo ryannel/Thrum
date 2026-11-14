@@ -37,3 +37,22 @@
   West water notes. Not read: the Far Cry 5 water talk, any account of Red Dead Redemption 2's rivers or
   falls, and measurements of a falling sheet's breakup. Horeni's length, the weir relation and the surface's
   turbulent energy are from memory.
+- 2026-11-14 Design review asked for changes: [three Must Fix findings](../../evidence/RIVERS/design-review.md).
+  All three are resolved in the design, the items and [rulings 2 and 5](../ARCHITECTURE.md#seam-rulings-for-rivers).
+- 2026-11-14 Dry support. A dry cell's level always lies under its bed, and between two samples each cell
+  has a prepared wetting gauge: the least gauge at which wet cells join it to the lower sample's water. Below
+  it the cell has no water, wave support or margin, so a hollow behind a ridge is dry until the ridge wets.
+  A bank cell's answer is the linear mix it was. [Part 8](../../evidence/RIVERS/design-proof/README.md)
+  reproduces the review's 0.80 m of invented water and its removal. M1.6, M3.2 and M4.3 judge the wet
+  cells as well as depth and current; a river file gains a seventh value.
+- 2026-11-14 Rings on running water. The weighted mean is replaced by a current ladder in the interaction
+  step: a few carriage currents for each region, each cell blending the two that bracket its own, as the
+  depth ladder does. Part 9: two ring sets at once on a pool and a riffle stay within 0.10 m of their own
+  water, where any one current leaves each 3.25 m off. New item M6.10 judges it with a second source in
+  the same region; M6.3 keeps the plunge. Declared: 0.2% to 1.3% of a midway wave's energy lost a second.
+- 2026-11-14 M1.6 no longer asks for the solver's row inside a join. The stored chart equals the solve; the
+  map equals it where the join's weight is nothing, and `WATERS`' joined row, backwater included, elsewhere.
+- 2026-11-14 Suggestion taken in part: M6.4 looks at the fall from 2 m and 200 m as well, and the design and
+  M7.11's ledger say that only the island's fall of about 4 m is judged by eye. Short and tall falls for
+  the looks alone were not added to the island: they are scenery no cue of the island needs.
+- 2026-11-14 Not run by the planner: the ladder in plan or on the GPU, and wetting gauges on a solved valley.

@@ -1366,7 +1366,7 @@
         },
         {
           "id": "M14.3",
-          "statement": "The Sun path's ground band matches the model's reference at points on the ground, inside a bank and beside it, at a 30\u00b0, a 10\u00b0 and a 4\u00b0 Sun, within the bound this milestone measures first. `ATMOSPHERE`'s factor on a receiver is the exponential of minus the sum of both bands, applied once. The surface visibility is read by medium samples only: no surface's shading changes when it is filled.",
+          "statement": "The Sun path's ground band matches the model's reference at points on the ground, inside a bank and beside it, at a 30\u00b0, a 10\u00b0 and a 4\u00b0 Sun, within the bound this milestone measures first. The band holds the whole path, the cloud band's value where the ray leaves it included, so `ATMOSPHERE`'s factor on a receiver inside it is the exponential of minus the band's one value there, and a receiver under an upper cloud with no condensate near it takes that cloud's factor once. The surface visibility is read by medium samples only: no surface's shading changes when it is filled.",
           "check": "cargo test --locked --offline -p thrum-clouds --test ground_band_gpu",
           "ask": "Is the reference the model's and not the shader's? Does one case put a surface receiver in a ridge's shadow and show its shading unchanged by the surface visibility?",
           "lock": "gpu",

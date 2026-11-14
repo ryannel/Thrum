@@ -13,9 +13,9 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: a river's flow is still worked out ahead and stored, once for each of a few source levels, never while the game runs. A page in Chrome loads stored rivers and never solves one.
 - Assumption: rivers are not fed by rain. Their sources are springs and lakes the game declares, and a spring's flow is a control.
 - Assumption: rapids have no spray and no standing waves that overturn, and nothing in a river surges by itself: the flow is steady, and what moves is its ripples, its foam and what it carries.
-- Assumption: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high. A lower drop is a chute in the stream.
+- Assumption: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high. A lower drop is a chute in the stream. Only the island's fall, about 4 m, is judged by eye.
 - Assumption: the island shows the solved rivers and the waterfall only when a selection is turned on, until `WATERS` closes, so that `WATERS`' own reviews see the island they were written for.
-- Assumption: this module builds inside `WATERS`' crates under seven rulings, and two of them replace what `WATERS`' design expected: a stream's ripples are made by its flow and not by the wind, and a reach follows its source's level.
+- Assumption: this module builds inside `WATERS`' crates under seven rulings, and three of them replace what `WATERS`' design expected: a stream's ripples are made by its flow and not by the wind, a reach follows its source's level, and rings are carried at each water's own current where a pool meets a riffle.
 - Assumption: the module closes without waiting for the governor and MetalFX, which `WATERS`' last milestone waits for; its two quality controls are declared for the governor to use.
 - Assumption: a float does not ground on the bed, and running water makes no sound, because the engine has no physics or audio owner.
 - Assumption: cost is recorded on the Mac only, at 2560×1440, and no timing figure decides an item (brief decision 3).
@@ -30,7 +30,7 @@ Ruling 1 changes the map's preparation in `thrum-water-model`, which `WATERS`' b
 
 ## M3 On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale
 
-Rulings 2 and 3 change the map's function and the surface model in `thrum-water-model`. The flow bands' spectrum and evaluator live there, not in `thrum-sea-model`, which is `SEA`'s until its last milestone. Part 3 gives M3.2's bounds.
+Rulings 2 and 3 change the map's function and the surface model in `thrum-water-model`. The flow bands' spectrum and evaluator live there, not in `thrum-sea-model`, which is `SEA`'s until its last milestone. Part 3 gives M3.2's bounds, and part 8 of `revision_proof.py` its hollow and how wetting gauges are found.
 
 ## M4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
@@ -42,7 +42,7 @@ The flow bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to 
 
 ## M6 A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings
 
-Measure M6.1's bound and M6.3's wave share first, then assert them. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
+Measure M6.1's bound and M6.3's wave share first, then assert them. M6.10's figures are part 9's and are not measured first: build the ladder in `thrum-water-model`'s interaction reference, then on the GPU. The game names a body in the plunge pool for the views that judge rings, because interaction windows follow the named body.
 
 ## M7 A visitor raises the lake, sets the stream's flow and takes the day from dawn to night, and the rivers and the waterfall hold up in motion, in shade and from under water, on the Mac and in Chrome
 

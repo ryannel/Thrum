@@ -9,7 +9,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. [Design](DESIGN.md) · [done-when 
 - Assumption: G3s closes with the west-lookout crossing (M3) still parked and named as a known defect, and with M4 deferred; neither is judged in M6.
 - Assumption: the sky's closing review waits for TAAU, so it is judged once on the image the exit will show.
 - Assumption: solar sky radiance and solar aerial transport stay unqualified against an all-orders reference when G3s closes. M5 and M6 prove that the lent lookups return the stored products in the right units and that the existing bounded referees still pass; the ledger names the gap. A full accuracy campaign would be a separate plan.
-- Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step (at most 0.1% of the value), because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image for no visible gain.
+- Assumption: the lent sky and aerial lookups stay one hardware-filtered read, and their handoff bound allows one stored half-float step, because Metal returns filtered half-float reads at that precision. Blending exact texels in the shader for float32 results was rejected: it costs every sky pixel and lit fragment more reads and changes every scene's image, and M6 judges by eye whether a step shows.
 - Assumption: "top quality atmosphere" (the owner, 14 November) gives this module two milestones after G3s closes, M7 and M8: haze the weather sets, shafts of light, and fog near the camera, integrated jointly with the air in one view volume. They gate nothing in the V1 exit, and the exit scene does not declare the view volume.
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
@@ -77,8 +77,10 @@ files, one of which splits solar in-scatter by the surface's shadow, which the v
 volume's history uses `EFFECT-GRAPH`'s state kinds, as `examples/v1-game/src/effect` does. The control and the scene's declaration go behind a selection in `examples/v1-game` that is off by
 default; that game is `SHOWCASE`'s, so leave its generator, routes and exit configuration alone. `CLOUDS`
 builds rulings 1 to 4 in these same files; integrate on top of what has landed, and if its haze scale is
-present make sure the volume does not take it. Record M7.1's base before changing anything, and measure M7.3's
-bound before asserting it. `scripts/view_volume.py` is created here.
+present make sure the volume does not take it. Record M7.1's base before changing anything. M7.3's ceiling is
+[the design's](DESIGN.md#numerical-acceptance-for-the-view-volume): a miss you cannot close ends `BLOCKED`, never
+a wider bound. The sky is drawn from `atmosphere/sky.wgsl` and the stars in `synthetic/stars.rs`; both take the
+terminal pair. `scripts/view_volume.py` is created here.
 
 ## M8 A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome
 

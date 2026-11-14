@@ -17,9 +17,9 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "A secondary view of a camera holds what the main view draws from that camera. For a scene of entities on meshes with the Sun, the sky and local lights, at the main view's extent and at a quarter of it each side, with temporal sampling off, the view's colour and depth at every covered pixel are the main view's from the same camera at the same extent. The difference is measured first and then asserted, and where it is not zero the cause is named.",
+          "statement": "A secondary view of a camera holds what the main view draws from that camera under the same shadow profile. For a scene of entities on meshes with the Sun, the sky and local lights, at the main view's extent and at a quarter of it each side, with temporal sampling off, the reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. The view's colour and depth at every covered pixel equal the reference's to one step of each stored format. A larger difference is a defect whose cause is found; the bound is not widened to it.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_equal_gpu",
-          "ask": "Is the reference a main view drawn from the view's camera by the scene's ordinary path, and would a view that reused the main camera's cluster table, aerial volume or cascades fail?",
+          "ask": "Is the reference a main view drawn from the view's camera by the scene's ordinary path, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? Is the allowance one step of the stored format and no more?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -62,9 +62,9 @@
         },
         {
           "id": "M1.5",
-          "statement": "With a fold height, a view's air is the air of the path unfolded about it. For a view camera 2 m and 40 m below the fold and a panel 20 m and 3 km off above it, the view's aerial pair at the panel is the atmosphere reference's transport along the unfolded path, to the bound `ATMOSPHERE`'s aerial product meets against that reference. With no fold height the aerial pass draws the main view's bytes as before.",
+          "statement": "With air from the plane, a view's aerial pair at a point is the transport from where the line of sight crosses the clip plane to that point, and nothing of the stretch before the crossing. For a view camera 2 m and 40 m below the plane and a panel 20 m and 3 km beyond it, with the Sun 45\u00b0 up ahead of and across the line of sight and 10\u00b0 up behind it, the pair the view's shaded fragment uses is the atmosphere reference's transmittance and in-scatter over that stretch, to the bounds `ATMOSPHERE`'s aerial product and its shadowed decoder meet against that reference. A caster that shades only the stretch between the camera and the crossing changes nothing, and one that shades the stretch beyond it darkens the in-scatter as the reference does. With no such request the aerial pass and the decoder write the bytes they wrote before, and the main view's shader text is unchanged.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_air_gpu",
-          "ask": "Is the expected pair integrated by the atmosphere's CPU reference along the folded path, and would taking each sample's altitude as it stands fail at 40 m?",
+          "ask": "Is the expected pair integrated by the atmosphere's CPU reference from the crossing to the panel, at real positions with the line's own direction, and are transmittance and in-scatter both compared? Would starting the air at the camera, or folding altitudes about the plane, fail with the Sun across the line of sight?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -74,7 +74,7 @@
         },
         {
           "id": "M1.6",
-          "statement": "A clip plane cuts a view cleanly. An entity that crosses the plane is cut at it to within a pixel of the view, nothing wholly below it draws, and a view whose camera stands under the ground beneath the plane still sees what is above the plane. A plane asked for nearer the camera than 5 cm is held at 5 cm. A world point rebuilt from the view's depth and its record's inverse matrix is within the bound measured first of the true point, at 20 m and at 3 km.",
+          "statement": "A clip plane cuts a view cleanly. An entity that crosses the plane is cut at it to within a pixel of the view, nothing wholly below it draws, and a view whose camera stands under the ground beneath the plane still sees what is above the plane. A plane asked for nearer the camera than 5 cm is held at 5 cm. A world point rebuilt from the view's depth and its record's inverse matrix is the true point, at 20 m and at 3 km, to within four steps of the stored depth at that distance plus four spacings of a 32-bit float at the point's largest coordinate, which the test works out. A larger difference is a defect.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_clip_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -114,6 +114,18 @@
           "review": ""
         },
         {
+          "id": "M1.11",
+          "statement": "Two views in one frame do not disturb each other. Two slots asked in the same frame with different cameras, clip planes, extents and air requests each hold the bytes they hold when asked alone, in either order of asking, and the main view's bytes are the same with one, both or neither asked.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_pair_gpu",
+          "lock": "gpu",
+          "ask": "Do the two requests differ in every field, and would per-view products shared between slots (one cluster table, aerial volume, cascade set or culled list) fail?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
           "id": "M1.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
@@ -136,9 +148,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera holds what the main view draws of the cooked scene from that camera, to the bound measured first, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
+          "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera holds what the main view draws of the cooked scene from that camera at the view's extent under the view's shadow profile, to one step of each stored format, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --features thrum-render/creation-counters --test cooked_view_gpu",
-          "ask": "Is the reference the main view from the view's camera, on the same cooked path? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
+          "ask": "Is the reference the main view from the view's camera, on the same cooked path and shadow profile? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -157,9 +169,9 @@
         },
         {
           "id": "M2.3",
-          "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view. On the flat mirror a marker of known radiance standing above the frame shows in the pool at the pixel geometry gives, with the stored colour the marker has through the air of the reflected path, to the bound measured first, at exposure scales sixteen times apart.",
+          "statement": "`./dev scene examples/mirror` opens a scene with a flat pool that reads one secondary view with air from the plane. On the flat mirror a marker of known radiance standing above the frame shows in the pool at the pixel geometry gives. The pool's stored colour there is the marker's radiance through both stretches of the reflected path, marker to water in the view and water to camera by the main view's lent aerial pair, each applied once, times the exposure scale. It holds to `ATMOSPHERE`'s bounds for the two lookups, with the Sun off the line of sight, at exposure scales sixteen times apart.",
           "check": "cargo test --locked --offline -p mirror-scene --test pool_gpu",
-          "ask": "Is the expected pixel and colour worked out on the CPU from the marker, the pool's plane and the lent aerial values, without the pool's shader? Is the pool the example's own effect, with no type or file of it in an engine crate?",
+          "ask": "Is the expected pixel and colour worked out on the CPU from the marker, the pool's plane and the atmosphere's reference over the two stretches, without the pool's shader? Would a pool that left out the camera's stretch, or a view that already held it, fail? Is the pool the example's own effect, with no type or file of it in an engine crate?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -239,9 +251,9 @@
         },
         {
           "id": "M3.3",
-          "statement": "A view's extent, far distance, least size and the count and reach of its cascades are named runtime values with a range and a declared effect. Setting each to both ends of its range while the scene runs changes the view as declared, creates no pipeline, and leaves the main view's submitted bytes as they were.",
+          "statement": "A view's extent, far distance, least size and the count and reach of its cascades are named runtime values with a range and a declared effect. Setting each to both ends of its range while the scene runs changes the reflection in the pool as declared, creates no pipeline or resource, and changes no pixel of the frame outside the pool; the main view's geometry, culling and shadow submissions are the bytes they were. The extent moves a viewport inside the slot's prepared targets.",
           "check": "cargo test --locked --offline -p mirror-scene --features thrum-render/creation-counters --test view_knobs_gpu",
-          "ask": "Can a caller that knows nothing of views list these knobs and set one, as the governor will?",
+          "ask": "Can a caller that knows nothing of views list these knobs and set one, as the governor will? Is the frame compared outside the pool's pixels, and the pool's inside them against the declared change?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

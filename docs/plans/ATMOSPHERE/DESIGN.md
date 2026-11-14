@@ -243,8 +243,9 @@ aerial `(T,S)`. The forward pass does the same in the last line of its shading.
 
 Each chart lookup is one hardware-filtered read per chart layer of a half-float chart, as the forward pass reads
 it today. A GPU may return a filtered half-float read at the stored format's precision, and the M3 Max does. So a
-lent sky, aerial or reflection value is resolved to one stored step, at most 0.1% of the value, and not to
-float32 precision. The stored texels are already rounded to that step.
+lent sky, aerial or reflection value is resolved to one stored step and not to float32 precision. A step is under
+0.1% of a value in the format's normal range and a larger share of the smallest values it holds. The stored
+texels are already rounded to that step.
 
 | Operation | Returns | Support, and what happens outside it |
 |---|---|---|
@@ -301,8 +302,9 @@ below the low-Sun views M5 captures. It exists to prove the path; `CLOUDS` repla
 - **Blend exact texels in the shader, to get float32 results.** Four texel loads replace the sky's one filtered
   read, and sixteen replace the aerial volume's four, on every sky pixel and lit fragment. The forward pass shares
   these functions, so its shader text and every scene's image would change. The stored texels are already rounded
-  to the same half-float step, so the product would be no more accurate, only smoother below 0.1% of the value.
-  M6 judges sky and twilight banding by eye, and a visible step there reopens this.
+  to the same half-float step, so the product would be no more accurate at a texel; between texels it would be
+  smoother by less than a step. Whether a step shows is M6's to judge by eye in the sky and at twilight, and a
+  visible one there reopens this.
 - **Float32 charts.** Filtering a 32-bit float texture is an optional WebGPU feature (`float32-filterable`), so
   the portable recipe could not rely on it, and the charts' memory and bandwidth would double.
 
@@ -532,7 +534,7 @@ jointly by one owner; the aerial product is already that owner's, so the joint i
   declare it keeps the 32³ product, bit for bit.
 - **One plane for the Sun-path optical depth**, with a factor of exactly 1 at or above it
   ([M5](#environment-identity-and-products), and its open question on a second height band). A provider may add
-  a ground band read at the receiver's own position.
+  a ground band, which a receiver inside it reads at its own position in place of the plane's value.
 - **In-scatter under cloud is `CLOUDS`' scalar** (that section's first open question). Inside the view volume
   the air is lit sample by sample, through the scene's shadows and the cloud factor. The scalar stays for a
   scene without the view volume.
@@ -600,23 +602,50 @@ the Sun's light at the point, from the transmittance chart; the scene's shadow, 
 range; and the Sun-path optical depth. The air's single-scattered sunlight is multiplied by the shadow and by
 the cloud factor at the point. The provider's solar kernel is multiplied by the Sun's light and the shadow
 only, because the provider has already put its own optical depth into the kernel, once for each scattering
-order. Coefficients are summed, then the cell is integrated with the step that conserves energy.
+order. The cell holds the summed extinction and the summed lit source. Beside them it holds the **clear
+baseline**: the air and haze alone, with no shadow, no cloud factor and no medium.
 
-**History.** A cell's value is blended with its history, reprojected through the cell's world position and the
-previous view. History advances only with submitted frames, and a cut, a new epoch, a replaced device or a
-provider's reset marks it invalid, after which the volume is filled from that frame alone and settles within a
-declared number of frames.
+**History.** A cell's coefficients and sources are blended with their history, reprojected through the cell's
+world position and the previous view, and every frame each ray is integrated from the blended cells with the
+step that conserves energy. History is kept on what is integrated and not on the integrated result, so a
+jittered sample at a medium's edge settles to the cell's mean: beyond a slab's face the transmittance is then
+within 1.1%, against 3.7% with history on each cell's own result (part III). History advances only with
+submitted frames, and a cut, a new epoch, a replaced device or a provider's reset marks it invalid, after which
+the volume is filled from that frame alone and settles within a declared number of frames.
 
-**Rays that leave the volume.** Beside the joint pair, the volume carries at its far end the provider's
-transmittance `R` and the in-scatter the medium added over clear air, `ΔS`. The sky, the Sun's disc and the
-stars, which are drawn through clear air, become `R·L + ΔS`. With no medium `R` is 1 and `ΔS` is 0, exactly.
-`CLOUDS`' compose already reads the lent transport at its cloud's front distance, so it needs no change.
+**Rays that leave the volume.** The scene draws its sky through clear, unshadowed air, and draws stars over it
+as added light. Along a ray that leaves, the volume's joint pair `(T_joint, S_joint)` stands in for the near
+part of that air. So the volume also integrates the clear baseline, `(T_base, S_base)`, by the same step from
+the same cells: it is what the sky's radiance already holds for that stretch. At its far end the volume
+carries the **terminal pair**: `R = T_joint / T_base`, the medium's transmittance, and
+`ΔS = S_joint − R · S_base`. Then, for each pixel:
+
+- the **background**, the sky's radiance with the Sun's disc where the sky's draw holds it, becomes
+  `R · L + ΔS`, once;
+- each **added emitter** drawn over it, the stars and a disc drawn by itself, is multiplied by `R` and takes no
+  `ΔS`. The background's term already holds the medium's light for that pixel. With `R` 0.5, `ΔS` 0.5, a sky
+  of 4.4 and a star of 4, the pixel is 4.7; correcting each draw by itself gives 5.2 (part II).
+
+With no medium `R` is exactly 1. Where no medium stands on a ray and nothing shadows its samples, the joint and
+baseline cells are the same numbers, so `ΔS` is exactly 0 and the sky's radiance is the clear sky's to the bit.
+Where the scene's shadows or the cloud factor darken the near air, `ΔS` is negative with no medium at all: the
+baseline is unshadowed and the joint source is not. That is how a shaft shows against the sky, and it is why
+the terminal pair is built in M7 with the air alone. `CLOUDS`' compose already reads the lent transport at its
+cloud's front distance, so it needs no change.
 
 **The ground band.** A provider may register, beside its 2D Sun-path field, a ground band: optical depth toward
-the Sun at heights above the ground, read at a receiver's own position and added to the 2D field's value. The
-one cloud-factor function reads both, so every direct-Sun receiver, the cooked volume's samples and the
-incident-light meter take fog's shade once. The band may also say where the land blocks the Sun beyond the
-cascades; only the view volume's cells read that, never a surface.
+the Sun at heights above the ground, with its mapping and a border width. The band holds the **whole path**:
+at each node, the provider's own march from the node to where the ray leaves the band, plus the 2D field's
+value there. `CLOUDS` fills it so. The one cloud-factor function therefore makes **one read**: the band, at the
+receiver's own position, for a receiver inside it, and the 2D field, as before, for a receiver at or above the
+band's top or outside its region. It never adds the two. A receiver in the band under an upper cloud of
+optical depth ln 2, with no condensate near it, takes 0.5; adding the 2D field's value to the band's would
+give 0.25 (part I). At the band's top its value is the 2D field's, so the factor is continuous there, and
+across the border at its side the factor mixes from the band's to the 2D field's, as
+[ruling 1](../ARCHITECTURE.md#seam-rulings-for-clouds)'s field mixes to its far value. Every direct-Sun
+receiver, the cooked volume's samples and the incident-light meter read through that function, so each takes
+fog's shade once. The band may also say where the land blocks the Sun beyond the cascades; only the view
+volume's cells read that, never a surface.
 
 **A test medium** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, writes the medium
 coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS` M14 replaces it.
@@ -624,12 +653,52 @@ coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS
 ### Check that it can work
 
 The joint transport is the aerial integrator this module already runs, with more cells, more terms in each and a
-history. Its parts are shipped practice at 1 to 3 ms on a 2013 console. `CLOUDS`' design proof
-([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a medium split by a near
-weight composes with the far part to the exact transmittance. The identity for a ray that leaves holds because
-the medium's transmittance multiplies the air's: `T_joint = R·T_air`, so `S_joint + T_joint·L_beyond` equals
-`ΔS + R·(S_air + T_air·L_beyond)` with `ΔS = S_joint − R·S_air`. Unrun: the look, the history's steadiness and
-the cost, which M7 sees first.
+history. Its parts are shipped practice at 1 to 3 ms on a 2013 console.
+[The planner's reproduction](../../evidence/ATMOSPHERE/design-proof/README.md) is arithmetic in f64:
+
+- **I, the ground band.** One read of a band that holds the whole path gives the true factor; a consumer that
+  adds the cloud band's value again squares the upper cloud's.
+- **II, a ray that leaves.** The medium's transmittance multiplies the air's, `T_joint = R · T_base`, so
+  `S_joint + T_joint · L_beyond` equals `ΔS + R · (S_base + T_base · L_beyond)`. With the near air half in
+  shadow and no medium, `R` is 1 and `ΔS` is −1 where the clear sky holds 2 for that stretch; held at 0, the
+  sky would keep haze the land beside it has lost.
+- **III, the grid as a quadrature.** Against a fine quadrature of the same air, with visual ranges from 244 km
+  to 3 km, on level, climbing and descending rays to 31 km: 64 slices with 48 inside 500 m are within 0.0043
+  in transmittance and 3.4% in in-scatter, at most 0.62 of [the ceiling below](#numerical-acceptance-for-the-view-volume).
+  32 slices with 24 inside 500 m pass in clear air and miss the ceiling in haze of 20 km and thicker, because
+  a linear blend of transmittance across a far cell is too coarse there; with 16 of the 32 beyond 500 m, or
+  with optical depth blended in place of transmittance, they pass. A slab of fog of 30 m to 10 km visual
+  range is within 1.1% a cell from its faces.
+
+`CLOUDS`' design proof ([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a
+medium split by a near weight composes with the far part to the exact transmittance. Its in-scatter is an
+approximation whose size depends on what stands in the ramp: 0.002 in that proof's uniform medium, and 0.011
+in 0.65 for a bank that occupies a 300 to 500 m ramp (the design review's case). `CLOUDS` M15.2 measures it on
+a bank across the ramp. Unrun: the look, the history's steadiness and the cost, which M7 sees first.
+
+### Numerical acceptance for the view volume
+
+M7.3 and M8.1 compare the settled volume with an f64 reference written apart from the shader: a quadrature of
+the same equation along the ray, with the air's coefficients from the profile, the Sun's light from the
+existing f64 direct-light quadrature, and the multiple-scattering source from the read-back chart. What decides
+and what is recorded are kept apart.
+
+- **The ceiling decides.** Per channel, at every probe: transmittance within `0.05 × expected + 0.005`, and
+  solar in-scatter within `0.05 × expected + 0.005 × F`, where `F` is the reference's in-scatter at 32 km on
+  that ray; each plus `Q`, one stored step, as [the handoff](#numerical-acceptance) defines it. This is P2's
+  bound, the one this module already holds its lent Sun light to, so the joint product is held no looser than
+  the light that feeds it. A gain error of a tenth fails it. The night part keeps P5.
+- **The measurement is a record.** The worst error at each haze is written beside the 32-layer product's
+  against the same reference at the same probes. It decides nothing.
+- **A miss is a plan change.** If a volume the builder believes correct misses the ceiling at a grid a recipe
+  ships, the builder records where and by how much and ends `BLOCKED`. The ceiling is not widened in the build.
+  Part III says what to expect and what the remedies are.
+- **At a medium's face** the volume resolves the medium to a cell, so M8.1's probes stand a cell or more from
+  its slab's faces.
+- **The wrong composition** M8.1 rejects is the slab's own pair composed with the air's pair, in either order.
+  It differs from the joint answer only where the two media overlap at like strength, so the test names such
+  a case: a slab of 2 km visual range in haze of 3 km, where the two wrong orders are off by 32% and 26%
+  (part III). In haze of 20 km with a 150 m slab they are inside the ceiling and prove nothing.
 
 ### Risks
 
@@ -641,12 +710,14 @@ the cost, which M7 sees first.
 | The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, M7 records it and the proposal for a prepared set of amounts goes to the log |
 | Chrome's sampled-texture limit | Pipeline creation fails with a ground band and a medium registered | Dropping a texture silently |
 | The grid is too coarse for a fog's edge on terrain | Tiles show where fog meets a slope | Blurring the fog |
+| The far cells are too thick for the haze | M7.3 misses its ceiling at far probes in haze of 20 km or thicker | Widening the ceiling. More slices beyond the handover, or a blend of optical depth, are the remedies |
+| The sky keeps haze the land has lost | A line where shadowed land meets the sky; no shaft against the sky | Holding `ΔS` at 0 when no medium is registered |
 
 ### Cost
 
 Without the view volume: nothing. With it, each frame: one sample for each cell (0.6 to 1.4 million at the
-proposed sizes) of the air, the charts, the cascades and the Sun-path field, then the integration; with a
-provider, three more reads a cell and the provider's own pass. Recorded paired, on and off, on the Mac and in
+proposed sizes) of the air, the charts, the cascades and the Sun-path field, then the integration of the joint
+pair and the clear baseline; with a provider, three more reads a cell and the provider's own pass. Recorded paired, on and off, on the Mac and in
 Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
 
 ### Not built

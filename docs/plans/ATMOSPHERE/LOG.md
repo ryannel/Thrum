@@ -317,3 +317,22 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   at `3a12c45f`. Not chosen: an analytic height fog over the 32³ volume, a second fog grid, fog marched per
   pixel, and a module of its own for the view volume, which would put two owners on the aerial product.
 
+
+
+## 14 November 2026 — the view volume after its design review
+
+- 2026-11-14 [Design review](../../evidence/ATMOSPHERE/design-review.md): three Must Fix findings on M7 and M8.
+  Resolved in the design, M7.3, M8.1 to M8.3 and a new M7.13, with
+  [a reproduction](../../evidence/ATMOSPHERE/design-proof/README.md). M5 and M6 are unchanged.
+- 2026-11-14 `ground-band-double-counts-upper-cloud`: the band holds the whole path to the Sun, as `CLOUDS` fills
+  it, and the cloud factor makes one read, the band inside it and the 2D field elsewhere, never their sum.
+  The module list's ruling 7, `CLOUDS`' ruling 7 and its M14.3 now say the same.
+- 2026-11-14 `terminal-correction-source-ownership`: the volume integrates a clear, unshadowed baseline beside
+  the joint pair. The background takes `R·L + ΔS` once and each added emitter takes `R` alone. With no medium
+  `R` is 1 and `ΔS` is the sunlight the shadows took from the near air, so the terminal pair is built in M7.
+- 2026-11-14 `view-volume-self-selected-correctness-bound`: M7.3 and M8.1 are held to a ceiling of P2's form, 5%
+  of the expected value plus 0.005, which the reproduction shows 64 slices meet at 0.62 at worst from 3 to
+  244 km. The measured error is a record. History is kept on each cell's coefficients and sources.
+- 2026-11-14 Suggestions. Taken: the handover's in-scatter claim is qualified by the reviewer's bank at the
+  ramp; the half-float step is no longer called at most 0.1% of every value; M7.9's and M8.7's inspections
+  name every sequence. Left: the exposure control's scale, which is M5's built test and not this plan's.

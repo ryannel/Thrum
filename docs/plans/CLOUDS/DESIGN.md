@@ -419,7 +419,9 @@ that M2 measures first and then asserts; that no part is older than its bound is
 ### The Sun's path: one optical-depth product
 
 This section describes the product's **cloud band**. With ground condensate it continues to the ground in a
-[ground band](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), and the two add along the Sun's ray.
+[ground band](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), which holds the whole path: its own
+stretch of the Sun's ray, plus the cloud band's value where the ray leaves it. A receiver reads one or the
+other, never their sum.
 
 One product holds optical depth along the Sun's ray, from the top of the cloud layer down: `tau(column,
 height)`, in levels of camera-following windows whose columns are Sun rays. A column is indexed by where its ray
@@ -725,7 +727,9 @@ near the camera and this module's trace beyond it.
 - **The handover.** The near weight is 1 from the camera to the start of a ramp and falls to 0 at its end; the
   far weight is one minus it. The ramp is a profile value, 300 to 500 m from the camera in the first profile.
   Two integrators that each take a share of one extinction compose as ordered segments to the exact
-  transmittance, and to the in-scatter within 0.002 for a ramp twice that long (part I). The distance is short
+  transmittance, and to the in-scatter within 0.002 for a ramp twice that long in part I's uniform medium.
+  The in-scatter's error depends on what stands in the ramp: a bank that fills a 300 to 500 m ramp is 0.011
+  in 0.65 (`ATMOSPHERE`'s design review), and M15.2 measures one. The distance is short
   for three reasons: fog thick enough to hide the land is all inside it; every heaped cloud base is beyond it,
   so no cumulus is ever drawn at the volume's cell size; and a low deck overhead is featureless at that range.
 - **The world's light.** The [sky overlay](#the-sky-the-world-sees) traces every condensate from the camera, so
@@ -944,8 +948,8 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its M7 and M8, and this mo
 6. **The view volume takes a provider's medium coefficients** (`ATMOSPHERE` M8): extinction, a solar kernel and
    an ambient source at the sample points it gives, weighted by the provider's near weight, summed with the
    air's before integration.
-7. **The Sun-path optical depth has a ground band** (`ATMOSPHERE` M8), read at the receiver's own position and
-   added to the cloud band's.
+7. **The Sun-path optical depth has a ground band** (`ATMOSPHERE` M8), which holds the whole path to the Sun
+   and is read at the receiver's own position in place of the cloud band's value, never added to it.
 8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount, which the weather state supplies.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace

@@ -69,8 +69,8 @@ display's full refresh.
 | **P2** Puddles spill, join and part: a full hollow overflows into the next, two become one level puddle, and drying parts them again | Every pair of hollows a bed holds; filling and drying; rings on the water at the time | A body for each puddle, rebuilt when two meet. Rejected by both levels across the tick of a merge, by rings that must survive it, and by a query that must answer through it |
 | **P3** Rain rings: each drop raises rings that spread, leaving calm water inside them, on every water the rain reaches, more and rougher as the rain grows | Rain of 1 to 100 mm/h; water from 1 mm deep to the sea; from 0.5 m and from 30 m; a roof over part of the water | A texture of circles that grow at one speed with one width. Rejected by the calm disc's growth against the least speed water's waves have, by crests that multiply with age, by rings that weaken on a film, and by none under the roof |
 | **P4** A footfall or a dropped stone rings a puddle: rings cross it at the speed its depth gives and die at its edge | Puddles 10 mm to 0.2 m deep; two puddles a sill apart; before and after they join | A ripple decal. Rejected by the rings' speed at two depths, by a dry sill that passes nothing, and by rings that cross once the sill is under water |
-| **P5** Puddles mirror: the sky, and what stands in and round them, joined to its foot at the waterline; the ground shows through from above and the mirror takes over toward a grazing view; muddy water hides its bed | Camera 0.3 m to 15 m up; a post in the water, a wall and a roof beside it; clear and muddy water; dawn to night; in rain and after | A sky-only reflection. Rejected by a post whose top is off the screen, and by a bed that must fade with depth by the water's type |
-| **P6** Rain wets the ground: it darkens and its colour deepens, a sheen gathers on paving and in its joints and mirrors at a grazing view, and shelter stays dry | Paving, earth, sand, rock and metal; exposure from none to full; level ground to walls; props and cooked meshes | One darker, glossier look for everything. Rejected by ground under a roof, by metal that must not darken, by pale stone that must darken less than dark, and by sand that takes no sheen |
+| **P5** Puddles mirror: the sky, and what stands in and round them, joined to its foot at the waterline; the ground shows through from above and the mirror takes over toward a grazing view; muddy water hides its bed | Camera 0.3 m to 15 m up; a post in the water, a wall and a roof beside it; a pothole well below the paving round it; clear and muddy water; dawn to night; in rain and after | A sky-only reflection, or one mirror plane for a whole yard. Rejected by a post whose top is off the screen and whose foot stands in a pothole, and by a bed that must fade with depth by the water's type |
+| **P6** Rain wets the ground: it darkens and its colour deepens, a sheen gathers on paving and in its joints and mirrors at a grazing view, and shelter stays dry | Paving, earth, sand, rock and metal; exposure from none to full; level ground to walls; props and cooked meshes | One darker, glossier look for everything. Rejected by ground under a roof, by metal that must not darken, by pale stone that must darken less than dark, by earth whose sheen must wait until its pores are full, and by sand, which passes the rain down and takes none |
 | **P7** It dries in order: the sheen goes first, from slopes before level ground and from high relief before low; darkness lingers and lifts last; a shrinking puddle leaves a dark margin | Drying rates of 0.1 to 600 mm/h; each ground | One fade of everything at once. Rejected by the order of the three |
 | **P8** A wet shore: sand is dark where the waves have run, under the sheen and foam `WATERS` draws there | Calm to gale; the tide through its range | Darkness painted along the still waterline. Rejected by its edge in a calm against a gale, and by a tide that ebbs and leaves a dark band |
 | **P9** One water: a puddle has the lake's light, optics, query, mirror and controls, and the rain rings the lake and the sea as it rings a puddle | Every body in one view | A puddle drawn by the ground's material. Rejected by the query, and by one rain on three waters |
@@ -143,11 +143,11 @@ What each source was read for, and how far.
 | P1, P2 | **A prepared tree of hollows with water volumes stepped on the CPU, read by a point test in the map** | **Selected** |
 | P3 | A tiled texture of ring normals | Fails the calm disc, the crests and the film |
 | P3 | Impulses into a simulated level | Fails the count, and a level that steps on the tick cannot show waves of 73 rad/s between ticks |
-| P3 | **Two rain bands: a function of time that sums each scheduled drop's own wave train** | **Selected** |
+| P3 | **Two rain bands: a function of time and of the last second's rain, summing each scheduled drop's own wave train** | **Selected** |
 | P4 | `WATERS`' near level as built | Fails: one cell is a quarter of the puddle |
 | P4 | **A fine interaction level with a ladder from 5 mm** | **Selected** |
 | P6, P7 | A wetness texture stepped on the GPU in a window | Not selected: it resets with the device, ends at its window and differs between machines |
-| P6, P7 | **Two stores for each ground class, read at a point through exposure, slope and relief** | **Selected** |
+| P6, P7 | **Two stores for each ground class, with a rate into the pores and a rate down out of them, read at a point through exposure, slope and relief** | **Selected** |
 
 ## Mechanisms
 
@@ -156,7 +156,7 @@ What each source was read for, and how far.
 | Part of [the system](../WATERS/DESIGN.md#one-water-in-four-parts) | What rain adds | Its state |
 |---|---|---|
 | The map | A fourth kind of body, hollows; a relief on its ground | Content, with numbers a game moves: a level for each hollow |
-| Waves | Two rain bands on every body; a fine interaction level | The bands are a function of time; the level is state, as the wake is |
+| Waves | Two rain bands on every body; a fine interaction level | The bands are a function of time and of the rain's rate over the last second, which the rain state keeps; the level is state, as the wake is |
 | Material | Nothing. Rain makes no foam here | |
 | Optics | The film over standing rain water, which is `WATERS`' film | None |
 | Beside the water | The ground's wetness, which every forward surface reads | Game state on the CPU, stepped with the tick |
@@ -171,20 +171,36 @@ ground absorbs, holds and looks like wet.
 **The rain record.** A game puts one record in its tick page: the rain's flux, in kilograms a square metre a
 second (a millimetre an hour is 1/3600 of one), and the drying rate in the same units. Both are uniform over
 the scene and held over the tick (C09's interval). Until `CLOUDS` has rain they are the game's controls. A game
-that wants nothing to dry while it rains sets the drying rate to nothing then; the example does.
+that wants nothing to dry while it rains sets the drying rate to nothing then; the example does. The rain
+state keeps the flux of each tick of the last second, the **rate history**, for the rings
+([below](#rain-rings)).
 
-**Exposure.** Shelter is content. A game gives the triangles that shelter, each with the share of the rain it
-lets through: none for a roof, a part for a tree's crown. Preparation rasterises them from above into a
-**canopy grid**, at the profile's cell (0.1 m): for each cell, the height of the lowest underside and the share let through. Exposure at a
-world point is 1 above that height or where no canopy stands, and the cell's share below it, read with a soft
-edge of the profile's width (0.3 m), which stands for splash and drift. So the ground under a roof is dry, the
-roof's own top is wet, and the function is the same on the CPU and the GPU and reads no camera. One canopy is
-kept for a column. Things that move shelter nothing.
+**Exposure.** Shelter is content. A game gives its **shelters**: each a set of triangles with one share of the
+rain it lets through, none for a roof, a part for a tree's crown. Preparation rasterises them from above into a
+**canopy grid**, at the profile's cell (0.1 m): for each cell, up to two **layers**, each a shelter's lowest
+underside there and its share. A shelter counts once in a column however many of its triangles cross it.
+Exposure at a world point is the product of the shares of the layers whose underside is above it, and 1 where
+none is, read with a soft edge of the profile's width (0.3 m), which stands for splash and drift. So the
+ground under a roof is dry, the roof's own top is wet, a crown under a roof is as dry as the ground below it
+([part 10](../../evidence/PUDDLES/design-proof/README.md): 0.00 at the ground and between the two, where the
+lowest canopy alone gave 0.50 and 1.00), and the function is the same on the CPU and the GPU and reads no
+camera. A column that three or more shelters cross is refused at preparation, by name and place. Things that
+move shelter nothing.
 
-**One partition.** Each tick's rain on a square metre goes to exactly one place (C09): to the canopy's named
-sink, by the share exposure withholds; to the ground's stores; to the hollow the ground drains to; or over the
-edge of a hollows body, another named sink. The account of a hollows body closes to rounding
-([below](#filling-spilling-merging-and-parting)).
+**One partition, by what the rain hits first.** Each tick's rain on a cell goes to exactly one receiver (C09):
+
+1. the canopy's named sink, by the share exposure withholds;
+2. of the rest, where a puddle stands on the cell, that puddle: it is the puddle's water at once and the
+   ground's stores see none of it;
+3. where none stands, the cell's ground: its class's stores take what they take
+   ([below](#wet-ground)), and what they do not is runoff, to the hollow the cell drains to or over the
+   body's edge, another named sink.
+
+The ground's stores describe uncovered ground only. Ground that goes under a puddle, and ground a puddle
+leaves, change receiver by a transfer the account holds
+([below](#filling-spilling-merging-and-parting)). The receivers are proved apart from the total: a total that
+closes does not show where a cell's rain went, so M1 and M2 hold each receiver's gain alone as well as the
+account ([proof](#proof-and-builder-handoff)).
 
 ### Hollows: the tree and the point test
 
@@ -236,9 +252,14 @@ The **rain state** is plain data in the game's world, stepped once a tick by `th
 fixed order: a volume for each puddle, the ground's stores, and a margin for each hollow. For a puddle, over a
 tick:
 
-- **In.** The runoff of every cell that drains to its hollows: the rain exposure lets through, less what the
-  ground's stores took up that tick ([below](#wet-ground)). Runoff arrives at once.
-- **Out.** The drying rate and the ground class's soak rate, each times the puddle's water surface.
+- **In.** The rain on its own water surface, by the exposure there; and the runoff of the uncovered ground
+  that drains to its hollows: the rain exposure lets through, less what the ground's stores took up that tick
+  ([below](#wet-ground)). Runoff arrives at once.
+- **Out.** The drying rate and the ground class's percolation rate, each times the puddle's water surface.
+- **Covering and uncovering.** Ground the water rises over stops being open ground: the surface water on it
+  joins the puddle, and the puddle fills its pores. Ground the water leaves is open ground again, in its
+  class's present state: the puddle leaves the class's surface water on it, and what its full pores hold
+  beyond the class's fill is counted as soaked. Both are entries in the account.
 - **Spill.** A puddle past its sill sends the excess to the hollow across it. If that neighbour is itself full
   to the same sill, the two are one puddle, holding both volumes: a **merge**. A root's excess leaves.
 - **Part.** A puddle whose volume falls under what its two halves hold at the sill between them becomes two,
@@ -249,31 +270,41 @@ continuous through each (part 1: the largest change in a step with either falls 
 rebuilt: the labels and the tree are content, the levels are numbers, and
 [the interaction waves' regions](../WATERS/DESIGN.md#interaction-waves) are labelled again from the map, which
 leaves their height and potential where they are; that is CPU work whenever a puddle's wet cells change,
-which in rain is often, and M4 records it. So rings on two puddles are still there on the one they
+which in rain is often, and M4 records it, with M8 for the fine level's. So rings on two puddles are still there on the one they
 become, and can then cross the drowned sill.
 
 The account: rain on the body equals the change in the ground's stores and in the puddles, plus what dried,
-soaked, was withheld by canopy and left over the edge. Part 1 closes it to 1.5e-12 l in 199 l.
+soaked or percolated, was withheld by canopy and left over the edge. Part 1 closes it to 1.5e-12 l in 199 l,
+for a fill with no stores; M2.1 closes it with the stores and the transfers.
 
 Part 2 gives the times this makes: a pothole of 4 l with six times its area draining to it fills in 8 minutes
-at 10 mm/h on paving; on sand that soaks 60 mm/h no puddle forms. Real evaporation empties 20 mm in days, so
+at 10 mm/h on paving; on sand that passes 60 mm/h down no puddle forms. Real evaporation empties 20 mm in days, so
 the drying rate is a control a demo turns up.
 
 Declared approximations: runoff has no travel time and makes no visible flow; a cell is all one hollow's; and
-the ground's stores are kept for a class and not for a cell, so ground a puddle covers is counted as open
-ground.
+the ground's stores are kept for a class and not for a cell, so ground a puddle has just left takes its
+class's state at once, and only its margin shows that it was under water.
 
 ### Wet ground
 
 **Two stores** (C09's film and absorbed liquid, one authority). A game's table has up to eight ground classes;
-a hollows body names one, and a scene names one for every surface outside a hollows body. For each class the
-rain state holds
-surface water, in millimetres, and the pores' fill, from 0 to 1, for level ground under open sky, and the same
-pair for ground that half and a quarter of the rain reaches. Each tick, for each: rain arrives; the pores take
-it at the class's soak rate until they are full; what is left stands as surface water up to what the class's
-relief holds, and the rest is runoff; then the drying rate takes surface water, and once there is none the
-pores dry in proportion to their fill. So paving shows a sheen two minutes into a shower and earth that drinks
-faster than the rain never does, and after the rain the sheen is gone long before the darkness (part 5).
+a hollows body names one, and a scene names one for every surface outside a hollows body. A class has two
+rates: its **soak rate**, at which its pores take water until they are full, and its **percolation rate**, at
+which full pores pass water on down, a named sink. For each class the rain state holds surface water, in
+millimetres, and the pores' fill, from 0 to 1, for level uncovered ground under open sky, and the same pair
+for ground that half and a quarter of the rain reaches. Each tick, for each: rain arrives; the pores take it
+at the soak rate until they are full, and from then only at the percolation rate; what is left stands as
+surface water up to what the class's relief holds, and the rest is runoff; while the pores are full, surface
+water goes down at the percolation rate; then the drying rate takes surface water, and once there is none
+the pores dry in proportion to their fill.
+
+So paving shows a sheen two minutes into a shower. Packed earth whose pores take 15 mm/h shows none while
+they fill, 18 minutes at 10 mm/h, and a film from then, well before its puddles form
+([part 8](../../evidence/PUDDLES/design-proof/README.md): pores full at 1,080 s, a film at 1,081 s, the
+relief full at 1,440 s). Ground never takes a sheen only where it passes water down faster than the rain
+falls, as sand does at 60 mm/h. After the rain the sheen is gone long before the darkness (part 5). The first
+design said earth that drinks faster than the rain never shows a sheen; its own stores do not do that once
+the pores are full, and the design review ran them to show it.
 
 **At a point**, the same function in f64 and in WGSL, of prepared fields and the state, reading no camera:
 
@@ -287,10 +318,13 @@ faster than the rain never does, and after the rain the sheen is gone long befor
 - **relief**: a class's relief is a height, and where it has one a tiling pattern of heights. Surface water
   stands in the relief's lows first, so the film's cover at a point is whether the water's fill stands above
   the pattern there, and with no pattern it is the fill's share;
-- a puddle's **margin**: each hollow keeps one more number, the height of the damp band above its waterline,
-  which is the rate its level has lately fallen over the rate its ground dries. The pores' fill falls off
-  above the waterline over that height, so a puddle that shrinks slowly leaves a thin dark rim and one that
-  drains fast a wide one;
+- a puddle's **margin**: each hollow keeps one more number, `m`, the height of the damp band above its
+  waterline. Each tick a level that fell adds its fall to `m`, a level that rose takes its rise from `m`,
+  down to nothing, and then `m` shrinks by the factor `exp(−Δt · drying rate / pore capacity)` and is held
+  under the height from the waterline to the hollow's rim. The pores' fill falls off above the waterline
+  over `m`. So a puddle that shrinks slowly leaves a thin dark rim and one that drains fast a wide one; a
+  level that stops falling leaves a band that fades at the pores' own rate; with drying off the band stays;
+  and a hollow that has emptied keeps its band from its pit until it dries;
 - a **shore**: inside a body's [wave support](../WATERS/DESIGN.md#the-water-map) the pores are full, and above
   it they fall off over the body's own margin, kept as a hollow's is from the fall of its stage. This is the
   wave support `WATERS`' film reads, so the dark sand and the sheen share one edge (C07).
@@ -337,17 +371,28 @@ tuned: the crater's width is the one closure, and one drop radius would put 29.5
 
 **Two rain bands** ([ruling 3](../ARCHITECTURE.md#seam-rulings-for-puddles)). Two more wave layers in the
 world's one field, beside the wind's cascades and the flow's bands: periodic patches of 512², 1.28 m and near
-2.1 m across, so that their pattern does not repeat in view. Each is a **function of time**. Drops fall on a
-schedule drawn from a hash of place and time, by size class, and a texel's height and slopes are the sum of
-the rings of the drops that landed within reach in the last second, each read from a prepared table of a
-ring's height by radius and age. The bands are evaluated every presented frame at the display's time, hold no
-state, and are the same in f64. A paused frame holds them and a capture shows its own tick's rings.
+2.1 m across, so that their pattern does not repeat in view. Drops fall on a schedule drawn from a hash of
+place and time, by size class, and a texel's height and slopes are the sum of the rings of the drops that
+landed within reach in the last second, each read from a prepared table of a ring's height by radius and age.
+
+**What a drop's birth reads.** A scheduled drop falls if the rain's rate *at the tick it lands* passes its
+threshold, whatever the rate is now. The rate history gives that: the flux of each tick of the last second,
+one ring's life, 60 numbers at a 60 Hz tick, committed with the tick and uploaded with the rain record. So
+each band is a function of the display's time and of that committed history, the same in f64, and keeps
+nothing of its own from frame to frame. When the rain stops, the rings already spreading run out their
+second and no new one is born; when it starts again no ring appears that would have fallen while it was dry
+([part 9](../../evidence/PUDDLES/design-proof/README.md): 60, 41 and 27 rings alive 0.05, 0.3 and 0.59 s
+after a stop, where births from the present rate give none, and 40 rings born in the dry spell at the
+restart). No new drops is not no live rings: the bands' passes run while any tick of the history holds
+rain, and stop when it holds none, when the surface is exactly what it is with no rain. A paused frame holds
+the bands, and a capture shows its own tick's rings from that tick's history.
 
 - **How many.** Marshall and Palmer's drops at 2, 10 and 50 mm/h number 14, 152 and 918 of 2 mm and over on a
   square metre each second. The largest are scheduled, up to the profile's count (128 a square metre a
-  second, about 8 over a point); whether a scheduled drop falls is a soft threshold on the rate, so a
-  changing rate adds and removes rings without a pop. The drops below the cut are not drawn: their summed
-  squared slope goes into the bands' moments, as everything under a pixel's footprint does.
+  second, about 8 over a point); whether a scheduled drop falls is a soft threshold on the rate at its own
+  tick, so a rate that changes slowly adds and removes rings without a pop. The drops below the cut are not
+  drawn: their summed squared slope goes into the bands' moments, as everything under a pixel's footprint
+  does, summed over the same history with a ring's decay, so it too fades over a second after the rain stops.
 - **The gain** at a point is the exposure there times the **depth response**, the model's ratio of a ring's
   height on that depth to its height on deep water: 1 from 10 mm, 0.76 at 5 mm, 0.41 at 2 mm, 0.25 at 1 mm,
   none on dry ground. Every body's row has it, the sea's included.
@@ -360,7 +405,8 @@ splash's crown and jet are not waves and are not drawn.
 
 ### Rings from a footfall
 
-A profile may name a **fine interaction level** ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-puddles)):
+A profile may name a **fine interaction level** ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-puddles)),
+built in M8, after `WATERS:M6` has built the interaction reference it extends:
 256² cells of 2 cm, a window 5.12 m across round the body the game names, with `WATERS`' operator, regions,
 border and sources, and
 
@@ -383,14 +429,41 @@ and the regions with the latest sources are the ones solved.
 ### What a puddle already has
 
 Everything else is `WATERS`' and is used as built. A puddle is lit, seen through and mirrored by the one
-optics: the ground shows through thin water and is lost under a muddy type; a puddle's level takes a mirror
-view when its water is among the two largest in view, and the screen's reflection otherwise; rain's slope
-variance blurs both. For a mirror view a hollows body counts as one level, the mean of its ground, and its
-film's area counts with its puddles'; ground further than the plane tolerance from that level takes the
-screen's reflection. The view from under water is `WATERS`' on any body and is not judged on water this
-shallow. A float sits on it through the one query. From `WATERS:M16` the film's and the puddle's
-Sun lobes take the scene's Sun visibility, by [`RIVERS`' ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)
-and ruling 7 here, so a puddle in a wall's shadow does not glint.
+optics: the ground shows through thin water and is lost under a muddy type, and rain's slope variance blurs
+its reflections. The view from under water is `WATERS`' on any body and is not judged on water this shallow.
+A float sits on it through the one query. From `WATERS:M16` the film's and the puddle's Sun lobes take the
+scene's Sun visibility, by [`RIVERS`' ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers) and ruling 7
+here, so a puddle in a wall's shadow does not glint.
+
+**Mirrored scenery** ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-puddles)). `WATERS` cuts a mirror view
+at its plane, so a view holds nothing below its plane. The first design gave a hollows body one plane, the
+mean of its ground. A puddle 15 cm below that mean then loses the lowest 15 cm of everything standing in
+it, and no lookup can bring back what the view never drew
+([part 7](../../evidence/PUDDLES/design-proof/README.md): from 0.3 m every reflection on it is wrong and
+no ray finds the post's foot). One plane at the yard's lowest water fails the other way: a puddle 13 cm
+above it is read 26 cm off its own mirror point, and half of it is wrong from 0.3 m.
+
+So a hollows body has no one level. It gives the mirror each puddle's level and, where its film stands, the
+ground's height. Each frame these are grouped into **bands** no taller than the profile's tolerance for
+hollows, 5 cm, and a band's plane is its lowest water, so a view's cut takes away nothing above any water it
+serves. Bands rank for the profile's views with every other body's level, by the screen area of their water,
+with `WATERS`' hysteresis. A lookup starts from its own surface point's height and refuses a sample that
+lies below that height, which then takes the environment as any refused sample does. Over the top fifth of a
+band the mirror's share gives way to the screen's reflection, so nothing switches at a band's edge. Rain
+water in no band with a view takes the screen's reflection, as `WATERS`' third level does.
+
+What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
+
+- Water at its band's plane is exact: every ray that should find the post's foot finds it. A pothole 15 cm
+  below the paving is a band of its own, and has a view when its water ranks.
+- Water up to 5 cm above its band's plane, such as the film on the paving round a puddle, is read up to
+  twice that height off its own mirror point: under 1% of its reflections are wrong.
+- Declared residual: a thing standing in water that lies above its band's plane hides a strip of that water
+  behind it from the mirrored camera, as wide as that height over the tangent of the view's elevation.
+  Those samples are refused. On a puddle with a post in it, 2 cm and 5 cm above its plane, that is 5.5% and
+  22% of the puddle from 0.3 m and none from 1.7 m.
+- Declared limit: the first profile has two views. Water in more bands than there are views mirrors
+  off-screen scenery in the bands that hold the most water on screen, and what is on screen in the rest.
 
 ### Capabilities, recipes, limits and knobs
 
@@ -407,11 +480,11 @@ and ruling 7 here, so a puddle in a wall's shadow does not glint.
   | Standing film | The film over a hollows body's ground | Hollows; wet ground |
 
 - **The physical profile**, never a quality setting (C04): the tree, the fill step and the point test; the
-  stores and the wetness function; the ring tables, the drop schedule and its count; the fine level and its
-  ladder.
+  stores, their two rates and the wetness function; the ring tables, the drop schedule, its count and the
+  rate history; the fine level and its ladder; the canopy's layers; the mirror's band tolerance.
 - **Limits are inputs.** The labels, the fine bed and the canopy grid are textures, the levels and the stores
   small tables, and the rain bands layers of the cascades' arrays, all counted against the capability record
-  at preparation. The forward stage gains one texture, the canopy grid.
+  at preparation. The forward stage gains one texture, the canopy grid, with both layers in it.
 - **Knobs**, in `EFFECT-GRAPH`'s list with a declared invalidation: the rain bands' cadence. It changes no
   query answer.
 
@@ -420,14 +493,18 @@ and ruling 7 here, so a puddle in a wall's shadow does not glint.
 - **P1, P2.** Part 1 runs the tree, the fill and the point test on a made bed through 10 merges and 10
   partings. The preparation in Rust at 640,000 cells, the map on the GPU and the look of a waterline at 5 cm
   cells are unrun; M1 and M3 are the first.
-- **P3.** Part 3 is the ring's own integral. That a sum of scheduled rings reads as rain and not as a pattern,
-  at 128 a square metre a second, is unrun; M4 is the first look ([risk 2](#risks)). Part 3's mean square
-  slope at 50 mm/h, 0.065, is a superposition and likely too high; M4 judges it.
+- **P3.** Part 3 is the ring's own integral, and part 9 the schedule through a stop and a restart. That a
+  sum of scheduled rings reads as rain and not as a pattern, at 128 a square metre a second, is unrun; M4 is
+  the first look ([risk 2](#risks)). Part 3's mean square slope at 50 mm/h, 0.065, is a superposition and
+  likely too high; M4 judges it.
 - **P4.** Part 6 is the operator on uniform depth, wave by wave. Fields, regions and a puddle's edge are
-  `WATERS`' as measured in its part H and J at larger scale, and unrun at this one.
-- **P5.** `WATERS`' optics and mirror. Unrun on water 5 mm deep.
-- **P6, P7.** Parts 4 and 5 are arithmetic. The look of the wet ground and of the film is unrun; M5 is the
-  first.
+  `WATERS`' as measured in its part H and J at larger scale, and unrun at this one; M8 is the first.
+- **P5.** Part 7 is a yard in section with puddles at two heights, a post, a kerb, a roof's edge and a wall:
+  the planes and cuts above, ray by ray. `WATERS`' optics on water 5 mm deep, the bands' ranking as a camera
+  moves and the look are unrun; M7 is the first.
+- **P6, P7.** Parts 4 and 5 are arithmetic, part 8 the stores through a shower long enough to fill the
+  pores, and part 10 exposure under two shelters. The look of the wet ground and of the film is unrun; M5 is
+  the first.
 - **P8.** The wave support is `WATERS`'. Unrun.
 - **Cost.** Unrun. Each milestone records its own.
 
@@ -437,22 +514,22 @@ and ruling 7 here, so a puddle in a wall's shadow does not glint.
 |---|---|
 | The tree of hollows and its preparation, the fill step and its account, the canopy grid and exposure, the ground's stores and the wetness function, the wet look's reference, the ring response and its tables, the rain state | `thrum-rain-model` (this module), on `thrum-water-model`, no GPU dependency |
 | The hollows kind in the map's function; the rain bands in the surface model's sum; the fine level in the interaction reference | Files this module adds to `thrum-water-model`, and its changes there under [rulings 1 to 3](../ARCHITECTURE.md#seam-rulings-for-puddles) |
-| Hollows in the map on the GPU and their tiles; the rain bands' passes; the fine level; the film over standing water; the wetness provider and its tables | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 1 to 4 |
+| Hollows in the map on the GPU and their tiles; the rain bands' passes; the fine level; the film over standing water; the mirror's bands; the wetness provider and its tables | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 1 to 4 and 8 |
 | The wetness read in the forward surface | The scene's shader and the cooked material, under ruling 5 |
-| The map, the surface, optics, the query, interaction waves, the film, mirror views | `WATERS`, `SCENE-VIEWS` |
+| The map, the surface, optics, the query, interaction waves, the film, mirror views and their lookup | `WATERS`, `SCENE-VIEWS`; the bands of a hollows body under ruling 8 |
 | The rain record, the ground classes and their patterns, the yard and its roof, the rain selection and its controls, footfalls | The games: `examples/water` and `examples/v1-game` |
 | Sky, Sun, air, the cloud factor, the lent Sun visibility | `ATMOSPHERE` |
 
 `thrum-water` takes the rain as data in `upload` and does not link `thrum-rain-model`; the game does.
 
 **A frame, in order**, for what rain adds to [`WATERS`' frame](../WATERS/DESIGN.md#the-system-as-it-runs). On
-the tick, in the game: the rain state steps. `upload` takes the rain record, each hollow's level and margin
-and the stores, with the page's stages. `simulate`, every frame: the rain bands at `t`, with the cascades.
+the tick, in the game: the rain state steps. `upload` takes the rain record and its rate history, each hollow's level
+and margin and the stores, with the page's stages. `simulate`, every frame while the history holds rain: the rain bands at `t`, with the cascades.
 `simulate`, on a frame that advances the tick: the fine level's step, region by region. Forward: surfaces read
 the wetness function. `after-opaque`: the water's gather, then its surface, puddles and film with the rest.
 
 **Creator journey.** A game names the capabilities in its water profile, declares a hollows body over a
-rectangle of its ground with a ground class, gives the triangles that shelter, keeps a rain state in its
+rectangle of its ground with a ground class, gives its shelters, keeps a rain state in its
 world and steps it, and sets the rain and the drying rate with the tick. Moving the ground or a roof prepares
 the tree or the canopy grid again and rebuilds the water, as changing any body does. Changing the rain, the
 drying rate or a ground class's numbers rebuilds nothing.
@@ -473,17 +550,19 @@ these capabilities compiles to the shader text, passes and storage it has today,
 it the same answers to the bit.
 
 1. A hollows body in the map (M1 on the CPU, M3 on the GPU).
-2. A fine interaction level (M2 on the CPU, M4 on the GPU).
+2. A fine interaction level (M8, on the CPU and the GPU, after `WATERS:M6`).
 3. Rain bands: wave layers the wind does not fill, at a gain every body's row has (M2 on the CPU, M4 on the
    GPU).
 4. The film is drawn over standing rain water (M5).
 5. A wetness provider on the forward surface, in the scene's shader and the cooked material (M5).
 6. A rain selection in `examples/water` (M3) and in `examples/v1-game` (M6).
 7. The film's Sun lobe takes the lent Sun visibility, with the surface's (M7).
+8. A hollows body gives the mirror its levels in bands, each cut at its lowest water (M7).
 
-Three of these replace what [`WATERS`' design](../WATERS/DESIGN.md#what-the-later-modules-build-on) expected: a
-puddle is not a basin with a seed, a drop is not an impulse record, and the film is drawn off the shore. Used
-as built: the bed's builder, the surface, the optics, the gather, mirror views, the query, impulse records,
+Four of these replace what [`WATERS`' design](../WATERS/DESIGN.md#what-the-later-modules-build-on) expected: a
+puddle is not a basin with a seed, a drop is not an impulse record, the film is drawn off the shore, and a
+hollows body is not one mirror level. Used as built: the bed's builder, the surface, the optics, the gather,
+a mirror view's draw and its depth correction, the query, impulse records,
 the film, the lease of a pattern, the typed controls. Nothing is asked of `EFFECT-GRAPH`, `CONTENT-LOOP`,
 `SCENE-VIEWS` or `CLOUDS`.
 
@@ -497,9 +576,10 @@ Estimates, unmeasured.
 | The fill step | Tick, on the CPU | A few operations for each puddle and each node that spills | Microseconds for hundreds of puddles; M1 records it |
 | Hollows in the map | Every read inside a hollows rectangle | A label, a level and the fine bed | Three reads on puddle pixels; none elsewhere. 640,000 cells are about 4 MiB |
 | Puddle tiles | Frame | Cells that hold water and their neighbours, at the cell's spacing | A fifth of a yard under water is about 130,000 quads; M3 records it |
-| Rain bands | Frame, while it rains on water in view | Two patches of 512²; about 8 rings a texel from a table | Under the cascades' cost; two more layer reads in the surface where the gain is not zero |
-| The fine level | Tick, while a source is in the window | 256²; one solve for each region and ladder depth in use, up to the profile's count | A few tenths of a millisecond; M4 records it with the count of solves |
-| The wetness function | Frame, every forward fragment in a scene with wet ground | One read of the canopy grid and arithmetic on a small table | One texture more in the forward stage, the second with `WATERS`' caustics; M5 records the pair |
+| Rain bands | Frame, while the last second held rain and water is in view | Two patches of 512²; about 8 rings a texel from a table, each with one read of the 60-entry rate history | Under the cascades' cost; two more layer reads in the surface where the gain is not zero |
+| The fine level | Tick, while a source is in the window | 256²; one solve for each region and ladder depth in use, up to the profile's count | A few tenths of a millisecond; M8 records it with the count of solves |
+| The wetness function | Frame, every forward fragment in a scene with wet ground | One read of the canopy grid's two layers and arithmetic on a small table | One texture more in the forward stage, the second with `WATERS`' caustics; M5 records the pair |
+| The mirror's bands | Frame, on the CPU | The levels of the hollows in view, sorted and grouped; no view beyond the profile's | Negligible; a band's view costs what any mirror view does, and M7.8 records it |
 | The film | Frame, over a hollows body's ground with surface water | The film's pixels: the function, a pattern read, the reflection | Of the order of the surface on those pixels; M5 records it |
 
 Records and tripwires are [`WATERS`'](../WATERS/DESIGN.md#cost-account): `scripts/water_cost.py`, with scenes
@@ -525,7 +605,7 @@ decides an item ([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
    roughness and `p` by class are the mechanism; three failed looks on one cue go to the log.
 7. **The forward pass will not take another texture in Chrome**, with `WATERS`' caustics. Early sign: M5's
    preparation. The designed remedy is the canopy grid packed with the caustic level's array.
-8. **Too many puddles for the fine level's solves.** Early sign: M4's record. Regions are admitted by their
+8. **Too many puddles for the fine level's solves.** Early sign: M8's record. Regions are admitted by their
    latest source, so a walked path is solved and the rest lie at rest.
 9. **`WATERS` and `RIVERS` move under this module's changes**, since three builders edit the same crates.
    Each ruling keeps its change behind a declaration that existing scenes do not make, and each milestone
@@ -534,6 +614,12 @@ decides an item ([brief](../BRIEF.md#goal-and-exit-rule), decision 3).
     remedy this plan does not have ([plan](PLAN.md#open-for-the-human)).
 11. **Exposure's edge is a ruled line.** Early sign: M5's captures under the roof. The soft edge's width is
     the remedy.
+12. **Mirror bands swap as the camera moves, or a puddle's reflection breaks behind a post.** Early sign:
+    M7.2's pan and M7.12's ranking. The designed remedies are `WATERS`' hysteresis, the fade at a band's
+    top and a smaller tolerance. The wrong fix is one plane for the yard, which part 7 fails either way.
+13. **A real scene stacks three shelters in a column**, a crown over a porch under an eave. Early sign: a
+    refusal at preparation. The remedy is a third layer in the grid, a profile value; the wrong fix is
+    dropping the refusal.
 
 ## Proof and builder handoff
 
@@ -545,8 +631,15 @@ dependencies. In addition:
   `docs/evidence/PUDDLES/PROVENANCE.md`; none is expected, and Barnes's code is not copied.
 - **Other modules' files.** A change inside a file another module wrote is one a ruling names, behind a
   declaration no existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 6 are the source of the bounds in M1 and M2. A bound on the GPU is measured first,
-  on this Mac, and then asserted, with its date and commit in the record.
+- **Bounds.** Parts 1 to 10 are the source of the bounds in M1, M2 and M8. A bound on the GPU is measured
+  first, on this Mac, and then asserted, with its date and commit in the record, and it is accepted only if
+  it is no more than a tenth of the difference a named wrong evaluator makes on the same case, which the
+  test also measures: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for
+  M8.3, the deep operator in place of the ladder; for M5.2, wetness that ignores slope and wetness that
+  reads the open store everywhere. A measured difference that fails this has a cause to find. It is not the
+  bound.
+- **Receivers.** The account's total and the receivers are separate proofs. A test of a receiver sets a
+  case where the total would close under the wrong assignment too, and checks that receiver's gain alone.
 - **Time in the views.** An inspected item that shows filling or drying may turn the rain and the drying rate
   up so the change fits the sequence; it says the rates it used.
 - **Maturity.** A ledger row for `E1.rain` is added in M3 and kept current.
@@ -560,4 +653,5 @@ dependencies. In addition:
 | Do 128 rings a square metre a second read as heavy rain, and what moments do the rest need? | M4; [risks 2 and 3](#risks) |
 | What `p` reads right for each ground, and does the film carry wet paving? | M5; [risk 6](#risks) |
 | How many sampled textures do the surface and the forward stage need with rain, in Chrome? | M3 and M5 count against the record |
+| Do two mirror views serve a yard whose water stands at several heights, and is 5 cm the right band? | M7.2 and M7.12; [risk 12](#risks) |
 | Does a rainy scene need rain in the air to meet its bar? | M4's and M7's reviews; the owner ([plan](PLAN.md#open-for-the-human)) |

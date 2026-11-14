@@ -1870,7 +1870,7 @@
           "id": "M14.2",
           "statement": "A mirrored reflection carries the right light. A matte panel of known radiance standing above the frame, 20 m and 3 km from flat water, reflects with the stored colour the optics equation gives, the air between the panel and the water included, at exposure scales sixteen times apart.",
           "check": "cargo test --locked --offline -p water-scene --test mirror_units_gpu",
-          "ask": "Is the expected colour worked out on the CPU with the air of the whole reflected path, and would applying the camera's air to the mirror image a second time fail it at 3 km?",
+          "ask": "Is the expected colour worked out on the CPU from the two stretches of the reflected path, camera to water and water to panel, with the Sun off the line of sight? Would a reader that took the camera's air off the mirror image, or applied it to the image a second time, fail it at 3 km?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

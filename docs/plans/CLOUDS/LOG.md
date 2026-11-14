@@ -204,3 +204,10 @@
   965.46 seconds, with 38 and 4 native comparisons and 481 records in each of four Chrome sets.
   All 13 CPU/dependency commands were refreshed there, under shared Git check key `d82f679aa755f3194b973a13`.
   Canonical integration keeps GPU exclusivity and removes owned development builds before unlocking.
+
+- 2026-11-14 `ATMOSPHERE`'s design review found this design's producer and its ruling 7 at odds: the ground
+  band is filled with the whole path to the Sun, the cloud band's value included, while ruling 7 and M14.3
+  had the consumer add the cloud band again, which squares an upper cloud's factor. Settled with `ATMOSPHERE`
+  and the module list: the band holds the whole path and a receiver makes one read. Ruling 7's summary, the
+  Sun's-path section's first paragraph and M14.3's second sentence now say so; the fill is unchanged. The
+  handover's in-scatter figure is qualified by that review's bank at the ramp. No other item changed.

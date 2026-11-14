@@ -35,3 +35,31 @@
   or wet ground of The Last of Us Part II, Red Dead Redemption 2, Forza Horizon, Spider-Man, Alan Wake 2 or
   Cyberpunk 2077. From memory: Marshall and Palmer's drop sizes, Atlas's fall speed and the form of Lekner and
   Dorf's model, which part 4 derives again and which gives 0.55 where Lagarde quotes about 0.68 for asphalt.
+- 2026-11-14 Design review asked for changes: [five Must Fix findings](../../evidence/PUDDLES/design-review.md).
+  All five are resolved in the design, the items and [the rulings](../ARCHITECTURE.md#seam-rulings-for-puddles),
+  with [reproductions 7 to 10](../../evidence/PUDDLES/design-proof/README.md).
+- 2026-11-14 The mirror (finding 1). A hollows body is no longer one plane at the mean of its ground, which
+  cut the foot off everything standing in a low puddle. New ruling 8: it gives the mirror its levels in
+  bands no taller than 5 cm, each cut at its lowest water, ranked with every other level; a lookup refuses
+  a sample below its own surface. Part 7: one plane fails whichever height it takes. Declared: a strip
+  behind a thing standing in water above its band's plane, and two views for however many bands. M7.2 is
+  restated and M7.12 added. Not chosen: a cut for each thing at its own water, which ties a view to scenery.
+- 2026-11-14 Rain that stops (finding 2). The rain state keeps the rate of each tick of the last second and
+  a drop is born by the rate at its own tick, so rings run out their second after a stop and none is born
+  in a dry spell (part 9). The bands' passes stop when the history is empty. M2.6, M4.1, M4.2 and M7.1 are
+  restated to it, and M4.12 looks at a stop and a restart.
+- 2026-11-14 First-hit receivers (finding 3). The canopy grid holds two shelters in a column and exposure is
+  the product of those above a point; a third is refused (part 10). Rain on a puddle is the puddle's; the
+  ground's stores describe uncovered ground only, with entries in the account when water covers ground and
+  when it leaves. M1.5 has the crown under the roof; M1.13 and M2.11 judge each receiver alone.
+- 2026-11-14 Saturation (finding 4). A ground class has a soak rate into its pores and a percolation rate out
+  of them. Earth takes a sheen once its pores are full, 1,080 s into the review's shower, and only ground
+  that passes water down faster than the rain never does (part 8). M1.4, M2.1 and M5.5 and cue P6 say so.
+- 2026-11-14 The fine interaction level (finding 5) moved out of M2 and M4 into a new milestone, M8, built
+  after M4 and waiting for `WATERS:M6`, whose reference it extends. M2 and M4 no longer need it.
+- 2026-11-14 Suggestions taken, both. The damp band has a state rule: a fall adds, a rise takes away, and it
+  decays at the pores' rate, so it is judgeable when a level stops, a puddle empties or drying is off
+  (M2.3). A GPU bound measured first is accepted only at a tenth of what a named wrong evaluator makes on
+  the same case (M4.1, M5.2, M8.3).
+- 2026-11-14 Not run by the planner: any GPU check, the bands' ranking as a camera moves, and the stores with
+  the covering transfers in a full fill step. Part 1's account was run without stores.

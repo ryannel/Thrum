@@ -158,3 +158,17 @@
   stage rain raises, a drop as an impulse record, and a film only on a shore. The question this design left
   it, how basins that overflow merge and part, is settled without changing a basin: two basins that would
   merge are still refused. No item, test or bound here changes.
+- 2026-11-14 `SCENE-VIEWS`' design review found that an image holding the air of the whole unfolded path cannot
+  be undone by subtracting the camera's lent in-scatter: the phase angle, the Sun's visibility and any fog on
+  the camera's stretch differ from the straight line's. Settled with `SCENE-VIEWS` and the module list: a
+  mirror view's air starts at its plane, the image holds the water-to-body stretch alone, and the optics
+  equation applies the camera-to-water stretch once. The mirror section's units, request and declared
+  approximations and M14.2's question now say so. No other item changed.
+- 2026-11-14 `PUDDLES`' design review found that a hollows body mirrored about the mean of its ground loses
+  the foot of anything standing in a lower puddle. [Ruling 8 for `PUDDLES`](../ARCHITECTURE.md#seam-rulings-for-puddles)
+  gives a hollows body bands of levels in the mirror's selection, built by `PUDDLES` M7. This module's rule
+  for its own bodies is unchanged; the same cut applies to a channel that lies below the lake it shares a
+  plane with, which M14.5's inspection of the channel's source end is the place to see.
+- 2026-11-14 `RIVERS`' design review replaced the weighted mean current of its ruling 5 with a current ladder
+  in the interaction step, and gave a chart's samples a wetting gauge (ruling 2). Both are built by `RIVERS`
+  behind declarations no scene of this module makes.

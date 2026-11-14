@@ -67,7 +67,7 @@ words, at the display's full refresh.
 | **R5** A waterfall: a smooth tongue at the lip, a sheet that thins and breaks into white strands as it gathers speed, and a plunge that boils, foams and sends rings across the pool | Falls of 0.75 m to 12 m; 0.005 to 1 m² of water a second for each metre of lip; the pool's level moved through its range; from 2 m to 200 m, in front, beside and behind | A scrolling texture on a card. Rejected by strands that must stretch as they fall, by a trickle that must be strands where a flood is a sheet, and by rings and foam that must stop when the fall is dry |
 | **R6** A river answers its source: raise the lake and its outlet runs deeper, wider and faster, the fall thickens and the foam grows; lower it and the river thins | The source's level through its declared range; a spring's flow through the range the game declares | One prepared flow with the level added. Rejected by discharge at two lake levels against the outlet's own sill, and by a waterline that must move up the bank |
 | **R7** One water: the river has the lake's light, foam, query, mirror and view from beneath, and no seam where it leaves the lake, lands below a fall or meets the sea | The joins of [W6](../WATERS/DESIGN.md#cues), with a solved chart; a swell at the mouth; dawn to night; a gorge in shadow | A river drawn by its own shader. Rejected by the surface either side of each join, and by a fall in a gorge's shadow, which the Sun must not light |
-| **R8** Rings on running water: a stone dropped in a pool sends rings that stay with the pool's water, beside a riffle that runs | A pool at 0.2 m/s beside a riffle at 1.5 m/s in one window | Rings carried at one speed for the whole window. Rejected by the centre of the rings after five seconds |
+| **R8** Rings on running water: a stone dropped in a pool sends rings that stay with the pool's water, beside a riffle that runs | A pool at 0.2 m/s beside a riffle at 1.5 m/s in one window, with rings on both at once | Rings carried at one speed for the whole window. Rejected by the centre of each set of rings after five seconds |
 
 ## Research and selection
 
@@ -126,7 +126,7 @@ What each source was read for, and how far.
 | The flow's roughness is a gain on the wind's shortest cascades (`WATERS`) | **Change** | A gain of at most 1 on waves the wind makes gives a stream no ripples in a calm or under shelter, which is where streams are. The flow makes its own waves: two wave layers the wind does not fill, at a gain the flow sets |
 | Foam is born from the height a chart's flow loses (`WATERS`) | **Keep**, made exact | Bed friction roughens the water and whitens it only on a steep chute. What whitens it is head lost in jumps, ledges and the wakes of rocks. The chart's loss is that power |
 | A fall is a sheet with the water's optics and pattern, and a plunge of impulses and births (`WATERS`) | **Keep**, with the pattern carried by the falling water itself | A fall's motion is known in closed form, so its pattern needs no cross-fade |
-| One mean current for an interaction window (`WATERS`, left to this module to judge) | **Change** | Rings in a pool beside a riffle slide 4.7 m in 5 s (part 7). The mean is weighted by where the waves are |
+| One mean current for an interaction window (`WATERS`, left to this module to judge) | **Change** | Rings in a pool beside a riffle slide 4.7 m in 5 s (part 7). No one current serves a pool and a riffle that both hold waves, however it is weighted: each set is 3.25 m off after 5 s (part 9). The step carries at a few currents and each cell blends the two that bracket its own |
 | Live shallow water near the camera (Crimson Desert, Fluid Flux, the water decision) | **Not selected** | It pays every tick for a flow that does not change, differs between devices, ends at its window and needs a GPU to answer a float. A live solver would write the same map, so it can come later |
 
 ### The candidates, decided against the cues
@@ -229,14 +229,19 @@ below a fall, a river is cut into reaches at its falls, and the face of the clif
 
 For each reach, a chart as [the map defines one](../WATERS/DESIGN.md#the-water-map), holding for each flow sample:
 
-- **Level**, over the whole footprint. In a cell the sample leaves dry it is the level of the nearest wet cell, so
-  it lies under the bed there and the waterline is where the surface meets the ground.
+- **Level**, over the whole footprint. In a cell the sample leaves dry it lies under the bed: it is the level of
+  the nearest wet cell where that is under the cell's bed, as on a bank, so the waterline is where the surface
+  meets the ground; and where that level is over the bed, as in a hollow the water has not reached, it is held
+  a margin under the bed. A dry cell is never water, whatever stands beside it.
 - **Current**, the discharge over the depth; none in a dry cell.
+- **Wetting gauge**, where the river has a higher sample: the gauge at which the cell first holds water on
+  the way to that sample ([below](#a-river-answers-its-source)).
 - **Loss**: the whitewater power, in watts for each square metre of surface ([below](#whitewater-from-the-flow)).
 - **Flow gains**: one for each flow band ([below](#the-flows-own-waves)).
 
-And once for the reach: its **footprint**, the wet cells of the highest sample grown by a margin of cells whose
-bed stands above the level; its **ends**, each a source end, a mouth or a **brink end**; its join lengths; and
+And once for the reach: its **footprint**, the cells any sample wets, grown by a margin of cells whose bed
+stands above the level beside them, so a dry cell whose bed is below that level is in the footprint only if
+some sample wets it; its **ends**, each a source end, a mouth or a **brink end**; its join lengths; and
 the **gauge level** of each sample.
 
 For each fall, a **fall record**: along its lip, for each sample, the path as a line of points with the time the
@@ -255,9 +260,25 @@ range the solve reports.
 The river is solved once for each **flow sample**: for a source body, at levels across its stage's range no more
 than 0.3 m apart; for springs, at the discharges the game declares. Each sample records its gauge level. At any
 moment every chart row of the river (level, current, loss and gains) and every fall record is the mix, linear in
-the gauge, of the two samples whose gauge levels bracket it. Because each sample's level runs under the bed
-where that sample is dry, the mixed level crosses the bed along a line that moves up the bank as the gauge
-rises, and a channel that only the high samples wet fills from its upstream end.
+the gauge, of the two samples whose gauge levels bracket it, in every cell both samples wet.
+
+**Where the two samples differ in what is wet**, a cell holds water only from its **wetting gauge**. A cell's
+own crossing is the gauge at which the mixed level meets its bed. Its wetting gauge is the least gauge at
+which a path of wet cells joins it to the lower sample's water: the larger of its own crossing and the
+smallest wetting gauge among the cells it can be reached through. Preparation finds it by flooding outward
+from the lower sample's wet cells in order of gauge. Below its wetting gauge a cell has no water, no wave
+support and no shore margin, and the level the map gives there lies under its bed. From its wetting gauge to
+the upper sample its level runs linearly from its bed to the upper sample's level, and its current, loss and
+gains from nothing to the upper sample's. For a bank cell, whose wetting gauge is its own crossing, that is
+the linear mix exactly, so the waterline moves up a bank as it did. A hollow behind a ridge waits for the
+ridge: it is dry until the ridge's lowest point wets, then fills from its bed. A cell the lower sample wets
+and the upper leaves dry dries where its mixed level meets its bed.
+
+[Part 8](../../evidence/RIVERS/design-proof/README.md) runs the design review's case, a channel beside a
+hollow behind a ridge with a notch. The first design's rule, a dry cell at the nearest wet level, puts 0.80 m
+of water in the hollow at the low sample. With wetting gauges the hollow is dry until the notch wets at a
+quarter of the way between the samples and the wet cells are those of a quasi-static flood at every gauge
+tried, each joined to the channel; a bank cell's ramp is the linear mix to 2e-16 m.
 
 The mix is the map's, in `thrum-water-model` and in WGSL alike, so every reader has it and no reader sees a
 river the query does not ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A chart with one sample is
@@ -265,8 +286,9 @@ exactly `WATERS`' chart, and its stage adds to its level as before.
 
 Part 3: between samples 0.3 m apart the mixed row is within 5.6 mm in depth and 19% in speed of a solve at that
 level; 0.15 m apart, 2.6 mm and 10%. Declared approximations: the mix is not itself a steady flow, so between
-samples discharge is not quite the same through every section; and the whole river answers at once. A rise does
-not travel. A prepared travel time for each cell, read against a short record of the gauge, would make it
+samples discharge is not quite the same through every section; a cell that waits for its connection fills
+linearly from its wetting gauge, not at the rate its inflow would give; and the whole river answers at once.
+A rise does not travel. A prepared travel time for each cell, read against a short record of the gauge, would make it
 travel with no change to a reader, and is not built.
 
 ### The flow's own waves
@@ -378,12 +400,31 @@ Rings exist where the interaction windows are, which is round the body the game 
 
 ### Rings on running water
 
-`WATERS` carries a window's interaction waves by the mean current of its wet cells. Each region's mean is instead
-weighted by the wave energy each cell holds and by the step's sources, and is the plain mean where there is
-neither ([ruling 5](../ARCHITECTURE.md#seam-rulings-for-rivers)). Rings in a pool are then carried by the pool's
-current and a wake in a riffle by the riffle's. On a uniform current, and on still water, nothing changes. The
-difference between a cell's current and the weighted mean is still not carried, a declared approximation: rings
-that spread from a pool into a riffle are carried at a speed between the two.
+`WATERS` carries a window's interaction waves by the mean current of its wet cells. A pool joined to a riffle
+is one region, and no one current carries both: with rings on each, any single current leaves each set
+3.25 m from its own water after 5 s, and a stronger source on the riffle drags the pool's rings.
+
+So the step has a **current ladder**, as it has a depth ladder
+([ruling 5](../ARCHITECTURE.md#seam-rulings-for-rivers)). When a window's regions are labelled, each region
+takes a few **carriage currents** from the currents of its wet cells, four at most in the first profile,
+spread over their range. The step transforms the state once, transforms back once for each carriage current
+in use at each ladder depth, and each cell takes the blend of the outputs carried at the currents that
+bracket its own. The weights are never negative, sum to one and give back the cell's own current; where a
+current lies outside the ladder's it takes the nearest. On still water and on a uniform current the ladder
+has one current, and the step is what `WATERS` built, to the bit.
+
+A **solve** is now one region at one ladder depth and one carriage current, inside the profile's same count
+of 16. Where a level would pass it, regions give up carriage currents first, down to the one mean, before a
+region is left at rest, and the step reports what it dropped.
+
+[Part 9](../../evidence/RIVERS/design-proof/README.md), a section with a pool at 0.2 m/s and a riffle at
+1.5 m/s in one region and a ring set raised on each at once: with the ladder each set's centre is within
+0.10 m of where its own water carries it after 5 s, in steps of 1 and of 8 ticks, and the pool's is
+unmoved when the riffle's source is five times stronger. Declared approximations: a wave on water whose
+current lies between two carriage currents is a blend of two carried copies and loses energy, 0.2% a
+second midway between four currents and 1.3% between two, and never gains; rings that cross from a pool
+into a riffle pass through that blend; and the proof is one section, so currents that turn across a window
+are M6.10's to measure.
 
 ### The chart store
 
@@ -432,8 +473,13 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
   the shallows' constant is unrun; M5 records it.
 - **R5.** Part 4 is arithmetic, and a section for the depth at a lip. The sheet's look is unrun; M6 is the
   first ([risk 4](#risks)).
-- **R6.** Part 3, in section. The waterline's travel between samples in plan is unrun; M3 tests it.
-- **R8.** Part 7 is arithmetic on part 2's flow. The weighted mean on the GPU is unrun; M6 measures the rings.
+- **R6.** Part 3, in section, for cells both samples wet; part 8, in plan, for what is wet between two
+  samples, with a hollow behind a ridge. The solver's own samples of a valley are unrun; M3 tests them.
+- **R8.** Part 7 is arithmetic on part 2's flow. Part 9 steps two ring sets at once on a pool and a riffle in
+  one region, in section. The ladder in plan and on the GPU is unrun; M6 measures the rings.
+- **What the looks cover.** The island's fall is about 4 m, and M6 judges it from 2 m to 200 m at three
+  gauges. Falls of other heights in R5's range, 0.75 m to 12 m, are held to the sheet's closed forms (M2.4)
+  and are not judged by eye: the ledger says so until a game shows one.
 - **Cost.** Unrun. M1 records the solve and M4 the first frame.
 
 ## The system as it runs
@@ -442,7 +488,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 |---|---|
 | The solver, the brink rule, the energy account, the river file's writer | `thrum-river-model` (this module), on `thrum-water-model`, no GPU dependency |
 | A river's samples and gauge in the map's function; brink ends; fall records and the sheet's f64 reference; the plunge's births and impulses as a function of the tick; the flow bands' spectrum, evaluator and gains; the river file's reader | Files this module adds to `thrum-water-model`, and its changes to the map's function there under [rulings 1 to 3](../ARCHITECTURE.md#seam-rulings-for-rivers) |
-| Samples in the map on the GPU; the flow bands' passes; births from loss; sheets; plunges; the weighted mean | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 2 to 7 |
+| Samples and wetting gauges in the map on the GPU; the flow bands' passes; births from loss; sheets; plunges; the current ladder | Files this module adds to `thrum-water` and `thrum-sea`, and its changes there under rulings 2 to 7 |
 | The map, the surface, optics, the query, interaction waves, foam, carriage | `WATERS` |
 | The rivers' declarations, the island's valley, spring, sill, rocks and cliff, Manning's `n`, the river selection, the river controls | `examples/water` |
 | Sky, Sun, air, the lent Sun visibility | `ATMOSPHERE` |
@@ -450,7 +496,7 @@ product: the map needs them on the CPU, and a lease lends views on the GPU.
 **A frame, in order**, for what a river adds to [`WATERS`' frame](../WATERS/DESIGN.md#the-system-as-it-runs).
 `upload` takes the gauges with the page's stages. `simulate`, every frame: the flow bands at `t`, with the
 cascades. `simulate`, on a frame that advances the tick: births from loss with the foam's births; the plunges'
-births and impulses; each region's weighted mean before its interaction step. `after-opaque`: the sheets, then
+births and impulses; the interaction step with each region's current ladder. `after-opaque`: the sheets, then
 the water's gather and surface as before.
 
 **Creator journey.** A game declares a river: a rectangle, its sources, the bodies it may reach, Manning's `n`
@@ -473,10 +519,11 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-rivers), each b
 scene with no river and neither capability compiles to the shader text, passes and storage it has today.
 
 1. A chart's end may be a brink (M2).
-2. A chart may hold several flow samples that a gauge reads between (M3 on the CPU, M4 on the GPU).
+2. A chart may hold several flow samples that a gauge reads between, with a wetting gauge for each cell (M3 on
+   the CPU, M4 on the GPU).
 3. Flow bands: wave layers the wind does not fill, at gains a chart holds (M3 on the CPU, M5 on the GPU).
 4. Births from a chart's loss and at a plunge (M5 and M6), which `WATERS`' design already books.
-5. A region's mean current is weighted by its waves (M6).
+5. A current ladder in the interaction step (M6).
 6. A river selection in `examples/water` (M4).
 7. The sheet is drawn in the water's contribution before its gather (M6), and water's direct Sun takes the
    lent Sun visibility (M7, after `WATERS:M16` lends it).
@@ -492,13 +539,13 @@ Estimates, unmeasured.
 | Work | Rate | Size | Estimate |
 |---|---|---|---|
 | The solve | Prepared, once for each flow sample | Wet cells times steps. A 350 m stream 4 m wide at 0.25 m cells is 22,400 wet cells and about 24,000 steps: 540 million cell updates a sample (part 5) | Tens of seconds a sample on one core; M1 records it. Each cell's own time step saves a third; a filled start and a coarser grid first save little in a section |
-| A river file | Loaded at preparation | For each reach: its rectangle's cells × samples × 6 values at 16 bits. A 300 m by 30 m reach at 0.25 m cells with 6 samples is about 10 MiB | Cutting a winding river into more reaches is the remedy where a rectangle is mostly ground |
-| Samples in the map | Every read of a chart with more than one sample | Two layers in place of one | Two reads on river pixels; none elsewhere |
+| A river file | Loaded at preparation | For each reach: its rectangle's cells × samples × 7 values at 16 bits. A 300 m by 30 m reach at 0.25 m cells with 6 samples is about 12 MiB | Cutting a winding river into more reaches is the remedy where a rectangle is mostly ground |
+| Samples in the map | Every read of a chart with more than one sample | Two layers in place of one, and the wetting gauge | Three reads on river pixels; none elsewhere |
 | Flow bands | Frame, while a river is inside the field's reach | Two transforms of 256² and their mips | About half the cascades' cost again; two more layer reads in the surface where a gain is not zero |
 | Births from loss | Tick | One read of the chart's loss in the foam's births | Inside the foam's pass |
 | Sheets | Frame, while a fall is in view | A lip's cells × up to 32 points; the sheet's pixels, blended | Small beside the surface; M6 records it |
 | Plunges | Tick | A record and a birth for each segment | Negligible |
-| The weighted mean | Tick, for each region | One reduction of a 256² level | Under the interaction step's own cost |
+| The current ladder | Tick, for each region whose currents differ | One more transform back for each carriage current beyond the first at each ladder depth, inside the profile's 16 solves a level; choosing the currents is CPU work when regions are labelled | Up to four times a still region's step where a pool and a riffle share a window; nothing on still water or a uniform current. M6.8 records it |
 
 Records and tripwires are [`WATERS`'](../WATERS/DESIGN.md#cost-account): `scripts/water_cost.py`, with scenes this
 module adds, and `scripts/river_cost.py` for the solve. No timing figure decides an item
@@ -529,6 +576,9 @@ module adds, and `scripts/river_cost.py` for the solve. No timing figure decides
 9. **A steady flow looks frozen**: nothing surges. Early sign: M5's sequences. The flow bands, the carried
    cascades and the foam are what moves; a slow wander of the gauge is the game's. The wrong fix is noise in the
    level.
+10. **The current ladder multiplies a window's solves** where a pool and a riffle share it. Early sign: M6.8's
+    record, and carriage currents dropped in M6.10's report. Remedy: fewer carriage currents, which part 9
+    prices at 1.3% of a midway wave's energy a second for two. The wrong fix is one current again.
 
 ## Proof and builder handoff
 
@@ -540,8 +590,8 @@ dependencies. In addition:
   `docs/evidence/RIVERS/PROVENANCE.md`; none is expected.
 - **`WATERS`' crates.** A change inside a file `WATERS` wrote is one a ruling names, behind a declaration no
   existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 7 are the source of the bounds in M1 to M3. A bound on the GPU is measured first, on
-  this Mac, and then asserted, with its date and commit in the record.
+- **Bounds.** Parts 1 to 9 are the source of the bounds in M1 to M3 and M6.10. A bound on the GPU is measured
+  first, on this Mac, and then asserted, with its date and commit in the record.
 - **Maturity.** A ledger row for `E1.rivers` is added in M4 and kept current.
 
 ## Open questions

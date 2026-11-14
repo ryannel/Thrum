@@ -233,10 +233,10 @@
         },
         {
           "id": "M7.3",
-          "statement": "With the view volume and clear air, the lent aerial transport to a point, read from the settled volume, matches an f64 integration of the air along that ray within the bound this milestone measures first, at P10's Sun elevations and at points from 5 m to beyond 32 km. Its night part still meets P5.",
+          "statement": "With the view volume and no medium, the lent aerial transport to a point, read from the settled volume, is within the design's ceiling of an f64 quadrature of the air along that ray, in each channel: transmittance within 0.05 \u00d7 expected + 0.005, and solar in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray, each plus one stored step. It holds at the default haze and at visual ranges of 20 km and 3 km, at P10's Sun elevations, at points from 5 m to beyond 32 km on level, climbing and descending rays. Its night part still meets P5. The worst error at each haze is on record beside the 32-layer product's against the same reference; the record decides nothing.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test view_volume_air_gpu",
           "lock": "gpu",
-          "ask": "Is the reference an f64 integration written apart from the shader? Is the bound measured on the settled volume and then asserted, and is it set beside what the 32\u00b3 product measures against the same reference?",
+          "ask": "Is the reference an f64 quadrature written apart from the shader, with the Sun's light from the existing direct-light quadrature and not from the volume's own cells? Does the test show a volume whose in-scatter is scaled by 1.1 failing? Is the ceiling the design's, unchanged?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -254,6 +254,18 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "M7.13",
+          "statement": "A ray that leaves the volume takes the volume's terminal pair once. With no provider `R` is exactly 1. Where nothing shadows a ray's air, `\u0394S` is exactly 0 and the sky's radiance is the clear sky's to the bit. Where a cascade occluder or the registered Sun-path optical depth shadows the near air, the sky pixel is the clear sky's radiance plus the reference's `\u0394S`, which is negative, within M7.3's in-scatter ceiling.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_sky_gpu",
+          "ask": "Is the expected `\u0394S` the f64 difference of the shadowed and the unshadowed near in-scatter, written apart from the shader, and would a sky left as the clear sky fail the shadowed case?",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M7.5",
@@ -299,7 +311,7 @@
         {
           "id": "M7.9",
           "statement": "In Chrome the haze sweep and the shafts pass M7.6's, M7.7's and M7.8's lists.",
-          "inspect": "Capture the same stills and the pan in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "inspect": "Capture the same stills, the pan, the walk, the scrub and the cut in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -352,10 +364,10 @@
       "items": [
         {
           "id": "M8.1",
-          "statement": "The view volume integrates a provider's medium coefficients jointly with the air. For a uniform slab of known extinction, solar kernel and ambient source standing in the air, the lent aerial transport to points before, inside and beyond the slab matches the retained joint reference within the bound this milestone measures first, with the grid's slices as they are and with twice as many. The coefficients are summed with the air's before integration: composing the slab's own pair with the air's pair gives a different answer on a case the test names, and that answer fails.",
+          "statement": "The view volume integrates a provider's medium coefficients jointly with the air. For a uniform slab of known extinction, solar kernel and ambient source standing in the air inside the provider's ramp, at visual ranges of 30 m, 150 m and 2 km, the lent aerial transport to points before, inside and beyond the slab, each a cell or more from its faces, is within the design's ceiling of the retained joint reference (transmittance within 0.05 \u00d7 expected + 0.005; in-scatter within 0.05 \u00d7 expected + 0.005 \u00d7 the reference's in-scatter at 32 km on that ray; each plus one stored step), with the grid's slices as they are and with twice as many. The coefficients are summed with the air's before integration: for a slab of 2 km visual range in haze of 3 km, composing the slab's own pair with the air's pair, in either order, misses that ceiling by more than twice, and the test shows both failing.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_medium_gpu",
           "lock": "gpu",
-          "ask": "Is the joint reference `scripts/reference/atmosphere/joint_reference.py` or an f64 evaluation written apart from the shader? Does the wrong composition fail by more than the bound?",
+          "ask": "Is the joint reference `scripts/reference/atmosphere/joint_reference.py` or an f64 evaluation written apart from the shader? Do both wrong compositions fail on the named case, and is the ceiling the design's, unchanged?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -364,10 +376,10 @@
         },
         {
           "id": "M8.2",
-          "statement": "A ray that leaves the volume composes once. Sky radiance, the Sun's disc and a star seen through a slab near the camera equal the reference: the slab's transmittance times the clear-air value plus the in-scatter the slab adds. With a provider registered and its coefficients zero, sky pixels hold the same bytes as with none.",
+          "statement": "A ray that leaves the volume composes once. Through a slab near the camera a sky pixel is `R\u00b7L + \u0394S`, and a star drawn over it adds `R` times its own light and no second `\u0394S`: a pixel that holds sky and a star equals the reference for their sum, and the Sun's disc dims by `R`. With a provider registered and its coefficients zero, sky pixels hold the same bytes as with none.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_terminal_gpu",
           "lock": "gpu",
-          "ask": "Does the far aerial operation beyond 32 km, if `CLOUDS` has built it, compose the same terminal pair, and does the test say whether it was present?",
+          "ask": "Does the tested pixel hold both sky and a star with the slab's `\u0394S` at least a tenth of their sum, so that correcting each draw by itself fails? Does the far aerial operation beyond 32 km, if `CLOUDS` has built it, compose the same terminal pair, and does the test say whether it was present?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -376,10 +388,10 @@
         },
         {
           "id": "M8.3",
-          "statement": "The Sun-path optical depth has a ground band. With one registered, the factor on terrain, synthetic instances, cooked meshes, each lit sample of the cooked volume and the incident-light meter is the exponential of minus the sum of the cloud band's and the ground band's optical depth at that receiver's own position, applied once. With none registered the shaders are composed without the read, as before.",
+          "statement": "The Sun-path optical depth has a ground band that holds the whole path to the Sun. With one registered, the factor on terrain, synthetic instances, cooked meshes, each lit sample of the cooked volume and the incident-light meter is the exponential of minus one read: the band at the receiver's own position for a receiver inside it, and the 2D field at or above the band's top and outside its region. The two are never added. A receiver in the band under an upper cloud of optical depth ln 2, with no condensate near it, takes 0.5, and condensate near it adds its own path alone. The factor is continuous across the band's top and across its border. With none registered the shaders are composed without the read, as before.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test ground_band_receivers_gpu",
           "lock": "gpu",
-          "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails?",
+          "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails? Does a factor that adds the 2D field's value to the band's fail the ln 2 case?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -420,7 +432,7 @@
         {
           "id": "M8.7",
           "statement": "In Chrome the test bank passes M8.5's and M8.6's lists.",
-          "inspect": "Capture the same stills and the walk in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "inspect": "Capture the same stills, the walk, the pan and the mover in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",

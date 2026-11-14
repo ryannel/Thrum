@@ -26,7 +26,7 @@ is. It is never presented, and it has no history.
 
 | User | Needs | What that requires of the design |
 |---|---|---|
-| `WATERS` M14, for a lake, a pond and the sea under an island | The far shore, hills, trees and the craft as a camera at the mirror image of the main one would see them, with the light the main view gives them, up to two a frame | The same shading, with what belongs to a view made again for the view; a cut at a plane; the air of the reflected path |
+| `WATERS` M14, for a lake, a pond and the sea under an island | The far shore, hills, trees and the craft as a camera at the mirror image of the main one would see them, with the light the main view gives them, up to two a frame | The same shading, with what belongs to a view made again for the view; a cut at a plane; air that starts at the plane, so each stretch of a reflected path has one owner |
 | `PUDDLES`, `RIVERS`, through `WATERS` | The same, with no work of their own | Nothing beyond the interface |
 | A game that has no such water | Nothing | A scene that declares no view is what it was, bit for bit |
 | A later consumer: a probe, a portal, a monitor in the world | A view from any camera | The request is a camera, and nothing in it says "mirror" |
@@ -117,10 +117,10 @@ one: the same world, lit the same, from the other side. In words, on both target
 
 ### Slots and requests
 
-A contribution declares, when the scene is prepared, how many secondary views it may ask for and each one's
-extent as a share of the render extent, from a quarter to the whole of each side. Each is a **slot**: its
-targets, per-view products, pipelines and graph passes exist from preparation, so asking never compiles
-anything. A scene's slots are bounded by its profile, four in the first, and a declaration over the bound, or
+A contribution declares, when the scene is prepared, how many secondary views it may ask for and the largest
+extent of each as a share of the render extent, from a quarter to the whole of each side. Each is a **slot**:
+its targets at that largest extent, its per-view products, pipelines and graph passes exist from preparation,
+so asking never compiles or creates anything. A scene's slots are bounded by its profile, four in the first, and a declaration over the bound, or
 over what the capability record allows, is refused at preparation.
 
 Each frame, in its upload, the declaring contribution **asks** for a slot or leaves it idle. A request is a
@@ -128,7 +128,8 @@ camera and nothing more specific:
 
 - a rigid, right-handed view transform and a symmetric perspective with a near and a far distance;
 - optionally a **clip plane**, in world space;
-- optionally a **fold height** for the air ([below](#what-a-view-owns-and-what-it-shares));
+- optionally, with a clip plane, **air from the plane** ([below](#what-a-view-owns-and-what-it-shares));
+- an extent no larger than the slot's, drawn as a viewport inside the slot's targets;
 - the least size, in the view's pixels, of an instance or a meshlet group worth drawing.
 
 An improper transform is refused. A clip plane nearer the view's camera than 5 cm is moved to 5 cm, so a
@@ -162,15 +163,26 @@ The forward shader is shared text. What it reads splits by whether the quantity 
   profile gives a view one cascade to 128 m; the count, from none to two, and the reach are knobs. With none,
   the view has hill-scale shadows only.
 - **Lights.** A cluster table is built for the view's own frustum by the pass that builds the main view's.
-- **Air.** The aerial volume is computed again along the view's own lines of sight. With a fold height, a
-  sample below it takes the altitude of its image above it. For a mirror the fold is the mirror's plane, so
-  the view's air is the air of the reflected path unfolded, and the atmosphere is never asked for an altitude
-  below the camera's side of the plane. Taken as it stands, the aerosol on that part of the path would be up
-  to 3.4% too dense for a camera 40 m up, and the view's camera would stand that far under the water
-  ([part B](../../evidence/SCENE-VIEWS/design-proof/README.md)). A view has clear air even where the main view
-  has the view volume.
+- **Air.** The aerial volume is computed again along the view's own lines of sight, from the view's camera.
+  A mirror's camera stands under its plane, where there is no air: light reaches the main camera from a body
+  by way of the water, body to water and then water to camera, and the mirrored camera's straight line to the
+  body is only the first of those stretches, beyond where it crosses the plane. So a request with a clip
+  plane may ask for **air from the plane**. Then the volume, and the decoder that shades a fragment with
+  it, measure each line of sight from its crossing of the plane: the pair at a point is the transport from
+  the crossing to the point and nothing before it. Every sample is a real point beyond the plane, taken with
+  the line's own direction, the Sun's light and the scene's Sun visibility at that point, and bounded by the
+  atmosphere's top and the ground as any ray is, so the phase angle and the shadows are the true stretch's.
+  The stretch from the main camera to the plane is the reader's, which has it already: the lent aerial pair
+  from its own camera to its own surface point. Each stretch has one owner and is applied once (C08).
+  The first version of this design folded altitudes about the plane and kept the line's direction; that put
+  the wrong phase angle on the stretch below the plane, 40 times the true in-scatter in the design review's
+  case, and a reader could not take it off again ([part D](../../evidence/SCENE-VIEWS/design-proof/README.md)).
+  A view has clear air even where the main view has the view volume, so with air from the plane a reader
+  still applies the main view's fog once, on its own stretch. With no such request the aerial pass and the
+  decoder do what they do today, and the main view's shader text never changes.
 - **Exposure and encoding.** A view's colour is in the scene target's own encoding for that view,
-  `(T_v · L + S_v) · E`: radiance through the view's air, times the frame's exposure scale. Coverage is 1 where
+  `(T_v · L + S_v) · E`: radiance through the view's air, from its camera or from the plane as the request
+  says, times the frame's exposure scale. Coverage is 1 where
   geometry drew and 0 elsewhere, in alpha, and uncovered colour is zero. Depth is the standard reversed depth
   of the view's projection, so the view's inverse matrix turns a texel back into a world point.
 
@@ -215,21 +227,29 @@ frame that asks for none.
 
 Named runtime values in `EFFECT-GRAPH`'s list, each with a declared effect and none with a history to
 invalidate: a view's extent, its far distance, its least size, and the count and reach of its cascades. The
-count of slots is the profile's. Each is the asking contribution's to register, so the governor moves water's
+extent moves a viewport inside the slot's prepared targets, up to the slot's largest, and each cascade a view
+may use is prepared with the slot, so no knob creates a pipeline or a resource. The count of slots and each
+slot's largest extent are fixed at preparation. Each is the asking contribution's to register, so the governor moves water's
 mirror through water's knobs.
 
 ### Check that it can work
 
 - **V1.** A view runs the main view's shader with the main view's inputs, and each input that depends on the
   view is produced by the code that produces the main view's, from the view's camera. So a view of camera X
-  must equal the main view drawn from X, where both cover, up to the sky the view leaves out. M1.1 holds it to
-  that. Unrun.
+  must equal the main view drawn from X, where both cover, up to the sky the view leaves out, when the two
+  are drawn under one shadow profile. A view's own profile is smaller than the main view's (one cascade, no
+  fog), so that is the comparison M1.1 makes, to one step of each stored format. Unrun.
 - **V2, V3.** Nothing a view reads is fitted to the main frustum: its lists, cascades, clusters and aerial
   volume are its own, and the height map and the air's shadow heights are laid out round the main camera's
   position and not its direction. Moving the main camera does move those two; M1.4 turns it only.
 - **V4.** The plane test is per fragment and exact to a pixel. The depth it leaves is the standard reversed
   depth, which resolves 0.33 mm at 3 km (part C), so `WATERS`' lookup loses nothing to the cut.
 - **V6.** Part A, above. That reconstruction then holds a reflection steady is `WATERS` M14.6's to judge.
+- **The air of a mirrored path.** Part D, in a section with the aerosol's phase function: a view with air
+  from the plane, composed with the main camera's own stretch, is the true two-stretch path to rounding for
+  a Sun ahead, behind and low, under a ridge that shades part of the path, and with a fog bank between the
+  camera and the water. The first design's whole-path image, with the camera's stretch taken off by the
+  reader, is 40 times the true in-scatter in the review's case and 2.2% off in total behind the bank.
 - **V7.** Unrun. M3 takes the record.
 - **A hard component on paper: the cooked indirect path in a view.** Its meshlet culling reads one frustum
   from the contribution frame and writes one set of indirect arguments. For a view it needs the same pass
@@ -257,12 +277,13 @@ for nothing runs none of the view steps.
 **The example.** `examples/mirror` is a creator scene on the sky kit: ground, a tower, rocks, a post standing
 in a pool, a lamp, a far hill, and a flat pool. The pool is the example's own diagnostic effect: it declares
 one slot, asks each frame for the camera's mirror image in the pool's plane, and shades each pool pixel with
-one read of the view where that pixel's surface point projects, which on a flat mirror is exact. It is a
-fixture and a demonstration, and no engine crate holds it.
+one read of the view where that pixel's surface point projects, which on a flat mirror is exact. It asks for
+air from the plane and applies the lent aerial pair from the main camera to the surface point itself. It is
+a fixture and a demonstration, and no engine crate holds it.
 
 **Creator journey.** An effect author declares slots with their extents, asks in upload with a camera, reads
-colour, depth and the record in the effect's own pass, and registers the knobs. Changing a request needs no
-rebuild. Changing the count of slots or an extent share is a new preparation.
+colour, depth and the record in the effect's own pass, and registers the knobs. Changing a request, its
+extent included, needs no rebuild. Changing the count of slots or a slot's largest extent is a new preparation.
 
 ## What SCENE-VIEWS asks of other modules
 
@@ -274,8 +295,9 @@ the same bytes.
 1. **The contribution seam** (`EFFECT-GRAPH`'s, M1): a contribution may declare slots, ask in upload, opt in to
    drawing in views, and read its own slots in its own passes.
 2. **A camera-drawn compaction against another volume** (`CULLING`'s files, M1), as Sun casters have.
-3. **Per-view lighting products** (the forward pass's shadow and cluster files and `ATMOSPHERE`'s aerial pass,
-   M1): cascades, a cluster table and an aerial volume for a second view, and the aerial pass's fold height.
+3. **Per-view lighting products** (the forward pass's shadow and cluster files, `ATMOSPHERE`'s aerial pass and
+   the aerial decoders, M1): cascades, a cluster table and an aerial volume for a second view, and air from
+   the plane in the pass and in the decoder a view's pipelines compose.
 4. **The view record for a view that is not presented** (`APPLE-PRESENTATION`'s, M1). C07 now names a
    secondary view: it publishes no frame contract and has no history key.
 5. **Cooked placements in a view** (`thrum-asset-gpu`, `COOKED-DRAW`'s paths and `CONTENT-LOOP`'s residency, M2).
@@ -289,7 +311,7 @@ Estimates, unmeasured. A view is the scene's opaque draw again at its extent, le
 | Work | Rate | Size | Estimate |
 |---|---|---|---|
 | Compaction | Frame, each asked view | The scene's instances once more | As the main view's Frustum compaction |
-| Cluster table and aerial volume | Frame, each asked view | 32×18×16 cells; 32×32×32 texels | Small beside a draw |
+| Cluster table and aerial volume | Frame, each asked view | 32×18×16 cells; 32×32×32 texels, from the plane where asked | Small beside a draw |
 | Cascades | Frame, each asked view | One 1024² depth layer in the first profile | A Sun pass with fewer casters |
 | The view's pass | Frame, each asked view | A quarter of the main view's pixels at half each side; one colour and one depth target stored | The largest term. On a tile GPU each view is a render pass with two stores |
 | Memory | | Colour and depth at 1280×720 for a 2560×1440 frame: about 11 MiB a slot; a cascade layer 4 MiB | |
@@ -327,6 +349,12 @@ figure decides whether an item passes.**
   ([rules](../ARCHITECTURE.md#exact-baselines)). No retained image moves.
 - **Engine tests hold no game content.** The tests of `thrum-render` and `thrum-asset-gpu` make their own
   scenes. The pool, the tower and the lamp are the example's.
+- **Bounds.** An equality item compares like with like: the same camera, extent and shadow profile. Its
+  allowance is one step of each stored format, because two pipelines may round the last bit differently;
+  for M1.6's rebuilt point it is a few steps of the stored depth and of a 32-bit float at the point's
+  coordinates, which the test works out; for M1.5 and M2.3 it is `ATMOSPHERE`'s own bounds for the lookups. A larger
+  difference has a cause to find and is never recorded as the bound. A builder who cannot close one ends
+  `BLOCKED` with the measurement.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/scene-views-<milestone>/`, selected
   evidence in `docs/evidence/SCENE-VIEWS/`.
 - **Dependencies.** The example's package is registered in `.config/architecture.toml`.
@@ -337,7 +365,7 @@ figure decides whether an item passes.**
 
 | Question | Settled by |
 |---|---|
-| Does a view equal the main view from its camera to the last bit, or to a bound? | M1.1 measures first, then asserts |
+| Does a view equal the main view from its camera to the last bit? | M1.1: to one step of each stored format; more is a defect |
 | Can the cooked indirect path hold a second set of culling buffers inside Chrome's limits? | M2.1; the direct path is the fallback for a view |
 | What does a view cost, and what does each knob buy? | M3.4 |
 | Is one cascade to 128 m enough for a reflection? | M2.5; [risk 5](#risks) |

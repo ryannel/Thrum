@@ -225,10 +225,10 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
-| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band**, read at the receiver's own position and added to the field's value, so land inside fog loses its Sun ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2, the ground band from its M14 (diagnostic stand-ins in `ATMOSPHERE:M5` and `M8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
+| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band** that holds the whole path to the Sun: a receiver inside it reads the band at its own position in place of the field, so land inside fog loses its Sun and an upper cloud is counted once ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2, the ground band from its M14 (diagnostic stand-ins in `ATMOSPHERE:M5` and `M8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
 | **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
 | Ordered medium segments `(T,S)` and the reflection provider. Condensate is split along a view ray by distance, at a handover: nearer, it is in `ATMOSPHERE`'s view volume, integrated jointly with the air; beyond, it is the trace's segment, which stops at the scene's depth and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The two shares sum to one. Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
-| **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. The sky, the Sun's disc and stars take the volume's terminal pair. A scene that declares none is unchanged | `ATMOSPHERE:M7` (the volume, with air and haze), `ATMOSPHERE:M8` (a medium) → every reader of the lent aerial operation; `CLOUDS:M14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
+| **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. A ray that leaves the volume takes its terminal pair once: the sky behind it becomes `R·L + ΔS`, and stars and a disc drawn by itself are multiplied by `R` alone. A scene that declares none is unchanged | `ATMOSPHERE:M7` (the volume, with air and haze), `ATMOSPHERE:M8` (a medium) → every reader of the lent aerial operation; `CLOUDS:M14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
 | **The air's haze**: the aerosol's amount, as the clear air's visual range. The weather state holds it; `ATMOSPHERE` takes it as an input of its air profile and recomputes its charts, with today's constant as the default | `CLOUDS:M13` (the state), `ATMOSPHERE:M7` (the input) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
 | **Surface field**: the height of the ground and the level of any water, on a grid, which a game gives the weather as data so that mist can pool in hollows and fog can keep to water. The engine never reads terrain meshes or the water map for it | games → `CLOUDS` | [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
@@ -237,14 +237,14 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Body query**: one batched asynchronous GPU query for all water, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (the body of water with its depth and current, or dry ground; height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `WATERS` → games and P3 | C09, [WATERS](WATERS/DESIGN.md#bodies-and-the-query) |
 | **Wave field**: the wind's waves as analytic long-wave components and spectral cascades with their slope and Jacobian moments, evaluated every frame at the display's time and keeping nothing between frames; an f64 evaluator of the same waves; the spectrum's energy in each layer's band for a given fetch | `SEA` → `WATERS` | [SEA](SEA/DESIGN.md#the-ambient-sea) |
 | **Water map**: a game declares bodies of water (a sea by its level, a basin by a seed and a level, a chart by grids of level, current and loss with a footprint, a source end and a mouth, and, by [ruling 1 for `PUDDLES`](#seam-rulings-for-puddles), hollows by a rectangle with its own bed, a label for each cell and a level for each hollow) over a bed; one function, the same on the CPU and the GPU and independent of the camera, gives the body, level, bed, depth, current and wave gains at any point; a stage, inside a declared range, moves a body's level. Bodies meet only at a chart's ends, where the chart's row is mixed to the joined body's, so level, current and waves are continuous across a join for every reader; preparation refuses a chart its banks do not hold and a basin that spills or merges. Each body also has a shore margin its waves wash, with its wave support, and, where a profile has surf, a shore transform that turns, shortens and raises its long waves over the bed. A chart is what a flow solver writes, and a hollows body is where puddles stand | `WATERS` → games, `RIVERS`, `PUDDLES` | [WATERS](WATERS/DESIGN.md#the-water-map), [PUDDLES](PUDDLES/DESIGN.md#hollows-the-tree-and-the-point-test) |
-| **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names, with an optional clip plane, a fold height for the air and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before | `SCENE-VIEWS:M3` (entities from its M1, cooked placements from its M2) → `WATERS:M14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
+| **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names, with an optional clip plane, from which its air may start, and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed; for a mirror that air starts at the plane, and the reader applies the air from its own camera to the plane itself), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before | `SCENE-VIEWS:M3` (entities from its M1, cooked placements from its M2) → `WATERS:M14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
 | **Sun-path factor**: a water provider's factor on a receiver's direct Sun, read at the receiver's own position beside the cloud factor: `1 + D (C − 1)`, the beam's share times the caustic field's departure from even light, and exactly 1 at or above the water's level and outside the provider's window. With it goes the point at which a receiver under water reads its Sun visibility, where its refracted Sun ray leaves the water. This is C08's caustics, an illumination contribution whose owner is `WATERS`, applied once by V3's direct-Sun path | `WATERS:M16` → `ATMOSPHERE`'s direct-Sun receivers in the forward pass, and every contribution that compiles the scene's shader | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), [ruling 5](#seam-rulings-for-waters) |
 | **Lent Sun visibility**: with the environment products, the scene's Sun visibility at a world point as one tap of its cascades and height map, for an effect's own volume samples; 1 in a scene with no shadows | `ATMOSPHERE` (built by `WATERS:M16`, [ruling 6](#seam-rulings-for-waters)) → `WATERS`' shafts | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **Meter medium factor**: a camera request may carry three numbers that multiply the incident light the camera's meter reads, for a camera inside a medium; 1 by default, and with 1 the resolved exposure sample is unchanged to the bit. `thrum-water-model` gives the factor for a camera under water, and the game sets it | `APPLE-PRESENTATION` (V4; built by `WATERS:M16`, [ruling 7](#seam-rulings-for-waters)) → games | C07, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **River**: everything one steady solve of the map's bed writes, as a stored file with a key: one chart for each reach, each holding one or more flow samples (level, current, loss and flow gains) and the gauge level of each; brink ends where the ground drops away; and a fall record for each fall. A chart's loss is the power that breaks the surface, in watts a square metre. A game declares a river's rectangle, sources, bodies and flow samples; a build step or a native game's preparation solves it, and a page only loads it | `RIVERS:M1` (one sample), `RIVERS:M2` (falls), `RIVERS:M3` (samples and gains) → games, and `WATERS`' map through [rulings 1 to 3](#seam-rulings-for-rivers) | [RIVERS](RIVERS/DESIGN.md#what-a-solve-writes) |
 | **Fall record**: along a fall's lip, for each flow sample, the water's path with the time it takes, its discharge for each metre of lip and its launch speed; the reach above and the body below; stable IDs for its segments; and so the fall's power, which a later mist may read | `RIVERS:M2` → `WATERS`' pass (the sheet, by ruling 7), games | [RIVERS](RIVERS/DESIGN.md#the-falls-sheet) |
 | **Impulse records**: a place, a vertical impulse, a radius, a tick and a stable ID, which raise interaction waves on any water; refused over capacity in ID order and counted. A footfall in a puddle is one; a raindrop is not, since rain's rings are [wave layers](PUDDLES/DESIGN.md#rain-rings) | games, `RIVERS` (a fall's plunge) → `WATERS` | [WATERS](WATERS/DESIGN.md#interaction-waves) |
-| **Rain record**: the rain's flux and the drying rate, in kilograms a square metre a second, uniform over a scene and held over a tick, which a game sets in its tick page; with it the triangles that shelter, each with the share of rain it lets through, as prepared content. `CLOUDS` may set the record once it has rain | games → `PUDDLES`, and through it `WATERS`' rain bands | C09, [PUDDLES](PUDDLES/DESIGN.md#rain-and-what-it-reaches) |
+| **Rain record**: the rain's flux and the drying rate, in kilograms a square metre a second, uniform over a scene and held over a tick, which a game sets in its tick page, and the flux of each tick of the last second, which the rain state keeps and the rain bands read; with it a game's shelters, each a set of triangles with the share of rain it lets through, as prepared content, up to two in a column. `CLOUDS` may set the record once it has rain | games → `PUDDLES`, and through it `WATERS`' rain bands | C09, [PUDDLES](PUDDLES/DESIGN.md#rain-and-what-it-reaches) |
 | **Ground wetness**: the pores' fill and the surface water with its cover at a world point, one function in f64 and in WGSL of prepared fields (exposure, slope, relief) and the rain state a game steps, reading no camera. A forward surface reads it before it is lit, composed as the cloud factor is; with no provider a scene compiles the shader text and draws the bytes it does today | `PUDDLES:M2` (the function), `PUDDLES:M5` (the provider) → the scene's shader and the cooked material, `WATERS`' film, games | C09, [PUDDLES](PUDDLES/DESIGN.md#wet-ground), [ruling 5](#seam-rulings-for-puddles) |
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
@@ -366,8 +366,12 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
 2. **A chart may hold several flow samples** (`RIVERS` M3 in `thrum-water-model`, M4 in `thrum-water`). Each
    sample is a chart's grids with a gauge level. The chart's row at a point is the mix, linear in the gauge, of
    the two samples that bracket it: the source body's level where the chart has one, else the river's own
-   stage. Every chart of one river takes the same gauge. A chart with one sample is unchanged, and its stage
-   adds to its level as [the map](WATERS/DESIGN.md#the-water-map) says.
+   stage. Every chart of one river takes the same gauge. Between two samples each cell also has a prepared
+   **wetting gauge**, and holds no water, wave support or shore margin below it: a cell that only the upper
+   sample wets, and that is reached through another such cell, stays dry until that cell is wet, so a hollow
+   behind a ridge is never filled from the level beside it. From its wetting gauge a cell's level and current
+   run linearly to the upper sample's, which for a bank cell is the mix it was. A chart with one sample is
+   unchanged, and its stage adds to its level as [the map](WATERS/DESIGN.md#the-water-map) says.
 3. **Flow bands** (`RIVERS` M3 in `thrum-water-model`, M5 in `thrum-sea` and `thrum-water`). The world's wave
    field gains two layers the wind does not fill, of the cascades' kind, generated only where a scene's profile
    names them. A chart's row holds a gain for each, which may be any size the depth limit allows, and every
@@ -376,8 +380,12 @@ its source's stage (ruling 2). [RIVERS' design](RIVERS/DESIGN.md#judged-from-fir
    that so.
 4. **Births from a chart's loss and at a plunge** (`RIVERS` M5 and M6; the foam's births in `thrum-water`), by
    the bounded rule the foam's other births use.
-5. **A region's mean current is weighted by its waves** (`RIVERS` M6; the interaction step in `thrum-water` and
-   its reference in `thrum-water-model`). On still water and on a uniform current the step is what it was.
+5. **A current ladder in the interaction step** (`RIVERS` M6; the interaction step in `thrum-water` and its
+   reference in `thrum-water-model`). A region whose wet cells run at different currents is stepped with a
+   few carriage currents chosen from them, and each cell takes the blend of the outputs carried at the
+   currents that bracket its own, as the depth ladder blends by depth. So two sets of rings raised at once
+   on a pool and on a riffle are each carried by their own water, whatever the other's strength. On still
+   water and on a uniform current the ladder has one current and the step is what it was.
 6. **A river selection in `examples/water`** (`RIVERS` M4). The game gains a selection that is off by default.
    With it off, the game's ground, bodies, tick page, compiled graph and frames are what they were, and the
    hand-made channel is `WATERS`' stand-in as built. With it on, the island's ground gains a valley, a spring
@@ -395,8 +403,8 @@ passing. The files `RIVERS` adds stay its own.
 
 ### Seam rulings for PUDDLES
 
-Rain's water is a body in `WATERS`' map, wave layers in its field, a level of its interaction waves and its
-film, and wet ground is a read in the forward shader, so most of what `PUDDLES` builds at run time lies in
+Rain's water is a body in `WATERS`' map, wave layers in its field, a level of its interaction waves, its
+film and levels of its mirror, and wet ground is a read in the forward shader, so most of what `PUDDLES` builds at run time lies in
 other modules' files. Each ruling is built by the `PUDDLES` builder there, with the behaviour
 [PUDDLES](PUDDLES/DESIGN.md#mechanisms) defines. No item, test, bound or reference of `WATERS`, `SEA`,
 `RIVERS`, `ATMOSPHERE`, `COOKED-DRAW`, `CONTENT-LOOP` or `SHOWCASE` changes, and all keep passing. A scene with
@@ -417,12 +425,13 @@ gives the reasons.
    state. Preparation refuses a hollows body with a cell in another body's water or shore margin anywhere in
    that body's stage range, so this settles how puddles merge without changing what preparation refuses of a
    basin: two basins that would merge are still refused.
-2. **A fine interaction level** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-water`). A profile may name
+2. **A fine interaction level** (`PUDDLES` M8, in `thrum-water-model` and `thrum-water`, after `WATERS:M6` has built the interaction reference it extends). A profile may name
    a third level, of 2 cm cells with a depth ladder from 5 mm and surface tension in its frequency, which
    takes the waves under 1 m and steps one tick at a time. With none, the two levels hold and step what they
    did.
 3. **Rain bands** (`PUDDLES` M2 in `thrum-water-model`, M4 in `thrum-sea` and `thrum-water`). The world's wave
-   field gains two layers that are a function of time and hold no state, generated only where a scene's
+   field gains two layers that are a function of time and of the rain's committed rate over the last second, and
+   keep nothing of their own between frames, generated only where a scene's
    profile names them. Every body's row has a rain gain, exposure times the depth response at the point, and
    every reader of the wave layers reads them through the one sum, with the rules a cascade has. They are
    layers beside [`RIVERS`' flow bands](#seam-rulings-for-rivers) and share nothing with them.
@@ -448,8 +457,17 @@ gives the reasons.
 7. **The Sun's shadow on the film** (`PUDDLES` M7). [`RIVERS`' ruling 7](#seam-rulings-for-rivers) gives the
    surface's Sun lobe the lent Sun visibility once `WATERS:M16` has built it; the film's Sun lobe takes it
    too. Whichever of `RIVERS` M7 and `PUDDLES` M7 lands first builds the surface's.
+8. **Mirror levels of a hollows body** (`PUDDLES` M7; the mirror views' selection and lookup in
+   `thrum-water`, which `WATERS:M14` builds). A hollows body has no one level. It gives the mirror each
+   puddle's level and the ground's height where its film stands. Each frame those are grouped into bands no
+   taller than the profile's tolerance for hollows, 5 cm in the first, and a band's plane is its lowest
+   water, so a view's cut removes nothing above a water it serves. Bands rank for the profile's views with
+   every other level, by the screen area of their water and with `WATERS`' hysteresis. The lookup starts
+   from the surface point's own height and refuses a sample that lies below it. Rain water in no band
+   with a view takes the screen's reflection, as `WATERS`' third level does. `WATERS`' rule for its own
+   bodies, its items and its tests are unchanged.
 
-Once built, rulings 1 to 4 belong to `WATERS`, ruling 5 to the owners of the files it is in (`ATMOSPHERE` for
+Once built, rulings 1 to 4 and 8 belong to `WATERS`, ruling 5 to the owners of the files it is in (`ATMOSPHERE` for
 the scene's composed shader, `COOKED-DRAW` for the cooked material) and ruling 6 to each game's owner: later
 work there keeps their tests passing. The files `PUDDLES` adds stay its own.
 
@@ -473,9 +491,13 @@ before.
    view's lists, bits and byte-equality with Direct are untouched.
 3. **Lighting products for a second view** (`SCENE-VIEWS` M1; `synthetic/{shadow,cluster}.rs` and
    `atmosphere/{graph.rs,aerial.wgsl}`). A view has Sun cascades fitted to its own frustum by the scene's
-   fit, a cluster table built by the scene's pass, and an aerial volume from `ATMOSPHERE`'s aerial pass,
-   which gains a fold height: a sample below it takes the altitude of its image above it. With no fold the
-   pass writes what it writes today. A view has clear air where a scene declares the view volume.
+   fit, a cluster table built by the scene's pass, and an aerial volume from `ATMOSPHERE`'s aerial pass.
+   For a view that asks for **air from the plane**, the volume and the decoder that shades it measure each
+   line of sight from where it crosses the view's clip plane: the pair at a point is the transport from the
+   crossing to the point, sampled at the true positions beyond the plane with the line's own direction and
+   the scene's Sun visibility there, and nothing before the crossing. The reader owns the stretch from its
+   own camera to the plane. With no such request the pass writes what it writes today, and the main view's
+   shader text is unchanged. A view has clear air where a scene declares the view volume.
 4. **A view that is not presented** (`SCENE-VIEWS` M1; `synthetic/view.rs`, `APPLE-PRESENTATION`'s view
    record). [C07](../design/CONTRACTS.md) now names a secondary view: a product of its presenting view that
    publishes no frame contract, has no history key and is never given to a reconstruction provider. It takes
@@ -538,9 +560,14 @@ large, has its own inspections and must leave the V1 scene untouched:
    [the interface](#interfaces) states. `ATMOSPHERE` never evaluates a density, a phase or a medium's own
    shadow, and a provider never integrates the air.
 7. **A ground band of the Sun-path optical depth** (`ATMOSPHERE` M8). A provider may register optical depth
-   toward the Sun at heights above the ground, with where the land blocks the Sun beyond the shadow cascades
-   kept apart from it. The one cloud-factor function adds the band's value at a receiver's own position to the
-   2D field's. Only the view volume's cells read the land's blocking; no surface does.
+   toward the Sun at heights above the ground, with its mapping and a border width, and with where the land
+   blocks the Sun beyond the shadow cascades kept apart from it. The band holds the whole path: the
+   provider's march from each node to where the ray leaves the band, plus the 2D field's value there. The
+   one cloud-factor function makes one read: the band at a receiver's own position for a receiver inside
+   it, and the 2D field at or above the band's top and outside its region. It never adds the two, so an
+   upper cloud dims a receiver in the band once. The factor is continuous at the band's top, where the
+   band's value is the 2D field's, and mixes to the 2D field's across the band's border. Only the view
+   volume's cells read the land's blocking; no surface does.
 8. **The air's haze is an input** (`ATMOSPHERE` M7), with today's constant as its default and no change of
    epoch when it moves.
 
@@ -820,16 +847,17 @@ carried, foam where it loses height and at rocks, and a waterfall with its sheet
 planner settled the brief's open mechanisms, and [seven rulings](#seam-rulings-for-rivers) say what that asks of
 `WATERS`. Mist at a fall is not planned and is [the owner's](#owner-decisions).
 
-**`PUDDLES`** was planned on 14 November 2026: [design](PUDDLES/DESIGN.md), [plan](PUDDLES/PLAN.md). Seven
-milestones: puddles, then wet ground and rings, on the CPU after `WATERS:M1`; the yard's puddles, the rain's
-rings and the wet ground on the island after `WATERS:M8`; the V1 valley after `SHOWCASE:M6`; and the close,
+**`PUDDLES`** was planned on 14 November 2026: [design](PUDDLES/DESIGN.md), [plan](PUDDLES/PLAN.md). Eight
+milestones: puddles, then wet ground and a drop's rings, on the CPU after `WATERS:M1`; the yard's puddles, the
+rain's rings, a footfall's rings and the wet ground on the island after `WATERS:M8`; the V1 valley after
+`SHOWCASE:M6`; and the close,
 after `WATERS:M10`, `M14` and `M16`. Its brief asked for rain that wets the ground it can reach and leaves
 shelter dry; puddles that form in the ground's hollows as it rains, join when they overflow, ripple under
 drops and feet, reflect the sky and what stands in them, and dry out; sand that darkens where waves have
 run, under the sheen and foam `WATERS` draws there as [its film](WATERS/DESIGN.md#the-surface-and-the-frame-contract);
 and the same on the island and in the V1 valley behind a selection, in Chrome too. Its planner settled the
 brief's open mechanisms, the first of them how puddles merge and part, and
-[seven rulings](#seam-rulings-for-puddles) say what that asks of `WATERS`, the forward shader and the two
+[eight rulings](#seam-rulings-for-puddles) say what that asks of `WATERS`, the forward shader and the two
 games. Rain seen falling is not planned and is [the owner's](#owner-decisions).
 
 ## Track 3: the swarm-survival game, after V1
@@ -1538,3 +1566,18 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   records; and the shore's film is also drawn over standing rain water. `WATERS`' design, plan and items are
   unchanged; its log records the rulings. No contract text, no exact baseline and no other module's item
   changed.
+- 2026-11-14 Four designs revised after their design reviews: `ATMOSPHERE`'s view volume, `SCENE-VIEWS`,
+  `RIVERS` and `PUDDLES`. Interfaces changed: the ground band of the Sun-path optical depth holds the whole
+  path and is read once, never added to the 2D field ([ruling 7 for `CLOUDS`](#seam-rulings-for-clouds),
+  with `CLOUDS`' ruling text and M14.3 brought into line); a ray that leaves the view volume corrects the sky
+  once and added emitters by transmittance alone; a mirror view's air starts at its plane and the reader
+  owns the stretch before it ([ruling 3 for `SCENE-VIEWS`](#seam-rulings-for-scene-views), with `WATERS`'
+  mirror text brought into line).
+- 2026-11-14 The same revision, for water: a chart's samples carry a wetting gauge
+  ([ruling 2 for `RIVERS`](#seam-rulings-for-rivers)); the interaction step gains a current ladder in place
+  of a weighted mean current (ruling 5); `PUDDLES`' fine interaction level moved to a new milestone after
+  `WATERS:M6` (ruling 2), and a hollows body gives the mirror bands of levels in place of the mean of its
+  ground ([ruling 8 for `PUDDLES`](#seam-rulings-for-puddles)); the rain bands read the rain's rate over the
+  last second, so stopping the rain lets its rings run out (ruling 3), and shelter is up to two layers in a
+  column. No contract text and no exact baseline
+  changed, and no item of a module other than these four, `CLOUDS` M14.3 and `WATERS` M14.2 changed.

@@ -32,3 +32,21 @@
 - 2026-11-14 Not read: Unreal's source, a frame study of Red Dead Redemption 2, and how any shipped engine
   jitters a reflection capture. The GPU checks were not run by the planner; each check was tried with the
   loop's own command and fails as it should before the work exists.
+- 2026-11-14 Design review asked for changes: [two Must Fix findings](../../evidence/SCENE-VIEWS/design-review.md).
+  Both are resolved in the design, the items and [ruling 3](../ARCHITECTURE.md#seam-rulings-for-scene-views).
+- 2026-11-14 `folded-air-transport`. The fold height is gone. A request with a clip plane may ask for air
+  from the plane: the aerial pass and the shadowed decoder measure each line of sight from where it crosses
+  the plane, at real positions, so the image holds the stretch from water to body and nothing else. The
+  reader applies the stretch from camera to water once, from the main view's lent aerial pair. Nothing is
+  subtracted or divided. [Part D](../../evidence/SCENE-VIEWS/design-proof/README.md) reproduces the review's
+  case (40.2 times the true in-scatter with the fold) and the composed path to rounding. M1.5 and M2.3 are
+  restated to it, with a Sun across the line of sight and a caster on each stretch.
+- 2026-11-14 `knob-output-invariant`. M3.3 now says what a view's knob may change: the reflection inside the
+  pool, and no pixel outside it, no pipeline and no resource.
+- 2026-11-14 Suggestions taken, all three. A slot is prepared at its largest extent and the extent knob is a
+  viewport inside it, so the knob creates nothing. Equality items compare under one shadow profile to one
+  step of each stored format, and a larger difference is a defect, not the bound (M1.1, M1.6, M2.1). New
+  item M1.11: two slots asked in one frame each hold the bytes they hold alone.
+- 2026-11-14 `WATERS` follows: its mirror section asks for air from the plane and its M14.2 composes the
+  two stretches. Not run by the planner: any GPU check. Declared: a wave-lifted reflecting point 0.3 m off
+  the plane moves a term of 1e-4 of the body's radiance by 3.8%.

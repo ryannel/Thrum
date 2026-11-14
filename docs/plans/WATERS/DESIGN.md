@@ -1159,7 +1159,7 @@ scene is drawn a second time, from the camera's mirror image in the water's plan
   half the render extent each way in the first profile; and a field of view widened by the profile's margin,
   so a ray a wave has tilted still lands inside. The view holds the scene's opaque geometry above the plane,
   lit as the main view lights it, in the scene target's own encoding for that view,
-  `(T_v · L_body + S_v) · E` with `(T_v, S_v)` the air from the mirrored camera, with its depth and its
+  `(T_v · L_body + S_v) · E` with `(T_v, S_v)` the air between the plane and the body, with its depth and its
   coverage. It holds no sky, no water and no after-opaque effect. The sky and its clouds reach a reflection
   through the environment product, as they did.
 - **Which water has one.** A plane serves every body whose level lies within the profile's plane tolerance of
@@ -1173,11 +1173,13 @@ scene is drawn a second time, from the camera's mirror image in the water's plan
   take its reflected ray as far as the mirror's depth says the last sample lay, project that point into the
   mirror and read again. Two corrections are made. A ray that leaves the image or meets no coverage takes
   the environment product.
-- **Units.** The mirrored camera's line of sight to a body is the reflected path unfolded, so the image
-  already carries the air of the whole path. The surface pass takes off the part the optics equation applies
-  itself: `L_reflected = max(colour / E − S_cs, 0) / T_cs`, where `(T_cs, S_cs)` is the lent aerial lookup
-  from the camera to the surface point. What remains is the body's radiance with the air between the body and
-  the water on it, which the screen-space rays leave out.
+- **Units.** The reflected path has two stretches, and each has one owner. The view's air starts at the
+  plane ([`SCENE-VIEWS`](../SCENE-VIEWS/DESIGN.md#what-a-view-owns-and-what-it-shares)), so the image holds
+  the body's radiance with the air between the water and the body on it, which the screen-space rays leave
+  out, and none of the air between the camera and the water. The surface pass takes it as it stands:
+  `L_reflected = colour / E`. The optics equation's `T_air` and `S_air` then carry the air from the camera to
+  the surface point, once, as for every other term. Nothing is subtracted or divided, so fog between the
+  camera and the water reaches a reflection through the lent operation while the image keeps clear air.
 - **Roughness.** The view lends one level. The water filters it into mips of premultiplied radiance and
   coverage in a resource of its own, and a pixel reads the level
   its slope covariance and its ray's length cover, as it reads the environment product. A reflection
@@ -1186,8 +1188,8 @@ scene is drawn a second time, from the camera's mirror image in the water's plan
 - **With the other readers.** A registered body is geometry and is in the image, so water with a view casts
   no screen-space ray for reflection. The rays through the water are unchanged.
 - **The request.** [`SCENE-VIEWS`](../SCENE-VIEWS/DESIGN.md#slots-and-requests) takes a camera: the water
-  gives it a rigid camera at the mirror image of the main one, the plane as its clip plane and as the fold
-  height of its air, and reads the image by projecting points through the view's own matrix, jitter
+  gives it a rigid camera at the mirror image of the main one and the plane as its clip plane, asks for the
+  view's air to start at the plane, and reads the image by projecting points through the view's own matrix, jitter
   included, so nothing is flipped. The view holds the plane at least 5 cm from its camera, so a lens at the
   waterline still has a mirror.
 
@@ -1201,7 +1203,8 @@ or the tree's top (part P).
 Declared approximations: radiance toward the mirrored camera stands in for radiance toward the water, which
 is exact for a matte surface. A level further than the plane tolerance from every plane has no view. A
 surface point off the plane sees scenery from a viewpoint that is off by twice its height, so the hidden side
-of a near object can be wrong by that parallax. Whatever the view leaves out, other water among it, is not
+of a near object can be wrong by that parallax, and the image's air starts at the plane and not at the lifted
+point, which moves a term of about a ten-thousandth of the body's radiance by a few per cent. Whatever the view leaves out, other water among it, is not
 reflected.
 
 ### Under water

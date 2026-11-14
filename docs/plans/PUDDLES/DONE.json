@@ -48,7 +48,7 @@
         },
         {
           "id": "M1.4",
-          "statement": "The water account closes. Over 10,000 ticks with merges and partings, the rain on the body equals the change in the puddles plus what dried, soaked, was withheld by canopy and left over the edge, within 1e-9 of the rain. A pothole with six times its area draining to it fills in a sixth of the time; on ground that soaks faster than the rain no puddle forms.",
+          "statement": "The water account closes. Over 10,000 ticks with merges and partings, the rain on the body equals the change in the puddles plus what dried, went down into the ground, was withheld by canopy and left over the edge, within 1e-9 of the rain. On ground that takes nothing, a pothole with six times its area draining to it fills in a sixth of the time. A puddle with no other ground draining to it, on ground whose percolation rate is at least the rain's, does not grow.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test account",
           "target": "mac-metal",
           "builder_result": "open",
@@ -56,11 +56,23 @@
         },
         {
           "id": "M1.5",
-          "statement": "Shelter is content. From triangles the test gives, each with the share of rain it lets through, exposure is 0 under a roof, the crown's share under a tree, 1 under open sky, on the roof's own top and outside the grid, and passes between them over the profile's edge width. A hollow under a roof fills only by what drains to it from open ground, and one with no open ground stays dry.",
+          "statement": "Shelter is content. From shelters the test gives, each a set of triangles with one share of rain it lets through, exposure is 0 under a roof, the crown's share under a tree, 1 under open sky, on the roof's own top and outside the grid, and passes between them over the profile's edge width. Under a crown that stands under a roof it is 0 at the ground and between the two and 1 above the roof; under two crowns it is the product of their shares; a shelter counts once in a column however many of its triangles cross it; and a column three shelters cross is refused by name and place. A hollow under a roof fills only by what drains to it from open ground, and one with no open ground stays dry.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test exposure",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "ask": "Would exposure taken from the lowest canopy alone fail the crown under the roof, as part 10 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows?"
+        },
+        {
+          "id": "M1.13",
+          "statement": "Each tick's rain on a cell goes to one receiver, the first thing it hits, and each receiver's gain is right alone. On a bed the test makes, with a puddle covering part of its hollow, a roof's edge over part of the water and a crown over part of the ground: the canopy's sink gains what each layer withholds over the cells it covers; the puddle gains the rain on its own water surface, by the exposure there; the runoff is the rain on the uncovered ground that drains to it; and the edge's sink takes the rest. Each entry of the account is the test's own sum over cells for that receiver, within 1e-9, at three fills.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
+          "ask": "Does the test sum each receiver's cells by brute force from the bed, the levels and the shelters, without the model? Does it check each entry by itself and not only their sum?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M1.6",
@@ -140,13 +152,13 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
-      "quality_bar": "Wet ground and rain rings a physics text would accept: two stores that keep their water, darkening that follows from the film's optics, and rings that follow from water's dispersion, each held to the test's own arithmetic as part 3 to 6 of the design proof hold them.",
+      "quality_bar": "Wet ground and rain rings a physics text would accept: two stores that keep their water through a shower long enough to fill the pores, darkening that follows from the film's optics, and rings that follow from water's dispersion and outlive the rain that made them, each held to the test's own arithmetic as parts 3 to 5 and 8 to 10 of the design proofs hold them.",
       "items": [
         {
           "id": "M2.1",
-          "statement": "The ground's two stores step with the tick for each ground class, in the open and where a half and a quarter of the rain reaches. Through a shower on paving the pores fill, then surface water stands up to what the relief holds and the rest is runoff; after it the surface water goes at the drying rate and the pores' fill falls only once it has gone. Ground whose pores drink faster than the rain takes no surface water. With the stores in it, M1.4's account still closes within 1e-9.",
+          "statement": "The ground's two stores step with the tick for each ground class, in the open and where a half and a quarter of the rain reaches. Through a shower on paving the pores fill at the soak rate, then surface water stands up to what the relief holds and the rest is runoff; after it the surface water goes at the drying rate and the pores' fill falls only once it has gone. On earth with 3 mm of pores, a soak rate of 15 mm/h, 0.5 mm of relief and a percolation rate of 5 mm/h, under 10 mm/h with drying off: no surface water stands for the 1,080 s the pores take to fill, a film stands from then, and the relief is full and runoff starts at 1,440 s, each within two ticks. Ground whose percolation rate is at least the rain's takes no surface water through two hours of it. With the stores and the covering and uncovering transfers in it, M1.4's account still closes within 1e-9.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
-          "ask": "Are the expected times and fills worked out in the test from the rates, as part 5 of `docs/evidence/PUDDLES/design-proof/puddle_proof.py` does, and not read from the model?",
+          "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -163,7 +175,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "A shrinking puddle leaves a damp margin whose height is the rate its level has lately fallen over the rate its ground dries, so a slow fall leaves a thin band and a fast one a wide band, and a rising puddle leaves none. Inside a body's wave support the pores are full, and above it they fall off over that body's margin as its stage falls. A margin and a shore's band add no water to the account.",
+          "statement": "A hollow's margin follows the design's rule: each tick a fall of the level adds to it, a rise takes from it down to nothing, and it then shrinks by `exp(-dt * drying rate / pore capacity)` and stays under the hollow's rim. Under a steady fall it settles within 2% at the fall's rate times the pore capacity over the drying rate, so a slow fall leaves a thin band and a fast one a wide band; a rising puddle leaves none; when the level stops falling the band halves in `ln 2` times the capacity over the drying rate; with drying at nothing it stays; and a hollow that has emptied keeps its band until it has faded. Inside a body's wave support the pores are full, and above it they fall off over that body's margin, kept by the same rule from its stage. A margin and a shore's band add no water to the account.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test margins",
           "ask": "Does the shore's case read the wave support from `thrum-water-model`'s own function, so that it is the support `WATERS`' film reads?",
           "target": "mac-metal",
@@ -193,9 +205,9 @@
         },
         {
           "id": "M2.6",
-          "statement": "Ruling 3 is built on the CPU: `thrum-water-model`'s surface model sums two rain bands through the one sum, with the depth limit and moments a wave layer has. The bands are a function of time: the same time gives the same field whatever was evaluated before. Scheduled rings over a patch follow the rain rate up to the profile's count, and the drops below the cut add their squared slope to the moments. The gain at a point is exposure times the depth response, on every body, the sea included, and none under a roof. With no rain bands every answer of the model is the same to the bit.",
+          "statement": "Ruling 3 is built on the CPU: `thrum-water-model`'s surface model sums two rain bands through the one sum, with the depth limit and moments a wave layer has. The bands are a function of time and of the committed rate history: the same time and history give the same field whatever was evaluated before. A drop is born by the rate at its own tick. Through rain that runs, stops and starts again 0.6 s later, each ring born before the stop is in the field through the rest of its second at the height the table gives, no ring is born at a tick with no rain, no ring at the restart has a birth in the dry spell, and a second after a stop with no restart the field is exactly nothing. Scheduled rings over a patch follow the rain rate up to the profile's count, and the drops below the cut add their squared slope to the moments by the same history. The gain at a point is exposure times the depth response, on every body, the sea included, and none under a roof. With no rain bands every answer of the model is the same to the bit.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test rain_bands && cargo test --locked --offline -p thrum-water-model",
-          "ask": "Do the bands hold any state between evaluations, or any power that depends on the wind? Was any existing test of `thrum-water-model` changed?",
+          "ask": "Do the bands hold any state between evaluations other than the committed history, or any power that depends on the wind? Would births read from the present rate fail the stop and the restart, as part 9 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows? Was any existing test of `thrum-water-model` changed?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -203,27 +215,19 @@
           "review": ""
         },
         {
-          "id": "M2.7",
-          "statement": "Ruling 2 is built on the CPU: the interaction reference takes a fine level with a ladder of 5, 10, 20, 40, 80 and 160 mm, the deep operator from 320 mm, and surface tension in its frequency. Over waves of 8 cm to 1 m on uniform depths from 5 mm to deep and midway between ladder depths, a step of one tick and of two has a phase speed within 3% of the true speed, never grows, and loses under 0.5% of a wave's height a second at one tick and under 3% at two. A frame more than two ticks ahead takes two steps and counts the rest as dropped. With a fine level the near level holds no wave under 1 m; with none, the reference's answers are the same to the bit.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level && cargo test --locked --offline -p thrum-water-model --test interaction",
-          "ask": "Does the test show steps of eight ticks failing the loss, as part 6 of the design proof does? Were `WATERS`' interaction tests left as they were?",
+          "id": "M2.11",
+          "statement": "With the stores in, rain that falls on a puddle is the puddle's and not the ground's. On ground that takes all the rain it is given, a puddle that covers half its hollow rises by the rain on its own surface, and the uncovered ground's stores are those of open ground stepped by itself. As the level rises over ground, the surface water on it joins the puddle and the puddle fills its pores; as it falls, the ground it leaves takes its class's state, the puddle leaves that surface water behind, and what the full pores held beyond the class's fill is counted as soaked. Each of those entries is the test's own figure within 1e-9, apart from the total M2.1 closes.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
+          "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
           "target": "mac-metal",
-          "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M2.8",
-          "statement": "On the fine level a footfall's rings cross 30 mm of water at the speed that depth gives within 5%, and slower on 10 mm. With two puddles a dry sill apart, a ring raised in one leaves the other exactly at rest. After the two merge, the same height and potential are still in the level, and a ring then crosses the drowned sill.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
-          "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands and a fine level, reports nothing for the model against itself, and reports a provider that ignores exposure, by the points and the differences.",
+          "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands, reports nothing for the model against itself, and reports a provider that ignores exposure, by the points and the differences.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
           "builder_result": "open",
@@ -254,7 +258,7 @@
       "items": [
         {
           "id": "M3.1",
-          "statement": "Ruling 6 is built for `examples/water`: a rain selection, off by default. With it off the island's ground, bodies, tick page and compiled graph are what they were. With it on the island has a yard by the lake, with paving that dips, a track of packed earth with ruts, a roof on posts, a wall and a post standing in a hollow, as a hollows body with its ground classes, and the game keeps a rain state in its world and steps it.",
+          "statement": "Ruling 6 is built for `examples/water`: a rain selection, off by default. With it off the island's ground, bodies, tick page and compiled graph are what they were. With it on the island has a yard by the lake, with paving that dips, a track of packed earth with ruts, a roof on posts, a wall and a post standing in a pothole 15 cm deep, as a hollows body with its ground classes, and the game keeps a rain state in its world and steps it.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_selection_gpu",
           "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this milestone? Is the yard's ground reached only with the selection on?",
           "lock": "gpu",
@@ -376,7 +380,7 @@
     },
     {
       "id": "M4",
-      "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and a footfall in a puddle sends rings to its edges",
+      "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -386,9 +390,9 @@
       "items": [
         {
           "id": "M4.1",
-          "statement": "Ruling 3 is built on the GPU. The two rain bands, evaluated at the display's time, differ from `thrum-water-model`'s at three times by no more than the bound this milestone first measures and records. A repeated frame at one time draws the same bands, and a capture at a tick draws that tick's. A scene without the capability compiles to the shader text, passes and storage it had before.",
+          "statement": "Ruling 3 is built on the GPU. The two rain bands, evaluated at the display's time, differ from `thrum-water-model`'s at three times, one of them 0.4 s after the rain stops, by no more than the bound this milestone first measures and records. That bound is no more than a tenth of the difference the same test measures for bands evaluated half a tick late and for bands that ignore the rate history. A repeated frame at one time draws the same bands, and a capture at a tick draws that tick's, from its history. A scene without the capability compiles to the shader text, passes and storage it had before.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Do the bands keep any texture from one frame to the next?",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the two wrong evaluators' differences? Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -398,7 +402,7 @@
         },
         {
           "id": "M4.2",
-          "statement": "The bands' gain is the model's. Under the roof the drawn surface carries no ring and in the open it carries them; a ring on 2 mm of water is the depth response's share of one on a deep puddle; the lake and the sea carry them; the rings counted over a patch follow the rain at 2, 10 and 50 mm/h; and with no rain the bands' passes do not run.",
+          "statement": "The bands' gain is the model's. Under the roof the drawn surface carries no ring and in the open it carries them; a ring on 2 mm of water is the depth response's share of one on a deep puddle; the lake and the sea carry them; and the rings counted over a patch follow the rain at 2, 10 and 50 mm/h. The passes run while any tick of the last second held rain and not after: 0.4 s after the rain stops the surface still carries the rings born before it, and from a second after it the passes do not run and the surface is what it is with no rain.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -435,26 +439,14 @@
           "review": ""
         },
         {
-          "id": "M4.6",
-          "statement": "Ruling 2 is built on the GPU. The fine level follows the reference for a scripted set of footfalls within the bound this milestone first measures and records; a ring raised in one puddle leaves the next exactly at rest across a dry sill and crosses it once the two have merged; and `WATERS`' interaction tests pass unchanged with the fine level in the profile and without it.",
-          "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit? Does the fine level take one tick at a time and never more than two in a frame?",
-          "lock": "gpu",
+          "id": "M4.12",
+          "statement": "Stopping the rain reads as rain stopping: the rings on the water spread out and fade over a second and no new one starts, the water does not snap to still, and when the rain starts again the first rings are small and new.",
+          "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 10 and 50 mm/h through a stop, two seconds of no rain and a restart; consecutive frames across the stop and across the restart at native size.",
           "target": "mac-metal",
-          "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "M4.7",
-          "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
-          "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M4.8",
@@ -467,7 +459,7 @@
         },
         {
           "id": "M4.9",
-          "statement": "In Chrome rain rings the puddles and the lake and not the water under the roof, and a footfall's rings cross a puddle.",
+          "statement": "In Chrome rain rings the puddles and the lake and not the water under the roof, and the rings run out after the rain is stopped.",
           "check": "node scripts/check_water_browser.mjs --case rain-rings",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -476,7 +468,7 @@
         },
         {
           "id": "M4.10",
-          "statement": "With rain at 50 mm/h on the yard and the lake and the marker walking, the paired cost record is taken again at 2560x1440, beside M3's, with the count of regions and solves in the fine level's step and the CPU time of labelling regions as the puddles fill. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With rain at 50 mm/h on the yard and the lake, the paired cost record is taken again at 2560x1440, beside M3's, with the CPU time of labelling regions as the puddles fill. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
           "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
@@ -494,6 +486,105 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "name": "A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "WATERS:M6"
+      ],
+      "quality_bar": "Rings from a step in a puddle as on the street puddles of The Last of Us Part II, and past them in that each ring is the water's own wave: round, crossing at the speed the depth gives and slower in the shallower puddle, dying at the edge, and stopped exactly by a dry sill.",
+      "items": [
+        {
+          "id": "M8.1",
+          "statement": "Ruling 2 is built on the CPU: the interaction reference takes a fine level with a ladder of 5, 10, 20, 40, 80 and 160 mm, the deep operator from 320 mm, and surface tension in its frequency. Over waves of 8 cm to 1 m on uniform depths from 5 mm to deep and midway between ladder depths, a step of one tick and of two has a phase speed within 3% of the true speed, never grows, and loses under 0.5% of a wave's height a second at one tick and under 3% at two. A frame more than two ticks ahead takes two steps and counts the rest as dropped. With a fine level the near level holds no wave under 1 m; with none, the reference's answers are the same to the bit.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level && cargo test --locked --offline -p thrum-water-model --test interaction",
+          "ask": "Does the test show steps of eight ticks failing the loss, as part 6 of the design proof does? Were `WATERS`' interaction tests left as they were?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.2",
+          "statement": "On the fine level a footfall's rings cross 30 mm of water at the speed that depth gives within 5%, and slower on 10 mm. With two puddles a dry sill apart, a ring raised in one leaves the other exactly at rest. After the two merge, the same height and potential are still in the level, and a ring then crosses the drowned sill.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test fine_level",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M8.3",
+          "statement": "Ruling 2 is built on the GPU. The fine level follows the reference for a scripted set of footfalls within the bound this milestone first measures and records, and that bound is no more than a tenth of the difference the same test measures with the deep operator in place of the ladder. A ring raised in one puddle leaves the next exactly at rest across a dry sill and crosses it once the two have merged; and `WATERS`' interaction tests pass unchanged with the fine level in the profile and without it.",
+          "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu && cargo test --locked --offline -p thrum-water --test interaction_gpu",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the wrong evaluator's difference? Does the fine level take one tick at a time and never more than two in a frame?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.4",
+          "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
+          "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M8.5",
+          "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands and a fine level, reports nothing for the model against itself.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.6",
+          "statement": "In Chrome a footfall's rings cross a puddle and stop at a dry sill.",
+          "check": "node scripts/check_water_browser.mjs --case rain-footfall",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.7",
+          "statement": "With the marker walking through the yard's puddles in rain at 10 mm/h, the paired cost record is taken again at 2560x1440, beside M4's, with the count of regions and solves in the fine level's step. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/water_cost.py check --scene rain-footfall",
+          "lock": "gpu",
+          "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ]
     },
@@ -521,9 +612,9 @@
         },
         {
           "id": "M5.2",
-          "statement": "On the GPU the wetness function is the model's: at 4,096 scattered points of a scene the test makes, with a roof's edge, a slope, a wall, a puddle's margin and a shore among them, the pores' fill and the surface water differ from `thrum-rain-model`'s by no more than the bound this milestone first measures and records.",
+          "statement": "On the GPU the wetness function is the model's: at 4,096 scattered points of a scene the test makes, with a roof's edge, a crown under a roof, a slope, a wall, a puddle's margin and a shore among them, the pores' fill and the surface water differ from `thrum-rain-model`'s by no more than the bound this milestone first measures and records. That bound is no more than a tenth of the difference the same test measures for wetness that ignores slope and for wetness that reads the open store everywhere.",
           "check": "cargo test --locked --offline -p thrum-water --test wetness_gpu",
-          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit?",
+          "ask": "Was the bound written from a measurement on this Mac, in the record with its date and commit, beside the two wrong evaluators' differences?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -554,7 +645,7 @@
         },
         {
           "id": "M5.5",
-          "statement": "As a shower starts the paving and the earth darken and their colour deepens, the earth more than the pale paving. On the paving a sheen gathers in the joints first and then across the slabs, and at a grazing view it mirrors the post, the wall and the roof's edge. The earth takes no sheen until its puddles form. The ground under the roof stays dry to a soft edge, the roof's top is wet, rocks and the wall darken, the wall less than the ground, and metal does not.",
+          "statement": "As a shower starts the paving and the earth darken and their colour deepens, the earth more than the pale paving. On the paving a sheen gathers in the joints first and then across the slabs, and at a grazing view it mirrors the post, the wall and the roof's edge. The earth darkens at once and takes no sheen while its pores fill; once they are full a sheen stands in its ruts, after the paving's. The ground under the roof stays dry to a soft edge, the roof's top is wet, rocks and the wall darken, the wall less than the ground, and metal does not.",
           "inspect": "`realtime` sequences of the yard from 1.7 m at three places through a shower from dry, with the rates the sequence names, one framed on the roof's edge; `fixed` stills at 0.5 m and 1.7 m, looking down and at a grazing view, dry, damp and with a full sheen, at noon and at a low Sun.",
           "target": "mac-metal",
           "builder_result": "open",
@@ -707,7 +798,7 @@
       "items": [
         {
           "id": "M7.1",
-          "statement": "The rain selection, the rain and the drying rate are typed controls in both games on the Mac and in Chrome, saved in each game's parameter file. Moving the rain or the drying rate rebuilds nothing and resets no wake, foam or ring.",
+          "statement": "The rain selection, the rain and the drying rate are typed controls in both games on the Mac and in Chrome, saved in each game's parameter file. Moving the rain or the drying rate rebuilds nothing and resets no wake, foam or ring: with the rain set to nothing the rings on the water run out their second and no new one is born, and with it set back none appears that would have fallen in between.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_controls_gpu && node scripts/check_water_browser.mjs --case rain-controls",
           "lock": "gpu",
           "target": "mac-metal",
@@ -716,13 +807,25 @@
         },
         {
           "id": "M7.2",
-          "statement": "With `WATERS`' mirror view, the puddles and the film mirror the post, the wall, the roof and the tree on the lake's bank where their tops are off the screen, each joined to its foot at the waterline, sharp on still water and softened by the rain.",
-          "inspect": "`fixed` stills of the yard from 0.5 m and 1.7 m looking down at puddles and at wet paving so that the reflected things' tops are out of frame, with no rain, at 10 mm/h and just after it; a `realtime` pan across the yard at 1.7 m.",
+          "statement": "With `WATERS`' mirror views, the puddles and the film mirror the post, the wall, the roof and the tree on the lake's bank where their tops are off the screen, each joined to its foot at the waterline, the post in its pothole below the paving included, sharp on still water and softened by the rain. Water in no band with a view shows what is on the screen, and nothing switches or swims as the camera pans.",
+          "inspect": "`fixed` stills of the yard from 0.3 m, 0.5 m and 1.7 m looking down at puddles and at wet paving so that the reflected things' tops are out of frame, two of them framed on the post in its pothole with the paving's film beside it, with no rain, at 10 mm/h and just after it; a `realtime` pan across the yard at 1.7 m that takes the pothole and the paving in and out of view.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
           "review": ""
+        },
+        {
+          "id": "M7.12",
+          "statement": "Ruling 8 is built. In a scene the test makes, a post stands in a pothole whose water lies 15 cm below paving that carries a film. The pothole's water and the paving's are in different bands, and each band's plane is its lowest water. With a view for each, the stored reflection at every point of the pothole's water whose mirror ray meets the post's lowest 15 cm is the post's, where one plane at the mean of the ground returns none of them; and on the paving's film the reflection of a wall is within `WATERS` M14.1's bound. A sample below the reader's own surface height is refused. With more bands than views, the views go to the bands with the most water on screen and keep them through `WATERS`' hysteresis as the camera moves, and water in no band with a view takes the screen's reflection. `WATERS`' mirror tests pass unchanged.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_mirror_gpu && cargo test --locked --offline -p water-scene --test mirror_lookup_gpu && cargo test --locked --offline -p water-scene --test mirror_views_gpu",
+          "lock": "gpu",
+          "ask": "Is the expected reflection worked out on the CPU from the scene's geometry, as part 7 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` does, without the lookup under test? Does the test show the mean-ground plane losing the foot? Was any mirror test of `WATERS` edited?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         },
         {
           "id": "M7.3",
