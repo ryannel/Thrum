@@ -1,6 +1,28 @@
 {
   "module": "GAME-SPLIT",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/GAME-SPLIT/design-review.md",
+    "commit": "837467483f1e43292357e58e9084dc363870b80c",
+    "hash": "1a7ce4c3a630b2dffea656e22e69000335e145916e2d8466ecc082704f15ceed",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 108390,
+      "cached": 1054464,
+      "output": 7024,
+      "turns": 1
+    },
+    "at": "2026-11-14T22:19:39Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "bf2eecb67e6317701a30cc2846499d3adafd53c8481f21643a2f3ef02524b8d1",
