@@ -32,7 +32,13 @@ An optional offline tile-shader compile was attempted with macOS SDK 27.2. `xcru
 separate Metal Toolchain component is missing; no shader object was produced and no component was downloaded.
 This does not replace or establish the queued runtime Metal compilation/readback proof.
 
-The exact Metal fixture is queued outside the sandbox under the shared `gpu` lock. No device result,
+The first device attempt reached the Apple M3 Max Metal adapter, then panicked before encoding because
+simultaneous texture HAL guards recursively acquired wgpu's device snatch lock. Failed executable SHA-256:
+`4577f13d0ed77e2db1b8470d240118e91cb3c0921f7645d69b235f597d5ccf6a`.
+The fix retains each native texture handle separately and drops its HAL guard before taking another
+or entering the raw encoder callback. This is a handle-access correction, not an exact-copy/order result.
+
+The corrected Metal fixture is queued outside the sandbox under the shared `gpu` lock. No passing device result,
 route/T2 capture, simulator native background race, full repository gate, baseline guard or merge is claimed.
 An earlier broad `graph::` test filter selected one Metal test in the sandbox, which found no adapter;
 the CPU-only filters were then run successfully. That refusal is not a native-boundary failure.
