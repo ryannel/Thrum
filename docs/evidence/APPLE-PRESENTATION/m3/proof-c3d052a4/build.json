@@ -1,0 +1,9 @@
+{
+  "adapter": "Apple M3 Max",
+  "backend": "Metal",
+  "executable": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/release/deps/v1_game-8fe651ee7240a58c",
+  "extent": [
+    640,
+    360
+  ]
+}

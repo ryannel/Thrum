@@ -1,8 +1,47 @@
 # M3 builder evidence
 
-Implementation checkpoint, 14 November 2026. No item is qualified yet. The last
-clean-source oracle (`9c1349f2`) proves exact reference repeatability and camera-cut
-reset, but four still comparisons fail. The next clean-source proof is queued.
+Builder evidence, 14 November 2026. D3.2 reconstruction and D3.4 camera-cut reset
+pass on Metal at `c3d052a4`. Route execution, both targets' motion, moving-route
+timing, exact baselines, the full gate and integration remain unqualified.
+
+## Reconstruction and cut
+
+`python3 scripts/run_v1_showcase.py reconstruction --target mac-metal --no-build`
+passes on Apple M3 Max / Metal at 640×360. The oracle's actual executable digest,
+build, adapter, load and arm order are in [the complete report](proof-c3d052a4/run.json)
+and [execution log](proof-c3d052a4/oracle.log). The command rebuilds its game-host
+test executable even with the ordinary product-build step skipped.
+
+| Still route checkpoint | TAAU p99 ΔE | No-AA p99 ΔE |
+| --- | ---: | ---: |
+| Sunrise | 0.945706 | 1.123111 |
+| Noon | 0.969162 | 1.369814 |
+| Sunset clear Sun | 0.813268 | 0.888748 |
+| Sunset Sun | 0.944157 | 1.099360 |
+| Twilight | 0.960176 | 0.971272 |
+| Night upslope | 0.883204 | 0.924525 |
+
+Every full-frame p99 is below 3 and strictly below no AA. Every history-disabled
+control is rejected. The two independent ordered f32 reference means agree bit
+for bit at every checkpoint, with all held world/camera/solar/celestial/alpha,
+cooked-generation and exposure assertions passing across all four arms.
+The retained checkpoint directories contain reference, TAAU and no-AA PNGs,
+compressed f32 linear means and complete frame records. [Image hashes](proof-c3d052a4/images.json)
+identify the exact displayed RGB and round-trip-verified RGBA PNG bytes.
+The builder inspected the noon and night whole-frame pairs at native size.
+
+The post-cut frame is byte-identical to an independently prepared reset host;
+the suppressed-reset control differs. Submitted histories are `[65,0]`, `[1,0]`
+and `[65,64]` respectively. The [cut](proof-c3d052a4/cut.png),
+[independent reset](proof-c3d052a4/independent-reset.png) and
+[suppressed reset](proof-c3d052a4/suppressed-reset.png) are retained.
+
+Held-checkpoint resolve timings are 0.0465–0.0520 ms at 640×360, with capture on
+in both paired arms and the first 16 frames excluded. These are supplementary
+held measurements. D3.5's actual moving-route pair is queued separately; no
+measured 1080p time or panel cadence is claimed.
+
+## Implementation and earlier attempts
 
 The portable registry selects TAAU. Its compute pass reads jittered forward colour,
 reversed-Z depth, dilated motion, reactive and GPU-resolved exposure; it writes linear
@@ -23,8 +62,8 @@ both WGSL modules' Naga validation, native release and Wasm builds. These establ
 no target image quality, motion quality or GPU cost.
 The real Metal alternating-slot/reset execution test now passes, as do the
 authoritative tick-60 replacement and sampled moving-light fixture tests. The
-changed-kernel game-reference proof is queued under the shared `gpu` lock. Chrome execution, motion sequences, timing,
-exact baselines, the full gate and integration remain unqualified.
+game-reference proof now passes as recorded above. Chrome execution, motion sequences,
+moving-route timing, exact baselines, the full gate and integration remain unqualified.
 
 Technique source: [Karis, High-Quality Temporal Supersampling, SIGGRAPH 2014](https://advances.realtimerendering.com/s2014/index.html).
 
@@ -46,8 +85,8 @@ depth rejection disabled improves five checkpoints, isolating false rejection as
 a remaining cause. Rejection is retained in the implementation, using the range
 of the complete reprojected depth footprint instead of one nearest-depth texel.
 The follow-up also uses unbiased half-float history quantisation to avoid a
-long average becoming stuck below a representable value. Target quality remains
-unqualified until a clean-source run passes all checkpoints.
+long average becoming stuck below a representable value. It is the passing
+`c3d052a4` candidate recorded above.
 
 The follow-up also records two independent f32 means from the T2 submitted
 scene-linear RGB16F inputs, comparing all components against a combined 64-epsilon

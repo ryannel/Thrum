@@ -1,5 +1,13 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 D3.2 and D3.4 pass on Metal at `c3d052a4`: all six full-frame p99
+  values improve on no AA and remain below 3; both linear reference cycles agree
+  bit for bit, all history-disabled controls are rejected, and cut/reset equality
+  plus the suppressed-reset control pass. Strict Clippy passes all native workspace
+  targets after preserving the field benchmark's explicit reconstruction-off setup.
+  Motion, actual moving-route timing and integration remain unqualified.
+  [Target proof](../../evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut).
+
 - 2026-11-14 Independent GPT-6.1 Sol medium research separates the depth-rejection
   failure from night's broad one-code green-channel p99 plateau. It finds no evidence
   requiring a foundational design change and recommends evaluating the queued

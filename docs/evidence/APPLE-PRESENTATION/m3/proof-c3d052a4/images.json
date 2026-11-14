@@ -1,0 +1,87 @@
+{
+  "night-upslope/reference.png": {
+    "rgba_sha256": "da545dc9f7d881467f076a0d9871300af1bb2777fa9cc3e2cedf33d46def7079",
+    "displayed_rgb_sha256": "343be4e79c13755518a456608f6abab20da9e4031476429f2499818197a76231"
+  },
+  "night-upslope/taau.png": {
+    "rgba_sha256": "983755f997c69c507e0d87376998cb6762c1052a141a267aee63c515f5e63ad6",
+    "displayed_rgb_sha256": "bf5ae7b97676c8420d9cc43be2268bd78264fc84278bc3f52bf141aee1e16eb8"
+  },
+  "night-upslope/off.png": {
+    "rgba_sha256": "a81b36fa69e4ec7686e7a2e8f1730a0cf45558a60aa69974e6985d9baca5dfe9",
+    "displayed_rgb_sha256": "820376a675f4a6f00c855ed84d1bbf148c32b0323dd7b7c230adcd05717efa49"
+  },
+  "noon/reference.png": {
+    "rgba_sha256": "b298822d3553743b38694be9a26559125ccf073c689f7d4735d441e3f51f0dc5",
+    "displayed_rgb_sha256": "8b122f0589668ecc4108848d01132d3cfcbc734fcab6231b8ed29c3aa343524d"
+  },
+  "noon/taau.png": {
+    "rgba_sha256": "ef66b4a9537b2892cb38a73c4da422e69a3752f9ee051bd886033086e6e1eaf9",
+    "displayed_rgb_sha256": "90276bf9b93f3126455c83ea98e9fc2c09963f65a518fdf7723c516969203dc8"
+  },
+  "noon/off.png": {
+    "rgba_sha256": "6f0c556156baaeb635e9c5ce11853636bfe9a736d6ccbe651a42250265c1cb34",
+    "displayed_rgb_sha256": "fbf95626b0be71f9f53435d893176f1f64d3aff92a88f34cf49e2ff5cb770192"
+  },
+  "noon/broken.png": {
+    "rgba_sha256": "d6d705490b05e720da11b4c5069a20517838185eaa66b2b5b11a6797f25a6b06",
+    "displayed_rgb_sha256": "f954520bd3ae1deefee91dcb6dc7e5e82402bbc89df2456e178eb9819d486261"
+  },
+  "sunrise/reference.png": {
+    "rgba_sha256": "f9a5d310e10a15ef778103fdf4d5c43d73c384b973bfaed3e206a20f1fab71cc",
+    "displayed_rgb_sha256": "009b3c4dc7bb787f875400b698b07c1f5a706575a8881739ee6cdd787eb67424"
+  },
+  "sunrise/taau.png": {
+    "rgba_sha256": "2971fdf305083ab8d983c8a4dff82af66a1afb1213152cb3924eb630ca5d1407",
+    "displayed_rgb_sha256": "be6a69ed9dca16301ed837cfcf8c59eef67ac3020c175ee9d34c1ad583a99a6f"
+  },
+  "sunrise/off.png": {
+    "rgba_sha256": "80a662dec6f55923aedb98b30d88272e990b31c11b3a2abe81c96908c19a0880",
+    "displayed_rgb_sha256": "afce67a6114d081b6443cc67188fb294abf5011390d0427d14b2dc31eba094e0"
+  },
+  "sunset-clear-sun/reference.png": {
+    "rgba_sha256": "77493228938ee8a459428ae05e283a8a44d48891d8ca45c4c6e372fc9424e44d",
+    "displayed_rgb_sha256": "204c51de84937f6a611da1b640280529489705f96ead60f2c11b16c117c11a78"
+  },
+  "sunset-clear-sun/taau.png": {
+    "rgba_sha256": "cf4d72c480a4ff6b8859066d1323303dfe963e21040924c9fe08297a8b9bc004",
+    "displayed_rgb_sha256": "1706a0f71e6a4db72dc0d1c052d00759fc3986959c59ae391c1dc62848a7f9bd"
+  },
+  "sunset-clear-sun/off.png": {
+    "rgba_sha256": "121c782e8ed29b94ac4a5e209b196d74bc897052790bceb9f5672eef30c43c4b",
+    "displayed_rgb_sha256": "0ba044d0620603da777837f7df030d175673ef8af86dc48a73fef6241676d97b"
+  },
+  "sunset-sun/reference.png": {
+    "rgba_sha256": "5d89e959ed3b8402d694d786e1195cef1bc4d92063fbe27f430b56329d38e8e1",
+    "displayed_rgb_sha256": "c5705906fc4fe3d9fc15daccf2498201a533bc5c01cdf978f39df0347b6f5cde"
+  },
+  "sunset-sun/taau.png": {
+    "rgba_sha256": "e9e989209b4d61d181b7510019797f45327ada1c5c23db6db71ac451749caecd",
+    "displayed_rgb_sha256": "d061b4abf45314d09061fe9fc300f0a3511070025ad6a4514c181351cdc4b575"
+  },
+  "sunset-sun/off.png": {
+    "rgba_sha256": "22cf4d9afa6d382e16aacbadb2cb64a60186f4408f57a764845af746e53947fb",
+    "displayed_rgb_sha256": "317b2f8429add840deb348a4132a344e5b2e10c2f534c28204c5b8a40acdda15"
+  },
+  "twilight/reference.png": {
+    "rgba_sha256": "d4e3ae10379c9db4815e050140d0723dc567b299710f480ba474a3446e2ca2eb",
+    "displayed_rgb_sha256": "3fbc6201d9cefc2ae5dd532dad9373d7b3a272e52b961cb75e808f042420ccf6"
+  },
+  "twilight/taau.png": {
+    "rgba_sha256": "010957af646b0ece0f18a6425ac3d8e61b13ab229e84838ea0cef2af32e441f7",
+    "displayed_rgb_sha256": "b90a15b1c71c1eefd851dacddef62f9bd8fe801a4372d997fed9d5a828d758af"
+  },
+  "twilight/off.png": {
+    "rgba_sha256": "62f3fa1ea7fa696ddbacdd968654a72de6cca92c956e3f027da46473ddcfe360",
+    "displayed_rgb_sha256": "a8644b2160de0e2ddc509f9f2d8786d545eea9aa1e0d1e625fefd477cc9c47fe"
+  },
+  "cut.png": {
+    "rgba_sha256": "2da488a6f0b962463ceded28ba9534d0ed23c064688a2b1b0f02ea429fb8a7c6"
+  },
+  "independent-reset.png": {
+    "rgba_sha256": "2da488a6f0b962463ceded28ba9534d0ed23c064688a2b1b0f02ea429fb8a7c6"
+  },
+  "suppressed-reset.png": {
+    "rgba_sha256": "b83a618671936ba5b60124033dc58abf31dd6c218892e430b63c89669b2f77ea"
+  }
+}

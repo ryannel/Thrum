@@ -658,10 +658,10 @@
       },
       "M3": {
         "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
-        "functional_validation": "Native and Wasm Clippy, shader validation and real Metal alternating-slot/reset execution pass. At 9c1349f2 all six 640x360 independent linear reference-cycle means agree bit for bit and both cut controls pass; four colour comparisons still fail improvement over no AA. Subsequent depth-footprint diagnostics improve five checkpoints, with night tied; unbiased half-float history target proof remains pending.",
-        "experienced_quality": "First candidate inspected against its reference and rejected by the required colour metric. No M3 motion qualification or independent review yet.",
+        "functional_validation": "Strict Clippy passes all native workspace targets and the Wasm game; shader validation and Metal alternating-slot/reset execution pass. At c3d052a4 all six 640x360 full-frame CIEDE2000 p99 values are below 3 and improve on no AA; independent linear reference-cycle means agree bit for bit, history-disabled controls are rejected, and both cut controls pass. Motion and integration remain unqualified.",
+        "experienced_quality": "Builder inspected passing noon/night whole-frame pairs at native size. No M3 motion qualification or independent review yet.",
         "platform_performance": {
-          "mac": "First-candidate GPU timestamps exist at 640x360; changed-kernel paired timing and the 1080p estimate remain unqualified.",
+          "mac": "Paired held-checkpoint resolve medians are 0.0465-0.0520 ms at 640x360 on Apple M3 Max; supplementary only. Actual moving-route timing is queued; no measured 1080p, cadence or speed promotion.",
           "browser": "Wasm Clippy passes; target reconstruction and motion proof pending.",
           "ios": "not_run"
         },

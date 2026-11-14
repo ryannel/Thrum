@@ -1,0 +1,9 @@
+{
+  "cycles": 2,
+  "maximum_absolute_difference": 0.0,
+  "maximum_rounding_units": 0.0,
+  "phases_per_cycle": 32,
+  "pixels": 230400,
+  "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+  "within_float_rounding": true
+}

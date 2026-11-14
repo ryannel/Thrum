@@ -191,10 +191,10 @@
           "lock": "gpu",
           "ask": "Read the reconstruction arm. Is the reference accumulated by a separate mode from the TAAU path it judges, with the held state checked and not assumed? Is the difference the design's CIEDE2000 over the whole frame without masks, against the bound the design states? Does a deliberately broken TAAU (history disabled) fail?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D3.3",
@@ -223,10 +223,10 @@
           "lock": "gpu",
           "ask": "Does the cut arm compare the post-cut frame with an independently reset render, and does a control with the reset suppressed fail?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D3.5",

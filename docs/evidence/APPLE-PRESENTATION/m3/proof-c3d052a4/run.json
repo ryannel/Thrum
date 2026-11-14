@@ -1,0 +1,373 @@
+{
+  "command": "reconstruction",
+  "target": "mac-metal",
+  "extent": [
+    640,
+    360
+  ],
+  "commit": "c3d052a4e275987ac8bef63e235e63a360bf4734",
+  "passed": true,
+  "cut": false,
+  "metric": "whole-frame submitted 8-bit SDR CIEDE2000, D65, nearest-rank p99",
+  "tolerance": 3,
+  "checkpoints": {
+    "sunrise": {
+      "taau": {
+        "p99": 0.9457063764808965,
+        "maximum": 21.47727174492319,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.1231110752638422,
+        "maximum": 28.119124515204533,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.3526916722090268,
+        "maximum": 35.103893274424415,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "90b9e58368caa2a60a685a9fa42b45bbee0141b7f1913e880af1e2593e5a84f7",
+          "64": "90b9e58368caa2a60a685a9fa42b45bbee0141b7f1913e880af1e2593e5a84f7"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "noon": {
+      "taau": {
+        "p99": 0.9691617730793515,
+        "maximum": 12.246879338654914,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.3698135289889812,
+        "maximum": 17.38182375542482,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.5056348323787376,
+        "maximum": 29.07058564359154,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "77ce108a3e4336d755aa00d2b50ac8d45387fcfb385ce85d97683d13e5d37920",
+          "64": "77ce108a3e4336d755aa00d2b50ac8d45387fcfb385ce85d97683d13e5d37920"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "sunset-clear-sun": {
+      "taau": {
+        "p99": 0.8132682320217826,
+        "maximum": 13.460900711144202,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.8887479555756362,
+        "maximum": 17.95697739752007,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.6650532411921724,
+        "maximum": 15.048146917325782,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "a43af3c90fad55ee4e0b3401da6de72bcf9a92ed46b43629d9ddeb259cbe8420",
+          "64": "a43af3c90fad55ee4e0b3401da6de72bcf9a92ed46b43629d9ddeb259cbe8420"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "sunset-sun": {
+      "taau": {
+        "p99": 0.9441568575758877,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.0993601518854126,
+        "maximum": 25.898288723005354,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.0412207444803347,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "78723ef2e9c17f9de428b7dc66ec70ebb49a9d31d201789544a657d174d803ae",
+          "64": "78723ef2e9c17f9de428b7dc66ec70ebb49a9d31d201789544a657d174d803ae"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "twilight": {
+      "taau": {
+        "p99": 0.9601755370920853,
+        "maximum": 32.95848515898119,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9712720989157503,
+        "maximum": 42.86850485892834,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.4485760256307543,
+        "maximum": 32.95848515898119,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "017b6ec702a9a07daac8d6c9441877e485680a02a7adf71d3930e578f82fbda5",
+          "64": "017b6ec702a9a07daac8d6c9441877e485680a02a7adf71d3930e578f82fbda5"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    },
+    "night-upslope": {
+      "taau": {
+        "p99": 0.883204361034679,
+        "maximum": 6.269534795539182,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9245245590916956,
+        "maximum": 8.850288989067561,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.3863371339048776,
+        "maximum": 37.22813795070079,
+        "pixels": 230400
+      },
+      "linear_cycles": {
+        "cycles": 2,
+        "maximum_absolute_difference": 0.0,
+        "maximum_rounding_units": 0.0,
+        "phases_per_cycle": 32,
+        "pixels": 230400,
+        "source": "T2 submitted SceneLinear RGB16F; independent ordered f32 means",
+        "within_float_rounding": true,
+        "hashes": {
+          "32": "b0e1e508c5e9351b9ce8b1b9d8c91bd3c3f09adecd708bcd60a6f5e81bf127f5",
+          "64": "b0e1e508c5e9351b9ce8b1b9d8c91bd3c3f09adecd708bcd60a6f5e81bf127f5"
+        }
+      },
+      "reference_sdr_cycle_equal": true,
+      "pass": true,
+      "broken_rejected": true
+    }
+  },
+  "timing": {
+    "sunrise": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1401853.0,
+        "taau_passes": 48,
+        "taau_p50_ns": 52042.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1286167.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.468378,
+      "tripwire_only_outside_estimate": false
+    },
+    "noon": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1236771.0,
+        "taau_passes": 48,
+        "taau_p50_ns": 48729.5
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1218000.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.4385655,
+      "tripwire_only_outside_estimate": false
+    },
+    "sunset-clear-sun": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1357041.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 50396.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1259854.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.453564,
+      "tripwire_only_outside_estimate": false
+    },
+    "sunset-sun": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1526646.0,
+        "taau_passes": 48,
+        "taau_p50_ns": 46500.5
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1222081.5,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.4185045,
+      "tripwire_only_outside_estimate": false
+    },
+    "twilight": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1318271.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 46750.0
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1196437.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.42075,
+      "tripwire_only_outside_estimate": false
+    },
+    "night-upslope": {
+      "taau": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1234833.5,
+        "taau_passes": 48,
+        "taau_p50_ns": 46562.5
+      },
+      "off": {
+        "available": true,
+        "frames": 48,
+        "scene_p50_ns": 1123457.0,
+        "taau_passes": 0,
+        "taau_p50_ns": null
+      },
+      "pixel_ratio_1080p_heuristic_ms": 0.4190625,
+      "tripwire_only_outside_estimate": false
+    }
+  },
+  "load_start": [
+    3.0400390625,
+    2.6318359375,
+    2.607421875
+  ],
+  "arm_order": [
+    "reference",
+    "taau",
+    "off",
+    "broken"
+  ],
+  "timing_scope": "640x360 held showcase checkpoints; paused world; capture on in both paired arms; first 16 frames excluded; registered GPU jobs serialized by caller; shared host load",
+  "design_1080p_estimate_ms": [
+    0.2,
+    0.5
+  ],
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "device": {
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "executable": "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/target/release/deps/v1_game-8fe651ee7240a58c",
+    "extent": [
+      640,
+      360
+    ]
+  },
+  "oracle_binaries": {
+    "target/release/deps/v1_game-8fe651ee7240a58c": "1277117cfe953269bb02c1cb0410bf5f3057f719d00f93c77ad7990b2be23240"
+  },
+  "cut_comparison": {
+    "cut_equals_reset": true,
+    "cut_history": [
+      65,
+      0
+    ],
+    "reset_history": [
+      1,
+      0
+    ],
+    "suppressed_differs": true,
+    "suppressed_history": [
+      65,
+      64
+    ]
+  },
+  "load_end": [
+    2.66748046875,
+    2.56787109375,
+    2.583984375
+  ]
+}
