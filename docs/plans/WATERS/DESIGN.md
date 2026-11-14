@@ -47,12 +47,12 @@ material it carries, and one optics. A kind of water is a row of data for those 
 | Body | Where it lies (the map) | Waves | Whitewater | Built by |
 |---|---|---|---|---|
 | Open sea | A level; no bed in reach | The whole wave field | Breaking crests, hulls | `SEA` (the wave field), this module |
-| Coast and beach | The sea's level meeting a rising bed | The field, held by the depth | Where waves die in the shallows | This module |
+| Coast and beach | The sea's level meeting a rising bed, and the sand its waves wash | The field, held by the depth, with a remainder that runs the waterline up and back | Where waves die in the shallows and the swash | This module |
 | Lake, pond, pool, canal, flooded hollow | A level filling the hollow around a seed | The field at the body's fetch | Hulls; the lee shore | This module |
 | River and stream | A chart: a sloping level and a current | Ripples carried by the current; roughness where it runs fast | Where the flow loses height; at rocks | The seam and a stand-in channel here; `RIVERS` |
 | Waterfall | A fall joining two bodies | None: the sheet has its own streaks | The sheet as it breaks up; the plunge | `RIVERS` |
 | Puddle and standing rain water | A level filling a small hollow, rising with rain | Rings from drops and feet | None | A level that rises and falls here; `PUDDLES` |
-| Wet ground, wet shore | No body: a wetness the ground's material reads | | | `PUDDLES` |
+| Wet ground | No body: a wetness the ground's material reads | | | `PUDDLES`. The sheen and foam on sand the waves wash are this module's [film](#the-surface-and-the-frame-contract) |
 
 **Commissioned in this module:** the shared system, and still open water on it: the sea, the shore, and lakes,
 ponds and pools. Cues S1 to S7 of the sea brief and W1 to W6 below, on `mac-metal` and `chrome-webgpu`, lit only by
@@ -65,7 +65,8 @@ streams and waterfalls) and `PUDDLES` (rain, puddles and wet ground).
 
 - Surf: waves that shoal, turn toward a beach and plunge. A height field cannot overturn, shipped games that have
   it play back baked simulations (Horizon Forbidden West), and Crest's manual calls shoreline waves "a
-  challenging, open problem". Here waves fade and foam where the water shallows.
+  challenging, open problem". Here waves fade and foam where the water shallows, and the waterline runs up the
+  sand and back with each of them ([the swash](#waves-on-a-body-gains)).
 - Bulk water that moves while the game runs: a flood, a dam break, a level change that travels downstream. Flow is
   prepared once. A live solver would write the same map, so it can come later without changing a reader.
 - A camera below the surface, caustics, water above water in one column (a pool on a bridge over a river), water in
@@ -98,11 +99,11 @@ of Red Dead Redemption 2; both in words, at the display's full refresh.
 | **S6** Stable in motion: no shimmer, ghosting or history smear under reconstruction; cuts and rebuilds reset cleanly | TAAU on portable and Chrome, MetalFX on Apple tile; motion, reactive and reset written per the frame contract | Zero motion on a moving surface. Rejected by motion read from submitted frames against the surface's known displacement |
 | **S7** Controls a visitor can use: wind, swell, time of day and a field overlay, on Mac and in Chrome | The typed controls of `CREATOR` | A control that restarts the sea. Rejected by a wind change in motion with no pop |
 | **W1** Water lies where the land holds it: a level surface that ends in a clean line where the ground rises | A sea, a lake above it and a pond in one view; levels raised and lowered while the scene runs; from the shore and from 40 m up | A water plane drawn through the terrain, or a sheet joining two levels. Rejected by a hollow beyond a ridge that must stay dry, and by a top-down view classified from the CPU model |
-| **W2** Shelter and shallows: a lake is calm while the sea runs, and waves fade as water shallows | Glassy calm to gale; fetches of 200 m to open sea; depths from 10 m to the waterline | One wave height for all water. Rejected by the lake's measured height against its fetch in a gale, and by a wave that reaches the beach at full height |
+| **W2** Shelter and shallows: a lake is calm while the sea runs, waves fade as water shallows, and on a beach the waterline runs up and back with them | Glassy calm to gale; fetches of 200 m to open sea; depths from 10 m to the waterline; a beach of 1 in 10 at a fixed stage | One wave height for all water, or a waterline pinned to the still level. Rejected by the lake's measured height against its fetch in a gale, by a wave that reaches the beach at full height, and by the waterline's travel under one regular wave |
 | **W3** The ground shows through the shallows and the shore reflects in still water | Depths from the waterline to where the water type hides the bed; calm to breeze; the far shore, hills and a tree on the bank on screen | An opaque sheet with a painted edge, or a sky-only mirror. Rejected by a bed of known radiance under known depths, and by a reflection that must join its source at the waterline |
-| **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes; a shore and a bar of dry ground | A deep-water solver everywhere. Rejected by a ring's speed at two depths, and by a wave that must not cross dry ground |
+| **W4** Rings on any water: a dropped stone or a hull raises waves that travel at the speed the depth gives and die at the shore | Depths of 0.25 m to deep; rings and wakes, short waves and long, in one window that holds shallows and deep water; a shore and a bar of dry ground | A deep-water solver everywhere, or one transform over land and water alike. Rejected by a wave's speed across the range of depths, and by the water beyond a bar of ground, which must stay at rest |
 | **W5** Running water: where the map has a current, ripples, foam and floats travel with it | Currents to 3 m/s; a channel that narrows; a hand-made chart here, a solved one in `RIVERS` | A texture sliding over still water. Rejected by a float that must be carried, by foam born at a post standing in the current, and by tracked surface detail |
-| **W6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel entering a lake and the sea; one craft crossing from one body to another | A renderer for each kind. Rejected by the join in close view and by one query answering across it |
+| **W6** One water: the same light, foam, query and controls on every body, and no seam where two meet | A channel leaving a lake and entering the sea; a swell running; the lake's level and the tide moved through their ranges; one craft crossing from one body to another | A renderer for each kind, or a blend drawn over two surfaces that do not meet. Rejected by the surface's height either side of the join under a swell and after a stage has moved, and by one query answering across it |
 
 ## Research and selection
 
@@ -118,9 +119,11 @@ read them; the sources for water as a whole follow.
 - **eWave** ([Tessendorf 2014](https://jtessen.people.clemson.edu/reports/papers_files/ewavealgorithm.pdf), pages
   1 to 6 read). Height `h` and surface potential `φ` advance per wavenumber by an exact rotation, equations 19 and
   20: `h' = cos(ωΔt) h + (k/ω) sin(ωΔt) φ`, `φ' = cos(ωΔt) φ − (g/ω) sin(ωΔt) h`, with `ω = √(gk)`. For free propagation
-  it is exact for any `Δt` and unconditionally stable, and the FFT form needs a periodic domain. The paper's
-  exactness does not cover what this design adds to it, a source and an absorbing border; [interaction waves](#interaction-waves)
-  says how far those hold.
+  it is exact for any `Δt` and unconditionally stable, and the FFT form needs a periodic domain. Equations 21 to
+  27 state the same step as a convolution in space, so the transform reaches across a whole window, land and
+  water alike. The paper's exactness covers deep water and free propagation. It does not cover what this design
+  adds: a source, an absorbing border, a bed and dry ground. [Interaction waves](#interaction-waves) states the
+  finite-depth update and says how far each holds.
 - **Whitecaps** ([Dupuy and Bruneton 2012](https://liris.cnrs.fr/Documents/Liris-5812.pdf), read whole). Breaking
   is where the Jacobian of the horizontal displacement falls below a threshold. Coverage inside a pixel is
   `½ + ½ erf((ε − μ)/(√2 σ))` from the Jacobian's filtered mean and variance, so distant whitecaps average
@@ -172,6 +175,10 @@ read them; the sources for water as a whole follow.
   for a real-time successor published in 2024 to 2026 found none.
 - **Thornton and Guza 1983**, from memory of the result and not re-read: in a saturated surf zone the
   root-mean-square wave height is about 0.42 of the depth, so the significant height is about 0.6 of it.
+- **Stockdon et al. 2006**, from memory of the result and not re-read: on a natural beach the waterline's run-up
+  is a set-up of the mean level plus a swash about it, each a fraction of the offshore wave height that grows
+  with the beach's slope; on a slope of 1 in 10 the swash is of the order of half the wave height. Read for the
+  size of the swash, which this design keeps below that figure.
 - **Hasselmann et al. 1973 (JONSWAP)**, the fetch-limited growth relations, from memory and reproduced in part I.
 - **Vlachos 2010**, [Water Flow in Portal 2](https://www.advances.realtimerendering.com/s2010/Vlachos-Waterflow(SIGGRAPH%202010%20Advanced%20RealTime%20Rendering%20Course).pdf),
   as summarised by search: detail is carried along a flow field by two samples half a period apart, cross-faded.
@@ -188,8 +195,10 @@ read them; the sources for water as a whole follow.
   this module rests on them; `RIVERS` and `PUDDLES` read what their own mechanisms need.
 
 Reproductions A to G were run for the sea design and are kept with their output in
-[the sea's evidence folder](../../evidence/SEA/design-proof/). Parts H and I were run for this design and are in
-[this module's](../../evidence/WATERS/design-proof/). [Check that it can work](#check-that-it-can-work) reports
+[the sea's evidence folder](../../evidence/SEA/design-proof/). Parts H to L were run for this design and are in
+[this module's](../../evidence/WATERS/design-proof/): H the interaction step at depth, I shelter, J dry ground,
+K joins and L the swash. H was run again, and J to L added, after [the design review](../../evidence/WATERS/design-review.md)
+of 14 November, whose own reproduction is kept beside it. [Check that it can work](#check-that-it-can-work) reports
 them.
 
 ### Judged from first principles
@@ -204,7 +213,7 @@ against the users and cues above. "Keep" means it would be chosen again with the
 | One level, the sea's, everywhere below the horizon | **Change** | Water lies at many levels. A map says where, and the surface is drawn body by body |
 | Inland water as a live generalised shallow-water solver on the GPU (the water decision and the dynamics design) | **Change**: flow is prepared once | A river is steady nearly always. A prepared flow is the same on every machine and readable by a CPU, costs nothing in the frame and exists far from the camera; live solvers are hard to keep stable and to make reach their end. The solver's split is kept: a bulk in the map, waves on it. Whether floods ever move is [open for the owner](PLAN.md#open-for-the-human) |
 | Bodies read the GPU through one batched query, one to two ticks late | **Keep**, for all water | Interaction waves exist nowhere else. The answer gains the body of water, its depth and its current |
-| The wake: eWave on two body-following windows with complementary bands, deep water only | **Keep**, with the depth | The operator is exact per wave vector for any dispersion relation, so it takes finite depth by computing a few depths and blending per cell, which is Jeschke and Wojtan's own device (part H). On deep water it is unchanged |
+| The wake: eWave on two body-following windows with complementary bands, deep water only | **Keep**, with the depth and with regions | The step is a rotation for each wave vector on any uniform depth, once the depth is in its coefficients as well as its frequency. A bed that varies is met by a ladder of depths blended per cell, which is Jeschke and Wojtan's own device, and land by solving each connected region of water alone (parts H and J). On deep open water it is unchanged |
 | A wake source that is the body's own reaction force | **Keep** | Physical, with no gain to tune. Impulses a game posts join it, for a dropped stone |
 | Foam as four transported stocks, born only from booked causes | **Keep**, with more causes | The stocks and their chain are the same on any water. Shallows, a current meeting a post and, later, a river's loss of height are causes of the same kind |
 | Reflection and refraction of registered bodies only; the scene is never copied | **Change** | True of an open sea, which is thick and empty. In a lake the bed is what a viewer sees in the shallows and the far shore is the reflection. The copy is kept regional: nothing on an open sea, the screen where shallow or mirror-still water fills it |
@@ -222,7 +231,7 @@ reading matter. The builder of each milestone judges fit file by file. Paths are
 
 | Mechanism here | Where Broadsides has it | Expected fit |
 |---|---|---|
-| The eWave step: height and potential as one complex field, the exact turn, a source carried through the step, a damped border | `crates/render/bw_render_water/shaders/ocean_wake.wesl` and its CPU twin `crates/sim/bw_water/src/wake/grid.rs` | Close for one deep level. The two banded levels, the depth bins, the dry cells and the step of several ticks are this design's |
+| The eWave step: height and potential as one complex field, the exact turn, a source carried through the step, a damped border | `crates/render/bw_render_water/shaders/ocean_wake.wesl` and its CPU twin `crates/sim/bw_water/src/wake/grid.rs` | Close for one deep level. The two banded levels, the finite-depth update, the depth ladder, the regions and the step of several ticks are this design's |
 | The batched query and its ring | `shaders/body_query.wesl`, `body_sea_query.wesl`; `crates/sim/bw_water/src/ocean/query.rs` | The kernels may fit; the mailbox and packing are written for Thrum's tick page |
 | Foam stocks, deposition, transport and the stochastic pattern sampler | At `2e5f47184`: `crates/gpu/bw_gpu/shaders/lib/sea_foam.wesl`, `foam_pattern.wesl`, `whitewater_medium.wesl`; `crates/render/bw_render_water/shaders/ocean_foam.wesl`, `ocean_deposition.wesl` | The two changes the spike passed are here. Check each rule against [whitewater](#whitewater) before copying |
 | The ranked foam pattern | At `2e5f47184`: `assets/textures/water-foam/ranked.png` (Git LFS) and its recipe in `factory/materials/water-foam/` | Usable as the example's pattern. It derives from Crest's foam texture under the MIT licence, and that notice comes with it |
@@ -241,8 +250,8 @@ modules; its algorithm is left as it is. [The handoff](#proof-and-builder-handof
 | Constant-speed wave equation on a grid, as in Crest's dynamic waves | Fails S3. In the reproduction its ridge follows the Mach angle, 42° at 3 m/s and 17° at 6 m/s, and it has no transverse wave train |
 | Steady Kelvin pattern evaluated per body | Fails S3: it has no memory, so it cannot persist through a stop or a turn |
 | Wave packets or wavelets (Jeschke and Wojtan 2017, 2018) | Correct dispersion, but cost grows with packets and a rasterised field is still needed for the surface and the query. Not selected |
-| Generalised shallow water with dispersive waves (Jeschke and Wojtan 2023) | Its split of a bulk flow from the waves on it is this design's, and so are its depth bins. Run whole and live, it pays every tick for a bulk that does not change, and its stability on a shore was never qualified here. Not selected |
-| **eWave on body-following periodic windows, two levels with complementary bands** | **Selected.** Exact dispersion at any speed for the depth it is given, a few FFTs a tick, and stable at any step. [Interaction waves](#interaction-waves) says how it takes a bed, a shore and a current |
+| Generalised shallow water with dispersive waves (Jeschke and Wojtan 2023) | Its split of a bulk flow from the waves on it is this design's, and so is its blend of a few depths. Run whole and live, it pays every tick for a bulk that does not change, and its stability on a shore was never qualified here. Not selected |
+| **eWave on body-following periodic windows, two levels with complementary bands** | **Selected.** Exact dispersion at any speed on uniform depth, a few FFTs a tick, and stable at any step. Its transform is global, so by itself it knows neither a bed that varies nor land; [interaction waves](#interaction-waves) says how it takes a bed, a shore, dry ground and a current, and what each costs in accuracy |
 
 Two levels, because one 256² window cannot both resolve a 0.5 m ripple at the hull and hold a 25 m transverse
 wave: a 64 m window of 0.25 m cells does the first and a 512 m window of 2 m cells the second. Two overlapping
@@ -280,7 +289,7 @@ kinds are added.
 |---|---|---|
 | Sea | A level | Everywhere the bed lies below the level, and everywhere beyond the bed's extent. Unbounded |
 | Basin | A seed point and a level | The connected hollow around the seed where the bed lies below the level. A lake, a pond, a pool, a canal, a puddle. A second hollow beyond a ridge stays dry until the level passes the ridge |
-| Chart | A grid of level and current over a rectangle, with the loss of height in the flow | Where the grid's level lies above the bed. A river or a stream, written by `RIVERS`' solver; in this module a hand-made channel |
+| Chart | A grid of level and current over a rectangle, with the loss of height in the flow, a footprint, and its ends: where it leaves one body and enters another | Where its level lies above the bed, inside its footprint. A river or a stream, written by `RIVERS`' solver; in this module a hand-made channel |
 
 **The bed** is a height grid with a declared cell size, given by the game or built by `thrum-water-model` from
 the triangles of the game's ground. Beyond the bed's extent the water has no bed in reach.
@@ -290,13 +299,64 @@ bed), the current, and the body's gains. It is written once in `thrum-water-mode
 two are held to each other, and neither reads the camera. Where declarations overlap, a chart is taken over a
 basin and a basin over the sea; two bodies of one kind that overlap are refused at preparation, by name.
 
+**Joins: how connected bodies meet.** Taking one body over another says who owns a point. It does not make two
+surfaces meet: a sea with a swell and a chart without one, or a lake raised a metre above a chart left as
+prepared, would stand apart at the line between them. Still bodies never touch each other, so every join is an
+end of a chart, and the join is made in the map, where every reader finds it.
+
+- *Ends.* A chart declares a **source end** and a **mouth**: each is a stretch of its footprint's edge and the
+  body it joins there. A spring has no source body, and a tributary's mouth joins another chart.
+- *The mix.* Inside its footprint a chart's row (level, current, the four gains and the water type) is mixed
+  toward the joined body's row by a weight. The prepared weight is 1 on the end's edge and falls smoothly, with
+  no slope at either limit, to 0 a join length inside, a value of the chart (12 m for the example's channel). At
+  the mouth the weight is also raised by **backwater**: it rises smoothly to 1 as the receiving body's level
+  comes within 0.25 m of the chart's own, and is 1 wherever that body stands higher. A rising tide therefore
+  drowns the lower channel, which becomes the sea's water: the sea's level, its swell, and no current.
+- *What follows.* Where the weight is 1 the chart's row is the joined body's row. So the level, the current,
+  every gain, and with them the displaced surface, its normals, the foam's births and the query's answers, are
+  the same either side of the line, for any stage of either body and any sea state. Swell enters a mouth and
+  fades up the channel with the weight. The point's body stays the chart on its footprint.
+- *Not a drawn blend.* The mix is the map's, in `thrum-water-model` and in WGSL alike, so it is the physical
+  answer and the conformance model's too. Nothing is blended in the surface pass, and no reader sees a join the
+  query does not (C04, C09).
+- *A basin's fill stops at a chart's footprint*, so a lake does not pour down its own outlet.
+
+**What preparation refuses.** Each body's stage has a declared range. Over those ranges, by name: a chart with a
+cell on its footprint's edge whose neighbour outside is neither ground standing above the chart's level there nor
+a joined body's water at weight 1; and a basin whose fill reaches the sea, another basin, the edge of the bed, or
+a chart anywhere but across its end. So a chart's water is held by its banks, a lake's outlet lies where its
+banks stand above its highest stage, a source never drops below its outlet's sill, and a chart reaches down to
+its mouth's lowest level. A lagoon open to the sea is the sea. Two basins that would merge are refused here;
+merging is [`PUDDLES`' question](#what-the-later-modules-build-on).
+
+On a 200 m island with a channel from a lake to the sea, with the lake moved from −0.5 m to +1 m and the tide by
+±1 m under a 0.5 m swell crest, taking one body over another with one stage a chart leaves steps of 0.5 m to
+1.5 m between bodies and stands the channel 0.95 m over its banks at low tide. With joins the surface is the
+same to four decimal places a millimetre either side of each end, and nowhere over a bank (part K).
+
+Declared approximations of a join: the mix is linear in the weight; a chart keeps its prepared flow whatever
+its source's stage, so the reach inside the source join steepens or flattens and the river below does not swell
+(how a river answers its lake is `RIVERS`'); and swell in a drowned mouth is held by the depth and not by the
+channel's width.
+
 **One water surface in a column.** The map holds one body at a point. Water above water is not planned
 ([plan](PLAN.md#open-for-the-human)).
 
-**Stage.** Each body has a stage, in metres, which the game sets with the tick and which is added to its level:
-the sea's tide, a lake's level, a puddle's fill. A basin's hollow is filled again from its seed when its stage
-moves, so a shoreline travels up the ground and a neighbouring hollow floods only when the water reaches its sill.
-A chart's stage raises its level and leaves its current as prepared; that is a declared approximation.
+**Stage.** Each body has a stage, in metres, which the game sets with the tick, inside the body's declared range,
+and which is added to its level: the sea's tide, a lake's level, a puddle's fill. A stage set outside its range
+is held at the range's end and counted. A basin's hollow is filled again from its seed when its stage moves, so
+a shoreline travels up the ground and a neighbouring hollow floods only when the water reaches its sill. A
+chart's stage raises its own level and leaves its current as prepared, a declared approximation; its ends follow
+the bodies they join.
+
+**The shore margin.** Waves wash ground above the still waterline, so the map names a body on its still water
+and on its **shore margin**: the ground that rises from its waterline to the profile's margin height above its
+level, reached from the still water by a path that never descends. A hollow beyond a ridge is therefore never
+in it. Depth there is negative. Where two margins meet, the ground is the body's whose level is higher. The
+margin is content, as the fill is, and moves only with a stage. Three things are then distinct, and each reader
+names the one it uses: **still water** (depth above zero), **wave support** (depth above minus the body's swash
+depth, [below](#waves-on-a-body-gains)), and **wet now** (the surface at this moment stands above the bed).
+Wet now is the physical wet support that the surface, the optics, the query and the foam's births all use (C07).
 
 **What the map is not.** It is not what a viewer sees of a shoreline: the visible waterline is where the drawn
 surface meets the scene's own depth, to the pixel, and the map's cells never show. It holds no waves.
@@ -312,18 +372,31 @@ query and the foam's births all read the layers through the same gains.
   root of the energy a fetch-limited spectrum has in that layer's band over the energy the field's own spectrum
   has there, from `thrum-sea-model`. Part I, for a wind of 10 m/s over a sea 2.1 m high: a pond with 200 m of
   fetch takes 0, 0, 1 and 1 of the four layers and stands 0.07 m high; a lake with 1 km takes 0, 0.25, 1, 1; with
-  5 km, 0, 0.76, 1, 1; with 50 km, 0.49, 1, 1, 1. Swell, which is part of the long waves, never enters a basin
-  or a chart.
-- **Shallows.** At any point each layer is held so that its significant height is at most 0.6 of the depth, the
-  ratio of a saturated surf zone, longest layer first. At 1 m of depth a 2.1 m sea is held to 0.28 of its height,
-  and at the waterline to nothing (part I). The power the limit takes from the waves is reported, and it is what
-  foam is born from at a shore ([whitewater](#whitewater)).
+  5 km, 0, 0.76, 1, 1; with 50 km, 0.49, 1, 1, 1. Swell, which is part of the long waves, enters no basin, and
+  a chart only through [its mouth's join](#the-water-map).
+- **Shallows and the swash.** At any point each layer is held so that its significant height is at most 0.6 of
+  the depth plus the body's **swash depth**, longest layer first; 0.6 is the ratio of a saturated surf zone. The
+  swash depth is the profile's swash ratio (0.7 in the first profile) times the significant height of the body's
+  waves at its gains, before the limit; it is one number a body each tick, never more than the margin height,
+  and nothing in a calm. Above the still waterline the depth is negative and the same expression holds, up to
+  where it reaches zero. At 1 m of depth a 2.1 m sea is held to 0.28 of its height by the depth alone (part I).
+  With the depth alone the waves would end at the still waterline, and nothing could move it: an admissible
+  wave's trough never bares the bed, and the map gives no water beyond. With the swash depth they keep a
+  remainder there, and the displaced surface crosses the beach along a line that travels. For one regular wave
+  the waterline runs up to 0.175 of the swash depth above the level and back to 0.27 of it below: 0.26 m up and
+  0.40 m down in a 2.1 m sea, which is 6.7 m along a beach of 1 in 10; 3.1 m in a 1 m sea; 0.5 m on a lake with
+  1 km of fetch; and it stands still when the swash depth is zero (part L). That is the set-up and swash a surf
+  zone has, in the limiter's terms, and smaller than Stockdon's figure for such a beach. It is not surf: nothing
+  shoals, turns or overturns. The power the limit takes from the waves is reported, and it is what foam is born
+  from at a shore ([whitewater](#whitewater)).
 - **Roughness from the flow** is a gain `RIVERS` adds to the shortest cascades where a chart's water runs fast
   and shallow. The seam is the same four numbers.
 
 A gain multiplies a layer's displacement, slopes and rate of change, and its square multiplies the layer's slope
 and Jacobian moments. The slope a changing gain itself adds is left out: gains change over many wavelengths
-except on a steep shore, where waves are already small. Waves do not shoal, turn or shorten as water shallows.
+except on a steep shore, where waves are already small, and inside a mouth's join, where a 0.5 m swell fading
+over 12 m is left out of the shading normal by under 4° while the geometry carries it. Waves do not shoal,
+turn or shorten as water shallows.
 
 ### Carriage by the current
 
@@ -336,7 +409,8 @@ Where the map has a current, everything on the surface travels with it.
   downstream at the current's speed and its distortion is renewed before it shows. The period is a profile value.
 - **Bodies** feel the current through the query, and the game's own drag carries them.
 
-The long waves are not carried: a body with a current is a chart, and its long-wave gain is zero.
+The long waves are not carried: a body with a current is a chart, and its long-wave gain is zero outside its
+mouth's join. The swell a join lets in is not shifted by the outflow, a declared approximation.
 
 ### Time: content, functions and state
 
@@ -392,11 +466,23 @@ bank that holds `P` runs; on a full frame both run. `EFFECT-GRAPH` needs no chan
 
 **Drawn body by body, shaded as one.** The sea is drawn by a camera-centred mesh whose spacing doubles outward,
 snapped to the world so vertices do not swim, closed to the horizon by a far skirt. Every other body is drawn by
-tiles over its own bounds, with spacing that follows distance. A vertex takes its body's level, continued a
-little past its shore, so no triangle ever joins two levels. A pixel is shaded only by the body the map names at
-its place, so where two bodies meet or their tiles overlap there is neither a gap nor a doubled surface, and
-the ground's own depth cuts each shoreline. Earth's curvature is not modelled; the sea covers everything below the
-level horizon that the ground does not.
+tiles over its own bounds and shore margin, with spacing that follows distance. A vertex takes its body's row,
+continued a little past its shore and past a chart's end at weight 1, so no triangle ever joins two levels. A
+pixel is shaded only by the body the map names at its **rest place**, the place its surface point had before
+the waves displaced it, which the vertices carry. Two bodies' meshes are therefore complementary parts of one
+displaced sheet: where their tiles overlap there is neither a gap nor a doubled surface, and at a join, where
+the map's rows agree, the two parts meet in height and slope. The ground's own depth cuts each shoreline.
+Earth's curvature is not modelled; the sea covers everything below the level horizon that the ground does not.
+
+**The sheet and the film.** Inside a body's wave support the surface is drawn over the shore margin as it is
+over still water. Where it stands above the ground it is the swash, a sheet that runs up the sand and thins to
+nothing at its edge, cut by the scene's depth as every waterline is. Where it stands below the ground, on sand
+the waves wash, it is held on the ground and drawn as a **film**: it has no thickness, so the ground shows
+through it unchanged; it reflects the sky by a weight that is 1 at the still waterline and falls to 0 at the
+height a regular wave of the body's height reaches; and the foam the sheet left lies on it. The film is drawn
+with a depth bias so that it neither fights the ground nor floats over it. It is a declared residual and not
+water: the query answers dry under it, nothing is born on it, and it has no optical depth (C07, C09). How dark
+wet sand is belongs to the ground's material, and so to `PUDDLES`.
 
 A vertex is displaced from its level by the long waves (the field cache) and the cascades its spacing resolves,
 at its body's gains, and by the interaction waves. A pixel takes its normal from the same layers down to its
@@ -433,7 +519,7 @@ found by fixed-point iteration on the horizontal displacement; the oracle iterat
 
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
 velocity (the current and the waves' together) and the time derivative of height, with one support flag per
-layer, and it is **valid at the use tick** its point asked for. A point on ground above the water says it is dry. The dispatch brings every layer to that tick
+layer, and it is **valid at the use tick** its point asked for. A point that is not wet now says it is dry: ground beyond the water, and the swash between waves, where the depth it reports is negative. The dispatch brings every layer to that tick
 before it sums them: the long waves are evaluated there, the height of the cascades is carried there from the
 frame's `t` by its rate of change, and the wake's from its state tick. The answer carries the use tick and the
 times it was made from. A game that uses an answer at another tick moves the whole answer once, by its time
@@ -458,20 +544,60 @@ owns hydrostatics, drag, thrust and the rigid-body step, as game code, until Thr
 
 Interaction waves are what bodies and impacts raise on any water: a hull's wake, the rings from a dropped stone,
 the lap round a float. The sea design called them the wake, after their first source, and the text below keeps
-the word. They are that design's operator with four things added, so that it holds on water that has a bed, a
-shore and a current.
+the word. They are that design's operator with five things added, so that it holds on water that has a bed, a
+shore, land in it and a current. They live on still water; the swash is the ambient waves' alone.
 
-**Depth.** The step is exact for any dispersion relation, so finite depth is a different frequency for each wave
-vector, `ω = √(g k tanh(k d))`. Depth varies across a window, so each level's step is computed for a few depths a
-factor of two apart, from the shallowest wet depth in the window (not below 0.125 m) to half the level's longest
-wavelength, at most six a level, and each cell takes the blend of the two that bracket its depth, weighted in the
-logarithm of depth. A window over deep water has one, and its step is the deep-water step below. Part H gives the
-error: speed within 1.6%, and under 0.3% of a wave's height lost a second. Water shallower than the shallowest
-depth computed runs at that depth's speed.
+**The update at depth.** On water of uniform depth `d`, a wave vector `k` advances by
 
-**Dry ground.** A cell the map calls dry holds no wave: its height and potential are set to rest each step, with
-the border's damping over the cell beside it. So a wave dies at a shore and none crosses a bar of dry ground. That
-a wall reflects is not promised.
+`h' = cos(ωΔt) h + (D/ω) sin(ωΔt) φ`, `φ' = cos(ωΔt) φ − (g/ω) sin(ωΔt) h`, with `D = k tanh(kd)` and `ω = √(gD)`.
+
+`D` is the depth's own coefficient as well as its frequency, and the pair is a rotation: its determinant is 1 for
+any `Δt`. Deep water is `D = k`, which is eWave's equations 19 and 20. Putting a finite-depth `ω` into those
+equations and leaving their `k/ω` is not a rotation, and grows a 2 m wave on 0.25 m of water by 9% a second
+(part H). At `k = 0`, `h' = h` and `φ' = φ − gΔt h`.
+
+**The depth ladder.** Depth varies across a window, so each level has a ladder of depths a factor of two apart,
+which ends in the deep operator `D = k`: for the near level 0.25, 0.5, 1, 2 and 4 m and deep, and for the far
+level 1, 2, 4, 8, 16, 32 and 64 m and deep. The deep operator serves all deeper water: 8 m is deep for the near
+level's waves and 128 m for the far level's. A step transforms the state once and transforms back once for each
+ladder depth that brackets a depth present, and each cell takes the blend of the two outputs that bracket its
+own depth, with weights linear in the square root of depth. Below a ladder's first depth a cell blends that
+output with the **rest operator** (`h' = h`, `φ' = φ − gΔt h`), linear in depth; it needs no transform, and it
+slows a wave to a stop at the waterline. No depth falls outside a ladder: a window that holds 0.125 m shallows
+and 10 m of water uses the rest operator, the first depth and the deep operator on the near level, and the
+rest operator and the depths from 1 m to 16 m on the far level. A window over deep water has one operator, and its step is eWave's.
+
+The blend is the selected operator, and part H measures it as such:
+
+| Measured | Result |
+|---|---|
+| Each wave vector on uniform depth, from a level's first depth to deep, over the level's band, steps of 1 and 8 ticks | Phase speed within 2.1%, group speed within 4.4%; never grows; loses nothing a second at 1 tick and under 0.2% a second if every step were 8 |
+| Far level between 0.25 m and its first depth, 1 m | Phase speed within 4.2%, group speed within 12%, worst for its shortest wave, 12 m |
+| Height and potential fields, a 6 m packet up a beach of 1 in 10 from 6 m of water | The packet stays within 0.7 m of the true group speed's ray over 60 m, down to 1.3 m of water; the sum of squared height rises 8% as it shoals; 2.4% of its energy comes back from the shore |
+| Fields, a far window holding 0.125 m shallows and 10 m of water; 30, 60 and 100 m packets across the 10 m part | Within 3.9% of the true group speed |
+| Fields on rough beds with dry patches, 120 s, undamped, steps of 1 and 8 ticks | The sum of squared height never passes its start |
+| The beach run in steps of 8 ticks against steps of 1 | 0.3% of the gauge's RMS height |
+
+Below a level's first depth the speed is not claimed. There a wave is damped at a rate that rises to the
+waterline, which is how it dies at a shore. The ladders and the weights are the physical profile's.
+
+**Dry ground and regions.** A transform is a convolution over the whole window, so it carries a wave across
+land, and setting the land's cells to rest afterwards does not take back what it wrote beyond them: a 2 m bar
+in 4 m of water passes 3.2% of a pulse's peak, where open water passes 24% (the design review's case; part J).
+So each **region** of a window, its still-water cells joined through still-water cells of that window, is solved
+alone: its cells are transformed with every other cell at rest, and only its cells are kept. Between two regions
+nothing passes, exactly (part J: 0). Regions are labelled from the map on the CPU when a window moves or a stage
+changes; the map is content, so nothing is read back. A cell that is not still water holds no wave.
+
+A **solve** is one region at one ladder depth. A level's step makes at most the profile's count of solves, 16 in
+the first profile. Regions are admitted in order: the one that holds the named body, then the others by their
+latest source. A region that does not fit is at rest, and its sources are refused, counted and reported.
+
+Inside one region thin land shadows waves but does not stop the transform, a declared approximation that part J
+bounds: land with 4 m of water at its foot passes 3.2% of a pulse's peak at 2 m wide, 1.4% at 4 m and 0.03% at
+8 m; with 1 m at its foot, 0.3%; and a beach of 1 in 4 or gentler on each side, under 0.2%, because shallow
+water's operators reach only as far as it is deep. A spit, a pier or a rock therefore leaks at most a few
+percent, and two waters that land separates share nothing. That a wall reflects is not promised.
 
 **Current.** Each window takes the mean current of its wet cells, and its waves are carried by it exactly, as a
 phase shift for each wave vector in the same step. The difference between a cell's current and the window's mean
@@ -486,13 +612,13 @@ in ID order, counted and reported.
 The far level owns wavelengths above about 12 m and the near level the rest, through complementary filters on
 the source. A level never holds a wave from the other's band.
 
-**A step of *n* ticks.** Transform, add half the step's impulse, apply equations 19 and 20 for `nΔt`, add the
-other half, transform back, and damp a border one eighth of the window wide by its per-tick factor to the power
-*n*. The border absorbs what reaches the edge, so nothing wraps. The impulse is the body's pressure summed along
+**A step of *n* ticks.** For each region: transform, add half the step's impulse, apply the update for `nΔt` at
+each ladder depth, add the other half, transform back and blend, and damp a border one eighth of the window wide
+by its per-tick factor to the power *n*. The border absorbs what reaches the edge, so nothing wraps. The impulse is the body's pressure summed along
 its path over the step, placed in Fourier space at exact positions, so a wake neither stair-steps with the cells
 nor bunches where a hitch ended.
 
-Free propagation is exact for any step. The two additions are approximations that grow with it: the impulse split
+Free propagation on uniform depth is exact for any step, and the table above bounds the blend's. Two additions are approximations that grow with the step: the impulse split
 around the rotation is second order in the step, and the border treats a wave that crosses it during the step as
 if it had been there throughout. Part A measures them on a hull at 6 m/s against the same run stepped tick by
 tick: one 8-tick step differs by 0.16% of the field's RMS height, a hitch of 8 ticks every second by 0.6%, and the
@@ -555,8 +681,10 @@ ticks has a closed form, and one long step equals many short ones to rounding.
   included, so a post standing in a current foams as a hull moving through still water does;
 - *the stern ribbon*: behind the footprint, from the power the body lost to the water, which the game's own drag
   supplies in the body record;
-- *the shallows*: where the depth holds a wave layer's height ([gains](#waves-on-a-body-gains)), at a rate
-  from the power the limit takes, so foam forms where waves die on a shore.
+- *the shallows and the swash*: where the depth holds a wave layer's height ([gains](#waves-on-a-body-gains)),
+  at a rate in proportion to the power the limit takes, and only where the point is wet now. So foam forms
+  through the band where waves die, up to the top of the swash. There is no threshold: a lake's small waves
+  lose little power and make little foam, in that proportion, and a calm makes none.
 
 `RIVERS` books two more through the same rule: the height a chart's flow loses, and a fall's plunge.
 
@@ -566,7 +694,9 @@ A cause that loses no power makes no foam. That is what keeps a calm sea and a h
 with a diffusivity that dies with the turbulence that made them. This is the dispersal the bar gets from a
 feedback blur, as a physical term. Drift is traced back along the flow and spreading is a kernel as wide as the
 step makes it, so a step of up to the catch-up bound stays stable. Foam on ground the water has left stays where it is and
-ages out. Beyond the far level the surface uses the erf
+ages out; on sand the waves wash, [the film](#the-surface-and-the-frame-contract) shows it as lace until the sheet
+returns. Nothing carries foam shoreward: it reaches the top of the swash because it is born under the sheet
+there, and the sheet covers and bares it. Beyond the far level the surface uses the erf
 coverage estimator from the cascades' Jacobian moments, so whitecaps continue to the vista without state.
 
 **Appearance.** Coverage thresholds a ranked pattern, so thin foam is lace and thick foam closes. The pattern is
@@ -715,7 +845,7 @@ The declared approximations, and where they hold:
   | Body optics | The gather and the rays for registered bodies | Body records |
 
   Open water alone is a still pond under the sky. With waves it is the sea of a sunset demo.
-- **One physical profile on every recipe.** The map, the gains, component count, cascade layout and loop, the interaction levels and their depths, and query
+- **One physical profile on every recipe.** The map and its joins, the gains, the swash ratio and margin height, component count, cascade layout and loop, the interaction levels, their depth ladders and their count of solves, and query
   semantics are the profile's, never a quality setting (C04). Chrome and the Mac float the same body on the same
   sea.
 - **Limits are inputs.** Transform length, workgroup memory, storage formats and counts, and sampled textures per
@@ -739,25 +869,39 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   shallow-water solution over the bed from declared sources, prepared once and stored, never stepped in the
   frame. It adds the flow's roughness as gains, and births of foam from the chart's loss, through the rules above.
   A waterfall is a fall record joining two bodies where the flow leaves the bed: a sheet drawn with this module's
-  optics and pattern, and a plunge that enters the lower body as impulse records and births. What this module
-  proves for it: a chart is drawn, queried, carries detail, foam and floats, and joins a lake and the sea (M9).
+  optics and pattern, and a plunge that enters the lower body as impulse records and births. Its solver writes
+  a chart's footprint, ends and join weights with its level, current and loss, to [the rules preparation
+  holds](#the-water-map). What this module proves for it: a chart is drawn, queried, carries detail, foam and
+  floats, and joins a lake and the sea under a swell and through their stages (M9). What it leaves to `RIVERS`:
+  how a river's reach answers its source's stage, which here stays as prepared.
 - **`PUDDLES`: rain, puddles and wet ground.** A puddle is a basin whose stage rain raises and drying lowers, in
   hollows found from the bed. Rain rings are one more short wave layer. Wet ground is not a body: it is a wetness
   the ground's material reads, written by rain and by water that has left, which needs a ruling with the forward
-  pass's owner. What this module proves for it: a basin of any size whose stage moves (M4, M10), rings on water
-  0.25 m deep (M6), and the ground seen through thin water (M8).
+  pass's owner. On a shore the waves wash, this module draws the sheen and the foam as its film, and the map
+  gives each body's wave support, so the ground's material can darken the same sand and the two agree on one
+  support (C07). What this module proves for it: a basin of any size whose stage moves (M4, M10), rings on water
+  0.25 m deep (M6), and the ground seen through thin water (M8). What it leaves to `PUDDLES`, as a question its
+  planner settles here with this module: two basins may not overlap, and a stage that would merge them is
+  refused, so how puddles that overflow into each other join and part again, keeping each body's identity,
+  stage and the rings and foam on it, with no rebuild or reset a viewer could see.
 
 ### Check that it can work
 
 - **S1, S2 and the oracle, and time for the wave field.** In [the sea's design](../SEA/DESIGN.md#check-that-it-can-work).
 - **W1.** A level over a bed, cut by the scene's depth, is how Crest and Unreal place lakes; the hollow round a
   seed is a flood fill with a closed form on simple beds, which M1 tests. Unrun on the GPU.
-- **W2.** Part I gives the gains above. That a lake reads right with the short layers alone, and a beach with the
-  depth limit and no shoaling, is unrun; M4 is the first look, and [risk 12](#risks) covers a beach that reads
-  wrong.
-- **W4, and waves at depth.** Part H: operators a factor of two apart in depth, blended per cell in log depth,
-  carry waves of 0.5 m to 100 m within 1.6% of the finite-depth speed and take under 0.3% of their height a
-  second; one operator at a pond's mean depth of 1 m is 23% fast in 0.25 m of water.
+- **W2.** Part I gives the gains above, and part L the waterline's travel under the limit with a swash depth,
+  against its closed form, with the pinned waterline of the limit alone beside it. That a lake reads right with
+  the short layers alone, and a beach with a swash and no shoaling, is unrun on the GPU; M4 is the first look,
+  and [risk 12](#risks) covers a beach that reads wrong.
+- **W4, and waves at depth.** Part H measures the selected step, the blend of ladder depths, as an operator on
+  each wave vector and as fields over beds that vary, in steps of 1 and 8 ticks; [its table](#interaction-waves)
+  is the envelope. Part J measures dry ground: one transform passes 3.2% of a pulse across a 2 m bar, a solve
+  for each region passes nothing, and thin land inside one region passes what that section declares. Both are
+  1D sections in f64, so a field constant along a straight shore; neither is a GPU measurement.
+- **W6.** Part K: the map's function with joins, on a grid of an island with a lake, a channel and the sea,
+  through the lake's and the tide's ranges under a swell crest, against taking one body over another.
+  The surface is unrun.
 - **S3.** `wake_proof.py`, with a Gaussian stand-in for a 6 m hull. Transverse wavelength at 3 and 6 m/s: 5.72
   and 23.44 m against `2πU²/g` of 5.77 and 23.07 (−0.8%, +1.6%). Ridge half-angle at 3 m/s (Fr 0.39): 20.9°
   against Kelvin's 19.47°; at 6 m/s (Fr 0.78): 9.6°, narrower as Rabaud and Moisy report. With the source removed
@@ -790,7 +934,7 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 | State | Owner |
 |---|---|
 | Spectrum, components, cascades and their f64 evaluators; the wave field's GPU passes | `SEA`: `thrum-sea-model`, `thrum-sea`. After `SEA`'s last milestone is Done they are this module's to extend, with their tests kept passing |
-| The map and its function, gains, the f64 surface model, the interaction and foam references, the conformance model | `thrum-water-model` (this module), no GPU dependency |
+| The map and its function, joins, shore margins and what preparation refuses; gains and the swash depth; the labels of a window's regions; the f64 surface model, the interaction and foam references, the conformance model | `thrum-water-model` (this module), no GPU dependency |
 | The map on the GPU, the surface, optics, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
 | Body declarations, the bed, presets, water types, the craft and floats, hull footprints, foam pattern, body integration, controls | The example scene `examples/water` (package `water-scene`); never in engine crates or their tests |
 | Stages, state commit, cadence, knob list | `EFFECT-GRAPH` |
@@ -801,7 +945,7 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 
 **A frame, in order.** `upload` takes the page's body records, query points, impulses, stages and wind, and the
 long-wave phases and loop time for the frame's `t`. `simulate`, every frame: the cascades and the field cache at
-`t`. `simulate`, only on a frame that advances the tick: the interaction step with its sources; foam births and
+`t`. `simulate`, only on a frame that advances the tick: the interaction step with its sources, region by region; foam births and
 transport; the query dispatch and its copy to the ring. Forward, sky and stars draw. `after-opaque`: the gather,
 where a reader needs it; the surface, body by body. Reconstruction, tone and present follow. On submission the
 water commits its tick and each endpoint's tick. A scene without a capability runs none of its steps.
@@ -813,7 +957,7 @@ chart is made by hand and labelled a stand-in. Its ground, craft, floats and foa
 content: made here, or copied from Broadsides where [that serves](#what-broadsides-offers).
 
 **Creator journey.** A scene adds the water contribution with a profile that names its capabilities, and declares
-its bodies: a level for a sea, a seed and a level for a lake. A scene with ground gives the bed, or the triangles
+its bodies, each with its stage's range: a level for a sea, a seed and a level for a lake, a chart with its ends. A scene with ground gives the bed, or the triangles
 to build it from. A scene that floats things puts body records in its tick page and reads answers from the
 mailbox. Changing wind, swell or a stage needs no rebuild. Changing the profile or the bodies rebuilds the water
 and resets interaction waves and foam.
@@ -842,7 +986,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
-| Interaction waves | Tick | 2 × 256², one complex transform forward and one back for each depth bin, at most six bins a level | Under 0.2 ms over deep water; under 0.7 ms at the bound | About 3.8 ms a tick in its lake, as an interval |
+| Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which M6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks | Under 0.2 ms | About 2.2 ms for first deposition |
 | Query | Tick | Up to 2,048 points, 48 B each | Under 0.1 ms; 96 KiB back | 0.03 ms |
 | Gather | Frame | The rectangles its readers need: nothing on an open sea with no body, the screen where see-through or mirror-still water fills it | Proportional to the pixels copied; a whole-screen copy is one pass ended on a tile GPU | A whole-scene copy and a 3 ms trace |
@@ -897,14 +1041,21 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 11. **A reflection whose source is off screen falls to the sky**, and reads as a hole in a lake under a hill.
     Early sign: M8's pan. The fade at the screen's edge and the reach are the remedies here; a probe of the
     scene round the camera is the real one, and no module plans it ([plan](PLAN.md#open-for-the-human)).
-12. **A beach where waves only fade reads as a pond's edge.** Early sign: M4's and M7's captures. The designed
-    remedy is the foam the depth limit births and the run of the waterline up the sand, which the long waves give
-    for nothing. Surf is the real one and is not planned.
+12. **A beach without surf reads as a pond's edge, or its swash as a tide.** Early sign: M4's and M7's captures.
+    The designed remedies are the swash ratio, which sets how far the waterline travels, the foam born through
+    the band, and the film's sheen. The wrong fixes are a waterline animated apart from the waves, which the
+    query would not know, and foam painted along the shore. Surf is the real one and is not planned.
 13. **The carried detail pulses** at the carriage's period. Early sign: M9. The designed remedies are a period
     varied from place to place and a longer one where the current is slow. The wrong fix is a single scrolled
     sample, which smears.
 14. **A later module finds a seam wrong.** Early sign: `RIVERS`' or `PUDDLES`' planning. M9 proves the chart on
     a stand-in so that the seam is tried before a solver exists.
+15. **Regions and depths multiply the interaction step.** Early sign: M6's record at the lake's shore, with its
+    count of solves. The designed remedies are the profile's count of solves and, on the far level, a coarser
+    ladder with its measured envelope stated. The wrong fix is one transform over land and water.
+16. **The film fights the ground or floats over it.** Early sign: M7's captures at grazing angles. The designed
+    remedy is its depth bias and a bed built as [the map's](#the-water-map) is, from the highest ground in each
+    cell. The wrong fix is drawing foam into the ground's material here, which is `PUDDLES`' seam.
 
 ## Proof and builder handoff
 
@@ -945,7 +1096,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | Do the two endpoints of interaction waves and foam serve `EFFECT-GRAPH`'s cadence rules as built? | M6; a failure is a proposal there |
 | What do the gather and the rays cost where they fill the view? | M8 records it |
 | What tolerance do the map, the interaction waves and the foam meet against their f64 references on Metal and in Chrome? | M4, M6 and M7 measure first, then assert the recorded bound |
-| Does a beach read as a beach without surf? | M4 and M7; [risk 12](#risks) |
+| Does a beach read as a beach with a swash and no surf? | M4 and M7; [risk 12](#risks) |
+| How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
+| How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
 | Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on M9's channel |
 | How many sampled textures does the surface need with the map, against sixteen? | M4 counts against the record |
 | Is an Apple-tile kernel variant a measured win? | M11 |
