@@ -284,9 +284,11 @@ try {
       await evaluate('game.set_visible(true, performance.now())');
       await until(async()=> (await latest()) > results.onAgain.newest + 10, 'live frames after visibility restore');
       await evaluate('__creatorDevices.at(-1).destroy()');
-      await until(()=>evaluate('__creatorDevices.length > 1'), 'replacement WebGPU device');
-      results.replaced = await rows();
-      await until(async()=> numeric(await gpuRows()), 'fresh replacement GPU timings');
+      // The kit's existing device-loss policy asks the creator to reload. It does
+      // not request detached replacement automatically; generation clearing is
+      // covered by the shared window's replacement test.
+      await until(async()=> (await gpuRows()).every(([,text])=>text.includes('no recent completed frame')), 'lost device expires GPU rows');
+      results.lost = await rows();
       await cdp.call('Page.navigate', {url:url+'?without-timestamps'}, sid);
       await drawn();
       await set(true);
