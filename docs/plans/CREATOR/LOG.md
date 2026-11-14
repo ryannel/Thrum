@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Resumed at `d82da4d1` and confirmed the retained M3.2, M3.3 and M3.5
+  records. Stopped the inherited queued window and dependent merge workers before
+  desktop interaction, following this turn's explicit attended-access instruction.
+  M3.1 still needs the lead's fresh agent; M3.4 has setup preflight evidence only.
+  No new target run or merge is claimed. [Handoff](../../evidence/CREATOR/M3-handoff.md).
+
 - 2026-11-14 Passed M3.3 at `8daa1ce2`: ten native save assertions, complete object/cause/action
   diagnostics, both missing-store refusals and exact last-good frame retention. Both native exact
   matrices and four Chrome sets pass in 962.76 seconds; the official M3 check and full repository
