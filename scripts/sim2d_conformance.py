@@ -29,6 +29,18 @@ def identity():
             "rustc": command(["rustup", "run", "1.99.1", "rustc", "--version"]).strip()}
 
 
+def source_key():
+    """Identity of the measured rules, runtime, codec, runner and build settings."""
+    files = [ROOT / name for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "scripts/sim2d_conformance.py", "scripts/sim2d_browser.mjs"]]
+    for directory in ["crates/thrum-core", "crates/thrum-sim2d", "crates/thrum-network", "examples/crowd-2d", "examples/crowd-2d-run", ".cargo"]:
+        files.extend(path for path in (ROOT / directory).rglob("*") if path.is_file())
+    digest = hashlib.sha256()
+    for path in sorted(files):
+        digest.update(str(path.relative_to(ROOT)).encode())
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
 def build(target, debug=False):
     args = ["rustup", "run", "1.99.1", "cargo", "build", "--locked", "--offline", "-p", "crowd-2d-run"]
     if not debug:
@@ -176,7 +188,7 @@ def control(target):
     return {"mac_fold": a["fold"], "chrome_fold": b["fold"], "first_differing_tick": first, "user_agent": chrome.user_agent}
 
 
-def costs(target):
+def measure(target):
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
     runner = Runner(target)
@@ -194,12 +206,33 @@ def costs(target):
             row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > previous["tick_ms_per_neighbour"]
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
-    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "timings_are_baselines": True}
+    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": source_key(), "timings_are_baselines": True}
+
+
+def costs(target):
+    """Check the retained device measurements, independently of their time values."""
+    path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
+    record = json.loads(path.read_text())
+    assert record["target"] == target and record["dirty"] is False
+    assert record["source_sha256"] == source_key(), "cost record belongs to different simulation sources"
+    assert record["rustc"] == identity()["rustc"], "cost record belongs to another compiler"
+    subprocess.run(["git", "merge-base", "--is-ancestor", record["commit"], "HEAD"], cwd=ROOT, check=True)
+    assert len(record["runs"]) == 2
+    for run in record["runs"]:
+        assert run["build"] == "release" and len(run["load"]) == 3
+        assert [(row["bodies"], row["ticks"]) for row in run["rows"]] == SIZES
+        for row in run["rows"]:
+            assert row["samples"] == row["ticks"] - 120 and row["neighbours_per_tick"] > 0
+            for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
+                assert isinstance(row[key], (float, int)) and row[key] >= 0
+            for key in ["clock_tripwire", "quarter_slower_tripwire", "super_neighbour_scaling_tripwire"]:
+                assert isinstance(row[key], bool)
+    return {"record": str(path.relative_to(ROOT)), "source_sha256": record["source_sha256"], "measured_commit": record["commit"], "timings_are_baselines": True}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["retain", "run", "control", "costs"])
+    parser.add_argument("action", choices=["retain", "run", "control", "measure", "costs"])
     parser.add_argument("--target", choices=["mac-metal", "chrome-webgpu", "ios-sim"], default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
