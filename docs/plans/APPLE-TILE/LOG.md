@@ -191,3 +191,11 @@
   retains tool/PID/window/scale/clocks, original-time OS video packets and lifecycle logs. The required M3
   check passes the moving command and full repository gate. No engine code or grants changed; no panel,
   cadence, photon or performance qualification is inferred. M3 is reclaimed for the lead's review.
+
+- **2026-11-14 — M10 implementation checkpoint.** The small stateful same-submit fixture passes on the Apple M3 Max
+  at `cdede389`. Route integration now retains the native provider through completion, invalidates discarded history,
+  prepares its WGSL twin and exposes labelled submitted output/history taps and simulator cancellation counters.
+  Scoped native/Web/mobile compilation, graph and iOS lease/input/world-policy CPU tests pass. Integrated Metal,
+  simulator and T2 proofs plus the exact baseline/repository gate are queued behind the shared GPU; no integrated
+  item acceptance is claimed. [Continuation record](../../evidence/APPLE-TILE/M10-handoff.md) names the jobs and limits.
+  D10.5 still needs the owner's unlocked active Mac session and existing OS-observer Screen Recording grant.
