@@ -142,11 +142,18 @@ def collect(args, output, name, tap, replace=False, grid=False, traced=False, in
         raise RuntimeError('less than 16 GiB free before this arm; no attempt consumed')
     ledger_path = ROOT / 'tmp/mac-m2/presented-commission-20261111.json' if presented else LEDGER
     allowance = 6 if presented else 2
+    if args.post_apple_tile_m3:
+        ledger_path = ROOT / 'tmp/mac-m3/recording-commission.json'
+        allowance = 2
     hypothesis = ('The full Game Performance 16s window retained the full marked interval but exceeded its bounded process deadline. Use only Metal Application, Display and Points of Interest to reduce unrelated system-wide event and finalization volume, keeping the same 16s window and game. Require complete markers, drawable joins and bounded completion.' if args.presented_minimal else 'Explicit --window 16s replaces the template 5s ring buffer; retained ca-client-presented-handler rows must span both Whole markers. Empty display tables are recorded, not a failure.') if presented else OS_LOG_HYPOTHESIS if include_os_logs else HYPOTHESIS
     if presented and args.presented_deferred:
         hypothesis = 'The three-instrument 16s ring window finalized within bounds but retained only the final 1.075s of drawable events. Remove --window entirely and use the installed Blank template with windowLimit=0 (non-windowed default), retaining the same Metal Application/Display/Points of Interest instruments and game. Require both Whole markers inside retained presented times and bounded completion.'
     if traced:
         ledger = json.loads(ledger_path.read_text()) if ledger_path.exists() else {'commission': '11-November-2026-presented-time-ab66bca5' if presented else '9-November-2026', 'attempts': []}
+        if args.post_apple_tile_m3:
+            ledger['commission'] = 'PLATFORM-RUNTIME-MAC-M3-one-recording-per-traced-arm'
+            if any(Path(attempt['arm']).name == name for attempt in ledger['attempts']):
+                raise RuntimeError('BLOCKED: M3 grants one recording per traced arm; scoped re-plan required')
         if len(ledger['attempts']) >= allowance:
             raise RuntimeError(f'BLOCKED: {allowance}-attempt trace allowance exhausted; scoped re-plan required')
         if presented and any(a['hypothesis'] == hypothesis and a['status'].startswith('failed') for a in ledger['attempts']):
@@ -254,12 +261,16 @@ def main():
     parser.add_argument('--store', type=Path, default=ROOT / 'tmp/mac-m2/valley')
     parser.add_argument('--identity', type=Path, help='identity.json from this build’s freshly qualified window arms; required for presented arms')
     parser.add_argument('--window-only', action='store_true', help='collect only untraced window proofs without spending a trace recording')
+    parser.add_argument('--post-apple-tile-m3', action='store_true',
+                        help='M3 commission: one recording per traced arm, no diagnostic attempts')
     parser.add_argument('--diagnostic-with-os-logs', action='store_true',
                         help='use the remaining diagnostic attempt for OFF with OS logs after the empty-display probe')
     parser.add_argument('--presented-deferred', action='store_true', help='omit --window; installed Blank template has windowLimit=0')
     parser.add_argument('--presented-minimal', action='store_true', help='Blank template plus Metal Application, Display and Points of Interest; fewer system-wide sources')
     parser.add_argument('--presented-arm', choices=['on-traced', 'off-traced', 'on-untraced'], help='11 November reviewed presented-time commission; one arm per invocation')
     args = parser.parse_args()
+    if args.post_apple_tile_m3 and not (args.presented_arm and args.presented_minimal and args.presented_deferred):
+        parser.error('--post-apple-tile-m3 requires a presented arm and the qualified minimal/deferred configuration')
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     try:
