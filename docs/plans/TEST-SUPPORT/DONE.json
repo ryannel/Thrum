@@ -1,131 +1,131 @@
 {
- "module": "TEST-SUPPORT",
- "milestones": [
-  {
-   "id": "M1",
-   "name": "A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a printed reason, or fails when a GPU is required",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "REPO-RULES:M1"
-   ],
-   "quality_bar": "As dependable as wgpu's own `gpu_test` harness: one way to ask for a device, a skip that always says why, and no machine on which a missing GPU can pass for a run.",
-   "items": [
+  "module": "TEST-SUPPORT",
+  "milestones": [
     {
-     "id": "M1.1",
-     "statement": "`thrum-test-support` is registered in `.config/architecture.toml` as a dev-only crate: no package has it as a normal or build dependency, and the `dev-only-crates` rule refuses one.",
-     "check": "python3 scripts/shape_rules.py check --rule dev-only-crates --zero .",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
+      "id": "M1",
+      "name": "A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a printed reason, or fails when a GPU is required",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "REPO-RULES:M1"
+      ],
+      "quality_bar": "As dependable as wgpu's own `gpu_test` harness: one way to ask for a device, a skip that always says why, and no machine on which a missing GPU can pass for a run.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`thrum-test-support` is registered in `.config/architecture.toml` as a dev-only crate: no package has it as a normal or build dependency, and the `dev-only-crates` rule refuses one.",
+          "check": "python3 scripts/shape_rules.py check --rule dev-only-crates --zero .",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "A test asks for a GPU through one gate. With an adapter it runs. With none it prints a line that names the test and the reason and returns, and with `THRUM_REQUIRE_GPU=1` it fails. `./dev check` sets the variable on macOS, so on this Mac a missing adapter can never pass for a run.",
+          "check": "cargo test --locked --offline -p thrum-test-support",
+          "ask": "Read the gate and its tests. Is the no-adapter path exercised by a test that forces it, in both modes? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "Every GPU test and bench in `thrum-sea`, `thrum-asset-gpu` and `thrum-cook` takes its device through the gate: `device-request` is at zero for those crates, and their tests pass.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-sea crates/thrum-asset-gpu crates/thrum-cook && cargo test --locked --offline -p thrum-sea -p thrum-asset-gpu -p thrum-cook'",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "The tests that ran in those crates before run now, and none that ran on this Mac is skipped.",
+          "ask": "Compare the recorded test lists before and after for the three crates: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     },
     {
-     "id": "M1.2",
-     "statement": "A test asks for a GPU through one gate. With an adapter it runs. With none it prints a line that names the test and the reason and returns, and with `THRUM_REQUIRE_GPU=1` it fails. `./dev check` sets the variable on macOS, so on this Mac a missing adapter can never pass for a run.",
-     "check": "cargo test --locked --offline -p thrum-test-support",
-     "ask": "Read the gate and its tests. Is the no-adapter path exercised by a test that forces it, in both modes? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M1.3",
-     "statement": "Every GPU test and bench in `thrum-sea`, `thrum-asset-gpu` and `thrum-cook` takes its device through the gate: `device-request` is at zero for those crates, and their tests pass.",
-     "check": "sh -c 'python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-sea crates/thrum-asset-gpu crates/thrum-cook && cargo test --locked --offline -p thrum-sea -p thrum-asset-gpu -p thrum-cook'",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M1.4",
-     "statement": "The tests that ran in those crates before run now, and none that ran on this Mac is skipped.",
-     "ask": "Compare the recorded test lists before and after for the three crates: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M1.5",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
+      "id": "M2",
+      "name": "Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]`",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "HOST:M1",
+        "ATMOSPHERE:M9",
+        "APPLE-TILE:M10",
+        "APPLE-PRESENTATION:M3",
+        "EFFECT-GRAPH:M3",
+        "CULLING:M3"
+      ],
+      "quality_bar": "As dependable as wgpu's own `gpu_test` harness, across the whole workspace: the same answer to 'does this test need a GPU' in every file, and a Linux or Windows run that neither fails for want of an adapter nor hides a CPU test.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device.",
+          "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "No test file is gated as a whole on an operating system: `whole-file-gpu-gate` is at zero, the CPU-only graph validation tests build on every platform, and a Metal-only test is gated on the test, with its reason.",
+          "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
+          "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition? Does any GPU test still return early without printing why?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`.",
+          "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "The tests that ran before run now and pass on this Mac, and none that ran here is skipped.",
+          "ask": "Compare the recorded `cargo test --workspace -- --list` output before and after: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
-   ]
-  },
-  {
-   "id": "M2",
-   "name": "Every GPU test in the engine goes through the gate, the graph tests that need no GPU run on every platform, and no test shares code by `#[path]`",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "HOST:M1",
-    "ATMOSPHERE:M9",
-    "APPLE-TILE:M10",
-    "APPLE-PRESENTATION:M3",
-    "EFFECT-GRAPH:M3",
-    "CULLING:M3"
-   ],
-   "quality_bar": "As dependable as wgpu's own `gpu_test` harness, across the whole workspace: the same answer to 'does this test need a GPU' in every file, and a Linux or Windows run that neither fails for want of an adapter nor hides a CPU test.",
-   "items": [
-    {
-     "id": "M2.1",
-     "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device.",
-     "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M2.2",
-     "statement": "No test file is gated as a whole on an operating system: `whole-file-gpu-gate` is at zero, the CPU-only graph validation tests build on every platform, and a Metal-only test is gated on the test, with its reason.",
-     "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
-     "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition? Does any GPU test still return early without printing why?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M2.3",
-     "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`.",
-     "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M2.4",
-     "statement": "The tests that ran before run now and pass on this Mac, and none that ran here is skipped.",
-     "ask": "Compare the recorded `cargo test --workspace -- --list` output before and after: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M2.5",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    }
-   ]
-  }
- ]
+  ]
 }

@@ -34,12 +34,12 @@
       }
     },
     "M2": {
-      "definitions": "b73217ee768213bf9168a69cf0577edba46d8b6445af23a7f9b02390a4a26cf2",
+      "definitions": "2d56a719f50a648617f08c09ed5ae11f0e1e8edecc88188bf1131a780220e21d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T16:54:40Z"
+        "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
+        "at": "2026-11-14T22:15:19Z"
       }
     },
     "M3": {
@@ -117,11 +117,15 @@
     {
       "task": "Two tasks in one pass.\n1) Owner decision, 14 Nov 2026: \"Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands.\" Split the swarm-goal modules (SIM-2D, RENDER-2D, TRANSPORT, GAME-UI, SESSION, SWARM and any others from docs/design/NEXT-GOAL-SWARM-GAME.md) into reusable 2D engine work and swarm-game work. Engine work loses its gate on SHOWCASE:M8 and keeps only edges where it needs another milestone's actual output; where an engine milestone is shaped by the swarm game, state its requirement generically so the engine does not depend on game code. Game work (SWARM and any game-specific milestones) stays gated on SHOWCASE:M8. Where a module mixes both, move the game milestones into the game module rather than gating engine ones. Engine designs that change need their design reviews.\n2) APPLE-PRESENTATION M4 to M11 have no done-when entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them (docs/evidence/dependency-audit-2026-11-14/README.md). Write their done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3, which a builder holds.\nSay which milestones can start once this lands.",
       "at": "2026-11-14T21:26:25Z"
+    },
+    {
+      "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive that work?\" So the decisions below are made; plan them as buildable milestones, not human decisions.\n\n1) Code review fixes. A whole-repository review is at /Users/ryannel/Workspace/thrum/tmp/code-review-2026-11-14/CODE-REVIEW.md, with slices in sections/ beside it. Copy it into docs/evidence/code-review-2026-11-14/ and plan its fixes. The canonical shapes are already written in .agents/skills/thrum-engineering/references/patterns.md (review step 1); add the review's mechanical repo_check rules. Then follow its order of attack: confirmed bugs first (H01, H09, M41, H11, H14), then typed Rust-WGSL records and typed pass keys (T1, T2), test support and one GPU gate (T6), one device recipe and host core (T4), error convention (T3), performance (T12), and renames and splits (T9, T10) as one planned architecture milestone, then hygiene (T13). Give each fix to the module that owns the code, or a new module where none does. Modules are cut by isolation and ownership, and each delivers milestone by milestone in order; do not split CLOUDS or WATERS or change their milestones. Sequence work so it does not rewrite files that running builders hold (CULLING M3, APPLE-PRESENTATION M3, APPLE-TILE M10, CREATOR M3, EFFECT-GRAPH M3, ATMOSPHERE M9, CLOUDS M1, WATERS M1); later milestones of those modules may be rebased onto it.\n   H03 decision: no Git history rewrite (it would need a force-push to main under many live worktrees). Plan the forward fix only: bulk media and archives leave the tracked tree under docs/ASSET-LIFECYCLE.md's storage rules (untrack at HEAD, keep selected small evidence), and repo_check stops new bulk binaries being committed. Keep evidence links that reviews depend on resolvable.\n\n2) Separate the game from the engine. Owner: \"it sounds like we're blurring the lines between the engine and the game a ton. Please let's separate out the game as much as we can, it shouldn't even sit in the same code base ideally.\" Today examples/v1-game (26k lines) holds engine host and shell code (host, window, browser, camera, projection, controls), engine qualification rigs (H20), and engine tests compile its source (H02/H13); thrum-cook depends on examples/asset-loop (H19); ARCHITECTURE places CLOUDS and PUDDLES selections in v1-game. Design the end state where the game lives in its own repository and depends only on the engine's public API: engine host/shell code moves into engine crates (also H15/M03), qualification moves into the owning crates or an engine-side harness, shared fixtures move to engine test support, and repo_check enforces the boundary. Stage it: first make the boundary real inside this repository, then move the game out.\n   Repository decision: the game moves to a new local Git repository at /Users/ryannel/Workspace/thrum-games (v1-game now; the swarm game later), with no remote until the owner asks for one. It consumes the engine through Cargo path dependencies on a sibling Thrum checkout, so engine changes surface in the game at once; switching to pinned git revisions is a later step once the engine has releases. The last stage creates that repository, moves the game with its history-free copy, and leaves Thrum with no game code. The upcoming swarm game follows the same shape from the start. V1 still exits through the showcase game, so keep its milestones buildable throughout and say how the V1 gate is verified once the game lives outside.\n\nSay which new milestones can start at once, and which wait for running builders.",
+      "at": "2026-11-14T22:15:19Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T21:26:25Z"
+    "at": "2026-11-14T22:15:19Z"
   },
   "design_history": [
     {

@@ -1,333 +1,333 @@
 {
- "module": "GAME-SPLIT",
- "milestones": [
-  {
-   "id": "M1",
-   "name": "From any engine checkout, one command builds and tests a game in a games repository against that checkout",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "REPO-RULES:M1"
-   ],
-   "quality_bar": "The relationship Bevy, Godot and Fyrox have with the games built on them, kept honest by a gate in the manner of rust-lang's crater: the engine is checked alone, and a game is checked against the exact engine commit in question.",
-   "items": [
+  "module": "GAME-SPLIT",
+  "milestones": [
     {
-     "id": "M1.1",
-     "statement": "`python3 scripts/game_gate.py <game> <command>` finds the games repository beside the main checkout, or where `THRUM_GAMES` says, builds the named game against the engine checkout the command runs in, and runs the game's command. A game whose manifests name `../../thrum/crates/…` builds against a builder's worktree with no change to the game.",
-     "check": "python3 scripts/test_game_gate.py",
-     "ask": "Read the test. Does it make a scratch games repository and two engine trees that differ, and show the game built against the tree the gate ran in and not the sibling one? Does it pass with no `thrum-games` on the machine?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
+      "id": "M1",
+      "name": "From any engine checkout, one command builds and tests a game in a games repository against that checkout",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "REPO-RULES:M1"
+      ],
+      "quality_bar": "The relationship Bevy, Godot and Fyrox have with the games built on them, kept honest by a gate in the manner of rust-lang's crater: the engine is checked alone, and a game is checked against the exact engine commit in question.",
+      "items": [
+        {
+          "id": "M1.1",
+          "statement": "`python3 scripts/game_gate.py <game> <command>` finds the games repository beside the main checkout, or where `THRUM_GAMES` says, builds the named game against the engine checkout the command runs in, and runs the game's command. A game whose manifests name `../../thrum/crates/\u2026` builds against a builder's worktree with no change to the game.",
+          "check": "python3 scripts/test_game_gate.py",
+          "ask": "Read the test. Does it make a scratch games repository and two engine trees that differ, and show the game built against the tree the gate ran in and not the sibling one? Does it pass with no `thrum-games` on the machine?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.2",
+          "statement": "The gate never writes into the games repository, refuses a games tree with uncommitted changes unless told to take it as it stands, and its record names both revisions, the engine's and the game's.",
+          "ask": "After a gate run, is the games repository's working tree, lockfile and index exactly as before? What does the record hold when the games tree was taken as it stands?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "With no games repository the gate says so and exits with a code of its own, and `./dev check` needs none: the engine is checked without any game.",
+          "ask": "Is the exit code for a missing repository distinct from a failed build and from a failed game check? Does anything in `./dev check` call the gate?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.4",
+          "statement": "`boundary` runs the shape rules on a game: its only path dependencies are packages under the engine's `crates/`, and no source file or build script reaches outside the game except through them.",
+          "ask": "Does the test's scratch game fail `boundary` when it depends on a package under the engine's `examples/`, and when it includes a file from the engine's source by path?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     },
     {
-     "id": "M1.2",
-     "statement": "The gate never writes into the games repository, refuses a games tree with uncommitted changes unless told to take it as it stands, and its record names both revisions, the engine's and the game's.",
-     "ask": "After a gate run, is the games repository's working tree, lockfile and index exactly as before? What does the record hold when the games tree was taken as it stands?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
+      "id": "M2",
+      "name": "No engine crate reaches into a game or an example, and the engine's tests build with the games taken away",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "TEST-SUPPORT:M1",
+        "REVIEW-ENGINE:M3",
+        "CULLING:M3",
+        "EFFECT-GRAPH:M3",
+        "APPLE-PRESENTATION:M3"
+      ],
+      "quality_bar": "The line Bevy and wgpu hold between their crates and their examples: examples depend on the engine, never the other way, by any route a compiler can follow.",
+      "items": [
+        {
+          "id": "M2.1",
+          "statement": "`package-reach` is at zero for the whole repository: no source file includes another package's files, and no package under `crates/` depends on one under `examples/` in any way.",
+          "check": "python3 scripts/shape_rules.py check --rule package-reach --zero .",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M2.2",
+          "statement": "The mixed-mesh field that `thrum-render`'s visibility tests draw is a fixture in `thrum-test-support`, and the temporal witness and the cloud shader source are reached through `thrum-render`'s public API. The game and `thrum-asset-gpu` use the same fixture and accessors.",
+          "ask": "Does any engine test's result still depend on a file under `examples/`? Does the web build script still copy a file out of `thrum-render`'s source? Are the visibility tests' assertions and references unedited?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.3",
+          "statement": "Every package under `crates/` builds its tests with `examples/v1-game` and `examples/v1-game-ios` absent from the tree.",
+          "check": "python3 scripts/engine_alone.py check",
+          "ask": "Read the script. Does it work on a copy in which the two folders are really absent, and build tests and benches, not only libraries?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.4",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     },
     {
-     "id": "M1.3",
-     "statement": "With no games repository the gate says so and exits with a code of its own, and `./dev check` needs none: the engine is checked without any game.",
-     "ask": "Is the exit code for a missing repository distinct from a failed build and from a failed game check? Does anything in `./dev check` call the gate?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
+      "id": "M3",
+      "name": "The game builds and passes its own tests with every engine rig compiled out, and a normal build ships no test hooks",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "HOST:M4"
+      ],
+      "quality_bar": "A game that could be lifted out of the repository today: what Godot's demo projects are to Godot, with the engine's own test rigs kept on the engine's side of a line a compiler enforces.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "`examples/v1-game` has a `proving` feature, on by default, that holds every engine rig, selection and qualification export. With it off the package builds for the Mac and for wasm32, and the game's own tests pass.",
+          "check": "cargo test --locked --offline -p v1-game --no-default-features --test game_alone",
+          "ask": "With the feature off, does the library export anything that qualifies an engine module? Which tests are the game's own, and do they all run with it off? Is any test target declared with `required-features`, which would let another module's check pass by running nothing?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "Rigs that need no hosted scene live with the code they test: the cooked texture quality and staging-fault tests are `thrum-asset-gpu`'s.",
+          "check": "cargo test --locked --offline -p thrum-asset-gpu --features fault-probe --test cooked_fault_gpu --test cooked_texture_quality",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
+          "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "No file under `crates/` names a game: `game-names` refuses a game's package name, crate name or control key in engine source, and is at zero.",
+          "check": "python3 scripts/shape_rules.py check --rule game-names --zero crates",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "Every check that an open item in another module pins on `v1-game` still finds what it names, under the default features.",
+          "ask": "Take the open items in other modules whose checks name `-p v1-game`: does each named test target that existed at the starting commit still exist and run with no extra flag?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.6",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     },
     {
-     "id": "M1.4",
-     "statement": "`boundary` runs the shape rules on a game: its only path dependencies are packages under the engine's `crates/`, and no source file or build script reaches outside the game except through them.",
-     "ask": "Does the test's scratch game fail `boundary` when it depends on a package under the engine's `examples/`, and when it includes a file from the engine's source by path?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
+      "id": "M4",
+      "name": "The showcase game lives in `thrum-games`, builds against the engine through its public API alone, and passes the V1 exit check from there",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "SHOWCASE:M8"
+      ],
+      "quality_bar": "The showcase as a real external consumer, as a studio's game is of Unreal or a Bevy game is of Bevy: it builds from its own repository against an engine it cannot reach into, and the exit it passed inside the engine's repository it passes again from outside.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "`/Users/ryannel/Workspace/thrum-games` is a Git repository with no remote and one first commit: the V1 game as a copy with no history and no proving code, with its content, routes, presets, exit configuration, launcher and the baselines its checks compare with. Its packages reach the engine only by path to `../../thrum/crates/`.",
+          "check": "python3 scripts/game_gate.py v1-game boundary",
+          "ask": "Does `git -C` the games repository show one root commit and no remote? Does its tree hold any rig, selection or qualification export of an engine module?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "The game builds and passes its own tests from there against the engine checkout under test, for the Mac and for wasm32.",
+          "check": "python3 scripts/game_gate.py v1-game test",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "The V1 exit holds from outside. Launched through the gate, each of the three rows runs the six stops and the exit flythrough and reports what the exit configuration says, and the exit scene agrees with its retained baselines. The record names the engine and game revisions, and the V1 exit record gains a dated note of the run.",
+          "check": "python3 scripts/game_gate.py v1-game exit",
+          "lock": "gpu",
+          "ask": "Does `exit` run the commands `SHOWCASE` M5.5 and M7.2 to M7.5 pinned, on all three rows, with their thresholds and baselines unchanged? Is the Chrome row a real browser run?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "Thrum holds nothing that is the game's. The launcher, the exit configuration, the presets and the live copies of the exit baselines are in the games repository, and `scripts/run_v1_showcase.py` forwards to the gate so recorded command lines still run. What stays at `examples/v1-game` is the engine's proving ground, a frozen copy of the scenes its baselines and other modules' checks draw, and its README and crate docs say so.",
+          "ask": "What under `examples/`, `scripts/` or `docs/` in Thrum would a change to the showcase game still have to edit? Does the proving ground's first page say that it is engine test content and where the game is?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "The repository guard knows that games live outside: `.config/architecture.toml` declares no game in this workspace and the guard refuses a package that declares itself one. README, AGENTS, REPOSITORY and `thrum-engineering` say where the game is, how to build it against a checkout, and that an engine milestone proves itself in its own crate or the proving ground.",
+          "check": "sh -c 'python3 scripts/repo_check.py && ! grep -q external_game .config/architecture.toml'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M4.6",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     },
     {
-     "id": "M1.5",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
+      "id": "M5",
+      "name": "The proving ground carries its own name, the game's iPhone app has followed the game, and nothing in Thrum is called a game",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "CLOUDS:M12",
+        "GAME-UI:M6",
+        "PUDDLES:M6",
+        "RENDER-2D:M5",
+        "ATMOSPHERE:M8",
+        "CONTENT-LOOP:M2",
+        "SESSION:M6",
+        "TRANSPORT:M2"
+      ],
+      "quality_bar": "A repository whose names tell the truth, as Bevy's `examples/` and `benches/` do: a newcomer never mistakes the engine's test content for a game.",
+      "items": [
+        {
+          "id": "M5.1",
+          "statement": "The package at `examples/v1-game` is renamed for what it is, in its folder, package name, crate docs, scripts and the baseline registry's covered paths, and every name an open item's check uses still works.",
+          "check": "sh -c 'test ! -e examples/v1-game && python3 scripts/open_check_names.py verify'",
+          "ask": "Did the registry change anything but paths? Does any document a builder reads first still call the proving ground a game?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.2",
+          "statement": "The game's iPhone app is in the games repository, on the engine's shared shell, and passes its simulator checks through the gate.",
+          "check": "python3 scripts/game_gate.py v1-game ios-sim",
+          "lock": "gpu",
+          "ask": "Is any iPhone code of the game's left in Thrum? Simulator results are function only: is anything else claimed?",
+          "target": "ios-sim",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.3",
+          "statement": "No package or folder under `crates/`, `examples/` or `tools/` is a game or is named for one, and a script names a game only to forward to the gate.",
+          "check": "python3 scripts/shape_rules.py check --rule game-names --zero crates examples tools",
+          "ask": "Which scripts still name the V1 game, and does each only forward to the gate or record history?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M5.4",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
-   ]
-  },
-  {
-   "id": "M2",
-   "name": "No engine crate reaches into a game or an example, and the engine's tests build with the games taken away",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "TEST-SUPPORT:M1",
-    "REVIEW-ENGINE:M3",
-    "CULLING:M3",
-    "EFFECT-GRAPH:M3",
-    "APPLE-PRESENTATION:M3"
-   ],
-   "quality_bar": "The line Bevy and wgpu hold between their crates and their examples: examples depend on the engine, never the other way, by any route a compiler can follow.",
-   "items": [
-    {
-     "id": "M2.1",
-     "statement": "`package-reach` is at zero for the whole repository: no source file includes another package's files, and no package under `crates/` depends on one under `examples/` in any way.",
-     "check": "python3 scripts/shape_rules.py check --rule package-reach --zero .",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M2.2",
-     "statement": "The mixed-mesh field that `thrum-render`'s visibility tests draw is a fixture in `thrum-test-support`, and the temporal witness and the cloud shader source are reached through `thrum-render`'s public API. The game and `thrum-asset-gpu` use the same fixture and accessors.",
-     "ask": "Does any engine test's result still depend on a file under `examples/`? Does the web build script still copy a file out of `thrum-render`'s source? Are the visibility tests' assertions and references unedited?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M2.3",
-     "statement": "Every package under `crates/` builds its tests with `examples/v1-game` and `examples/v1-game-ios` absent from the tree.",
-     "check": "python3 scripts/engine_alone.py check",
-     "ask": "Read the script. Does it work on a copy in which the two folders are really absent, and build tests and benches, not only libraries?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M2.4",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    }
-   ]
-  },
-  {
-   "id": "M3",
-   "name": "The game builds and passes its own tests with every engine rig compiled out, and a normal build ships no test hooks",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "HOST:M4"
-   ],
-   "quality_bar": "A game that could be lifted out of the repository today: what Godot's demo projects are to Godot, with the engine's own test rigs kept on the engine's side of a line a compiler enforces.",
-   "items": [
-    {
-     "id": "M3.1",
-     "statement": "`examples/v1-game` has a `proving` feature, on by default, that holds every engine rig, selection and qualification export. With it off the package builds for the Mac and for wasm32, and the game's own tests pass.",
-     "check": "cargo test --locked --offline -p v1-game --no-default-features --test game_alone",
-     "ask": "With the feature off, does the library export anything that qualifies an engine module? Which tests are the game's own, and do they all run with it off? Is any test target declared with `required-features`, which would let another module's check pass by running nothing?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M3.2",
-     "statement": "Rigs that need no hosted scene live with the code they test: the cooked texture quality and staging-fault tests are `thrum-asset-gpu`'s.",
-     "check": "cargo test --locked --offline -p thrum-asset-gpu --features fault-probe --test cooked_fault_gpu --test cooked_texture_quality",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M3.3",
-     "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
-     "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M3.4",
-     "statement": "No file under `crates/` names a game: `game-names` refuses a game's package name, crate name or control key in engine source, and is at zero.",
-     "check": "python3 scripts/shape_rules.py check --rule game-names --zero crates",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M3.5",
-     "statement": "Every check that an open item in another module pins on `v1-game` still finds what it names, under the default features.",
-     "ask": "Take the open items in other modules whose checks name `-p v1-game`: does each named test target that existed at the starting commit still exist and run with no extra flag?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M3.6",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    }
-   ]
-  },
-  {
-   "id": "M4",
-   "name": "The showcase game lives in `thrum-games`, builds against the engine through its public API alone, and passes the V1 exit check from there",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "SHOWCASE:M8"
-   ],
-   "quality_bar": "The showcase as a real external consumer, as a studio's game is of Unreal or a Bevy game is of Bevy: it builds from its own repository against an engine it cannot reach into, and the exit it passed inside the engine's repository it passes again from outside.",
-   "items": [
-    {
-     "id": "M4.1",
-     "statement": "`/Users/ryannel/Workspace/thrum-games` is a Git repository with no remote and one first commit: the V1 game as a copy with no history and no proving code, with its content, routes, presets, exit configuration, launcher and the baselines its checks compare with. Its packages reach the engine only by path to `../../thrum/crates/`.",
-     "check": "python3 scripts/game_gate.py v1-game boundary",
-     "ask": "Does `git -C` the games repository show one root commit and no remote? Does its tree hold any rig, selection or qualification export of an engine module?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M4.2",
-     "statement": "The game builds and passes its own tests from there against the engine checkout under test, for the Mac and for wasm32.",
-     "check": "python3 scripts/game_gate.py v1-game test",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M4.3",
-     "statement": "The V1 exit holds from outside. Launched through the gate, each of the three rows runs the six stops and the exit flythrough and reports what the exit configuration says, and the exit scene agrees with its retained baselines. The record names the engine and game revisions, and the V1 exit record gains a dated note of the run.",
-     "check": "python3 scripts/game_gate.py v1-game exit",
-     "lock": "gpu",
-     "ask": "Does `exit` run the commands `SHOWCASE` M5.5 and M7.2 to M7.5 pinned, on all three rows, with their thresholds and baselines unchanged? Is the Chrome row a real browser run?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M4.4",
-     "statement": "Thrum holds nothing that is the game's. The launcher, the exit configuration, the presets and the live copies of the exit baselines are in the games repository, and `scripts/run_v1_showcase.py` forwards to the gate so recorded command lines still run. What stays at `examples/v1-game` is the engine's proving ground, a frozen copy of the scenes its baselines and other modules' checks draw, and its README and crate docs say so.",
-     "ask": "What under `examples/`, `scripts/` or `docs/` in Thrum would a change to the showcase game still have to edit? Does the proving ground's first page say that it is engine test content and where the game is?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M4.5",
-     "statement": "The repository guard knows that games live outside: `.config/architecture.toml` declares no game in this workspace and the guard refuses a package that declares itself one. README, AGENTS, REPOSITORY and `thrum-engineering` say where the game is, how to build it against a checkout, and that an engine milestone proves itself in its own crate or the proving ground.",
-     "check": "sh -c 'python3 scripts/repo_check.py && ! grep -q external_game .config/architecture.toml'",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    },
-    {
-     "id": "M4.6",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    }
-   ]
-  },
-  {
-   "id": "M5",
-   "name": "The proving ground carries its own name, the game's iPhone app has followed the game, and nothing in Thrum is called a game",
-   "status": "not_started",
-   "failed_reviews": 0,
-   "failed_reviews_with_repeat": 0,
-   "diagnoses": 0,
-   "depends_on": [
-    "CLOUDS:M12",
-    "GAME-UI:M6",
-    "PUDDLES:M6",
-    "RENDER-2D:M5",
-    "ATMOSPHERE:M8",
-    "CONTENT-LOOP:M2",
-    "SESSION:M6",
-    "TRANSPORT:M2"
-   ],
-   "quality_bar": "A repository whose names tell the truth, as Bevy's `examples/` and `benches/` do: a newcomer never mistakes the engine's test content for a game.",
-   "items": [
-    {
-     "id": "M5.1",
-     "statement": "The package at `examples/v1-game` is renamed for what it is, in its folder, package name, crate docs, scripts and the baseline registry's covered paths, and every name an open item's check uses still works.",
-     "check": "sh -c 'test ! -e examples/v1-game && python3 scripts/open_check_names.py verify'",
-     "ask": "Did the registry change anything but paths? Does any document a builder reads first still call the proving ground a game?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M5.2",
-     "statement": "The game's iPhone app is in the games repository, on the engine's shared shell, and passes its simulator checks through the gate.",
-     "check": "python3 scripts/game_gate.py v1-game ios-sim",
-     "lock": "gpu",
-     "ask": "Is any iPhone code of the game's left in Thrum? Simulator results are function only: is anything else claimed?",
-     "target": "ios-sim",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M5.3",
-     "statement": "No package or folder under `crates/`, `examples/` or `tools/` is a game or is named for one, and a script names a game only to forward to the gate.",
-     "check": "python3 scripts/shape_rules.py check --rule game-names --zero crates examples tools",
-     "ask": "Which scripts still name the V1 game, and does each only forward to the gate or record history?",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": "",
-     "verdict": "",
-     "review": ""
-    },
-    {
-     "id": "M5.4",
-     "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
-     "check": "python3 scripts/exact_baselines.py verify",
-     "lock": "gpu",
-     "target": "mac-metal",
-     "builder_result": "open",
-     "evidence": ""
-    }
-   ]
-  }
- ]
+  ]
 }
