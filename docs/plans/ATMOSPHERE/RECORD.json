@@ -1,10 +1,10 @@
 {
   "module": "ATMOSPHERE",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/ATMOSPHERE/design-review.md",
-    "commit": "ea124871d9744fee4264447e8d4a99c6bcae4dac",
-    "hash": "cba31dd640ec53c4f9d2b4aa665a5cca3ede405de7c0cad194ea56af559db6aa",
+    "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
+    "hash": "64a3879192a14b614eb64f6d9af40d62e93368a21f3e737e9d86efb83d51fcd8",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 101485,
-      "cached": 1116672,
-      "output": 7804,
+      "input": 107331,
+      "cached": 1462656,
+      "output": 8764,
       "turns": 1
     },
-    "at": "2026-11-14T09:19:12Z"
+    "at": "2026-11-14T13:18:35Z"
   },
   "milestones": {
     "M5": {
@@ -112,21 +112,23 @@
       }
     },
     "M7": {
-      "definitions": "ff012e617a272c12a5d4386f9550286aae4e0f12fd09badc1b02318f9ea0ee65",
+      "definitions": "79679c0cabb2ff3294a395b802fbc244311f8c065b9207f9a3b8979cd2b9bdcb",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "by": "design review",
+        "review": "docs/evidence/ATMOSPHERE/design-review.md",
+        "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
+        "at": "2026-11-14T13:18:35Z"
       }
     },
     "M8": {
-      "definitions": "b42602a01f5da2fb697286608c869a6e89638aa3ae8af163054d6c04e40bf412",
+      "definitions": "cbb7cc9c3a9d23db8b70265555377a3d3203fe31dbf0c48baf1cda6fba8002a1",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "by": "design review",
+        "review": "docs/evidence/ATMOSPHERE/design-review.md",
+        "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
+        "at": "2026-11-14T13:18:35Z"
       }
     }
   },
@@ -239,6 +241,29 @@
         "turns": 1
       },
       "at": "2026-11-11T06:08:18Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/ATMOSPHERE/design-review-5.md",
+      "commit": "ea124871d9744fee4264447e8d4a99c6bcae4dac",
+      "hash": "cba31dd640ec53c4f9d2b4aa665a5cca3ede405de7c0cad194ea56af559db6aa",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 101485,
+        "cached": 1116672,
+        "output": 7804,
+        "turns": 1
+      },
+      "at": "2026-11-14T09:19:12Z"
     }
   ]
 }
