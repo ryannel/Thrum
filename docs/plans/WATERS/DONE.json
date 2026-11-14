@@ -229,9 +229,20 @@
         },
         {
           "id": "M12.6",
-          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, and says where a point is dry. Where a crest overhangs it gives the highest surface in the column, by the design's bounded scan of the throw: across a breaking crest thrown as far as the first profile's table throws one, its height lies between the least and the greatest height that a cut of the section, made in the test without the model's inversion, gives within one scan step of the point along the crest's travel. The plain iteration on horizontal displacement, run through the same assertion, fails it under the lip. Without surf every answer is M1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
+          "statement": "With surf in the profile the f64 surface model gives the height, slope, surface velocity and rate of height of the transformed and shaped surface, and says where a point is dry. Where a crest overhangs it gives the highest surface in the column, which M12.12 holds. Without surf every answer is M1's to the last bit. On a sea with no bed in reach the answers with and without surf are the same. The conformance harness reports a provider that leaves the transform out by the points where it differs.",
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_surface",
-          "ask": "Read the test. Is the reference a fine polyline of the thrown section cut by the vertical line over each point, written without the scan? Do its points include columns that hold three surfaces, as x = 3.8 m does in part V of `docs/evidence/WATERS/design-proof/surf_revision_proof.py`, and does the plain iteration fail there by most of the crest's height?",
+          "ask": "Read the test. Does it compare the answers without surf with M1's bit for bit, and is the harness's provider the model with only the transform left out?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M12.12",
+          "statement": "The highest surface in a column is found by the design's cut of the sheet within the point's throw reach. On three sheets the test makes, at every point tried, the model's height lies between the least and the greatest height that the test's own cut gives within one cut cell of the point: a straight crest thrown as far as the first profile's table throws one; two trains crossing at a right angle, with heights of two to one, over a level bed shallow enough for their crests to be thrown; and a beach where three trains shoal and turn and the section follows the breaking index. The test's own cut evaluates the sheet forward on a lattice an eighth of the cut cell or finer, with no throw reach, search or inversion of the model's in it. On each sheet no thrown rest place the test evaluates is further from its own world place than the model's throw reach there, and every answer whose refinement converged maps to its point within the column tolerance. The plain iteration on horizontal displacement fails the same assertion under the straight crest's lip, and a scan of the throw along the crest's direction at the point, bounded by the envelope there, fails it on the crossing trains.",
+          "check": "cargo test --locked --offline -p thrum-water-model --test surf_cut",
+          "ask": "Read the test. Is its reference the sheet's own forward evaluation on a finer lattice, cut by the vertical line over each point, with nothing of the model's search in it? On each sheet do the points include columns that hold three surfaces, and on the crossing trains a rest place set over its own world place, as in part X of `docs/evidence/WATERS/design-proof/surf_cut_proof.py`? Do the two wrong substitutes fail by a large part of a crest's height, and not by a rounding?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -250,9 +261,9 @@
         },
         {
           "id": "M12.8",
-          "statement": "What the transform costs to prepare is on record in `docs/evidence/WATERS/M12-preparation.md`: for a 1 km bed on 4 m cells with a 2 m range of stage, on this Mac, the time to solve the lags and exposures and the bytes they occupy. No figure in the record decides this item.",
+          "statement": "What the transform costs is on record in `docs/evidence/WATERS/M12-preparation.md`: for a 1 km bed on 4 m cells with a 2 m range of stage, on this Mac, the time to solve the lags and exposures and the bytes they and the bed's pyramid occupy; and on each of M12.12's sheets, the nodes the model's cut evaluates for a point and the time it takes. No figure in the record decides this item.",
           "check": "test -s docs/evidence/WATERS/M12-preparation.md",
-          "ask": "Does the record give the time and the bytes with the commit and the load on the machine, and say how each grows with the bed's cells and the stage's range?",
+          "ask": "Does the record give the time and the bytes with the commit and the load on the machine, and say how each grows with the bed's cells and the stage's range? Does it give the cut's nodes and time on each sheet?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1078,7 +1089,7 @@
         },
         {
           "id": "M13.2",
-          "statement": "Surf is a capability. A profile without it creates no lag or exposure texture, makes none of their reads and evaluates no section.",
+          "statement": "Surf is a capability. A profile without it creates no lag texture, exposure texture or bed pyramid, makes none of their reads and evaluates no section.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_capability_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1089,9 +1100,9 @@
         },
         {
           "id": "M13.3",
-          "statement": "A float rides the crest the surface shows. In the surf on a plane beach the test makes, a float's answers are the model's at its use tick, the highest surface where a crest overhangs, and a float carried into the swash reads dry between waves and wet under each. At a point under a thrown lip, where the plain iteration settles on the trough, the float's height is the lip's.",
+          "statement": "A float rides the crest the surface shows. In the surf on a plane beach the test makes, under a swell of two trains from different directions, a float's answers are the model's at its use tick, the highest surface where a crest overhangs, and a float carried into the swash reads dry between waves and wet under each. At a point under a thrown lip, where the plain iteration settles on the trough, the float's height is the lip's.",
           "check": "cargo test --locked --offline -p water-scene --test surf_floating_gpu",
-          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface M12.6 holds to a cut of the section, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces?",
+          "ask": "Is the float's expected height taken from `thrum-water-model` with surf in the profile, whose highest surface M12.12 holds to the test's own cut, and would a query that left the transform out fail? Does one probe sit in a column that holds three surfaces, under a crest the two trains make together?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1185,7 +1196,7 @@
         },
         {
           "id": "M13.12",
-          "statement": "With surf running at the beach in a gale, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views, with the bytes of the lags and exposures and the reads they add to the field cache. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With surf running at the beach in a gale, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views, with the bytes of the lags and exposures and the reads they add to the field cache, and with the query's time and the nodes its cuts evaluate in a tick with every float in the breakers. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene surf",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -1452,9 +1463,9 @@
       "items": [
         {
           "id": "M15.1",
-          "statement": "A pixel is under water exactly when its own point on the near plane lies below the displaced surface there, which under a crest that overhangs is the highest surface in its column. With the lens half under in a swell, the pixels composed as under water in submitted frames are those `thrum-water-model` gives for that camera, to within a pixel of the line, on the sea, on the lake, in the swash and under a thrown lip. While the whole lens is above the water none of the capability's passes runs.",
+          "statement": "A pixel is under water exactly when its own point on the near plane lies below the displaced surface there, which under a crest that overhangs is the highest surface in its column. With the lens half under in a swell, the pixels composed as under water in submitted frames are those `thrum-water-model` gives for that camera, to within a pixel of the line, on the sea, on the lake, in the swash and under a lip that a crest of two crossing trains throws. While the whole lens is above the water none of the capability's passes runs.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test lens_gpu",
-          "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail?",
+          "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail? Does the lip's case put the lens in a column that holds three surfaces?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

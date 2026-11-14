@@ -24,9 +24,9 @@
         },
         {
           "id": "M1.2",
-          "statement": "`thrum-cloud-model` answers a point query for any world point with coverage, type, base, top, age and column optical depth. At coverage 0 every answer is valid and exactly zero. As coverage rises from 0 to 1, at both ends of the type axis, the share of cloudy columns in a square 20 lattice sites across never falls, and at 1 on the layered end no column is clear.",
+          "statement": "`thrum-cloud-model` answers a point query for any world point with coverage, type, base, top, age and column optical depth. Type is the weather's at every point, and where no placed shape stands in the column, base is the type's base height from the table, in cloud and in clear air alike. A clear column has coverage, age and column optical depth exactly zero and its top exactly at its base. At coverage 0 every column is clear and every answer is valid. As coverage rises from 0 to 1, at both ends of the type axis, the share of cloudy columns in a square 20 lattice sites across never falls, and at 1 on the layered end no column is clear.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test field",
-          "ask": "Is the type table the test's own, with no name or value that belongs to a game? Does the test cover both ends of the type axis and the middle?",
+          "ask": "Is the type table the test's own, with no name or value that belongs to a game? Does the test cover both ends of the type axis and the middle? Does it read clear columns beside cloudy ones under a type whose base is far from zero, and would a clear answer that is zero in every field fail it?",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
@@ -45,9 +45,9 @@
         },
         {
           "id": "M1.4",
-          "statement": "The field never steps. At fixed air-frame points over a day, across births, deaths and generation boundaries, and across a ramp of coverage and of type, halving the time step halves the largest change in column optical depth, top and coverage, within the factor the test states. Where cells overlap, moving a point across the overlap changes them continuously.",
+          "statement": "Weather with no placed shape never steps. At fixed air-frame points over a day, across births, deaths and generation boundaries, across a ramp of coverage, and across a ramp of type between table rows whose base heights differ, each halving of the time step shrinks the largest change in column optical depth, in coverage, in top and in thickness (top less base) by at least the factor the test states, which a step could not meet. The points include ones that turn from clear to cloudy and back, and a cell that the test switches on between two samples fails the same assertion. Base changes only with the type. Where cells overlap, moving a point across the overlap changes those four continuously.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test continuity",
-          "ask": "Would a single cell that switched on between two samples fail this test? Does it sample finely enough in time to land inside a birth and a death?",
+          "ask": "Does the test measure top itself as well as top less base, at a point that turns from clear to cloudy under a type whose base is far from zero? Does it sample finely enough in time to land inside a birth and a death? Does the switched-on cell fail it in each of the four quantities?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -130,7 +130,7 @@
         },
         {
           "id": "M1.12",
-          "statement": "In a directed profile the state holds the game's shapes. One added at envelope 0 forms as its envelope moves toward its target over the response time, its growth moves the same way, and it is dropped once its envelope and its target are both 0. Over a directed shape the query returns its footprint at that point, scaled by its envelope and added to the cells and deck there; with coverage at 0 the query is zero everywhere outside the directed footprints. Through an add, a growth and a removal, halving the time step halves the largest change in column optical depth. A shape whose footprint would overlap another directed shape's, or one beyond the limit, is refused, the refusal is returned and counted, and the state is unchanged. A world point turned into the air frame and back after a day's travel at 40 m/s returns within the f64 rounding of the travel.",
+          "statement": "In a directed profile the state holds the game's shapes. One added at envelope 0 forms as its envelope moves toward its target over the response time, its growth moves the same way, and it is dropped once its envelope and its target are both 0. Over a directed shape the query returns its footprint at that point, scaled by its envelope and added to the cells and deck there; with coverage at 0 every column outside the directed footprints is clear. Through an add, a growth and a removal, halving the time step halves the largest change in column optical depth. A shape whose footprint would overlap another directed shape's, or one beyond the limit, is refused, the refusal is returned and counted, and the state is unchanged. A world point turned into the air frame and back after a day's travel at 40 m/s returns within the f64 rounding of the travel.",
           "check": "cargo test --locked --offline -p thrum-cloud-model --test directed",
           "ask": "Is the shape the test's own? Does the test add a shape where cells are alive and show that the column there is the sum, and does it try an overlapping add and an add beyond the limit?",
           "target": "mac-metal",

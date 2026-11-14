@@ -202,3 +202,15 @@
   and a component with no blend must fail. Suggestions taken: the foam's conservation is scoped to cover
   under the cap, and the caustic mask's use of the level is declared. The figures are parts U to W of
   [the design proof](../../evidence/WATERS/design-proof/README.md).
+- 2026-11-14 [The fifth design review](../../evidence/WATERS/design-review.md) asked for changes, one Must Fix:
+  the scan of the throw inverts a straight section and not the assembled sheet, where a surface arrives from
+  beside the line through the point and from an envelope larger than the point's. Re-planned; M1 is untouched.
+  The highest surface is now a cut of the sheet: forward evaluation on a 0.25 m lattice of rest places fixed in
+  the world, over the cells within a throw reach that needs no wave evaluated, refined on the assembled map.
+  Part X of [the design proof](../../evidence/WATERS/design-proof/README.md) holds it to a cut eight times
+  finer on three sheets, the review's among them. Continued below.
+- 2026-11-14 The same re-plan, continued. M12.12 is new and takes the highest surface from M12.6; M13.3 and
+  M15.1 put their lip under two crossing trains; M12.8 and M13.12 record the cut's cost, about 1,200 to 5,500
+  nodes a point where the scan took 40; M13.2 names the bed's pyramid. The breaker's look, the lags and every
+  seam with `SEA`, `RIVERS`, `PUDDLES`, `SCENE-VIEWS`, `ATMOSPHERE` and `CLOUDS` are unchanged. Neither
+  Suggestion was taken: M16's waterline crossing and a lake's surf by eye stay as the review left them.

@@ -340,16 +340,43 @@ with no GPU:
 - **Types** are game data: a table along the type axis giving base height, depth range, liquid water content,
   droplet radius, the shares of cells and deck, and a vertical profile. The engine interpolates it. Extinction
   is physical: `σ = 3·LWC / (2·ρ_water·r_droplet)` in m⁻¹, about 0.06 m⁻¹ for 0.4 g/m³ and 10 µm.
-- **Continuity.** The field is continuous in space, in weather time and in every parameter. Where cells overlap
-  the column takes the larger depth and the larger profile, never a switch between cells.
+- **Continuity.** Under cells and the deck the field is continuous in space, in weather time and in every
+  parameter: its density at every point, and its column's optical depth, coverage, thickness and top. Where
+  cells overlap the column takes the larger depth and the larger profile, never a switch between cells.
+  [Outputs](#one-weather-field-in-the-air-frame) says what a placed shape's column does.
 - **Lattice and period are profile constants.** A preset never changes them, because scaling a lattice would move
   every cloud at once.
 - **Precision.** Site indices and generations are integers. Weather time reaches the GPU as an integer generation
   count and a fraction, and positions as integer texel coordinates plus a snapped anchor, so the GPU names the
   same cells as the CPU after any travel.
 
-**Outputs.** Coverage is the column's profile, 0 in clear air. Age is the dominant cell's life phase. A query
-outside nothing is invalid; valid clear weather returns zero.
+**Outputs.** A query outside nothing is invalid. Every valid answer is the weather's column at that point.
+
+- **Type** is the weather's, the same at every point: the type axis as the state holds it.
+- **Base and top** are heights in the world, and between them lies all of the column's condensate, with
+  nothing eroded. Under cells and the deck the base is the type's condensation level, which every column
+  shares, and the top is the base plus the column's **thickness**, its depth of cloud. Over a
+  [placed shape](#placed-volumes) they are the lowest and the highest height of the shape's own column, and
+  where a shape and weather share a column, the lower base and the higher top.
+- **Coverage** is the column's profile, and **age** the dominant cell's life phase.
+- **A clear column** has no thickness: its top is exactly its base, at the type's condensation level, and its
+  coverage, age and column optical depth are exactly zero. A consumer asks whether a column is clear by its
+  coverage or its optical depth, never by a height.
+
+No height is ever zero to mean that there is no cloud, for three reasons. Zero is a height like any other: a
+layered type's base may lie [at the ground](#condensate-that-meets-the-ground-mist-fog-and-low-cloud), and
+the ground may lie below zero. The [weather map](#the-weather-map) holds base and top and is read through a
+filter, so a clear texel that held zero beside a cloudy one would hang cloud below the shared base along
+every cloud's edge, where a clear texel that holds its base draws a thinner cloud on the same base. And a top
+that fell to zero as a cell cleared would step by the height of the base, where the cell's thickness goes to
+nothing smoothly.
+
+**What steps and what does not.** Thickness follows a cell's envelope and its rim to zero, so under cells and
+the deck the top comes down to the base as a column clears and rises from it as one forms. There the top, the
+thickness, the coverage and the optical depth never step, and the base moves only as the type does. A placed
+shape's extents are its geometry, and its envelope does not scale them: its base and top stand whole at its
+silhouette and from the tick its envelope leaves zero, while its optical depth and its density rise from
+zero. Age changes hands when another cell becomes the dominant one.
 
 **What a query promises.** Column optical depth is the vertical integral of the density below with nothing
 eroded: every noise term at its uneroded value. In the model that is exact at every point, for cells, the deck
@@ -405,12 +432,12 @@ darkened twice and no density is divided by a count.
 ### The weather map
 
 The GPU reads the field through a **weather map**: a few world-anchored wrapping levels in the air frame, whose
-texel doubles or quadruples outward to the horizon. A texel holds the field's column (base, top, profile, type)
-and, apart from it, two presentation values: the slot of at most one placed shape and the weight of its volume
-form. Compute passes in `simulate` evaluate the same cell and deck rules as the CPU. Because the map lives in
+texel doubles or quadruples outward to the horizon. A texel holds the field's column (base, top, profile, type),
+a clear one with its top at its base, and, apart from it, two presentation values: the slot of at most one
+placed shape and the weight of its volume form. Compute passes in `simulate` evaluate the same cell and deck rules as the CPU. Because the map lives in
 the air frame, wind costs nothing: only evolution and the camera's movement through the air need new texels, so
 the map is refreshed in parts. A coarse level of the tallest top in each region lets a ray step across empty
-air.
+air: a region is empty where its tallest top is no higher than the base.
 
 **The map holds nothing of the ground.** With ground condensate a texel also holds each ground row's **air
 factors**, and only those: its extent and the cut of its noise. A row's

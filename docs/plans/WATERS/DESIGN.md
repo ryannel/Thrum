@@ -1,9 +1,9 @@
 # Waters: one water system for every body of water
 
 14 November 2026, revised the same day for surf, mirrored scenery and the view from under water, again for
-light under water, and after the review of those revisions for
-[a lake's own waves](#surf-the-shore-transform-and-the-breaker) and
-[the highest surface under a crest](#bodies-and-the-query).
+light under water, after the review of those revisions for
+[a lake's own waves](#surf-the-shore-transform-and-the-breaker), and after the review of that for
+[the highest surface under a crest](#bodies-and-the-query), which is now a cut of the sheet.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -694,7 +694,7 @@ height, and is tuned against the inspected items of M13.
 **Readers.** The transform and the section are one function, in `thrum-water-model` in f64 and in WGSL, read
 by the field cache, the query, the foam's births and the conformance model. On the GPU the lags are one array
 texture and the exposures another. Where a crest overhangs, a column holds more than one surface: the query
-answers the highest, by [a bounded scan of the throw](#bodies-and-the-query), and the surface is drawn as the
+answers the highest, by [a cut of the sheet](#bodies-and-the-query), and the surface is drawn as the
 displaced sheet it is. Inside a chart's join the
 transform is the joined body's, taken at the join's weight, so it follows from the row as the swash depth
 does and the surface still meets across an end.
@@ -837,30 +837,74 @@ the answer will be used at, and the body's ID and generation. One compute dispat
 - the wake, read from its windows, with **the body's own static dent added back** (below).
 
 Crests sharpen because displacement is horizontal as well as vertical, so the surface above a world point is
-found by inverting that displacement. Where no crest is thrown, a fixed-point iteration on the horizontal
-displacement does it, a contraction, and the oracle iterates to convergence.
+found by inverting that displacement. Where no crest can be thrown onto the point, a fixed-point iteration on
+the horizontal displacement does it, a contraction, and the oracle iterates to convergence.
 
-**The highest surface.** Under a thrown crest the map from rest place to world place is many to one. That
-iteration then settles on one of the surfaces in the column and not on the highest: on part O's section it
-stops in the trough under the lip at 52 of 501 points across a wave, up to 0.92 m low, with no residual to
-show for it (part V). So where a crest may be thrown the inversion is a **bounded scan of the throw**. A
-surface in the column over a point was thrown some distance `τ` along the crest's direction of travel to get
-there, and `τ` lies between zero and the **throw bound**, the section's largest throw at the envelope there,
-which is known before the search. For a trial `τ`, the plain iteration gives the rest place that the unthrown
-surface carries to the point less `τ` along that direction; it is a surface in the column exactly when its
-own throw equals `τ`. The scan samples `τ` across the range at the profile's scan steps, 16 in the first
-profile, refines every change of sign of that difference, and answers the highest surface it finds, with that
-surface's slope and velocity. Where the throw bound is zero, which is everywhere but under a crest whose
-breaking index is in the thrown range, the scan is the plain iteration. The model in f64 and the dispatch on
-the GPU run the same scan.
+**The highest surface.** Under a thrown crest the map from rest place to world place is many to one. It is
+`F(u) = u + P(u) + T(u)·n(u)`: the plain displacement `P`, and the throw `T`, the section's departure along the
+crest's direction `n`, both taken at the rest place `u`. The plain iteration then settles on one of the
+surfaces in the column and not on the highest: on part O's section it stops in the trough under the lip at 52
+of 501 points across a wave, up to 0.92 m low, with no residual to show for it (part V). Nor does a search
+along the crest's direction at the point find it. In a sea of more than one train the envelope and the
+direction change from place to place, so a surface arrives from beside that line, thrown further than the
+envelope at the point allows: on two crossing trains such a search is wrong at 33 of 676 points, by up to
+0.62 m (part X). So the surface over a point is found the way it is drawn, forward, by a **cut of the sheet**
+within the point's **throw reach**.
 
-What a scan can miss is a fold thinner than one of its steps: the tip of a lip. Its answer is then the
-highest surface at a point no more than one step away along the crest's travel, 0.26 m of a 4.2 m throw in
-the first profile, and never the water under a lip longer than that. Against a cut of the section made
-without the scan, it is within that at every point at 8, 16, 32 and 64 steps, at 35 to 91 evaluations of the
-surface a point (part V). M12.6 holds the model to such a cut, written in the test, so the GPU is compared
-with a model whose branch is established. The lens test of [the view from under water](#under-water) reads
-the same function.
+- **The throw reach** is how far away a rest place can be and still stand over the point. It is a ceiling
+  that needs no wave evaluated. The **amplitude ceiling** at a depth is the sum of the tick's long-wave
+  components, each at the body's gain and at its shoaling gain in that depth, with every exposure taken as 1;
+  no envelope in that depth exceeds it. The **throw ceiling** at a depth is the table's largest throw over
+  every envelope up to the amplitude ceiling, each at the breaking index it has in that depth. It is zero in
+  water too deep for any crest of the tick to be thrown. The **displacement ceiling** is the largest plain
+  horizontal displacement those amplitudes give. A point's throw reach is the largest throw ceiling and the
+  largest displacement ceiling, added, over the depths the bed has within the reach itself, at the body's
+  stage and floored as the lag's is. It is found from coarse to fine: the body's whole range of depths gives
+  a first reach, and the bed's lowest and highest height within that
+  reach, read from a min-max pyramid of the bed that is prepared with the lags, give the next, twice in the
+  first profile. Every round's reach holds every rest place that can stand over the point, because such a
+  place lies inside the round before and so in a depth that round took its ceilings over. On part X's sheets
+  no thrown rest place is further from its own world place than 0.92 of the reach there.
+- **The cut.** The sheet is evaluated forward at the nodes of a square lattice of rest places, fixed in the
+  world, of the profile's **cut cell**, 0.25 m in the first profile. Every cell within the point's throw reach
+  is two triangles of the displaced sheet, and a triangle whose plan holds the point is a surface in the
+  column, at the height interpolated across it. The answer is the highest. Nothing in it follows a direction
+  or inverts a map: however far and whichever way a rest place was thrown, its triangle lies where the
+  surface is drawn.
+- **Refinement.** The highest triangle gives a rest place by the same interpolation. Newton's method on the
+  assembled map moves it until it maps to the point within the profile's column tolerance, 1 mm in the first
+  profile, and the answer's height, slope and velocity are the surface's there. So a point that passes into
+  a throw reach sees no step beyond that tolerance, and a float does not feel the lattice. A hit that does not converge inside its
+  cell, as the map's Jacobian allows at the very edge of a fold, keeps its interpolated height. In part X an
+  interpolated place maps up to 0.14 m from its column, and all 16,526 refined answers land within 1 mm.
+
+Where no depth within the reach has a throw ceiling above zero, which is everywhere but near water shallow
+enough for a crest of the tick to be thrown, there is no cut and the answer is the plain iteration. The model
+in f64 and the dispatch on the GPU make the same cut on the same lattice.
+
+What a cut can miss is a fold thinner than a cell: the edge of a lip. Its answer is then the highest surface
+at a point no more than one cell away, and never the water under a lip longer than that. Part X holds it to a
+cut of a lattice eight times finer, made with no reach in it, on three sheets: part V's straight section; the
+design review's two trains crossing at a right angle, 0.47 m and 0.23 m; and a beach of 1 in 20 where three
+trains of a 3.2 m sea shoal and turn and the section follows the breaking index. At every one of 82,619
+columns, 1,062 of which hold three surfaces or more, and at cells of 0.5, 0.25 and 0.125 m, the answer lies
+between the least and the greatest height the fine cut gives within one cell of the point. Of 1,200 rest
+places of known height over their own world place, the 0.25 m cut answers below 28, and each of those stands
+within 46 mm of a lip's edge. The review's own witness is found, to the micrometre. M12.12 holds the model to
+such a cut on such sheets, written in the test, so the GPU is compared with a model whose branch is
+established. The lens test of [the view from under water](#under-water) reads the same cut, made once for the
+lens: its near plane spans a cell or two, so one set of nodes serves every pixel.
+
+**What the cut costs.** Every node within the throw reach is one evaluation of the long waves and the
+section: about 1,200 for a 1.4 m wave thrown 4.2 m, and 3,500 on average and 5,500 at most under the 3.2 m
+sea, where a plain point costs a few (part X). That is the price of a surface that is right. The lattice is
+fixed in the world so that points close together share their nodes, as a hull's do. The count falls with the
+square of the cell and with the square of the waves' height, and nothing is paid out of reach of a crest
+that may be thrown. How the dispatch evaluates the nodes is the builder's, held to the model by M13.1: no
+long wave is shorter than 7.7 m, a 20 m wave over the lag's floor, so the component sums may be taken on a
+coarser lattice and interpolated, and a cell whose own depth cannot throw as far as the point may be
+skipped. M12 records what the model's cut costs and M13 a tick with every float in the breakers; the cell is
+the profile's knob, and a larger one widens what a cut can miss.
 
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
 velocity (the current and the waves' together) and the time derivative of height, with one support flag per
@@ -1413,7 +1457,7 @@ net on the bed shows, shafts do not. The meter's depth takes the wave field and 
   | Body query | The query dispatch, its ring and mailbox | |
   | Interaction waves | The two levels and their sources | Body records or impulses |
   | Whitewater | The foam stocks, their births and transport, and the whitecap estimator beyond them | A foam pattern; hull births need body records |
-  | Surf | The shore transform's lags and exposures, and the breaker section | Waves; a bed |
+  | Surf | The shore transform's lags and exposures, the bed's min-max pyramid, and the breaker section | Waves; a bed |
   | See-through water | The gather where water is thin, and the scene through it | |
   | Scene reflection | The gather and the march where water is mirror-still | |
   | Body optics | The gather and the rays for registered bodies | Body records |
@@ -1518,9 +1562,10 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   the sea and the exposure calms the lee. Part O: the break point against Komar and Gaughan, sets, a thrown
   section that overhangs without crossing itself, and the swash's closed form with the transform on. All are
   f64 arithmetic on sections and small grids. Part U: a lake that land encloses, with no path to the bed's
-  edge, takes its lag from its own waterline and its exposure from the fetch upwind. Part V: the bounded scan
-  for the highest surface against a cut of the section, beside the plain iteration's misses. Part W: the two
-  blends together against the dispersion relation and against the solve itself. That the section reads as a
+  edge, takes its lag from its own waterline and its exposure from the fetch upwind. Part V: the plain
+  iteration's misses under a lip. Part W: the two blends together against the dispersion relation and against
+  the solve itself. Part X: the cut for the highest surface, on a straight section, on crossing trains and on
+  a beach, against a cut eight times finer, with the throw reach held to every throw. That the section reads as a
   breaking wave and not as a marching ridge is unrun; M13 is the first look ([risk 20](#risks)). Surf on a
   lake is unrun by eye and stays so: the example's lake is too small to raise long waves, so M12 and M13
   prove it in the model and on the GPU against the model.
@@ -1623,10 +1668,10 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
-| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
+| The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits, and the bed's min-max pyramid about two thirds of the bed's own bytes. Solving them is CPU work at preparation, which M12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; M13 records it | |
 | Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which M6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
-| Query | Tick | Up to 2,048 points, 48 B each. A point under a crest in the thrown range costs the scan, about 40 evaluations of the long waves where a plain point costs a few | Under 0.1 ms with no point in surf; M13 records a tick with every float in the breakers; 96 KiB back | 0.03 ms |
+| Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut: the nodes of a 0.25 m lattice within its throw reach, about 1,200 for a 1.4 m wave and 3,500 to 5,500 under a 3.2 m sea, shared by points close together, where a plain point costs a few evaluations | Under 0.1 ms with no point in surf; M12 records the model's cut and M13 a tick with every float in the breakers; 96 KiB back | 0.03 ms |
 | Gather | Frame | The rectangles its readers need: nothing on an open sea with no body, the screen where see-through or mirror-still water fills it | Proportional to the pixels copied; a whole-screen copy is one pass ended on a tile GPU | A whole-scene copy and a 3 ms trace |
 | Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; M8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. M14 records it with no view, one and two | |
@@ -1795,7 +1840,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | What tolerance do the map, the interaction waves and the foam meet against their f64 references on Metal and in Chrome? | M4, M6 and M7 measure first, then assert the recorded bound |
 | Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | M4 and M7, for a profile without surf; [risks 12 and 17](#risks) |
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | M13; [risk 20](#risks) |
-| What does the scan for the highest surface cost in a tick with every float in the breakers? | M13 records it |
+| What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | M12 and M13 record it; the cell is the knob |
 | What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | M12 records preparation; M13 measures first, then asserts the recorded bound |
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first milestone; M14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in M16 |

@@ -29,7 +29,7 @@ This creates `thrum-water-model`, registered in `.config/architecture.toml`, on 
 
 ## M12 On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee
 
-Surf is a capability: without it M1's answers and tests stay as they are. `surf_view_proof.py` and `surf_revision_proof.py` in `docs/evidence/WATERS/design-proof/` sketch the solve, a lake's source, the highest-surface scan and a section that meets M12.5.
+Surf is a capability: without it M1's answers and tests stay as they are. `surf_view_proof.py`, `surf_revision_proof.py` and `surf_cut_proof.py` in `docs/evidence/WATERS/design-proof/` sketch the solve, a lake's source, the highest-surface cut and a section that meets M12.5.
 
 ## M2 An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh
 

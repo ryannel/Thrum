@@ -226,3 +226,17 @@
   Suggestions taken: Chrome motion in M14.9, M15.9, M16.6 and M11.10, mist under MetalFX in M12.2, M11.1's
   owner, M11.2's water exclusion, and depth against density at amount zero. The figures are parts VII to XI of
   [the design proof](../../evidence/CLOUDS/design-proof/README.md).
+- 2026-11-14 M1 was Blocked on two of its items: M1.2 made every answer of a clear column zero and M1.4 had
+  top never step, so top jumped by the base's height at each clear/cloud transition
+  ([review](../../evidence/CLOUDS/M1-review.md), [handoff](../../evidence/CLOUDS/M1-handoff.md)). Settled:
+  type and base are the weather's in cloud and in clear air; a clear column has no thickness, its top exactly
+  at its base, and its coverage, age and optical depth are exactly zero. The builder's proposal, top defined
+  only in cloud with zero kept for clear air, was not taken: the weather map filters base and top, so a zero
+  beside a cloud hangs cloud below the shared base; zero is a legal height for a deck on the ground; and M1.4
+  would have had to stop naming top. Continued below.
+- 2026-11-14 The same re-plan, continued. M1.2 and M1.4 are rewritten to agree. M1.4 names top and thickness,
+  a type ramp between rows of different base, a point that turns from clear to cloudy, and a switched-on cell
+  that must fail; it asks that halving the step shrink the largest change by a stated factor, not halve it.
+  M1.12 says clear where it said zero. The design now says a placed shape's extents are its geometry and step
+  at its silhouette, which M1.4 leaves out by name. The M1.6 fix on `build/clouds` (`08184d54`) stands. No
+  other item, seam or bound changed; `ATMOSPHERE`, `WATERS` and the rest read none of these answers.
