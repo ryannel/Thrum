@@ -282,7 +282,7 @@
         },
         {
           "id": "M3.6",
-          "statement": "The first frame's cost is on record. On this Mac at 2560×1440, capture off, a paired record with the sea absent gives the whole frame on tick frames and on repeat frames, each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the sea absent gives the whole frame on tick frames and on repeat frames, each sea pass's GPU time by name, the vertices submitted and the sea pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene first-frame",
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -492,7 +492,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "The f64 wake reference in `thrum-sea-model`, forced on deep water by the moving Gaussian pressure patch of `wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2πU²/g at 3 m/s and at 6 m/s, a ridge within 3° of 19.47° at 3 m/s and narrower than 19.47° at 6 m/s. After the source is removed a crest travels on at its phase speed.",
+          "statement": "The f64 wake reference in `thrum-sea-model`, forced on deep water by the moving Gaussian pressure patch of `wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2\u03c0U\u00b2/g at 3 m/s and at 6 m/s, a ridge within 3\u00b0 of 19.47\u00b0 at 3 m/s and narrower than 19.47\u00b0 at 6 m/s. After the source is removed a crest travels on at its phase speed.",
           "check": "cargo test --locked --offline -p thrum-sea-model --test wake",
           "target": "mac-metal",
           "builder_result": "open",
@@ -568,7 +568,7 @@
         },
         {
           "id": "M6.8",
-          "statement": "With the wake running, the paired cost record is taken again for the wake scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the wake running, the paired cost record is taken again for the wake scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene wake",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -703,7 +703,7 @@
         },
         {
           "id": "M7.9",
-          "statement": "With foam running in a gale, the paired cost record is taken again for the foam scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With foam running in a gale, the paired cost record is taken again for the foam scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene foam",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -813,7 +813,7 @@
         },
         {
           "id": "M8.7",
-          "statement": "With the optics running, the paired cost record is taken again for the optics scene at 2560×1440, beside the last record for the same view, with the gather and the body rays recorded on a calm sea and in a gale with zero, one and nine bodies on screen. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the optics running, the paired cost record is taken again for the optics scene at 2560\u00d71440, beside the last record for the same view, with the gather and the body rays recorded on a calm sea and in a gale with zero, one and nine bodies on screen. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene optics",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -955,7 +955,7 @@
         },
         {
           "id": "M9.10",
-          "statement": "In a gale with the craft, wake, foam and optics all running, the paired cost record is taken again for the gale scene at 2560×1440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "In a gale with the craft, wake, foam and optics all running, the paired cost record is taken again for the gale scene at 2560\u00d71440, beside the last record for the same view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/sea_cost.py check --scene gale",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
