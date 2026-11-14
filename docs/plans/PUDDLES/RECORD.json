@@ -1,0 +1,79 @@
+{
+  "module": "PUDDLES",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "3eb0803be8378ab20b2b4db442c7a05b8e10cb5adc68bbbb520200dc8cef5dea",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M2": {
+      "definitions": "ca65d5be59dcfb3447e2a8e087d0c69d191befba07da55d1fbcf194451eda081",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M3": {
+      "definitions": "848927216051802280251f2422678593ff965502aa1988bc24b691e6cab01b81",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M4": {
+      "definitions": "be8a540bc2d7bcb0b9e677339c074237c03648bb76bf7e9091c13833b8321f26",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M5": {
+      "definitions": "ba7413313e36a587735ea5585564720a911d96ca27b728bf6cb0d35b49851dc7",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M6": {
+      "definitions": "45206b2658bf3c4b2af555e47a47d03bf08d8744fa44b0e97ae0ac1807036261",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    },
+    "M7": {
+      "definitions": "99e61bbf4e0e876b51b7a475ece2a2d99320fb0de673901b6122c385b61b5804",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
+        "at": "2026-11-14T12:06:54Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
+      "at": "2026-11-14T12:06:54Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-14T12:06:54Z"
+  }
+}
