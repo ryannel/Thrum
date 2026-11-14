@@ -279,11 +279,11 @@
           "id": "D10.2",
           "statement": "A labelled native stateful storage-writing copy/select witness has exact RGBA16F output/history bytes against its prepared WGSL twin through route, reset and replacement. It proves composition, not MetalFX or a speed win.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "inspect": "Use T2 still/fixed submitted output plus exact linear/output/history readbacks for finite nonnegative half texels, and realtime for diagnostic motion. Current scene copies to history/output; alternate submissions select prior submitted history in a declared crop and toggle the reserved binary-exact 0/1 fixture tile from prior state. Previous/next history textures are distinct, preinitialized and submission-selected. Scene/history regions use bit-preserving native blits and public wgpu copies; the reserved 0/1 tile uses native storage writes versus its WGSL twin with integer selection. Verify native commands actually produce the writes. No-op native work, hidden WGSL production, stale source/history and omitted reset must fail exact comparisons. Ordinary scene runs disable the witness and remain exact to M0; no 1-ULP or perceptual bound applies.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D10.3",
@@ -299,11 +299,11 @@
           "id": "D10.4",
           "statement": "An encoded native frame raced with iOS backgrounding is refused by the platform lease and resets provider history; no background submission occurs.",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Run the encoded-native-frame lease/background race test and simulator diagnostic-pattern background/resume witness. Use simctl endpoint/function evidence with recorded coverage plus lease/queue/history logs, never claimed submitted temporal output or elapsed-time engine motion before T2 M2. Report function only; retain world/input. No cooked dependency is introduced here.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D10.5",

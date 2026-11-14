@@ -1,0 +1,8 @@
+simulator: Thrum APPLE-TILE M1 owned 01ECA3AE-55FE-4B9D-9191-F06CECD2FC09 type=com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro runtime=com.apple.CoreSimulator.SimRuntime.iOS-27-2 state=Booted
+startup: presented=835 completed=833 callbacks=858 pending<=2 threads display/prepare/frame/world=main/thrum-v1-ios-render/thrum-v1-ios-render/thrum-world
+step 08:58:42: xcrun simctl launch 01ECA3AE-55FE-4B9D-9191-F06CECD2FC09 com.apple.Preferences
+step 08:58:45: xcrun simctl launch 01ECA3AE-55FE-4B9D-9191-F06CECD2FC09 org.thrum.v1
+m1-background: pid 9415, world epoch 1 at tick 915 paused and resumed at tick 915; surface epoch 2 -> 4; deferred releases 0
+step 08:58:50: command stall-render (file drop #1)
+step 08:58:50: xcrun simctl launch 01ECA3AE-55FE-4B9D-9191-F06CECD2FC09 com.apple.Preferences
+step 08:58:52: xcrun simctl launch 01ECA3AE-55FE-4B9D-9191-F06CECD2FC09 org.thrum.v1
