@@ -1,10 +1,10 @@
 {
   "module": "PUDDLES",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/PUDDLES/design-review.md",
-    "commit": "783c3b1acbf1154dc97e3d533169cd4c719221b4",
-    "hash": "53949efaff67b1afe1a3875c560c15d3a28bf746a63ca13db31507de4cb81948",
+    "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+    "hash": "2e1ff0f8286a37d642c6d57fd8461325ebf42267f71c49cfc1d7385dc5fa1ce0",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,57 +16,62 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 100806,
-      "cached": 1178752,
-      "output": 8085,
+      "input": 119522,
+      "cached": 1329664,
+      "output": 8149,
       "turns": 1
     },
-    "at": "2026-11-14T12:13:00Z"
+    "at": "2026-11-14T13:32:41Z"
   },
   "milestones": {
     "M1": {
-      "definitions": "3eb0803be8378ab20b2b4db442c7a05b8e10cb5adc68bbbb520200dc8cef5dea",
+      "definitions": "4deeadb54d2cbf1d87b5cc7f5c9539f542bb070fec53bc602c3eaa610f6517ad",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     },
     "M2": {
-      "definitions": "ca65d5be59dcfb3447e2a8e087d0c69d191befba07da55d1fbcf194451eda081",
+      "definitions": "f94730c32c1e40daee1db8123c126e8cdcc4ecc12bb3744c2c4ff704f50c9f2d",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     },
     "M3": {
-      "definitions": "848927216051802280251f2422678593ff965502aa1988bc24b691e6cab01b81",
+      "definitions": "3dfdcf0d2e66361611466049f501cf73ec24324b7b2b93de80dcb0d6834f1285",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     },
     "M4": {
-      "definitions": "be8a540bc2d7bcb0b9e677339c074237c03648bb76bf7e9091c13833b8321f26",
+      "definitions": "0d278d2b44841b28c8717fa00c9b49e40a9cba207f150aeb515785e9f6b1cfd1",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     },
     "M5": {
-      "definitions": "ba7413313e36a587735ea5585564720a911d96ca27b728bf6cb0d35b49851dc7",
+      "definitions": "d268d533c7bb6c114e4f7e6b30bb15af1aa734f3205343fd6b6e40b8d3c2b263",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     },
     "M6": {
@@ -79,12 +84,13 @@
       }
     },
     "M7": {
-      "definitions": "99e61bbf4e0e876b51b7a475ece2a2d99320fb0de673901b6122c385b61b5804",
+      "definitions": "92831a628ae5daf4ad35a952d20d2de78e30ae9b3c2ef9245d6aa3fa3ea12995",
       "reviews": [],
       "authorised": {
-        "by": "plan",
-        "task": "Plan module PUDDLES from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: puddles and wet ground as part of t",
-        "at": "2026-11-14T12:06:54Z"
+        "by": "design review",
+        "review": "docs/evidence/PUDDLES/design-review.md",
+        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
+        "at": "2026-11-14T13:32:41Z"
       }
     }
   },
@@ -97,5 +103,30 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-14T12:06:54Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/PUDDLES/design-review-1.md",
+      "commit": "783c3b1acbf1154dc97e3d533169cd4c719221b4",
+      "hash": "53949efaff67b1afe1a3875c560c15d3a28bf746a63ca13db31507de4cb81948",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 100806,
+        "cached": 1178752,
+        "output": 8085,
+        "turns": 1
+      },
+      "at": "2026-11-14T12:13:00Z"
+    }
+  ]
 }
