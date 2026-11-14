@@ -142,10 +142,10 @@
           "lock": "gpu",
           "ask": "Is the reference a column stored by the production pass for a camera turned so that a texel's centre lies on the point's line, and is the read an f64 evaluation of the lent operation's blend on the volume read back, so that no expected value comes from the test's own model of the air? Are the cases, the four Suns and the allowance the design's, unchanged? Under the ground, does the pass follow the density law below zero altitude and dim the Sun's light with depth, and not hold the surface's air or its light?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.2",
@@ -154,10 +154,10 @@
           "lock": "gpu",
           "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.3",
