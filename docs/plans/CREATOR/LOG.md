@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-14 Repeated both native exact-image matrices and all four Chrome sets after the SEA
+  rebase: exact in 942.78 seconds at `2b4d6589`. The full gate then found one unit-test Clippy
+  assertion style error. The equivalent diagnostic assertion at `480a6436` passes full workspace
+  Clippy and all four profile-window tests. No runtime code changed.
+  [M2 evidence](../../evidence/CREATOR/M2.md) retains the latest records.
+
 - 2026-11-14 Passed both native exact-image matrices and all four Chrome sets at `1e0d687b`
   in 973.39 seconds. Rebase comparison found no changes to M2's measured producers or consumers.
   The next gate found two upstream M10 handoff links into unmerged evidence; their worktree scope
