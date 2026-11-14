@@ -320,6 +320,7 @@ fn declaration(sizes: &[u64]) -> EffectGraph {
         .map(|(name, accesses)| EffectPass {
             name: (*name).into(),
             cadence: EffectCadence::EveryFrame,
+            async_eligible: false,
             accesses: accesses
                 .iter()
                 .map(|&(resource, kind)| EffectAccess {
@@ -338,6 +339,7 @@ fn declaration(sizes: &[u64]) -> EffectGraph {
         passes.push(EffectPass {
             name: format!("sea moments mip {level}"),
             cadence: EffectCadence::EveryFrame,
+            async_eligible: false,
             accesses: vec![
                 EffectAccess {
                     resource: parent,
@@ -356,5 +358,10 @@ fn declaration(sizes: &[u64]) -> EffectGraph {
             ],
         });
     }
-    EffectGraph { resources, passes }
+    EffectGraph {
+        resources,
+        passes,
+        opaque_reads: Vec::new(),
+        after_opaque: Vec::new(),
+    }
 }
