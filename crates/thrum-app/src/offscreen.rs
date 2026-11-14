@@ -234,6 +234,11 @@ impl<G: Game> Offscreen<G> {
         self.host.native_witness_report()
     }
 
+    /// Reset submitted view correspondence before the next ordinary frame.
+    pub fn invalidate_history(&mut self) {
+        self.host.invalidate_history();
+    }
+
     /// Drain one submitted image, without a GPU wait or endpoint redraw.
     /// # Errors
     /// Returns a mapping or old-session error.
