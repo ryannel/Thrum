@@ -563,6 +563,22 @@ pub enum RegisteredWorldError {
     WrongSystem,
 }
 
+/// Human-readable refusal at the registered-world boundary.
+impl std::fmt::Display for RegisteredWorldError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Self::NonFinite { schema, slot } = self {
+            return write!(
+                f,
+                "component {} at slot {slot} would store a non-finite profile number",
+                schema.0
+            );
+        }
+        write!(f, "{self:?}")
+    }
+}
+
+impl std::error::Error for RegisteredWorldError {}
+
 /// Reusable typed bundle writer. It never exposes storage rows or a mutable world.
 pub struct EntityWriter<'a> {
     slot: u32,
