@@ -1,7 +1,7 @@
 # CLOUDS log
 
 - 2026-11-14 M1 review follow-up: implemented bounded shape thresholding and edge-only detail
-  erosion; [revision evidence](../../evidence/CLOUDS/M1-revision.md) records CPU tests, Clippy
+  erosion; revision evidence (`../../evidence/CLOUDS/M1-revision.md` on branch `build/clouds`) records CPU tests, Clippy
   and 252 fully removed edge samples among 891 positive uneroded probes. No visual claim.
   M1.4 remains open: the actual-top jumps reproduce and cannot converge to zero with both
   the designed fixed condensation base and M1.2's all-zero clear sentinel.
