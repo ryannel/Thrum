@@ -365,6 +365,7 @@ async fn drive(
 ) {
     // Each future owns at most one message outside the capped application queues.
     let empty_stack_space = session.datagram_send_buffer_space();
+    let received = std::cell::Cell::new((connection.stats().udp_rx.datagrams, Instant::now()));
     let writer = async {
         loop {
             let bytes = link
@@ -472,6 +473,9 @@ async fn drive(
                     .unwrap_or(u64::MAX);
                 state.expire(now);
                 let stats = connection.stats();
+                if stats.udp_rx.datagrams != received.get().0 {
+                    received.set((stats.udp_rx.datagrams, Instant::now()));
+                }
                 state.counts.stack_bytes =
                     Some(empty_stack_space.saturating_sub(session.datagram_send_buffer_space()));
                 state.counts.rtt_us =
@@ -503,8 +507,20 @@ async fn drive(
     let reason = if matches!(
         connection.close_reason(),
         Some(quinn::ConnectionError::TimedOut)
-    ) {
+    ) || (matches!(
+        connection.close_reason(),
+        Some(quinn::ConnectionError::LocallyClosed)
+    ) && received.get().1.elapsed()
+        >= Duration::from_millis(
+            link.state
+                .lock()
+                .expect("link state poisoned")
+                .profile
+                .idle_ms,
+        )) {
         // H3's capsule reader may wrap this as a read error. The QUIC endpoint owns idle timeouts.
+        // Its capsule task can also replace a timeout with LocallyClosed. Disambiguate only
+        // after the configured receive-idle interval; an earlier stream failure stays Transport.
         CloseReason::TimedOut
     } else {
         match session.close_reason() {
