@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/GAME-UI/design-review.md",
-    "commit": "97b83136ffb65764a32329a0c5e50cf38b72d3bb",
-    "hash": "62b614fd13ce740a6ee2435d8a0240d1e632af7e7715a7209e1963d6117f3238",
+    "commit": "10e6260f449810203f0f79bd24939f0d5e671bf5",
+    "hash": "3977fb534eec205cf4356014e70c7fa60250bd9f1fe8c0cfcaf832a48516a7ca",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 118005,
-      "cached": 1682688,
-      "output": 6611,
+      "input": 106846,
+      "cached": 1170688,
+      "output": 5990,
       "turns": 1
     },
-    "at": "2026-11-13T19:44:18Z"
+    "at": "2026-11-14T21:30:10Z"
   },
   "milestones": {
     "M1": {
@@ -120,6 +120,29 @@
         "turns": 1
       },
       "at": "2026-11-13T19:25:37Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/GAME-UI/design-review-2.md",
+      "commit": "97b83136ffb65764a32329a0c5e50cf38b72d3bb",
+      "hash": "62b614fd13ce740a6ee2435d8a0240d1e632af7e7715a7209e1963d6117f3238",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 118005,
+        "cached": 1682688,
+        "output": 6611,
+        "turns": 1
+      },
+      "at": "2026-11-13T19:44:18Z"
     }
   ]
 }
