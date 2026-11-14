@@ -631,6 +631,7 @@ pub(super) fn prepare_route(
     content: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     text: &str,
     render_extent: [u32; 2],
+    gpu: &thrum_app::Gpu<'_>,
 ) -> Result<Duration, String> {
     let camera = host
         .scene_camera()
@@ -644,6 +645,27 @@ pub(super) fn prepare_route(
         return Err("runtime route extent differs from the prepared game grid".to_owned());
     }
     let stats = content.ok_or("routed capture needs cooked content")?;
+    // The native provider retains the ordinary presentation contract during
+    // preparation too. Use an engine texture as the headless surface consumer;
+    // never submit native work without its prepared presenter.
+    let preparation_output = host.native_witness_report().map(|_| {
+        gpu.device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("native route preparation virtual surface"),
+                size: wgpu::Extent3d {
+                    width: gpu.surface.extent[0],
+                    height: gpu.surface.extent[1],
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: gpu.surface.format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    });
     host.pause()?;
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {
@@ -664,8 +686,14 @@ pub(super) fn prepare_route(
         if Instant::now() >= deadline {
             return Err("routed capture content preparation deadline".to_owned());
         }
-        if host.native_witness_report().is_some() {
-            host.drive(Duration::ZERO, None)?;
+        if let Some(view) = &preparation_output {
+            host.drive(
+                Duration::ZERO,
+                Some(&crate::SurfaceOutput {
+                    view,
+                    extent: gpu.surface.extent,
+                }),
+            )?;
             drop(host.poll_completed()?);
         } else {
             drop(host.capture_pixels()?);
