@@ -22,6 +22,9 @@ fn coverage_is_monotone_at_both_ends_and_middle_of_type_axis() {
                     );
                     assert_eq!(c.kind, kind);
                     assert_eq!(c.base, 700.0);
+                    if step == 0 {
+                        assert_clear(c, kind);
+                    }
                     if c.optical_depth == 0.0 {
                         assert_clear(c, kind);
                     }
