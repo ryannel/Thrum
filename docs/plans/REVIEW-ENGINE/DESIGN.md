@@ -1,6 +1,7 @@
 # Review fixes outside the renderer: the simulation, the sea, cooked assets and the cooker
 
-14 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-ENGINE/design-review.md).
+[Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
 [patterns](../../../.agents/skills/thrum-engineering/references/patterns.md)
@@ -35,8 +36,10 @@ does. This is the contained fix; `HOST` M1 then replaces every host's request wi
 **2. One publication model (H14).** `GameRuntime` supports a page the game fills and a page the engine fills, and
 branches on which in every publication method. The G2S decision gives layout and page capture to the engine, and
 the only production consumer uses the engine's page: the game path runs in tests alone, and the rewind patch the
-V1 game passes never runs. The engine's page is the one model. The game-authored capture, the state it added and
-the rewind patch callbacks are removed, and the tests that used them are rebuilt on the engine's page. What must
+V1 game passes never runs. The engine's page is the one model. The game-authored capture, the state only that
+path used and the rewind patch callbacks are removed, and the tests that used them are rebuilt on the engine's
+page. What the engine's own path keeps for a deferred publication stays: its undo preimages, the skipped-with-undo
+state and the previous poses, which a later publication and M5's replay fix rely on. What must
 stay true is the behaviour, so it gets a test it never had: after a rewind and replay the published page equals
 a fresh capture of the same world. No planned module (`SIM-2D`, `SESSION`, `SWARM`) uses a game-authored page.
 
@@ -61,6 +64,9 @@ change, so no product, content address or baseline moves. `examples/asset-loop`,
 edit-to-visible test and tripwire measure, goes: the test and bench drive `thrum-asset-gpu`'s loader, and the
 profile preference both copies held becomes one function in `thrum-asset`. The tripwire then measures other code,
 so its history breaks once: the old and new figures are recorded side by side and the new one is the baseline.
+This milestone starts before [REPO-RULES](../REPO-RULES/DESIGN.md)' rule engine exists, so that the cooker reaches
+no example is proved here by a search of the cooker's manifest and sources; `GAME-SPLIT` M2 later holds it, with
+every other reach, by rule.
 
 **5. Errors (T3).** Each public boundary in these crates gets one enum with `Display` and `Error`, as
 `thrum-asset`'s is. A compile-time test in each crate names its public error types. Core's `FrameError` (an input

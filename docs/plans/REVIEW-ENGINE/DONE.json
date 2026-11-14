@@ -35,7 +35,7 @@
         },
         {
           "id": "M1.3",
-          "statement": "`GameRuntime` has one publication model, the engine's page. The game-authored capture path, the state it added to publication and the rewind patch callbacks are gone, and the V1 game passes no patch closure.",
+          "statement": "`GameRuntime` has one publication model, the engine's page. The game-authored capture path, the state only that path used and the rewind patch callbacks are gone, and the V1 game passes no patch closure. The engine's own deferred publication keeps its undo preimages and previous poses.",
           "ask": "Is there any path left by which a game fills a page itself, or any branch on whether the engine captures? Do `thrum-core`'s runtime tests build their fixtures on the engine page? If `PublicationPage::patch_rewind` remains, what in the engine calls it?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -169,8 +169,8 @@
         },
         {
           "id": "M3.3",
-          "statement": "The cooker's edit-to-visible test and bench drive `thrum-asset-gpu`'s loader. `examples/asset-loop` is gone, `thrum-cook` reaches no example, and the texture and volume profile preference is one function in `thrum-asset` that every caller uses.",
-          "check": "sh -c 'test ! -e examples/asset-loop && python3 scripts/shape_rules.py check --rule package-reach --zero crates/thrum-cook'",
+          "statement": "The cooker's edit-to-visible test and bench drive `thrum-asset-gpu`'s loader. `examples/asset-loop` is gone, `thrum-cook` names no example in its manifest or its sources, and the texture and volume profile preference is one function in `thrum-asset` that every caller uses.",
+          "check": "sh -c 'test ! -e examples/asset-loop && ! grep -rqE \"asset[-_]loop|examples/\" crates/thrum-cook --include=Cargo.toml --include=*.rs && ! grep -q asset-loop .config/architecture.toml'",
           "ask": "Do `scripts/check_g5_tripwires.sh` and the edit-to-visible test now measure the engine's loader? Is the tripwire's history still comparable, or is a new baseline recorded with the reason and the old and new figures side by side?",
           "target": "mac-metal",
           "builder_result": "open",

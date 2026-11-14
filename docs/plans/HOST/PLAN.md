@@ -28,7 +28,8 @@ build the recipe beside them and change no recipe selection.
 The four copies of the policy are `crates/thrum-app/src/app/pause.rs`, `examples/v1-game-ios/src/world_policy.rs`,
 `recover_overload` in `crates/thrum-app/src/web.rs` and the episode counting in `examples/v1-game/src/host/world.rs`.
 `APPLE-PRESENTATION` M4 changes the render actors for render extent and may be in the same files: integrate on
-what has landed.
+what has landed. The contract, the sky kit's second construction path and the render owner's job and reply
+types are M4's: leave them.
 
 ## M3 The game and the iPhone app hold the engine's frame host directly, a frame can be drawn without reading it back, and there is one way to capture the game to disk
 
@@ -40,7 +41,10 @@ game's capture path, so the path that stays must give the bytes it gave.
 `Game` is in `crates/thrum-app/src/game.rs`, the browser's contract in `web.rs`, and the sky kit builds its host
 twice, in `sky.rs` and `sky/browser.rs`. `WATERS`' ruling 3 and `RENDER-2D`'s second program make the shell serve a
 second game too; if either has landed, build on it. `GAME-UI` adds events, density and insets to the shells later
-and builds on this contract.
+and builds on this contract. The frame job and reply are `RenderJob`, `FrameRequest` and `RenderReply` in
+`crates/thrum-app/src/app/render_actor.rs` and `Job`, `FrameRequest`, `FrameReply` and `Reply` in
+`examples/v1-game-ios/src/ios/render.rs`; the iPhone app already depends on `thrum-app`. Its owner thread and
+UIKit code stay for `GAME-UI` M6.
 
 ## M5 A failure in the shells can be matched and printed: `thrum-app`'s public functions return typed errors
 

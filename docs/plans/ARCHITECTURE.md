@@ -29,7 +29,7 @@
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors |
-| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 to start; TEST-SUPPORT M1, REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
@@ -1452,10 +1452,10 @@ there keeps its tests passing.
 |---|---|---|
 | `REPO-RULES` | The shape rules, their baseline and the `--zero` proof (`scripts/shape_rules.py`, `.config/shape-baseline.json`); the evidence size rule, the bulk manifest and its restore command; the one rename and split of names and files; repository layout ([design](REPO-RULES/DESIGN.md)) | `scripts/repo_check.py`; every crate, for the rename only |
 | `REVIEW-ENGINE` | Nothing of its own: the review's fixes in `thrum-core`, `thrum-network`, `thrum-sea`, `thrum-sea-model`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` and `thrum-controls`, and the iPhone app's device request ([design](REVIEW-ENGINE/DESIGN.md)) | Core (G1, G2S), `SEA`'s and so `WATERS`' crates, `CONTENT-LOOP`'s and `COOKED-DRAW`'s, `PLATFORM-RUNTIME-IOS`'s |
-| `TEST-SUPPORT` | `crates/thrum-test-support`: the GPU gate, the test device, fixtures shared between packages ([design](TEST-SUPPORT/DESIGN.md)) | Every crate's tests |
+| `TEST-SUPPORT` | `crates/thrum-test-support`: the GPU gate and the test device. `crates/thrum-fixtures`: fixtures shared between packages, as plain data. The registration of both and the `test-crate-edges` rule on who may depend on them ([design](TEST-SUPPORT/DESIGN.md)) | Every crate's tests |
 | `REVIEW-RENDER` | Nothing of its own: the review's fixes in `thrum-render` ([design](REVIEW-RENDER/DESIGN.md)) | `APPLE-TILE`'s, `APPLE-PRESENTATION`'s, `ATMOSPHERE`'s, `CULLING`'s and `EFFECT-GRAPH`'s files |
 | `HOST` | The device recipe and its fault watch; the world lifecycle policy for pause and overload; what a surface outcome means; render-once and await-drawn; the contract a game implements to be hosted ([design](HOST/DESIGN.md)) | `thrum-render`'s capabilities (`APPLE-TILE`), `thrum-core`'s clock, `thrum-app` (`CREATOR`, `PLATFORM-RUNTIME-MAC`, `PLATFORM-RUNTIME-WEB`), the iPhone app (`PLATFORM-RUNTIME-IOS`), the V1 game's host code |
-| `GAME-SPLIT` | The game gate and the games repository's layout; the rule that no engine package reaches a game; the proving ground as the engine's own test content; the move of the game ([design](GAME-SPLIT/DESIGN.md)) | `examples/v1-game`, `examples/v1-game-ios`, `.config/architecture.toml`, the engine's tests that read game files |
+| `GAME-SPLIT` | The game gate and the games repository's layout; the rule that no engine package reaches a game; the proving ground as the engine's own test content, with the frozen qualification content the exact baselines are drawn from; the move of the game ([design](GAME-SPLIT/DESIGN.md)) | `examples/v1-game`, `examples/v1-game-ios`, `.config/architecture.toml`, the engine's tests that read game files, `TEST-SUPPORT`'s `thrum-fixtures` (its first fixture) |
 
 ### Where each theme of the review is fixed
 
@@ -1487,7 +1487,7 @@ for that milestone. Later milestones of those modules are built on what has land
 | When `ATMOSPHERE` M9, `APPLE-TILE` M10, `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3 and `CULLING` M3 are Done | `REVIEW-RENDER` M1 to M5 | Every one of them holds files in `thrum-render` |
 | When those, less `ATMOSPHERE` M9, and `CREATOR` M3 are Done | `HOST` M1 to M5 | They hold `thrum-app`, the frame runtime and the V1 game's host and capture files |
 | When `CULLING` M3, `EFFECT-GRAPH` M3 and `APPLE-PRESENTATION` M3 are Done | `GAME-SPLIT` M2 | They hold the visibility tests, the game's effect and the temporal witness |
-| After `HOST` | `TEST-SUPPORT` M2 (`HOST` M1); `GAME-SPLIT` M3 (`HOST` M4) | The test device is the recipe's; the game must hold no host code before it is cut |
+| After `HOST` | `TEST-SUPPORT` M2 (`HOST` M1, and `GAME-SPLIT` M2); `GAME-SPLIT` M3 (`HOST` M4) | The test device is the recipe's, and the last `#[path]` includes of game source go with `GAME-SPLIT` M2; the game must hold no host code before it is cut |
 | After every fix above | `REPO-RULES` M3, then M4 | A rename collides with everything, so it lands once, last |
 | After `SHOWCASE` M8 | `GAME-SPLIT` M4 | The V1 exit closes before the game moves |
 | After the last milestone whose check names `-p v1-game` | `GAME-SPLIT` M5 | A builder cannot edit a pinned check |
@@ -1506,13 +1506,16 @@ registered baseline stays exact: each milestone that edits a covered path carrie
 belongs to its owner.
 
 1. **The rules bind everyone from `REPO-RULES` M1.** They are ratchets: a file may not gain a violation and a new
-   file starts at zero, so a running builder is refused only for a shape it adds. The baseline may only go down.
-   Another module adds a rule through the same engine, with fixtures, in the milestone that first needs it.
+   file starts at zero, so a running builder is refused only for a shape it adds. A rule's total may only go
+   down: the accepted total is the lowest the checked-in baseline has held in Git history, so rewriting the
+   baseline does not admit a new violation, and a moved file carries its allowance. Another module adds a rule
+   through the same engine, with fixtures, in the milestone that first needs it.
 2. **Bulk evidence** (`REPO-RULES` M2). A file over the cap leaves the tree and stays in Git history, listed in
    `docs/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
    modules'. No review, record or design is edited, and a registered exact-baseline reference never leaves. From
    then on a builder keeps large captures in scratch or the local store, as
-   [the design](REPO-RULES/DESIGN.md#mechanisms) says.
+   [the design](REPO-RULES/DESIGN.md#mechanisms) says. The local store is one folder beside the main checkout,
+   the same from every worktree, so what a builder puts there a reviewer's clean checkout restores.
 3. **One publication model in core** (`REVIEW-ENGINE` M1; G2S). The engine's page is the only one. The V1 game's
    dead patch closure is deleted by the same builder.
 4. **The sea's keys, records and upload** (`REVIEW-ENGINE` M2 and M5; `SEA`, and `WATERS` from its M2). The wave
@@ -1529,20 +1532,31 @@ belongs to its owner.
 7. **The device recipe** (`HOST` M1; `APPLE-TILE`'s capabilities and registry, the three shells). Recipe selection
    does not change. The browser keeps today's request as the recipe's named portable profile, so no Chrome
    baseline moves; compressed textures in Chrome would change default output and are `CONTENT-LOOP`'s to propose
-   under [rule 1](#exact-baselines). On the Mac an uncaptured GPU error is recorded and survived.
+   under [rule 1](#exact-baselines). On the Mac an uncaptured GPU error is recorded and survived. A test that
+   needs a reduced device asks the recipe for a restriction, which only lowers limits and removes features; no
+   shell passes one.
 8. **The host core and the game contract** (`HOST` M2 to M5; `CREATOR`, the platform modules, core's clock).
    `SESSION` M7's driven world extends the one lifecycle policy. `GAME-UI` M6 still moves the iPhone app's UIKit
    lifecycle into `thrum-app`, onto this contract. `APPLE-PRESENTATION`'s seams 5 to 7, `WATERS`' ruling 3,
    `RENDER-2D`'s and `GAME-UI`'s shell rulings are built on whichever of these has landed.
 9. **Test support** (`TEST-SUPPORT` M1 and M2; every module's tests). A test's device and gate change; what it
-   asserts does not. No test that ran on the Mac becomes one that skips.
+   asserts does not. No test that ran on the Mac becomes one that skips, and a skip elsewhere is a line on
+   standard error that an ordinary run shows. `thrum-test-support` is a dev-dependency only. `thrum-fixtures`
+   holds each shared fixture once, as plain data: any package's tests may use it, and the proving ground alone
+   may take it as a normal dependency. `TEST-SUPPORT` owns both packages and that rule; `GAME-SPLIT` M2 creates
+   `thrum-fixtures` with its first fixture, the mixed-mesh field.
 10. **Names** (`REPO-RULES` M3). `synthetic` becomes `scene` and milestone codes leave file names, in one landing.
     A name that an open check, `./dev` or the baseline registry uses keeps working. No `DESIGN.md` is edited:
-    approved designs keep saying `synthetic`, and `thrum-engineering`'s table maps old paths to new.
+    approved designs keep saying `synthetic`, and `thrum-engineering`'s table maps old paths to new. The graph
+    and timing import nothing from the scene renderer from then on; the frame runtime and the presenter still
+    do, held from growing by a rule, until a module is planned to put an interface between them.
 11. **The proving ground and the game** (`GAME-SPLIT` M2 to M5; `SHOWCASE`, `CULLING`'s visibility tests,
     `APPLE-PRESENTATION`'s temporal witness, `BASELINE-GUARD`'s registry). Until M5 the proving ground is the
     package `v1-game` at `examples/v1-game`, so every approved check that names it runs as written, and its
     `proving` feature is on by default. M5 changes paths in `.config/exact-baselines.json` and no reference.
+    Everything the verifier and its drivers read (the scenes, the valley's sources, the presets, the routes, the
+    pages) stays in Thrum as the proving ground's frozen content; the game takes its own copies, and the
+    verifier passes with the games repository unavailable.
 
 ### The proving ground, and where a game lives
 
@@ -1571,10 +1585,11 @@ loop runs in one repository; its builder commits the game's code there and prove
 |---|---|---|
 | **Shape rules**: `shape_rules.py check`, the ratchet baseline, `--rule R --zero PATH` as a proof that a path is clean, and how a module adds a rule | `REPO-RULES:M1` → every module | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
 | **Bulk evidence**: the manifest, `evidence_store.py check`, `restore` and `put` | `REPO-RULES:M2` → every builder and reviewer | [REPO-RULES](REPO-RULES/DESIGN.md#mechanisms) |
-| **GPU gate and test device**: a test asks for a GPU and runs, is skipped with a printed reason, or fails under `THRUM_REQUIRE_GPU=1` | `TEST-SUPPORT:M1` → every GPU test | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
-| **Device recipe**: a device, its capability record and its fault watch from one request, native or portable | `HOST:M1` → shells, captures, benches, `TEST-SUPPORT` | C04, [HOST](HOST/DESIGN.md#mechanisms) |
+| **GPU gate and test device**: a test asks for a GPU and runs, is skipped with a `thrum-gpu-skip:` line on standard error, or fails under `THRUM_REQUIRE_GPU=1` | `TEST-SUPPORT:M1` → every GPU test | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
+| **Shared fixtures**: `thrum-fixtures`, plain data defined once; `test_role`, `proving_ground` and the `test-crate-edges` rule | `TEST-SUPPORT:M1` (the rule), `GAME-SPLIT:M2` (the package and the field) → `CULLING`'s visibility tests, the proving ground, `REPO-RULES`' `library-env`, the game gate | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#mechanisms) |
+| **Device recipe**: a device, its capability record and its fault watch from one request, native or portable, optionally restricted | `HOST:M1` → shells, captures, benches, `TEST-SUPPORT` | C04, [HOST](HOST/DESIGN.md#mechanisms) |
 | **World lifecycle policy**, **render once** and **await drawn** | `HOST:M2` and `M3` → shells, captures, tests; `SESSION:M7` | [HOST](HOST/DESIGN.md#mechanisms) |
-| **Game contract**: what a game implements to run in the window, on the page and offscreen | `HOST:M4` → games, kit scenes; `GAME-UI:M6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
+| **Game contract**: what a game implements to run in the window, on the page and offscreen; and the render owner's **frame job and reply** | `HOST:M4` → games, kit scenes, the iPhone app; `GAME-UI:M6` adds the iPhone | C11, [HOST](HOST/DESIGN.md#mechanisms) |
 | **Game gate**: a game in the games repository built and checked against the engine checkout under test, with both revisions recorded | `GAME-SPLIT:M1` → `SHOWCASE` after the move, `SWARM` | [GAME-SPLIT](GAME-SPLIT/DESIGN.md#mechanisms) |
 
 ## Owner decisions
@@ -1935,3 +1950,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   its builder stopped under rule 1. `CULLING` M3 builds the forward pass's coverage output and regenerates the
   `APPLE-TILE` references it moves in the same landing; the references stay `APPLE-TILE`'s. `CULLING` M3.10 was
   rewritten and M3.11 to M3.13 added. No item of any other module changed, and no module or milestone was added.
+- 2026-11-15 Track 4's six designs revised after their first design reviews (16 Must Fix), on the lead's task.
+  Settled between modules: shared fixtures are `TEST-SUPPORT`'s second package, `thrum-fixtures`, which the
+  proving ground may take as a normal dependency and `GAME-SPLIT` M2 fills (ruling 9); the device recipe takes a
+  restriction for tests (ruling 7); `library-env` exempts the registered test-support package; `TEST-SUPPORT` M2
+  now waits for `GAME-SPLIT:M2`. `REVIEW-RENDER` M5 keeps the timestamp resolve in a later submission, because
+  the retained Metal evidence outranks the code review's M40. The owner's decisions stand: no history rewrite,
+  the game at `/Users/ryannel/Workspace/thrum-games` with path dependencies, `CLOUDS` and `WATERS` unchanged.
+  No item of any module outside track 4 changed.

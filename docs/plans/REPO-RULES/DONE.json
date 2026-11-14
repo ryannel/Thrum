@@ -13,9 +13,9 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "Each rule in the design's table refuses its violation and passes the corrected code: for every rule a fixture with one violation fails with the rule's name, the file and the line, and the same fixture corrected passes. A file's count cannot rise above its baseline, a file with no entry is held at zero, and a baseline entry above the file's present count is refused.",
+          "statement": "Each rule the design's table marks M1 refuses its violation and passes the corrected code: for every such rule a fixture with one violation fails with the rule's name, the file and the line, and the same fixture corrected passes. `library-env` passes a read in a package registered `test_role = \"support\"` and refuses the same read in an engine library. `history-names` refuses a code in a file name, an environment variable name, a Cargo target name and a Cargo description.",
           "check": "python3 scripts/test_shape_rules.py",
-          "ask": "Read the test and the rules. Does every rule in the design's table have a violating and a corrected fixture? Do the fixtures include a `pub fn` whose `Result<_, String>` return spans two lines, an `include_str!` that climbs out of its package with `..`, and a dependency from a package under `crates/` on one under `examples/`? Is there a case where a baseline count is raised by hand and the check refuses it?",
+          "ask": "Read the test and the rules. Does every rule marked M1 have a violating and a corrected fixture? Do the fixtures include a `pub fn` whose `Result<_, String>` return spans two lines, an `include_str!` that climbs out of its package with `..`, a dependency from a package under `crates/` on one under `examples/`, and `THRUM_G5_CAPTURE_DIR` read in a file whose own name is clean? Is a name such as `rgba8` or `vec3` left alone?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -24,7 +24,18 @@
         },
         {
           "id": "M1.2",
-          "statement": "At the claimed commit the whole repository passes every rule against a checked-in baseline that holds each file's present count and nothing higher, and `--zero` on a path fails wherever a violation of the named rule exists under it.",
+          "statement": "A rule's total can only go down. In a scratch Git repository, a change that adds a violation is refused; a change that adds a violation and rewrites the baseline to match is refused before it is committed, after it is committed, and from a second worktree of the same repository; and removing a violation lowers the mark that later changes are held to. A file moved or split with its violations, a newly registered rule and a new version of a rule pass.",
+          "check": "python3 scripts/test_shape_ratchet.py",
+          "ask": "Read the ratchet cases. Is the accepted total taken from the baseline's Git history and never from the working tree's baseline? Does the committed case run the check at the commit that raised the count, with no remote and no branch name given? After a violation that reached history is removed, does the check pass again with nothing waived?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.3",
+          "statement": "At the claimed commit the whole repository passes every rule against a checked-in baseline that holds each file's present count and nothing else, and `--zero` on a path fails wherever a violation of the named rule exists under it, and for a path that does not exist.",
           "check": "python3 scripts/shape_rules.py check",
           "ask": "Run `check --rule string-errors --zero crates/thrum-app` and `check --rule package-reach --zero crates/thrum-render`: does each fail and list the sites the review named there? Does the baseline hold any count above what its file has now?",
           "target": "mac-metal",
@@ -34,7 +45,7 @@
           "review": ""
         },
         {
-          "id": "M1.3",
+          "id": "M1.4",
           "statement": "`./dev check` and `./dev check-docs` run the rules through `repo_check.py`, with no flag, feature or environment variable that skips them. A refusal names the patterns section to read and the shape to use, and the patterns reference names the rule that holds each shape.",
           "check": "sh -c 'grep -q shape_rules scripts/repo_check.py && grep -q shape_rules .agents/skills/thrum-engineering/references/patterns.md'",
           "ask": "Could a builder who has never seen the review fix a refusal of each rule from its message alone? Does any path through `./dev check` skip the rules?",
@@ -45,8 +56,8 @@
           "review": ""
         },
         {
-          "id": "M1.4",
-          "statement": "The counts the rules found at the starting commit are on record: for each rule, the violations in each crate and example.",
+          "id": "M1.5",
+          "statement": "The counts the rules found at the starting commit are on record: for each rule marked M1, the violations in each crate and example.",
           "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -55,7 +66,7 @@
           "review": ""
         },
         {
-          "id": "M1.5",
+          "id": "M1.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
@@ -77,7 +88,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "No tracked file under `docs/evidence/` is over 2 MiB except the registered exact-baseline references, the manifest agrees with the object store, and a new `evidence-size` rule, with its fixtures, refuses a new oversized file.",
+          "statement": "No tracked file under `docs/evidence/` is over 2 MiB except the registered exact-baseline references. Every history entry in the manifest matches its blob in the object store, every local entry the store holds matches its hash, and a new `evidence-size` rule, with its fixtures, refuses a new oversized file.",
           "check": "python3 scripts/evidence_store.py check",
           "target": "mac-metal",
           "builder_result": "open",
@@ -85,9 +96,9 @@
         },
         {
           "id": "M2.2",
-          "statement": "Every file that left the tree is in `docs/evidence/BULK.json` with its path, size, SHA-256, Git blob and the last commit that held it, and `restore` writes back bytes with that SHA-256. `put` stores a new file beside the repository and lists it the same way, and `restore` finds it there.",
+          "statement": "Every file that left the tree is a history entry in `docs/evidence/BULK.json` with its path, size, SHA-256, Git blob and the last commit that held it, and `restore` writes back bytes with that SHA-256. `put` stores a new file in the one local store beside the main checkout and lists it as a local entry, with no blob or commit; a file put from one worktree is restored with the same hash in another worktree of the repository.",
           "check": "python3 scripts/test_evidence_store.py",
-          "ask": "Read the test. From a clean checkout, does it restore the largest file, a video and a sample of others, and compare hashes it computes itself? Does `restore` fail loudly for a path that is in neither history nor the local store?",
+          "ask": "Read the test. From a clean checkout, does it restore the largest file, a video and a sample of others, and compare hashes it computes itself? Does it make two worktrees of a scratch repository, put a file from one and restore it in the other? Does `restore` fail loudly for a path that is in neither history nor the local store, and does `check` name a local entry whose file is not on this machine without failing?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -96,7 +107,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "Every link in tracked Markdown still resolves, to a tracked file or to a file the manifest lists, and no review, record or `DESIGN.md` was edited to make it so.",
+          "statement": "Every link in tracked Markdown still resolves, to a tracked file or to a path the manifest lists, whether or not a restored copy is on disk, and no review, record or `DESIGN.md` was edited to make it so. A link to a path that is neither tracked nor listed is still refused.",
           "check": "sh -c 'python3 scripts/evidence_store.py check && python3 scripts/repo_check.py'",
           "ask": "Does the milestone's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
           "target": "mac-metal",
@@ -162,9 +173,9 @@
         },
         {
           "id": "M3.2",
-          "statement": "No file, bench, script, environment variable or Cargo description is named for a milestone or gate: `history-names` passes at zero over the repository, except for names that an open item's check, `./dev` or the baseline registry uses, each listed with what pins it.",
+          "statement": "No file, bench, script, environment variable or Cargo description under `crates/`, `examples/`, `tools/` or `scripts/` is named for a milestone or gate: `history-names` is at zero over file names, environment variable names in source, Cargo target names and Cargo descriptions. The only names left are those an open item's check, `./dev` or the baseline registry uses, which the rule finds itself and lists with what pins each.",
           "check": "python3 scripts/shape_rules.py check --rule history-names --zero .",
-          "ask": "Is every exception in the list really named by an open item's check, by `./dev` or by the registry? Pick five renamed test files: does each new name say what the test covers?",
+          "ask": "Run the rule's list of pinned names: is each really named by an open item's check, by `./dev` or by the registry, and is any exception written by hand? Is `THRUM_G5_CAPTURE_DIR`, or any other environment variable with a gate code, still read anywhere? Pick five renamed test files: does each new name say what the test covers?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -184,11 +195,14 @@
         },
         {
           "id": "M3.4",
-          "statement": "Inside `thrum-render` the frame runtime, the graph, the presenter and timing import nothing from the scene renderer or the atmosphere, and the `layering` rule holds that at zero.",
-          "check": "python3 scripts/shape_rules.py check --rule layering --zero crates/thrum-render",
+          "statement": "Inside `thrum-render` the graph and timing import nothing from the scene renderer or the atmosphere, and the `layering` rule holds that at zero. The frame runtime's and the presenter's imports from the scene renderer are counted in the baseline, each on record with the type it needs, and the rule refuses a new one.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule layering --zero crates/thrum-render/src/graph.rs crates/thrum-render/src/graph crates/thrum-render/src/timing.rs crates/thrum-render/src/timing && python3 scripts/shape_rules.py check --rule layering'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "ask": "Does the rule's fixture refuse a new import of a scene-renderer type in the frame runtime? Was any scene-renderer code moved under the runtime, the presenter or a neutral name so that an import no longer shows?",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M3.5",

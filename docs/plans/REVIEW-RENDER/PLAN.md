@@ -18,7 +18,10 @@ again when `land` refuses a rebased commit for lack of a proof.
 
 The light split is in `synthetic.rs` (`cpu_light_bytes`), `atmosphere/graph.rs`, `atmosphere/diffuse.wgsl`,
 `atmosphere/products.wgsl` and `atmosphere/products.rs`. `thrum-asset-gpu`'s cooked shader and `thrum-sea` read the
-light group through the contribution seam, so they follow its layout. The dropped encode is in `runtime.rs`
+light group through the contribution seam, so they follow its layout. The mode with no atmosphere is
+`FrameLighting::Photometric` and `Diagnostic`: `pack_directional` writes the constant ambient at bytes 48 to 60,
+and `ambient_irradiance` in `synthetic.wgsl` picks it when the mark is clear. Take the photometric scene's bytes
+before you change anything. The dropped encode is in `runtime.rs`
 (`encode_surface(...).is_ok()`), and the two blanket conversions are beside `FrameError` there.
 
 ## M2 Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test
@@ -36,7 +39,9 @@ the Mac qualification read pass names and buckets from the frame timing feed: th
 Every crate that names the render error follows: `thrum-app`, `thrum-asset-gpu`, `thrum-sea`, the examples. Convert
 at their edge and leave their own errors to `HOST` and `REVIEW-ENGINE`.
 
-## M5 A frame's GPU timing costs no extra submission and no allocation, and a resize compiles one graph
+## M5 A frame's GPU timing is valid, belongs to its frame and allocates nothing, and a resize compiles one graph
 
-The frame-allocation test is `examples/v1-game/tests/frame_alloc.rs`. Take the paired frame records at the commit
-you claim and say what else the machine was doing.
+The frame-allocation test is `examples/v1-game/tests/frame_alloc.rs`. `GpuTimings::resolve_if_ready` in
+`timing.rs` holds the completion boundary and `try_collect` already refuses zero and inverted counters: keep both,
+and do not move the resolve into the frame's encoder. Take the paired frame records at the commit you claim and
+say what else the machine was doing.

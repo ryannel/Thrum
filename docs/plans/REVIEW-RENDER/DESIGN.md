@@ -1,6 +1,7 @@
 # Review fixes in the renderer: confirmed bugs, GPU records, pass identity, errors and waste
 
-14 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+14 November 2026, revised 15 November after [the first design review](../../evidence/REVIEW-RENDER/design-review.md).
+[Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), slices S1 to S4 ·
 [patterns](../../../.agents/skills/thrum-engineering/references/patterns.md)
@@ -32,14 +33,33 @@ proposal in the log and ends `BLOCKED`, as [the exact-baseline rules](../ARCHITE
 
 ## Mechanisms
 
-**1. One writer for each light buffer (H09).** The scene renderer writes bytes 0 to 48 of its directional buffer
-on the CPU; the atmosphere's diffuse pass writes bytes 48 to 208 on the GPU and caches them by relying on the CPU
-not to write there. The split is the literal `48` in two modules, and the layout is declared in four places. The
-buffer becomes two: the directional record, which only the scene renderer's upload writes, and the environment
-light (the diffuse result and its coefficients), which only the atmosphere's pass writes. Each has one Rust
-record, one WGSL declaration and a layout test. Readers bind both. The alternative, one record with named
-offsets, keeps two writers on one buffer, which the adopted shape rules out. The values read are the same, so the
-image is.
+**1. One writer for each light buffer (H09).** The light record is one 208-byte buffer with two writers. Bytes 0
+to 48 are the directional light (direction, irradiance, half vector), which the scene renderer writes on the CPU.
+Bytes 48 to 208 are the ambient term: a constant ambient irradiance, a mark, and nine diffuse coefficients. What
+writes them depends on the lighting mode:
+
+- With an atmosphere (`FrameLighting::Atmosphere`), its diffuse pass writes the coefficients and sets the mark on
+  the GPU, and caches them by relying on the CPU not to write there.
+- With none (`FrameLighting::Diagnostic` and `FrameLighting::Photometric`), the CPU writes all 208 bytes. A
+  photometric environment's `ambient_lux` reaches the shader as the constant ambient, and the mark stays clear.
+
+The shader reads the coefficients when the mark is set and the constant otherwise. The split is the literal `48`
+in two modules, and the layout is declared in four places.
+
+The buffer becomes two, divided by who writes:
+
+| Buffer | Holds | Its one writer |
+|---|---|---|
+| The directional record | Everything the CPU authors: direction, irradiance, half vector, and the constant ambient irradiance (zero for diagnostic and atmosphere lighting, the photometric ambient for a photometric environment) | The scene renderer's upload, every frame, in every lighting mode |
+| The environment light | The atmosphere's diffuse result: the coefficients and the mark that they are valid | The atmosphere's diffuse pass. With no atmosphere the buffer is bound, zeroed when created, and nothing writes it |
+
+A reader takes the environment light when its mark is set and the directional record's constant ambient
+otherwise: the choice the shader makes today, from the same mark. So every mode keeps its behaviour. A photometric
+scene with no atmosphere shades by its `ambient_lux`. An atmosphere frame shades by the sky's diffuse light, and
+before its diffuse pass has first run, by the constant, which is zero in that mode, as now. Each buffer has one
+Rust record, one WGSL declaration and a layout test, and readers bind both. The alternative, one record with named
+offsets, keeps two writers on one buffer, which the adopted shape rules out. The values read are the same in
+every mode, so the image is.
 
 **2. A surface encode failure is kept (M41).** The runtime turns a failed surface encode into a dropped-frame
 count. The failure is kept by kind on the drive report and the frame sample, and one that is not transient is
@@ -51,7 +71,10 @@ where it was raised. They are removed; each site names its variant.
 **4. Records by reflection (T1).** Each record a shader reads is a `#[repr(C)]` `Pod` struct written whole. One
 test composes every shader source production builds, parses it with naga, walks every struct bound as a uniform
 or storage buffer, and fails unless a Rust record is registered for it with equal size and offsets. A second test
-fails when one struct name is declared in two sources. Constants used on both sides are generated into the shader
+fails when a shared record has two authoritative definitions: two source files that each declare the struct a
+registered record is bound as. A declaration composed into several shaders is one definition, counted by the file
+it comes from, however many composed modules repeat it. Two shader-local structs that share a name but are
+different records, as `Bounds` is in the visibility and the cluster shaders, are not duplicates. Constants used on both sides are generated into the shader
 from the Rust value, as the atmosphere's spectrum profile already is. Because the test finds structs by
 reflection, a shader added later by another module is held without anyone remembering to list it.
 
@@ -68,10 +91,28 @@ error enums implement `Error`, `FrameError` carries typed sources, and the effec
 enum. The constants the atmosphere imports from the scene renderer move to a neutral module, which removes the
 module cycle the error caused.
 
-**7. Waste (T12).** Timestamp queries are resolved in the frame's own encoder and mapped on that submission, so
-timing adds no submission and no frame of latency; the completed timing reaches the sample without allocating.
-The presenter's standalone graph, which nothing calls and every resize recompiles, is removed. The timing-demand
-switch `CREATOR` M2 built keeps its meaning.
+**7. Waste (T12), and what is not waste.**
+
+*Timing.* The review's M40 asks for two things: resolve timestamp queries in the frame's own encoder, to save a
+submission, and stop allocating for every completed frame. Retained device evidence outranks the first.
+[The M3 Max experiment of 3 November](../../evidence/render/R0-FXAA-1080P-TIMESTAMP-2026-11-03.md) found that
+resolving in the render's own submission returns stale or zero end counters on Metal, with reused query slots and
+with fresh ones, on the wgpu 30.0.1 this checkout still pins. Resolving in a later submission, after the render
+had completed, passed all 432 pairs. Every method drew the same image, so no image check can see the fault. The
+protocol chosen from that evidence is in
+[the render foundation decision](../../design/decisions/M1-RENDER-FOUNDATION.md) and in `timing.rs`: resolve and
+copy only in a later host-owned submission, after render completion.
+
+So that submission is what makes the counters right, and it stays. What goes is the allocation: the copied pass
+list, the cloned pass names and the fresh string a completed frame builds today. A completed frame's timing
+reaches the frame sample without allocating and says which frame it measured. Publication keeps refusing what the
+decision says it must, and now by counted reason: a batch whose counters are zero, the error value, inverted or
+repeated from an earlier frame, one from a retired device generation, and one discarded before submission. A
+refused batch is never published as a time.
+
+*Presenter.* The standalone graph, which nothing calls and every resize recompiles, is removed.
+
+The timing-demand switch `CREATOR` M2 built keeps its meaning.
 
 ## Parked, with the reason
 
@@ -79,6 +120,9 @@ switch `CREATOR` M2 built keeps its meaning.
   general case, a new accelerated recipe. The brief puts tuning after the exit.
 - **M31, every Sun change rebuilds the sky, the diffuse light and seven reflection mips.** Its fix is a cadence,
   and the cadence of the atmosphere's products is a quality knob that `APPLE-PRESENTATION` M7 gives the governor.
+- **M40's resolve in the frame's own submission.** Rejected by the device evidence above. Encoding the resolve
+  into a later frame's encoder would also save the submission and keep the completion boundary, but nobody has
+  run it on Metal. Either waits for someone to qualify it with that experiment's evaluator first.
 - **T7, shader source assembled four ways** (M18, M20, M27, M28): not in the review's order of attack. The
   reflection test of mechanism 4 runs over the composed sources, so a text edit that breaks a record is caught.
 - **T9 and T10, names and splits**: [REPO-RULES](../REPO-RULES/DESIGN.md) M3, once, after this module.
@@ -91,4 +135,6 @@ module; rename `synthetic` or split files (that is one later landing); add a num
 ## Proof
 
 Each fix has a test that fails without it, written by the builder and read by the reviewer. Unchanged output is
-held by the verifier in every milestone and by the owning modules' exact tests, unedited.
+held by the verifier in every milestone and by the owning modules' exact tests, unedited. Two things the verifier
+cannot see have proofs of their own: a photometric scene with no atmosphere, which no registered baseline draws,
+and the validity of GPU timing, which never changes an image.

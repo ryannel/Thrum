@@ -21,7 +21,7 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "One function in `thrum-render`'s capabilities owns the device request: adapter choice, features, limits, the fault watch, the SDR surface-format preference and the retrying surface configure. The Mac window, the browser page, the kit capture, the iPhone app and the game's captures and benches call it: `device-request` is at zero in their sources.",
+          "statement": "One function in `thrum-render`'s capabilities owns the device request: adapter choice, features, limits, an optional restriction that can only lower limits and remove features, the fault watch, the SDR surface-format preference and the retrying surface configure. The Mac window, the browser page, the kit capture, the iPhone app and the game's captures and benches call it: `device-request` is at zero in their sources.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-app/src examples/v1-game/src examples/v1-game/benches examples/v1-game-ios/src",
           "target": "mac-metal",
           "builder_result": "open",
@@ -29,7 +29,7 @@
         },
         {
           "id": "M1.2",
-          "statement": "A native device from the recipe has every content feature its adapter offers and the adapter's limits: on an Apple GPU the first texture profile is ASTC, and the sea's limit check passes. The browser keeps the portable request it has today, as a named choice of the recipe.",
+          "statement": "A native device from the recipe has every content feature its adapter offers and the adapter's limits: on an Apple GPU the first texture profile is ASTC, and the sea's limit check passes. The browser keeps the portable request it has today, as a named choice of the recipe. A restricted request yields a device with the lowered limit, and a restriction that raises a limit or adds a feature is refused.",
           "check": "cargo test --locked --offline -p thrum-render --test device_recipe && cargo test --locked --offline -p thrum-sea --test recipe_limits",
           "lock": "gpu",
           "ask": "Is the browser's narrower request a named input of the one recipe, with the reason beside it, or a second copy? Does the first device generation come from one engine constant, with no literal `1` passed where a capability record is captured?",
@@ -41,10 +41,10 @@
         },
         {
           "id": "M1.3",
-          "statement": "A GPU fault means the same on every host: the first uncaptured error and the first loss message are recorded with the device generation, an uncaptured error does not abort the process, and a lost device is replaced.",
+          "statement": "A GPU fault means the same on every host: the first uncaptured error and the first loss message are recorded with the device generation, an uncaptured error does not abort the process, and a lost device is replaced. A fault that invalidated the device generation and its histories before still does.",
           "check": "cargo test --locked --offline -p thrum-render --test device_fault",
           "lock": "gpu",
-          "ask": "Do the Mac window, the browser page and the iPhone app each install the recipe's one watch and no handler of their own? Does the test raise a real validation error on a device and see the process survive and the error recorded?",
+          "ask": "Do the Mac window, the browser page and the iPhone app each install the recipe's one watch and no handler of their own? Does the test raise a real validation error on a device and see the process survive and the error recorded? Is the path by which a delayed execution error retires the generation and resets its histories still there, as C07 requires?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -118,8 +118,8 @@
         },
         {
           "id": "M2.3",
-          "statement": "The iPhone app's render owner keeps only what is UIKit's. Each difference the review found between the three shells is closed, or named in the design's table as a fact of the platform.",
-          "ask": "For each drift the review lists under H01, H15 and M03, where is the one implementation now? What is left in `examples/v1-game-ios` that the Mac or web shell also has?",
+          "statement": "Every drift the design's table marks M1 or M2 is closed: the device request, the fault watch, the surface configure and format list, the first generation, the surface outcome mapping and the pause and overload policy each have one implementation, and the Mac window, the browser page and the iPhone app call it.",
+          "ask": "Take the rows of the design's drift table marked M1 and M2 one at a time: where is the one implementation, and does each of the three shells call it? Is any copy of those policies left in a shell, in `examples/v1-game-ios` or in the game? Rows marked M3, M4 or Not here are not this milestone's.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -185,9 +185,9 @@
         },
         {
           "id": "M3.3",
-          "statement": "There is one way to capture the game to disk, on the engine's offscreen driver. `src/bin/window/` and its `#[path]` includes are gone, and engine capture's modes give the records they gave.",
+          "statement": "There is one way to capture the game to disk, on the engine's offscreen driver. `src/bin/window/` and its `#[path]` includes are gone, and engine capture's `still`, `fixed` and `realtime` modes each run on the Mac at the claimed commit and give the records they gave.",
           "check": "sh -c 'test ! -e examples/v1-game/src/bin/window && python3 -m unittest discover -s scripts -p test_t2_capture.py'",
-          "ask": "Which code path does each of `still`, `fixed` and `realtime` capture take now, and is any device, host or route logic written twice?",
+          "ask": "Which code path does each of `still`, `fixed` and `realtime` capture take now, and is any device, host or route logic written twice? Is there a native `fixed` run at the claimed commit on record, beside the `still` and `realtime` runs the baseline matrices make?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -259,6 +259,18 @@
         },
         {
           "id": "M4.5",
+          "statement": "The render owner's frame job and reply are one pair of platform-neutral types in `thrum-app`, used by the Mac render actor and by the iPhone app's render owner. What `examples/v1-game-ios` still holds that `thrum-app` also holds is on the design's list of what `GAME-UI` M6 moves, and nothing else.",
+          "check": "sh -c '! grep -q \"SAMPLE_SLOTS: usize\" examples/v1-game-ios/src/ios/render.rs && python3 scripts/host_lifecycle.py check --target ios-sim'",
+          "lock": "gpu",
+          "ask": "List what the iPhone app's render owner and `thrum-app`'s render actor both still define. Is each entry the owner thread, the UIKit lifecycle, the surface lease, touch or the command table, which the design leaves to `GAME-UI` M6? Is the device request, the lifecycle policy, the outcome mapping, the frame host or the frame job and reply defined twice anywhere?",
+          "target": "ios-sim",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.6",
           "statement": "The starter runs in its window and in Chrome, and the V1 game on the Mac and in Chrome, as before.",
           "check": "sh -c './dev check-web && python3 scripts/host_lifecycle.py check --target mac-metal --target chrome-webgpu'",
           "lock": "gpu",
@@ -267,7 +279,7 @@
           "evidence": ""
         },
         {
-          "id": "M4.6",
+          "id": "M4.7",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",

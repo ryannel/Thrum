@@ -9,3 +9,10 @@
   game's folder, so the gate works from a detached copy.
 - 2026-11-14 Decided: the move waits for `SHOWCASE` M8; the proving ground stays at `examples/v1-game` under its
   old name until no open check names it, because 54 approved checks in other modules' open milestones do.
+- 2026-11-15 Revised after [the first design review](../../evidence/GAME-SPLIT/design-review.md) (three Must
+  Fix). The mixed-mesh field is one fixture in `crates/thrum-fixtures`, `TEST-SUPPORT`'s package, read by the
+  visibility tests as a dev-dependency and by the proving ground as a normal one; M2 proves the proving ground's
+  Mac and wasm32 builds. The presets, routes, valley sources and pages the exact baselines are drawn from stay in
+  Thrum as frozen qualification content, and M4 runs the verifier with the games repository unavailable. M4's
+  exit check runs every command `SHOWCASE` M5.5 and M7.2 to M7.8 pinned, the live clauses included; frame and
+  visual evidence stays `SHOWCASE`'s accepted history. The owner's decisions are unchanged.

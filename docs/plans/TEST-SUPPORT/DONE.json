@@ -3,7 +3,7 @@
   "milestones": [
     {
       "id": "M1",
-      "name": "A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a printed reason, or fails when a GPU is required",
+      "name": "A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -15,17 +15,20 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "`thrum-test-support` is registered in `.config/architecture.toml` as a dev-only crate: no package has it as a normal or build dependency, and the `dev-only-crates` rule refuses one.",
-          "check": "python3 scripts/shape_rules.py check --rule dev-only-crates --zero .",
+          "statement": "`thrum-test-support` is registered in `.config/architecture.toml` with `test_role = \"support\"` and nothing has it as a normal or build dependency. The `test-crate-edges` rule refuses that edge, and for a package registered `\"fixtures\"` it refuses a build dependency and a normal dependency from any package but the registered proving ground.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule test-crate-edges --zero . && python3 scripts/test_shape_rules.py'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "ask": "Do the rule's fixtures refuse a normal dependency on the support package, a normal dependency on a fixtures package from a package under `crates/`, and a build dependency on either, and pass a dev-dependency on both and a normal dependency on the fixtures package from the proving ground?",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M1.2",
-          "statement": "A test asks for a GPU through one gate. With an adapter it runs. With none it prints a line that names the test and the reason and returns, and with `THRUM_REQUIRE_GPU=1` it fails. `./dev check` sets the variable on macOS, so on this Mac a missing adapter can never pass for a run.",
+          "statement": "A test asks for a GPU through one gate. With an adapter it runs. With none the gate writes `thrum-gpu-skip: <test>: <reason>` to standard error, where an ordinary `cargo test` run shows it, and the test returns; with `THRUM_REQUIRE_GPU=1` the test fails with that reason. `./dev check` sets the variable on macOS, so on this Mac a missing adapter can never pass for a run.",
           "check": "cargo test --locked --offline -p thrum-test-support",
-          "ask": "Read the gate and its tests. Is the no-adapter path exercised by a test that forces it, in both modes? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
+          "ask": "Read the gate and its tests. Do they run a child test process with the adapter forced absent, under the default harness with no `--nocapture` or `--show-output`, and find the skip line in its output and exit code 0, then a failing exit code with `THRUM_REQUIRE_GPU=1`? Does `./dev check` set the variable on macOS and leave it unset elsewhere? Does the gate reach wgpu only, with no type of `thrum-render`'s in what it hands to a unit test inside `thrum-render`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -34,17 +37,20 @@
         },
         {
           "id": "M1.3",
-          "statement": "Every GPU test and bench in `thrum-sea`, `thrum-asset-gpu` and `thrum-cook` takes its device through the gate: `device-request` is at zero for those crates, and their tests pass.",
-          "check": "sh -c 'python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-sea crates/thrum-asset-gpu crates/thrum-cook && cargo test --locked --offline -p thrum-sea -p thrum-asset-gpu -p thrum-cook'",
+          "statement": "Every GPU test and bench in `thrum-sea`, `thrum-asset-gpu` and `thrum-cook` takes its device through the gate, by profile and restriction: `device-request` is at zero for those crates, and their tests pass with a GPU required. The sea's seven-storage-buffer device and its default-limits device are restrictions the helper is asked for, and what those tests assert is unchanged.",
+          "check": "sh -c 'python3 scripts/shape_rules.py check --rule device-request --zero crates/thrum-sea crates/thrum-asset-gpu crates/thrum-cook && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-sea -p thrum-asset-gpu -p thrum-cook'",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "ask": "In `thrum-sea`'s `portable_limits_gpu` and its harness, does the device with seven storage buffers a stage, and the one on WebGPU's default limits, come from the helper, with each assertion as it was? Can a restriction raise a limit or add a feature?",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M1.4",
-          "statement": "The tests that ran in those crates before run now, and none that ran on this Mac is skipped.",
-          "ask": "Compare the recorded test lists before and after for the three crates: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
+          "statement": "Every test that ran and passed in those crates before runs and passes now, and none is skipped on this Mac. The record holds the results of the same test command before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
+          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line? Does any GPU test in the three crates return early without asking the gate?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -71,6 +77,7 @@
       "diagnoses": 0,
       "depends_on": [
         "HOST:M1",
+        "GAME-SPLIT:M2",
         "ATMOSPHERE:M9",
         "APPLE-TILE:M10",
         "APPLE-PRESENTATION:M3",
@@ -81,7 +88,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device.",
+          "statement": "`device-request` is at zero across `crates/` and `examples/`: outside the device recipe and the gate, nothing asks wgpu for an adapter or a device. The support package's stand-in is gone, and a test's device is the recipe's, by profile and restriction.",
           "check": "python3 scripts/shape_rules.py check --rule device-request --zero crates examples",
           "target": "mac-metal",
           "builder_result": "open",
@@ -91,7 +98,7 @@
           "id": "M2.2",
           "statement": "No test file is gated as a whole on an operating system: `whole-file-gpu-gate` is at zero, the CPU-only graph validation tests build on every platform, and a Metal-only test is gated on the test, with its reason.",
           "check": "python3 scripts/shape_rules.py check --rule whole-file-gpu-gate --zero crates examples",
-          "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition? Does any GPU test still return early without printing why?",
+          "ask": "Do the 13 CPU-only tests the review named in `tests/graph_kinds.rs` now build with no macOS condition, and is that shown by a compile for a target that is not macOS? Does any GPU test still return early without asking the gate, so that no skip line is written?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -100,7 +107,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`.",
+          "statement": "Test support shared inside a crate is a declared module: `path-attribute` is at zero under `crates/`. The includes of game source went with `GAME-SPLIT` M2.",
           "check": "python3 scripts/shape_rules.py check --rule path-attribute --zero crates",
           "target": "mac-metal",
           "builder_result": "open",
@@ -108,8 +115,8 @@
         },
         {
           "id": "M2.4",
-          "statement": "The tests that ran before run now and pass on this Mac, and none that ran here is skipped.",
-          "ask": "Compare the recorded `cargo test --workspace -- --list` output before and after: was any test removed, renamed without a mapping, or reported as skipped on this Mac?",
+          "statement": "Every test that ran and passed before runs and passes now on this Mac, and none is skipped. The record holds the results of `cargo test --workspace` before and after, the later one run with `THRUM_REQUIRE_GPU=1`.",
+          "ask": "Compare the two recorded runs' results, test by test, not their lists: does every test that reported `ok` before report `ok` after, under its name or a mapped one? Does the later run's output hold any `thrum-gpu-skip:` line?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

@@ -1,6 +1,7 @@
 # Host: one device recipe, one host core, one contract for a game
 
-14 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+14 November 2026, revised 15 November after [the first design review](../../evidence/HOST/design-review.md).
+[Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T4 (H01, H15, M01, M02, M03, M56,
 M76, M78, M79) · [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -34,22 +35,29 @@ uncaptured error is to panic, so a host that installs no handler dies on an erro
 ## Mechanisms
 
 **1. The device recipe**, in `thrum-render`'s capabilities, beside the registry it feeds. One entry point takes
-an instance, an optional surface and a profile, and returns the adapter, device, queue and capability record. It
-owns:
+an instance, an optional surface, a profile and an optional restriction, and returns the adapter, device, queue
+and capability record. It owns:
 
 - **The request.** A *native* profile asks for every timing and content feature the adapter offers and for the
   adapter's own limits. A *portable* profile is the browser's: the request Chrome gets today. It is a named input
   with its reason, the hardware-native decision's "the browser runs the portable recipe", not a second copy. So
   Chrome's cooked content keeps the portable profile and no exact baseline moves. Compressed textures in Chrome
   would change default output; that is `CONTENT-LOOP`'s to propose under the baseline rules.
+- **The restriction.** A caller may lower limits and remove features from what its profile asks, and can add
+  nothing. Tests need it: `thrum-sea` proves that it refuses a device with seven storage buffers a stage, and runs
+  its harness on WebGPU's default limits as well as the adapter's. Those are test inputs, so they go through the
+  one request as a restricted profile and not around it. No shell passes a restriction.
 - **The fault watch.** One watch holds the lost flag, the device generation, the first loss message and the first
-  uncaptured error. An uncaptured error is recorded and the process lives.
+  uncaptured error. An uncaptured error is recorded and the process lives. Only the abort goes: what a fault
+  invalidates is unchanged. A delayed execution error still retires the device generation and resets its
+  histories, as [C07](../../design/CONTRACTS.md#c07-render-scene-views-and-temporal-data--v2-with-p4v3v4) and
+  `APPLE-PRESENTATION` require, where an isolated validation error is recorded and the generation carries on.
 - **The surface.** The SDR format preference, and a configure that clears a stale drawable after a loss by
   retrying inside an error scope where the platform has one.
 - **The first device generation**, as one constant.
 
-`TEST-SUPPORT`'s gate hands tests a device from the same recipe. The `device-request` rule holds every other call
-site at zero.
+`TEST-SUPPORT`'s gate hands tests a device from the same recipe, by profile and restriction. The
+`device-request` rule holds every other call site at zero.
 
 **2. The host core.** Three things every shell decides, each in one place:
 
@@ -70,36 +78,53 @@ the offscreen driver. The browser's binding of typed controls becomes the engine
 qualification harness takes its control and schedule from its caller and attaches as one observer, so the shell
 names nothing of any game. The test of the whole: a second game copies nothing from the first.
 
+The same platform-neutral half holds the render owner's frame job and reply: the request a shell sends its render
+owner for one frame and what comes back (the late-acquired target time, the frame samples, the outcome). The Mac's
+render actor and the iPhone app's render owner each define their own today, with the same two sample slots. They
+become one pair of types that both use. The iPhone app keeps its owner thread and everything UIKit; it does not
+go onto the game contract here.
+
 **5. Typed errors in the shells** (T3), last, when the signatures have stopped moving.
 
 ## The drifts, and where each ends
 
-| Drift between hosts today | Ends as |
-|---|---|
-| Features: content features on the Mac, timing only on iPhone and in the browser | The native profile everywhere native; the portable profile, by name, in the browser |
-| Limits: `downlevel_defaults` on iPhone, wgpu's defaults elsewhere | The adapter's limits on every native host |
-| Adapter choice differs between the two game capture paths | The recipe's one choice |
-| Fault watch: three, with different contents | The recipe's one watch |
-| An uncaptured error is fatal on the Mac and in the browser, survived on iPhone | Recorded and survived |
-| Surface configure retries on the Mac only | The recipe's configure |
-| A validation failure at acquire is fatal in the browser | Recovered |
-| The SDR format list, three copies; the first generation, eleven literals | One of each |
-| Pause and overload, four copies | One policy in core |
-| The display link: Swift on iPhone, `objc2` on the Mac | A fact of the platform. The UIKit lifecycle moves to `thrum-app` in `GAME-UI` M6 |
+| Drift between hosts today | Ends as | Closed in |
+|---|---|---|
+| Features: content features on the Mac, timing only on iPhone and in the browser | The native profile everywhere native; the portable profile, by name, in the browser | M1 |
+| Limits: `downlevel_defaults` on iPhone, wgpu's defaults elsewhere | The adapter's limits on every native host | M1 |
+| Adapter choice differs between the two game capture paths | The recipe's one choice | M1 |
+| Fault watch: three, with different contents | The recipe's one watch | M1 |
+| An uncaptured error is fatal on the Mac and in the browser, survived on iPhone | Recorded and survived | M1 |
+| Surface configure retries on the Mac only | The recipe's configure | M1 |
+| The SDR format list, three copies; the first generation, eleven literals | One of each | M1 |
+| A validation failure at acquire is fatal in the browser | Recovered, by the one outcome mapping | M2 |
+| Pause and overload, four copies | One policy in core | M2 |
+| Waiting for cooked content by reading frames back, about thirty sites | Render once and await drawn | M3 |
+| The game's forwarding host, and two ways to capture the game to disk | The engine's frame host held directly; one capture path | M3 |
+| `Game` exists on macOS only; the browser has a second contract; the sky kit builds its host twice | One contract, three adapters, one construction | M4 |
+| The Mac qualification harness names a game's control | An observer given its control by its caller | M4 |
+| The render owner's frame job and reply, written twice (Mac and iPhone) | One pair of types in `thrum-app` | M4 |
+| The iPhone app's owner thread, UIKit lifecycle, surface lease, touch and command table | Stay in the iPhone app; `GAME-UI` M6 moves them to `thrum-app` | Not here |
+| The display link: Swift on iPhone, `objc2` on the Mac | A fact of the platform | Not a drift |
+
+A milestone is judged on its own rows. M2 closes the device, fault, surface and lifecycle policies; the contract
+and the render owner's types are M4's, and a review of M2 does not ask for them.
 
 ## Interfaces
 
 | Interface | For |
 |---|---|
-| **Device recipe**: a device, its capability record and its fault watch from one request, by profile | Every shell, capture, bench and test; `TEST-SUPPORT` |
+| **Device recipe**: a device, its capability record and its fault watch from one request, by profile and optional restriction | Every shell, capture, bench and test; `TEST-SUPPORT` |
 | **World lifecycle policy**: pause, overload and resume for both drive styles | The three shells; `SESSION` M7's driven world extends it |
 | **Render once** and **await drawn** | Shells, captures, tests |
 | **Game contract**: what a game implements to run in the window, on the page and offscreen | Games, the kit scenes; `GAME-UI` M6 adds the iPhone adapter |
+| **Frame job and reply**: what a shell's render owner is asked for one frame, and what it answers | The Mac render actor, the iPhone app's owner; `GAME-UI` M6 |
 
 ## Not built here
 
 The iPhone app's UIKit lifecycle and render owner stay where they are until `GAME-UI` M6 moves them into
-`thrum-app`; this module makes that a move by taking the shared policy out first. A still scene that renders at
+`thrum-app`; this module makes that a move by taking out first what the copies share: the device request (M1),
+the lifecycle and surface policy (M2), the forwarding host (M3) and the frame job and reply (M4). A still scene that renders at
 the display's full rate forever (M58) is left: idling a host changes what the cadence qualification measured, and
 belongs with the governor.
 
