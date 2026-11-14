@@ -1,0 +1,12 @@
+{
+  "job": "20261114-004643-94012",
+  "result": "deliberately_stopped_while_waiting_for_native_test_GPU_lease",
+  "passed": false,
+  "moving_check": "tmp/g7-showcase/runs/moving-20261114-011509/run.json",
+  "completed_stages": ["moving smoke passed", "repository CPU checks passed", "Clippy passed", "native test compilation passed"],
+  "native_tests_executed": false,
+  "lease": "tmp/apple-tile-m3-resume/lease-f9exxril/cargo-6585",
+  "lease_ready_file_existed": false,
+  "stopped_pids": [94023, 7814],
+  "reason": "Run focused target tests with the captures, then run the complete official gate on the final evidence commit through merge and check. This avoids a duplicate broad run on files that will change during evidence promotion. No stopped stage is represented as passed."
+}

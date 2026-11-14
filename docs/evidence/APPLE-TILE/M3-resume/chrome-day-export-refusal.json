@@ -1,0 +1,15 @@
+{
+  "complete": false,
+  "renderer_omissions": 0,
+  "export_omissions": 2,
+  "page_export_peak": 8,
+  "recorded_sources": 480,
+  "gaps": [
+    [
+      459,
+      462
+    ]
+  ],
+  "cause": "The eight-in-flight page export cap was reached twice. This is an observer omission, and the run is not counted as evidence of complete motion. The brief throughput reduction was not attributed to a particular OS task.",
+  "next": "One retry with identical capture settings; no guard or queue change."
+}

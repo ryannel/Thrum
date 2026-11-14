@@ -1,0 +1,41 @@
+{
+  "reason": "Completed historical M3 review sources reduced after the current-source exact matrices and full source verification passed. Full metadata, source hashes, selected lossless images and original-time previews remain. Fresh current-source visual recordings are retained separately.",
+  "released": [
+    {
+      "file": "tmp/g3t-m3/native-m1/portable-variants-motion/frames.zst",
+      "bytes": 322627775,
+      "sha256": "ef23686da005e7800faa3615cc06dd1d182968068dd61e9766f7bbbf05a6753a",
+      "archive": "tmp/apple-tile-m3-resume/native-m1-portable-variants-motion-historical-retention.json.gz"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m1/apple-tile-variants-motion/frames.zst",
+      "bytes": 323103279,
+      "sha256": "514c8682373950d119cc36bd45eeb9837bf2797520ac3b1be268fb0d95f777d2",
+      "archive": "tmp/apple-tile-m3-resume/native-m1-apple-tile-variants-motion-historical-retention.json.gz"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m2/apple-tile-route-motion/frames.zst",
+      "bytes": 1688122265,
+      "sha256": "ddf62fd63089196982892d74c9e709c252b51b1dd38aad631004f82e3d3c0ac0",
+      "archive": "tmp/apple-tile-m3-resume/native-m2-apple-tile-route-motion-historical-retention.json.gz"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m2/portable-render-stall-motion/frames.zst",
+      "bytes": 507449928,
+      "sha256": "64f8b4c9b2f431524a7407bbe9a783097931008e250de3abe5daa2b7db1b0e4e",
+      "archive": "tmp/apple-tile-m3-resume/native-m2-portable-render-stall-motion-historical-retention.json.gz"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m2/portable-route-motion/frames.zst",
+      "bytes": 1620139637,
+      "sha256": "b7a0c5decf88dd7a54649da0a2b5e15391e90a5ecdc7b90df4b886edb69ef8eb",
+      "archive": "tmp/apple-tile-m3-resume/native-m2-portable-route-motion-historical-retention.json.gz"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m2/apple-tile-render-stall-motion/frames.zst",
+      "bytes": 505694584,
+      "sha256": "e34625bd14ce4ec14ac83cfad3287f75228df4960e214de6636818c87a94dab9",
+      "archive": "tmp/apple-tile-m3-resume/native-m2-apple-tile-render-stall-motion-historical-retention.json.gz"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "reason": "Redundant older native M1 route spools; selected M3 route recordings and sources remain in tmp/g3t-m3/native-m2, and committed selected evidence is verified. Manifests, image hashes, selected frames and original-time previews remain.",
+  "files": [
+    {
+      "file": "tmp/g3t-m3/native-m1/portable-route-motion/frames.zst",
+      "bytes": 1648389689,
+      "sha256": "7ec3dcf750db54c0e0c824f1994a4346acc139e36bab86af519e11382a507a5a"
+    },
+    {
+      "file": "tmp/g3t-m3/native-m1/apple-tile-route-motion/frames.zst",
+      "bytes": 1604215548,
+      "sha256": "4a8a3817be7f30fefc6f7976f47814264c6b38439808c5f04834a2ee8b5823aa"
+    }
+  ]
+}

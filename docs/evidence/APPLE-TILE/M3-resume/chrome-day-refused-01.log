@@ -1,0 +1,9 @@
+/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/tmp/apple-tile-m3-resume/captures/chrome-day/ThrumCapture.app: replacing existing signature
+file:///Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/scripts/capture_v1_browser.mjs:143
+    } else throw new Error(record.error ?? 'Incomplete page result');
+                 ^
+
+Error: Error: incomplete capture: renderer=0, export=2, error=undefined
+    at file:///Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/scripts/capture_v1_browser.mjs:143:18
+
+Node.js v24.16.0

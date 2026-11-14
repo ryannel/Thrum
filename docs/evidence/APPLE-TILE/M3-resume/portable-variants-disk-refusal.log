@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/scripts/capture_v1_runtime.py", line 398, in <module>
+    run(parser.parse_args())
+    ~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-tile-m0/scripts/capture_v1_runtime.py", line 221, in run
+    raise ValueError("less than declared 16 GiB free space")
+ValueError: less than declared 16 GiB free space

@@ -1,0 +1,3 @@
+serving http://127.0.0.1:62060
+scan 984.5µs (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 34.3285ms, publish 435.917µs -> generation 1
+  0 paths, event to publish 35.771166ms

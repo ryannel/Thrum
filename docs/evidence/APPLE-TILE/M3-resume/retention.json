@@ -1,0 +1,6 @@
+{
+  "qualified_source": "e41686a0f4164cd164fed403dd0e75c63946937b",
+  "retained": "Selected PNGs, original-time movies, all source/timing manifests, exact comparisons and refusal diagnostics in this directory; qualified binary and full compressed captures in tmp/apple-tile-m3-resume through review.",
+  "removed_owned_external_scratch": "/private/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/orchestrate-6ihn_wnv",
+  "scope": "This directory records builder target proofs. The orchestration record owns final merged repository checks. Historical source releases have separate verified inventories; no remote backup is claimed."
+}

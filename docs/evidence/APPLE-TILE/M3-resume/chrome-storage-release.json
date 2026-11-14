@@ -1,0 +1,47 @@
+{
+  "reason": "Historical candidate frames from the completed prior review. Baselines, selected lossless images, original-time previews and committed evidence are retained; the new current-source registered verifier passed all 1924 frames. Complete old metadata and compressed-frame hashes were archived before release.",
+  "released": [
+    {
+      "directory": "tmp/g3t-m3/chrome-day-sdr/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-day-sdr-historical-retention.json.gz",
+      "files": 481,
+      "bytes": 600226958
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-day-scene-linear/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-day-scene-linear-historical-retention.json.gz",
+      "files": 481,
+      "bytes": 1831779176
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-night-sdr/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-night-sdr-historical-retention.json.gz",
+      "files": 481,
+      "bytes": 356349232
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-night-scene-linear/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-night-scene-linear-historical-retention.json.gz",
+      "files": 481,
+      "bytes": 1498186693
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-day-realtime/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-day-realtime-historical-retention.json.gz",
+      "files": 482,
+      "bytes": 601534369
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-night-realtime/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-night-realtime-historical-retention.json.gz",
+      "files": 482,
+      "bytes": 357175648
+    },
+    {
+      "directory": "tmp/g3t-m3/chrome-resize/frames",
+      "archive": "tmp/apple-tile-m3-resume/chrome-resize-historical-retention.json.gz",
+      "files": 481,
+      "bytes": 600429898
+    }
+  ]
+}
