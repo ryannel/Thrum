@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "87d8a7d3acb05f07db44ceb731c90f89dc7afbb9094bf3209c34c8422a2bc147",
+      "definitions": "6b69c2dc757c4410a2387c6e6cb7391b4523fdfc7421b0c56e9862d16ae9caef",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M2": {
-      "definitions": "b21356ee50aa3bb962a1971aa6aaf236cfdc3f4a4f70c16197ab65c4a8515cc2",
+      "definitions": "c6a9580bfcf44b66055e050fc2a35f3f188f4bf5fc3147c044479cb7429fbf7e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M3": {
-      "definitions": "4793d21d4dce8466e1916a1e0f0e593c14fd5477098eb79af1a98a0afff42389",
+      "definitions": "bf9ddf8b6ad66abb5a77dc0365ad968c5b3498f30b4c8e6e9979fe9c12537129",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M4": {
@@ -61,57 +61,57 @@
       }
     },
     "M5": {
-      "definitions": "e5bf660b5c5c7e33fc595710a22ebb30e53c88aef7db61cb9736d52fb0903d74",
+      "definitions": "5b48352a2aa326d89c11632ee31affcf612914a5a03d689591305645d928560f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M6": {
-      "definitions": "4b83e404c0abf87ea0bb89bc030b114d8f5f34fac1ca3e2a10be4ad1f9bce13b",
+      "definitions": "9c7ad6271415af788c17f06ed9cb1a20ed77aad36428a30ca3528d3909dd702c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M7": {
-      "definitions": "09b808996b418c369495995cc3c76046dc1b99a0ac774910f727e07252f30c9d",
+      "definitions": "401ca04a7dcc71515769b3f8bfe54d26f643a5b40bdb672cc636aca40d30d615",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M8": {
-      "definitions": "177488e179e7aed5a9589b081c19227c61eab3ce77f5dfb22b001a0a6ad31e26",
+      "definitions": "3b764ffdc2538589d1cd6523b3875920115e18aaf13f38f168188e48bf4073fc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M9": {
-      "definitions": "7428a1cc592184337fc54ef8fc9f38d3bf9497147b11206472640677938a1986",
+      "definitions": "94aa8a82e6d69862032570cce5f49c770bf0b1d27a5229334f4a59093ae383b9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M10": {
-      "definitions": "414f0d0e803b600b2002f98ba5c20708b8007e2e520caad13d813bdd7d538e94",
+      "definitions": "d26bb65a5979541927c47817e0cf759a1cacecccba7e1687837940a429a42615",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     },
     "M11": {
@@ -124,12 +124,12 @@
       }
     },
     "M12": {
-      "definitions": "9fc7ce2365aaa50b7d2ee1cc17dbd5c5e1bd969af3e4080f226ac726c622fbb3",
+      "definitions": "d6ece63afbe3ded3d311df34254ee05bbb901be62dcd59c0889966cfdfb5b69b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
+        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
+        "at": "2026-11-14T00:31:29Z"
       }
     }
   },
@@ -141,10 +141,14 @@
     {
       "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T23:34:13Z"
+    },
+    {
+      "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But we should make sure that it aligns with the approach we want. But yes, you can copy that code out and reuse as is if it's useful.\" Then: \"We can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate design.\" Then, on clouds: \"So in broadsides you will find both a procedural cloud setup as well as pre-baked clouds. The idea being that we could support both those two sky types as well as a hybrid as needed by the game being built.\" And then: \"That's the approach we were going with in broadsides that might not be the right approach here. The agent should look at that work from first principles and figure out how to design the best possible atmospheric system for the thrum game engine. Maybe that's a flexible set of cloud capabilities built from what we did in broadsides, maybe it isn't, but it should start from first principles.\" Lead's reading, to record as assumptions: the owner's last words govern; the existing CLOUDS design and docs/design/decisions/SEA-AND-CLOUD-PORT.md describe the Broadsides approach and are inputs to judge, not constraints; Broadsides code, shaders and assets may be copied and reused as is wherever the design you arrive at finds them useful, and Broadsides itself stays unmodified. Settle the best CLOUDS for the Thrum engine, keep or change the current design accordingly and say why, and update the port decision to match what you decide. SEA M1 is being built in a worktree now; if your design changes what it builds, say so plainly.",
+      "at": "2026-11-14T00:31:29Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T23:34:13Z"
+    "at": "2026-11-14T00:31:29Z"
   }
 }
