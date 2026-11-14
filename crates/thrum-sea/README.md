@@ -25,6 +25,9 @@ Three bands are consecutive. Resolve a world sample modulo each band's length in
 converting to f32. Cascade bins have integer loop cycles; unsigned multiplication wraps the
 frame's 32-bit loop fraction before conversion to phase. Two shared 256-point transforms
 apply an unnormalized positive-sign inverse to eleven complex channels.
+The uploaded spectrum allocation becomes the final transform output after evolution;
+the next frame uploads fresh CPU-owned modes before reading it. Each transform stage
+therefore has an unambiguous producer on the effect graph.
 
 Each field texel is three consecutive `vec4<f32>` values:
 
@@ -40,8 +43,9 @@ of its restricted long-wave model. No forces read this display cache.
 Moments store two `vec4<f32>` values: `(mean sx, mean sz, mean sx², mean sx*sz)` and
 `(mean sz², mean J, mean J², 0)`. Recover covariance as second moment minus outer mean,
 and Jacobian variance as `mean J² - mean J * mean J`; clamp negative roundoff to zero.
-Each band has 87,381 moment texels: base, then each progressively smaller mip. The eight
-reductions average raw moments, preserving variance instead of averaging covariance away.
+Each band has 87,381 moment texels across nine separately allocated mip buffers.
+`moments_buffer(mip)` lends one level with three consecutive bands. The eight reductions
+average raw moments, preserving variance instead of averaging covariance away.
 
 Uploads reuse one CPU byte arena and GPU staging allocation. Record and submit one frame before
 uploading another; the scene owner serializes recording. An encoded and discarded upload never

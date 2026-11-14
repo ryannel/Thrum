@@ -7,6 +7,41 @@ mod upload;
 #[cfg(test)]
 mod tests {
     #[test]
+    fn graph_compiles_with_no_ambient_history_or_uninitialized_reads() {
+        use thrum_render::graph::{Access, FrameGraph, Pass, PassScope};
+        let declaration = super::declaration(&super::prepare::sizes());
+        declaration.validate().expect("every-frame declaration");
+        let mut graph = FrameGraph::default();
+        let resources: Vec<_> = declaration
+            .resources
+            .iter()
+            .map(|(d, s)| graph.resource(d.clone(), *s).expect("real descriptors"))
+            .collect();
+        for pass in &declaration.passes {
+            graph.pass(Pass {
+                name: pass.name.clone(),
+                scope: PassScope::View(1),
+                pipeline: None,
+                accesses: pass
+                    .accesses
+                    .iter()
+                    .map(|a| Access {
+                        resource: resources[a.resource].clone(),
+                        range: a.range.clone(),
+                        kind: a.kind,
+                        view: a.view,
+                        store: true,
+                    })
+                    .collect(),
+                external_side_effect: true,
+            });
+        }
+        let compiled = graph
+            .compile(1, &std::collections::BTreeSet::new())
+            .expect("complete producers");
+        assert_eq!(compiled.pass_names().count(), 13);
+    }
+    #[test]
     fn portable_shader_validates_without_a_device() {
         let source = include_str!("ambient.wgsl");
         let module = wgpu::naga::front::wgsl::parse_str(source)
@@ -81,7 +116,7 @@ pub struct Ambient {
     profile: Profile,
     buffers: Vec<wgpu::Buffer>,
     pipelines: Vec<wgpu::ComputePipeline>,
-    group: wgpu::BindGroup,
+    groups: Vec<wgpu::BindGroup>,
     mip_groups: Vec<wgpu::BindGroup>,
     mip_uniforms: Vec<wgpu::Buffer>,
     staging: wgpu::Buffer,
@@ -122,120 +157,25 @@ impl Ambient {
 
     /// Declare actual hazards. All resources are transient in content, even though allocation is reused.
     pub fn graph(&self) -> EffectGraph {
-        let resources = self
-            .buffers
-            .iter()
-            .enumerate()
-            .map(|(i, b)| {
-                (
-                    ResourceDescriptor::Buffer {
-                        bytes: b.size(),
-                        usage: b.usage(),
-                    },
-                    if i < 4 {
-                        ResourceScope::Imported { initialized: true }
-                    } else {
-                        ResourceScope::Transient
-                    },
-                )
-            })
-            .collect();
-        let specs: &[(&str, &[(usize, AccessKind)])] = &[
-            (
-                "sea long waves",
-                &[
-                    (0, AccessKind::UniformRead),
-                    (2, AccessKind::StorageRead),
-                    (3, AccessKind::StorageRead),
-                    (8, AccessKind::StorageWrite),
-                ],
-            ),
-            (
-                "sea cascade evolve",
-                &[
-                    (0, AccessKind::UniformRead),
-                    (1, AccessKind::StorageRead),
-                    (4, AccessKind::StorageWrite),
-                ],
-            ),
-            (
-                "sea cascade rows",
-                &[(4, AccessKind::StorageRead), (5, AccessKind::StorageWrite)],
-            ),
-            (
-                "sea cascade columns",
-                &[(5, AccessKind::StorageRead), (4, AccessKind::StorageWrite)],
-            ),
-            (
-                "sea cascade unpack",
-                &[(4, AccessKind::StorageRead), (6, AccessKind::StorageWrite)],
-            ),
-        ];
-        let mut passes: Vec<_> = specs
-            .iter()
-            .map(|(name, accesses)| EffectPass {
-                name: (*name).into(),
-                cadence: EffectCadence::EveryFrame,
-                accesses: accesses
-                    .iter()
-                    .map(|&(resource, kind)| EffectAccess {
-                        resource,
-                        range: 0..self.buffers[resource].size(),
-                        kind,
-                        view: None,
-                        history: None,
-                    })
-                    .collect(),
-            })
-            .collect();
-        for band in 0..3_u64 {
-            let base = band * u64::from(MIP_PIXELS) * 32;
-            passes[4].accesses.push(EffectAccess {
-                resource: 7,
-                range: base..base + u64::from(PIXELS) * 32,
-                kind: AccessKind::StorageWrite,
-                view: None,
-                history: None,
-            });
-        }
-        // Each reduction reads only its parent's range and writes the child's disjoint range.
-        let mut parent = 0_u64;
-        let mut child = u64::from(PIXELS);
-        let mut width = 128_u64;
-        for level in 1..=8 {
-            let mut accesses = Vec::new();
-            for band in 0..3_u64 {
-                let base = band * u64::from(MIP_PIXELS);
-                for (start, count, kind) in [
-                    (parent, 4 * width * width, AccessKind::StorageRead),
-                    (child, width * width, AccessKind::StorageWrite),
-                ] {
-                    accesses.push(EffectAccess {
-                        resource: 7,
-                        range: (base + start) * 32..(base + start + count) * 32,
-                        kind,
-                        view: None,
-                        history: None,
-                    });
-                }
-            }
-            passes.push(EffectPass {
-                name: format!("sea moments mip {level}"),
-                cadence: EffectCadence::EveryFrame,
-                accesses,
-            });
-            parent = child;
-            child += width * width;
-            width /= 2;
-        }
-        EffectGraph { resources, passes }
+        declaration(
+            &self
+                .buffers
+                .iter()
+                .map(wgpu::Buffer::size)
+                .collect::<Vec<_>>(),
+        )
     }
 
     /// Record one named graph pass, under the host's encoder and timing scope.
     pub fn encode_pass(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
         let pipeline = if index < 5 { index } else { 5 };
         pass.set_pipeline(&self.pipelines[pipeline]);
-        pass.set_bind_group(0, &self.group, &[]);
+        let group = match index {
+            3 | 4 => 1,
+            5..=12 => index - 3,
+            _ => 0,
+        };
+        pass.set_bind_group(0, &self.groups[group], &[]);
         pass.set_bind_group(1, &self.mip_groups[0], &[]);
         match index {
             0 => pass.dispatch_workgroups(
@@ -260,8 +200,14 @@ impl Ambient {
         &self.buffers[6]
     }
     /// Raw filtered moments. Covariance and variance are recovered from second moments.
-    pub fn moments_buffer(&self) -> &wgpu::Buffer {
-        &self.buffers[7]
+    pub fn moments_buffer(&self, mip: usize) -> Option<&wgpu::Buffer> {
+        if mip == 0 {
+            self.buffers.get(7)
+        } else if mip <= 8 {
+            self.buffers.get(8 + mip)
+        } else {
+            None
+        }
     }
     /// Query samples followed by eight row-major 128-square cache levels, three vec4s per sample.
     pub fn long_buffer(&self) -> &wgpu::Buffer {
@@ -283,4 +229,101 @@ impl Ambient {
     ) -> Result<(), String> {
         upload::frame(self, queue, encoder, spectrum, time, anchor, queries)
     }
+}
+
+fn declaration(sizes: &[u64]) -> EffectGraph {
+    let resources = sizes
+        .iter()
+        .enumerate()
+        .map(|(i, b)| {
+            (
+                ResourceDescriptor::Buffer {
+                    bytes: *b,
+                    usage: prepare::usage(i),
+                },
+                if i < 4 {
+                    ResourceScope::Imported { initialized: true }
+                } else {
+                    ResourceScope::Transient
+                },
+            )
+        })
+        .collect();
+    let specs: &[(&str, &[(usize, AccessKind)])] = &[
+        (
+            "sea long waves",
+            &[
+                (0, AccessKind::UniformRead),
+                (2, AccessKind::StorageRead),
+                (3, AccessKind::StorageRead),
+                (8, AccessKind::StorageWrite),
+            ],
+        ),
+        (
+            "sea cascade evolve",
+            &[
+                (0, AccessKind::UniformRead),
+                (1, AccessKind::StorageRead),
+                (4, AccessKind::StorageWrite),
+            ],
+        ),
+        (
+            "sea cascade rows",
+            &[(4, AccessKind::StorageRead), (5, AccessKind::StorageWrite)],
+        ),
+        (
+            "sea cascade columns",
+            &[(5, AccessKind::StorageRead), (1, AccessKind::StorageWrite)],
+        ),
+        (
+            "sea cascade unpack",
+            &[
+                (1, AccessKind::StorageRead),
+                (6, AccessKind::StorageWrite),
+                (7, AccessKind::StorageWrite),
+            ],
+        ),
+    ];
+    let mut passes: Vec<_> = specs
+        .iter()
+        .map(|(name, accesses)| EffectPass {
+            name: (*name).into(),
+            cadence: EffectCadence::EveryFrame,
+            accesses: accesses
+                .iter()
+                .map(|&(resource, kind)| EffectAccess {
+                    resource,
+                    range: 0..sizes[resource],
+                    kind,
+                    view: None,
+                    history: None,
+                })
+                .collect(),
+        })
+        .collect();
+    for level in 1..=8 {
+        let child = 8 + level;
+        let parent = if level == 1 { 7 } else { child - 1 };
+        passes.push(EffectPass {
+            name: format!("sea moments mip {level}"),
+            cadence: EffectCadence::EveryFrame,
+            accesses: vec![
+                EffectAccess {
+                    resource: parent,
+                    range: 0..sizes[parent],
+                    kind: AccessKind::StorageRead,
+                    view: None,
+                    history: None,
+                },
+                EffectAccess {
+                    resource: child,
+                    range: 0..sizes[child],
+                    kind: AccessKind::StorageWrite,
+                    view: None,
+                    history: None,
+                },
+            ],
+        });
+    }
+    EffectGraph { resources, passes }
 }

@@ -140,9 +140,9 @@ pub(super) fn frame(
     }
     queue.write_buffer(&sea.staging, 0, data);
     let mut offset = 0;
-    for buffer in &sea.buffers[..4] {
-        encoder.copy_buffer_to_buffer(&sea.staging, offset, buffer, 0, buffer.size());
-        offset += buffer.size();
+    for (buffer, size) in sea.buffers[..4].iter().zip(crate::prepare::upload_sizes()) {
+        encoder.copy_buffer_to_buffer(&sea.staging, offset, buffer, 0, size);
+        offset += size;
     }
     sea.query_count = query_count;
     Ok(())

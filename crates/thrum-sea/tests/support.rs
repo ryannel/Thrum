@@ -144,7 +144,15 @@ impl Harness {
         let timing = copy(&self.device, &mut encoder, &resolve);
         let long = copy(&self.device, &mut encoder, self.sea.long_buffer());
         let cascades = copy(&self.device, &mut encoder, self.sea.cascade_buffer());
-        let moments = copy(&self.device, &mut encoder, self.sea.moments_buffer());
+        let moments: Vec<_> = (0..=8)
+            .map(|mip| {
+                copy(
+                    &self.device,
+                    &mut encoder,
+                    self.sea.moments_buffer(mip).expect("moment mip"),
+                )
+            })
+            .collect();
         self.queue.submit([encoder.finish()]);
         let timing = read(&self.device, &timing);
         for (pass, bytes) in graph.passes.iter().zip(timing.as_chunks::<16>().0.iter()) {
@@ -162,10 +170,21 @@ impl Harness {
             writeln!(self.record, "time {time:.9} {}: {ms:.6} ms", pass.name)
                 .expect("valid Metal qualification fixture");
         }
+        let moment_mips: Vec<_> = moments
+            .iter()
+            .map(|b| floats(&read(&self.device, b)))
+            .collect();
+        let mut moments = Vec::new();
+        for band in 0..3 {
+            for mip in &moment_mips {
+                let count = mip.len() / 3;
+                moments.extend_from_slice(&mip[band * count..(band + 1) * count]);
+            }
+        }
         Some(Output {
             long: floats(&read(&self.device, &long)),
             cascades: floats(&read(&self.device, &cascades)),
-            moments: floats(&read(&self.device, &moments)),
+            moments,
         })
     }
     pub(super) fn save(&self, name: &str) {
@@ -255,7 +274,11 @@ fn floats(data: &[u8]) -> Vec<f32> {
     data.as_chunks::<4>()
         .0
         .iter()
-        .map(|v| f32::from_le_bytes(*v))
+        .map(|v| {
+            let value = f32::from_le_bytes(*v);
+            assert!(value.is_finite(), "nonfinite GPU readback");
+            value
+        })
         .collect()
 }
 pub(super) fn points() -> Vec<[f64; 2]> {
