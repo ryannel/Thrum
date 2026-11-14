@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-14 Passed M3.3 at `8daa1ce2`: ten native save assertions, complete object/cause/action
+  diagnostics, both missing-store refusals and exact last-good frame retention. Both native exact
+  matrices and four Chrome sets pass in 962.76 seconds; the official M3 check and full repository
+  gate pass. Retained compact proofs and inspected full frames in [M3 evidence](../../evidence/CREATOR/M3.md).
+  Fresh read-only preflights now show Screen Recording/Accessibility granted and the built-in
+  display awake/unlocked, so M3.4 can proceed without a permission request. M3.1 still needs its fresh agent.
+
 - 2026-11-14 M3.3's initial command passed, but inspection found missing recovery advice for
   refused asset/material edits and lost multiline compiler evidence. Added advice in the kit's
   error-report path and strengthened the real native check to require all three diagnostic
