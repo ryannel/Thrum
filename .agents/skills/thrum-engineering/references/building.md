@@ -53,7 +53,9 @@ gates only done-when items about pacing.
   Chrome, and the iPhone simulator. The simulator shows function only, never speed. Label a Mac standing in for an
   iPhone `proxy:iphone`.
 - **The GPU is shared.** Device timing and capture runs hold the `gpu` lock (`LOOP lock gpu -- <command>`), which
-  every worktree of this repository shares.
+  every worktree of this repository shares. Waiting for that lock, or for your own background job, is progress,
+  not a blocker: wait for it with the script's `wait` and carry on. Several builders stopped as BLOCKED while
+  their verifier was still queued or running, which cost hours each.
 - **A change to a covered path** needs an exact-baseline proof before it lands: `python3 scripts/exact_baselines.py
   verify`, under the `gpu` lock. `CONTRIBUTING.md` lists the requirements, and `.config/exact-baselines.json` lists
   the covered paths.
