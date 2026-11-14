@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -149,17 +149,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "M1.11 and merge need additional shared-disk space after rebuilding.",
-        "work": {
-          "commit": "848c8851ddf8f7eb158c193c56ef27165e7cc50e",
-          "branch": "build/waters",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/WATERS/M1-handoff.md"
-      }
+      ]
     },
     {
       "id": "M12",
