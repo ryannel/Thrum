@@ -199,7 +199,7 @@
         },
         {
           "id": "M2.7",
-          "statement": "The first frame's cost is on record. On this Mac at 2560×1440, capture off, a paired record with the water absent gives the whole frame on tick frames and on repeat frames, each water and wave pass's GPU time by name, the vertices submitted and the water pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "The first frame's cost is on record. On this Mac at 2560\u00d71440, capture off, a paired record with the water absent gives the whole frame on tick frames and on repeat frames, each water and wave pass's GPU time by name, the vertices submitted and the water pixels shaded, beside the design's estimates. Each tripwire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene first-frame",
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -375,7 +375,7 @@
         },
         {
           "id": "M4.8",
-          "statement": "With the island's three bodies in view, the paired cost record is taken again at 2560×1440, beside the first-frame record, with the surface's vertices and pixels given for each body. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the island's three bodies in view, the paired cost record is taken again at 2560\u00d71440, beside the first-frame record, with the surface's vertices and pixels given for each body. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene island",
           "ask": "Does the record say what the map's reads and the second and third bodies added to the surface pass? Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -512,7 +512,7 @@
       "items": [
         {
           "id": "M6.1",
-          "statement": "The f64 wake reference in `thrum-water-model`, forced on deep water by the moving Gaussian pressure patch of `docs/evidence/SEA/design-proof/wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2πU²/g at 3 m/s and at 6 m/s, a ridge within 3° of 19.47° at 3 m/s and narrower than 19.47° at 6 m/s. After the source is removed a crest travels on at its phase speed.",
+          "statement": "The f64 wake reference in `thrum-water-model`, forced on deep water by the moving Gaussian pressure patch of `docs/evidence/SEA/design-proof/wake_proof.py` (6 m long, 2 m wide), gives a transverse wavelength within 5% of 2\u03c0U\u00b2/g at 3 m/s and at 6 m/s, a ridge within 3\u00b0 of 19.47\u00b0 at 3 m/s and narrower than 19.47\u00b0 at 6 m/s. After the source is removed a crest travels on at its phase speed.",
           "check": "cargo test --locked --offline -p thrum-water-model --test interaction",
           "target": "mac-metal",
           "builder_result": "open",
@@ -520,7 +520,7 @@
         },
         {
           "id": "M6.2",
-          "statement": "The interaction reference carries waves at the speed the depth gives. On 0.25 m, 1 m and 4 m of water, and at depths midway between two of its computed depths, a 2 m wave travels within 3% of √(g·tanh(kd)/k), where the design's blend measured 1.6%, and loses under 1% of its height a second to the blend, where the design measured 0.3%. On deep water its step is the deep-water step.",
+          "statement": "The interaction reference carries waves at the speed the depth gives. On 0.25 m, 1 m and 4 m of water, and at depths midway between two of its computed depths, a 2 m wave travels within 3% of \u221a(g\u00b7tanh(kd)/k), where the design's blend measured 1.6%, and loses under 1% of its height a second to the blend, where the design measured 0.3%. On deep water its step is the deep-water step.",
           "check": "cargo test --locked --offline -p thrum-water-model --test interaction",
           "ask": "Does the test measure the speed from the crest's travel, and would one operator at the window's mean depth fail it at 0.25 m?",
           "target": "mac-metal",
@@ -621,7 +621,7 @@
         },
         {
           "id": "M6.12",
-          "statement": "With interaction waves running at sea and at the lake's shore, where the depths in a window are most, the paired cost record is taken again at 2560×1440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With interaction waves running at sea and at the lake's shore, where the depths in a window are most, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene wake",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -775,7 +775,7 @@
         },
         {
           "id": "M7.12",
-          "statement": "With foam running in a gale, at sea and at the beach, the paired cost record is taken again at 2560×1440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With foam running in a gale, at sea and at the beach, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene foam",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -913,7 +913,7 @@
         },
         {
           "id": "M8.10",
-          "statement": "With the optics running, the paired cost record is taken again at 2560×1440, beside the last record for the same views: the gather and the rays on a calm sea and in a gale with zero, one and nine bodies on screen, and at the lake with see-through water and the scene's reflection filling the view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the optics running, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views: the gather and the rays on a calm sea and in a gale with zero, one and nine bodies on screen, and at the lake with see-through water and the scene's reflection filling the view. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene optics",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -1008,7 +1008,7 @@
         },
         {
           "id": "M9.7",
-          "statement": "With the channel in view, the paired cost record is taken again at 2560×1440, beside the island's record. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the channel in view, the paired cost record is taken again at 2560\u00d71440, beside the island's record. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene channel",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
@@ -1142,7 +1142,7 @@
         },
         {
           "id": "M10.11",
-          "statement": "In a gale with the craft, wake, foam and optics all running, at sea and at the lake, the paired cost record is taken again at 2560×1440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "In a gale with the craft, wake, foam and optics all running, at sea and at the lake, the paired cost record is taken again at 2560\u00d71440, beside the last record for the same views. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene gale",
           "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
