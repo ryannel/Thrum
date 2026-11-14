@@ -33,8 +33,11 @@ impl Recording {
         std::fs::create_dir_all(&self.directory).map_err(|e| e.to_string())?;
         let frames: Vec<_> = samples.iter().rev().take(120).map(|s| serde_json::json!({
             "submission": s.submission_order, "timed": s.timing_requested,
+            "tick":s.tick,"completed_ticks":s.completed_ticks,
             "tick_us": s.tick_cpu.as_secs_f64() * 1e6,
             "extract_us": s.extract_cpu.as_secs_f64() * 1e6,
+            "upload_us":s.upload_cpu.as_secs_f64() * 1e6,
+            "uploaded_rows":s.uploaded_rows,"uploaded_bytes":s.uploaded_bytes,
             "encode_us": s.encode_cpu.as_secs_f64() * 1e6,
             "render_us": s.render_cpu.as_secs_f64() * 1e6,
             "gpu": self.detailed.then(|| s.gpu_pass_ns.as_ref().map(|p| p.passes().iter().map(|p| (p.name.to_string(), p.nanoseconds / 1e6)).collect::<Vec<_>>())),
