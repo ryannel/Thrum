@@ -1,10 +1,10 @@
 {
   "module": "CLOUDS",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": "docs/evidence/CLOUDS/design-review.md",
-    "commit": "79d39ed1e247cc941502b89938c4debe48bf500e",
-    "hash": "fcae29197194c6b527baac24b7afe485c8f99255decf51c67fa9d5f893f54322",
+    "commit": "e7e176a297040d8926544097c9d483a2a4b365df",
+    "hash": "fec44c11734b1714c1feb79f500f64b3a64c3ae13328636b0807a0804b52c619",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 131707,
-      "cached": 2067456,
-      "output": 8584,
+      "input": 139753,
+      "cached": 2422912,
+      "output": 17896,
       "turns": 1
     },
-    "at": "2026-11-14T02:36:24Z"
+    "at": "2026-11-14T14:55:39Z"
   },
   "milestones": {
     "M1": {
@@ -322,6 +322,29 @@
         "turns": 1
       },
       "at": "2026-11-14T00:38:33Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/CLOUDS/design-review-3.md",
+      "commit": "79d39ed1e247cc941502b89938c4debe48bf500e",
+      "hash": "fcae29197194c6b527baac24b7afe485c8f99255decf51c67fa9d5f893f54322",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 131707,
+        "cached": 2067456,
+        "output": 8584,
+        "turns": 1
+      },
+      "at": "2026-11-14T02:36:24Z"
     }
   ]
 }
