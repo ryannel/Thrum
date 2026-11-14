@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -80,6 +81,8 @@ def main():
                 if not manifest['complete']:
                     raise ValueError(f'{case}-{mode}: incomplete target capture')
                 compact_pngs(session,args.target)
+                if args.target == 'mac-metal':
+                    shutil.rmtree(directory/'swift-cache')
                 row.update(complete=True,manifest_sha256=sha(session/'manifest.json'),records=len(manifest['records']))
         report['complete'] = True
     finally:
