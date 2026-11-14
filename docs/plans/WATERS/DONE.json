@@ -1301,7 +1301,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -1828,7 +1830,9 @@
           "check": "python3 -c 'import json,sys; r=json.load(open(\"docs/plans/APPLE-PRESENTATION/RECORD.json\"))[\"milestones\"]; bad=[m for m in (\"M7\",\"M8\") if not (r.get(m) or {}).get(\"done\")]; print(\"not Done:\", bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M11.2",
@@ -1847,7 +1851,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M11.4",
@@ -1932,7 +1938,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     }

@@ -88,12 +88,12 @@
       }
     },
     "M8": {
-      "definitions": "2bbb47597ae67d07de0cc3888181d862e2509947384f850a382c5a206c9f219d",
+      "definitions": "820a4f92c61c869310edd92f84c8ecc05bf7129b1b353459d7b4521f6c7c4624",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
-        "at": "2026-11-14T01:49:07Z"
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
       }
     },
     "M9": {
@@ -106,21 +106,57 @@
       }
     },
     "M10": {
-      "definitions": "f8add49ed4fcf507c23711888a2f63695230358c00dd30e213bd451475567882",
+      "definitions": "415d4fefba63b79cd7aab2f1095e0ebd9fb93429aa3317c65562a3006160382b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
       }
     },
     "M11": {
-      "definitions": "2d3c793fc4b3cd4885ca44d10f3e35d9e1cfdd6275d5babf1db24dee5ae2e929",
+      "definitions": "30cc4df5de58c9d3551526d6295ea172ce2f45065e6097d17a33fcc4fbbb79f8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
-        "at": "2026-11-14T01:49:07Z"
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
+      }
+    },
+    "M12": {
+      "definitions": "02f7b48f4a8be60073804ec33cf068f115067e55e341da3d04eb05df784476e5",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
+      }
+    },
+    "M13": {
+      "definitions": "dc76a51314ad79288b56f8f00710db4759f3ff79da32ce0a1a942e1fa1845760",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
+      }
+    },
+    "M15": {
+      "definitions": "07b94ef7363882492a50ccdf29369a77f7dfd79fe29e90b77afc51bc07b9ad82",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
+      }
+    },
+    "M14": {
+      "definitions": "42f7727442755d9ff46835a1dccf25b23505a6e73ca34e1d7c7efe9e03e0fefe",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
+        "at": "2026-11-14T08:35:24Z"
       }
     }
   },
@@ -136,11 +172,15 @@
     {
       "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T04:10:30Z"
+    },
+    {
+      "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well. Breaking waves is something we'd like to have as well.\" Revise the WATERS design, plan and done-when file (and SEA or other modules where it is right) so water reflects scenery that is off screen at the quality of shipped high-end games, the camera can go below the surface and see the underwater view and the surface from beneath, and waves shoal and break at a shore. Choose the methods from first principles and current practice; Broadsides is evidence, not a constraint. WATERS M1 is being built now; if your changes alter what it builds, say so plainly. Say which existing assumptions these choices replace, and which new modules or dependencies (such as a scene probe owner) they need.",
+      "at": "2026-11-14T08:35:24Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T04:10:30Z"
+    "at": "2026-11-14T08:35:24Z"
   },
   "design_history": [
     {
