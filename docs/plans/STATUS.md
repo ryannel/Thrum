@@ -227,6 +227,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - APPLE-PRESENTATION's design: Design Ready for Review · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome (ATMOSPHERE M9): Not Started · [plan](ATMOSPHERE/PLAN.md)
+- CULLING's design: Design Changes Requested · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
 - EFFECT-GRAPH M3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome: Blocked: Needs Dependency: APPLE-TILE must resolve the mismatch before M3 can qualify and merge. A planner adds it to the module that owns it
 - Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point (WATERS M1): In Progress · [plan](WATERS/PLAN.md)
 - The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly (CLOUDS M1): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../evidence/CLOUDS/M1-review.md)
@@ -274,7 +275,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Design Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | Nothing for its M9; APPLE-PRESENTATION M3 for its M6 | M9 of 5 · Not Started |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
-| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Invalid |
+| 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Design Changes Requested |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Blocked: Needs Dependency |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
