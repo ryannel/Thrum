@@ -1844,7 +1844,7 @@ impl PreparedSynthetic {
     }
     /// Number of prepared GPU scene passes for this scene's shadow recipe.
     pub fn scene_pass_count(&self) -> u32 {
-        5 + u32::from(self.temporal_inputs)
+        5 + u32::from(self.temporal_witness_enabled())
             + u32::from(self.taau.is_some())
             + u32::from(self.shadow.is_some()) * shadow::LAYERS
             + u32::from(self.caster_culling.is_some())

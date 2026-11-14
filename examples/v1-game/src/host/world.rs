@@ -259,6 +259,7 @@ pub(crate) struct WorldDriver {
 
 pub(super) struct GameWorld {
     content: GameContent,
+    route_overlay: scene::RouteOverlay,
     pub(super) sim: Simulation,
     projections: Option<ProjectionOutbox>,
     desired_axes: [f32; 3],
@@ -278,6 +279,7 @@ impl WorldDriver {
     ) -> Result<Self, String> {
         let game = GameWorld {
             content,
+            route_overlay,
             sim: scene::simulation(content, route_overlay)?,
             projections: None,
             desired_axes: [0.0; 3],
@@ -506,8 +508,14 @@ impl WorldGame for GameWorld {
             self.admitted_axes = self.desired_axes;
             self.input_sequence = next_sequence;
         }
+        let commands =
+            if self.route_overlay == scene::RouteOverlay::Reconstruction && self.sim.tick() == 59 {
+                scene::reconstruction_spawn(&self.sim)?
+            } else {
+                Vec::new()
+            };
         self.sim
-            .step(&[])
+            .step(&commands)
             .map_err(|error| format!("simulation step: {error:?}"))?;
         let skipped_publication = !self.sim.has_current_page();
         let projected_changes = if skipped_publication {

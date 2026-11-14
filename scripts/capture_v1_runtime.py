@@ -278,6 +278,9 @@ def run(args):
         else 'true' if manifest['permission_before']['denied'] is False else None)
     manifest['screen_recording_preflight_error'] = manifest['permission_before']['error']
     environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode, THRUM_CAPTURE_SOURCE=args.source, THRUM_CAPTURE_RUNTIME_PARAMS=str(args.params.resolve()))
+    for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
+        if getattr(args,option,None) is not None:
+            environment[variable] = getattr(args,option)
     if args.case == 'route':
         if args.route is None:
             raise ValueError('--case route requires --route')
@@ -387,7 +390,10 @@ if __name__ == "__main__":
     parser.add_argument("--store", type=Path)
     parser.add_argument("--params", type=Path, default=ROOT / "examples/v1-game/params/showcase-noon.params.json")
     parser.add_argument("--route", type=Path, help="checked cooked route for --case route")
-    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow"], default="pan")
+    parser.add_argument('--reconstruction', choices=['off','taau'])
+    parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
+    parser.add_argument('--recipe', choices=['portable','apple-tile'])
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "reconstruction-stars", "reconstruction-scrub"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")

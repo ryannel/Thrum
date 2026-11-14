@@ -92,6 +92,8 @@ pub enum RouteOverlay {
     Proof,
     /// M1 proof: the same static overlay plus one visible automatic mover.
     Motion,
+    /// M3 temporal witness: moving prop/light and an authoritative replacement at tick 60.
+    Reconstruction,
     /// The same instances and light with no mirrored basis (one-sided pipelines).
     Unmirrored,
     /// The proof overlay with the retuned light at zero intensity.
@@ -211,7 +213,11 @@ fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<S
         sim.seed(ComponentEntity {
             id: StableId(index as u128),
             position: Position(
-                if route_overlay == RouteOverlay::Motion && index == MOTION_SUBJECT_SLOT {
+                if matches!(
+                    route_overlay,
+                    RouteOverlay::Motion | RouteOverlay::Reconstruction
+                ) && index == MOTION_SUBJECT_SLOT
+                {
                     MOTION_SUBJECT_POSITION.map(f64::from)
                 } else if let Some(position) = overlay {
                     position.map(f64::from)
@@ -222,7 +228,11 @@ fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<S
                 },
             ),
             velocity: Velocity([
-                if route_overlay == RouteOverlay::Motion && index == MOTION_SUBJECT_SLOT {
+                if matches!(
+                    route_overlay,
+                    RouteOverlay::Motion | RouteOverlay::Reconstruction
+                ) && index == MOTION_SUBJECT_SLOT
+                {
                     3.0
                 } else if index < moving_count {
                     0.05
@@ -244,6 +254,25 @@ fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<S
     }
     register_peers(&mut sim, entity_count)?;
     Ok(sim)
+}
+
+pub(crate) fn reconstruction_spawn(
+    sim: &Simulation,
+) -> Result<Vec<crate::simulation::Command>, String> {
+    let old = sim
+        .handle(StableId(MOTION_SUBJECT_SLOT as u128))
+        .ok_or("M3 moving prop missing")?;
+    Ok(vec![
+        crate::simulation::Command::Despawn(old),
+        crate::simulation::Command::Spawn(ComponentEntity {
+            id: StableId(20_000),
+            position: Position([-0.5, 240.6, -5.0]),
+            velocity: Velocity([3.0, 0.0, 0.0]),
+            health: 100,
+            ownership: None,
+            visual: Some(1),
+        }),
+    ])
 }
 
 pub(crate) fn extract(extractor: &mut RenderExtractor, snapshot: &PublishedPage) -> ExtractReport {

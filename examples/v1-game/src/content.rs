@@ -62,6 +62,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             (_, Err(std::env::VarError::NotPresent) | Ok("off")) => crate::RouteOverlay::Off,
             (Ok("valley"), Ok("proof")) => crate::RouteOverlay::Proof,
             (Ok("valley"), Ok("motion")) => crate::RouteOverlay::Motion,
+            (Ok("valley"), Ok("reconstruction")) => crate::RouteOverlay::Reconstruction,
             (Ok("valley"), Ok("unmirrored")) => crate::RouteOverlay::Unmirrored,
             (Ok("valley"), Ok("light-off")) => crate::RouteOverlay::LightOff,
             _ => {

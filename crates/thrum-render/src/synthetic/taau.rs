@@ -29,6 +29,55 @@ pub(super) struct TaauTarget {
 
 impl Taau {
     pub(super) fn new(device: &crate::runtime::DeviceSite, reference: bool) -> Self {
+        let entries: Vec<_> = (0..=10)
+            .filter(|binding| !reference || [0, 4, 6, 7, 9].contains(binding))
+            .map(|binding| {
+                let ty = match binding {
+                    6..=8 => wgpu::BindingType::StorageTexture {
+                        access: wgpu::StorageTextureAccess::WriteOnly,
+                        format: match binding {
+                            8 => wgpu::TextureFormat::R32Float,
+                            7 if reference => wgpu::TextureFormat::Rgba32Float,
+                            _ => wgpu::TextureFormat::Rgba16Float,
+                        },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                    },
+                    9 | 10 => wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: wgpu::BufferSize::new(if binding == 9 {
+                            PARAM_BYTES
+                        } else {
+                            super::exposure::SAMPLE_BYTES
+                        }),
+                    },
+                    _ => wgpu::BindingType::Texture {
+                        sample_type: if binding == 1 {
+                            wgpu::TextureSampleType::Depth
+                        } else {
+                            wgpu::TextureSampleType::Float { filterable: false }
+                        },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                };
+                wgpu::BindGroupLayoutEntry {
+                    binding,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty,
+                    count: None,
+                }
+            })
+            .collect();
+        let bindings = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("portable reconstruction inputs"),
+            entries: &entries,
+        });
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("portable reconstruction"),
+            bind_group_layouts: &[Some(&bindings)],
+            immediate_size: 0,
+        });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("portable TAAU"),
             source: wgpu::ShaderSource::Wgsl(
@@ -43,7 +92,7 @@ impl Taau {
         Self {
             pipeline: device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some("portable TAAU"),
-                layout: None,
+                layout: Some(&layout),
                 module: &shader,
                 entry_point: Some(if reference {
                     "accumulate"

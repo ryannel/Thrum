@@ -6,6 +6,30 @@ use super::{GameWorld, WorldDriver};
 use thrum_core::sim::ClockedWorld;
 
 #[test]
+fn reconstruction_fixture_replaces_the_prop_on_authoritative_tick_sixty() {
+    use thrum_core::{StableId, sim::WorldGame};
+    let mut driver = WorldDriver::new(
+        crate::scene::GameContent::Grid,
+        crate::scene::RouteOverlay::Reconstruction,
+    )
+    .unwrap();
+    let old_id = StableId(crate::scene::MOTION_SUBJECT_SLOT as u128);
+    for _ in 0..59 {
+        driver.world.game_mut().step().unwrap();
+    }
+    let sim = &driver.world.game().sim;
+    assert!(sim.handle(old_id).is_some());
+    assert!(sim.handle(StableId(20_000)).is_none());
+    driver.world.game_mut().step().unwrap();
+    let sim = &driver.world.game().sim;
+    assert_eq!(sim.tick(), 60);
+    assert!(sim.handle(old_id).is_none());
+    let spawned = sim.get(sim.handle(StableId(20_000)).unwrap()).unwrap();
+    assert!(spawned.position.0[1] > 240.0);
+    assert_eq!(spawned.velocity.0, [3.0, 0.0, 0.0]);
+}
+
+#[test]
 fn threaded_control_equality_preserves_inline_signed_zero_admission() {
     let positive_zero = [0.0_f32; 3];
     let negative_zero = [-0.0_f32, 0.0, 0.0];

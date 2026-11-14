@@ -113,6 +113,9 @@ impl TemporalInputs {
 }
 
 impl PreparedSynthetic {
+    pub(super) fn temporal_witness_enabled(&self) -> bool {
+        self.temporal_inputs && (self.taau.is_none() || self.view_sample.temporal_diagnostic())
+    }
     pub(super) fn temporal_key(&self, witness: bool) -> PipelineKey {
         PipelineKey {
             role: 0x5440 + u32::from(witness),
@@ -191,7 +194,10 @@ impl PreparedSynthetic {
             Ok::<_, RenderError>((output, pass))
         };
         let (exposure, _) = append(false)?;
-        let witness = self.temporal_inputs.then(|| append(true)).transpose()?;
+        let witness = self
+            .temporal_witness_enabled()
+            .then(|| append(true))
+            .transpose()?;
         let (witness, witness_pass) =
             witness.map_or((None, None), |(id, pass)| (Some(id), Some(pass)));
         Ok(TemporalResources {
