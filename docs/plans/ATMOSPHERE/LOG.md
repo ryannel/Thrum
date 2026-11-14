@@ -1,5 +1,11 @@
 # ATMOSPHERE log
 
+- 14 November, M9 preparation from `91cf8eae7587d811ee6ac2783df6385af3bc1aee`.
+  Added the production-column referee and unchanged-volume recorder; scoped Clippy passes.
+  The native and Wasm builds of the unchanged pass are retained in owned scratch with hashes.
+  The pre-change baseline, volume recording and timing arms are queued under the shared GPU lock;
+  no shader change or numerical, image or device qualification is claimed by this preparation.
+
 - 10 November re-plan from [the module list](../ARCHITECTURE.md). M5 and M6 added and moved onto the loop's done-when
   file; M1–M4 keep their prose criteria above. M5 is commissioned now because sea and clouds read the sky through it.
 - 10 November revision after [the design review](../../evidence/ATMOSPHERE/design-review.md) at `4bbe44a4` (changes
