@@ -141,8 +141,8 @@
           "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-proof.md",
           "inspect": "Rerun the implemented M2.1 command on the post-APPLE-TILE-M3 release assembly: 1920x1080 paused-world noon pan, 120 Hz requested opportunities, normal semantic input, one-second holds and full two-second 0-to-36-degree sweep. Apply M2.1's denied launcher/driver Screen Recording preflights and console witness policy, accepting either console state and transitions. Apply every M2.1 timing, coverage, provenance and worded visual criterion to fresh full-resolution frames, native-size crops and host-time-preserving 1x motion. A pre-change run or fixed-step movie cannot pass.",
           "ask": "Join source/build/shader/content/recipe identity to the integrated APPLE-TILE M3 path. Are the complete M2.1 proof and observer limits retained, with no reuse of an earlier verdict for changed output?",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -152,8 +152,8 @@
           "evidence": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-proof.md",
           "inspect": "On the unlocked active built-in panel, rerun all three M2.2 arms on the same post-G3t build/content/recipe/extent as M3.1: ON untraced, ON traced and OFF traced. Require the complete pan and holds, normal AppKit controls and fresh presented times from Mac M2's qualified witness, covering the full interval with the validated conversion and stated error. Review full-resolution ON sequences at 1x; cadence comes only from OFF. Apply every M2.2 attribution, completeness, overhead and clock-separation criterion. No earlier trace or functional-window-only run can pass.",
           "ask": "Revalidate the M2.3 known-pattern correspondence, lease, pending-readback loss and capture-OFF direct-path proofs on the changed graph/present path. Rerun Mac M2's qualified recording configuration and witness command; M3 grants one recording per traced arm and no diagnostic recordings. If trace tooling regresses, record it blocked and require a scoped re-plan before further diagnostic attempts. Does fresh M3.1 motion match this build, and are both post-change items independently reviewed before claiming final Mac qualification for V1?",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
           "builder_result": "pass"
         }
       ],
@@ -163,7 +163,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Coherent slow camera motion fit for a shipped high-end game in the cooked noon valley, reviewed at 1x from exact submitted engine output. Unattended elapsed-time runtime motion and attended built-in ProMotion cadence are separate required proofs. Record local holds and investigate visible hitches; no numeric performance threshold is a gate."
     }
   ]

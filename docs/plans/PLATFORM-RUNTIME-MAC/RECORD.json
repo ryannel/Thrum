@@ -185,7 +185,33 @@
     },
     "M3": {
       "definitions": "742bfebb2f59cb54f3d52f68ef886a3d526f06a26691edaeb4ce22b84f2e0331",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "15282d3e74bb52d4895b5f75452a52e7508246bd",
+          "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 307999,
+            "cached": 17678848,
+            "output": 39913,
+            "turns": 1
+          },
+          "at": "2026-11-14T16:46:51Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Scoped re-plan of PLATFORM-RUNTIME-MAC M2: the attended Instruments Game Performance traces (owner present, console unlo",
@@ -219,6 +245,13 @@
           "output": 220202,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "15282d3e74bb52d4895b5f75452a52e7508246bd",
+        "review": "docs/evidence/PLATFORM-RUNTIME-MAC/M3-review.md",
+        "checked": "f0b9f4da4f32db7521672a7214776ca26af3e8af",
+        "at": "2026-11-14T16:46:51Z"
       }
     }
   },
