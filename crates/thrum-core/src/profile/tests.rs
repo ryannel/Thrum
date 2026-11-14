@@ -1,6 +1,19 @@
 use super::*;
 
 #[test]
+fn encoding_cannot_observe_nan_sign_or_payload() {
+    let mut canonical = Digest::default();
+    0x7fc0_0000_u32.encode(&mut canonical);
+    for bits in [0x7fc0_0001, 0x7fa0_0002, 0xffc0_0042, 0xffa0_4321] {
+        let value = Number(f32::from_bits(bits));
+        let mut actual = Digest::default();
+        value.encode(&mut actual);
+        assert_eq!(actual.finish(), canonical.finish());
+        assert!(!actual.1);
+    }
+}
+
+#[test]
 fn philox_matches_random123_published_known_answers() {
     // https://github.com/DEShawResearch/random123/blob/main/tests/kat_vectors
     for (counter, key, expected) in [

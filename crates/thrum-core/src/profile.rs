@@ -166,7 +166,12 @@ impl<T: StateEncode, const N: usize> StateEncode for [T; N] {
 impl StateEncode for Number {
     fn encode(&self, digest: &mut Digest) {
         digest.1 &= self.0.is_finite();
-        self.0.to_bits().encode(digest);
+        let bits = if self.0.is_nan() {
+            0x7fc0_0000
+        } else {
+            self.0.to_bits()
+        };
+        bits.encode(digest);
     }
     fn is_finite(&self) -> bool {
         self.0.is_finite()
