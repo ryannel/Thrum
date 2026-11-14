@@ -118,3 +118,10 @@ combined source. The merge gate runs the full repository check again.
 - 2026-11-14 The assumptions that were about the surface, wake, optics, cost and the close moved to
   [`WATERS`' plan](../WATERS/PLAN.md#open-for-the-human). The one on body-only reflection was replaced there:
   water now reflects what is on screen.
+- 2026-11-14 Built M2's composable every-frame GPU field and loop-frequency CPU model.
+  Metal source `4b1fbfa8` passes the long/cache, cascade displacement/rate, moments,
+  lifecycle, wind-transition and default-WebGPU-limit tests on this M3 Max. The
+  [M2 record](../../evidence/SEA/M2.md) retains the errors and fixed measured bound;
+  the [cost record](../../evidence/SEA/M2-cost.md) explains the estimate overruns.
+  No surface or integrated performance is claimed. Exact baseline qualification
+  and final integration are being completed separately.

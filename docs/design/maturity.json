@@ -4578,9 +4578,9 @@
     "as_of": "2026-11-14",
     "owner": "SEA",
     "implementation": "frame_time_gpu_kernels_and_composable_effect_declaration",
-    "correctness": "cpu_loop_velocity_and_portable_shader_validation_passed_metal_pending",
+    "correctness": "cpu_loop_velocity_portable_shader_and_metal_field_lifecycle_transition_and_default_limit_oracles_passed",
     "visuals": "not_drawn_this_module",
-    "device": "unqualified",
+    "device": "M3_Max_Metal_numerical_qualification_and_per_pass_samples_recorded_no_integrated_performance_claim",
     "evidence": "../evidence/SEA/M2.md"
   },
   "sea_and_cloud_port_design": {
