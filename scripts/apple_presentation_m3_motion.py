@@ -21,15 +21,15 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def compact_pngs(session, target):
+def compact_pngs(session):
     manifest = json.loads((session/'manifest.json').read_text())
     records = manifest['records']
     selected = {0,len(records)//4,len(records)//2,3*len(records)//4,len(records)-1}
-    if target == 'mac-metal':
-        images = json.loads((session/'runtime.json').read_text())['images']
-        spawn = next((i for i,row in enumerate(images) if row.get('source_tick',row.get('tick',0)) >= 60),None)
-        if spawn is not None:
-            selected.update(range(max(0,spawn-2),min(len(records),spawn+4)))
+    images = json.loads((session/'runtime.json').read_text())['images']
+    ticks = {row['submission_id']:row.get('source_tick',row.get('current_endpoint_tick',row.get('tick',0))) for row in images}
+    spawn = next((i for i,row in enumerate(records) if ticks[row['submission_id']] >= 60),None)
+    if spawn is not None:
+        selected.update(range(max(0,spawn-2),min(len(records),spawn+4)))
     keep = {f'{records[i]["submission_id"]:06}.png' for i in selected}
     result = {'full_source_archive_retained':True,'selected_pngs':{},'preview_sha256':sha(session/'preview-1x.mp4')}
     for path in (session/'png').glob('*.png'):
@@ -81,7 +81,7 @@ def main():
                 manifest = json.loads((session/'manifest.json').read_text())
                 if not manifest['complete']:
                     raise ValueError(f'{case}-{mode}: incomplete target capture')
-                compact_pngs(session,args.target)
+                compact_pngs(session)
                 shutil.rmtree(directory/'swift-cache')
                 row.update(complete=True,manifest_sha256=sha(session/'manifest.json'),records=len(manifest['records']))
         report['complete'] = True
