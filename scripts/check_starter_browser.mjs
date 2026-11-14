@@ -154,10 +154,16 @@ try {
     GPU.prototype.requestAdapter = async function(...arguments_) {
       const adapter = await originalRequestAdapter.apply(this, arguments_);
       if (adapter) {
+        // Exercise the real hardware path with timestamp queries denied at both
+        // the exposed adapter and the enabled device, never with fabricated times.
+        if (location.search.includes('without-timestamps')) Object.defineProperty(adapter, 'features', {
+          value: new Set([...adapter.features].filter(f => !f.startsWith('timestamp-query'))),
+        });
         const info = adapter.info;
         globalThis.__creatorSelectedAdapter = {
           vendor: info.vendor, architecture: info.architecture,
           isFallbackAdapter: info.isFallbackAdapter ?? adapter.isFallbackAdapter,
+          timestampQuery: adapter.features.has('timestamp-query'),
         };
       }
       return adapter;
@@ -293,7 +299,8 @@ try {
       await drawn();
       await set(true);
       await until(async()=> (await latest()) > 30, 'no-timestamp device completed frames');
-      results.unsupported = { rows:await rows(), work:await evaluate('__timingWork') };
+      results.unsupported = { rows:await rows(), work:await evaluate('__timingWork'), adapter:await evaluate('__creatorSelectedAdapter') };
+      assert(!results.unsupported.adapter.timestampQuery, 'no-timestamp adapter still exposed queries');
       assert(!results.unsupported.work.supported, 'no-timestamp device still enabled queries');
       assert((await gpuRows()).every(([,text])=>text.includes('no timestamp queries')), 'no-feature device showed numeric GPU time');
       assert(results.unsupported.work.resolves===0 && results.unsupported.work.maps===0 && results.unsupported.work.pairs===0, 'no-feature device wrote timestamps');
