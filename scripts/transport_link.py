@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run TRANSPORT target proofs. No sockets are opened by default workspace tests."""
 import argparse
+import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -24,6 +26,13 @@ def run(args, **kwargs):
 
 
 def build(target):
+    SCRATCH.mkdir(parents=True,exist_ok=True)
+    with (SCRATCH / "build.lock").open("w") as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        return build_locked(target)
+
+
+def build_locked(target):
     triple = {"mac-metal": None, "ios-sim": "aarch64-apple-ios-sim", "chrome-webgpu": "wasm32-unknown-unknown"}[target]
     args = ["cargo", "build", "--locked", "--offline", "--release", "-p", "link-proof"]
     if triple:
@@ -33,7 +42,12 @@ def build(target):
     run(args)
     binary = ROOT / "target" / (triple or "") / "release/link-proof"
     if target == "chrome-webgpu":
-        run(["wasm-bindgen", "--target", "web", "--out-dir", "target/link-proof-web", "target/wasm32-unknown-unknown/release/link_proof.wasm"])
+        artifact = ROOT / "target/wasm32-unknown-unknown/release/link_proof.wasm"
+        digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        stamp = ROOT / "target/link-proof-web/source.sha256"
+        if not stamp.exists() or stamp.read_text() != digest:
+            run(["wasm-bindgen", "--target", "web", "--out-dir", "target/link-proof-web", artifact])
+            stamp.write_text(digest)
     return binary
 
 
@@ -103,9 +117,19 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
             client = start([ROOT / "target/release/link-proof", "client", ticket, seconds, controller, case], output / "client.jsonl")
         began = time.monotonic()
         if case == "expiry":
-            time.sleep(0.7)
+            deadline = time.monotonic()+15
+            while True:
+                if target == "chrome-webgpu":
+                    ready = (output / "browser.json.progress.json").exists()
+                else:
+                    ready = any("Open" in row.get("events",[]) for row in rows(output / "client.jsonl"))
+                if ready:
+                    break
+                if time.monotonic()>deadline:
+                    raise RuntimeError("expiry client did not open")
+                time.sleep(0.01)
             (output / "control").write_text("cut")
-            time.sleep(2.5)
+            time.sleep(2.8)
             (output / "before-heal.json").write_text(json.dumps({"cut": True, "elapsed": time.monotonic() - began}))
             (output / "control").write_text("open")
         elif case == "idle" and conditioned and identity == "correct":

@@ -11,6 +11,12 @@ const root = path.resolve('target/link-proof-web');
 await fs.mkdir(directory, { recursive: true });
 const server = createServer(async (req, res) => {
   try {
+    if (req.url === '/progress') {
+      let body = '';
+      for await (const chunk of req) { body += chunk; if (body.length > 16384) throw new Error('progress too large'); }
+      await fs.writeFile(output+'.progress.json',body);
+      res.end('ok'); return;
+    }
     if (req.url === '/control') { res.end(controlPath ? await fs.readFile(controlPath,'utf8').catch(()=>'') : ''); return; }
     const file = req.url === '/' ? 'index.html' : path.basename(req.url);
     if (file === 'index.html') { res.end('<!doctype html><title>Thrum transport proof</title>'); return; }
@@ -79,6 +85,7 @@ try {
     while (performance.now() - started < ${seconds * 1000}) {
       last = JSON.parse(module.tick());
       for (const event of last.events) events.push({ elapsed_ms: performance.now() - started, event });
+      if (last.events.includes('Open')) await fetch('/progress',{method:'POST',body:JSON.stringify({elapsed_ms:performance.now()-started,id:last.id,events:last.events})});
       if (last.events.some(e=>e.startsWith('Closed('))) closed_results.push(last);
       if (${Boolean(controlPath)} && performance.now() >= nextControl) {
         nextControl = performance.now() + 50;
