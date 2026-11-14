@@ -146,3 +146,5 @@
   comparisons, and each Chrome day/night SDR/scene-linear set passed all 481 records. Its covered-content key
   was `2a88ba9a92a09c95374b0cc5bfd0480b4b7782eb3c4e2a10dea1553a98c77c8f`. The build script retains complete
   check outputs under shared Git check key `1190e26f38e7ca52478fa707`. No cloud visual or performance claim follows.
+  The full milestone check on `e448e7be` passed all 15 commands, including `./dev check` (repository policy,
+  formatting, workspace Clippy/tests, native GPU integration and the configured Wasm checks).
