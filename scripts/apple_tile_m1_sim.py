@@ -15,6 +15,45 @@ import sys
 import time
 
 
+def native_background_race(route, base, device):
+    """Hold an encoded native frame, then observe its refusal while suspended."""
+    num = route['num']
+    route['start_stall']()
+    held = route['read']()
+    route['simctl']('launch', device, 'com.apple.Preferences')
+    paused = route['wait'](
+        lambda s: s.get('state') == 'Suspended' and
+            num(s, 'pause_replies') > num(base, 'pause_replies'),
+        20, 'native-race world pause')
+    refused = route['wait'](
+        lambda s: s.get('state') == 'Suspended' and
+            num(s, 'stalls') > num(base, 'stalls'),
+        20, 'encoded native frame refusal while backgrounded')
+    for counter in ['native_submitted', 'empty_submits', 'presented']:
+        if num(refused, counter) != num(held, counter):
+            raise ValueError(f'background native race advanced {counter}')
+    if num(refused, 'native_discarded') <= num(held, 'native_discarded'):
+        raise ValueError('background lease did not discard its encoded native candidate')
+    route['snapshot']('m10-native-refused-background', refused)
+    time.sleep(1)
+    stable = route['read']()
+    for counter in ['native_encoded', 'native_submitted', 'empty_submits', 'presented']:
+        if num(stable, counter) != num(refused, counter):
+            raise ValueError(f'background native witness was not quiescent: {counter}')
+    route['foreground']()
+    resumed = route['wait'](
+        lambda s: num(s, 'resume_replies') > num(base, 'resume_replies') and
+            route['presents_after'](refused)(s) and route['settled'](s),
+        20, 'native provider reset and presentation after resume')
+    if resumed['pid'] != base['pid'] or resumed['resume_epoch'] != paused['pause_epoch']:
+        raise ValueError('native background race replaced the world/process')
+    if resumed['resume_tick'] != paused['pause_tick']:
+        raise ValueError('native background race advanced the paused world')
+    route['snapshot']('m10-native-resumed', resumed)
+    return resumed, {'held': held, 'paused': paused, 'refused': refused,
+                     'stable': stable, 'resumed': resumed}
+
+
 def run(output, native_witness=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -67,7 +106,10 @@ def run(output, native_witness=False):
                 current = route[step](current)
         current = route['background'](current, 'm1-background')
         before_race = current
-        current = route['background'](current, 'm1-background-stall', during_stall=True)
+        if native_witness:
+            current, report['native_race'] = native_background_race(route, current, device)
+        else:
+            current = route['background'](current, 'm1-background-stall', during_stall=True)
         if native_witness:
             for counter in ['native_discarded', 'native_resets']:
                 if int(current.get(counter, '0')) <= int(before_race.get(counter, '0')):
