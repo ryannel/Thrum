@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 Resumed at `8fa5592d` and retained all ten Mac motion arms, native
+  source crops and independently decoded all-frame star/scrub diagnostics. The
+  scrub trace's best-fit lag is zero milliseconds; sampled spawn/reveal frames
+  show no persistent silhouette. Direct 1× visual observation has not occurred,
+  so D3.3 stays open. Documentation checks pass; fresh route, Chrome, timing and
+  integration qualification remain pending. [Inspection limits](../../evidence/APPLE-PRESENTATION/m3/motion/motion-review.md).
+
 - 2026-11-14 D3.2 and D3.4 pass on Metal at `c3d052a4`: all six full-frame p99
   values improve on no AA and remain below 3; both linear reference cycles agree
   bit for bit, all history-disabled controls are rejected, and cut/reset equality

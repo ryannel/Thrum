@@ -1,0 +1,306 @@
+{
+  "pan-taau": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/pan-taau/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "486824ae04115934d4a440735e64bbf3fc5749d605ea24a63d835ca1fbb52a84",
+      "bytes": 527058238,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "pan-off": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/pan-off/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "cbaa748287ec5cdc7f9807abdae0a97982b637ff2dc0efae4b81094ccd19d17b",
+      "bytes": 584774918,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "reveal-taau": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/reveal-taau/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "9837b49169b1a52effe53d20c869716c3b82720a82bb7f184218ded30b2e1b92",
+      "bytes": 133474689,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 480,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "reveal-off": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/reveal-off/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "5e14748026bc185928efea3b78ecc3409a6b7c701ec39dfebf6508671d221b28",
+      "bytes": 16920831,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "spawn-taau": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/spawn-taau/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "968c146bb11d7fa9f5d3bb983ffabf0a72e6aede922c6e22e1998dee5657568c",
+      "bytes": 132845911,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 478,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "spawn-off": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/spawn-off/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "0acfb11c421c28543277aa56a687051f0e9ce07aae757556c5ee23b12f2998d7",
+      "bytes": 16869849,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "stars-taau": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/stars-taau/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "8bfcccdefa2cc1933eaa02b3a835b4e878977de6eecb4e756bf6f2c927c808eb",
+      "bytes": 36804111,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "stars-off": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/stars-off/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "a3f0914093f9dcae5d706a13646d93dd566ed2f71fafc482cd2f5482b52d6fbe",
+      "bytes": 1353000,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "scrub-taau": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/scrub-taau/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "67c10c7856bcfbb3fc41eb86ea0289f81040515cc8b4c42c6f8bc5540919a951",
+      "bytes": 716947815,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 481,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "scrub-off": {
+    "lossless_source": "tmp/apple-presentation-m3/mac-motion-final/scrub-off/session/frames.zst",
+    "archive": {
+      "file": "frames.zst",
+      "sha256": "11334a326378afc4322ebe2ea1276131f066855c121b5fc62d7cf60bf55f8e9c",
+      "bytes": 373029348,
+      "encoding": "ZstdDelta",
+      "decoded_frames_verified": 480,
+      "timebase": "ordinal; use submission records",
+      "equality": "independent zstd CLI + XOR reconstruction equals each original pre-encoding writer SHA-256"
+    },
+    "local_only": true,
+    "retention_reason": "Original writer-hash-verifiable frames for unresolved motion inspection; remove after motion items are qualified and selected retained artifacts verified."
+  },
+  "campaign.json": {
+    "sha256": "32a1bee5556a589c7d283aa8b5de3cf47905d5b0f96e7426ac90ad2260f967c8",
+    "bytes": 15758
+  },
+  "scrub-taau/manifest.json.gz": {
+    "sha256": "f3fe4bd2a249590c719fd9c2508d0b317cbd591fe581983d451bd14c82c43b8f",
+    "bytes": 57506
+  },
+  "scrub-taau/preview-1x.mp4": {
+    "sha256": "1cdb274f8fe8051f390bad5a87c65a6b2de2d7ae5876aa4ec248734bf3dd078b",
+    "bytes": 3999286
+  },
+  "scrub-taau/selected.json": {
+    "sha256": "ee54781e143f19e99bf0f695f88cc7d803d3e49bcb54d7e499cd2f89def366c0",
+    "bytes": 586
+  },
+  "scrub-taau/runtime.json.gz": {
+    "sha256": "dd98f44f4b5dd6180f7d451a35a4c237706a574c54fe7b74fee71327be294b56",
+    "bytes": 132110
+  },
+  "spawn-taau/manifest.json.gz": {
+    "sha256": "1333aa2751819d110fd728bb7731757ddad447adbbaab25aaaea2245481cf25e",
+    "bytes": 57372
+  },
+  "spawn-taau/preview-1x.mp4": {
+    "sha256": "5b6cbf802d832d46bd3e69a3260fa023cf13b9b8933278fbf9224a610ce1fc30",
+    "bytes": 1031739
+  },
+  "spawn-taau/selected.json": {
+    "sha256": "989b367cc51d0e0ef83576221963f2aa2f3589858ffa1e16a2e056886ba72a2f",
+    "bytes": 1016
+  },
+  "spawn-taau/runtime.json.gz": {
+    "sha256": "1954a5232153c59bcd9b9c64e6f469bc6ceb3d4bd209094e540c26b0becb34e4",
+    "bytes": 125670
+  },
+  "stars-taau/manifest.json.gz": {
+    "sha256": "51bda1428b07702e632a103f12d371d3ea2521669201b4606fa8d80d89b3e181",
+    "bytes": 57513
+  },
+  "stars-taau/preview-1x.mp4": {
+    "sha256": "fd01ec70700620095b346a5b4ea951c61ed2ad80a4ecaca244b3e77376fda9e9",
+    "bytes": 747131
+  },
+  "stars-taau/selected.json": {
+    "sha256": "3bce1c52e93d7835a392b3094f2d16259b285409953ca41ecd3fae43884954ed",
+    "bytes": 586
+  },
+  "stars-taau/runtime.json.gz": {
+    "sha256": "827e2b51e6149dd62faa843e24ceec310789997dfcc330089510cc9530cdf525",
+    "bytes": 106279
+  },
+  "scrub-off/manifest.json.gz": {
+    "sha256": "44bd0da801bc4c20d545f44978b43ed7b7b43a50f1b0b3949b60af1c2c4f8482",
+    "bytes": 47922
+  },
+  "scrub-off/preview-1x.mp4": {
+    "sha256": "11d8821b2f22a23b209215698d9137697a51dc5789f87ed2b1addfc490248953",
+    "bytes": 3020841
+  },
+  "scrub-off/selected.json": {
+    "sha256": "3a96b8a2d1fae936ec323c230a144b98bf26eb367ccfc15c07e5811da51e3cf3",
+    "bytes": 586
+  },
+  "scrub-off/runtime.json.gz": {
+    "sha256": "a714f3177928b227348f72eb8af708524757bbefc2ad97668bf5fe2f2d05741d",
+    "bytes": 118684
+  },
+  "spawn-off/manifest.json.gz": {
+    "sha256": "b5d3877951197374d01d66665e0ef5206018cc9ecbef5750b0d2273bb587e7ad",
+    "bytes": 47685
+  },
+  "spawn-off/preview-1x.mp4": {
+    "sha256": "b33af70976ef66a050cc6066f5cff72792a4dc94e36efe81e6b40935121d0e38",
+    "bytes": 1077068
+  },
+  "spawn-off/selected.json": {
+    "sha256": "20d36745e5585d0e1e60065d45997fbbe44992cae444f3e6578e8180c8d68e3c",
+    "bytes": 1016
+  },
+  "spawn-off/runtime.json.gz": {
+    "sha256": "20eade24bab08dabb0ea890c9474d3416a85dd19091457d4baa074e395ca3055",
+    "bytes": 114306
+  },
+  "reveal-off/manifest.json.gz": {
+    "sha256": "138ab9e2bb3cde7bbf1e3c9d515f82d33f1ca4a352f44908289e1f7c2bebba9d",
+    "bytes": 47375
+  },
+  "reveal-off/preview-1x.mp4": {
+    "sha256": "45841dcc9bcb156050d5f3d4c71dc6e48dbfdd1229e69aad562a18427b62179a",
+    "bytes": 1073544
+  },
+  "reveal-off/selected.json": {
+    "sha256": "24d7145697886cd7ee012d260ee4e20b47bb1565a5f1f3fae2cc29153b1755be",
+    "bytes": 1016
+  },
+  "reveal-off/runtime.json.gz": {
+    "sha256": "ef675d0f9f7760573fc604f15a27abf631ebac7aa0aa7e6daf6651597164cd3c",
+    "bytes": 112657
+  },
+  "stars-off/manifest.json.gz": {
+    "sha256": "f4bf0a8d35a72de9b5b598d8323fca7387127b2518eaf6d4b4f00fd6492697e5",
+    "bytes": 38003
+  },
+  "stars-off/preview-1x.mp4": {
+    "sha256": "87b29fb291ed96839cff810786e47a8de37da0c954aef38511cf503bd6ce8bd2",
+    "bytes": 697767
+  },
+  "stars-off/selected.json": {
+    "sha256": "6ab8758d2e77c5db3b3b51b89b392e0f4e4faee47c5676f9ea9a95047d60ba01",
+    "bytes": 586
+  },
+  "stars-off/runtime.json.gz": {
+    "sha256": "0a9ada5fb9fdc1381036518878a6e5ed9a1e6472568be215cb9c44499b641d8c",
+    "bytes": 83780
+  },
+  "reveal-taau/manifest.json.gz": {
+    "sha256": "2ce9b6379cd4b384017432103f4720f34fffd62aba73b0eb9a85504c86c67ead",
+    "bytes": 57553
+  },
+  "reveal-taau/preview-1x.mp4": {
+    "sha256": "db3f7ae121d12e1fbec4a3d39902d720dc399919f167a7eb774000dcaba397f6",
+    "bytes": 1005755
+  },
+  "reveal-taau/selected.json": {
+    "sha256": "b70e6f14f6dd292511e42be90b04bd7978e63bd17dbe70cac5ff68dbcdf55976",
+    "bytes": 1016
+  },
+  "reveal-taau/runtime.json.gz": {
+    "sha256": "8ba774f91a5c9ca737c505b92f645d4396c25e62af5bfc55af4d0b6346c4f6ce",
+    "bytes": 125975
+  },
+  "pan-off/manifest.json.gz": {
+    "sha256": "469e412bd4cca016ed522e3a3042a45ba3f9d2713795d63103706bdd5a5af7a9",
+    "bytes": 47915
+  },
+  "pan-off/preview-1x.mp4": {
+    "sha256": "b928b995949bd3ec0cc529ff4264f3209188224df685ff948543ab34e9a944f2",
+    "bytes": 2901077
+  },
+  "pan-off/selected.json": {
+    "sha256": "8cbc244b7ec286e7f7dbba51fd3517a907ae7605c3e32a7be03ab709bb96e842",
+    "bytes": 1016
+  },
+  "pan-off/runtime.json.gz": {
+    "sha256": "4cbf3a3d1d0a290b5b6da7ccd5eb3db5b195738c29fbb8fe827847ba4c6531c2",
+    "bytes": 118310
+  },
+  "pan-taau/manifest.json.gz": {
+    "sha256": "7d9a825279b5f76d30465535dba06f50a7323c2550f14a776b06b99e2304bfde",
+    "bytes": 57421
+  },
+  "pan-taau/preview-1x.mp4": {
+    "sha256": "764179d59809e933654e0d6f3683a27664f0abc8eef3b6e5d4230860b41dd04c",
+    "bytes": 2311265
+  },
+  "pan-taau/selected.json": {
+    "sha256": "d345c6159adfb925112afb8bbcb06770780b52fe7f2912e30d1fcc2b171212c5",
+    "bytes": 1016
+  },
+  "pan-taau/runtime.json.gz": {
+    "sha256": "0f3c2c54412752384b9db488cf34466c3ab793497d73e1f99bb7b60ffa5210ea",
+    "bytes": 131220
+  }
+}

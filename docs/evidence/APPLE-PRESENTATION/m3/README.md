@@ -4,6 +4,24 @@ Builder evidence, 14 November 2026. D3.2 reconstruction and D3.4 camera-cut rese
 pass on Metal at `c3d052a4`. Route execution, both targets' motion, moving-route
 timing, exact baselines, the full gate and integration remain unqualified.
 
+## Motion review in progress
+
+The ten Mac real-time capture arms at `8fa5592d` complete on Metal, with the
+portable TAAU pass observed only in enabled arms. [Retained clips and campaign](motion/mac/campaign.json),
+compressed per-arm manifests/runtime records and [native inspection notes](motion/motion-review.md)
+preserve what was inspected and what remains unjudged. Native crops show an opaque
+first spawn and no persistent blue silhouette in the inspected reveal frames.
+The four all-frame star-core flux traces and the all-frame scrub sky trace support
+the sampled review; the scrub diagnostic's minimum-error lag is zero milliseconds.
+These measurements introduce no acceptance threshold.
+
+The [1× software-decoder record](motion/software-playback.json.gz) delivers every
+movie frame. Decoder completion and static source-frame inspection are distinct
+from continuous visual observation. D3.3 remains open because direct 1× viewing
+has not occurred. Chrome motion, fresh route execution and moving-route timing
+remain queued. Original lossless Mac archives remain locally in owned scratch
+for follow-up, with hashes and retention reasons in [the retention record](motion/mac/retention.json).
+
 ## Reconstruction and cut
 
 `python3 scripts/run_v1_showcase.py reconstruction --target mac-metal --no-build`

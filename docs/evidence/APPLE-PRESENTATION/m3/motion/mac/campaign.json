@@ -1,0 +1,440 @@
+{
+  "commit": "8fa5592dcb814cdfd6cf1fe03225d89e4a7718d0",
+  "target": "mac-metal",
+  "mode": "realtime",
+  "load_start": [
+    3.27392578125,
+    2.93896484375,
+    2.919921875
+  ],
+  "arms": [
+    {
+      "case": "pan",
+      "reconstruction": "taau",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/pan-taau",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-pan",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/pan-taau/session",
+        "--finalize"
+      ],
+      "load": [
+        3.27392578125,
+        2.93896484375,
+        2.919921875
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 480,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "62f2bbb322a9bff047602101c900ac978c02cee99d4a362aecc2c9b6337de848",
+      "records": 481
+    },
+    {
+      "case": "pan",
+      "reconstruction": "off",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/pan-off",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-pan",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/pan-off/session",
+        "--finalize"
+      ],
+      "load": [
+        3.11962890625,
+        2.96337890625,
+        2.9287109375
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 0,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "cc8dfa14bde6b2c949d3fc09d1a797091a21826923b13e4ea086fcd843277adc",
+      "records": 481
+    },
+    {
+      "case": "reveal",
+      "reconstruction": "taau",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/reveal-taau",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "running",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/reveal-taau/session",
+        "--finalize"
+      ],
+      "load": [
+        3.19287109375,
+        2.99951171875,
+        2.94091796875
+      ],
+      "gpu_timed_frames": 479,
+      "portable_resolve_timed_frames": 479,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "949f475cc73210661da7c32a0b109e8e5ff81ecf9ba1565663eb1827bb7a445e",
+      "records": 480
+    },
+    {
+      "case": "reveal",
+      "reconstruction": "off",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/reveal-off",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "running",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/reveal-off/session",
+        "--finalize"
+      ],
+      "load": [
+        2.2138671875,
+        2.7412109375,
+        2.845703125
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 0,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "c765653ce01b315abe81e10d8b3d1366ecd4a7d326f0bfe956a5370d8528a65a",
+      "records": 481
+    },
+    {
+      "case": "spawn",
+      "reconstruction": "taau",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/spawn-taau",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "running",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/spawn-taau/session",
+        "--finalize"
+      ],
+      "load": [
+        1.94384765625,
+        2.54638671875,
+        2.76220703125
+      ],
+      "gpu_timed_frames": 477,
+      "portable_resolve_timed_frames": 477,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "aeccc7673b63db875796ad929dd07e3af0d12d89a026dda6b6d0a98fde5e1824",
+      "records": 478
+    },
+    {
+      "case": "spawn",
+      "reconstruction": "off",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/spawn-off",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "running",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/spawn-off/session",
+        "--finalize"
+      ],
+      "load": [
+        1.962890625,
+        2.4306640625,
+        2.7021484375
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 0,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "84a0d2834a2e58d6ce33d3149756dbd774838a60ef477019a2eddcad85b6bdb1",
+      "records": 481
+    },
+    {
+      "case": "stars",
+      "reconstruction": "taau",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/stars-taau",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-stars",
+        "--params",
+        "examples/v1-game/params/showcase-night-upslope.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/stars-taau/session",
+        "--finalize"
+      ],
+      "load": [
+        2.1845703125,
+        2.38671875,
+        2.6640625
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 480,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "bfa18210746decaaab8db6aa1d94f354fbc5a1b5d2932dddf8ae9c8cc0441bf6",
+      "records": 481
+    },
+    {
+      "case": "stars",
+      "reconstruction": "off",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/stars-off",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-stars",
+        "--params",
+        "examples/v1-game/params/showcase-night-upslope.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/stars-off/session",
+        "--finalize"
+      ],
+      "load": [
+        1.72265625,
+        2.2314453125,
+        2.58984375
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 0,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "2a74c800ee85e7647d9030e97b2e808b00de7fa649c5b358cd2be2ddf6d237cd",
+      "records": 481
+    },
+    {
+      "case": "scrub",
+      "reconstruction": "taau",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/scrub-taau",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-scrub",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "taau"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/scrub-taau/session",
+        "--finalize"
+      ],
+      "load": [
+        2.99951171875,
+        2.48046875,
+        2.66015625
+      ],
+      "gpu_timed_frames": 480,
+      "portable_resolve_timed_frames": 480,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "e68613a2484e7487f7a193ece30a4b873e2b53387ce7c357023718a379c83497",
+      "records": 481
+    },
+    {
+      "case": "scrub",
+      "reconstruction": "off",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_mac_m2_ungranted.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/scrub-off",
+        "--binary",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/v1-game",
+        "--store",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/valley",
+        "--case",
+        "reconstruction-scrub",
+        "--params",
+        "examples/v1-game/params/showcase-noon.params.json",
+        "--recipe",
+        "portable",
+        "--overlay",
+        "reconstruction",
+        "--reconstruction",
+        "off"
+      ],
+      "package": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "scripts/capture_v1_runtime.py",
+        "--output",
+        "/Users/ryannel/Workspace/thrum/.claude/worktrees/apple-presentation/tmp/apple-presentation-m3/mac-motion-final/scrub-off/session",
+        "--finalize"
+      ],
+      "load": [
+        3.13525390625,
+        2.60888671875,
+        2.693359375
+      ],
+      "gpu_timed_frames": 479,
+      "portable_resolve_timed_frames": 0,
+      "recipe": "Ok(Portable)",
+      "complete": true,
+      "manifest_sha256": "17bd5f0714a2f75244dac5a8636ed7d0d8f55fb7e733db555d8166374305be92",
+      "records": 480
+    }
+  ],
+  "comparison": "capture on in both arms; TAAU on/off; native 1920x1080, Chrome route extent",
+  "complete": true,
+  "product_sha256": "fac59f0be14f7040953b3a1941128fd43b881351bc482be5c2c4530cc055990a",
+  "load_end": [
+    2.79150390625,
+    2.5712890625,
+    2.669921875
+  ]
+}
