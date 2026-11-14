@@ -24,7 +24,7 @@ fn procedural_edges_are_removed_rather_than_uniformly_attenuated() {
                     retained[i] += usize::from(d > 0.0);
                 }
             }
-            different += usize::from(densities[0] != densities[1]);
+            different += usize::from((densities[0] - densities[1]).abs() > 1e-8);
         }
     }
     assert!(removed.iter().all(|&n| n > 100), "{removed:?}");
