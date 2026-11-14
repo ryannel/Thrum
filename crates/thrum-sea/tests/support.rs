@@ -187,6 +187,82 @@ impl Harness {
             moments,
         })
     }
+    fn isolated_cost(&mut self, spectrum: &Spectrum, points: &[[f64; 2]]) {
+        // Separate command buffers prevent Metal's neighboring pass samples
+        // coalescing to zero. Sixteen identical dispatches amortize tiny mips.
+        let graph = self.sea.graph();
+        let count = u32::try_from(graph.passes.len()).expect("pass count");
+        for round in 0..5 {
+            let mut upload = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            self.sea
+                .upload(
+                    &self.queue,
+                    &mut upload,
+                    spectrum,
+                    86400.00625,
+                    ANCHOR,
+                    points,
+                )
+                .expect("cost upload");
+            self.queue.submit([upload.finish()]);
+            let timestamps = self.device.create_query_set(&wgpu::QuerySetDescriptor {
+                label: Some("isolated sea costs"),
+                ty: wgpu::QueryType::Timestamp,
+                count: count * 2,
+            });
+            for (i, pass) in graph.passes.iter().enumerate() {
+                let mut encoder = self
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                let index = u32::try_from(i).expect("pass index");
+                {
+                    let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some(&pass.name),
+                        timestamp_writes: Some(wgpu::ComputePassTimestampWrites {
+                            query_set: &timestamps,
+                            beginning_of_pass_write_index: Some(2 * index),
+                            end_of_pass_write_index: Some(2 * index + 1),
+                        }),
+                    });
+                    for _ in 0..16 {
+                        self.sea.encode_pass(i, &mut compute);
+                    }
+                }
+                self.queue.submit([encoder.finish()]);
+            }
+            let resolve = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("isolated cost resolve"),
+                size: u64::from(count) * 16,
+                usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
+            let mut encoder = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            encoder.resolve_query_set(&timestamps, 0..count * 2, &resolve, 0);
+            let timing = copy(&self.device, &mut encoder, &resolve);
+            self.queue.submit([encoder.finish()]);
+            for (pass, bytes) in graph
+                .passes
+                .iter()
+                .zip(read(&self.device, &timing).as_chunks::<16>().0)
+            {
+                let start = u64::from_le_bytes(bytes[..8].try_into().expect("timestamp"));
+                let end = u64::from_le_bytes(bytes[8..].try_into().expect("timestamp"));
+                let ms = (end - start) as f64 * f64::from(self.queue.get_timestamp_period()) / 16e6;
+                writeln!(
+                    self.record,
+                    "isolated round {round} dispatches 16 {}: {ms:.6} ms/dispatch",
+                    pass.name
+                )
+                .expect("cost record");
+                assert!(ms > 0.0, "isolated nonzero pass timing: {}", pass.name);
+            }
+        }
+    }
+
     pub(super) fn save(&self, name: &str) {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/sea-m2");
         std::fs::create_dir_all(&path).expect("valid Metal qualification fixture");
@@ -361,7 +437,9 @@ fn compare_long(gpu: &[f32], cpu: thrum_sea_model::Sample, h: &mut f64, s: &mut 
     }
 }
 // First run records an observed bound; the selected bound is kept unchanged at both ages.
-pub(super) const CASCADE_BOUND: f64 = 0.001;
+// 2026-11-14, bd36ca70: worst measured 0.000191522 across both ages and
+// the lifecycle script. Rounded upward at twice that maximum, below one percent.
+pub(super) const CASCADE_BOUND: f64 = 0.0004;
 pub(super) fn check_cascades(h: &mut Harness, out: &Output, s: &Spectrum, time: f64, samples: u32) {
     for (band, c) in s.cascades.iter().enumerate() {
         let rms = c.variance().sqrt();
@@ -456,6 +534,7 @@ pub(super) fn ambient(portable: bool, name: &str) {
             naive_seconds_ablation(&mut h, &s, time);
         }
     }
+    h.isolated_cost(&s, &p);
     h.save(name);
 }
 
