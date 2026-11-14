@@ -77,6 +77,15 @@
         "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix finding",
         "at": "2026-11-13T19:29:49Z"
       }
+    },
+    "M7": {
+      "definitions": "d13ea127b0f85e350e88c9b76f05d7c7e4115ec9f1a0a2bb0d863c7f2d6113cf",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T21:26:25Z"
+      }
     }
   },
   "briefs": [
@@ -87,11 +96,15 @@
     {
       "task": "The design review of SESSION at docs/evidence/SESSION/design-review.md asked for changes. Resolve its 4 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T19:29:49Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Owner decision, 14 Nov 2026: \"Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands.\" Split the swarm-goal modules (SIM-2D, RENDER-2D, TRANSPORT, GAME-UI, SESSION, SWARM and any others from docs/design/NEXT-GOAL-SWARM-GAME.md) into reusable 2D engine work and swarm-game work. Engine work loses its gate on SHOWCASE:M8 and keeps only edges where it needs another milestone's actual output; where an engine milestone is shaped by the swarm game, state its requirement generically so the engine does not depend on game code. Game work (SWARM and any game-specific milestones) stays gated on SHOWCASE:M8. Where a module mixes both, move the game milestones into the game module rather than gating engine ones. Engine designs that change need their design reviews.\n2) APPLE-PRESENTATION M4 to M11 have no done-when entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them (docs/evidence/dependency-audit-2026-11-14/README.md). Write their done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3, which a builder holds.\nSay which milestones can start once this lands.",
+      "at": "2026-11-14T21:26:25Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T19:29:49Z"
+    "at": "2026-11-14T21:26:25Z"
   },
   "design_history": [
     {

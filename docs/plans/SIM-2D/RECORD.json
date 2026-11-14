@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "fca53ee85a40b75e8212c66beb15c61d4d3edf4262bd1cf4e1d746d96387cdc8",
+      "definitions": "0a85584ac0ec1fcc58036fb0627ae248da1dfceff58e0e5723ca0c61ac2fca5e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-13T15:38:44Z"
+        "task": "Two tasks in one pass.",
+        "at": "2026-11-14T21:26:25Z"
       }
     },
     "M2": {
@@ -60,11 +60,15 @@
     {
       "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-13T15:38:44Z"
+    },
+    {
+      "task": "Two tasks in one pass.\n1) Owner decision, 14 Nov 2026: \"Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands.\" Split the swarm-goal modules (SIM-2D, RENDER-2D, TRANSPORT, GAME-UI, SESSION, SWARM and any others from docs/design/NEXT-GOAL-SWARM-GAME.md) into reusable 2D engine work and swarm-game work. Engine work loses its gate on SHOWCASE:M8 and keeps only edges where it needs another milestone's actual output; where an engine milestone is shaped by the swarm game, state its requirement generically so the engine does not depend on game code. Game work (SWARM and any game-specific milestones) stays gated on SHOWCASE:M8. Where a module mixes both, move the game milestones into the game module rather than gating engine ones. Engine designs that change need their design reviews.\n2) APPLE-PRESENTATION M4 to M11 have no done-when entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them (docs/evidence/dependency-audit-2026-11-14/README.md). Write their done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3, which a builder holds.\nSay which milestones can start once this lands.",
+      "at": "2026-11-14T21:26:25Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-13T15:38:44Z"
+    "at": "2026-11-14T21:26:25Z"
   },
   "design_history": [
     {

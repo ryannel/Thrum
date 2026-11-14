@@ -459,7 +459,9 @@
           "check": "cargo test --locked --offline -p thrum-cook --test sheet_hostile",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.3",
@@ -492,7 +494,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.6",
@@ -513,7 +517,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.8",
@@ -522,7 +528,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.9",
@@ -551,7 +559,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,
