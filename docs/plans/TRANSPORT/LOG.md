@@ -1,5 +1,13 @@
 # TRANSPORT log
 
+- 2026-11-14 Dependency proposal for M1.10: its whole-workspace no-socket claim is false before TRANSPORT.
+  `thrum-cook/tests/serve_and_watch.rs` has ordinary ungated tests that call `DevServer::start` and
+  `TcpStream::connect`; its manifest has no opt-in test gate. `./dev check` runs `cargo test --workspace`, and
+  also runs `v1-game`'s cooked-asset tests with their loopback HTTP fetcher. These are CONTENT-LOOP's proofs.
+  CONTENT-LOOP must move its socket proofs out of the default gate while preserving an explicit way to run them,
+  or the planner must revise M1.10's scope. The builder has changed neither those tests nor the pinned criterion.
+  The TRANSPORT Wasm lint is installed, and its own default tests open no sockets; that is only part of M1.10.
+
 - 2026-11-14 The browser now timestamps accepted messages on its own monotonic clock, as the native adapter does;
   only the virtual carrier takes queue time from the caller. The cost workload deliberately supplies zero queue
   timestamps on both socket adapters, independently of its round-trip clock, to exercise that boundary.
