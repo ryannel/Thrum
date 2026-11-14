@@ -1,99 +1,62 @@
 # APPLE-TILE M10 continuation
 
-This is a resumable checkpoint while target proofs wait for the shared GPU. M10
-remains in_progress and every item remains open. Three integrated Metal lifecycle
-tests pass, but no complete item, repository gate or merge is claimed. Continue the
-existing worktree, not a new implementation. The latest code checkpoint is
-`fe809c7f`; later commits retain continuation and proof records. `57e70e7c`
-restricts the Metal-only device-test module to macOS. `fe809c7f` ends the native
-qualification hold once both backgrounding and lease revocation are observed,
-so the harness can observe cancellation while still backgrounded. Ordinary
-eight-second stall witnesses retain their existing behavior. Simulator-target
-Clippy and the rebuilt app pass after that change; actual simulator function is
-still pending.
+Resume this worktree. M10 remains `in_progress`; D10.1 (native boundary) and D10.3
+(retention/discard/reset) pass. D10.2 (T2 diagnostic output), D10.4 (simulator race)
+and attended D10.5 remain open. Checkpoint `1b00d4ee` retains the passing target
+proofs. The [builder record](M10/README.md) links their complete compact evidence.
+No merge or complete milestone acceptance is claimed.
 
-The small same-submit fixture passed on the Apple M3 Max at `cdede389`; its
-[retained result](M10/fixture-cdede389.txt) permits the route integration now in
-the worktree. The implementation adds a dedicated whole Metal encoder between
-wgpu encoders in one coordinator submission, initialized output/ping-pong history,
-generation/completion retention, RAII discard invalidation, a prepared WGSL twin,
-and five omission/stale/reset controls. Ordinary scenes leave the witness Off.
-Diagnostic phase restarts after reset, and T2 resets the diagnostic after its
-variable-duration warmup. Absolute warmup/submission serials remain recorded;
-paired fixed samples use reset-relative sample indices and numerical exposure.
+The latest engine source is `fe809c7f`. It ends the native-only qualification hold
+after both backgrounding and lease revocation become visible; ordinary stalls
+retain their previous behavior. The simulator release app and target Clippy pass.
+The source in `07282556` passes the exact baseline campaign (38 ordinary native
+comparisons, four surface/letterbox comparisons, 1,924 Chrome frame records) and
+the official M10 check with full `./dev check`, outside the sandbox under the GPU
+lock. This includes all four integrated Metal native tests, graph restrictions,
+fixture API separation and iOS lease/input/world-pause unit tests. No pixel
+tolerance or retained reference changed, and no speed/MetalFX/panel claim follows.
 
-The native lifecycle tests cover exact SDR/scene/output/history parity, cuts,
-healthy discard, background cancellation, acquire refusal, held two-slot history,
-failure/loss, replacement parity and old-generation resource retirement. These
-Three Metal lifecycle tests pass at `d29d2667`: held two-slot history, exact
-replacement output/failure/loss reset, and old-generation retention until completion
-delivery. [Selected actual output](M10/lifecycle-d29d2667.txt) records the command
-and executable hash. The separate coordinator test stopped on capture accounting,
-expecting zero omissions despite its three deliberate discarded candidates. It had
-not reached native/twin pixel comparison. `342151fc` requires exactly those three
-omissions, with no pixel-metric change; its rerun is queued. The simulator harness's
-`--native-witness` mode holds an encoded frame, backgrounds the app, waits for
-refusal while still suspended, checks native/empty-submit/present quiescence,
-then checks reset and world-preserving resume. Simulator execution is pending.
+The earlier small same-submit fixture passed at `cdede389` before route integration.
+The earlier coordinator attempt stopped on capture accounting, before pixel
+comparison: its three deliberate candidate discards were incorrectly expected to
+produce zero omissions. `342151fc` requires exactly three. The corrected
+coordinator test now passes exact SDR/scene/output/history comparisons and rejects
+all five omission/stale/reset controls in the full gate.
 
-Verified before this checkpoint: scoped native Clippy, `./dev check-web`,
-`./dev check-mobile-core`, `./dev check-docs`, two graph-native CPU tests, 13 iOS
-lease/input/world-policy CPU tests, and 11 capture-validator tests pass. The
-simulator-target Clippy check and release simulator app build pass after
-`a9330a7e`. Mac release game build passes; later edits affect only tests, the
-simulator observer and proof scripts. These are compile/unit results, not target
-acceptance. Use the pinned toolchain bin directory on PATH for cross-target
-Clippy, as the repository launchers do; a direct Cargo subcommand otherwise found
-a driver with the wrong sysroot despite the installed simulator target.
+The configured script is
+`/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.2.2/skills/orchestration/build/scripts/agent_loop.py`.
+Background job `20261114-063318-66523` finished with exit 0 (baselines and full
+official M10 check). Background job `20261114-072259-82489` is still queued for
+the shared GPU. Use the script's `wait <id> --worktree .` command. It runs the
+corrected coordinator test, `scripts/apple_tile_m1_sim.py --native-witness`, then
+`scripts/apple_tile_m10.py`; results go to `tmp/g3t-m10/simulator` and
+`tmp/g3t-m10/diagnostic`. At the last observation the Mac runtime builder's
+repository gate actively held the GPU, after CULLING completed its oracle.
+No M10 deadlock was observed. Do not launch duplicates or change/rebase engine
+source while the diagnostic campaign is active.
 
-Existing work to resume, using the configured `agent_loop.py`:
+After that job finishes, diagnose any failure, inspect its actual source frames
+and transition samples against `tmp/g3t-m10/inspection-plan.md`, retain compact
+provenance/results and selected original images in `docs/evidence/APPLE-TILE/M10`,
+and mark only proved items pass. The simulator proves diagnostic function only;
+do not claim submitted temporal output or speed. Its app build completed in job
+`20261114-080040-90655`. The native release executable hash is recorded with the
+baseline proof. The cooked store is `tmp/g7-showcase/runs/moving-20261114-033128/store`.
 
-- The foreground `metal_native` command completed successfully: three actual
-  Metal tests passed. Its retained result is linked above.
-- Background job `20261114-062934-64565` exited 101 on the capture-accounting
-  assertion described above, before simulator or T2 capture. Do not treat it as a
-  pixel failure or as a passing proof.
-- Background job `20261114-072259-82489` waits for the GPU, then reruns the corrected
-  coordinator test, simulator native background race, and
-  `scripts/apple_tile_m10.py`. Output goes to `tmp/g3t-m10/simulator` and
-  `tmp/g3t-m10/diagnostic`; inspect `manifest.json`/`report.json` and the job log.
-- Background job `20261114-063318-66523` waits for the GPU, then runs
-  `scripts/exact_baselines.py verify` and the official M10 check, with the full
-  repository gate. It requires a clean tree. Both jobs survive turn interruption.
-- Release builds have finished. The latest simulator build job is
-  `20261114-080040-90655`; the latest Mac game build is
-  `20261114-064231-69171`. The shared input store is
-  `tmp/g7-showcase/runs/moving-20261114-033128/store`, validated by the proof runner.
+Integrate through the official `merge --worktree .`, inspect `upstream_files`,
+and repeat proofs affected by upstream changes. The existing
+`tmp/apple-tile-m3-resume/check-or-merge.py` wrapper serializes Cargo GPU tests
+after taking the integration lock; do not take an outer GPU lock around merge.
+The last fetch showed no upstream engine, M10-runner or baseline-registry changes,
+but check again at integration. Leave M10 `in_progress`.
 
-The original long Mac presentation holder exited. At the latest observation the
-GPU holder was the Apple-presentation motion proof, child PID 88998 under lock
-owner PID 66291; it was actively running, not diagnosed stuck. There
-are other queued builders ahead of the corrected M10 diagnostic job. If a queued proof fails,
-diagnose its saved result and preserve the failure; never widen exact equality or
-replace target proof with unit tests. A native copying/ordering mechanism failure
-returns to boundary design review.
+D10.5 needs the owner's unlocked active Mac session and an existing Screen
+Recording grant for the OS-window observer. This background session cannot obtain
+that setup; do not automate grants. Complete every other item, then report
+`BLOCKED needs_access` naming that setup, with this handoff committed.
 
-Finish target runs, inspect the selected full-resolution images and realtime
-sequences, retain compact provenance/results in `docs/evidence/APPLE-TILE/M10`,
-and mark only actually proved items pass. Then integrate through
-`agent_loop.py merge --worktree .`, inspect upstream changes and rerun affected
-proofs. Leave M10 in_progress. D10.5 must stay open: this background session cannot
-obtain the owner's unlocked active Mac session and Screen Recording permission
-for the OS-window observer. Do not automate grants. The requested final outcome
-after every other item is completed is `BLOCKED needs_access`, naming that setup.
-
-Scratch ownership is recorded in `tmp/g3t-m10/OWNERSHIP.md`. Earlier M3 captures
-and selected evidence were preserved. This session removed reconstructible debug
-build outputs with `cargo clean --profile dev` (4.9 GiB); target tests rebuild
-them normally. It also released 7,156,258,376 bytes of superseded M3 resume bulk
-sources after confirming M3 is done, the documented through-review expiry, 256
-retained artifact hashes, and the newer integrated source set still retained in
-`tmp/apple-tile-m3-integrated/captures`. Only README differs from the old hash
-inventory and is the current committed integration/history explanation. The
-[release receipt](M10/m3-expired-bulk-release.json.gz) inventories deleted bytes;
-expired raw source bytes are not claimed recoverable from hashes. Selected M3
-frames/previews/records and the registered baselines remain intact. Retain selected
-M10 source spools through review, and preserve
-failed proof artifacts while they are needed for diagnosis. No Instruments run,
-temporary Python environment, OS grant change or capability/performance promotion
-was made.
+Scratch ownership is in `tmp/g3t-m10/OWNERSHIP.md`. Preserve selected M10 sources
+through review and failed captures needed for diagnosis. Earlier M3 bulk cleanup
+is documented by `M10/m3-expired-bulk-release.json.gz`; selected evidence and newer
+integrated sources were preserved. No Instruments recording, temporary Python
+environment or grant change was made. Do not delete another builder's artifacts.
