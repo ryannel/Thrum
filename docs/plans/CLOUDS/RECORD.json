@@ -192,57 +192,57 @@
       }
     },
     "M11": {
-      "definitions": "8472e4161ad914512f0d2ff4b7433487aee8ac38abf2f09a6e940a7e49ffb3a7",
+      "definitions": "812651bedbf6799e3fe32ffa58b28f4d5bad5acf514ab6d31b85c56475498592",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M12": {
-      "definitions": "d6ece63afbe3ded3d311df34254ee05bbb901be62dcd59c0889966cfdfb5b69b",
+      "definitions": "e01c4f7ea2725bc5d4718255ba59b5c02d01f6c607ab1b7f9b37d22128a59ca5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M13": {
-      "definitions": "d5bda65c277ffdc606f30f6d481086fcdb63b3b9c370e0d1c7bd4d6e9f1dddd8",
+      "definitions": "814be0b2e6f37d5e623b94f8a830b55e8272963aa5fb5998585e2f7b4111f99e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M14": {
-      "definitions": "d43beaf6903aa42b37c1a6bee703426bd40db799e48539514be393a897b8bb5c",
+      "definitions": "31da719b637fd49b8bae3d2cf8f9ad833c37ae066804f493f915e2e9c48a2684",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M15": {
-      "definitions": "51ac00caa9e60c43d48f92f0f634769f719ee38215f1fc01bb16788212d5ba1c",
+      "definitions": "f53472cd4e528891cdf1a18481ce09ca073c0874bcb5194d9d01c8f017ab6093",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M16": {
-      "definitions": "9b7409e57ef4b62b0d7258256c2a6f94c68598819be0e59c2b5d59c78a780432",
+      "definitions": "653b819ff9d25111452e5878014fb65a15d9387797a01a66ae646fb819fe0fdf",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     }
   },
@@ -270,11 +270,15 @@
     {
       "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able to deliver on top quality atmosphere.\" Revise the plans so Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky, clouds, haze, and mist and fog (ground fog, valley mist, fog banks over water, low cloud the camera can enter), lit consistently and changing with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE and any other affected module, keep one authority for each kind of state, and revise their designs, plans and done-when files. Broadsides is evidence, not a constraint. CLOUDS M1 is being built now; if your changes alter what it builds, say so plainly. Say which assumptions these choices replace.",
       "at": "2026-11-14T09:13:54Z"
+    },
+    {
+      "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design-review.md, 3 Must Fix) asked for changes. Resolve every Must Fix in both designs and plans, keeping them consistent with each other and with ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES. Builders hold CLOUDS M1 and WATERS M1, so don't change those milestones' items unless a finding requires it. Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T16:17:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T09:13:54Z"
+    "at": "2026-11-14T16:17:06Z"
   },
   "design_history": [
     {

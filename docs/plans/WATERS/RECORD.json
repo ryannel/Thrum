@@ -124,30 +124,30 @@
       }
     },
     "M12": {
-      "definitions": "02f7b48f4a8be60073804ec33cf068f115067e55e341da3d04eb05df784476e5",
+      "definitions": "9fc6968aeb1d8306c1534c66726a99f6bd03e2b001837cd718ddcf00b74c9549",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M13": {
-      "definitions": "dc76a51314ad79288b56f8f00710db4759f3ff79da32ce0a1a942e1fa1845760",
+      "definitions": "c90f9095875c86b2d2852ed221f3e16625ca7d083dba237773efb4ad0de1b6ac",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M15": {
-      "definitions": "88d7bf3a14489a4f5407bc1fdf2c29881092b16c65e4db2f35f7097562d78554",
+      "definitions": "9cc1a3779d02b219ea5573ca54dad72ed391379af39eef31fc049426a1619925",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
+        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
+        "at": "2026-11-14T16:17:06Z"
       }
     },
     "M14": {
@@ -193,11 +193,15 @@
     {
       "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a descending column at the model's ground, so observers near sea level read thin haze just above the horizon, and mirror views inherit it. Sea-level scenes (the sea, sunsets) are a showcase priority. Fix it in ATMOSPHERE's design and plan with the modern technique, keeping SCENE-VIEWS, WATERS and CLOUDS consistent, and say where exact baselines move.",
       "at": "2026-11-14T15:25:42Z"
+    },
+    {
+      "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design-review.md, 3 Must Fix) asked for changes. Resolve every Must Fix in both designs and plans, keeping them consistent with each other and with ATMOSPHERE, SCENE-VIEWS, RIVERS and PUDDLES. Builders hold CLOUDS M1 and WATERS M1, so don't change those milestones' items unless a finding requires it. Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-14T16:17:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T15:25:42Z"
+    "at": "2026-11-14T16:17:06Z"
   },
   "design_history": [
     {

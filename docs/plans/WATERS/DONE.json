@@ -179,7 +179,9 @@
           "ask": "Read the test. Does it vary the wavelength and the stage together, between the samples of both, and include a wave of about 113 m in a metre of water halfway between two stages? Is the comparison lag solved in the test's run for the component's own wavelength and stage, on the same grid, so that only the blend's error is left, with M12.1 holding the solve itself to Snell?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M12.3",
@@ -232,7 +234,9 @@
           "ask": "Read the test. Is the reference a fine polyline of the thrown section cut by the vertical line over each point, written without the scan? Do its points include columns that hold three surfaces, as x = 3.8 m does in part V of `docs/evidence/WATERS/design-proof/surf_revision_proof.py`, and does the plain iteration fail there by most of the crest's height?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M12.7",
@@ -240,7 +244,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test surf_joins",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M12.8",
@@ -271,7 +277,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -1075,7 +1083,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M13.3",
@@ -1148,7 +1158,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M13.10",
@@ -1157,7 +1169,9 @@
           "lock": "gpu",
           "target": "chrome-webgpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M13.11",
@@ -1188,7 +1202,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
