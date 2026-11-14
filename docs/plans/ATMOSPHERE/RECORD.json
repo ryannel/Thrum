@@ -112,13 +112,12 @@
       }
     },
     "M7": {
-      "definitions": "79679c0cabb2ff3294a395b802fbc244311f8c065b9207f9a3b8979cd2b9bdcb",
+      "definitions": "82ec6847fe7e085a50432bb197debf0ae63d069a1e6c06870916ca657c67e944",
       "reviews": [],
       "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/ATMOSPHERE/design-review.md",
-        "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
-        "at": "2026-11-14T13:18:35Z"
+        "by": "plan",
+        "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
+        "at": "2026-11-14T15:25:42Z"
       }
     },
     "M8": {
@@ -129,6 +128,15 @@
         "review": "docs/evidence/ATMOSPHERE/design-review.md",
         "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
         "at": "2026-11-14T13:18:35Z"
+      }
+    },
+    "M9": {
+      "definitions": "ae6a0a81a60ccad37ef5eb1f21e8c724fa7d342487148ff4071f6e760d024c0a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
+        "at": "2026-11-14T15:25:42Z"
       }
     }
   },
@@ -152,11 +160,15 @@
     {
       "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able to deliver on top quality atmosphere.\" Revise the plans so Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky, clouds, haze, and mist and fog (ground fog, valley mist, fog banks over water, low cloud the camera can enter), lit consistently and changing with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE and any other affected module, keep one authority for each kind of state, and revise their designs, plans and done-when files. Broadsides is evidence, not a constraint. CLOUDS M1 is being built now; if your changes alter what it builds, say so plainly. Say which assumptions these choices replace.",
       "at": "2026-11-14T09:13:54Z"
+    },
+    {
+      "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a descending column at the model's ground, so observers near sea level read thin haze just above the horizon, and mirror views inherit it. Sea-level scenes (the sea, sunsets) are a showcase priority. Fix it in ATMOSPHERE's design and plan with the modern technique, keeping SCENE-VIEWS, WATERS and CLOUDS consistent, and say where exact baselines move.",
+      "at": "2026-11-14T15:25:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T09:13:54Z"
+    "at": "2026-11-14T15:25:42Z"
   },
   "design_history": [
     {

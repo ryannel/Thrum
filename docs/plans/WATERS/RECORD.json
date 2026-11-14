@@ -34,12 +34,12 @@
       }
     },
     "M2": {
-      "definitions": "8451afef013a43df9cf559c460bcbf29f9171a6223a5806d9d2dfa105cf325d2",
+      "definitions": "d987c1da30adb8e7221de79dac464a26cf56f994db9dda8f39463ae7d54632df",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
-        "at": "2026-11-14T01:49:07Z"
+        "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
+        "at": "2026-11-14T15:25:42Z"
       }
     },
     "M3": {
@@ -151,12 +151,12 @@
       }
     },
     "M14": {
-      "definitions": "4ba9f1db4b9a916730d1c6c503479b96a406078bdcae335b613ce8ec788b53cd",
+      "definitions": "b49cf9386f21d248fef75d5d0a3ec9bff0808cfec644d1563b64ab69098747fd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
+        "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
+        "at": "2026-11-14T15:25:42Z"
       }
     },
     "M16": {
@@ -189,11 +189,15 @@
     {
       "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to go under water we need to support as well.\" The WATERS re-plan of that day left out caustics, underwater light shafts and exposure that adapts under water, which are standard in high-end underwater views; bring the underwater view up to that bar in WATERS (or the owning module), and plan the new module SCENE-VIEWS that WATERS M14 depends on. Choose methods from first principles and current practice. Do not change WATERS M1, which is being built.",
       "at": "2026-11-14T10:11:12Z"
+    },
+    {
+      "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a descending column at the model's ground, so observers near sea level read thin haze just above the horizon, and mirror views inherit it. Sea-level scenes (the sea, sunsets) are a showcase priority. Fix it in ATMOSPHERE's design and plan with the modern technique, keeping SCENE-VIEWS, WATERS and CLOUDS consistent, and say where exact baselines move.",
+      "at": "2026-11-14T15:25:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T10:11:12Z"
+    "at": "2026-11-14T15:25:42Z"
   },
   "design_history": [
     {
