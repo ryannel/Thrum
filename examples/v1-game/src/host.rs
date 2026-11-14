@@ -414,6 +414,10 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Reconstruction provider actually prepared for the live scene generation.
+    pub fn reconstruction(&self) -> thrum_render::synthetic::Reconstruction {
+        self.inner.reconstruction()
+    }
     /// Pipeline creations on this device generation, when creation counters are enabled.
     pub fn pipeline_creation_count(&self) -> Option<u64> {
         self.inner.pipeline_creation_count()

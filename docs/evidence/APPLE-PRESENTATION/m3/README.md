@@ -25,3 +25,13 @@ game-reference proof is queued under the shared `gpu` lock. Chrome execution, mo
 exact baselines, the full gate and integration remain unqualified.
 
 Technique source: [Karis, High-Quality Temporal Supersampling, SIGGRAPH 2014](https://advances.realtimerendering.com/s2014/index.html).
+
+First target attempt at `55ae06ee`: [complete metrics](attempt-1/run.json),
+[noon TAAU](attempt-1/noon-taau.png), [independent reference](attempt-1/noon-reference.png).
+All six p99 values are below 3, but each fails the required improvement over no AA.
+The two reference cycles agree exactly, the history-disabled controls are rejected,
+and the cut equals its independently reset render while the suppressed-reset control
+differs. These are historical results, not passes for the changed kernel.
+The follow-up corrects depth-history jitter addressing, preserves exact unchanged
+colour during clipping/blending, and rescales from full-precision retained exposure.
+Its target rerun remains pending.

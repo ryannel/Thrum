@@ -800,6 +800,7 @@ def moving_controls(run, source, route_file, wasm, native, origin, last):
 
 def moving(args):
     os.environ.setdefault('THRUM_RECONSTRUCTION', 'taau')
+    os.environ.setdefault('THRUM_RECIPE', 'portable')
     route_file = json.loads(MOVING_ROUTE.read_text())
     origin, last = route_file['origin_tick'], route_file['origin_tick'] + route_file['keys'][-1]['tick']
     names = [checkpoint['name'] for checkpoint in route_file['checkpoints']]
@@ -838,6 +839,8 @@ def moving(args):
         # Extent and phase identity.
         for name, target in targets.items():
             header = target['header']
+            if header.get('reconstruction') != 'Taau' or (name.startswith('native') and header.get('recipe') != 'Ok(Portable)'):
+                failures.append(f'{name}: expected prepared TAAU and forced portable recipe, got {header}')
             if header['render_extent'] != route_file['render_extent'] or header['phase'] != route_file['phase'] \
                     or header['origin_tick'] != origin:
                 failures.append(f'{name} header differs from the route: {header}')
@@ -976,12 +979,16 @@ def culling(args):
 def reconstruction(args):
     """Independent held-state reference on the submitted portable game path."""
     from reconstruction_difference import compare, self_check
+    from statistics import median
     self_check()
     run = new_run('reconstruction')
     report = {'command': 'reconstruction', 'target': args.target, 'extent': [640,360],
               'commit': git('rev-parse','HEAD'), 'passed': False, 'cut': args.cut,
               'metric': 'whole-frame submitted 8-bit SDR CIEDE2000, D65, nearest-rank p99',
-              'tolerance': 3, 'checkpoints': {}}
+              'tolerance': 3, 'checkpoints': {}, 'timing': {}, 'load_start': os.getloadavg(),
+              'arm_order': ['reference','taau','off','broken'],
+              'timing_scope': '640x360 held showcase checkpoints; paused world; capture on in both paired arms; first 16 frames excluded; registered GPU jobs serialized by caller; shared host load',
+              'design_1080p_estimate_ms': [0.2,0.5]}
     try:
         if not args.no_build:
             build(run, web=False)
@@ -996,14 +1003,29 @@ def reconstruction(args):
                         'reconstruction_reference_on_submitted_game_frames','--','--ignored'],log,1800,
                        env=env,cwd=REPO/'examples/v1-game'):
                 raise Failure(f'game reconstruction oracle failed: {run / "oracle.log"}')
-        report['oracle_binaries'] = {str(p.relative_to(REPO)):sha256(p) for p in (REPO/'target/release/deps').glob('v1_game-*')
-                                     if p.is_file() and os.access(p,os.X_OK)}
+        report['device'] = json.loads((run/'frames/build.json').read_text())
+        executable = Path(report['device']['executable'])
+        report['oracle_binaries'] = {str(executable.relative_to(REPO)):sha256(executable)}
         for name in ROUTE:
             directory = run/'frames'/name
             frames = [json.loads(line) for line in (directory/'frames.jsonl').read_text().splitlines()]
             held = {(row['state'],tuple(row['exposure'][:4]),row['cooked_generation']) for row in frames}
             if len(held) != 1 or len(frames) != 4*64:
                 raise Failure(f'{name}: reference and judged frames did not hold the same state')
+            pair = report['timing'][name] = {}
+            for mode in ('taau','off'):
+                samples = [row['passes'] for row in frames if row['mode'] == mode and row['frame'] >= 16]
+                if any(sample is None for sample in samples):
+                    pair[mode] = {'available':False}
+                    continue
+                totals = [sum(p['ns'] for p in sample if p['name'] != 'V1 surface present') for sample in samples]
+                resolve = [p['ns'] for sample in samples for p in sample if p['name'] == 'portable TAAU']
+                pair[mode] = {'available':True,'frames':len(samples),'scene_p50_ns':median(totals),
+                              'taau_passes':len(resolve),'taau_p50_ns':median(resolve) if resolve else None}
+            if pair['taau'].get('taau_p50_ns') is not None:
+                heuristic = pair['taau']['taau_p50_ns']*9/1e6
+                pair['pixel_ratio_1080p_heuristic_ms'] = heuristic
+                pair['tripwire_only_outside_estimate'] = not .2 <= heuristic <= .5
             def pixels(mode, frame=64):
                 path = directory/f'{mode}-{frame}.ppm'
                 raw = path.read_bytes()
@@ -1027,6 +1049,7 @@ def reconstruction(args):
         report['error'] = str(error)
         raise
     finally:
+        report['load_end'] = os.getloadavg()
         write_json(run/'run.json',report)
         print(f'{"PASS" if report["passed"] else "FAIL"}: {run / "run.json"}')
 

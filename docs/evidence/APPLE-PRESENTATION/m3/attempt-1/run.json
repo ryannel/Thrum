@@ -1,0 +1,152 @@
+{
+  "command": "reconstruction",
+  "target": "mac-metal",
+  "extent": [
+    640,
+    360
+  ],
+  "commit": "55ae06ee7918c0455b4703f231b6a576da9f4565",
+  "passed": false,
+  "cut": false,
+  "metric": "whole-frame submitted 8-bit SDR CIEDE2000, D65, nearest-rank p99",
+  "tolerance": 3,
+  "checkpoints": {
+    "sunrise": {
+      "taau": {
+        "p99": 1.6291526277157973,
+        "maximum": 35.103893274424415,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.1231110752638422,
+        "maximum": 28.119124515204533,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.3533758209213183,
+        "maximum": 35.103893274424415,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    },
+    "noon": {
+      "taau": {
+        "p99": 1.7809551081685604,
+        "maximum": 29.07058564359154,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.3698135289889812,
+        "maximum": 17.38182375542482,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.5058796468206825,
+        "maximum": 29.07058564359154,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    },
+    "sunset-clear-sun": {
+      "taau": {
+        "p99": 1.3628857449809484,
+        "maximum": 15.048146917325782,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.8887479555756362,
+        "maximum": 17.95697739752007,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.6650532411921724,
+        "maximum": 15.048146917325782,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    },
+    "sunset-sun": {
+      "taau": {
+        "p99": 1.4208123014056826,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 1.0993601518854126,
+        "maximum": 25.898288723005354,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 2.0417232004255386,
+        "maximum": 24.425681293266763,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    },
+    "twilight": {
+      "taau": {
+        "p99": 1.1328652662948147,
+        "maximum": 32.95848515898119,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9712720989157503,
+        "maximum": 42.86850485892834,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.4485760256307543,
+        "maximum": 32.95848515898119,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    },
+    "night-upslope": {
+      "taau": {
+        "p99": 0.9245245590916956,
+        "maximum": 6.347207016405203,
+        "pixels": 230400
+      },
+      "off": {
+        "p99": 0.9245245590916956,
+        "maximum": 8.850288989067561,
+        "pixels": 230400
+      },
+      "broken": {
+        "p99": 1.3863371339048776,
+        "maximum": 37.22813795070079,
+        "pixels": 230400
+      },
+      "pass": false,
+      "broken_rejected": true
+    }
+  },
+  "cooked_root": "70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+  "oracle_binaries": {
+    "target/release/deps/v1_game-f95456a9cc85e18b": "2f2907880e67c4863bffcec4caa39ed105208984a43709862e70d4767a55d62c",
+    "target/release/deps/v1_game-8fe651ee7240a58c": "6bdb3e661d50a7664e92d524f6307025173444906afbde86a46310b2e43880c3",
+    "target/release/deps/v1_game-5b2af03534bda7a9": "df2cb3428024a6091d0a152653bfa45521c8f689c63e996db218c5c3a2763e51"
+  },
+  "cut_comparison": {
+    "cut_equals_reset": true,
+    "cut_history": [
+      65,
+      0
+    ],
+    "reset_history": [
+      1,
+      0
+    ],
+    "suppressed_differs": true,
+    "suppressed_history": [
+      65,
+      64
+    ]
+  },
+  "error": "reconstruction tolerance or history-disabled negative control failed"
+}

@@ -184,6 +184,15 @@ fn reconstruction_reference_on_submitted_game_frames() {
             .await
             .unwrap();
         let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+        std::fs::write(
+            output.join("build.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "executable":std::env::current_exe().unwrap(),"adapter":adapter.get_info().name,
+                "backend":format!("{:?}",adapter.get_info().backend),"extent":EXTENT,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
         assert_eq!(
             caps.recipe().unwrap(),
             thrum_render::capabilities::Recipe::Portable

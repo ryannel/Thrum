@@ -379,7 +379,7 @@ impl TaauTarget {
         words[32..48].copy_from_slice(&matrix(view).to_cols_array());
         words[48..52].copy_from_slice(&[
             f32::from(u8::from(valid)),
-            super::PRE_EXPOSURE,
+            0.0,
             extent[0] as f32,
             extent[1] as f32,
         ]);

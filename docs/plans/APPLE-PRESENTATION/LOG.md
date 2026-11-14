@@ -1,5 +1,12 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 The first M3 Metal reference run at `55ae06ee` fails the firm no-AA
+  comparison at all six checkpoints, despite meeting the absolute ΔE 3 bound.
+  Reference-cycle equality and both cut controls pass. Follow-up `5cffce8c`
+  corrects jittered depth addressing, steady-colour blend drift and retained GPU
+  storage-scale use; Clippy and shader validation pass, with target rerun pending.
+  [Retained failure](../../evidence/APPLE-PRESENTATION/m3/attempt-1/run.json).
+
 - 2026-11-14 M3 implementation checkpoint adds the portable temporal resolve, shared
   submitted history, pre-tone integration, an independent linear reference accumulator
   and the submitted game-host oracle. Focused native Clippy, shader validation and
