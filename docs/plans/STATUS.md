@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-6 of 25 modules done · 9 in progress · 10 to come
+6 of 31 modules done · 9 in progress · 16 to come
 
 ### Needs you now
 
@@ -198,6 +198,25 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SWARM assumes: "smooth" is judged from frame records and real-time engine capture, with no frame time as a pass mark (brief decision 3). A measurement on the built-in panel itself needs someone at the Mac and is named as not run. ([plan](SWARM/PLAN.md))
 - SWARM assumes: two changes the game needs inside other modules are built by SWARM's own builder under rulings in the module list: a repository guard that admits a second game, and whatever the window and page still assume of the V1 game. The shared iPhone shell and a world that steps when a match says are engine work, built before the game in `GAME-UI` M6 and `SESSION` M7. ([plan](SWARM/PLAN.md))
 - SWARM assumes: you are asked twice: to pick the concept in M1, and to play the finished game in M8. Track 3 closes only on your acceptance, and changes you ask for come first unless you say they can wait. ([plan](SWARM/PLAN.md))
+- REPO-RULES assumes: the rules bind every builder from the day M1 lands, running builders included. A rule only stops new violations, never code that was already there, and its message says what to write instead. The cap on evidence files binds from M2, when a refused file has somewhere to go. ([plan](REPO-RULES/PLAN.md))
+- REPO-RULES assumes: the cap on an evidence file is 2 MiB, the review's figure. About 2.3 GiB of 3.7 GiB leaves the checkout and about 1.4 GiB of smaller files stays. A lower cap removes more; say so and M2's cap changes. ([plan](REPO-RULES/PLAN.md))
+- REPO-RULES assumes: files that leave stay recoverable from Git history on this Mac and on the remote, by one command. New large captures go to a folder beside the repository, with no remote copy and no service, so a lost disk loses them. ([plan](REPO-RULES/PLAN.md))
+- REPO-RULES assumes: `thrum-render` stays one crate. The review suggested splitting it into three; a rule holds the direction of its layers instead, and a split is looked at again after `RENDER-2D` M1 builds the seam between the frame and the scene. ([plan](REPO-RULES/PLAN.md))
+- REPO-RULES assumes: three of the review's themes get no fix milestone now, because its order of attack does not schedule them: shader source assembled four ways (T7), environment variables read as configuration (T8, beyond a rule that stops new reads in libraries) and mechanisms built several times (T11). ([plan](REPO-RULES/PLAN.md))
+- REVIEW-ENGINE assumes: a game can no longer fill its own published page. The engine fills it, as the G2S decision says, and no planned game needs otherwise. ([plan](REVIEW-ENGINE/PLAN.md))
+- REVIEW-ENGINE assumes: the fix for Metal drawing every meshlet one by one (M71) waits for the performance phase after the V1 exit, as `CULLING`'s native recipes do. It is the largest cost finding this plan leaves alone. ([plan](REVIEW-ENGINE/PLAN.md))
+- REVIEW-ENGINE assumes: the cooker's mip filter keeps its two small quality defects (odd sizes, colour bleeding at alpha edges), because fixing them changes cooked bytes and would move every exact reference image. ([plan](REVIEW-ENGINE/PLAN.md))
+- TEST-SUPPORT assumes: on Linux and Windows, where nothing is qualified, a machine with no GPU skips GPU tests with a printed reason and still passes. On this Mac a missing GPU fails the run. ([plan](TEST-SUPPORT/PLAN.md))
+- TEST-SUPPORT assumes: test files are not all moved to one layout. New tests follow the adopted layout, and an old file moves when a task already touches it. ([plan](TEST-SUPPORT/PLAN.md))
+- REVIEW-RENDER assumes: nothing here starts until the five milestones other builders hold in the renderer are Done, so the renderer's confirmed bugs are fixed after them, not at once. The other choice interrupts those builders. ([plan](REVIEW-RENDER/PLAN.md))
+- REVIEW-RENDER assumes: two cost findings wait: many local lights built on the CPU each frame (M24), for the performance phase after the V1 exit, and the sky rebuilt on every Sun change (M31), for the quality governor's cadence controls. ([plan](REVIEW-RENDER/PLAN.md))
+- HOST assumes: Chrome keeps the device request it has today, so cooked textures in the browser stay uncompressed and no reference image moves. Turning compressed textures on in Chrome is a separate change to what Chrome draws. ([plan](HOST/PLAN.md))
+- HOST assumes: on the Mac a GPU validation or out-of-memory error no longer ends the game: it is recorded and the game carries on, as it already does on iPhone. ([plan](HOST/PLAN.md))
+- HOST assumes: a still scene keeps rendering at the display's full rate (finding M58). Idling it belongs with the quality governor. ([plan](HOST/PLAN.md))
+- GAME-SPLIT assumes: the game moves out after the V1 exit closes (`SHOWCASE` M8), not before. Until then it is separated inside this repository: no engine code reaches it, the engine's host code is out of it, and it builds alone. The other choice moves it as soon as that is true and builds the rest of the showcase across two repositories, on the road every V1 module closes through. ([plan](GAME-SPLIT/PLAN.md))
+- GAME-SPLIT assumes: Thrum keeps a frozen copy of the V1 scenes as engine test content, because its reference images and 54 approved checks in other modules' open milestones draw them. It is not the game and does not change with it. It keeps the name `v1-game` until the last check that names it is Done, then is renamed. ([plan](GAME-SPLIT/PLAN.md))
+- GAME-SPLIT assumes: the game's plans, reviews and evidence stay in Thrum's `docs/`, because the build loop runs in one repository. Only code and content move. ([plan](GAME-SPLIT/PLAN.md))
+- GAME-SPLIT assumes: `thrum-games` has no remote and no backup beyond this Mac until you ask for one. ([plan](GAME-SPLIT/PLAN.md))
 
 ### Now and next
 
@@ -212,6 +231,12 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1): Not Started · [plan](SIM-2D/PLAN.md)
 - A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): Not Started · [plan](TRANSPORT/PLAN.md)
 - SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
+- REPO-RULES's design: Design Ready for Review · [design](REPO-RULES/DESIGN.md) · [plan](REPO-RULES/PLAN.md)
+- REVIEW-ENGINE's design: Design Ready for Review · [design](REVIEW-ENGINE/DESIGN.md) · [plan](REVIEW-ENGINE/PLAN.md)
+- TEST-SUPPORT's design: Design Ready for Review · [design](TEST-SUPPORT/DESIGN.md) · [plan](TEST-SUPPORT/PLAN.md)
+- REVIEW-RENDER's design: Design Ready for Review · [design](REVIEW-RENDER/DESIGN.md) · [plan](REVIEW-RENDER/PLAN.md)
+- HOST's design: Design Ready for Review · [design](HOST/DESIGN.md) · [plan](HOST/PLAN.md)
+- GAME-SPLIT's design: Design Ready for Review · [design](GAME-SPLIT/DESIGN.md) · [plan](GAME-SPLIT/PLAN.md)
 
 ### Recently done
 
@@ -267,4 +292,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, EFFECT-GRAPH:M3, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Changes Requested |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1 and RENDER-2D M5 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
+| 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | Design Ready for Review |
+| 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | Design Ready for Review |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | Design Ready for Review |
+| 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Design Ready for Review |
+| 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Design Ready for Review |
+| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 to start; TEST-SUPPORT M1, REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Design Ready for Review |
