@@ -70,11 +70,11 @@
     },
     "EFFECT_GRAPH_seam": {
       "implementation": "M3_after_opaque_render_and_compute_requests_async_metadata_quality_controls_implemented;_integration_pending",
-      "functional_validation": "c33f9bb3_all_M3_item_commands_and_dev_check_passed:_native_and_Chrome_depth_union_shared_copy_current_occlusion_refraction_pixels_unjittered_motion_reset_device_replacement_discard_late_compute_history_composition_async_refusals_absent_graph_snapshots_quality_invalidation_and_all_registered_exact_baselines;_compiled_async_metadata_and_order_unit_passed",
+      "functional_validation": "86d0c1a3_all_M3_item_commands_and_dev_check_passed:_native_and_Chrome_depth_union_shared_copy_current_occlusion_refraction_pixels_unjittered_motion_reset_device_replacement_discard_late_compute_history_composition_async_refusals_absent_graph_snapshots_quality_invalidation_and_all_registered_exact_baselines;_compiled_async_metadata_and_order_unit_passed",
       "experienced_quality": "builder_inspected_four_T2_fixed_native_noon_night_whole_frames_and_native_size_crossings_on_both_recipes_and_Chrome_fixed_noon_crossings;_independent_review_pending;_reconstructed_motion_not_claimed",
       "platform_performance": {
-        "mac": "twelve_capture_OFF_paired_arms_on_9096b368;_depth_boundary_brackets_0.992-1.109ms_copy_plus_boundary_1.020-1.131ms;_raw_named_pass_sum_copy_minus_depth_66-90us;_load_retained;_bracket_differences_have_both_signs_no_isolated_transfer_cost_speedup_or_frame_latency_claim",
-        "browser": "c33f9bb3_submitted_inputs_and_fixed_T2_capture_passed_after_authored_camera_fixture_correction;_builder_inspected_whole_frame_and_native_size_crossings;_no_performance_claim",
+        "mac": "twelve_capture_OFF_paired_arms_on_86d0c1a3;_depth_boundary_brackets_0.972-1.097ms_copy_plus_boundary_1.025-1.165ms;_raw_named_pass_sum_copy_minus_depth_54-72us;_load_retained;_no_isolated_transfer_cost_speedup_or_frame_latency_claim",
+        "browser": "86d0c1a3_submitted_inputs_and_fixed_T2_capture_passed;_builder_inspected_whole_frame_and_native_size_crossings;_no_performance_claim",
         "ios": "not_targeted"
       },
       "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate.",
