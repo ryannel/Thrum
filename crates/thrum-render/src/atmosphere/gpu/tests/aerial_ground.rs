@@ -310,3 +310,105 @@ fn above_ground_bytes_preserved() {
         }
     });
 }
+
+fn cases() -> Vec<(f64, f64, f64, bool)> {
+    let mut cases = Vec::new();
+    for height in [0.0_f64, 3.0, 50.0, 245.0] {
+        let horizon = -(height * (12_742_000.0 + height)).sqrt().atan2(6_371_000.0);
+        for d in [3000.0, 10_000.0, 30_000.0] {
+            for elevation in [0.05_f64, 0.2] {
+                cases.push((height, d, horizon + elevation.to_radians(), d == 30_000.0));
+            }
+        }
+    }
+    for (height, distances) in [
+        (3.0, &[3000.0][..]),
+        (40.0, &[3000.0, 10_000.0][..]),
+        (100.0, &[3000.0, 10_000.0, 30_000.0][..]),
+    ] {
+        for &d in distances {
+            // A point on the ground at the declared camera-to-point distance.
+            let sine =
+                -(height * (12_742_000.0 + height) + d * d) / (2.0 * (6_371_000.0 + height) * d);
+            cases.push((height, d, sine.asin(), d == 10_000.0));
+        }
+    }
+    cases
+}
+
+#[test]
+fn near_ground_reads_match_their_own_column() {
+    pollster::block_on(async {
+        let fixture = Fixture::new().await;
+        let mut failed = Vec::new();
+        for fov in [60.0_f64, 90.0] {
+            let t = (fov.to_radians() * 0.5).tan();
+            for sun in [
+                [45.0, 60.0],
+                [10.0, 180.0],
+                [5.0, 20.0],
+                [2.0, 10.0],
+                [0.5, 0.0],
+            ] {
+                let decides = fov == 60.0 && sun[0] >= 2.0;
+                let mut worst = [[0.0_f64; 4]; 2];
+                let mut stop_worst = 0.0_f64;
+                for (h, d, angle, must_reject_stop) in cases() {
+                    let reference = fixture.volume(h, angle - (t / 32.0).atan(), fov, sun);
+                    let expected = reference.sample(angle, d, false);
+                    let far = reference.sample(angle, 32_000.0, false);
+                    let mut stop_case = 0.0_f64;
+                    for pitch in 0..8 {
+                        // Move the horizon through one complete row, without
+                        // using sampler-quantized weights in the f64 referee.
+                        let camera_pitch = (t / 32.0).atan() * (f64::from(pitch) / 4.0 - 1.0);
+                        let volume = fixture.volume(h, camera_pitch, fov, sun);
+                        let actual = volume.sample(angle, d, false);
+                        let stopped = volume.sample(angle, d, true);
+                        for field in 0..2 {
+                            for c in 0..4 {
+                                if field == 0 && c == 3 {
+                                    continue;
+                                }
+                                let e = expected[field][c];
+                                let allowance = if field == 0 {
+                                    0.025 * e + 0.0025 * far[field][c] + quantum(e)
+                                } else if c == 3 {
+                                    0.10 * e
+                                } else {
+                                    0.01 * e + 0.001 + quantum(e)
+                                };
+                                let share = (actual[field][c] - e).abs() / allowance.max(1e-30);
+                                worst[field][c] = worst[field][c].max(share);
+                                if decides && share > 1.0 {
+                                    failed.push(format!("h{h} d{d} angle{} sun{sun:?} pitch{pitch} field{field} c{c}: actual={:e} expected={e:e} allowance={allowance:e} share={share}", angle.to_degrees(), actual[field][c]));
+                                }
+                                if c < 3 {
+                                    stop_case = stop_case
+                                        .max((stopped[field][c] - e).abs() / allowance.max(1e-30));
+                                }
+                            }
+                        }
+                    }
+                    if decides && must_reject_stop && stop_case <= 5.0 {
+                        failed.push(format!(
+                            "stop negative h{h} d{d} sun{sun:?}: worst share {stop_case} <= 5"
+                        ));
+                    }
+                    stop_worst = stop_worst.max(stop_case);
+                }
+                eprintln!(
+                    "M9.1 fov={fov} Sun={sun:?} decides={decides} worst [S,T+night]={worst:?}; stop={stop_worst}"
+                );
+            }
+        }
+        for row in failed.iter().take(32) {
+            eprintln!("FAIL {row}");
+        }
+        assert!(
+            failed.is_empty(),
+            "M9.1 {} failures; allowance unchanged",
+            failed.len()
+        );
+    });
+}
