@@ -181,3 +181,11 @@
   Chrome set passed. The replacement covered-content key is
   `35ee716d5af06cc0e5cdcbaac1a9fe42ad061651dcdf20136fea84744a3a2fcc`; complete check outputs are retained
   under shared Git check key `fe466581b59a5ce1514b20dc`.
+
+- 2026-11-14 M1 resumed after the clean-checkout verifier failed its 16 GiB disk preflight before
+  `apple_tile_m2`, rather than an image comparison. The failed record on `bb86a1be` had passed all
+  38 comparisons in `apple_tile_m1`. This session found only 15 GiB available and no running owned
+  background job or open handle in this worktree's build output. Cleaning this worktree's reconstructible
+  development build with `cargo clean --profile dev` removed 5.6 GiB (Cargo's reported logical size),
+  restoring 20 GiB available. No references, bounds or capture preflights were changed. Verification
+  below records the rerun; the earlier failure alone establishes no new baseline pass.
