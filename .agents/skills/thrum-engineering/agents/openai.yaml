@@ -1,4 +1,4 @@
 interface:
   display_name: "Thrum Engineering"
-  short_description: "Engine rules for planning, building and reviewing Thrum"
-  default_prompt: "Use $thrum-engineering with the orchestrate skills for this Thrum work."
+  short_description: "Where Thrum's code lives, its adopted patterns, and its engine rules"
+  default_prompt: "Use $thrum-engineering for this Thrum work."

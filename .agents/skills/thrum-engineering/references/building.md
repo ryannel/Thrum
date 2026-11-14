@@ -1,75 +1,83 @@
 # Building in Thrum
 
-Engine rules for `/build-milestone` in this repository, on top of the generic skill. The profile is
-[ORCHESTRATE.md](../../../../ORCHESTRATE.md).
+What `/build-milestone` needs to know that is particular to this engine: what counts as proof, how capture works
+here, what to verify, and how to leave the machine. The generic build skill covers the plan, the stop rule, review
+and integration.
 
-## Pick the work
+## A milestone is proven in the game
 
-- **Extend running paths before hardening inactive ones.** Code with no consumer by the end of a slice does not land,
-  and parked tracks stay parked.
-- **Aim for showcase quality, not parity.** Prefer named techniques, paper reproductions and specialisations agents
-  can sustain. Claimed wins need measurements. Record sources and evidence in
-  [the technique register](../../../../docs/design/AI-PERFORMANCE.md#technique-register).
-- **Native and browser.** Native leads and uses every hardware feature. The browser runs the portable recipe at
-  showcase quality and never limits native.
-- **Crates.** Before building a general subsystem, look for a proven crate that meets the targets (Wasm, mobile,
-  determinism where needed). Build your own where a specialised path is the point and can show its win.
+A milestone is proven when the V1 test game (`examples/v1-game`) uses the module the way a game will:
 
-## Match rigour to the state
+- in the game's own scene;
+- through the module's public interface only;
+- with shipped content and configuration;
+- with the existing neighbours running alongside (sky, clouds, water, shadows);
+- under the game's own controls.
 
-| What the code touches | On violation |
-| --- | --- |
-| Authoritative world state, saves, wire input, security boundaries | Refuse with a typed error, leave state unchanged, test the failure path |
-| Presentation, VFX, audio, cosmetic budgets, frame resources | Degrade: clamp or drop, count it, log it; `debug_assert!` in development. Never stall a tick or fail a frame |
-| Authored content | Validate with tolerances; importers repair what they safely can (weld, drop degenerates) and warn |
+It is then captured while running and watched in motion. Anything less, such as a solver test, a geometry
+inspector or an offline high-sample render, is a diagnostic. A diagnostic is useful, but it proves nothing about
+the product.
 
-Don't add exact multi-precision arithmetic, certificates, logical byte-credit accounting or diagnostic-ordering
-contracts unless an observed failure needs them and a simpler bound failed.
+- **The first visual checkpoint renders the interaction itself.** If the milestone promises a wake behind a boat,
+  the checkpoint shows a boat making a wake, not a plot of the wave field.
+- **If the game can't host the milestone yet, making it able to is part of the work.** For example, there might be
+  no sea for a shadow over water. Add the scene through public APIs, and use simple labelled stand-ins for
+  neighbours that don't exist. A change that would alter another module's design goes to `/plan-module`.
+- **Drive behaviour with its real inputs.** A correct solver fed invented inputs, or an amplitude set by a
+  hand-tuned gain, still gives the wrong experience. An authored effect is fine when its role and limits are stated.
+- **Test the joins.** Faults hide at transitions between representations, bands and levels of detail, not inside
+  each part.
+- **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
+  loaded artifact before you carry evidence forward.
 
-## Shape the code
+## Capture
 
-The lint policy and `./dev check` enforce suppression discipline, API reachability, test placement and size
-backstops. When designing types, APIs, errors, decoders or test support, read [rust code](rust-code.md).
-- **One path per behaviour.** Express variants with generics, typestate or a builder.
-- **Engine crates hold no game schema.**
-- **Keep internals `pub(crate)` behind a small facade,** with one error enum per public boundary.
-- **When a size note or limit fires,** split by responsibility, never by line count.
+Engine capture renders the running game's frames through the shipped renderer offscreen, at the shipped simulation
+rate and settings. It needs no display, no unlocked session and no Screen Recording grant, so it is how motion is
+watched. The runbook is `docs/CAPTURE.md`. The capture modes each target supports are in `ORCHESTRATE.md`.
 
-## Hot paths
+Keep the encoded clip, the per-frame GPU timings and a few cited stills. Delete raw frames once they are encoded.
 
-For per-tick, per-frame and per-message code:
-- Reuse buffers and arenas, and move values.
-- Store iterated data as columns, and validate once.
-- Use a fast non-cryptographic hasher for internal maps.
-- Account cost before choosing a representation
-  ([the cost account](../../../../docs/design/AI-PERFORMANCE.md#the-cost-account-in-each-owning-design)).
-- Select accelerated paths from the capability registry and keep a portable fallback that the same tests exercise
-  ([hardware-native decision](../../../../docs/design/decisions/HARDWARE-NATIVE-ENGINE.md)).
+Presentation (cadence and latency on the real display) is a separate measurement, made in the owner's window. It
+gates only done-when items about pacing.
 
 ## Verify
 
-- **Tests** cover behaviour and plausible failure; authority work covers rejected, stale and duplicate input.
-- **Timing** lives in `benches/` with stored baselines. Allocation claims use the counting-allocator assertion.
-- **Parsers:** every parser of untrusted bytes gets a fuzz target.
-- **Device, frame-time and visual claims** come only from runs on named targets:
-  - this M3 Max;
-  - the iPhone simulator (function only, never speed);
-  - Chrome.
-
-  Label Mac stand-ins "proxy". Device timing runs alone on the GPU: wrap timing and capture
-  runs in `agent_loop.py lock gpu -- <command>`, which holds a lock shared by every worktree of this repository.
-- **Regressions.** Investigate visible hitches, about 25% regression from a comparable baseline, or unexpected scaling
-  ([performance](performance.md)).
-- **Visible output:** capture fixed cameras and a frame sequence from the exact build on the named target, offscreen.
-  Convert captures to PNG for review, since capture writes `.ppm`. Look at them yourself against the inspection list.
-- **Status** goes in [the maturity ledger](../../../../docs/design/maturity.json), separately for implementation,
-  correctness, visuals and device. Evaluator passes record `agent_reviewed`.
+- **Tests** cover behaviour and plausible failure. Authority work covers rejected, stale and duplicate input.
+  Lifecycle work covers interruption and recovery.
+- **Timing claims** come from `benches/` (divan, `=0.1.21`) with a stored baseline.
+- **Allocation claims** come from a counting-allocator test, such as `examples/v1-game/tests/frame_alloc.rs`.
+- **Parsers of untrusted bytes** (wire input, a remote product store) get a fuzz target. None exists yet, so the
+  first sets the pattern.
+- **Device, frame-time and visual claims** come only from runs on the targets in `ORCHESTRATE.md`: this M3 Max,
+  Chrome, and the iPhone simulator. The simulator shows function only, never speed. Label a Mac standing in for an
+  iPhone `proxy:iphone`.
+- **The GPU is shared.** Device timing and capture runs hold the `gpu` lock (`LOOP lock gpu -- <command>`), which
+  every worktree of this repository shares.
+- **A change to a covered path** needs an exact-baseline proof before it lands: `python3 scripts/exact_baselines.py
+  verify`, under the `gpu` lock. `CONTRIBUTING.md` lists the requirements, and `.config/exact-baselines.json` lists
+  the covered paths.
+- **Regressions:** investigate a visible hitch, a regression of about 25% from a comparable baseline, or unexpected
+  scaling.
+- **Status** goes in `docs/design/maturity.json`, with implementation, correctness, visuals and device recorded
+  separately. A check passing doesn't move any of them.
 - **Evidence** is at most one page per milestone, linked from the done-when items. Bulk output follows
-  [the storage rules](../../../../docs/ASSET-LIFECYCLE.md).
+  `docs/ASSET-LIFECYCLE.md`.
 
-## Build outputs and worktrees
+## What to deliver
 
-- **Run `cargo clean` in your worktree** when work stops. A daily sweep deletes stale `target` directories.
-- **Remove the worktree once the commit has landed,** that is, once `git merge-base --is-ancestor <commit>
-  origin/main` passes after a fetch.
-- **In fan-out,** each stream keeps one target directory across its milestones.
+- the result;
+- what was verified, with the evidence;
+- the measured cost;
+- what remains unqualified or failed.
+
+An unavailable path, such as a fallback, a device or a resource-loss case, stays unqualified. It doesn't silently
+pass. A bounded prototype is not full-range delivery, and an unrun check is not a failed one.
+
+## Leaving the machine clean
+
+- Run `cargo clean` in your worktree when work stops. A daily sweep deletes stale `target` folders, and builders
+  stall when the disk falls below about 16 GiB.
+- Remove the worktree once its commit has landed, that is, once `git merge-base --is-ancestor <commit> origin/main`
+  passes after a fetch.
+- In a fan-out, each stream keeps one target folder across its milestones.

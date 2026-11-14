@@ -1,104 +1,96 @@
 # Engine architecture
 
-Thrum-specific guidance for `/plan-module` at project level: how to design the engine's architecture, module map and module
-briefs. Shared contracts live in [CONTRACTS](../../../../docs/design/CONTRACTS.md).
+What project-level planning (`/plan-module` for the whole engine) needs to know about Thrum.
 
-Design the engine around its intended users, supported games and the work needed to create them. Establish the whole
-system before commissioning deep module designs. Module boundaries are hypotheses to improve through research and
-proof, not a copy of the existing folders or a list of fashionable engine features.
+## Where the architecture lives
 
-## Establish the engine brief
+| What | Where |
+|---|---|
+| Purpose, the V1 exit and the gates | `docs/plans/BRIEF.md` |
+| The module list and build order | `docs/plans/ARCHITECTURE.md` |
+| Requirements coverage (E01–E21) | `docs/design/ARCHITECTURE-BRIEF.md` |
+| Shared invariants between modules | `docs/design/CONTRACTS.md` |
+| Each module's brief | `docs/plans/<MODULE>/BRIEF.md` |
 
-First distinguish a single-game engine from a reusable engine or module library. For a reusable engine, establish its
-intended range of games, capability combinations, quality ambitions, developer experience and delivery goals. Derive
-contrasting usage profiles to expose shared needs and legitimate differences; do not force the user to select one
-game or narrative moment. For a game-specific engine, representative player experiences can establish the brief.
-Discuss unresolved choices in small rounds and keep the brief provisional; do not invent answers to finish it.
+Where an older document in `docs/design/` disagrees with these, these win. Update a record in place, rather than
+writing a competing version.
 
-Distinguish confirmed requirements, necessary implications, proposals, open questions and exclusions. Use existing
-product decisions as context, with their dates and scope; do not silently promote old experiments or revoke accepted
-choices. For a fresh design, derive responsibilities before inspecting old technical plans or implementation. Prior
-exposure is a limitation to disclose, not a reason to claim a blind study.
+## A reusable engine, not one game
 
-Discover requirements across the whole game: player control and camera, world scale and continuity, interactions,
-characters and world life, rules and progression, presentation and sound, persistence, content creation and delivery.
-These are prompts for discovery, not mandatory modules. Ask about platforms, devices, input and accessibility,
-networking, authoring workload and performance where they change architectural decisions. Keep unknowns explicit.
+Thrum serves a range of games, so design from contrasting usage profiles rather than one game's needs: the V1 test
+game, the kit scenes, the planned swarm game (`docs/design/NEXT-GOAL-SWARM-GAME.md`), and web demos of skies and
+water. Keep
+three things apart for each capability:
 
-For reusable engines, distinguish a capability from its visual presentation and from its implementation. A consumer
-may need a phenomenon's effects without drawing the phenomenon itself. Profiles select capabilities, providers and
-quality; they do not create independent copies of shared world state. Define supported combinations, dependencies,
-fallbacks and unsupported configurations. Disabling a feature should remove its avoidable work and resources while
-preserving retained consumers. Separate build-time inclusion, load-time configuration and live toggles where their
-cost, state migration or lifecycle differs. Modularity does not imply every arbitrary combination is valid.
+- **What a game needs.** A game may need a phenomenon's effects (shadows from clouds) without drawing the phenomenon.
+- **How it is presented.**
+- **How it is implemented.**
 
-Make developer composition explicit: how games select features, assemble entities from data, add behaviour and replace
-implementations through public extension points. Distinguish responsibility modules, plugin packages, components,
-systems and providers where those concepts apply. Folder boundaries alone do not establish pluggability; account for
-registration, compatibility, content requirements and removal without bypassing shared authorities.
+Profiles select capabilities, providers and quality. They don't create separate copies of shared world state.
+Disabling a feature removes its work and resources while keeping what other consumers rely on. A flag that hides
+output while the work continues is not modularity. Say which combinations are supported; modularity doesn't make
+every combination valid.
 
-## Derive responsibilities and interactions
+A game composes the engine through public extension points: selecting features, registering behaviour, replacing
+implementations. A folder boundary alone is not an extension point.
 
-Maintain one architecture brief in the project's durable design area. Link product decisions to their canonical
-record rather than maintaining competing versions. Give important requirements stable references when useful.
+## Owners and interactions
 
-Map required experiences and usage profiles to responsibilities, then propose modules around coherent ownership and change boundaries. Maintain
-both a module map and an interaction map: a tree alone hides feedback and shared services. Distinguish reusable
-engine capabilities, game-specific policies and authored content. Identify what the chosen host engine already
-provides once the experience requirements are established; building a custom replacement needs a reason.
+Keep two maps: a module map, and an interaction map. A tree alone hides feedback loops and shared services. For each
+consequential boundary, name:
+- the state's owner;
+- its producers and consumers;
+- what they exchange;
+- when it updates;
+- how consistent it must be.
 
-For consequential boundaries, identify state owners, producers and consumers, exchanged quantities/events, lifecycle
-and scheduling, persistence and acceptable consistency. Walk representative play sequences across systems, including
-important transitions. Find missing owners, duplicate authorities and circular assumptions before detailed APIs.
-Choose contract detail proportional to its downstream consequences; avoid empty frameworks and speculative APIs.
+Walk representative play sequences across modules, including transitions, to find missing owners and duplicate
+authorities before writing detailed APIs.
 
-For performance-led engines, map investment to expensive operations, frequent small work, data movement and waits
-across runtime and creator workflows. Derive scaling and critical-path consequences before committing representations.
-AI-maintained specialization may justify harder internals when semantics, invariants and gains are verifiable; public
-simplicity does not require uniform internal layouts. Sequence capability investments through construction rather
-than postponing them to a final optimization phase. Keep prospective advantage separate from measured evidence.
+**Cross-cutting mechanisms need owners too, not only world state.** The 14 Nov 2026 code review traced most of the
+codebase's inconsistency to mechanisms that no module owned, so each host or crate built its own:
+- the device request and loss handling;
+- the platform host loop;
+- pause and overload policy;
+- GPU test support;
+- capture and readback;
+- shader composition.
 
-Allocate whole-scene time, memory, loading and content budgets where targets are known. Distinguish estimates from
-measurements. Include simultaneous systems, background work and quality transitions; individually affordable
-modules do not establish a viable engine. Unknown hardware remains an open constraint, not invented certification.
+When a module brief needs one of these, name the module that owns it.
 
-## Develop and maintain the architecture
+## Cost across the whole scene
 
-Research decisions that could change system boundaries or feasibility using primary production and academic sources.
-Compare credible architectural alternatives, including a simpler composition, rather than only mapping engine feature
-lists to modules or rejecting extremes. Distinguish evidence that a candidate is internally coherent from evidence
-for choosing it. Include developer creation/change workflows and heterogeneous model boundaries where they can expose
-choices that ordinary play/frame scenarios miss; do not turn every surveyed engine capability into a requirement.
-When scenario dogfooding is commissioned, walk concrete creator actions from initial setup through changed requirements,
-iteration, delivery and a realistic failure. Compare what a simple and a demanding game actually need; use the traces
-to remove unnecessary developer concepts and machinery while retaining internal correctness. Label paper walkthroughs
-separately from running tools, observed usability and measured quality; a plausible story does not close a missing mechanism.
-For ambitious quality or innovation goals, distinguish established production methods, emerging research and original
-hypotheses. Derive consequential choices from domain models, mathematical relationships, system invariants and known
-constraints before proposing experiments. Explain assumptions, approximations, coupled behaviour, complexity and
-error/cost bounds where they determine the architecture. A missing core mechanism is a design gap; a prototype plan
-does not close it. Compare complete results with relevant current references; novelty alone is not quality.
-Use measurements to test explicit predictions or uncertainties analysis cannot settle, not to discover the architecture
-by layering attractive results. Public demos need representative running
-results and reproducible measurements; upstream contributions also need clear integration boundaries and licensing.
-Delegate detailed technique selection to module design once its responsibility and neighbouring contracts are clear.
-Keep selection status (proposed, provisional, selected, superseded) separate from implementation and proof status.
+Allocate time, memory, loading and content budgets across the whole scene where targets are known, and keep
+estimates apart from measurements. Individually affordable modules don't make a viable engine. The account has to
+include the systems that run at the same time, background work and quality transitions. Follow the owner's
+performance policy: decide for performance up front, then build with tripwires rather than invented gates.
 
-Each module brief supplies the requirement set, external contracts, budget, key interactions, open decisions,
-research depth and completion criteria. Include the relevant creator journey and content source when either could
-change the module boundary or its proof. Write it to `docs/plans/<MODULE>/BRIEF.md` (or a section of the
-architecture brief), then `/plan-module` does the research, design and milestones. Child research may expose a missing owner or contract; integrate that finding across affected
-consumers before treating the module design as settled. The architecture owner retains the shared contract and
-whole-scene budget, even when module studies run independently.
+## Proof order
 
-Order proofs by the architectural assumptions they can disprove. Each proof names the decision, realistic workload,
-observable rejection condition and consequences of failure. A demonstration does not select the engine architecture
-by existing. Reconcile old implementations only after choosing the target; retain what fits without favouring sunk
-effort. Revise the target when evidence or the user's requirements change.
+Order proofs by the architectural assumption each can disprove. Each proof names:
+- the decision it tests;
+- a realistic workload;
+- the observation that would reject it;
+- what changes if it fails.
 
-An exploratory brief is complete for its stage when confirmed needs and consequential questions are clear. An
-architecture is ready to commission modules when required experiences have owners, important interactions and shared
-budgets are accounted for, and consequential structural choices have reasoned mechanisms. Remaining empirical
-uncertainties have bounded qualification; unresolved core mechanisms remain design gaps. It need not preselect every algorithm.
-Record unqualified combinations and deferred decisions; a completed design phase does not certify implementation,
-performance or visual quality. What goes to the owner: changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible actions; everything else in this level is yours, including pushing verified checkpoints to main.
+A demonstration that happens to exist doesn't select the architecture.
+
+## Module briefs
+
+A brief gives a module:
+- its requirements and consumers;
+- its contracts with neighbours;
+- its budget;
+- its key interactions;
+- the decisions still open;
+- how deep its research should go;
+- when it is complete.
+
+Include the creator's path from source to screen when that could change the module's boundary. The architecture
+owner keeps the shared contracts and the whole-scene budget, even when modules are designed independently. When a
+module's research finds a missing owner or contract, settle it across the affected consumers before that design is
+treated as settled.
+
+The owner decides: changes to the purpose or the V1 exit, spending, publishing, licensing or deploying, and
+irreversible actions. Everything else at this level is the planner's, including pushing verified checkpoints to
+`main`.

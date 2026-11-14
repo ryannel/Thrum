@@ -1,0 +1,202 @@
+# Patterns
+
+Each section covers one recurring job:
+
+- the shape the codebase has adopted;
+- why it was chosen;
+- the older shapes you will meet and should not copy;
+- what to do where no shared helper exists yet.
+
+The 14 Nov 2026 code review (`tmp/code-review-2026-11-14/CODE-REVIEW.md`) found each split this file describes.
+Its finding IDs are given so you can see the evidence.
+
+Contents: [Errors](#errors) · [Data shared with WGSL](#data-shared-with-wgsl) ·
+[Shader source](#shader-source) · [Naming GPU work](#naming-gpu-work) ·
+[Device setup](#device-setup) · [Tests](#tests) ·
+[Configuration](#configuration) · [Crossing crate boundaries](#crossing-crate-boundaries) ·
+[Platform shells](#platform-shells) · [Names](#names)
+
+## Errors
+
+**Shape.** Each public boundary has one error enum. `crates/thrum-asset/src/error.rs` is the model:
+
+- each variant has a doc line saying what happened;
+- `Display` writes a message a person can act on;
+- `std::error::Error::source()` returns any wrapped error.
+
+Variants name the decision the caller has to make (reject the input, retry later, treat it as a fault), not where
+the error happened. Private helpers return the boundary's enum, or a private error converted at the edge.
+
+**Why.** A `String` can't be matched, so callers end up classifying errors by guessing. `thrum-render` has a blanket
+`From<String> for FrameError`, and as a result the same missing presenter is reported as a GPU error from
+`resize_surface` but as `InvalidState` from `drive` (H11).
+
+**Older shapes not to copy:**
+- `Result<_, String>`, which is most of `thrum-app` and the games.
+- Typed enums with no `Display` or `Error` impl, which is most of `thrum-core`, `thrum-network` and `thrum-render`.
+- `Box<dyn Error>` outside binaries and tools.
+- `synthetic::RenderError`. It is the crate-wide render error, but it lives in the synthetic module, so `atmosphere`
+  has to import its error from its sibling (H06).
+
+When you touch one of these at a boundary you are already changing, convert that boundary.
+
+## Data shared with WGSL
+
+**Shape.**
+- A record that a shader reads is a `#[repr(C)]` struct deriving `bytemuck::Pod` and `Zeroable`, written whole with
+  `bytemuck::bytes_of`. `crates/thrum-asset/src/layout.rs` shows the derive. `bytemuck` is already pinned at
+  `=1.25.2` in the workspace.
+- Each such record has a test that parses the WGSL with `wgpu::naga` and checks the struct's size and member offsets
+  against the Rust side. Copy the test at the end of `crates/thrum-render/src/synthetic/view.rs`.
+- A WGSL struct used by several shaders is declared once and included, not copied into each shader.
+- Each buffer has exactly one writer.
+
+**Why.** A drift between the Rust and WGSL layouts doesn't fail. It shades wrongly, silently. The review found:
+- about 44 hand-written byte offsets in two synthetic records with no layout test (H07);
+- a WGSL `Serials` struct whose copies already disagree (M06);
+- one light buffer written by the CPU for bytes 0..48 and by a GPU pass for bytes 48..208, split by the literal
+  `48` (H09).
+
+**Older shapes not to copy:** `put(data, offset, value.to_le_bytes())` and `[u8; N]` records packed by literal
+offsets. These are in `thrum-sea/src/upload.rs`, `synthetic/`, `atmosphere/` and `visibility/`.
+
+**Constants shared with WGSL** are generated into a prelude from the Rust value, as `Profile::shader` does in
+`crates/thrum-render/src/atmosphere/spectrum.rs`. A number typed into both a `.rs` and a `.wgsl` file will drift.
+
+## Shader source
+
+**Shape.**
+- A `.wgsl` file sits beside the Rust module that owns it and is loaded with `include_str!`.
+- Generated constants are prepended as above.
+- A variant of a shader is a separate entry point or a generated constant, not an edited copy of the text.
+
+**Older shapes not to copy:**
+- Variants made by exact-text `String::replace` (synthetic, `thrum-asset-gpu`).
+- WGSL cut out of another module's file at comment markers. `atmosphere/products.rs` builds its library by slicing
+  `synthetic.wgsl` and renaming with `.replace` (M27).
+- Tests that reassemble production shader lists by hand.
+
+A text edit fails at run time, on the device, the first time anyone renames the text it matched.
+
+## Naming GPU work
+
+**Shape.**
+- A pass name is a `const PASS: &str` in the module that owns the pass, as in
+  `crates/thrum-render/src/visibility.rs`. The graph declaration, the GPU timing buckets and the benches all use that
+  constant.
+- Pipelines, stages and resources inside a module are named by a typed key, such as an enum or named struct fields.
+  `thrum-asset-gpu` holds its resources in named fields (`GpuMesh`, `Bound`, `Pipelines`), and that is the shape to
+  copy.
+
+**Why.** A string or integer identity breaks quietly. Renaming a pass string zeroes its timing bucket. An atmosphere
+stage index means different things in five tables, so if two of them drift the graph drops a barrier the shader
+needs (H05, H08). `thrum-sea` binds 17 buffers and 13 passes by position (H17).
+
+**Older shapes not to copy:**
+- Role integers such as `0..9`, `0x5343` and `1000` in `PipelineKey.role`.
+- Hex ASCII owner tags.
+- Positional `Vec<wgpu::Buffer>` indexed by literals.
+- A recorder found by reverse lookup in a long `match` (`synthetic/scene_graph.rs`).
+
+## Device setup
+
+**Shape.** Feature requests come from `DeviceCapabilities::requested_timing_features` in
+`crates/thrum-render/src/capabilities.rs`. Pipelines are created through `DeviceSite::render` / `compute`
+(`runtime/creation.rs`), which records each creation.
+
+**Not shared yet.** Nothing yet owns the rest of a device request: the limits, the compressed-texture features, the
+uncaptured-error handler and the loss watcher. Every host writes its own, and the copies disagree (H01). The iOS
+shell asks for `downlevel_defaults` limits (4 storage buffers per stage), while `thrum-sea` requires 8. The macOS
+shell treats an uncaptured GPU error as fatal; iOS survives it.
+
+If your work adds or changes a device request, don't add another copy. Propose a shared request in
+`thrum-render::capabilities` in the plan log, and use the nearest existing host's request until it lands.
+
+## Tests
+
+**Shape.**
+- Unit tests go in `#[cfg(test)] mod tests;`, with the body in `foo/tests.rs` once it passes a screen or two.
+- `tests/` holds tests of the crate's public API.
+- Test support shared by several test files lives in `tests/support.rs` or `tests/support/`, declared as a normal
+  module.
+- Production code carries no test-only functions, fields or branches. To inject a fault, pass a trait whose
+  production implementation is zero-cost.
+
+**GPU tests.** No gate has been adopted yet, and four coexist (H12):
+- a whole-file `#![cfg(target_os = "macos")]`;
+- per-test `#[cfg]`;
+- ungated tests that panic with no adapter;
+- tests that silently return early.
+
+The whole-file gate is the harmful one: in `tests/graph_kinds.rs` it hides 13 CPU-only tests from Linux and
+Windows. Gate only the tests that need a GPU, and say in the test what it needs.
+
+**Test devices.** About 130 adapter requests are copied across test files (M09), and there is no shared helper.
+The closest is `device()` in `crates/thrum-render/tests/graph_kinds_support/support.rs`. When a crate's tests need a
+device, put one helper in that crate's `tests/support` and use it from every GPU test you touch.
+
+**Older shapes not to copy:**
+- Support shared by `#[path = "..."]` includes, which rely on implicit `super::` names.
+- `#[path = "x_tests.rs"]` sibling files.
+- Test files named after milestones (`g2_runtime.rs`, `g2s_chunked_kernel.rs`). Name a test file for its subject.
+
+## Configuration
+
+**Shape.** A host parses its settings once, at startup, into a typed struct, and passes the values down. A setting
+read from the environment uses a public constant for the variable's name, as `CAPTURE_VARIABLE` does in
+`thrum-app`.
+
+**Why.** There are about 87 `THRUM_*` variables, read at the point of use in 41 files (M16). That includes library
+crates: `thrum-render` reads `THRUM_RECIPE` and `THRUM_MAC_PATTERN` (M08). A setting read deep inside a library can't
+be found, typed or tested. A library crate takes its settings as arguments and doesn't read the environment.
+
+## Crossing crate boundaries
+
+An engine crate depends only on the crates `.config/architecture.toml` allows. These all create a hidden dependency
+that neither check sees:
+
+- `#[path]`;
+- `include_str!` or `include_bytes!` that leaves the crate's own folder;
+- a dev-dependency on an example.
+
+The review found these:
+
+| Hidden dependency | Where |
+|---|---|
+| Render tests compile three `examples/v1-game/src` files | H02 |
+| Six sites read `thrum-render/src/synthetic/temporal/witness.json` | M72 |
+| `thrum-asset-gpu` reads render's private `cloud.wgsl` | H02 |
+| `thrum-cook` dev-depends on `examples/asset-loop` | M73 |
+
+A fixture two crates need lives in the crate that owns the data, exposed through its API (behind a feature if it is
+test-only), or in a shared dev-only crate registered in `architecture.toml`.
+
+Qualification and diagnostic code for the engine belongs to the engine, not inside the showcase game's public
+library (H20).
+
+## Platform shells
+
+The macOS shell (`thrum-app/src/app`), the browser shell (`thrum-app/src/web`) and the iOS shell
+(`examples/v1-game-ios`) each implement frame stepping, device loss and recovery, and pause and overload policy on
+their own. The copies have drifted (H15, M02, M03).
+
+- **A fix to shared behaviour:** make it in every shell, or tell the planner that this behaviour needs one owner.
+- **A new shell feature:** look for the same feature in the other shells first, and match it.
+- **Policy that isn't about the platform:** pause and overload decisions belong beside `ClockState` in `thrum-core`,
+  not in a shell.
+
+## Names
+
+Name things for what they do. Many file names, environment variables and some identifiers carry milestone and gate
+codes (`g2s_`, `g2r`, `t2_`, `G3c`, `M3b`, `G5`). A reader without the history can't tell what they mean. Keep codes
+in plans, logs and evidence.
+
+When you rename, rename completely:
+
+- the item;
+- its file;
+- its doc comments;
+- every caller.
+
+A half-rename leaves two names for one thing. `synthetic` is the production scene renderer, and renaming it is
+planned work. Don't rename it piecemeal.

@@ -1,92 +1,84 @@
-# Independent review
+# Review
 
-Review exists to catch what the author can't see. Design, code correctness, visual output and performance claims are
-different questions; say which one a review answered and which artifact revision it inspected. Choose depth by
-consequence and uncertainty, not by a quota.
+What a Thrum reviewer checks, beyond what `/review-milestone` covers. The owner-graded verdicts are in
+`docs/design/GRADED-EXAMPLES.md`. They are the best guide to how strict to be.
 
-## Brief reviewers so they stay independent
+Contents: [Design reviews](#design-reviews) · [Code reviews](#code-reviews) · [Visual reviews](#visual-reviews) ·
+[Performance claims](#performance-claims) ·
+[Calibration: failures this engine has already paid for](#calibration-failures-this-engine-has-already-paid-for)
 
-Give a fresh reviewer the original requirements, the use cases and the raw artifacts (code, design, captures,
-measurements). Don't give it your preferred technique, expected verdict or research conversation: an agent handed a
-hypothesis tends to confirm it. Ask neutral questions. For blue-sky design review, keep the reviewer away from
-existing module code and old plans, or disclose that it saw them. Self-checks are not independent review. If
-delegation is unavailable, say so. If a reviewer contributes a new mechanism, another reader verifies it. Reviewers
-don't claim a full read of scope they didn't inspect.
+## Design reviews
 
-Ask reviewers to mark each finding as verified, with file and line or a reproduction, or as suspected. Then act on
-verified findings; investigate suspected ones before relying on them. Ask for everything that fails the criteria,
-ranked; don't ask only for blocking issues.
+Read the brief first, and derive what the module must do before you read the design. Then compare the two, keeping
+three kinds of gap separate:
+- omissions;
+- additions the brief doesn't support;
+- couplings that can't work.
 
-## The two reviews that matter most
+An explicit, safe deferral is not an omission.
 
-- **The design and plan, before building on them.** Give the reviewer the brief (the commission: what the module
-  is for, its consumers, the required experiences and constraints, without your design) first and have it derive what the
-  module must do, then compare with the design and plan: omissions, unsupported additions, mechanisms not shown to
-  make their cues, milestones that wouldn't show the behaviour, a milestone too large to reach the game soon, and proof
-  that pursues accuracy beyond what changes what the player sees.
-- **Each milestone, in the game.** Give the reviewer the done-when file (inspection list and bar), how the milestone is judged and the raw
-  captures and logs for one build, not your summary; a reviewer that can't play video gets a frame strip at 10 fps or
-  more over the window in question. It says, per check, pass, fail or can't tell, and whether it watched motion.
+For each defining cue, ask:
+- **Can the mechanism produce it across the operating range?** A numerical reproduction of the core maths often
+  settles this quickly.
+- **Is a modern alternative missing?**
+- **Is the method heavy or dated by design?**
 
-The reviewer's verdict goes in the design or plan with the revision or build it saw, together with the brief it was
-given; it applies only to that revision. A consequential technique chosen after the design review gets the same kind
-of review before it's built on.
+Walk a normal frame and a coupled interaction through the real producers and consumers, and note where an
+implementer would still have to invent a mechanism, a query or an update order.
 
-## What to challenge
+Look for shortcuts that pass at the demo point and fail elsewhere:
+- fixed domains;
+- constant depths;
+- hard-coded origins;
+- wrapping boundaries;
+- single-regime constants;
+- a local field that replaces the module's other regimes instead of composing with them.
 
-- **Technique choice.** Review it when the choice is made, not after hours of building on it. Can the mechanism
-  produce every defining cue across the operating range? A numerical reproduction of the core maths often settles this
-  quickly. Which modern alternatives were missed? Is the method heavy or dated by design?
-- **Coverage.** Have the reviewer derive the capabilities and interactions from the brief first, then compare them with
-  the design. Keep omissions, unsupported additions and incompatible couplings separate. An explicit, safe deferral
-  is not an omission.
-- **Composition.** Walk a normal frame and a coupled interaction through the actual producers and consumers. Where
-  would an implementer still have to invent a mechanism, query or update order? A rigorous component doesn't support
-  an unbuilt link elsewhere.
-- **Plausible wrong substitutes.** Does the mechanism produce the requested state change, or only animate its
-  presentation (moving texture for growth, a fade for breakup)? Could it pass the author's checks while missing the
-  goal?
-- **Range and shortcuts.** Look for fixed domains, constant depths, hard-coded origins, wrapping boundaries,
-  single-regime constants, or a local field that replaces, rather than composes with, the module's other regimes.
-- **Code across boundaries.** Read callers, shared data, shaders, fixtures, lifecycle and tools together. Look for
-  duplicate producers, mismatched clocks or encodings, dead alternative paths, unbounded catch-up loops, hot-path
-  allocation, unnecessary readbacks and redundant transforms.
-- **Visual output.** Reviewers inspect captured images and sequences directly. They state whether they watched motion
-  or sampled stills, at native size or downscaled, and which build they saw. Judge each indispensable cue separately,
-  against the inspection list and the shipped-game bar; good lighting or performance doesn't compensate for failed dynamics. Cover the
-  transitions (start from rest, stops, turns, camera cuts), where onset faults hide. Reviews diagnose the responsible layer
-  ([system diagnosis](system-diagnosis.md)) rather than prescribing cosmetic fixes.
-- **Performance claims.** Challenge benchmark identity and fairness, tails, equivalence claims, actual saved work,
-  memory accounting and contention on a shared GPU ([performance](performance.md)).
+## Code reviews
 
-## Close the loop
+Read callers, shared data, shaders, fixtures, lifecycle and tools together, because the faults sit at the joins. Look
+for:
+- duplicate producers;
+- mismatched clocks or encodings;
+- dead alternative paths;
+- unbounded catch-up loops;
+- allocation on a hot path;
+- readbacks to make progress;
+- redundant transforms.
 
-A finding names:
-- the affected decision or location;
-- the defect or unsupported claim;
-- the evidence;
-- the consequence;
-- what would resolve it.
+Check that the change uses the codebase's adopted shapes for recurring jobs (the table in this skill's `SKILL.md`).
+**A change that adds a new way to do an existing job is a finding**, even if each line is clean. Name the adopted
+shape it should have used. Most High findings in the 14 Nov 2026 code review were splits of this kind, and each
+started as one reasonable-looking change.
 
-Mark objections you can't yet prove as suspected, and say why each changes the decision.
+Also check that the change doesn't reach across a crate boundary through `#[path]`, `include_str!` or a
+dev-dependency on an example.
 
-The author then does one of these:
-- revises the model or contracts;
-- supplies evidence;
-- rejects the finding with reasons;
-- records a genuine open decision with a discriminating experiment.
+## Visual reviews
 
-Fix the class a finding belongs to, not only the instance the reviewer named: search the change for the same kind of
-fault before bringing it back. A resubmission answers each point of the latest hold: how it's now met, or why it
-doesn't apply. Narrowing a claim removes an overclaim; it doesn't deliver the excluded experience. A review report
-alone doesn't close the gap it found.
+Look at captured images and sequences yourself. Say whether you watched motion or sampled stills, at native size or
+downscaled, and which build you saw. A reviewer that can't play video asks for a frame strip at 10 fps or more over
+the window in question.
 
-Verify consequential fixes against the revised assembly. Old reviews apply only to the revision they inspected. Agreement
-on a design is not evidence of running behaviour, visual quality or cost.
+Judge each indispensable cue separately, against the milestone's inspection list and its shipped-game bar. Good
+lighting or performance doesn't make up for failed dynamics. Cover the transitions (start from rest, stops, turns,
+camera cuts), because onset faults hide there.
+
+## Performance claims
+
+Challenge:
+- the benchmark's identity and fairness;
+- the tails, not just the medians;
+- equivalence claims;
+- the work actually saved;
+- the memory accounting;
+- contention on the shared GPU.
+
+A timing taken while another agent used the GPU is labelled as contended, or it doesn't count.
 
 ## Calibration: failures this engine has already paid for
 
-Reviewers look for these first; each one passed an author's own checks.
+Look for these first. Each one passed its author's own checks.
 
 - **Tuning a mechanism that can't make the cue.** Hours of gain, resolution, foam and shading work went into a wake
   whose wave model couldn't form a Kelvin wedge at varying speed. A short CPU reproduction showed it.
@@ -99,10 +91,13 @@ Reviewers look for these first; each one passed an author's own checks.
   stopping point, and six rounds of horizon-shelf fixes all held base height, profile and lighting fixed.
 - **Swinging between cost-only and look-only work.** Chasing invented budgets before the look existed, then ignoring
   cost, produced designs that were heavy by design.
-- **Copying the better-looking prototype.** An earlier implementation looked better but was too heavy; it was a look
+- **Copying the better-looking prototype.** An earlier implementation looked better but was too heavy. It was a look
   bar, not a technique.
 - **Attractive frames without the behaviour.** Moving texture passed for growth and breakup. A fade or age label is
   not structural change.
 - **Paperwork displacing the defect.** Notes and qualification grew while the visible defect stayed.
-- **Verdicts from descriptions.** Techniques were endorsed from their write-ups and critics' passes were relayed as
-  fact, then proved wrong.
+- **Verdicts from descriptions.** Techniques were endorsed from their write-ups, and critics' passes were relayed as
+  fact. Both proved wrong.
+- **Copying the nearest example.** Each milestone copied the closest working code, so GPU data packing, errors,
+  device setup and test gating each ended up done three to five different ways. The copies then drifted until one
+  of them broke a platform.

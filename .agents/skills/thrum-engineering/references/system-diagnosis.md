@@ -1,67 +1,66 @@
-# Diagnose a fault at its system boundary
+# System diagnosis
 
-Use this when an artifact, mismatch, weak cue or unstable interaction might come from the model, the representation,
-ownership or integration rather than from a local bug. The outcome is a correction at the responsible layer that
-restores the intended behaviour, verified across its consumers. A local bug can still have a local fix.
+Use this when a visual or behavioural cue stays wrong after a local fix. The cause may be the model, the
+representation, an owner or a join, rather than a bug in the code you are looking at. The goal is a correction at
+the layer that's responsible, checked across that layer's consumers. A local bug can still have a local fix.
 
-## Find the cause before changing parameters
+## Ask whether the model can produce the behaviour at all
 
-- **Reproduce first.** Use known inputs and a known build. Hold the camera, lighting or presentation constant where
-  that helps, and compare intermediate state, not only the final image. Separate a local appearance jump from an
-  application-wide hitch.
-- **Ask whether the model can produce the missing behaviour at all.** Reproduce the core equations outside the engine,
-  for example in a short CPU script with the shipped constants, and compare the result with the cue and a reference.
-  This often settles in minutes what visual iteration doesn't settle in hours.
-- **Trace the path.** Follow it from source through state, transforms, reconstruction and composition to every
-  important consumer. Ask who owns the quantity and whether another path derives a conflicting version. A visible
-  fault can start upstream in support, timing, encoding, sampling or resource lifecycle.
-- **Look for one shared cause.** When several symptoms appear together, such as a weak wake, no wake when turning,
-  sudden starts and stops and missing foam, look for a common cause before fixing each one: a frozen input, a pinned
-  domain, a filter cancelling the signal, or state that stops updating after a hitch.
-- **Classify the failure:**
-  - an implementation mistake;
-  - a missing or incompatible mechanism;
-  - missing input or content;
-  - calibration;
-  - a representation or scale error;
-  - a presentation fault;
-  - a lifecycle fault (hitch, reset, resize, device loss).
+Before tuning, reproduce the core equations outside the engine, in a short CPU script with the shipped constants.
+Then compare the result with the cue and a reference. This often settles in minutes what visual iteration doesn't
+settle in hours.
 
-  Correct it at that layer. Damping a response, turning a term off or adding noise can isolate a defect or hide it;
-  keep such a change only if it restores the intended contract.
-- **Bound the next experiment.** After a negative result, choose a bounded experiment that can change the responsible
-  decision; it counts toward the stop rule in `/build-milestone`. Don't run a more expensive version of the
-  same test. More resolution can't supply an absent mechanism or
-  fix another quantity's calibration.
+The engine has paid for skipping this step. Hours went into gain, resolution, foam and shading work on a wake whose
+wave model couldn't form a Kelvin wedge at varying speed, and a short CPU reproduction showed it. More resolution
+can't supply a missing mechanism, or fix another quantity's calibration.
 
-## Make shared representations explicit
+## Look for one shared cause
 
-For each quantity that crosses a boundary, state:
-- its source or band;
-- units and coordinate frame;
-- spatial and temporal support;
-- physical time;
-- encoding;
-- composition rule;
-- each consumer's fidelity.
+When several symptoms appear together, look for a common cause before fixing each one. For example, a weak wake, no
+wake when turning, sudden starts and stops, and missing foam appeared together. Common causes:
+- a frozen input;
+- a pinned domain;
+- a filter cancelling the signal;
+- state that stops updating after a hitch.
 
-Where consumers must agree, use one authority. Others may approximate it within a stated bound.
+Trace the quantity from its source to every consumer. Ask who owns it, and whether another path derives a
+conflicting version of it.
 
-- **Derived quantities follow their source.** Displacement and its shading differential need compatible derivatives.
-  A changing frequency needs an integrated phase.
-- **Detail is resolved, filtered or statistical; never counted twice.** Filtering one representation may need a
-  matching statistical response in another. Never count a contribution twice, or amplify unresolved detail until it
-  resembles the target.
-- **Shared resources live where they're reused,** for example as a view or frame service, not allocated by every
-  instance.
+## Name the layer
 
-## Verify the correction
+Classify the fault, and fix it at its layer:
 
-- **Test against a reference.** Write tests that expose the broken relationship, with an analytic or independent
-  reference where one is meaningful. Two evaluators that share an omission can't bound it.
-- **Exercise the conditions.** Cover transforms, physical time, source tails, mixed contributions, resolution
-  changes, hitches and fallback paths.
-- **Look again in motion.** Re-inspect the ordinary output in motion and the adjacent consumers, and measure the
-  cost.
-- **Record what you learnt.** Record what the ablation established, why the repair preserves the design, and what
-  remains unproved.
+| Kind of fault | Example |
+|---|---|
+| Implementation mistake | a wrong index, a sign error |
+| Missing or incompatible mechanism | a single-speed wave model asked for a speed-dependent wake |
+| Missing input or content | a driver that is never fed |
+| Calibration | a unit or scale constant |
+| Representation or scale | resolution, band or level of detail |
+| Presentation | tone mapping, compositing |
+| Lifecycle | hitch, reset, resize, device loss |
+
+Damping a response, turning a term off or adding noise can isolate a defect, or hide it. Keep such a change only if
+it restores the intended behaviour.
+
+## Quantities that cross a boundary
+
+For each quantity two modules share, the owning design states:
+- its source;
+- its units and coordinate frame;
+- its spatial and temporal support;
+- its encoding;
+- how contributions combine;
+- the fidelity each consumer needs.
+
+Where consumers must agree, one module is the authority, and the others approximate it within a stated bound.
+
+Derived quantities follow their source. Displacement and its shading normal need compatible derivatives, and a
+changing frequency needs an integrated phase. Detail is resolved, filtered or statistical, and never counted twice.
+
+## Check the correction
+
+Write a test that exposes the broken relationship, against an analytic or independent reference where one exists.
+Two evaluators that share an omission can't catch it. Then re-inspect the ordinary output in motion, with its
+neighbours running, and measure the cost. Record what the experiment established and what remains unproved in the
+plan log.

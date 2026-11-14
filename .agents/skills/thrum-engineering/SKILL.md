@@ -1,30 +1,129 @@
 ---
 name: thrum-engineering
-description: Thrum's engine rules for planning, building and reviewing, read alongside the generic orchestrate skills (plan-module, build-milestone, review-milestone). Use whenever working on Thrum engine code, module designs, architecture or milestone reviews, for the engine-specific standards those skills defer to the project for. Not a process skill on its own.
+description: "How Thrum's engine code is laid out and written: where each responsibility lives, the shapes the codebase has adopted for recurring jobs and why, and the engine rules the orchestrate skills leave to the project. Use when writing, changing or reviewing Rust, WGSL, tests or tools in this repository, or when planning, building or reviewing a Thrum module."
 ---
 
 # Thrum engineering
 
-Thrum is a native-first Rust 3D engine and a showcase of AI-driven engineering: butter-smooth, high-end visuals and
-performance beyond what a human team would build and maintain. The process and its settings are in
-[ORCHESTRATE.md](../../../ORCHESTRATE.md); this skill holds the engine rules each level reads.
+Thrum is a reusable, native-first Rust 3D engine. Agents write and maintain nearly all of it, so it stays workable
+only if an agent landing cold in any file can guess where things are and how they work. This skill gives you that
+map, the shapes the codebase has adopted for recurring jobs, and the engine facts you could not work out alone. The
+orchestrate skills (`/plan-module`, `/build-milestone`, `/review-milestone`) cover how work runs. `ORCHESTRATE.md`
+holds this project's settings for them.
 
-**Planning** (`/plan-module`):
-- [Engine architecture](references/architecture.md): users and usage profiles, responsibilities and interactions,
-  module briefs, proof order.
-- [Research and design](references/blue-sky.md) and [what a design covers](references/design.md): from what the player
-  must see or feel, through shipped engines and research, to a mechanism shown to make each cue.
-- [Performance](references/performance.md): cost account, tripwires, honest measurement on a shared GPU, and the
-  [hardware-native decision](../../../docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).
-- [Reconciliation](references/reconciliation.md) of existing or ported code against a chosen target.
+## Extend the shape that exists
 
-**Building** (`/build-milestone`):
-- [Building in Thrum](references/building.md): picking the work, rigour by state, code shape, hot paths, verification
-  on named targets, build outputs.
-- [Rust code](references/rust-code.md) for types, APIs, errors, decoders and test support.
-- [Implementation in the game](references/implementation.md) and [system diagnosis](references/system-diagnosis.md)
-  for making the model produce a cue.
+Most of the code's problems come from one habit: each milestone copied the nearest working example, so the same
+job is now done three to five ways. GPU data is packed by hand in every GPU crate. Errors come in five shapes. Device
+setup is written once per host. Each copy then drifted from the others. One drift means the sea can never prepare
+on iPhone: the iOS shell asks for fewer storage buffers than the sea needs.
 
-**Reviewing** (`/review-milestone`):
-- [Review](references/review.md), including the calibration failures this engine has already paid for, and the
-  [graded examples](../../../docs/design/GRADED-EXAMPLES.md).
+So, before you write code that does a recurring job (the table below lists them), find how the codebase does it
+now, starting from the reference file. Extend that. When you find two shapes for one job, use the adopted one, and
+note the other in the plan log so the planner can schedule the cleanup. Don't add a third shape. If the adopted
+shape really doesn't fit, write why in the plan log before you depart from it; a quiet new variant becomes the next
+agent's template.
+
+Clean up older shapes only inside the code your task already touches. A repo-wide migration is planned work, not a
+side effect of a fix.
+
+## Where things are
+
+| Path | What lives there |
+|---|---|
+| `crates/thrum-core` | Simulation: world, schedule, clock, publication pages, snapshot ring, world lanes. No rendering or I/O |
+| `crates/thrum-render` | GPU runtime (`DeviceSite`, frame graph, `FrameHost`, presentation, timing, capabilities), the scene renderer, atmosphere and GPU visibility |
+| `crates/thrum-asset` | Cooked product format and loading: mapped, validated, content-addressed |
+| `crates/thrum-asset-gpu` | GPU residency for cooked products: staged uploads, meshlet culling, the cooked-mesh draw |
+| `crates/thrum-cook` | Authoring-only cooker, cache, watcher and dev server. Never a runtime dependency |
+| `crates/thrum-sea-model`, `thrum-cloud-model` | CPU models and oracles in `f64`, with no graphics dependency |
+| `crates/thrum-sea` | The GPU sea, on the scene effect graph |
+| `crates/thrum-app` | Platform shells: the native macOS window and render thread, the browser WebGPU shell, the sky kit |
+| `crates/thrum-controls`, `thrum-network`, `thrum-content-runtime` | Demo controls, network codecs, small checked runtime products |
+| `examples/v1-game` | The V1 test game, which uses the engine only through public APIs. Its iOS shell is `examples/v1-game-ios` |
+| `examples/starter`, `stones`, `lighthouse` | Small kit scenes that teach the public API |
+| `tools/xtask`, `dev`, `scripts/` | `./dev` commands (xtask) and the Python check and capture tools they call |
+| `.config/architecture.toml` | Registered crates and the workspace dependency edges each may have |
+| `docs/plans/<MODULE>/` | Each module's governing `DESIGN.md`, `PLAN.md`, `DONE.json` and `LOG.md`. These win over older docs |
+| `docs/design/` | Contracts (`CONTRACTS.md`), the maturity ledger (`maturity.json`), decisions and specifications |
+| `tmp/<task>/` | Ignored scratch work. Bulk output follows `docs/ASSET-LIFECYCLE.md` |
+
+Two names mislead. `thrum-render`'s `synthetic` module is the production V1 scene renderer, even though its docs
+still call it diagnostic. `docs/design/modules/*.md` are earlier family designs; where they disagree with
+`docs/plans/<MODULE>/DESIGN.md`, the plan folder wins.
+
+Engine crates never depend on a game, an example or a tool. That includes compile-time reach: a `#[path]`,
+`include_str!` or `include_bytes!` that points outside the crate's own folder is a hidden dependency that neither
+Cargo nor `architecture.toml` sees. The same goes for one engine crate reading another's private files.
+
+## The adopted shapes
+
+Each row names the shape to extend and a file to copy from. [Patterns](references/patterns.md) gives the reason for
+each, the older shapes you will meet and should not copy, and what to do where no shared helper exists yet. Read
+the matching section before you write code that does one of these jobs.
+
+| Job | Adopted shape | Reference |
+|---|---|---|
+| Errors | One enum per public boundary, with `Display` and `std::error::Error`, a doc line per variant, and `source()` for wrapped errors. No `Result<_, String>` in a `pub fn` | `crates/thrum-asset/src/error.rs` |
+| Data shared with WGSL | A `#[repr(C)]` `bytemuck::Pod` struct written whole, and a naga test that checks the WGSL struct's size and offsets | `crates/thrum-asset/src/layout.rs`; test in `crates/thrum-render/src/synthetic/view.rs` |
+| Constants shared with WGSL | Generated into a WGSL prelude from the Rust value | `Profile::shader` in `crates/thrum-render/src/atmosphere/spectrum.rs` |
+| Pipelines | Created through `DeviceSite::render` / `compute`, which records each creation | `crates/thrum-render/src/runtime/creation.rs` |
+| Pass names | A named `const PASS: &str` in the owning module, used by the graph, timing and benches | `crates/thrum-render/src/visibility.rs` |
+| Device request | Features from `DeviceCapabilities::requested_timing_features`; no shared request for limits and error handling yet | `crates/thrum-render/src/capabilities.rs` |
+| Modules | `foo.rs` plus a `foo/` folder; no `mod.rs` (lint-enforced) | any crate |
+| Unit tests | `#[cfg(test)] mod tests;` with the body in `foo/tests.rs` once it passes a screen or two | `crates/thrum-render/src/visibility.rs` and `visibility/tests.rs` |
+| GPU tests | No adopted gate yet; four coexist. Gate only the tests that need a GPU, never a whole file | — |
+| Construction | `new(..) -> Result<Self, E>` that validates up front; a documented `*Config` struct for many settings | `CookConfig` in `crates/thrum-cook/src/cooker.rs` |
+| Names | Say what the thing does (`transmittance`, `PublicationPage`). Milestone and gate codes (`g2s_`, `G5`, `t2_`) stay in plans and evidence | — |
+| GPU labels | Spaced plain words: `"camera visibility"` | `crates/thrum-render/src/visibility.rs` |
+| Maths | `glam` for vectors and matrices | `crates/thrum-render/Cargo.toml` |
+
+## Engine rules
+
+**One owner for each kind of state.** Before you add a producer, look for the existing owner: the one sky and
+atmosphere, the frame contract, the capability registry, cooked products, the maturity ledger. A shared invariant
+belongs in `docs/design/CONTRACTS.md`. Change a contract with its producers and consumers before you build on the
+change; a builder proposes the change in the plan log and leaves it to the planner.
+
+**Engine crates hold no game schema.** A crate under `crates/` never names a game's controls, scenes or types. A
+game reaches the engine through public APIs, and the engine reaches a game only through traits the game implements.
+
+**Match rigour to what the code touches.**
+
+| What the code touches | On a violation |
+|---|---|
+| Authoritative world state, saves, wire input, security boundaries | Refuse with a typed error, leave state unchanged, and test the failure path |
+| Presentation, effects, audio, frame resources | Degrade: clamp or drop, count it, and `debug_assert!` in development. Never stall a tick or fail a frame |
+| Authored content | Validate with tolerances; importers repair what they safely can (weld, drop degenerates) and warn |
+
+**Use the hardware, keep a fallback.** Native leads and uses every feature the device has; the browser runs the
+portable recipe and never limits native. Accelerated paths are selected from the capability registry, keep a
+portable fallback that the same tests exercise, and are promoted only by a measured win
+(`docs/design/decisions/HARDWARE-NATIVE-ENGINE.md`).
+
+**Cost is designed, then measured.** The owner's policy is best-practice decisions up front, tripwires while
+building, tuning later. Don't invent numeric budget gates. Per-frame and per-tick code reuses its buffers, uploads
+only what changed, and doesn't read back from the GPU to make progress.
+
+**Dependencies.** A new crate or external dependency gets an entry in `.config/architecture.toml` and an exact
+`=version`. Look for a proven crate before building a general subsystem; build your own where a specialised path is
+the point and can show its win.
+
+**Done.** A code change is done when `./dev check` passes; documentation-only work uses `./dev check-docs`. Claims
+about devices, frame time or visuals come only from runs on the targets in `ORCHESTRATE.md`, and status goes in
+`docs/design/maturity.json` with implementation, correctness, visuals and device recorded separately.
+
+## Which reference to read
+
+- [Patterns](references/patterns.md): before you write code that does one of the jobs in the table above.
+- [Rust code](references/rust-code.md): when you design a public type, an error enum, a decoder or test support.
+- [Building](references/building.md): when you build a milestone: proving it in the game, capture, and what to
+  deliver.
+- [Performance](references/performance.md): when you design or change performance-sensitive code, or make a
+  performance claim.
+- [System diagnosis](references/system-diagnosis.md): when a visual or behavioural cue stays wrong after a local fix.
+- [Design](references/design.md): when you research or write a module design, or reconcile existing code with one.
+- [Architecture](references/architecture.md): when you plan at project level: the module map, briefs and proof
+  order.
+- [Review](references/review.md): when you review a design, a milestone or a claim, including the failures this
+  engine has already paid for.
