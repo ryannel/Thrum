@@ -104,4 +104,12 @@ Integration and any required rebased baseline/gate run use the official merge
 script. The first integration attempt rebased to `012668c2`, then stopped at the
 guard because upstream proof-script changes require a fresh baseline key.
 All 500 captured build-source files [still match](rebase-source-identity.json).
-The [handoff](../M10-handoff.md) records the active integration job and attended item.
+The [fresh baseline proof](baseline-ca8b41f5.json.gz) passes on `ca8b41f5` in
+920.36 seconds with the unchanged native executable. The following full gate
+stopped on the unrelated watcher test's ten-second generation-2 timeout
+([stdout](check-ca8b41f5-watcher-failure.stdout.gz),
+[stderr](check-ca8b41f5-watcher-failure.stderr.gz)). The exact failed test binary
+then passed all four tests and three further consecutive runs
+([actual reruns](watcher-rerun.json)). The timeout's cause is unconfirmed; no
+test, threshold or engine source changed. A complete official gate retry is required.
+The [handoff](../M10-handoff.md) records the integration retry and attended item.

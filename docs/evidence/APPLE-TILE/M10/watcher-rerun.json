@@ -1,0 +1,25 @@
+{
+  "binary": "target/debug/deps/serve_and_watch-c3828e92fc45edc4",
+  "sha256": "f48854cd37e4aa32e86d1eaf9dba2e6414cf5c6868ae6ce96d655d24f9d222b2",
+  "revision": "ca8b41f515cdce723bee04f9988a9f301694566e",
+  "attempts": [
+    {
+      "pid": 42525,
+      "exit": 0,
+      "seconds": 0.393096833024174,
+      "output": "\nrunning 4 tests\ntest web_pages_cannot_read_the_dev_server ... ok\ntest only_listed_page_origins_beyond_loopback_may_read_the_dev_server ... ok\ntest the_dev_server_serves_head_verified_products_and_long_polls ... ok\ntest the_watcher_publishes_an_edited_source ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s\n\n"
+    },
+    {
+      "pid": 42526,
+      "exit": 0,
+      "seconds": 0.3355629160068929,
+      "output": "\nrunning 4 tests\ntest web_pages_cannot_read_the_dev_server ... ok\ntest only_listed_page_origins_beyond_loopback_may_read_the_dev_server ... ok\ntest the_dev_server_serves_head_verified_products_and_long_polls ... ok\ntest the_watcher_publishes_an_edited_source ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s\n\n"
+    },
+    {
+      "pid": 42531,
+      "exit": 0,
+      "seconds": 0.3391574998386204,
+      "output": "\nrunning 4 tests\ntest web_pages_cannot_read_the_dev_server ... ok\ntest only_listed_page_origins_beyond_loopback_may_read_the_dev_server ... ok\ntest the_dev_server_serves_head_verified_products_and_long_polls ... ok\ntest the_watcher_publishes_an_edited_source ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s\n\n"
+    }
+  ]
+}

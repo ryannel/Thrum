@@ -33,10 +33,23 @@ stopped at the exact-baseline guard because upstream Mac proof-script changes
 invalidate the earlier content key. All 500 captured build-source files still
 match after rebase ([identity check](M10/rebase-source-identity.json)); no M10 item
 proof is invalidated by those upstream changes. Background job
-`20261114-092239-14812` now waits for GPU, runs fresh exact baselines and the full
-official M10 check, releases GPU, then retries official merge through the wrapper
-below. Wait on that job first. Its log is under the shared `.git/orchestrate/jobs/`.
-Keep tracked files clean once verification starts. No merge is claimed yet.
+`20261114-092239-14812` finished with exit 1: its fresh exact baselines passed on
+`ca8b41f5` in 920.36 seconds, then the full gate stopped at
+`thrum-cook --test serve_and_watch`, where `the_watcher_publishes_an_edited_source`
+did not publish generation 2 within ten seconds. The exact failed test binary
+then passed all four tests, followed by three further consecutive passes; the
+cause is unconfirmed. Failure and rerun output are committed in the builder record.
+No test, timeout or engine source was changed. Retry the complete official gate
+under GPU exclusivity, release GPU, then retry official merge through the wrapper
+below. Check the current job list first: a later checkpoint may already have
+started that retry. Keep tracked files clean once verification starts. No merge
+is claimed yet. The fresh proof remains under
+`tmp/baseline-guard/proofs/789a7d7757b8308f6060c622f531198cca23579907b2aa13c88c6bdfff0cb925.json`.
+
+A likely associated failed watcher fixture remains at
+`/var/folders/dh/062x03k90yxbfxg__1yd_h000000gn/T/thrum-g5-serve-37423-2`, matching
+the failure timestamp. Preserve it while the timeout is unexplained; do not remove
+older fixture directories or assume those other runs belong to this builder.
 
 Integration uses
 `python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.2.2/skills/orchestration/build/scripts/agent_loop.py merge --worktree .`.
