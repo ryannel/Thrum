@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 import os
+import resource
 from pathlib import Path
 import statistics
 import subprocess
@@ -56,6 +57,9 @@ class Scene:
         self.params = directory / "params.json"
         self.params.write_text(json.dumps(params))
         self.log = (directory / "command.log").open("w")
+        usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        self.cpu_before = usage.ru_utime + usage.ru_stime
+        self.started = time.monotonic()
         self.process = subprocess.Popen(command, cwd=ROOT, env=dict(ENV, **env, THRUM_PROFILE_OUTPUT=str(directory), THRUM_PARAMS=str(self.params)), stdout=self.log, stderr=self.log, start_new_session=True)
         wait_for(lambda: latest(directory) if self.process.poll() is None else self.fail(), "native completed samples")
 
@@ -80,6 +84,8 @@ class Scene:
             os.killpg(self.process.pid, 15)
         self.process.wait(timeout=20)
         self.log.close()
+        usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        return {"process_cpu_s":usage.ru_utime + usage.ru_stime - self.cpu_before, "elapsed_s":time.monotonic() - self.started}
 
 
 def med(record, field):
@@ -127,13 +133,14 @@ v1-game = {{ path = "{ROOT / 'examples/v1-game'}" }}
     valley_env = {"THRUM_SCENE":"valley", "THRUM_ASSET_STORE":str(output / "valley-store")}
     for index, on in enumerate([False, True, True, False, False, True]):
         result["order"].append(on)
-        scene = Scene([str(binary)], output / f"pair-{index}", valley_env, {"profiler.enabled":on})
+        scene = Scene([str(binary)], output / f"pair-{index}", dict(valley_env, THRUM_PROFILE_DETAIL="compact"), {"profiler.enabled":on})
         try:
-            record = scene.settle(capture="panel" if index < 2 else None)
+            record = scene.settle()
+            (output / f"pair-{index}.json").write_text(json.dumps(record, indent=2))
             result["pairs"].append({"on":on, "encode_us":med(record,"encode_us"), "render_us":med(record,"render_us"), "tick_us":med(record,"tick_us"), "all_timed":all(f["timed"] for f in record["frames"]), "none_timed":all(not f["timed"] for f in record["frames"])})
             assert all(f["timed"] == on for f in record["frames"]), "shell ignored timing demand"
         finally:
-            scene.close()
+            result["pairs"][-1].update(scene.close())
     scene = Scene([str(binary)], output / "world", valley_env, {"profiler.enabled":True, "world.paused":False})
     try:
         for index in range(3):
@@ -141,6 +148,7 @@ v1-game = {{ path = "{ROOT / 'examples/v1-game'}" }}
             before = scene.settle(capture=f"before-{index}")
             paused = scene.settle({"profiler.enabled":True, "world.paused":True}, f"paused-{index}")
             result["world"].append({"control_us":med(control,"tick_us"), "before_us":med(before,"tick_us"), "paused_us":med(paused,"tick_us")})
+        scene.settle({"profiler.enabled":False,"world.paused":False}, "off")
     finally:
         scene.close()
     material = output / "material.wgsl"

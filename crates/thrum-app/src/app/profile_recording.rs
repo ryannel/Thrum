@@ -6,6 +6,7 @@ use thrum_render::runtime::FrameSample;
 pub(super) struct Recording {
     directory: PathBuf,
     saved: Duration,
+    detailed: bool,
 }
 
 impl Recording {
@@ -13,6 +14,7 @@ impl Recording {
         std::env::var_os("THRUM_PROFILE_OUTPUT").map(|path| Self {
             directory: path.into(),
             saved: Duration::ZERO,
+            detailed: std::env::var("THRUM_PROFILE_DETAIL").as_deref() != Ok("compact"),
         })
     }
 
@@ -34,9 +36,17 @@ impl Recording {
             "extract_us": s.extract_cpu.as_secs_f64() * 1e6,
             "encode_us": s.encode_cpu.as_secs_f64() * 1e6,
             "render_us": s.render_cpu.as_secs_f64() * 1e6,
-            "gpu": s.gpu_pass_ns.as_ref().map(|p| p.passes().iter().map(|p| (p.name.to_string(), p.nanoseconds / 1e6)).collect::<Vec<_>>()),
+            "gpu": self.detailed.then(|| s.gpu_pass_ns.as_ref().map(|p| p.passes().iter().map(|p| (p.name.to_string(), p.nanoseconds / 1e6)).collect::<Vec<_>>())),
         })).collect();
-        let record = serde_json::json!({"elapsed":now.as_secs_f64(),"model":serde_json::from_str::<serde_json::Value>(&controls.describe_json()).map_err(|e| e.to_string())?,"frames":frames});
+        let model = if self.detailed {
+            Some(
+                serde_json::from_str::<serde_json::Value>(&controls.describe_json())
+                    .map_err(|e| e.to_string())?,
+            )
+        } else {
+            None
+        };
+        let record = serde_json::json!({"elapsed":now.as_secs_f64(),"model":model,"frames":frames});
         let mut log = OpenOptions::new()
             .create(true)
             .append(true)
