@@ -19,7 +19,12 @@ impl OffscreenTarget {
         };
         plan.pass_bindings()
             .take(executed)
-            .filter(|(_, pass)| pass.kind == Some(crate::graph::PassKind::Copy))
+            .filter(|(_, pass)| {
+                matches!(
+                    pass.kind,
+                    Some(crate::graph::PassKind::Copy | crate::graph::PassKind::Native)
+                )
+            })
             .map(|(_, pass)| pass.name.clone())
     }
 }

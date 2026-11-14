@@ -388,6 +388,13 @@ impl PreparedSynthetic {
             &exposure_sample,
             [width, height],
         )?;
+        late.order_consumers(
+            &mut graph,
+            [
+                native.as_ref().map(|native| native.pass),
+                taau.as_ref().map(|taau| taau.pass),
+            ],
+        )?;
         let pre_tone = self.pre_tone_input(
             (&scene, &motion, &exposure_sample),
             &temporal,

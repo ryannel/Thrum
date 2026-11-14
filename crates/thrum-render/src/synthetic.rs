@@ -2484,28 +2484,6 @@ impl OffscreenTarget {
         self.ids.native.as_ref()?;
         self.native.as_ref().map(|native| native.provider.report())
     }
-    pub(crate) fn untimed_pass_names(
-        &self,
-        readback: bool,
-        presented: bool,
-    ) -> impl Iterator<Item = String> + '_ {
-        let plan = self.graph(readback).plan();
-        let executed = if presented {
-            usize::MAX
-        } else {
-            plan.pre_acquire_passes.unwrap_or(usize::MAX)
-        };
-        plan.pass_bindings()
-            .take(executed)
-            .filter(|(_, pass)| {
-                matches!(
-                    pass.kind,
-                    Some(crate::graph::PassKind::Copy | crate::graph::PassKind::Native)
-                )
-            })
-            .map(|(_, pass)| pass.name.clone())
-    }
-
     /// Allocate a nonempty bounded target and display bind group from
     /// one prepared view's generation, on the executor's device. The
     /// prepared view retains both pipelines across resize and additional targets.
