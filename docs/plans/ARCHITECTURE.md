@@ -727,6 +727,12 @@ and in every exact test of the default.
   M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
   triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
   items unchanged. No other change of M3 may move a reference.
+- **Qualified before the push.** (15 November 2026.) The gate needs a committed candidate, not a pushed one. So
+  M3.11's campaign, M3.12's difference images and the verifier all pass on a local candidate before `land`
+  pushes the output and the references together. If one fails, nothing is pushed and the references on main
+  stay as they are. Those two proofs therefore run on the candidate, not on the commit claimed, which rule 3
+  otherwise asks; [`CULLING`'s design](CULLING/DESIGN.md#qualified-before-it-lands) says when each stands for
+  a later commit and when a rebase repeats it.
 - **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, runs
   the verifier at its new starting commit and regenerates from there. Each records its own old and new hashes,
   so the two causes stay apart.
@@ -1958,3 +1964,6 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   the retained Metal evidence outranks the code review's M40. The owner's decisions stand: no history rewrite,
   the game at `/Users/ryannel/Workspace/thrum-games` with path dependencies, `CLOUDS` and `WATERS` unchanged.
   No item of any module outside track 4 changed.
+- 2026-11-15 The ruling on `CULLING` M3 gained "Qualified before the push", after that design's review (MF2):
+  the coverage output and the refreshed references are qualified on a local candidate and then pushed together.
+  Ownership, the registry, the comparisons and every other module's items are unchanged.

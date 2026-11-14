@@ -261,38 +261,42 @@ buffer gains compute visibility; no second table is made.
 ### M3: one image under load
 
 Added 14 November 2026, after M3's builder stopped on [the module list's](../ARCHITECTURE.md#exact-baselines)
-rule 1. Its evidence is on branch `build/culling` at `fb6afe7d`, under `docs/evidence/CULLING/M3/`
-(`pinned-probes-d70c1a27/`, `triangle-merging/`, `sample-dependency/`, `sample-frequency/`,
-`qualification-a5ab2143/`), and reaches main with M3's first landing.
+rule 1. Its evidence is on branch `build/culling` (`9170f291` as rebased on 15 November), under
+`docs/evidence/CULLING/M3/` (`pinned-probes-d70c1a27/`, `triangle-merging/`, `sample-dependency/`,
+`sample-frequency/`, `qualification-a5ab2143/`), and reaches main with M3's first landing.
 
 **The defect.** On Metal the valley drawn Direct is not one image. With other work on the GPU, two hosts that
 draw the same tick Direct differ at 4 to 152 pixels, and they still do with instance culling, Sun-caster culling
 and cooked-meshlet culling all absent. At the differing pixels the primitive, the depth and the UV agree and the
-UV derivatives do not. Apple's driver merges adjacent triangles, and a fragment at a shared edge can then take its
-implicit derivatives from the neighbouring triangle's values
-([Khronos Vulkan-Portability issue 54](https://github.com/KhronosGroup/Vulkan-Portability/issues/54), which
-quotes Apple's reply that Metal "is not disabling 'triangle merging' optimizations within the driver, when
-texture sampling with implicit LOD"). In four retained 2×2 quads, one host's derivatives equal the differences
-across two primitives exactly. Which edges merge changes under load. So no oracle drawn by the same shader can
-be relied on, and every exact comparison of the valley is exposed: this module's, and `APPLE-TILE`'s retained
-references, which hold merged derivatives.
+UV derivatives do not. The reported cause is triangle merging: the driver merges adjacent triangles, and a
+fragment at a shared edge can then take its implicit derivatives from the neighbouring triangle's values. The
+source is [Khronos Vulkan-Portability issue 54](https://github.com/KhronosGroup/Vulkan-Portability/issues/54),
+where MoltenVK's maintainer, Bill Hollings, reports to Apple that Metal "is not disabling 'triangle merging'
+optimizations within the driver, when texture sampling with implicit LOD". The thread holds no reply from Apple,
+so this is an implementer's report and not a guarantee about the driver. Here, in four retained 2×2 quads, one
+host's derivatives equal the differences across two primitives exactly, which supports that cause in those
+occurrences. Which edges merge changes under load. So no oracle drawn by the same shader can be relied on, and
+every exact comparison of the valley is exposed: this module's, and `APPLE-TILE`'s retained references, which
+hold merged derivatives.
 
 **The mechanism.** Every opaque forward fragment entry that takes an implicit derivative, through a
 `textureSample` or through `dpdx` or `dpdy` of an interpolated value, writes an all-ones `sample_mask` output.
-The driver does not merge triangles under a fragment shader that writes coverage, so each fragment's derivatives
-come from its own triangle. The value covers every sample, so coverage, depth and the shader's arithmetic are as
-they were; only derivatives at shared edges change, and with them the mip level and the Sun receiver's slope
-there. There is one shader source for every backend and recipe: no Metal-only variant and no selection. Volume
-entries, and passes whose fragment stage takes no derivative, stay as they are. This is the workaround an
-implementer on that issue reports shipping in Darwinia, over ANGLE's Metal backend and over MoltenVK. It has to
-be a written output: they found that a declared but unused one is optimised away.
+By the reports on that issue the driver does not merge triangles under a fragment shader that writes coverage, so
+each fragment's derivatives come from its own triangle. The value covers every sample, so coverage, depth and the
+shader's arithmetic are as they were; only derivatives at shared edges change, and with them the mip level and
+the Sun receiver's slope there. There is one shader source for every backend and recipe: no Metal-only variant
+and no selection. Volume entries, and passes whose fragment stage takes no derivative, stay as they are. This is
+the workaround Steven Noonan reports on that issue from Darwinia, over ANGLE's Metal backend and over its Vulkan
+backend on MoltenVK. It has to be a written output: he recalls a declared but unused one being optimised away.
+Those reports are why this mechanism is chosen. That it works here is M3.11's to prove.
 
 **Why not another way.** Each of these was built and is retained on the branch. Explicit gradients for the
 material samples moved 4,859 reference pixels and the hosts still differed. Sample-frequency interpolation
 failed M3.4's own check by one pixel. Making the Sun search depend on the samples failed under load. A depth output
 on opaque fragments was stable over four loaded routes, and at the `portable-sdr-approach` checkpoint its image
-is byte-equal to the coverage output's, 8,303 pixels from the retained reference. Two independent ways of
-stopping the merge give the same bytes, so that image is the unmerged one. The depth output is not chosen,
+is byte-equal to the coverage output's, 8,303 pixels from the retained reference. Two different outputs give
+the same bytes there, which is what both stopping the merge would produce; it is an inference from one
+checkpoint, not a proof that the image is the unmerged one. The depth output is not chosen,
 because it moves the depth test after the shader for every opaque fragment. A selection that kept today's output
 as the default is not chosen either: every scene that did not ask would draw an image that varies, and the exact
 tests would prove a configuration nobody ships.
@@ -314,11 +318,51 @@ planner's choice of how strong the proof is, and the campaign's length follows t
 campaign in which the control does not differ proves nothing, and is reported, not shortened. If the claimed
 shader differs once, the mechanism is wrong or incomplete: keep both payloads and end `BLOCKED`.
 
+<a id="qualified-before-it-lands"></a>
+
+**Qualified before it lands.** The shader and the refreshed references reach main in one push, and only after
+both are qualified on a local commit. That is possible because the verifier and its gate need a clean,
+committed tree and do not need the commit pushed. It is necessary because the verifier cannot stand in for the
+qualification: once references are regenerated, a wrong image that repeats passes it. The order is:
+
+1. **Start.** The verifier passes on main at the commit the candidate is built on, the **starting commit**, and
+   its record is kept.
+2. **Candidate.** A local commit holds the coverage output and each reference that moved, regenerated from it
+   with `APPLE-TILE`'s scripts. Nothing is pushed.
+3. **Qualification, on the candidate.** M3.11's campaign passes with its claimed binary built from the
+   candidate. M3.12's difference images, between the starting commit's references and captures and the
+   candidate's, show only what that item allows; the builder judges them by the item's own list, and the
+   reviewer judges them again at review. The verifier passes on the candidate.
+4. **Promotion.** `land` pushes the candidate, with those records.
+
+If the campaign fails, or a reference moved where M3.12 allows none, nothing is pushed: main keeps its shader
+and its references, the candidate and its payloads stay on the branch, and the builder ends `BLOCKED`.
+
+`land` rebases first, and other builders land covered changes, so the design says what a rebase repeats. The
+gate already refuses changed covered content without a new verifier pass. If the verifier passes on the rebased
+candidate with its references untouched, the references pushed are the ones qualified and M3.12's images stand.
+If it fails, an incoming change moved an image: the builder takes main's new tip as the starting commit, runs
+the verifier there, regenerates, and makes M3.12's images again, as
+[the module list](../ARCHITECTURE.md#exact-baselines) orders for `ATMOSPHERE` M9. The campaign compares hosts
+with each other and a control, so it depends on neither the references nor code outside the shader. It stands
+for any commit whose opaque forward fragment entries are built from the same shader sources, byte for byte, as
+its claimed binary; its record lists their hashes. If a rebase or a later change of this module alters those
+sources, the campaign is run again before that content is pushed. After the landing, the refreshed references
+hold the output in place and the verifier is M3.10's check at the claim.
+
 **Cost.** A coverage write can cost fragment time: merged triangles shaded fewer helper fragments at shared
 edges, and the driver may test depth later. Nobody has measured it here. M3.13 records it under
-[Performance](#performance), as paired rows of the claimed shader and the same control. If the whole frame
-passes the tripwire there, the builder ends `BLOCKED` with the rows, and a planner weighs the cost against a
-narrower mechanism.
+[Performance](#performance), as paired rows of the claimed shader and the same control. The figure is a
+recorded cost. It is not a condition of landing the correction, and no result of it ends the milestone
+([the brief](../BRIEF.md), decision 3;
+[the owner's performance decision](../../design/decisions/PERFORMANCE-PHILOSOPHY-2026-11-06.md)). If the rows
+cross a tripwire, the builder investigates within M3: which passes carry the cost, from the per-pass rows, and
+what in the output causes it. The finding is recorded with a disposition, one of two: the cause is corrected in
+M3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
+for a planner. Building continues either way. A cheaper form of the output is a new candidate and is qualified
+[as above](#qualified-before-it-lands) before it lands. Correctness and the milestone's quality bar remain
+requirements: the realtime captures of M3.7 and M3.8 are judged against "smooth at the display's full
+refresh", whatever the rows say.
 
 **Not measured.** Whether Chrome's image varied in the same way. The same shader source reaches Chrome, where
 M3.2 and M3.5 stand as the proof, and M3.10 records whether Chrome's four reference sets moved.
@@ -365,9 +409,9 @@ is caught. For this module:
   which M3.1 and M3.2 prove.
 - M3's coverage output is the one change of this module that moves retained images. Under the ruling, its
   builder regenerates each reference that moved, with `APPLE-TILE`'s own scripts, in the landing that adds the
-  output. The registry, the comparisons, their sampling and every script stay as they are, and the references
-  stay `APPLE-TILE`'s. M3.10 holds the refresh and M3.12 has a reviewer see what moved. No other change of M3
-  may move a reference.
+  output, and that landing is pushed only once it is [qualified](#qualified-before-it-lands). The registry, the
+  comparisons, their sampling and every script stay as they are, and the references stay `APPLE-TILE`'s. M3.10
+  holds the refresh and M3.12 has a reviewer see what moved. No other change of M3 may move a reference.
 
 ## Risks
 
@@ -385,9 +429,10 @@ is caught. For this module:
 7. **The coverage output is not the whole cause, or stops working.** The evidence for it is bounded: four quads
    and eight loaded routes. A later compiler could also fold the output away. Early sign: the claimed shader
    differs in M3.11's campaign, or the verifier draws the old bytes. Outcome: the builder ends `BLOCKED` with the
-   payloads and nothing is refreshed.
-8. **The coverage output costs too much.** Early sign: M3.13's paired rows pass the tripwire. Outcome: as
-   [the mechanism](#m3-one-image-under-load) says.
+   payloads. The campaign runs [before the push](#qualified-before-it-lands), so nothing on main is refreshed.
+8. **The coverage output costs more than expected.** Early sign: M3.13's paired rows cross a tripwire. Outcome:
+   the cause is investigated and given a disposition within M3, as the Cost paragraph of
+   [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the milestone.
 
 ## Performance
 
@@ -395,8 +440,9 @@ Costs are recorded, never gated ([performance rules](../../../.agents/skills/thr
 Paired, interleaved rows through the frame host's pass-name timing; p50 and p95; two separate runs; the load
 recorded and every row labelled contended, because the GPU is shared. Tripwires: about 25% paired regression
 against the previous checkpoint at the same configuration; per-instance cost that stops being flat from 10,000
-slots to the prepare limit; per-bucket cost that grows from 1 to 64 buckets; allocation growth per encode. No
-quiet-GPU figure exists, and none is claimed.
+slots to the prepare limit; per-bucket cost that grows from 1 to 64 buckets; allocation growth per encode. A
+crossed tripwire starts an investigation, whose cause and disposition are recorded with the rows. It is not a
+pass mark, and no item fails on the figure. No quiet-GPU figure exists, and none is claimed.
 
 The coverage output's cost is recorded the same way on the valley's moving route: the claimed shader paired with
 a control that leaves the output out, per pass and for the whole frame, on both native recipes.
@@ -421,4 +467,4 @@ a control that leaves the output out, per pass and for the whole frame, on both 
 | Does any pose need the footprint widening? | M1's reference search, and the no-widening mutant if it finds one |
 | Does Occlusion win on realistic meshes at 1080p on this Mac? | M2's paired rows |
 | Which of the five registered reference sets does the coverage output move? | M3.10's record |
-| What does the coverage output cost on the valley? | M3.13's paired rows |
+| What does the coverage output cost on the valley? | M3.13's paired rows, and its investigation if a tripwire is crossed |

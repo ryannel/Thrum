@@ -243,10 +243,10 @@
         },
         {
           "id": "M3.10",
-          "statement": "The registered exact baselines are refreshed in the landing that adds the coverage output, as the module list's ruling on this milestone allows. Each retained reference that moved is regenerated from that commit by `APPLE-TILE`'s own scripts, with the registry, the comparisons, their sampling and every script as they were, and the verifier passes at the claimed commit. The verifier passed at the commit that landing started from, before any change. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
+          "statement": "The coverage output and the refreshed exact baselines reached main in one landing, pushed only after they were qualified on a local candidate as the design's 'Qualified before it lands' orders. Each retained reference that moved is regenerated from the candidate by `APPLE-TILE`'s own scripts, with the registry, the comparisons, their sampling and every script as they were. The verifier passed at the starting commit before any change, and passes at the claimed commit. `APPLE-TILE`'s log and this module's each record the cause and every moved reference's old and new SHA-256.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
-          "ask": "Does the evidence hold the verifier's passing record at the commit the coverage landing started from, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Did that landing leave `.config/exact-baselines.json`, the comparison scripts and their sampling as they were, and did no other landing of this module change a registered reference?",
+          "ask": "Do the retained records, by the commits and times they name, show that M3.11's campaign, M3.12's difference images and a verifier pass were made on a local candidate before the landing that put the coverage output and the references on main, and that main's registered references are the ones M3.12's images compare? Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Did that landing leave `.config/exact-baselines.json`, the comparison scripts and their sampling as they were, and did no other landing of this module change a registered reference?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -256,7 +256,7 @@
         {
           "id": "M3.11",
           "statement": "Under GPU load the claimed forward shader draws one image. In the design's interleaved campaign, a control that differs only by leaving out the coverage output differs between hosts in at least five routes, and the claimed shader differs in none over at least as many routes of the same recipes and sources.",
-          "ask": "Does the retained campaign record meet the design's rule under 'Proof that it is one image': the claimed commit's own binary, complete routes taken in turn with the control, four hosts, two counted render workers, the full exact comparison at every tick, both recipes and both sources, ended at the control's fifth differing route with none for the claimed shader? Does the control's source differ from the claimed source only by the coverage output?",
+          "ask": "Does the retained campaign record meet the design's rule under 'Proof that it is one image': complete routes taken in turn with the control, four hosts, two counted render workers, the full exact comparison at every tick, both recipes and both sources, ended at the control's fifth differing route with none for the claimed shader? Was the claimed binary built from the local candidate before the coverage output was pushed, and are the shader sources of the opaque forward fragment entries at the claimed commit byte for byte the ones the record lists for that binary? Does the control's source differ from the claimed source only by the coverage output?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -265,8 +265,8 @@
         },
         {
           "id": "M3.12",
-          "statement": "Only shared triangle edges moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel lies along an edge between triangles of opaque geometry. The sky, the stars and the letterbox bars hold their old bytes, and no difference fills a triangle's interior. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one, for each set that moved.",
-          "inspect": "From the retained Mac references at the commit the coverage landing started from and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: thin lines that follow the terrain's and the props' triangle edges, none in the sky, among the stars or in the bars, and no filled patch. Read the builder's Chrome difference images the same way for each Chrome set that moved, and the count of differing pixels and the largest difference for each reference.",
+          "statement": "Only shared triangle edges moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel lies along an edge between triangles of opaque geometry. The sky, the stars and the letterbox bars hold their old bytes, and no difference fills a triangle's interior. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and captures whose digests are the refreshed ones, for each set that moved.",
+          "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: thin lines that follow the terrain's and the props' triangle edges, none in the sky, among the stars or in the bars, and no filled patch. Read the builder's Chrome difference images the same way for each Chrome set that moved, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -275,8 +275,8 @@
         },
         {
           "id": "M3.13",
-          "statement": "The coverage output's cost on the valley's moving route is recorded, and the whole frame stays inside the design's tripwire: paired, interleaved rows of the claimed shader and the control without the output, per pass and for the whole frame, p50 and p95, from two runs with their load, on both native recipes.",
-          "ask": "Do the retained rows pair the claimed shader with a control that differs only by the coverage output, on the moving route on both native recipes, from two runs with the load recorded? Is the whole frame's paired p50 regression inside the tripwire in the design's Performance section, and does the maturity ledger carry the rows as a recorded cost, not a budget?",
+          "statement": "The coverage output's cost on the valley's moving route is recorded: paired, interleaved rows of the claimed shader and the control without the output, per pass and for the whole frame, p50 and p95, from two runs with their load and workload identities, on both native recipes. Where the rows cross a tripwire in the design's Performance section, the evidence holds an investigation of the cause and its disposition. No figure is a pass mark.",
+          "ask": "Do the retained rows pair the claimed shader with a control that differs only by the coverage output, on the moving route on both native recipes, from two runs with the load and workload identities recorded, and does the maturity ledger carry them as a recorded cost, not a budget? If the whole frame's paired p50 crossed the tripwire in the design's Performance section, does the evidence say which passes carry the cost and why, and record one of the design's two dispositions? A crossed tripwire with that record passes this item.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

@@ -28,21 +28,24 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 Criteria: M3.1–M3.13 in the done-when file. Read [One image under load](DESIGN.md#m3-one-image-under-load) and
 [the module list's ruling on M3](../ARCHITECTURE.md#exact-baselines) first.
 
-The work so far is on branch `build/culling` at `fb6afe7d`, with
-[the handoff](../../evidence/CULLING/M3-handoff.md) there. Commit `86e8efd5` on it is the coverage output, later
-reversed; `docs/evidence/CULLING/M3/triangle-merging/` holds its patch, the loaded-route and qualification
-runners and the retained controls. [The failed review](../../evidence/CULLING/M3-review.md) found M3.3 open: star
+The work so far is on branch `build/culling`, rebased onto main on 15 November (`9170f291`), with
+[the handoff](../../evidence/CULLING/M3-handoff.md) there. Commit `035e01a9` on it is the coverage output, which
+`9170f291` reverses; `docs/evidence/CULLING/M3/triangle-merging/` holds its patch, the loaded-route and
+qualification runners and the retained controls. The handoff names both commits by their ids before the rebase. [The failed review](../../evidence/CULLING/M3-review.md) found M3.3 open: star
 visibility selected Direct for the cooked valley, and the legacy cost benchmarks measured Direct twice.
 
-The order is part of this milestone. Before any change, run the verifier at the starting commit and keep its
-record. The coverage output and the refreshed references then land together as M3's first checkpoint, because
-the gate passes a covered change only with a proof for its exact content, and because every other proof of M3
-has to be drawn by the corrected shader: regenerate each reference that moved from the changed commit with
-`APPLE-TILE`'s own scripts, then run the verifier for the proof. `scripts/apple_tile_m0.py` made the Mac set, and
-the verifier archives each Chrome run's manifest. M3.11's campaign, M3.13's rows, M3.3's rows and the captures
-follow, all from that shader. If the claimed shader differs in the campaign, a reference moves where M3.12 says
-none may, or M3.13 passes the tripwire, end `BLOCKED` with the measurement. `APPLE-TILE` M10 and `ATMOSPHERE` M9
-also land covered changes; integrate on top of what has landed.
+The order is part of this milestone, and [the design](DESIGN.md#qualified-before-it-lands) gives it. Run the
+verifier at the starting commit and keep its record. Build the coverage output and the regenerated references as
+a local candidate, and push nothing until M3.11's campaign, M3.12's difference images, which you judge by that
+item's own list, and the verifier have all passed on it. Then `land` pushes the shader and the references
+together, as M3's first checkpoint. `scripts/apple_tile_m0.py` made the Mac set, and the verifier archives each
+Chrome run's manifest. If the claimed shader differs in the campaign, or a reference moves where M3.12 says none
+may, push nothing and end `BLOCKED` with the payloads. Every other proof of M3 has to be drawn by the corrected
+shader, so M3.3's rows and the captures follow the landing. `APPLE-TILE` M10 and `ATMOSPHERE` M9 also land
+covered changes; integrate on top of what has landed, and the design says which proofs a rebase repeats.
+
+M3.13's rows never stop the milestone or the landing. If they cross a tripwire, investigate the cause and record
+a disposition, as the design's Cost paragraph says, and keep building.
 
 Stop rules, for every milestone:
 - If a mode differs from its oracle in any pixel, stop and diagnose. Never widen a comparison, sample fewer frames or change the oracle to pass.
