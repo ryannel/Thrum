@@ -190,6 +190,35 @@
         "by": "plan",
         "task": "Scoped re-plan of PLATFORM-RUNTIME-MAC M2: the attended Instruments Game Performance traces (owner present, console unlo",
         "at": "2026-11-11T12:41:29Z"
+      },
+      "ready_for_review": {
+        "commit": "f0b9f4da4f32db7521672a7214776ca26af3e8af",
+        "checked": "f0b9f4da4f32db7521672a7214776ca26af3e8af",
+        "at": "2026-11-14T07:57:51Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.167.0-alpha.4.1",
+        "path": "headless",
+        "usage": {
+          "input": 911258,
+          "cached": 85185792,
+          "output": 220202,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 911258,
+          "cached": 85185792,
+          "output": 220202,
+          "turns": 3
+        }
       }
     }
   },
