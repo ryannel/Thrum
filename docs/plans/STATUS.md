@@ -212,7 +212,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1): Not Started · [plan](SIM-2D/PLAN.md)
 - A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): Not Started · [plan](TRANSPORT/PLAN.md)
 - SESSION's design: Design Changes Requested · [design](SESSION/DESIGN.md) · [plan](SESSION/PLAN.md)
-- SWARM's design: Design Ready for Review · [design](SWARM/DESIGN.md) · [plan](SWARM/PLAN.md)
 
 ### Recently done
 
@@ -268,4 +267,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, EFFECT-GRAPH:M3, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Design Changes Requested |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1 and RENDER-2D M5 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Design Ready for Review |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1 and RENDER-2D M5 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
