@@ -1,6 +1,28 @@
 {
   "module": "HOST",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/HOST/design-review.md",
+    "commit": "2df2e3c54da1ec5ac7c012707830d484cf7975eb",
+    "hash": "8231998c99e5d3edfcb4060a6f9524917804a01325d33e3d6ddf28d7aa3b5824",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 96605,
+      "cached": 930944,
+      "output": 6112,
+      "turns": 1
+    },
+    "at": "2026-11-14T22:23:22Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "444417d7649c4f04e238fc6774ccb6e496533e6a0ba912fb4b7dba7cf4b1bd8d",
