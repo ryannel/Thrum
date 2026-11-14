@@ -105,7 +105,40 @@
     },
     "M2": {
       "definitions": "b1c3eae2608515aa41e66361e2f462f3ff06f5f905aefcf85c28cf4aaf6d87fe",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "3e1eac88c20c28a491f53f5f1a2b33931b7564c3",
+          "review": "docs/evidence/SEA/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 110735,
+            "cached": 1222400,
+            "output": 4976,
+            "turns": 1
+          },
+          "at": "2026-11-14T14:07:07Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
@@ -141,6 +174,13 @@
           "output": 348994,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "3e1eac88c20c28a491f53f5f1a2b33931b7564c3",
+        "review": "docs/evidence/SEA/M2-review.md",
+        "checked": "50e55915dc0ee4cbf308bd00b6f4563180fb2456",
+        "at": "2026-11-14T14:07:07Z"
       }
     }
   },
