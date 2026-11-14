@@ -1,5 +1,16 @@
 # SEA log
 
+## 2026-11-14 — M1 CPU reference built
+
+Added the registered, dependency-free `thrum-sea-model` crate: a conservative spectrum partition,
+phase-preserving power response, displaced-world-point long-wave oracle, scalar cascade transform and
+provider conformance harness. Nothing was copied or translated from Broadsides.
+
+Verified ten CPU tests, exact regeneration of the 70-digit fixture, all item checks, and `./dev check`
+on source `b0e08412fa39471b272d260f43a177e302977d43`. The unchanged verifier passed 42 native comparisons
+and all four 481-record Chrome sets. [Evidence](../../evidence/SEA/M1.md) keeps the numerical proof,
+baseline identities and limits together. Sea rendering and GPU cost remain later milestones.
+
 - 2026-11-13 Owner, through the lead, when asked whether SEA and CLOUDS planning could start now: "On 2 use the
   fable planner like normal but you can bring that across when it makes sense." The lead's reading, recorded as
   an assumption in the plan: planning starts now, and this plan decides when the Broadsides Rust work is brought
