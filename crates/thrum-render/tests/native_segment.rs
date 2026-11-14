@@ -246,9 +246,15 @@ fn bytes(device: &wgpu::Device, buffer: &wgpu::Buffer) -> Vec<u8> {
             send.send(result).expect("map result");
         });
     device
-        .poll(wgpu::PollType::wait_indefinitely())
+        .poll(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(std::time::Duration::from_secs(10)),
+        })
         .expect("poll");
-    receive.recv().expect("map callback").expect("readback");
+    receive
+        .recv_timeout(std::time::Duration::from_secs(1))
+        .expect("map callback")
+        .expect("readback");
     buffer
         .slice(..)
         .get_mapped_range()
