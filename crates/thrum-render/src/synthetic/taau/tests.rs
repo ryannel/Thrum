@@ -117,7 +117,7 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
         let expected = 1.0 / (0.031 * 0.31 + 0.019 * 0.73 + 0.12);
         let cases: [[f32; 4]; 4] = [
             [expected, 0.31, 0.73, 0.0],
-            [12.0, 0.5, 0.5, 0.0],
+            [8.0, 0.5, 0.5, 0.0],
             [0.0, 0.5, 0.5, 1.0],
             [12.0, 0.5, 0.5, 0.0],
         ];
