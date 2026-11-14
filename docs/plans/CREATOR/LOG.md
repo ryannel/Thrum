@@ -1,5 +1,13 @@
 # CREATOR log
 
+- 2026-11-14 Rebased onto current main at `29a2c6ef` and repeated the native mistake
+  journey with identical decoded selected frames. Both native exact matrices and four
+  Chrome sets pass in 996.79 seconds. One earlier night frame differed by one channel
+  unit at 839 pixels and did not reproduce in a strict repeat or the complete verifier.
+  Retained both payloads. Corrected upstream worktree-only evidence links after the
+  repository gate reported them. Full integration and the window journey remain pending.
+  [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-14 Resumed at `d82da4d1` and confirmed the retained M3.2, M3.3 and M3.5
   records. Stopped the inherited queued window and dependent merge workers before
   desktop interaction, following this turn's explicit attended-access instruction.
