@@ -8,7 +8,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Needs you now
 
-- Nothing.
+- APPLE-TILE M10 A stateful native segment composes inside one submission: Blocked: Needs Access, D10.5: ATTENDED SETUP: the APPLE-TILE M3 surface path (moved here from M3 D3.5 by the owner, 14 Nov 2026) functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence. (Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants.). You approve it at the machine, in a visible run the lead starts
 
 ### Choices made for you
 
@@ -165,7 +165,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3): Ready for Review · [plan](PLATFORM-RUNTIME-MAC/PLAN.md)
-- A stateful native segment composes inside one submission (APPLE-TILE M10): Not Started · [plan](APPLE-TILE/PLAN.md)
 - The demo UI shows where a frame's time goes on Mac and in Chrome (CREATOR M2): Not Started · [plan](CREATOR/PLAN.md)
 - APPLE-PRESENTATION M3 TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome: Blocked: Needs Context: Does D3.3 permit native frame-sequence inspection plus measurements, given that the available tools cannot perceive continuous 1× video? The lead finds the missing fact, or asks you for it
 - ATMOSPHERE's design: Design Changes Requested · [design](ATMOSPHERE/DESIGN.md) · [plan](ATMOSPHERE/PLAN.md)
@@ -206,7 +205,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | M3 of 4 · Ready for Review |
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 10 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Not Started |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Blocked: Needs Access |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M2 of 3 · Not Started |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 3 · Blocked: Needs Context |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 | Design Changes Requested |
