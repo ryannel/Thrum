@@ -1,0 +1,10 @@
+{
+  "revision": "012668c2b5176b910f64a2e65e622590694349ce",
+  "capture_manifest": "docs/evidence/APPLE-TILE/M10/diagnostic/records/portable-still-sdr-metal-manifest.json.gz",
+  "capture_manifest_sha256": "e033ed4bba1684c5ccb80850651fa26a30ad88f05a723f15b9e7f4d93286283e",
+  "capture_source_revision": "8078205cc09de145f58348af42a8e2524cb01891",
+  "recorded_build_source_digest": "5cfeee7fa5375383585538e23a109362243813abfb5c6a7967454584638da423",
+  "checked_source_files": 500,
+  "differences": [],
+  "passed": true
+}

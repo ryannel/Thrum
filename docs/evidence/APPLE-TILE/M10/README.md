@@ -101,4 +101,7 @@ No Instruments recording or temporary Python environment was created.
 The earlier [M3 release receipt](m3-expired-bulk-release.json.gz) describes only
 expired historical sources; no recoverability of released bytes is claimed.
 Integration and any required rebased baseline/gate run use the official merge
-script. The [handoff](../M10-handoff.md) records the remaining attended item.
+script. The first integration attempt rebased to `012668c2`, then stopped at the
+guard because upstream proof-script changes require a fresh baseline key.
+All 500 captured build-source files [still match](rebase-source-identity.json).
+The [handoff](../M10-handoff.md) records the active integration job and attended item.

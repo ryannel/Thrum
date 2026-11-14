@@ -28,6 +28,16 @@ queued. The earlier coordinator failure was a capture omission-count assertion
 before pixel comparison; `342151fc` requires the three deliberate omissions and
 the corrected target test now passes. No tolerance or reference was changed.
 
+Integration job `20261114-092134-14283` rebased the work to `012668c2`, then
+stopped at the exact-baseline guard because upstream Mac proof-script changes
+invalidate the earlier content key. All 500 captured build-source files still
+match after rebase ([identity check](M10/rebase-source-identity.json)); no M10 item
+proof is invalidated by those upstream changes. Background job
+`20261114-092239-14812` now waits for GPU, runs fresh exact baselines and the full
+official M10 check, releases GPU, then retries official merge through the wrapper
+below. Wait on that job first. Its log is under the shared `.git/orchestrate/jobs/`.
+Keep tracked files clean once verification starts. No merge is claimed yet.
+
 Integration uses
 `python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.2.2/skills/orchestration/build/scripts/agent_loop.py merge --worktree .`.
 Inspect Git ancestry and the current job list first; a later checkpoint may
