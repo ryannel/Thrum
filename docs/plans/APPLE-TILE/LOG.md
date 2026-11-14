@@ -1,5 +1,13 @@
 # APPLE-TILE log
 
+- 2026-11-14 Resumed M3 after the owner moved D3.5 to a later milestone. No engine change was needed.
+  Clean source e41686a0 passes 42 native exact comparisons and 1,924 Chrome exact frames; 15 focused input/timing
+  tests and fresh both-recipe/native plus Chrome day/night/resize source verification pass. Inspected full frames,
+  native detail, complete elapsed-time strips and the composed Chrome letterbox. The disk and observer-export
+  refusals are retained separately from successful retries. D3.1–D3.4 builder proofs pass; M3 stays in progress
+  for official integration/checks and independent lead review. No cadence or performance promotion.
+  [Current evidence](../../evidence/APPLE-TILE/M3-resume/README.md).
+
 - 2026-11-11 Resumed after the planner's D0.2 correction and lead unblock. Re-audited the retained `03bc878a` Mac/Chrome proof, all promoted hashes, fixed repeats, omission failures and complete realtime source accounting. Renderer/shaders/capture/cooked inputs are unchanged; the intervening app Config move is verbatim and Creator SkyGame changes use a separate consumer. The current named Metal creation check, actual Chrome moving command and full repository check pass. Re-recorded D0.1–D0.5 as pass and claimed M0 for lead review. The earlier linear-stride metadata erratum remains explicit in [the evidence](../../evidence/render/apple-tile-m0/README.md).
 
 - 2026-11-11 Planner settled the M0 builder's scope question (the `blocked` note at `21ad4609`). D0.2's statement
