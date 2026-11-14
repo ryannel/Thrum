@@ -30,7 +30,7 @@ const server = createServer((request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const log = await fs.open(path.join(output, 'chrome.log'), 'w');
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new',
+  [`--user-data-dir=${profile}`, '--remote-debugging-port=0',
    '--no-first-run', '--no-default-browser-check', '--disable-background-networking',
    '--autoplay-policy=no-user-gesture-required', '--window-size=1920,1080', 'about:blank'],
   { stdio: ['ignore', log.fd, log.fd] });
@@ -63,6 +63,7 @@ try {
   });
   const { targetId } = await call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await call('Target.attachToTarget', { targetId, flatten: true });
+  await call('Page.bringToFront', {}, sessionId);
   await call('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false }, sessionId);
   await call('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` }, sessionId);
   const evaluate = async expression => {
