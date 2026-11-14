@@ -1,4 +1,5 @@
 mod aerial;
+mod aerial_ground;
 pub(in crate::atmosphere) mod diffuse;
 mod ground;
 mod mapping;
