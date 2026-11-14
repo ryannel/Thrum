@@ -1,68 +1,52 @@
 # SEA M2 recovery note
 
-Update at 09:44 local time, 14 November: the eight passed items remain passed;
-M2.8 is still open. The original complete check below remains live. Direct M2.8
-verifier job `20261114-074918-88657` is also queued. Job
-`20261114-094322-25542` runs [the integration-source helper](qualify_m2_baselines.py)
-under the GPU lock: it updates this branch to current main, then reuses a proof
-only if the repository's gate accepts it, otherwise runs the verifier. Wait for
-these existing jobs instead of launching further duplicates. The helper may
-rebase HEAD. At this update the GPU owner was CLOUDS' merge; a successful merge
-could change covered source before the direct verifier starts. Neither newer
-verifier has reported a pass or a failure yet. The latest implementation remains
-unchanged; `6f1f53f6` adds only the scoped helper, and documentation checks pass.
+Finish M2 with every item proved on its target and the work merged through
+`agent_loop.py merge --worktree .`. Leave its status `in_progress`; the lead's
+script owns the later status and review. M2.1–M2.7 and M2.9 are passed. M2.8,
+the complete exact native/Chrome baseline verification, remains open.
 
-Finish SEA M2 with every item passed from its target and the work merged through
-`agent_loop.py merge --worktree .`. Leave M2 `in_progress`; the lead's script owns
-the later status and review. This note preserves a long-running qualification,
-not a request to restart the implementation.
+The integration source is now based on main's CLOUDS M1 work. Rebase conflicts
+in `Cargo.toml` and `.config/architecture.toml` were resolved by retaining both
+modules' registrations. The resulting source checkpoint is `9bcfed37`. Cargo
+metadata includes `thrum-sea`, `thrum-sea-model` and `thrum-cloud-model` together;
+documentation checks pass. A comparison with pre-rebase `327546b8` shows no
+change to the sea crates or renderer. SEA has not printed `MERGED` or pushed.
 
-The implementation and evidence checkpoint is `4372f847`, rebased by the integration
-script. `47f8337d` adds the resumed qualification log. No implementation changed
-in this session. M2.1–M2.7 and M2.9 have `builder_result: pass`; only M2.8 is open.
-The [M2 record](M2.md), its four selected Metal records, [cost record](M2-cost.md)
-and [CPU loop record](M2-loop.txt) hold the proofs.
+Use the latest live job for [the qualification helper](qualify_m2_baselines.py),
+listed by `agent_loop.py jobs --worktree .`, rather than launch another duplicate.
+The helper runs under `lock gpu`, updates only this branch to current main, and
+uses the repository's own baseline gate. It verifies when a valid proof is
+missing. If space is below 16 GiB, it inspects and cleans only this worktree's
+private target directory, refusing a linked target. Do not edit the worktree
+while the helper is active: it can rebase HEAD. Its terminal result and report
+are the next evidence needed.
 
-All three Metal integration targets and three library tests passed at `4b1fbfa8`
-under the GPU lock in job `20261114-051511-21883` (exit 0). The rebase changed
-none of the sea crates, their renderer dependency or workspace dependencies.
-The ambient integration target passed again at `4372f847`; its fresh record is
-`tmp/sea-m2/ambient.txt` (written at 07:13 local time on 14 November).
+These earlier jobs are terminal:
 
-The complete scripted check is still running as background job
-`20261114-054946-45357`, process 45366. It runs `check --module SEA --milestone M2
---worktree . --timeout 3600 --json`. Its output appears only when it finishes.
-Wait for that job rather than launch a duplicate:
+- `20261114-054946-45357`, the old complete check, was stopped while waiting with
+  no child so it could not compile a partially resolved rebase. The eight passed
+  items retain their target proofs; final repository checks remain required.
+- `20261114-074918-88657` refused the verifier's disk preflight before rendering.
+  Space recovered to 21 GiB afterward. It produced no baseline pass.
+- `20261114-094322-25542` safely aborted on the registration conflicts above.
+  Those conflicts are resolved; rerun the helper from the current clean source.
 
-```sh
-python3 /Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.2.2/skills/orchestration/build/scripts/agent_loop.py wait 20261114-054946-45357 --worktree .
-```
+The [M2 record](M2.md), selected Metal records, [cost record](M2-cost.md) and
+[CPU loop record](M2-loop.txt) retain the passed proofs. All three Metal targets
+and three library tests passed at `4b1fbfa8`; ambient also passed at `4372f847`
+and again after the later documentation-only checkpoints. No product code has
+changed since those proofs. The new upstream cloud crate changes the exact
+verifier's covered key, which is why a fresh integration proof is needed.
 
-Its log is in the common Git directory, at
-`orchestrate/jobs/20261114-054946-45357.log`. The shared GPU queue is long and has
-been advancing. At 07:39 local time WATERS' verifier held it, with process 65983
-as the lock parent and 85789 running the verifier. No access request was refused.
-These process identities are observations, not grounds to stop another builder.
-
-The first baseline job, `20261114-053227-31529`, exited 1 at `4372f847`. The
-[retained attempt](M2-baseline-attempt.json) records an incomplete native
-route-motion interval: 153 readback-ring omissions, zero writer omissions, and
-Metal backend. The verifier stopped before completing all comparisons. The cause
-of the omissions is unconfirmed. No baseline or other module's test was edited.
-All 66 diagnostic metadata files are additionally preserved in
+The [first baseline attempt](M2-baseline-attempt.json) stopped on an incomplete
+native route-motion interval: 153 readback-ring omissions, zero writer omissions,
+Metal backend. The cause is unconfirmed. Its complete diagnostic metadata is in
 `tmp/sea-m2/baseline-first-failure.json.gz`; disposable pixels were removed.
+No baseline reference or other module's test was changed.
 
-The integration attempt rebased successfully, then refused its repository gate
-because an exact-baseline proof was absent. It did not print `MERGED` and did not
-push SEA. Documentation checks pass. The active scripted check includes another
-baseline attempt and the full repository gate. Finish any actual failures, retain
-the successful baseline record, update M2.8 and the final log, and merge. Recheck
-only proofs affected by any upstream files the merge brings in.
-
-GPU commands use the shared `lock gpu -- <command>` wrapper and need automatic
-sandbox escalation for Metal/Chrome. The user authorizes verified pushes through
-the integration script and the lead starts the reviewer. Keep changes in this
-worktree. The baseline verifier needs a clean tree and at least 16 GiB free.
-This session removed only its private release/incremental build caches and its
-failed capture pixels. Keep the remaining diagnostic scratch until the baseline
-failure is resolved; clean owned scratch and build output at final closeout.
+After a successful current-source proof, retain its compact record, update M2.8,
+the pending baseline line in M2's evidence and the final log, then complete the
+repository gate and integration. The user authorizes verified pushes through
+the integration script; the lead starts the reviewer. A rebase that changes
+covered source needs a matching proof. Keep work in this worktree, and clean
+owned scratch/build outputs at final closeout. No access request was refused.

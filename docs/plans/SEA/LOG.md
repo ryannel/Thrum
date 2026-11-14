@@ -138,3 +138,9 @@ combined source. The merge gate runs the full repository check again.
   `20261114-094322-25542`, remains queued and updates this branch before checking
   its proof. CLOUDS has now merged new covered source, so the helper's rebase is
   required for the final baseline gate. M2.8 remains unproved.
+- 2026-11-14 The qualification helper aborted safely on CLOUDS/SEA registration
+  conflicts. Resolved both registrations and rebased to `9bcfed37`; metadata and
+  documentation checks pass. Sea and renderer source match the earlier proof.
+  Stopped the old queued checker, with no active child, during the rebase.
+  The [recovery note](../../evidence/SEA/M2-handoff.md) records terminal jobs and
+  the remaining current-source qualification. No baseline pass is claimed.
