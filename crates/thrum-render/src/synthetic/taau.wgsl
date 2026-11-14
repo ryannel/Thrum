@@ -48,6 +48,8 @@ fn depth_at(p: vec2<f32>, expected: f32) -> vec4<f32> {
     // taps; the latter admits stale occluder colour at a disocclusion.
     let projected = 1.0/max(dot(weights,vec4(1.0)/max(depths,vec4(1e-20))),1e-20);
     let errors = abs(depths-vec4(expected));
+    // At a discontinuity, a matching surface tap is also a valid witness.
+    // Interpolation alone invents a depth between surfaces and rejects both.
     return vec4(low,high,select(projected,0.0,high == 0.0),min(min(errors.x,errors.y),min(errors.z,errors.w)));
 }
 fn depth_matches(old: vec4<f32>, expected: f32, sky: bool) -> bool {
