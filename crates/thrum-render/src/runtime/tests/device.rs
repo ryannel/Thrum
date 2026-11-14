@@ -1393,5 +1393,6 @@ fn a_refused_contribution_keeps_the_prepared_replacement_usable() {
     });
 }
 
+#[cfg(target_os = "macos")]
 mod native;
 mod split_graph;
