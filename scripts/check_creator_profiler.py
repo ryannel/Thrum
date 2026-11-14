@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Native CREATOR M2 evidence through the ordinary kit and valley window shells.
+"""Native CREATOR M2 evidence through the ordinary kit and valley frame hosts.
 
 Run under agent_loop.py lock gpu. Uses AppKit's offscreen panel rendering, never desktop
 capture. A generated disposable consumer calls only the V1 game's public capture_game and
-the engine's run_until_closed; no V1 implementation is modified for the proof.
+the engine's completed samples; no V1 implementation is modified for the proof.
+Default: elapsed offscreen opportunities and offscreen AppKit panels. --window additionally
+exercises the ordinary native window shell and requires that it receive display-link callbacks.
 """
 import argparse
 import hashlib
@@ -113,6 +115,8 @@ def forward(record):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output", type=Path)
+    parser.add_argument("--window", action="store_true")
+    parser.add_argument("--prepare-only", action="store_true")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -127,14 +131,35 @@ edition = "2024"
 [dependencies]
 thrum-app = {{ path = "{ROOT / 'crates/thrum-app'}" }}
 v1-game = {{ path = "{ROOT / 'examples/v1-game'}" }}
+thrum-render = {{ path = "{ROOT / 'crates/thrum-render'}" }}
+thrum-controls = {{ path = "{ROOT / 'crates/thrum-controls'}" }}
+thrum-core = {{ path = "{ROOT / 'crates/thrum-core'}" }}
+wgpu = {{ version = "=30.0.1", default-features = false, features = ["std", "metal"] }}
+pollster = "=1.0.1"
+serde_json = "=1.0.154"
 ''')
-    (harness / "src/main.rs").write_text('''fn main() {
+    (harness / "src/starter.rs").write_text((ROOT / "examples/starter/src/main.rs").read_text() + '\npub fn profile_game() -> Result<thrum_app::sky::SkyGame, String> { scene::build().map_err(|e| e.to_string()) }\n')
+    modules = '\n'.join(f'#[path = "{ROOT / source}"] mod {name};' for name, source in [
+        ("window", "crates/thrum-app/src/profile/window.rs"),
+        ("recording", "crates/thrum-app/src/app/profile_recording.rs"),
+        ("probe", "scripts/creator_profile_probe.rs"),
+    ])
+    (harness / "src/main.rs").write_text(modules + '''
+mod starter;
+const TABLE: &str = "profiler.rows";
+fn main() -> Result<(), String> {
+    if std::env::var_os("THRUM_PROFILE_WINDOW").is_none() {
+        return if std::env::var_os("THRUM_PROFILE_STARTER").is_some() {
+            probe::run(starter::profile_game()?, [1600,900])
+        } else { probe::run(v1_game::capture_game()?, [1920,1080]) };
+    }
     thrum_app::run_until_closed(thrum_app::Config {
         name: "creator-profile-proof", frames_variable: "THRUM_PROFILE_FRAMES",
         window_title: "Thrum valley profiler proof", title: "Thrum valley",
         render_thread: "creator-profile-render", panel_title: "Thrum demo",
         window_size: [1920, 1080],
     }, v1_game::capture_game);
+    Ok(())
 }
 ''')
     build = ["cargo", "build", "--offline", "--release", "--manifest-path", str(harness / "Cargo.toml"), "--target-dir", str(ROOT / "target")]
@@ -142,9 +167,13 @@ v1-game = {{ path = "{ROOT / 'examples/v1-game'}" }}
     run(["cargo", "build", "--locked", "--offline", "--release", "-p", "thrum-starter", "-p", "thrum-cook"])
     for name, source in [("valley", "examples/v1-game/assets/showcase"), ("starter", "examples/starter/assets")]:
         run([str(ROOT / "target/release/thrum-cook"), "cook", source, str(output / f"{name}-store")])
+    if args.prepare_only:
+        return
     binary = ROOT / "target/release/creator-profile-proof"
-    result = {"revision":subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(), "binary_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(), "load":"V1 valley, 10,000 entities, 1920x1080, ordinary window shell, observer equal in every arm", "order":[], "pairs":[], "world":[], "material":[]}
+    result = {"revision":subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(), "binary_sha256":hashlib.sha256(binary.read_bytes()).hexdigest(), "load":"V1 valley, 10,000 entities, 1920x1080, ordinary Game/FrameHost, compact observer equal in every arm", "mode":"window" if args.window else "elapsed offscreen output and AppKit panel; no OS present or display-link claim", "order":[], "pairs":[], "world":[], "material":[]}
     valley_env = {"THRUM_SCENE":"valley", "THRUM_ASSET_STORE":str(output / "valley-store")}
+    if args.window:
+        valley_env["THRUM_PROFILE_WINDOW"] = "1"
     for index, on in enumerate([False, True, True, False, False, True]):
         result["order"].append(on)
         scene = Scene([str(binary)], output / f"pair-{index}", dict(valley_env, THRUM_PROFILE_DETAIL="compact"), {"profiler.enabled":on})
@@ -176,7 +205,8 @@ v1-game = {{ path = "{ROOT / 'examples/v1-game'}" }}
 }
 """
     material.write_text(light)
-    scene = Scene([str(ROOT / "target/release/thrum-starter")], output / "material", {"THRUM_ASSET_STORE":str(output / "starter-store"), "THRUM_MATERIAL":str(material)}, {"profiler.enabled":True})
+    starter_command = [str(ROOT / "target/release/thrum-starter")] if args.window else [str(binary)]
+    scene = Scene(starter_command, output / "material", {"THRUM_PROFILE_STARTER":"1", "THRUM_ASSET_STORE":str(output / "starter-store"), "THRUM_MATERIAL":str(material)}, {"profiler.enabled":True})
     try:
         for index in range(3):
             material.write_text(light)
