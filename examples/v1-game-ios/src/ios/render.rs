@@ -772,8 +772,9 @@ impl Owner {
             .and_then(|stats| stats.lock().ok())
             .map_or_else(String::new, |stats| {
                 format!(
-                    "cooked_path={:?}\ncooked_drawn={:?}\ncooked_device_generation={:?}\ncooked_submitted={}\ncooked_errors={:?}",
-                    stats.draw_path, stats.drawn, stats.drawn_device_generation, stats.submitted_frames, stats.errors
+                    "cooked_path={:?}\ncooked_drawn={:?}\ncooked_device_generation={:?}\ncooked_submitted={}\ncooked_errors={:?}\ncooked_texture_profile={:?}",
+                    stats.draw_path, stats.drawn, stats.drawn_device_generation, stats.submitted_frames, stats.errors,
+                    stats.swaps.last().and_then(|swap| swap.texture_profile)
                 )
             });
         reply.pending_frames = gpu.host.pending_frames();
