@@ -151,7 +151,9 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
             return {"wrong_version_refused": True, "client_log": str(output.relative_to(ROOT))}
         if client_status and case != "kill-peer":
             raise RuntimeError(f"client failed; see {output}")
-        if host.wait(timeout=20):
+        if identity == "hash" or case == "startup-cut":
+            stop(host)
+        elif host.wait(timeout=20):
             raise RuntimeError(f"host failed; see {output}")
     finally:
         stop(client)
@@ -172,6 +174,8 @@ def exchange(target, output, conditioned, seconds=32, controller="bbr", case="ex
         client_result, = [row["result"] for row in client_record if "result" in row]
     if identity == "hash":
         assert not host_results and not client_result["open"], "wrong hash accepted"
+        events = ([row["event"] for row in client_record["events"]] if target == "chrome-webgpu" else [event for row in client_record for event in row.get("events",[])])
+        assert "Closed(Refused)" in events,"wrong hash did not report refusal"
         return {"wrong_hash_refused": True, "client": client_record}
     if case == "startup-cut":
         assert not host_results and not client_result["open"]
@@ -308,8 +312,8 @@ def session(output):
         processes.append(process)
         return {"process":process,"target":target,"stem":stem,"control":control,"ticket":ticket,"local_id":1}
     try:
-        ticket = first_row(host,output / "host.jsonl")["ticket"]
-        began = time.monotonic()
+        host_start = first_row(host,output / "host.jsonl")
+        ticket = host_start["ticket"]
         for index in range(4):
             relay = start([sys.executable,"scripts/transport_relay.py","--host",ticket.split("@")[1],"--seed",29721+index,"--control",output / f"relay-control-{index}","--output",output / f"relay-{index}.json"],output / f"relay-{index}.jsonl")
             processes.append(relay)
@@ -321,6 +325,16 @@ def session(output):
             client["host_id"] = await_open(count)
             clients.append(client)
             pairs.append({"client":index,"stem":client["stem"],"local_id":1,"host_id":client["host_id"]})
+            deadline = time.monotonic()+15
+            while True:
+                ready = (output / f"{client['stem']}.json.progress.json").exists() if client["target"]=="chrome-webgpu" else any("Open" in row.get("events",[]) for row in rows(output / f"{client['stem']}.jsonl"))
+                if ready:
+                    break
+                if time.monotonic()>deadline:
+                    raise RuntimeError("session client did not observe its open")
+                time.sleep(0.01)
+        began = time.monotonic()
+        host_session_start_ms = time.time()*1000-host_start["epoch_unix_ms"]
         schedule = [(60,"reconnect",0),(120,"reconnect",2),(180,"reconnect",3),(240,"kill",1),(250,"replace",1),(300,"cut",0),(310,"heal-reconnect",0),(600,"drain",None),(610,"finish",None)]
         for at, action, index in schedule:
             while time.monotonic()-began < at:
@@ -409,10 +423,10 @@ def session(output):
     cut_host = next(event["host_id"] for event in events if event["harness_action"] == "cut")
     cut_comparison = next(row for row in comparisons if row["host_id"] == cut_host)
     assert cut_comparison["host"]["reliable_sent"] > cut_comparison["client"]["reliable_received"], "cut drained before interruption"
-    kill_time = next(event["elapsed_seconds"]*1000 for event in events if event["harness_action"] == "kill")
+    kill_time = host_session_start_ms+next(event["elapsed_seconds"]*1000 for event in events if event["harness_action"] == "kill")
     after_kill = [item for row in host_rows if row.get("elapsed_ms",0) > kill_time for item in row.get("progress",[]) if item["id"] == killed_host and item["open"]]
     assert len(after_kill) >= 2 and after_kill[-1]["reliable_sent"] > after_kill[0]["reliable_sent"], "host accepted nothing after kill"
-    return {"duration_seconds":610,"harness_events":events,"links":comparisons,"host_events":[row for row in host_rows if "events" in row],"accepted_after_kill":after_kill,"relays":[json.loads((output / f"relay-{i}.json").read_text()) for i in range(4)]}
+    return {"duration_seconds":610,"load_seconds_after_all_clients_open":600,"host_session_start_ms":host_session_start_ms,"harness_events":events,"links":comparisons,"host_events":[row for row in host_rows if "events" in row],"accepted_after_kill":after_kill,"relays":[json.loads((output / f"relay-{i}.json").read_text()) for i in range(4)]}
 
 
 def closure(output):

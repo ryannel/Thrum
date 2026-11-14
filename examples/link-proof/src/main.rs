@@ -40,6 +40,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let epoch = Instant::now();
+    let epoch_unix_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_millis();
+    let mut ever_opened = false;
     let mut links: Vec<(Link, Actor, Instant)> = Vec::new();
     if let Some(host) = &host {
         loop {
@@ -47,7 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 writeln!(
                     io::stdout(),
                     "{}",
-                    serde_json::json!({"ticket":ticket.to_string(), "pid":std::process::id()})
+                    serde_json::json!({"ticket":ticket.to_string(), "pid":std::process::id(),"epoch_unix_ms":epoch_unix_ms})
                 )?;
                 io::stdout().flush()?;
                 break;
@@ -108,6 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         if let Some(host) = &host {
             while let Some(link) = host.accept() {
+                ever_opened = true;
                 links.push((link, Actor::new(1, case), Instant::now()));
             }
         }
@@ -144,6 +149,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )?;
                 io::stdout().flush()?;
                 link.close(77);
+                let mut final_events = Vec::new();
+                while let Some(event) = link.event() {
+                    final_events.push(format!("{event:?}"));
+                }
+                if !final_events.is_empty() {
+                    writeln!(
+                        io::stdout(),
+                        "{}",
+                        serde_json::json!({"id":link.id(),"elapsed_ms":now,"events":final_events,"after_drain":true})
+                    )?;
+                }
             }
         }
         let now = u64::try_from(epoch.elapsed().as_millis())?;
@@ -160,11 +176,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if command == "finish" {
             break;
         }
-        if epoch.elapsed().as_secs() > seconds + 5 && links.is_empty() {
+        if links.is_empty() && (host.is_none() || ever_opened || epoch.elapsed().as_secs() > 60) {
             break;
         }
         std::thread::sleep(Duration::from_millis(1));
     }
+    // The game-facing close is immediate; leave the I/O runtime alive for its bounded close flight.
+    std::thread::sleep(Duration::from_millis(500));
     Ok(())
 }
 #[cfg(target_arch = "wasm32")]

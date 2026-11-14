@@ -101,7 +101,8 @@ try {
       await new Promise(resolve => setTimeout(resolve, 1));
     }
     module.close(77);
-    return { result: last, events, closed_results };
+    const closed_after_drain = JSON.parse(module.tick());
+    return { result: last, events, closed_results, closed_after_drain };
   })()` });
   if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
   await fs.writeFile(output, JSON.stringify({ ...result.result.value, version, args }, null, 2) + '\n');
