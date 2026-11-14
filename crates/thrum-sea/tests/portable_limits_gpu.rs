@@ -1,4 +1,8 @@
 //! Default WebGPU limits on the Metal target.
+#[expect(
+    dead_code,
+    reason = "the shared cost observer is exercised separately by ambient_gpu"
+)]
 mod support;
 #[test]
 fn default_webgpu_limits_and_named_profile_refusals() {

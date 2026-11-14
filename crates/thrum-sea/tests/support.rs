@@ -187,7 +187,7 @@ impl Harness {
             moments,
         })
     }
-    fn isolated_cost(&mut self, spectrum: &Spectrum, points: &[[f64; 2]]) {
+    pub(super) fn isolated_cost(&mut self, spectrum: &Spectrum, points: &[[f64; 2]]) {
         // Stage-boundary samples of tiny mips can be equal on Apple Metal.
         // Batch tiny passes and wait for each command buffer's completion before
         // resolving its counters. CPU waiting lies outside the GPU timestamps.
@@ -548,7 +548,6 @@ pub(super) fn ambient(portable: bool, name: &str) {
             naive_seconds_ablation(&mut h, &s, time);
         }
     }
-    h.isolated_cost(&s, &p);
     h.save(name);
 }
 
