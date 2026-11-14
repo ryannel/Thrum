@@ -322,7 +322,7 @@ async fn replace_device(
     host.publish_device(&mut prepared).map_err(error)?;
     host.world_mut().0.tick = 101;
     let report = host
-        .advance(Duration::from_secs(20))
+        .advance(Duration::from_secs(21))
         .map_err(error)?
         .encode_scene()
         .map_err(error)?

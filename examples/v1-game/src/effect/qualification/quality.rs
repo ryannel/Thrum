@@ -89,11 +89,38 @@ pub(super) async fn run(
     {
         return Err("view-history quality change did not reach effect reset".into());
     }
+    let dropped = handle.lock().map_err(error)?.state.dropped_ticks();
+    drop(host.poll_completed().map_err(error)?);
+    host.world_mut().0.tick = 200;
+    host.advance(Duration::from_secs(20))
+        .map_err(error)?
+        .encode_scene()
+        .map_err(error)?
+        .submit(None)
+        .map_err(error)?;
+    let volume = handle.lock().map_err(error)?.textures[3][0].clone();
+    let texels = super::read_texture(device, queue, &volume, 0).await?;
+    for z in 0..4usize {
+        for y in 0..8usize {
+            for x in 0..8usize {
+                let base = if z < 2 { 200 } else { 0 };
+                let expected = u32::try_from(base + x + 16 * y + 256 * z).map_err(error)?;
+                if texels[z * 64 + y * 8 + x] != expected {
+                    return Err(
+                        "volume-slices quality value did not select exactly two slices".into(),
+                    );
+                }
+            }
+        }
+    }
+    if handle.lock().map_err(error)?.state.dropped_ticks() - dropped != 94 {
+        return Err("catch-up quality value did not bound the 98-tick stall to four steps".into());
+    }
     if host.pipeline_creation_count() != count {
         return Err("quality created pipelines".into());
     }
     drop(host.poll_completed().map_err(error)?);
     Ok(format!(
-        "quality knobs={knobs:?}: staged boundary, none/effect/view invalidations, {timing_record}, unchanged pipeline count={count:?}"
+        "quality knobs={knobs:?}: staged boundary, none/effect/view invalidations, two volume slices and four-step catch-up verified, {timing_record}, unchanged pipeline count={count:?}"
     ))
 }

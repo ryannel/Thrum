@@ -35,15 +35,7 @@ impl Slab {
         surface: &SceneSurface<'_>,
         textures: &[Vec<wgpu::Texture>],
     ) -> Result<(), String> {
-        let source = format!(
-            "{}\n{}",
-            include_str!("slab.wgsl"),
-            if self.refraction {
-                "@group(1) @binding(1) var scene_copy:texture_2d<f32>; fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{ let size=vec2<i32>(textureDimensions(scene_copy)); let q=clamp(p+vec2(6,0),vec2(0),size-vec2(1)); return vec4(textureLoad(scene_copy,q,0).rgb*0.65+tint,1.0); }"
-            } else {
-                "fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{return vec4(tint+vec3(0.01,0.025,0.035),0.35);}"
-            }
-        );
+        let source = shader(self.refraction);
         let module = surface
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -200,3 +192,18 @@ impl Slab {
         }
     }
 }
+
+fn shader(refraction: bool) -> String {
+    format!(
+        "{}\n{}",
+        include_str!("slab.wgsl"),
+        if refraction {
+            "@group(1) @binding(1) var scene_copy:texture_2d<f32>; fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{ let size=vec2<i32>(textureDimensions(scene_copy)); let q=clamp(p+vec2(6,0),vec2(0),size-vec2(1)); return vec4(textureLoad(scene_copy,q,0).rgb*0.65+tint,1.0); }"
+        } else {
+            "fn colour(p:vec2<i32>, tint:vec3<f32>)->vec4<f32>{return vec4(tint+vec3(0.01,0.025,0.035),0.35);}"
+        }
+    )
+}
+
+#[cfg(test)]
+mod tests;
