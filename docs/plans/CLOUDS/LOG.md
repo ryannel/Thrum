@@ -1,5 +1,15 @@
 # CLOUDS log
 
+- 2026-11-14 M1 review follow-up: implemented bounded shape thresholding and edge-only detail
+  erosion; [revision evidence](../../evidence/CLOUDS/M1-revision.md) records CPU tests, Clippy
+  and 252 fully removed edge samples among 891 positive uneroded probes. No visual claim.
+  M1.4 remains open: the actual-top jumps reproduce and cannot converge to zero with both
+  the designed fixed condensation base and M1.2's all-zero clear sentinel.
+- 2026-11-14 Proposal for the planner: define top only where a column is cloudy, retaining
+  clear zeros, and require thickness continuity through clear transitions; separately test
+  top where defined, including a changing type-table base. This is a proposal, not an adopted
+  interpretation or a change to the items. [Handoff](../../evidence/CLOUDS/M1-handoff.md).
+
 - 2026-11-13 Owner, through the lead, when asked whether SEA and CLOUDS planning could start now: "On 2 use the
   fable planner like normal but you can bring that across when it makes sense." The lead's reading, recorded as
   an assumption in the plan: planning starts now, and this plan decides when the Broadsides Rust work is brought
