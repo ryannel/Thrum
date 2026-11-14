@@ -144,3 +144,8 @@ combined source. The merge gate runs the full repository check again.
   Stopped the old queued checker, with no active child, during the rebase.
   The [recovery note](../../evidence/SEA/M2-handoff.md) records terminal jobs and
   the remaining current-source qualification. No baseline pass is claimed.
+- 2026-11-14 Qualification built at `a490642d`, then the native observer refused
+  its 16 GiB disk preflight before capturing. Retained the
+  [attempt metadata](../../evidence/SEA/M2-disk-attempt.json.gz) and cleaned only
+  owned cooked scratch and 2.3 GiB of build output. The helper now allows 2 GiB
+  of build headroom above the observer's unchanged floor. M2.8 remains open.
