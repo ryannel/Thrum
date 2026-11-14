@@ -4,6 +4,26 @@
 @group(0) @binding(4) var trans_out: texture_storage_2d_array<rgba16float, write>;
 @group(0) @binding(5) var lut_sampler: sampler;
 
+// Aerial columns are interpolation support, including below the model's
+// ground. The charts and the sky keep their original, clamped altitude.
+fn aerial_altitude(p: vec3<f32>) -> f32 {
+    let n = dot(p,p)+2.0*R*p.y;
+    return n/(sqrt(max(0.0,R*R+n))+R);
+}
+
+// Continue the chart's near-surface optical-depth slope below its domain.
+// Diffuse sources stay at the surface; the direct Sun alone dims with depth.
+// A Sun hidden from the ground point above the sample remains hidden.
+fn aerial_sun_pair(h: f32, mu: f32) -> array<vec4<f32>,2> {
+    let surface = spectral_sun_pair(max(0.0,h),mu,transmittance,lut_sampler);
+    if h >= 0.0 || mu < 0.0 { return surface; }
+    let above = spectral_sun_pair(50.0,mu,transmittance,lut_sampler);
+    let depth = vec4(-h/50.0);
+    let lo = clamp(surface[0]/max(above[0],vec4(1e-20)),vec4(0.0),vec4(1.0));
+    let hi = clamp(surface[1]/max(above[1],vec4(1e-20)),vec4(0.0),vec4(1.0));
+    return array(surface[0]*pow(lo,depth),surface[1]*pow(hi,depth));
+}
+
 // The Sun's single-scattered part of lit_step: its multiple-scattering source is zero.
 // Consumers that know terrain visibility along the ray attenuate only this part.
 fn single_step(
@@ -27,9 +47,7 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let origin = vec3(0.0, h, 0.0);
     let sun = atmosphere.sun_lux.xyz;
     let phase = scattering_phase(dot(direction, sun));
-    var limit = min(32000.0, top_distance(h, direction.y));
-    let ground = ground_distance(h, direction.y);
-    if ground >= 0.0 { limit = min(limit, ground); }
+    let limit = min(32000.0, top_distance(h, direction.y));
     var ray = empty_ray();
     var single = empty_ray();
     let radiance = vec3(0.0);
@@ -47,10 +65,10 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
         if segment_end > segment_start {
             if night_control.x != 0u {
                 let middle = origin + direction * (0.5 * (segment_start + segment_end));
-                let height = altitude(middle);
+                let height = aerial_altitude(middle);
                 let mu = local_sun_mu(middle, direction);
                 let sigma = extinction(medium_densities(height), 1u).x;
-                let source = night_source(height, mu, lut_sampler);
+                let source = night_source(max(0.0,height), mu, lut_sampler);
                 // Use the stable midpoint attenuation form at the short first layer.
                 let optical_depth = sigma * (segment_end - segment_start);
                 let trans = exp(-0.5 * optical_depth);
@@ -60,11 +78,11 @@ fn aerial_main(@builtin(global_invocation_id) id: vec3<u32>) {
             let dt = (segment_end - segment_start) * 0.25;
             for (var step = 0u; step < 4u; step++) {
                 let p = origin + direction * (segment_start + (f32(step) + 0.5) * dt);
-                let ah = altitude(p);
+                let ah = aerial_altitude(p);
                 let densities = medium_densities(ah);
                 let mu = local_sun_mu(p,sun);
-                let direct = spectral_sun_pair(ah,mu,transmittance,lut_sampler);
-                ray = lit_step(ray, densities, ah, mu, phase, dt, direct, multiple_scattering, lut_sampler);
+                let direct = aerial_sun_pair(ah,mu);
+                ray = lit_step(ray, densities, max(0.0,ah), mu, phase, dt, direct, multiple_scattering, lut_sampler);
                 single = single_step(single, densities, phase, dt, direct);
                 throughput *= exp(-surface_extinction(densities)*dt);
             }
