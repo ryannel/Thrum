@@ -175,6 +175,126 @@
       ]
     },
     {
+      "id": "M13",
+      "name": "Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "An authority a GPU can be held to, as M1 is: every answer follows from the design's field, from Beer's law or from a closed form, and nothing in it needs a graphics device.",
+      "items": [
+        {
+          "id": "M13.1",
+          "statement": "The model takes a surface field (ground heights and water levels on a grid) and a fog table, and derives the datum as the surface averaged over the profile's window. With neither given, or with every amount at 0, every answer of the field, of the density and of the Sun-path references is bit for bit what it is without them.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_absent",
+          "ask": "Does the test compare with the same calls made with no surface field and no fog table, over cells, a deck and a placed cell, and not with stored values?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.2",
+          "statement": "A pooled row fills hollows first. With its noise at the uneroded value, at every amount the mist over a point is no deeper than over any point that lies lower against the datum; as the amount rises the share of ground under mist never falls; the mist top is never steeper than the datum; and halving an amount step halves the largest change of density at fixed points. A row with no pooling is as deep over a ridge as over a hollow.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test pooling",
+          "ask": "Is the relief the test's own, with hollows and ridges at several scales, and does it include a ridge that the datum's window fully contains?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.3",
+          "statement": "Rows keep to their place. A drifting row under travel equals itself with no travel at the point minus the travel, bit for bit; a held row's uneroded column at a world point does not change with travel. A row for water alone has no density over land beyond the profile's shore margin, and a row for land alone none over water.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_place",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.4",
+          "statement": "Mist follows the day. Stepped through three days with the Sun's elevation as an input, a radiative row's amount is zero in the afternoon, rises after dusk, is highest in the hour before sunrise and is zero again by late morning. With coverage at 1, with wind above the profile's calm limit, or with moisture at 0, it stays under a tenth of that peak. Halving the tick halves the largest change in a tick, two runs from one state agree bit for bit, and a row not marked radiative keeps the amount the game sets.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_day",
+          "ask": "Is the Sun's elevation an argument of the step, with no clock or renderer read inside the model?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.5",
+          "statement": "A point query answers the condensate's extinction and the visual range at any world point and height, and the model gives the optical depth between any two points. Under a deck whose base lies below a hill of the surface field, a point on the hill between the deck's base and top has the deck's extinction and one above its top has none. The optical depth between two points equals the test's own quadrature of the point extinction along the segment, through ground sources, a deck and cells.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test visibility",
+          "ask": "Is the quadrature written in the test and refined until it stops moving, and does a segment cross each kind of condensate?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.6",
+          "statement": "The model's Sun-path reference runs from any point to the top of the weather through ground sources and cloud alike, in the full and the coarse density, and reports apart from it whether the surface field blocks the ray. Through a bank at a 30\u00b0, a 10\u00b0 and a 4\u00b0 Sun, a ground band of the first profile's columns and heights, filled from that reference and read by interpolation, is within the bound this milestone measures first of the reference itself, on record beside the design proof's 0.006 to 0.011 RMS in transmittance.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_sun_path",
+          "ask": "Do the probe points include the ground beside the bank on its far side from the Sun, where a level-layer rule gives no shade?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.7",
+          "statement": "The model gives f64 references for the three medium coefficients at a point (extinction, the solar kernel and the ambient source) and for the near and far weights, which sum to one at every distance. Along probe rays through a bank that crosses the ramp, a near integration of the near share composed with a far integration of the far share gives the transmittance of one integration of the whole to rounding, and its in-scatter within the bound this milestone measures first, under uniform light and with a shadow edge inside the ramp. The conformance harness takes a provider of these as it takes one of weather columns.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test medium",
+          "ask": "Is the solar kernel cloud light's Sun term with the Sun's light left out, built from the same weights, extinction scales and phase tables as M1.8 and M1.14, and not a second copy of them?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.8",
+          "statement": "The state holds the clear air's visual range, which moves toward its target like any parameter, and the model gives the aerosol extinction for a visual range and a gas extinction by Koschmieder's relation. The two invert each other to rounding from 3 to 300 km.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test haze",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.9",
+          "statement": "`thrum-cloud-model` still builds and its tests still run with no graphics device and no dependency on `thrum-render` or `wgpu`, and it holds no surface field, fog table, preset or look: tests make their own.",
+          "check": "cargo tree --locked --offline -p thrum-cloud-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
+          "ask": "Does any file in the crate or its tests name a preset, a cloud type's values or a look that belongs to a game?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M13.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M2",
       "name": "Cloud shade crosses the valley in step with the weather, with no cloud drawn",
       "status": "not_started",
@@ -924,7 +1044,7 @@
         },
         {
           "id": "M8.2",
-          "statement": "With a haze scale registered, the air's solar in-scatter is multiplied by it, and transmittance and the night term are untouched. In clear weather, and with no provider, the scale is exactly 1 and frames are identical to before.",
+          "statement": "With a haze scale registered in a scene that declares no view volume, the air's solar in-scatter is multiplied by it, and transmittance and the night term are untouched. In clear weather, and with no provider, the scale is exactly 1 and frames are identical to before.",
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1209,8 +1329,414 @@
       ]
     },
     {
+      "id": "M14",
+      "name": "Mist lies in the valley's hollows and fades the land near the camera, in the land's own light",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [
+        "ATMOSPHERE:M8"
+      ],
+      "quality_bar": "Valley mist at dawn as in Red Dead Redemption 2: a soft, level sea of mist in the hollows with the land standing out of it, bright toward the Sun and grey away from it, in the same light as the land, with nothing that reads as a plane, a tile or a tint.",
+      "items": [
+        {
+          "id": "M14.1",
+          "statement": "With the Ground capability the cloud selection in `examples/v1-game` gives the field the valley's surface field and a fog table and declares `ATMOSPHERE`'s view volume, and the labelled test medium is not used. Without Ground the effect declares no ground band, medium-coefficient pass or surface texture, and its other products hold the same bytes as before this milestone.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_ground_selection_gpu",
+          "ask": "Does the test count creations by name with and without Ground, and compare the cloud band's ground field byte for byte?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.2",
+          "statement": "On every level of the GPU weather map each texel's ground sources match the CPU field at texel centres, at the tick the part was written, within the bound this milestone measures first; the surface field and the datum the GPU reads are the model's.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test ground_map_gpu",
+          "ask": "Is the bound measured on a sky with pooled, even, held and drifting rows, and asserted afterwards?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.3",
+          "statement": "The Sun path's ground band matches the model's reference at points on the ground, inside a bank and beside it, at a 30\u00b0, a 10\u00b0 and a 4\u00b0 Sun, within the bound this milestone measures first. `ATMOSPHERE`'s factor on a receiver is the exponential of minus the sum of both bands, applied once. The surface visibility is read by medium samples only: no surface's shading changes when it is filled.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test ground_band_gpu",
+          "ask": "Is the reference the model's and not the shader's? Does one case put a surface receiver in a ridge's shadow and show its shading unchanged by the surface visibility?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.4",
+          "statement": "The medium coefficients this module writes for the view volume match the model's references at the volume's sample points within the bound this milestone measures first, carry the near weight, and are zero beyond the end of the ramp.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test medium_coefficients_gpu",
+          "ask": "Are the sample points the ones the view volume names for that frame, jitter included?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.5",
+          "statement": "At dawn with valley mist at half and at full amount: mist lies in the hollows under a soft, nearly level top; slopes and ridges above it are clear; props stand out of it and fade into it with depth; from inside, the land fades with distance. There is no flat cut-off plane, no tile or slice pattern and no banding.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at a 10\u00b0 Sun, from 2 m inside the mist, from the valley's rim across its top and from 40 m above. Judge each whole, and native-size crops of the mist's top against a slope, of a prop standing in it and of the nearest 50 m.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.6",
+          "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line and below broken cloud. Shaded ground in mist is never black.",
+          "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range, and one frame under the broken preset. Judge each whole and in native-size crops of the shadows and the shafts.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.7",
+          "statement": "Inside fog of a 50 m visual range the land is lit flat and grey with no Sun shadow, a polished sphere reflects fog and not blue sky, and the exposure settles without pumping as the camera walks in.",
+          "inspect": "Capture `fixed` stills with the polished sphere in frame outside the fog, at its edge and inside it, and a `realtime` sequence of the walk in. Judge the sphere in native-size crops and the sequence at 1x.",
+          "ask": "Does the sky overlay trace ground condensate through the same density function as the trace, and not a copy?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.8",
+          "statement": "As the mist's amount sweeps from 0 to 1 and back, and as the camera walks 100 m through the mist's edge and pans inside it, nothing pops, crawls or trails, and a mover passing through the mist leaves no halo.",
+          "inspect": "Capture `realtime` sequences: the sweep, a minute each way, from the rim; the walk; a 10-second pan inside the mist; a mover crossing. Judge consecutive frames at 1x, whole and in native-size crops.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.9",
+          "statement": "In Chrome the dawn valley passes M14.5's, M14.6's and M14.7's lists.",
+          "inspect": "Capture the same `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.10",
+          "statement": "With mist and a bank in the valley at dawn, the paired cost record is taken at 2560\u00d71440, with the ground band, the medium coefficients and the view volume timed by name and the bytes of each new resource. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene mist-near",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.11",
+          "statement": "The maturity ledger's `E1.clouds` row is current.",
+          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M15",
+      "name": "Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "The far mists of Red Dead Redemption 2 and the low cloud of Horizon Forbidden West: banks and filled valleys to the horizon with clean ridge lines in front of them, a cloud base that hills rise into, and a climb through it with no seam between what is near and what is far.",
+      "items": [
+        {
+          "id": "M15.1",
+          "statement": "The trace marches each ray over the design's interval and keeps two stops. For a uniform slab with a wall inside it at a known depth, the pair at the wall and at a nearer and a farther pixel depth within one texel's footprint matches the model's reference within M3.6's bound, and a pixel nearer than the slab takes none of it. Under a cloud band that clears all geometry, with no ground condensate, the composed frame holds the same bytes as before this milestone.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test trace_depth_gpu",
+          "ask": "Do the expected pairs come from the model? Is the unchanged frame compared with one from the commit this milestone started at, or with a retained image?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.2",
+          "statement": "Along probe rays through a bank that crosses the handover, the view volume's condensate transmittance times the trace's equals the model's for the whole ray, and the composed in-scatter equals the model's, each within the bound this milestone measures first, on record beside the design proof's 0.002.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_handover_gpu",
+          "ask": "Does one probe ray carry a shadow edge inside the ramp?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.3",
+          "statement": "How far a far bank's composed radiance is from a joint integration of air, haze and condensate is on record at clear-air visual ranges of 8, 20 and 60 km, for a deep bank beyond the handover, and is within the bound this milestone set from that record.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test far_air_gpu",
+          "ask": "Is the joint reference the model's or a retained Python reference, and never the shader under test? If the record led to the design's fallback for its eleventh risk, does the log say so?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.4",
+          "statement": "From 40 m above the valley at dawn, mist fills the hollows to the horizon and a bank stands across the valley 2 km off. Ridges in front of mist have clean edges, with no halo and no mist drawn over them. No ring, step or change of softness shows where the view volume hands over to the trace, with the camera still or walking.",
+          "inspect": "Capture `fixed` stills at a 10\u00b0 Sun from 2 m and from 40 m, and a `realtime` 40 m walk toward the bank. Judge each whole, and native-size crops of a ridge line against mist and of the band 300 to 600 m from the camera.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.5",
+          "statement": "Under a deck whose base is below the hilltops, the hilltops are hidden along a level, soft base. A camera climbing the hill sees the base come down to it, stands in grey cloud with a visual range of tens of metres, and comes out above a sea of cloud with the Sun on it and other summits standing out of it. Nothing pops as the camera crosses the base or the top.",
+          "inspect": "Capture `fixed` stills from the valley floor, from just below the base, from inside the cloud and from the summit above it, and a `realtime` sequence of the climb. Judge the stills whole and in native-size crops of the base against a hillside, and the sequence at 1x.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.6",
+          "statement": "At a 5\u00b0 Sun the shadows of ridges and of clouds lie across far mist, and mist in shadow is dimmer than mist in sunlight beside it, in step with the lit and shaded land.",
+          "inspect": "Capture `fixed` stills at a 5\u00b0 Sun across the valley under the fair preset, from 40 m. Judge whole and in native-size crops of a ridge's shadow where it crosses from land onto mist.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.7",
+          "statement": "With two stops the layer still obeys M3.4: a texel whose stops moved between two frames by more than its motion explains writes reactive coverage and takes no history, and a cut marks the layer's history invalid.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_depth_contract_gpu",
+          "ask": "Does the test move an occluder across far mist and check the texels it uncovers?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.8",
+          "statement": "In a pan, a walk and with a mover crossing in front of far mist, nothing crawls on a ridge line, no ghost follows the mover, and after a cut the mist is whole in the first frame.",
+          "inspect": "Capture `realtime` sequences at dawn: a 10-second pan across ridges in front of mist, a 40 m walk, a mover crossing, and a cut. Judge consecutive frames at 1x in native-size crops of the edges.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.9",
+          "statement": "In Chrome the far mist and the climb through the deck pass M15.4's and M15.5's lists.",
+          "inspect": "Capture the same stills and the climb in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.10",
+          "statement": "With far mist and a low deck, the paired cost record is taken at 2560\u00d71440 beside M14's for the same view, with the trace's rays, the mean and 95th-percentile samples a ray and each pass's GPU time by name. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene mist-far",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.11",
+          "statement": "The maturity ledger's `E1.clouds` row is current.",
+          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M15.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "M16",
+      "name": "Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "depends_on": [],
+      "quality_bar": "A day in Red Dead Redemption 2: mist that gathers in the low ground at night and lifts with the morning, and air that goes from a crisp far horizon to a heavy haze, every change gradual and none on a beat.",
+      "items": [
+        {
+          "id": "M16.1",
+          "statement": "In a time-lapse from late afternoon to mid-morning on a clear, calm, moist night, mist first appears in the deepest hollows after dusk, deepens through the night, is deepest at dawn, thins from its shallow edges after sunrise and is gone by mid-morning. Nothing pops or returns on a beat. Under the overcast preset the same night has no mist, and in a 10 m/s wind none.",
+          "inspect": "Capture three `realtime` sequences at 60x from the valley's rim: the clear calm night, the overcast one and the windy one. Track one hollow through each, at 1x and frame by frame at dusk and after sunrise.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.2",
+          "statement": "Through sunset, twilight and night the mist takes its colour from the sky and is never brighter than the sky above it; at night it is a dark layer that dims the stars near the horizon.",
+          "inspect": "Capture `fixed` stills at Sun elevations of 2\u00b0, \u22123\u00b0, \u22129\u00b0 and \u221218\u00b0 toward and away from the Sun. Judge each whole and in native-size crops of the mist's top against the sky.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.3",
+          "statement": "As the clear air's visual range goes from 300 km to 5 km, the far ridges, the clouds near the horizon and the far mist fade into one horizon colour together, with no layer left crisp in front of a hazier one, and shafts under broken cloud strengthen as the haze thickens.",
+          "inspect": "Capture `fixed` stills at visual ranges of 300, 60, 20 and 5 km at noon and at a 10\u00b0 Sun under the broken preset, and a `realtime` sweep. Judge the stills side by side and in native-size crops along the horizon.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.4",
+          "statement": "The amount of each fog-table row, moisture, the clear air's visual range and the radiative day are typed controls, with a dawn-mist and a sea-fog preset and a parameter file, and the internal-field overlay shows the ground sources, the datum and the ground band. Changing any of them rebuilds nothing.",
+          "check": "cargo test --locked --offline -p v1-game --test clouds_ground_controls",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.5",
+          "statement": "In Chrome the page declares the same controls, and each preset and the parameter file apply.",
+          "check": "node scripts/check_v1_browser.mjs --case clouds-ground-controls",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.6",
+          "statement": "In Chrome the night's time-lapse and the haze sweep pass M16.1's and M16.3's lists.",
+          "inspect": "Capture the clear calm night at 60x and the haze stills in Chrome. Judge them by those lists.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.7",
+          "statement": "The ground band's and the medium coefficients' cadences are named runtime values with declared invalidations, and moving either changes no query answer and no column the weather map holds.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_ground_knobs_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.8",
+          "statement": "Across the night at 1x, 8x and 60x, the paired cost record is taken at 2560\u00d71440 beside M15's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene mist-day",
+          "ask": "Is the record paired, taken on this milestone's work and set beside the last record for the same view, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.9",
+          "statement": "The maturity ledger's `E1.clouds` row is current.",
+          "ask": "Does the row claim only what this milestone proved, on the targets it ran on, with visuals apart from correctness?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M16.10",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "M11",
-      "name": "Clouds drift over the open sea, shade it and show in its reflections",
+      "name": "Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore",
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -1293,6 +1819,38 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.8",
+          "statement": "`examples/water` gives the weather a surface field made from its own bed and water levels and declares Ground with its cloud selection. A fog-table row for water alone has no density inland of the shore margin, and the trace and the view volume stop the fog at the water's written depth.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test clouds_ground_gpu",
+          "ask": "Did any file of `WATERS` beyond the example's selection change? None may.",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.9",
+          "statement": "A bank of fog stands on the open sea and drifts with the wind onto the shore: its front has depth and a soft top, the sea and the craft fade into it with distance, it shades the water beside it at a 10\u00b0 Sun, and it meets the beach without a line. At dawn steam mist lies in wisps on the lake and thins after sunrise.",
+          "inspect": "Capture `fixed` stills of the bank from the deck camera at 2 km, at its front and inside it, at noon and at a 10\u00b0 Sun, a `realtime` sequence at 8x of the bank reaching the shore, and stills of the lake at dawn and an hour after. Judge each whole and in native-size crops of the bank's foot on the water and at the beach.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M11.10",
+          "statement": "In Chrome the fog bank on the sea passes M11.9's list.",
+          "inspect": "Capture the same stills in Chrome. Judge them by that list.",
+          "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",

@@ -1,0 +1,57 @@
+I. The handover between the view volume and the trace
+  uniform light:
+    visual range   400 m: T off by 1e-138; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 1.000)
+    visual range  2000 m: T off by 8e-39; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 1.000)
+    visual range 10000 m: T off by 9e-18; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 1.000)
+    visual range 40000 m: T off by 1e-14; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 0.947)
+  a shadow edge at 1500 m, 1 to 0.1:
+    visual range   400 m: T off by 1e-138; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 1.000)
+    visual range  2000 m: T off by 8e-39; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0001; ramp 1000 m: S off by 0.0016 (of 0.952)
+    visual range 10000 m: T off by 9e-18; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0007 (of 0.500)
+    visual range 40000 m: T off by 1e-14; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0001 (of 0.217)
+  light falling 1 to 0.1 over 1000-2000 m:
+    visual range   400 m: T off by 1e-138; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 1.000)
+    visual range  2000 m: T off by 8e-39; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0010 (of 0.947)
+    visual range 10000 m: T off by 9e-18; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0004 (of 0.498)
+    visual range 40000 m: T off by 1e-14; ramp    0 m: S off by 0.0000; ramp  200 m: S off by 0.0000; ramp 1000 m: S off by 0.0000 (of 0.217)
+
+II. Mist that pools in hollows
+  amount 0.0: ground under mist  19.3%, mean depth in hollows   19.7 m, on ridges   0.0 m
+  amount 0.2: ground under mist  32.5%, mean depth in hollows   44.7 m, on ridges   0.0 m
+  amount 0.4: ground under mist  47.4%, mean depth in hollows   72.7 m, on ridges   0.0 m
+  amount 0.6: ground under mist  64.0%, mean depth in hollows  100.7 m, on ridges   0.0 m
+  amount 0.8: ground under mist  77.6%, mean depth in hollows  128.7 m, on ridges   1.2 m
+  amount 1.0: ground under mist  88.6%, mean depth in hollows  156.7 m, on ridges  12.1 m
+  largest change of depth for an amount step of 0.001: 0.140 m; of 0.0005: 0.070 m (halves)
+  steepest slope of the mist top 11.7% against the ground's 71.3%
+
+III. Mist through a day: forms on a clear calm night, burns off after sunrise
+  moist, clear, calm         amount at 18h:0.00 20h:0.39 22h:0.97 00h:1.00 02h:1.00 04h:1.00 06h:1.00 08h:0.00 10h:0.00 12h:0.00 14h:0.00
+  moist, overcast, calm      amount at 18h:0.00 20h:0.00 22h:0.00 00h:0.00 02h:0.00 04h:0.00 06h:0.00 08h:0.00 10h:0.00 12h:0.00 14h:0.00
+  moist, clear, 9 m/s wind   amount at 18h:0.00 20h:0.00 22h:0.00 00h:0.00 02h:0.00 04h:0.00 06h:0.00 08h:0.00 10h:0.00 12h:0.00 14h:0.00
+  dry, clear, calm           amount at 18h:0.00 20h:0.00 22h:0.00 00h:0.00 02h:0.01 04h:0.05 06h:0.05 08h:0.00 10h:0.00 12h:0.00 14h:0.00
+  largest change of amount in one minute: 0.0219
+
+IV. What the view volume resolves
+  160x90x64 (0.92 M cells, 16 px tiles at 2560 wide): 20 m:   0.2 m across,    3.8 m deep; 100 m:   1.0 m across,   18.9 m deep; 500 m:   5.2 m across,   94.4 m deep; 2000 m:  20.7 m across,  377.5 m deep; 8000 m:  82.9 m across, 1510.1 m deep
+  160x90x128 (1.84 M cells, 16 px tiles at 2560 wide): 20 m:   0.2 m across,    1.8 m deep; 100 m:   1.0 m across,    9.0 m deep; 500 m:   5.2 m across,   45.2 m deep; 2000 m:  20.7 m across,  180.6 m deep; 8000 m:  82.9 m across,  722.4 m deep
+  128x72x64 (0.59 M cells, 20 px tiles at 2560 wide): 20 m:   0.3 m across,    3.8 m deep; 100 m:   1.3 m across,   18.9 m deep; 500 m:   6.5 m across,   94.4 m deep; 2000 m:  25.9 m across,  377.5 m deep; 8000 m: 103.6 m across, 1510.1 m deep
+  96 slices with three quarters inside a handover at 500 m: 20 m:   2.0 m deep; 100 m:  10.1 m deep; 500 m:  50.3 m deep
+  96 slices with three quarters inside a handover at 1500 m: 20 m:   2.4 m deep; 100 m:  11.8 m deep; 500 m:  58.8 m deep; 1500 m: 176.4 m deep
+
+V. The Sun's path through a fog bank: the ground band
+  Sun 30 deg: RMS in transmittance, level-layer rule 0.041 (largest 0.27); product of 80 m columns and 9 heights 0.006
+  Sun 10 deg: RMS in transmittance, level-layer rule 0.152 (largest 0.97); product of 80 m columns and 9 heights 0.007
+  Sun  4 deg: RMS in transmittance, level-layer rule 0.309 (largest 1.00); product of 80 m columns and 9 heights 0.011
+
+VI. Haze as visibility
+  today's fixed aerosol, 4.4e-06 per m at the ground: visual range 244 km
+  visual range 150 km needs aerosol extinction 1.45e-05 per m,    3.3 times today's
+  visual range  60 km needs aerosol extinction 5.36e-05 per m,   12.2 times today's
+  visual range  20 km needs aerosol extinction 1.84e-04 per m,   41.8 times today's
+  visual range   8 km needs aerosol extinction 4.77e-04 per m,  108.5 times today's
+  visual range   3 km needs aerosol extinction 1.29e-03 per m,  293.7 times today's
+  thin mist          visual range 10000 m: extinction 3.91e-04 per m; liquid water 0.002 g/m3 at 8 um droplets
+  mist/fog boundary  visual range  1000 m: extinction 3.91e-03 per m; liquid water 0.021 g/m3 at 8 um droplets
+  fog                visual range   200 m: extinction 1.96e-02 per m; liquid water 0.104 g/m3 at 8 um droplets
+  thick fog          visual range    50 m: extinction 7.82e-02 per m; liquid water 0.417 g/m3 at 8 um droplets

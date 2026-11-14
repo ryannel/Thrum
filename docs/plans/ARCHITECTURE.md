@@ -9,16 +9,16 @@
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads | APPLE-PRESENTATION M3 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | APPLE-PRESENTATION M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish (for ATMOSPHERE its M6, which closes G3s) |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land and seen from beneath, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M1 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
-| 17 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
@@ -99,7 +99,7 @@ the road to the exit.
 | `COOKED-DRAW` | G5 | The direct cooked draw path and the selection between it and the indirect path | [Design](COOKED-DRAW/DESIGN.md) |
 | `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | [Design](APPLE-TILE/DESIGN.md) |
 | `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [brief for M4–M11](#apple-presentation-m4m11-g4) |
-| `ATMOSPHERE` | G3s | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers | [Design](ATMOSPHERE/DESIGN.md) |
+| `ATMOSPHERE` | G3s; track 2 from M7 | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers; the air's optics for a haze the weather sets; the view volume, which integrates air, haze and a provider's medium jointly near the camera, with its history | [Design](ATMOSPHERE/DESIGN.md) |
 | `BASELINE-GUARD` | T2 | The exact-baseline registry, the one-command verifier, its proofs and the proof gate in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
@@ -111,7 +111,7 @@ the road to the exit.
 | `SCENE-VIEWS` | track 2 | Secondary views of the scene: a view's record, its culling, its forward draw with the scene's lights, shadows and air, its targets, and which contributions draw in it | [Brief](#scene-views) |
 | `RIVERS` | track 2 | The flow solver that prepares a chart (level, current, loss); fall records, their sheets and plunges; the flow's roughness gains | [Brief](#rivers-and-puddles) |
 | `PUDDLES` | track 2 | The hollows rain fills and each one's fill; the rain rate's use; rain rings; the wetness of ground and the forward material's reading of it | [Brief](#rivers-and-puddles) |
-| `CLOUDS` | track 2 | The weather field, its state's step and the f64 references (`thrum-cloud-model`); the weather map, cloud density and noise, the Sun-path optical-depth product, the cloud layer and its history, the sky overlay, placed-volume sampling (`thrum-clouds`); the cloud selection in `examples/v1-game` and `examples/water` | [Design](CLOUDS/DESIGN.md); [brief](CLOUDS/BRIEF.md) |
+| `CLOUDS` | track 2 | The weather field, its state's step and the f64 references (`thrum-cloud-model`): every condensate from the cloud tops to mist, fog and low cloud on the ground, and how much haze the air holds; the weather map, cloud density and noise, the Sun-path optical-depth product in its cloud and ground bands, the cloud layer and its history, the sky overlay, placed-volume sampling, the medium coefficients it writes for the view volume (`thrum-clouds`); the cloud selection in `examples/v1-game` and `examples/water` | [Design](CLOUDS/DESIGN.md); [brief](CLOUDS/BRIEF.md) |
 
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
 (G1 and G2S), input and replay in `thrum-network` and core, and game content (the valley, presets, hull data,
@@ -173,6 +173,11 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    then running water, then rain. `RIVERS`' flow solver is CPU work in files of its own and can run beside
    `WATERS` once `WATERS:M1` is Done. `SCENE-VIEWS` is renderer work that only `WATERS` M14 waits for, so it
    can be built at any point after `CULLING:M3`, `ATMOSPHERE:M5` and `EFFECT-GRAPH:M3`.
+9. **The atmosphere as a whole** ([below](#the-atmosphere-as-a-whole)). `CLOUDS` M13 (mist, fog and low cloud
+   on the CPU) follows its M1 and needs nothing. `ATMOSPHERE` M7 (the view volume, haze and shafts) and M8 (a
+   test fog) follow its M6, so they wait for TAAU and for G3s to close, in `thrum-render`'s atmosphere files.
+   `CLOUDS` M14 to M16 (mist near the camera, far mist and low cloud, mist through a day) follow its M10 and
+   `ATMOSPHERE:M8`.
 
 **The order in which the remaining modules are planned**, each a `plan-module` run from its brief below:
 `APPLE-PRESENTATION` M4–M11 (migration of [the drafted milestones](../evidence/APPLE-PRESENTATION/M4-M11-milestone-drafts.md)).
@@ -222,9 +227,12 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:M5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
-| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2 (a diagnostic stand-in in `ATMOSPHERE:M5`) → `ATMOSPHERE` receivers, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
-| **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
-| Ordered medium segments `(T,S)` and the reflection provider. The cloud segment never starts below its profile's lowest base and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
+| **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band**, read at the receiver's own position and added to the field's value, so land inside fog loses its Sun ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its M2, the ground band from its M14 (diagnostic stand-ins in `ATMOSPHERE:M5` and `M8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
+| **Sky overlay and haze scale**: a cube of cloud `(S,T)` around the camera, which `ATMOSPHERE` composes over the sky before it filters its reflection and diffuse products, and, in a scene without the view volume, one number a frame that scales the air's solar in-scatter. So ambient light, reflections and haze follow the clouds, and the sea reflects them through the environment reflection product | `CLOUDS:M8` → `ATMOSPHERE`'s products, and through them the forward pass and `WATERS` | C08, [CLOUDS](CLOUDS/DESIGN.md#the-sky-the-world-sees), [rulings 3 and 4](#seam-rulings-for-clouds) |
+| Ordered medium segments `(T,S)` and the reflection provider. Condensate is split along a view ray by distance, at a handover: nearer, it is in `ATMOSPHERE`'s view volume, integrated jointly with the air; beyond, it is the trace's segment, which stops at the scene's depth and is composed with the air once ([CLOUDS](CLOUDS/DESIGN.md#the-visible-layer)). The two shares sum to one. Water composes its own air, surface and water segments in its one pass and **writes scene depth**, so a medium drawn after it stops at the water; `WATERS` precedes `CLOUDS` in a scene's contribution list | `WATERS`, `CLOUDS` → V3 composition in `ATMOSPHERE` and the forward pass | C08, [WATERS](WATERS/DESIGN.md#optics) |
+| **View volume and medium coefficients**: a scene may declare the view volume, and then the lent aerial `(T,S)` to a point is the joint transport of air, haze and a provider's medium near the camera, with the same arguments and units. A provider writes three coefficients (extinction, a solar kernel that already holds its own optical depth and phase, an ambient source) at the sample points the volume names, weighted by its near weight; `ATMOSPHERE` multiplies the kernel by its Sun light and the scene's shadow, sums with the air and integrates once. The sky, the Sun's disc and stars take the volume's terminal pair. A scene that declares none is unchanged | `ATMOSPHERE:M7` (the volume, with air and haze), `ATMOSPHERE:M8` (a medium) → every reader of the lent aerial operation; `CLOUDS:M14` provides the medium | C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera), [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud), [rulings 6 to 8](#seam-rulings-for-clouds) |
+| **The air's haze**: the aerosol's amount, as the clear air's visual range. The weather state holds it; `ATMOSPHERE` takes it as an input of its air profile and recomputes its charts, with today's constant as the default | `CLOUDS:M13` (the state), `ATMOSPHERE:M7` (the input) → `ATMOSPHERE`'s charts | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) |
+| **Surface field**: the height of the ground and the level of any water, on a grid, which a game gives the weather as data so that mist can pool in hollows and fog can keep to water. The engine never reads terrain meshes or the water map for it | games → `CLOUDS` | [CLOUDS](CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud) |
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
 | **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:M1` (placements and leases), `CONTENT-LOOP:M2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
@@ -341,15 +349,34 @@ whichever builder lands second integrates on top. A fifth ruling covers the two 
    the incident-light meter has a Sun term without the cloud factor, it gains it at its metering point.
 4. **A haze scale** (`CLOUDS` M8). A provider may give one number a frame that multiplies the solar part of the
    aerial in-scatter. Transmittance and the night term are untouched. It is the stated approximation
-   `ATMOSPHERE`'s design left to `CLOUDS` for in-scatter under cloud: no shafts and no colour shift.
+   `ATMOSPHERE`'s design left to `CLOUDS` for in-scatter under cloud: no shafts and no colour shift. A scene
+   that declares the view volume does not take it, because there the air is lit sample by sample through the
+   cloud factor; whichever of `CLOUDS` M8 and `ATMOSPHERE` M7 lands second makes that so.
 5. **A cloud selection in two games** (`CLOUDS` M2 in `SHOWCASE`'s `examples/v1-game`, M11 in `WATERS`'
    `examples/water`). Each game gains a selection that is off by default. With it off, the game's world, tick page,
    compiled graph and frames are what they were, and no item of the owning module changes. With it on, the game
    keeps a weather state in its world, adds the cloud contribution after any sea, and the labelled stand-in
    shade provider is not used. `CLOUDS` does not edit the showcase's generator, routes or exit configuration.
-   Putting clouds in the V1 exit scene by default would change the exit, which is the owner's.
+   Putting clouds in the V1 exit scene by default would change the exit, which is the owner's. With the
+   Ground capability the selection also gives the weather the game's surface field, made in the game from its
+   own terrain heights (`CLOUDS` M14) or its own bed and water levels (`CLOUDS` M11), and declares the view
+   volume.
 
-Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. `CONTENT-LOOP`'s
+Rulings 6 to 8 are `ATMOSPHERE`'s own milestones and not the `CLOUDS` builder's, because the view volume is
+large, has its own inspections and must leave the V1 scene untouched:
+
+6. **The view volume takes a provider's medium coefficients** (`ATMOSPHERE` M8), as
+   [the interface](#interfaces) states. `ATMOSPHERE` never evaluates a density, a phase or a medium's own
+   shadow, and a provider never integrates the air.
+7. **A ground band of the Sun-path optical depth** (`ATMOSPHERE` M8). A provider may register optical depth
+   toward the Sun at heights above the ground, with where the land blocks the Sun beyond the shadow cascades
+   kept apart from it. The one cloud-factor function adds the band's value at a receiver's own position to the
+   2D field's. Only the view volume's cells read the land's blocking; no surface does.
+8. **The air's haze is an input** (`ATMOSPHERE` M7), with today's constant as its default and no change of
+   epoch when it moves.
+
+Once built, rulings 1 to 4 belong to `ATMOSPHERE`: later work there keeps their tests passing. Rulings 6 to 8
+are its own from the start. `CONTENT-LOOP`'s
 anticipated cook-time atlas is not asked for: a game stacks its shapes into one `TVOL` source of power-of-two
 slabs, cooked as any volume is. Its mips stay inside a slab only down to the level with one texel a slab, so
 `CLOUDS` reads no coarser level and holds its coordinate inside the slab
@@ -469,12 +496,37 @@ In one line each:
   added three things the same day: surf, reflection of scenery that is off screen, and a camera under water.
 - **Clouds:** one provider that draws a weather-driven sky from clear to overcast and placed cloud volumes from
   the baked library with the same march and light, shades the world through one optical depth, lights correctly
-  from noon to sunset under G3s, and runs shadow-only, at full refresh with governor knobs.
+  from noon to sunset under G3s, and runs shadow-only, at full refresh with governor knobs. The owner added mist
+  and fog on 14 November ([the atmosphere as a whole](#the-atmosphere-as-a-whole)).
 
 **Consolidation** means one module per provider. The two cloud paths become one `CLOUDS` module. Judged from first
 principles on 14 November, it is one medium and not a hybrid of two paths: the deterministic weather field is the
 authority, convective cells, a deck and shapes cooked from density volumes are sources of its one density, and
 which a sky has is the game's data ([CLOUDS](CLOUDS/DESIGN.md#judged-from-first-principles)).
+
+## The atmosphere as a whole
+
+The owner, 14 November 2026: "Oh and for clouds we also need to be taking into account mist / fog. We want a
+plan that's able to deliver on top quality atmosphere." Sky, clouds, haze, mist and fog are one medium, and its
+state has two kinds, each with one owner.
+
+| Kind of state | Owner | Why there |
+|---|---|---|
+| What is in the air and where: cloud, fog and mist as one condensate, the amount of haze, wind, and the weather state a game steps | `CLOUDS` | Fog is cloud at the ground. One field gives one density, one optical depth toward the Sun, one light model and one headless query, so a deck can come down onto the hills and a game can ask how far it can see |
+| What light does in the air: the gases and the aerosol's optics, the charts, the sky, and the transport from the camera to any point and from the Sun to any receiver | `ATMOSPHERE` | Near the camera fog overlaps the air, which C08 requires one owner to integrate jointly, and every surface already reads that owner's aerial product |
+| The surface field and the fog table | The game | Content, like the type table |
+
+The picture is made by two integrators that share the one density and light: `ATMOSPHERE`'s view volume to a
+handover a few hundred metres out, where fog meets the ground, water, props and the camera, and `CLOUDS`' trace
+beyond, where mist is a soft shape on the land. The assumptions this replaces are listed in
+[CLOUDS' design](CLOUDS/DESIGN.md#judged-again-for-the-whole-atmosphere) and
+[ATMOSPHERE's](ATMOSPHERE/DESIGN.md#what-this-replaces). In short: fog is no longer a separate provider below
+the cloud base; the camera and the land may stand in cloud; haze is no longer a constant; shafts of light are
+no longer left out; `ATMOSPHERE` gains two milestones of its own after G3s; and RENDER-SPEC §5's joint froxel
+integrator, which had no owner, is `ATMOSPHERE`'s view volume. No other module's design, plan or item changes:
+`WATERS` reads fog through the lent aerial operation and writes the depth the trace stops at, and a
+`SCENE-VIEWS` mirror carries clear air until its own plan says otherwise. The V1 exit scene declares none of
+this and does not change.
 
 ## Water as one system
 
@@ -1080,6 +1132,16 @@ For [water as one system](#water-as-one-system), each recorded as an assumption 
     mirrors for two water levels in a view, through a new module, `SCENE-VIEWS`; and under water with no
     caustics or shafts of light.
 
+For [the atmosphere as a whole](#the-atmosphere-as-a-whole), each recorded as an assumption in
+[CLOUDS' plan](CLOUDS/PLAN.md#open-for-the-human) or [ATMOSPHERE's](ATMOSPHERE/PLAN.md#open-for-the-owner):
+
+19. **Where fog sits in the order.** Fog near the camera waits for `ATMOSPHERE` M6, so for TAAU and for G3s to
+    close. The owner can ask for the view volume sooner, at the cost of track 2 work in the atmosphere files
+    while G3s is still open.
+20. **What the mist does by itself.** It forms after dusk and burns off after sunrise from the weather state,
+    and low cloud can be climbed through to a summit above it. Narrower readings drop items the plan names.
+21. **Lamps in fog** are not planned: the Sun, the sky and the ground light the air; local lights do not.
+
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
 7. **When track 3 starts.** The brief says after V1, and this plan holds every track 3 module until `SHOWCASE` is
@@ -1114,7 +1176,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   shade is allowed behind a selection that leaves the V1 exit scene as it is.
 - The clouds' assumption has moved to [CLOUDS's plan](CLOUDS/PLAN.md#open-for-the-human).
 - `SCENE-VIEWS` assumes a second view may draw less than the main one (coarser detail, a shorter view distance,
-  no water and no clouds), and that it is built for water's mirror first, with probes and portals left for
+  no water and no clouds, and clear air where the main view has fog), and that it is built for water's mirror first, with probes and portals left for
   later consumers.
 - The track 3 assumptions have moved to their modules' plans: the readings of "2D support in the engine" to
   [RENDER-2D](RENDER-2D/PLAN.md), [SIM-2D](SIM-2D/PLAN.md) and [GAME-UI](GAME-UI/PLAN.md), "no gamepad" to
@@ -1267,3 +1329,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   mirrored scenery) and its existing numbers kept. `SCENE-VIEWS` added at row 16 with a brief, the mirror-view
   interface and ruling 4; later rows renumbered. `SEA`, `CLOUDS` and every other module's done-when file are
   unchanged.
+- 2026-11-14 The owner: "Oh and for clouds we also need to be taking into account mist / fog. We want a plan
+  that's able to deliver on top quality atmosphere." Ownership settled in
+  [the atmosphere as a whole](#the-atmosphere-as-a-whole): the weather, in `CLOUDS`, owns every condensate from
+  cloud tops to ground mist and the amount of haze; `ATMOSPHERE` owns the air's optics and the view volume that
+  integrates air, haze and a medium jointly near the camera. `CLOUDS` gained M13 to M16 and three items in M11;
+  `ATMOSPHERE` gained M7 and M8 after G3s. Rulings 6 to 8 and three interfaces were added and ruling 4 narrowed.
+  `CLOUDS` M1's items are unchanged. No contract's text and no exact baseline changed.

@@ -299,3 +299,21 @@ The exact environment command now passes on hardware Chrome from a fresh source 
 `tmp/`; output confinement and existing-directory refusal still pass. Renderer inputs and capture
 helpers are unchanged, and the saved selection records the harness-only hash change.
 [Regression evidence](../../evidence/ATMOSPHERE/m5-claim.md).
+
+
+## 14 November 2026 — re-plan for the atmosphere as a whole
+
+- 2026-11-14 Owner, through the lead: "Oh and for clouds we also need to be taking into account mist / fog. We
+  want a plan that's able to deliver on top quality atmosphere." Ownership settled in
+  [the module list](../ARCHITECTURE.md#the-atmosphere-as-a-whole): the weather, in `CLOUDS`, owns what is in the
+  air; this module owns what light does in it.
+- 2026-11-14 Added [the view volume](DESIGN.md#the-view-volume-haze-fog-and-light-near-the-camera) and M7 and M8,
+  after M6 and outside the V1 exit: the air's haze as an input, the aerial product as a joint integration of
+  air, haze and a provider's medium with history, shafts through the scene's shadows and the cloud factor, a
+  ground band of the Sun-path optical depth, and a labelled test medium. Replaced: the fixed aerosol, the
+  clear-air 32³ aerial product where a scene declares the volume, the single plane of the Sun-path field, and
+  M5's two open questions on in-scatter under cloud and a second height band. M5 and M6 are unchanged.
+- 2026-11-14 M5's finished checklist left the plan, which now holds its heading and review; the list is in Git
+  at `3a12c45f`. Not chosen: an analytic height fog over the 32³ volume, a second fog grid, fog marched per
+  pixel, and a module of its own for the view volume, which would put two owners on the aerial product.
+

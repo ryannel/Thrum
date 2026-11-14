@@ -202,6 +202,280 @@
       "diagnoses": 0,
       "status": "not_started",
       "quality_bar": "Time of day as in Red Dead Redemption 2 or Horizon Forbidden West: colour that moves continuously through dawn, noon, sunset, twilight and night, shadows that sit on the ground without acne or steps, and a horizon that reads as distance. Judged in words from the running game with reconstruction on, never against a target image. The parked west-lookout crossing and the deferred exact disk match are known and not judged."
+    },
+    {
+      "id": "M7",
+      "name": "Haze thickens from crisp air to murk under a control, and shafts of sunlight stand in it below ridges and broken cloud, on the Mac and in Chrome",
+      "items": [
+        {
+          "id": "M7.1",
+          "statement": "A scene that declares no view volume is untouched: its composed shader text, passes, resources and submitted frames are what they were before this milestone, on the Mac and in Chrome.",
+          "check": "python3 scripts/view_volume.py off-parity",
+          "lock": "gpu",
+          "ask": "Is the base the commit this milestone started from, recorded before any change, and does the Chrome arm run the same comparison?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.2",
+          "statement": "The air's aerosol amount is an input of the air profile. At its default every chart holds the bytes it held before. At two other amounts the lent Sun light and the transmittance chart meet P1's and P2's bounds against the f64 quadrature evaluated at that amount, the charts follow a change within the lag the profile declares, and a change of amount does not move the environment epoch.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test air_state_gpu",
+          "lock": "gpu",
+          "ask": "Did any existing reference, case, bound or test in the numerical acceptance table change? None may. Is the reference the existing f64 quadrature with its aerosol set, and not the shader's own integrator?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.3",
+          "statement": "With the view volume and clear air, the lent aerial transport to a point, read from the settled volume, matches an f64 integration of the air along that ray within the bound this milestone measures first, at P10's Sun elevations and at points from 5 m to beyond 32 km. Its night part still meets P5.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test view_volume_air_gpu",
+          "lock": "gpu",
+          "ask": "Is the reference an f64 integration written apart from the shader? Is the bound measured on the settled volume and then asserted, and is it set beside what the 32\u00b3 product measures against the same reference?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.4",
+          "statement": "Inside the view volume the air's solar in-scatter is shadowed once. Behind an occluder that the shadow cascades hold, a cell takes no single-scattered sunlight; under a registered Sun-path optical depth a cell takes the cloud factor at its own position; and a registered haze scale is not applied as well. Transmittance and the night term are unchanged by either.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_shadow_gpu",
+          "lock": "gpu",
+          "ask": "Does the test show that the forward decoder's own split of solar in-scatter by a surface's shadow is not applied on top of the volume's, by comparing a shadowed surface's aerial term with the volume's value at its depth?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.5",
+          "statement": "The volume's history follows the frame contract: it advances only with submitted frames, a cut, a new epoch and a replaced device reset it, and after a reset the lent transport is whole in that frame and settled within the number of frames the profile declares. No pipeline or resource is created while the game runs.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_history_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.6",
+          "statement": "As the haze control goes from a 300 km visual range to 5 km, at noon and at a 10\u00b0 Sun, the land fades with distance into the sky's colour at the horizon. The sky and the farthest land meet without a line, and there is no banding, slice step or tile pattern in the haze.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at visual ranges of 300, 60, 20 and 5 km, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m. Judge each whole, the set side by side, and native-size crops along the horizon and across the middle distance.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.7",
+          "statement": "In haze of a 20 km visual range at a 10\u00b0 Sun, shafts of sunlight stand below a ridge line and below the test cloud field's gaps, lined up with the sunlit and shaded ground beneath them, soft-edged, with no stair-step along their depth.",
+          "inspect": "Capture `fixed` stills toward and across the Sun with the labelled test cloud field on and off. Judge each whole and in native-size crops of a shaft against dark terrain and of where it meets the ground.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.8",
+          "statement": "In a pan, a 40 m walk and a time scrub through sunset, the haze and its shafts do not crawl, flicker or trail, and after a cut they are whole in the first frame.",
+          "inspect": "Capture `realtime` sequences of each at a 20 km visual range. Judge consecutive frames at 1x, whole and in native-size crops of a shaft's edge.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.9",
+          "statement": "In Chrome the haze sweep and the shafts pass M7.6's, M7.7's and M7.8's lists.",
+          "inspect": "Capture the same stills and the pan in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.10",
+          "statement": "The view volume's cost is on record: on the Mac and in Chrome, a paired record of the valley with the view volume and without gives the whole frame, each added pass's GPU time by name, the grid chosen and the bytes of each resource. A visible hitch, a pass about 25% over its last comparable record, or a cost that grows faster than the grid has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/view_volume.py cost --scene haze",
+          "lock": "gpu",
+          "ask": "Is the record paired, with load and order, on this milestone's work, and is the Chrome record beside it? Does it say which grid sizes were tried and what the look lost or kept at each?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.11",
+          "statement": "The maturity ledger's atmosphere rows state implementation, correctness, visuals and device apart for the view volume and the haze input, and name what is not qualified: the joint volume against an all-orders reference, and local lights in the air.",
+          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.12",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Haze and light shafts as in Red Dead Redemption 2: distance that fades into the sky's own colour over a range the weather sets, and sunlight that stands in the air as soft shafts lined up with the shadows on the ground, steady as the camera moves."
+    },
+    {
+      "id": "M8",
+      "name": "A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome",
+      "items": [
+        {
+          "id": "M8.1",
+          "statement": "The view volume integrates a provider's medium coefficients jointly with the air. For a uniform slab of known extinction, solar kernel and ambient source standing in the air, the lent aerial transport to points before, inside and beyond the slab matches the retained joint reference within the bound this milestone measures first, with the grid's slices as they are and with twice as many. The coefficients are summed with the air's before integration: composing the slab's own pair with the air's pair gives a different answer on a case the test names, and that answer fails.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_medium_gpu",
+          "lock": "gpu",
+          "ask": "Is the joint reference `scripts/reference/atmosphere/joint_reference.py` or an f64 evaluation written apart from the shader? Does the wrong composition fail by more than the bound?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.2",
+          "statement": "A ray that leaves the volume composes once. Sky radiance, the Sun's disc and a star seen through a slab near the camera equal the reference: the slab's transmittance times the clear-air value plus the in-scatter the slab adds. With a provider registered and its coefficients zero, sky pixels hold the same bytes as with none.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_terminal_gpu",
+          "lock": "gpu",
+          "ask": "Does the far aerial operation beyond 32 km, if `CLOUDS` has built it, compose the same terminal pair, and does the test say whether it was present?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.3",
+          "statement": "The Sun-path optical depth has a ground band. With one registered, the factor on terrain, synthetic instances, cooked meshes, each lit sample of the cooked volume and the incident-light meter is the exponential of minus the sum of the cloud band's and the ground band's optical depth at that receiver's own position, applied once. With none registered the shaders are composed without the read, as before.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test ground_band_receivers_gpu",
+          "lock": "gpu",
+          "ask": "Does the test use a ground band that differs between two heights over one point, so a read at the wrong height fails?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.4",
+          "statement": "A provider's near weight bounds what the volume holds: beyond the end of the ramp the volume integrates air and haze alone, and the lent transport to a point beyond it is the joint value at the ramp's end composed with clear air from there.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test view_volume_handover_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.5",
+          "statement": "With the labelled test bank in the valley at noon and at a 10\u00b0 Sun: the land, props and movers fade into the fog with depth along clean edges; a prop's shadow inside the fog weakens with the fog over it; the Sun's disc dims through it; toward the low Sun the fog is bright and away from it grey. There is no tile, slice or banding pattern on the fog or where it meets terrain.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from outside the bank, at its edge and inside it, toward and away from the Sun. Judge each whole and in native-size crops of the fog against a ridge, a prop and the ground.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.6",
+          "statement": "As the camera walks into the bank, pans inside it and walks out, and as a mover passes through its edge, nothing pops at the edge, no trail follows the mover and the exposure does not pump.",
+          "inspect": "Capture `realtime` sequences of the walk, the pan and the mover. Judge consecutive frames at 1x, whole and in native-size crops.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.7",
+          "statement": "In Chrome the test bank passes M8.5's and M8.6's lists.",
+          "inspect": "Capture the same stills and the walk in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.8",
+          "statement": "The number of sampled textures each forward pipeline and the view volume's passes bind, with a ground band and a medium provider registered, is on record against the capability record and WebGPU's default limits, and every count is within its limit.",
+          "ask": "Does `docs/evidence/ATMOSPHERE/M8-bindings.md` give the count for each pipeline and the limit it was checked against?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.9",
+          "statement": "With the test bank, the paired cost record is taken again on the Mac and in Chrome beside M7's, with the medium's passes timed by name. Each tripped wire has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/view_volume.py cost --scene medium",
+          "lock": "gpu",
+          "ask": "Is the record paired, with load and order, on this milestone's work, with the Chrome record beside it?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.10",
+          "statement": "The maturity ledger's atmosphere rows are current, with the test medium named as a stand-in that `CLOUDS` replaces.",
+          "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M8.11",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Fog near the camera as in Red Dead Redemption 2 and The Last of Us Part II: the land, props and movers fade into it by depth with clean edges, the Sun and its shadows weaken inside it, and nothing trails or pops as the camera passes through."
     }
   ]
 }

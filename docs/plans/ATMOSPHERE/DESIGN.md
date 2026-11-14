@@ -12,6 +12,9 @@ and aerial perspective with time controls". The readiness condition it meets, fr
 [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md#readiness-6-november), is "G3s: finish and qualify the one
 shared sky, Sun, light-transmittance and environment-reflection products."
 
+[The view volume](#the-view-volume-haze-fog-and-light-near-the-camera), at the end, governs M7 and M8, added on
+14 November for haze, fog and shafts of light; it is track 2 and follows G3s.
+
 The sections below through [Frame and cost](#frame-and-cost) are the design M1–M4 were built from and are
 unchanged. [Environment identity and products](#environment-identity-and-products) governs M5 and
 [Closing G3s](#closing-g3s) governs M6. Both were revised on 10 November after
@@ -493,3 +496,160 @@ the first section says.
 **Risk.** Shadow defects have consumed days here before. If the review fails on one item twice, the builder stops
 and reports it instead of opening a new shadow method; a new method is a re-plan with its own cost account.
 
+## The view volume: haze, fog and light near the camera
+
+M7 and M8, added on 14 November 2026. They are track 2: they follow M6, gate nothing in the V1 exit, and leave
+every scene that does not ask for them as it is.
+
+**The owner's request**, 14 November 2026: "Oh and for clouds we also need to be taking into account mist / fog.
+We want a plan that's able to deliver on top quality atmosphere." The lead's task with it: "Revise the plans so
+Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky, clouds, haze, and mist and fog
+(ground fog, valley mist, fog banks over water, low cloud the camera can enter), lit consistently and changing
+with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE
+and any other affected module, keep one authority for each kind of state".
+
+### Who owns what
+
+The atmosphere is one medium with two kinds of state, and each has one owner.
+
+| State | Owner |
+|---|---|
+| What is in the air and where: cloud, fog and mist as one condensate, and how much haze there is | The weather, in `CLOUDS` ([its design](../CLOUDS/DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud)) |
+| What light does on its way to the eye and to a surface: the air's own optics, the charts, the sky, and the transport from the camera to any point | This module |
+| The far condensate's picture, beyond the handover | `CLOUDS`' trace, composed through this module's lent transport |
+
+So this module never evaluates a density, a droplet phase or a cloud's self-shadow, and `CLOUDS` never
+integrates the air or lights a surface. Fog near the camera overlaps the air, which
+[C08](../../design/CONTRACTS.md#c08-light-materials-and-transport--v3-with-e1-and-v4) requires to be integrated
+jointly by one owner; the aerial product is already that owner's, so the joint integrator is this module's.
+
+### What this replaces
+
+- **The air's profile is fixed.** The aerosol is a constant written into the shaders, a visual range of about
+  244 km. It becomes an input, so the weather can thicken and thin the haze.
+- **The aerial product is clear air in a 32³ volume.** In a scene that declares the view volume it is the joint
+  transport of air, haze and a provider's medium, at a finer grain near the camera. A scene that does not
+  declare it keeps the 32³ product, bit for bit.
+- **One plane for the Sun-path optical depth**, with a factor of exactly 1 at or above it
+  ([M5](#environment-identity-and-products), and its open question on a second height band). A provider may add
+  a ground band read at the receiver's own position.
+- **In-scatter under cloud is `CLOUDS`' scalar** (that section's first open question). Inside the view volume
+  the air is lit sample by sample, through the scene's shadows and the cloud factor. The scalar stays for a
+  scene without the view volume.
+- **`CLOUDS`' builder builds what clouds need here** (the module list's rulings 1 to 4). Those stand. The view
+  volume is larger and is judged by its own inspections, so it is this module's own milestones.
+- **[RENDER-SPEC §5](../../design/RENDER-SPEC.md#5-initial-atmosphere-fog-and-transport-operator)'s joint froxel
+  integrator** was a proposal with no owner or plan. This is it, for the Sun and the sky; its participating
+  local lights are not built.
+
+### Cues
+
+| Cue | Where it must hold | Plausible wrong substitute, and what rejects it |
+|---|---|---|
+| V1 Haze: the land fades with distance into the sky's colour, over a range the weather sets | Clear-air visual range 3 to 300 km; noon to twilight; Mac and Chrome | A tint by depth. Rejected by the sky and the farthest land meeting without a line at every range |
+| V2 Shafts: sunlight stands in the haze below ridges, props and broken cloud | Low Sun and noon; visual range 8 to 60 km; within the shadow cascades and under a registered Sun-path optical depth | A screen-space streak from the Sun's disc. Rejected by shafts that stay when the Sun is off screen and that meet the lit ground beneath them |
+| V3 A medium near the camera: the land fades into fog by depth, surfaces inside lose their sunlight by the fog between them and the Sun, the sky, the Sun's disc and stars dim through it, and the camera passes in and out | A provider's medium of visual range 30 m to 10 km, from the camera to the provider's handover | A fog composed over the finished frame by depth. Rejected by a slab integrated jointly with the air against the reference, and by a shadow that weakens inside the fog |
+| V4 Steady: nothing crawls, trails or flickers as the camera pans, walks or the Sun moves, and a cut is whole in its first frame | Pan, walk, time scrub, cut; a mover through the fog's edge | Heavy history that hides noise while the camera is still. Rejected frame by frame in the walk and behind the mover |
+| V5 Absent means absent | Every scene that declares no view volume | A volume that is filled and not read. Rejected by identical shader text, passes, resources and frames |
+
+The bar is haze, shafts and near fog in Red Dead Redemption 2 and The Last of Us Part II, in words.
+
+### Research
+
+Fog near the camera in shipped engines is a grid aligned to the view frustum
+(Wronski 2014; [Hillaire 2015](https://www.slideshare.net/DICEStudio/physically-based-and-unified-volumetric-rendering-in-frostbite),
+slide text read; [Unreal's volumetric fog](https://dev.epicgames.com/documentation/en-us/unreal-engine/volumetric-fog-in-unreal-engine),
+read whole; The Last of Us Part II, abstract read). Frostbite's is 8×8-pixel tiles by 64 slices: media are
+written into it as extinction, scattering and phase, a pass lights each cell from the Sun through the shadow
+cascades and from the sky, samples are jittered and blended 5% new to 95% history, and a last pass integrates
+along the ray with a step that conserves energy. It cost 2.95 ms on a PlayStation 4 at 900p; Unreal's costs 1 ms
+there. Unreal states the limits this design avoids: its grid hands over to an analytic fog that "can't be
+blended to match precisely", and its fog casts no shadow. Red Dead Redemption 2 (Bauer 2019, abstract only)
+joins "cloud and fog rendering" in one "voxelization and raymarching approach". Hillaire 2020's aerial volume,
+which this module already has, is the same grid at 32³ with the air alone in it.
+
+| Candidate | Verdict |
+|---|---|
+| Keep the 32³ aerial volume and add an analytic height fog on top | Two media integrated apart over the same air, which C08 rejects; no shafts; fog that cannot pool, drift or take a bank's shape |
+| A second grid for fog, composed with the aerial volume | The same overlap, and two lookups on every surface |
+| Fog marched for each pixel after the opaque pass | Transparent surfaces and water cannot read it at their depth, and its history breaks at every moving edge near the camera |
+| **One grid: the aerial product itself, integrating the air, the haze and a provider's medium coefficients jointly, lit through the scene's shadows, with history** | **Selected.** Every reader of the lent aerial operation gets fog and haze once, with no change of its own |
+
+### Mechanism
+
+**A scene declares it.** The view volume is a scene-build fact, like the Sun-path provider. Without it the
+aerial product, the shaders, the passes and the frames are today's. With it the aerial product is the view
+volume, and the lent "aerial `(T,S)` to a point" keeps its arguments, units and support: any reader gets the
+joint transport.
+
+**The air's haze is an input.** The air profile takes the aerosol's amount at the ground, with today's value as
+the default. The charts that depend on it (transmittance, multiple scattering, the sky view, the night profile)
+follow a change within a lag the profile declares; at the default their bytes are today's. Changing the amount
+is a recomputation of contents, like the Sun moving, and does not move the environment epoch. A weather provider
+supplies the amount; without one a scene sets it.
+
+**The grid.** Cells aligned to the view frustum: tiles of pixels across, slices in distance. Most slices lie
+inside the provider's handover distance, where condensate is; the rest carry air and haze to 32 km. The sizes
+are recipe values and knobs (RENDER-SPEC proposes 160×90×64 on desktop and 128×72×32 in the browser, and
+`CLOUDS`' proof part IV gives the cell sizes).
+
+**A cell.** Each frame every cell is sampled at one jittered point. There the pass takes the air's own
+coefficients; a registered provider's **medium coefficients**, read from a texture the provider writes at the
+same points (extinction, a solar kernel and an ambient source, already weighted by the provider's near weight);
+the Sun's light at the point, from the transmittance chart; the scene's shadow, from the cascades inside their
+range; and the Sun-path optical depth. The air's single-scattered sunlight is multiplied by the shadow and by
+the cloud factor at the point. The provider's solar kernel is multiplied by the Sun's light and the shadow
+only, because the provider has already put its own optical depth into the kernel, once for each scattering
+order. Coefficients are summed, then the cell is integrated with the step that conserves energy.
+
+**History.** A cell's value is blended with its history, reprojected through the cell's world position and the
+previous view. History advances only with submitted frames, and a cut, a new epoch, a replaced device or a
+provider's reset marks it invalid, after which the volume is filled from that frame alone and settles within a
+declared number of frames.
+
+**Rays that leave the volume.** Beside the joint pair, the volume carries at its far end the provider's
+transmittance `R` and the in-scatter the medium added over clear air, `ΔS`. The sky, the Sun's disc and the
+stars, which are drawn through clear air, become `R·L + ΔS`. With no medium `R` is 1 and `ΔS` is 0, exactly.
+`CLOUDS`' compose already reads the lent transport at its cloud's front distance, so it needs no change.
+
+**The ground band.** A provider may register, beside its 2D Sun-path field, a ground band: optical depth toward
+the Sun at heights above the ground, read at a receiver's own position and added to the 2D field's value. The
+one cloud-factor function reads both, so every direct-Sun receiver, the cooked volume's samples and the
+incident-light meter take fog's shade once. The band may also say where the land blocks the Sun beyond the
+cascades; only the view volume's cells read that, never a surface.
+
+**A test medium** in `examples/v1-game`, behind an opt-in control and labelled as a stand-in, writes the medium
+coefficients and a ground band for an analytic bank. It proves the path; `CLOUDS` M14 replaces it.
+
+### Check that it can work
+
+The joint transport is the aerial integrator this module already runs, with more cells, more terms in each and a
+history. Its parts are shipped practice at 1 to 3 ms on a 2013 console. `CLOUDS`' design proof
+([part I](../../evidence/CLOUDS/design-proof/whole-atmosphere-proof.txt)) shows that a medium split by a near
+weight composes with the far part to the exact transmittance. The identity for a ray that leaves holds because
+the medium's transmittance multiplies the air's: `T_joint = R·T_air`, so `S_joint + T_joint·L_beyond` equals
+`ΔS + R·(S_air + T_air·L_beyond)` with `ΔS = S_joint − R·S_air`. Unrun: the look, the history's steadiness and
+the cost, which M7 sees first.
+
+### Risks
+
+| Risk | Early sign | Wrong substitute to refuse |
+|---|---|---|
+| The off path is not free | A scene without the view volume composes different shader text or one more pass | Filling the volume and not reading it |
+| Sunlight is shadowed twice in the air | Shafts are too dark, or a shadowed surface's haze differs from the haze beside it | Leaving the forward decoder's own split of solar in-scatter on top of the volume's |
+| The history trails or flickers | A mover leaves a wake in fog; a shaft's edge crawls in a pan | A longer history |
+| The night profile cannot follow a moving haze | Preparing it for a new amount takes longer than the declared lag | Freezing the haze at night without saying so. If preparation is too slow, M7 records it and the proposal for a prepared set of amounts goes to the log |
+| Chrome's sampled-texture limit | Pipeline creation fails with a ground band and a medium registered | Dropping a texture silently |
+| The grid is too coarse for a fog's edge on terrain | Tiles show where fog meets a slope | Blurring the fog |
+
+### Cost
+
+Without the view volume: nothing. With it, each frame: one sample for each cell (0.6 to 1.4 million at the
+proposed sizes) of the air, the charts, the cascades and the Sun-path field, then the integration; with a
+provider, three more reads a cell and the provider's own pass. Recorded paired, on and off, on the Mac and in
+Chrome, with tripwires and no budget ([brief](../BRIEF.md), decision 3).
+
+### Not built
+
+Local lights in the air, a volume for a second camera (so [a mirror view](../ARCHITECTURE.md#scene-views)
+carries clear air until its own plan says otherwise), fog indoors, and any density of this module's own.
