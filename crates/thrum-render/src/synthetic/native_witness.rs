@@ -82,7 +82,7 @@ pub(super) struct Provider {
     submitted: AtomicU64,
     discarded: AtomicU64,
     resets: AtomicU64,
-    completed: AtomicU64,
+    completed: Arc<AtomicU64>,
 }
 
 struct Pipelines {
@@ -109,6 +109,13 @@ pub(crate) struct NativeFrame {
 }
 
 impl Factory {
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::arc_with_non_send_sync,
+            reason = "Shared native/WebGPU ownership model; WebGPU handles stay on their browser thread"
+        )
+    )]
     pub(super) fn new(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
@@ -155,6 +162,13 @@ impl Factory {
         }))
     }
 
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::arc_with_non_send_sync,
+            reason = "Native completion retains this same binding; WebGPU handles stay on their browser thread"
+        )
+    )]
     pub(super) fn binding(&self, source: &wgpu::Texture) -> Result<Arc<Binding>, RenderError> {
         let extent = [source.width(), source.height()];
         let mut extents = self
@@ -215,6 +229,9 @@ fn texture(device: &wgpu::Device, queue: &wgpu::Queue, [width, height]: [u32; 2]
 
 impl Provider {
     fn new(factory: &Factory, extent: [u32; 2]) -> Result<Self, RenderError> {
+        if extent.contains(&0) {
+            return Err(RenderError::TargetExtent);
+        }
         let output = texture(&factory.device, &factory.queue, extent);
         let histories = std::array::from_fn(|_| texture(&factory.device, &factory.queue, extent));
         let zero = texture(&factory.device, &factory.queue, [1, 1]);
@@ -267,7 +284,7 @@ impl Provider {
             submitted: AtomicU64::new(0),
             discarded: AtomicU64::new(0),
             resets: AtomicU64::new(0),
-            completed: AtomicU64::new(0),
+            completed: Arc::new(AtomicU64::new(0)),
         })
     }
 
@@ -372,6 +389,11 @@ impl NativeFrame {
             pass.set_bind_group(0, &provider.groups[self.side], &[]);
             pass.dispatch_workgroups(1, 1, 1);
         } else {
+            #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+            {
+                let _ = (device, segments);
+                unreachable!("native recording requires the admitted Apple backend");
+            }
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             {
                 let preceding = std::mem::replace(
@@ -413,7 +435,11 @@ impl NativeFrame {
         provider.valid.store(true, Ordering::Release);
         provider.reserved.store(false, Ordering::Release);
         self.committed = true;
-        NativeCompletion(Arc::clone(&self.binding))
+        NativeCompletion {
+            completed: Arc::clone(&provider.completed),
+            #[cfg(not(target_arch = "wasm32"))]
+            _binding: Arc::clone(&self.binding),
+        }
     }
 
     pub(super) fn history(&self) -> &wgpu::Texture {
@@ -421,10 +447,16 @@ impl NativeFrame {
     }
 }
 
-pub(crate) struct NativeCompletion(Arc<Binding>);
+pub(crate) struct NativeCompletion {
+    completed: Arc<AtomicU64>,
+    // Native handles are retained until delivery. WebGPU owns its resource
+    // lifetimes and only the thread-safe counter enters its Send callback.
+    #[cfg(not(target_arch = "wasm32"))]
+    _binding: Arc<Binding>,
+}
 impl NativeCompletion {
     pub(crate) fn completed(self) {
-        self.0.provider.completed.fetch_add(1, Ordering::Relaxed);
+        self.completed.fetch_add(1, Ordering::Relaxed);
     }
 }
 

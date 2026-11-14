@@ -32,6 +32,7 @@ impl DeviceSite {
         self.0.create_compute_pipeline(desc)
     }
 
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     pub(crate) fn native_prepared(&self) {
         let _ = &self.0;
     }
