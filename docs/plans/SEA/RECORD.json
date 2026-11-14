@@ -110,6 +110,37 @@
         "by": "plan",
         "task": "Revisit the SEA design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. But w",
         "at": "2026-11-14T00:03:20Z"
+      },
+      "ready_for_review": {
+        "commit": "e59149ed7d0ad232d98fa4bd93992e6b94fc3efe",
+        "checked": "50e55915dc0ee4cbf308bd00b6f4563180fb2456",
+        "at": "2026-11-14T14:03:13Z",
+        "reused": [
+          "M2.2",
+          "M2.3",
+          "M2.5"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 678789,
+          "cached": 171203328,
+          "output": 348994,
+          "turns": 5
+        },
+        "session_usage": {
+          "input": 678789,
+          "cached": 171203328,
+          "output": 348994,
+          "turns": 5
+        }
       }
     }
   },
