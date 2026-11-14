@@ -133,7 +133,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
     });
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("sea ambient"),
-        source: wgpu::ShaderSource::Wgsl(include_str!("ambient.wgsl").into()),
+        source: wgpu::ShaderSource::Wgsl(crate::SHADER.into()),
     });
     let pipelines = [
         "long_waves",
