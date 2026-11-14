@@ -1,0 +1,57 @@
+Source: 43caeacc430f8c0de2d96cc7a42a8ee729b5890c
+Target: mac-metal, CPU arithmetic without a graphics device
+Command: cargo test --locked --offline -p thrum-sea-model
+Exit: 0
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+     Running unittests src/lib.rs (target/debug/deps/thrum_sea_model-fe7091abd17a4763)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cascades.rs (target/debug/deps/cascades-336b1d58dcba448b)
+
+running 2 tests
+test conjugates_axes_and_high_modes_are_not_lost ... ok
+test full_256_band_matches_direct_sum_at_every_texel_centre ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.41s
+
+     Running tests/conformance.rs (target/debug/deps/conformance-9c40616ea1cfe23d)
+
+running 2 tests
+test invalid_answers_cannot_silently_pass ... ok
+test identical_model_is_zero_and_phase_fault_has_analytic_height ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/long_waves.rs (target/debug/deps/long_waves-39145f853e41b4cb)
+
+running 3 tests
+test one_component_matches_closed_form_at_a_displaced_label ... ok
+test far_point_after_a_day_matches_extended_precision ... ok
+test spatial_and_time_derivatives_match_world_finite_differences ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/spectrum.rs (target/debug/deps/spectrum-bf53d6482abfe015)
+
+running 2 tests
+test wind_height_and_fetch_have_physical_response ... ok
+test disjoint_layers_conserve_independently_integrated_variance ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests/transition.rs (target/debug/deps/transition-378109092a667c6c)
+
+running 1 test
+test every_power_follows_response_and_every_phase_survives_retargeting ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+   Doc-tests thrum_sea_model
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
