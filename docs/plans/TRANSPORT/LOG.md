@@ -56,3 +56,6 @@
   work exists. The script's dry run waited on a lock and was stopped, so the two verifier items were again not
   dry-run. `./dev check-docs` passes. The revised design has not been reviewed; no builder starts until a design
   review returns Design Approved.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 no longer waits for `SHOWCASE:M8` and waits for
+  nothing. The assumptions about waiting for V1 and about asking to leave the Codex sandbox are deleted: the
+  owner gave Codex full access the same day. No item and no word of the design changed, so its approval stands.

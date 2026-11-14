@@ -25,6 +25,12 @@ projectiles on screen at once. The module list's brief for this module, which
 existing modules: an app runner for a second game on the three targets, a repository guard that admits a second
 game, and a world that steps when a session says.
 
+**14 November 2026.** The owner said: "Let's move the 2d engine side of things to before v1 and decouple them.
+But we don't want to start working on the swarm game till v1 lands." The five engine modules no longer wait for
+V1. This module is the game and still does: M1 waits for `SHOWCASE:M8`. Two of the three asks were engine work
+and left this module that day: the iPhone shell for a second game is `GAME-UI` M6, and a world that steps when
+a session says is `SESSION` M7. The guard that admits a second game stays here, since it names the game.
+
 This design was written after reading the five designs above and the code on main: `thrum-app`'s window and page
 shells, `examples/v1-game-ios`, `thrum-core`'s world lane and `.config/architecture.toml`. None of the five
 modules is built, so what this design says of their code is what their designs promise.
@@ -41,7 +47,7 @@ crate names anything of it.
 the five engine modules proved in a real game.
 
 **What exists.** Nothing of the game. `examples/v1-game` is a different game. `thrum-app` runs any game in a Mac
-window and on a page; its iOS shell lives in `examples/v1-game-ios` and serves that one game. The repository
+window and on a page, and, once `GAME-UI` M6 is Done, as an iPhone app through one shared shell. The repository
 guard names one external game.
 
 **Commissioned.** The twelve mechanisms below: one arena, one run of about ten minutes, four heroes, six kinds
@@ -369,10 +375,10 @@ arrives in the slot's frame; alone it is put in the frame directly. The rule rea
 **A driven world.** `thrum-app`'s world lane runs a task that advances on a fixed clock and raises an overload
 when it falls behind. A host's and a client's world must commit the ticks the session names, none, one or
 several, and draw at the session's playout interpolation. That is
-[the module list's ask of core](../ARCHITECTURE.md#what-track-3-asks-of-existing-modules), built here under
-[seam ruling 4](../ARCHITECTURE.md#seam-rulings-for-swarm): a world may be **driven**. Its driver names how
-many ticks to commit at each advance and where the presentation stands between the last two; a driven world
-raises no overload for ticks nobody asked for; and a world on the fixed clock behaves as it did.
+[`SESSION`'s driven world](../SESSION/DESIGN.md#12-a-driven-world), which its M7 builds and proves with the
+reference crowd: a driver names how many ticks to commit at each advance and where the presentation stands
+between the last two. The game supplies the Host and Client drivers, which ask their session, and changes no
+engine crate for it.
 
 **Pausing.** Alone, the pause menu pauses the world lane, as `P` does today. In a match the menu opens over a
 run that carries on, and the lane's pause is not offered.
@@ -470,17 +476,20 @@ On the phone the hero is steered by a stick that appears where a thumb lands out
 They sit under `examples/swarm/`, with the game's sheets and font in `examples/swarm/assets/`. The names are
 fixed here because checks name them; where a file sits inside a package is the builder's.
 
-Three things the game needs are inside state other modules own, and are built by this module's builder under
+Two things the game needs are inside state other modules own, and are built by this module's builder under
 [seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm):
 
 1. **The repository guard admits a second game** (M2).
 2. **The Mac window and the page run a game that brings no sky kit** (M2): whatever `thrum-app`'s shells and
    the capture and packaging scripts still assume of the V1 game or the sky kit.
-3. **The iOS shell serves a second game** (M6). The parts of `examples/v1-game-ios` that name nothing of the V1
-   game move into `thrum-app`, generic over a game as the Mac shell is, and both apps use them. A second copy
-   was not chosen: [two copies of platform policy drift](../PLATFORM-RUNTIME-WEB/DESIGN.md), which is why the
-   browser shell was lifted the same way.
-4. **A driven world** (M7), as [mechanism 7](#7-who-admits-the-frames-alone-and-in-a-match) says.
+
+Two more are engine work that the game only uses, built before it starts:
+
+- **The iPhone app** (M6) is a user of the shell `GAME-UI` M6 left in `thrum-app`, after the V1 game's app and
+  the crowd view's. `swarm-ios` holds the game and nothing of the lifecycle, touch delivery, surface lease,
+  rotation or recovery.
+- **A driven world** (M7) is `SESSION` M7's, as [mechanism 7](#7-who-admits-the-frames-alone-and-in-a-match)
+  says.
 
 ### 12. A run replays from its seed and its inputs
 
@@ -584,7 +593,7 @@ interface tree, event routing, the font product, text drops and the clipboard (`
 socket adapters and the relay (`TRANSPORT`); the session, the connection state, the predicted controller and
 the match proof (`SESSION`); the app runner and typed controls (`CREATOR`); engine capture (`T2-CAPTURE`).
 
-**Asked of other modules.** The four [seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm) of
+**Asked of other modules.** The two [seam rulings](../ARCHITECTURE.md#seam-rulings-for-swarm) of
 [mechanism 11](#11-three-targets-one-game). No milestone is added to another module.
 
 **Contracts.** No contract's text changes. C13's rule-set addition is `SESSION`'s, and this game is its first
@@ -646,8 +655,8 @@ in the closing record as not run.
    the conformance run's wire route, and M5's match.
 8. **The hero's lead over the crowd feels wrong.** Early sign: M7's captures. The three easings of mechanism 9
    are presentation only and can be retuned without touching a rule.
-9. **Lifting the iOS shell breaks the V1 app.** Early sign: M6.3, which runs the simulator checks the other
-   modules left.
+9. **The shared iOS shell does not fit a third app.** Early sign: M6.4's question, and M6.3, which runs the
+   simulator checks the other modules left for the first two.
 10. **The engine modules land differently from their designs.** Early sign: each milestone's first reading.
     The builder writes the difference in the log, and ends `BLOCKED` if a mechanism here cannot stand.
 11. **The simulator cannot keep the pace of a match at the cap.** It proves function only, and a peer too slow
@@ -661,14 +670,15 @@ in the closing record as not run.
 
 - **Targets.** `mac-metal`, `chrome-webgpu` and `ios-sim`, the last for function only. The host is always
   native on the Mac.
-- **Order between modules.** M1 waits for `SHOWCASE:M8`, as all of track 3 does. M2 waits for `SIM-2D:M3`;
+- **Order between modules.** M1 waits for `SHOWCASE:M8`: the game starts when V1 has landed, by the owner's
+  word of 14 November, and every later milestone follows M1. M2 waits for `SIM-2D:M3`;
   for `SESSION:M1`, after which every rule package supplies both halves of the state encoding, so the game's
   components are written once; and for `RENDER-2D:M5`, which leaves the crowd view and the sprite scene in the
   shells. M2 draws no interface, so it does not wait for `GAME-UI`, whose builder may be in the shells at the
   same time: integrate on top of what has landed. M3 waits for `GAME-UI:M4`, which delivers the status
-  display, the modal choice and event routing on the Mac and in Chrome, and M6 for `GAME-UI:M5`, which
-  delivers them on the iPhone simulator. M5 waits for `SESSION:M4`, which delivers the predicted controller on the
-  in-memory link. M7 waits for `SESSION:M6`, its last, which implies `TRANSPORT:M2`.
+  display, the modal choice and event routing on the Mac and in Chrome, and M6 for `GAME-UI:M6`, which
+  delivers them on the iPhone simulator and the shell a second game's app runs in. M5 waits for `SESSION:M4`, which delivers the predicted controller on the
+  in-memory link. M7 waits for `SESSION:M7`, its last, which delivers the driven world and implies `TRANSPORT:M2`.
 - **One command.** `scripts/swarm.py`, with the scenario as its argument, runs every proof that needs a window,
   Chrome or a socket, and `scripts/swarm_sim.py` those that need the simulator's screen. It reuses `SIM-2D`'s conformance command and `SESSION`'s match harness and
   relay, and copies neither.

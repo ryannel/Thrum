@@ -193,7 +193,7 @@
       "name": "One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran",
       "depends_on": [
         "APPLE-TILE:M12",
-        "APPLE-PRESENTATION:M3",
+        "APPLE-PRESENTATION:M11",
         "ATMOSPHERE:M6",
         "CONTENT-LOOP:M3"
       ],

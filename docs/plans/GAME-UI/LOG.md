@@ -72,3 +72,9 @@
   `./dev check-docs` passes. The one new check, M3.14's, came back `fail` through the loop's `try_check`, as it
   should before the work exists; the other commands are unchanged from the first plan. The revised design has
   not been reviewed, and no builder starts until a design review returns Design Approved.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 now names both milestones it uses:
+  `RENDER-2D:M5` and `APPLE-PRESENTATION:M6`, whose EDR present pass the interface stage is drawn in. The
+  level-up choice is worded as a modal choice of four cards in the design, the plan and eight items; what is
+  built is the same. One iPhone shell for every game, engine work that `SWARM` M6 had carried under its ruling
+  3, is now mechanism 12 and a new M6 here, proved with the crowd view as a second app. The revised design
+  needs a design review.

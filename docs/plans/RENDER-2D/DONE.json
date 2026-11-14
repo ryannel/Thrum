@@ -5,9 +5,8 @@
       "id": "M1",
       "name": "A game selects a 2D scene, and sprites reach the screen through the game's own frame with no sky, shadow or light work, on the Mac and in Chrome",
       "depends_on": [
-        "SHOWCASE:M8",
-        "APPLE-TILE:M12",
-        "EFFECT-GRAPH:M3"
+        "EFFECT-GRAPH:M3",
+        "APPLE-PRESENTATION:M3"
       ],
       "items": [
         {
@@ -440,7 +439,7 @@
       "id": "M4",
       "name": "An artist saves a sprite sheet and the running game shows the new art in one frame, on the Mac and in Chrome",
       "depends_on": [
-        "CONTENT-LOOP:M3"
+        "CONTENT-LOOP:M1"
       ],
       "items": [
         {

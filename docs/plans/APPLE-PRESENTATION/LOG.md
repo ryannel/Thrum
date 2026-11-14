@@ -75,7 +75,7 @@
   submitted valley sequences and native crops were inspected, including a real simulation mover. Repository
   gate and milestone checks are recorded separately from visual self-review; no performance or G4 closure
   is claimed. [Builder evidence](../../evidence/APPLE-PRESENTATION/m1/README.md); lead review remains owed.
-  Integration recheck: the first land gate stopped at the final cooked draw-probe check; the identical pinned
+- 2026-11-11 M1 integration recheck: the first land gate stopped at the final cooked draw-probe check; the identical pinned
   binary passed all 13 isolated cases without changes. The final land gate serializes test cases, with every
   assertion and explicit concurrency witness enabled; details are retained with the builder evidence.
 
@@ -116,3 +116,11 @@
 - 2026-11-13 The rebased M2 checkpoint `7bcf2b02` passes all 1,966 exact-image comparisons in 889.44 seconds, under the GPU lock and without reference changes. Runtime and browser-checker source objects match the fully checked `cf0c424a`; the unrelated Mac qualification script required a new covered-content key. The required merge gate is next. [Integration proof](../../evidence/APPLE-PRESENTATION/m2-volume/integration-exact.json.gz).
 
 - 2026-11-13 M2 merged through `agent_loop.py merge` as `ff093ba7`; the repository gate passed and no upstream files came in. The post-merge milestone checker passes all seven items and the repository gate, including Chrome W1–W7 and all 33 regression cases with the same instantiated Wasm hash. Later main changes contain only CULLING plan records and STATUS.md, so they affect no M2 proof. M2 remains `in_progress` for the lead's checks and review. [Target and integration evidence](../../evidence/APPLE-PRESENTATION/m2-volume/README.md).
+- 2026-11-14 M4 to M12 planned, from the lead's task: "APPLE-PRESENTATION M4 to M11 have no done-when entries,
+  so no builder can be given them [...]. Write their done-when items and plans so they can be built, with honest
+  dependencies. Do not change APPLE-PRESENTATION M3". The drafts became items; the drafted M10 is now M10 and
+  M12, and the order is M4, M5, M6, M7, M8, M9, M10, M12, M11. The design settles the EDR transform, the MetalFX
+  exposure fallback, the generation build's lifecycle and the archive; the module list settles seams 5 to 9.
+  Only M8 (`APPLE-TILE:M11`) and M11 (`APPLE-TILE:M12`) wait on another module. The owner's look at EDR is
+  M11's last item. M1 to M3 are byte for byte as they were. The revised design needs its review; until it
+  passes, the script holds the whole module, M3's next step included.

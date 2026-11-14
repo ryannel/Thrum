@@ -48,3 +48,6 @@
   body count (new item M2.12). Both were edges a milestone reviewer would otherwise have tried.
 - 2026-11-13 The plan's ticked step lists became short notes, as the plan-module skill now asks. The changed and
   new checks parse and fail, as they should before the work exists. The revised design has not been reviewed.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 no longer waits for `SHOWCASE:M8` and waits for
+  nothing. The assumption that held it is deleted. No item and no word of the design changed, so its approval
+  stands.

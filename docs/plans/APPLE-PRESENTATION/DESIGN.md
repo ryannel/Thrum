@@ -10,7 +10,8 @@
 
 Revision 3 for Thrum Core review, 7 November 2026; G3t handoffs reconciled 9 November. Revised 10 November after
 [the loop's design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4` (changes requested); a
-fresh design review of this revision is owed. It answers the three independent reviews of revision 1
+fresh design review of that revision passed on 11 November. Revised 14 November for M4 to M12
+([settled below](#m4-to-m12-settled-14-november-2026)); a design review of this revision is owed. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -19,18 +20,19 @@ EDR and a quality governor" and gate G4 for "No pipeline compilation during play
 that put this module on the loop says, word for word: "The owner wants work lined up continuously toward the V1
 exit in docs/BUILD-PLAN.md, so builders always have a next milestone". The task for this revision says, word for
 word: "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks".
-[The module list](../ARCHITECTURE.md) places this module and accepts seams 1–4 below as proposed; M1–M3 are in
-[the done-when file](DONE.json) and M4–M11 are migrated next, when seams 5–9 are settled.
+The task for the 14 November revision says, word for word: "APPLE-PRESENTATION M4 to M11 have no done-when
+entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them [...]. Write their
+done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3,
+which a builder holds."
+[The module list](../ARCHITECTURE.md) places this module and settles seams 1–9 below; every milestone is in
+[the done-when file](DONE.json).
 
-**What a design approval covers.** A Design Approved result for this revision approves M1–M3 and seams 1–4, and
-nothing later. Everything this page says about M4–M11 and seams 5–9 is direction for the plan run that migrates
-them. That run settles, and a new design review reads, at least:
-- the final EDR transform and its H = 1 identity;
-- the output and exposure handoff of the normalising MetalFX fallback;
-- the lifecycle of a generation build (cancellation, device loss, the switch);
-- the archive mechanism.
-
-No builder starts M4 or later on the strength of an approval of M1–M3.
+**What a design approval covers.** A Design Approved result for this revision approves the whole module. M1–M3
+are as the 11 November review approved them and are not changed. For M4 to M12 the review reads
+[the section that settles them](#m4-to-m12-settled-14-november-2026), which holds the four things the earlier
+approval left for it: the EDR transform and its H = 1 identity, the exposure handoff of the normalising MetalFX
+fallback, the lifecycle of a generation build, and the archive mechanism. Where that section and an older
+paragraph of this page disagree, that section governs.
 
 ## Purpose and scope
 
@@ -386,8 +388,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
 - M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the pipeline preparation work: offline
-  metallibs, parallel pre-warm and local archive qualification, all within V1. Their details are designed when M10
-  starts.
+  metallibs and parallel pre-warm, and M12 local archive qualification, all within V1. Their mechanism is
+  [settled below](#pipeline-preparation-m10-and-m12).
 - Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 M10/U1.
 
 **What would change these choices:**
@@ -395,6 +397,132 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - A wgpu Metal 4 path would allow `MTL4FX`.
 - A measured MetalFX loss to TAAU on the valley would keep TAAU on Apple: the registry selects the reconstructor, and
   evidence decides.
+
+## M4 to M12, settled 14 November 2026
+
+The milestones run in this order: M4, M5, M6, M7, M8, M9, M10, M12, M11. They are the drafted M4 to M11 with one
+change: the drafted M10 was two sessions of work, so it is now M10 (libraries cooked ahead of time, and parallel
+preparation) and M12 (the archive). M11, the paired proof, stays last and keeps its number, because other modules
+name it. The drafts' numbers below are carried as written unless a line says otherwise: none is a performance
+gate.
+
+### Extent on three targets (M4)
+
+The render extent is the surface's backing size on the Mac, the oriented surface's on iOS and the canvas's
+backing size in Chrome. A host is still created at an extent its caller names, so offscreen runs, engine capture
+and every exact baseline keep the extent they were retained at: M4 moves no retained image. Chrome has one
+thread, so there a new extent is prepared between two frames as it is today, and the page records the gap; only
+the Mac and iOS build off the render thread.
+
+### The lifecycle of a generation build (M4)
+
+A **request** is what a generation is built for: the backing extent, the display mode (EDR float or 8-bit) and
+the device generation. The frame host holds the latest request, and one build at most.
+
+| State | Entered when | What the render thread does |
+|---|---|---|
+| Steady | A generation is current and matches the request | Draws it |
+| Debouncing | The request's extent changed during a live resize | Draws the current generation, scaled with linear filtering into the drawable; reconfigures the surface at most once a display tick and only while no surface texture is held |
+| Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor is frozen |
+| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, swaps the generation in, resets history and reconstruction, and unfreezes the governor after that frame |
+| Retiring | The swap happened | Keeps the old generation, providers included, until its frames in flight complete, as retirement works today |
+
+- **Cancellation.** A newer request sets the running build's cancel flag, which the builder reads between
+  resource groups. A cancelled build's result, and a finished one whose request is no longer the latest, is
+  dropped on the preparation thread and never bound. Only then does the next build start.
+- **Device loss.** A build belongs to one device generation. Loss during a build drops it; the existing recovery
+  makes the device and the prepared part again and then issues a new request. A result for an old device
+  generation is never taken.
+- **Failure.** A build that cannot allocate leaves the current generation drawing and is reported with its
+  request. The next change of request starts a new build; the same request is not retried in a loop.
+- **The switch** is pointer swaps on the render thread, with one full upload of the new frame buffers in its
+  first frame. No texture, view, bind group or pipeline is created on the render thread at any point of a
+  transition, which the creation counters prove by thread.
+
+### The EDR transform and its H = 1 identity (M6)
+
+The SDR curve is the engine's `neutral_highlights`: with x the largest channel of the exposed colour, it is the
+identity up to the knee k = 0.76, and above it the peak is `1 − d²/(x + d − k)` with d = 1 − k, with the
+colour drawn toward white by `g = 1/(0.15 (x − peak) + 1)`. The EDR transform is the same function with the
+display's current headroom H in place of 1:
+
+```
+d    = H − k
+peak = H − d² / (x + d − k)            for x > k;   the colour unchanged for x ≤ k
+out  = mix(peak, colour/x · peak, 1 / (0.15 (x − peak) + 1))
+```
+
+It passes through the knee with slope 1 for every H, so nothing below the knee changes with headroom. It tends
+to H and never passes it. At H = 1 it is the SDR curve term for term, so one function with H as an argument
+serves both, and the identity is a property of the arithmetic and not a tuned match. Output 1.0 is SDR white.
+The float drawable is written without dither. Against the 8-bit path at H = 1 the only difference is the float
+target's rounding, which is under a tenth of an 8-bit code everywhere, so a frame encoded from the float target
+is within one code of the undithered 8-bit frame: that bound is M6's test.
+
+H is the display record's current headroom, read by the platform and published through an atomic. The present
+pass takes it as a uniform, so a change of H creates nothing. Engine capture's tap reads the float target in
+this mode, so that a capture is the frame the surface was given; what it records in the 8-bit mode is unchanged
+([ruling for seam 6](../ARCHITECTURE.md#interfaces)). The game can read the resolved display mode and H.
+
+### The governor's knobs and state (M7)
+
+The governor owns one registry of **quality knobs**. A knob is a named runtime value with a short list of
+prepared steps and a declared history invalidation: none, marks age, or resets its own effect. Render scale is
+the governor's own knob. Any engine module registers others through `thrum-render`'s public interface without
+`thrum-render` naming it, which is how `WATERS` and `CLOUDS` add theirs; M7 registers the aerial lookup's
+cadence as the first, in the atmosphere files under [seam 7's ruling](../ARCHITECTURE.md#interfaces). The policy
+lowers scale first and effect knobs by tier after it, and a thermal state above nominal lowers the tier. The
+governor's state, which is scale, tier, each knob's value and the reason for the last change, is in the frame
+record and readable by the game.
+
+### MetalFX exposure and the normalising fallback (M8)
+
+The tone pass computes the exposed colour as `stored / A`, where A is the storage scale p times the camera's
+inverse gain, resolved on the GPU each frame. MetalFX is first given the stored colour and an exposure texture
+of `1/A`. M8 measures whether its history follows that through a time-of-day scrub and through a forced step of
+p. If it does not, the fallback is one pre-pass that writes `n = stored · (K/A)` at render extent, with K the
+constant 0.25, the storage scale's own key. Then:
+
+- MetalFX reads n, with an exposure texture of the constant `1/K`, so its input no longer moves with p;
+- its output is in the same domain, and goes to APPLE-TILE's pre-tone input together with the exposure that
+  matches it, which is the constant K. The tone pass divides by the exposure it is handed, as it does today, so
+  it computes the same exposed colour and no second exposure or tone step exists;
+- n is a quarter of the exposed colour, so it has the range the stored colour has wherever p is not clamped: an
+  exposed value up to 2^18 fits the half-float target;
+- TAAU, the reference and the portable recipe are untouched.
+
+Which path is in use is a resolved selection the game reports. The pre-pass's cost is recorded when it is on.
+
+### Pipeline preparation (M10 and M12)
+
+Three techniques, each behind the registry, each kept only if M9's and M12's launch records show it wins:
+
+1. **Libraries cooked ahead of time (M10).** A build step translates each shader the game ships exactly as the
+   running game would (the same translator, version and options), compiles the Metal source to a library, and
+   stores it with its **key**: a hash of the shader's source, the translator's version and options and the
+   Metal language version, with the reflection the runtime needs for each entry point (binding indices and
+   threadgroup memory lengths). At preparation the runtime computes the key it would translate under. On a match
+   it creates the module by passthrough from the library; on any mismatch, or missing reflection, it translates
+   the WGSL then and counts a fallback. That happens before readiness, never in play. The **manifest** is the
+   set of pipelines the route creates, taken from the creation counters.
+2. **Parallel preparation (M10).** The pipelines of the manifest are created across worker threads before
+   readiness. The set that is ready does not depend on the thread count.
+3. **The archive (M12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. A pinned copy of its Metal
+   backend, selected by a `[patch]` entry and kept in the repository with its difference from the release as a
+   reviewable patch, backs that cache with an `MTLBinaryArchive`. In **harvest**, a separate command, pipelines
+   are created with the archive attached and added to it, and it is written to a file whose header carries the
+   device, the OS build and the manifest's digest. In a normal launch the header is checked first: a stale or
+   unreadable archive is set aside and the launch prepares its pipelines the other way, counted by cause. In the
+   **strict witness**, a fresh process attaches the archive read-only and creates every pipeline with Metal's
+   option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to the
+   device that harvested it; nothing is shipped to another device in V1.
+
+The patch is not posted upstream by any agent: U1 is the owner's.
+
+### What the owner judges (M11)
+
+Engine capture proves the values the surface was given, never what the panel emits. So the look of EDR on the
+built-in display is one item of M11, marked as needing the owner, and M6 closes on captures and tests.
 
 ## The system as it runs
 
@@ -505,6 +633,9 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 
 ## Seams for Thrum Core (proposals)
 
+The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 14 November, in
+[its rulings](../ARCHITECTURE.md#interfaces).
+
 1. **Temporal acceptance (RENDER-SPEC:403-409, `history.rs`, C07).** Submission-order acceptance on one queue. The
    presentation-drop contract stays unchanged: TAAU history commits at successful submission of an accepted sample;
    discarded native frames reset the provider before reuse under G3t/C06. Provider reset on failure or generation
@@ -534,7 +665,7 @@ Mac rows standing in for iPhone are labelled proxy. iPhone EDR and timing are ow
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
 8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t M11).
-9. **Pipeline preparation and archives.** Owned by G4 M10 under the G3t boundary: the measured split, offline metallibs through
+9. **Pipeline preparation and archives.** Owned by G4 M10 and M12 under the G3t boundary: the measured split, offline metallibs through
    passthrough, and the Metal `PIPELINE_CACHE` in a pinned patch; upstream later. V1's archive item stays as written.
 
 ## Open questions
@@ -629,8 +760,13 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | M7 governor | M5, seam 7 | M6 |
 | M8 MetalFX temporal | **G3t M11**, seam 8, M5 | M9 |
 | M9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after M4–M8 | G3t M12 |
-| M10 offline metallibs, pre-warm, local archive | D9.1 | M2–M9 (own files) |
-| M11 paired proof | M1–M10, G3t M12 | none |
+| M10 offline metallibs, pre-warm | D9.1 | M2–M9 (own files) |
+| M12 local archive | M10 | none |
+| M11 paired proof | M1–M10 and M12, G3t M12 | none |
+
+Under the loop a module's milestones run one at a time, in the order M4, M5, M6, M7, M8, M9, M10, M12, M11, so
+the middle column's waits inside this module are already met when a milestone starts. The only waits on another
+module are `APPLE-TILE:M11` for M8 and `APPLE-TILE:M12` for M11, and both are in the done-when file.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*

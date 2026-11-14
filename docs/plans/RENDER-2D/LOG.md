@@ -57,3 +57,9 @@
   the scene with no contribution, and M1.3 and mechanism 1 say what a contribution adds.
 - 2026-11-13 The revised design has not been reviewed. No builder starts until a design review returns Design
   Approved. The reviewer should also read C07's new paragraph and seam ruling 1, which the design depends on.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 no longer waits for `SHOWCASE:M8` or
+  `APPLE-TILE:M12`; it waits for `EFFECT-GRAPH:M3` (the after-opaque stage it refuses) and
+  `APPLE-PRESENTATION:M3` (the reconstruction a 2D scene declares none of). M4 waits for `CONTENT-LOOP:M1`, not
+  M3: a sheet uses the lease and the publication, both M1's. No item changed. The design now says the rulings
+  are built on what the owning modules have landed, and that the iPhone app for a second game is `GAME-UI` M6.
+  It needs a design review.

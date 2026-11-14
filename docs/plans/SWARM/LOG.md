@@ -82,3 +82,8 @@
   `GAME-UI:M5`, the milestones that deliver what each uses. The design's "Order between modules" says so. No
   item changed. The swarm gate on `SHOWCASE:M8` stays, by the owner's decision of 14 November. The revised
   design needs its review.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." SWARM is the game and keeps its gate: M1 waits for
+  `SHOWCASE:M8`. The shared iPhone shell and the driven world left this module for `GAME-UI` M6 and `SESSION`
+  M7, so M6 now waits for `GAME-UI:M6` and M7 for `SESSION:M7`; M6.3, M6.4 and M7.1 are rewritten as uses of
+  what those leave, and the game changes no engine crate for either. Rulings 1 and 2 stay. The sandbox
+  assumption is deleted. The revised design needs a design review.

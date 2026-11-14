@@ -62,3 +62,8 @@
 - 2026-11-13 Checks after the revision: the three new item checks parse and fail, as they should before the work
   exists, and `./dev check-docs` passes. The verifier items were again not dry-run. The revised design needs a
   new design review.
+- 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." SESSION waits for nothing of V1's. A driven world,
+  engine work that `SWARM` M7 had carried under its ruling 4, is now mechanism 12 and a new M7 here, proved
+  with the reference crowd in a window on the Mac and in Chrome; it waits for `RENDER-2D:M5`. M1 to M6 are
+  unchanged. The sandbox assumption is deleted: the owner gave Codex full access. The revised design needs a
+  design review.

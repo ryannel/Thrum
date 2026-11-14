@@ -24,7 +24,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
-- Assumption: the module closes only after `APPLE-PRESENTATION`'s unplanned governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8.
+- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8.
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly
 

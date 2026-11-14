@@ -8,7 +8,10 @@
 ## The request
 
 The owner's words weren't passed on with this task; this design answers the lead's task, "Plan module GAME-UI. It
-needs: RENDER-2D", which is row 20 of the module list. What the owner asked for is on
+needs: RENDER-2D", which is row 20 of the module list. On 14 November 2026 the owner said: "Let's move the 2d
+engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till
+v1 lands." So this module waits for nothing of V1's but what it uses, and it took over one piece of engine work
+the game's plan had carried: [one shell for every game](#12-one-shell-for-every-game). What the owner asked for is on
 [the page they set on 10 November 2026](../../design/NEXT-GOAL-SWARM-GAME.md), which [the brief](../BRIEF.md) carries
 as decision 7:
 
@@ -43,7 +46,7 @@ A game builds a small tree of text, bars, panels and buttons. The engine lays it
 over the game's own frame, and gives each key, pointer and touch event to the interface or to the game, never
 both.
 
-**Consumers.** `SWARM` builds its status display, its level-up choice, its menus and its join screen with it.
+**Consumers.** `SWARM` builds its status display, its modal choice, its menus and its join screen with it.
 Any 2D or 3D game can.
 
 **What exists.** `thrum-controls` and its AppKit and DOM panels, which are demo controls outside the frame and
@@ -63,8 +66,7 @@ scene, and text over the 3D valley.
 right-to-left layout, a localisation system, typed text and IME, accessibility bridges and screen readers, a
 gamepad. Also not built: scrolling and clipped regions, an animation or transition system, an authored file
 format for trees, rich text, text selection, sound. Fonts that change size continuously. The game's own screens,
-art and font, which are `SWARM`'s. An app runner for a second game, which is
-[`CREATOR`'s ask for `SWARM`](../ARCHITECTURE.md#what-track-3-asks-of-existing-modules).
+art and font, which are `SWARM`'s. A one-command starter for a 2D game.
 
 **Words used here.** The **interface** is one tree of **nodes** and what it draws. A **control** is a node a
 player can work. A **scope** is a subtree that holds focus, such as a modal. A **point** is the interface's unit
@@ -391,7 +393,7 @@ is the interface's over a control or while an exclusive scope is open, and the g
 The contacts it held are suspended: their later events are swallowed, and a suspended key never moves focus.
 **When the last exclusive scope closes**, the game is told which contacts are still down and worked no control,
 with where each touch now is, and they are the game's again. So a player who holds a direction through a
-level-up keeps walking after it, and the key that made the choice does nothing more. A lost window focus or a
+modal choice keeps walking after it, and the key that made the choice does nothing more. A lost window focus or a
 backgrounded app interrupts the game and cancels every press in the interface.
 
 A scope may open **disarmed** for a time the game gives. It consumes as an exclusive scope does and acts on
@@ -488,6 +490,30 @@ through an authoring edit or a change of scale. An edit may create the second li
 [CONTENT-LOOP](../CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) lets an edit create buffers; it
 compiles nothing.
 
+### 12. One shell for every game
+
+`thrum-app` runs any game in a Mac window and on a page, and `RENDER-2D`'s crowd view is a second program on
+both. The iOS shell is not shared: it lives in `examples/v1-game-ios` and serves that one game, and by M5 it
+also holds this module's event routing and its reports of extent, density and insets. A second game would have
+to copy all of it.
+
+So the parts of `examples/v1-game-ios` that name nothing of the V1 game move into `thrum-app`, generic over a
+game as the Mac shell is: the UIKit lifecycle, touch delivery, the render owner and its surface lease, rotation,
+device-loss recovery, and the reports this module added. The V1 game's app becomes the shell's first user and
+passes every simulator check other milestones left for it, unchanged. A second copy was not chosen:
+[two copies of platform policy drift](../PLATFORM-RUNTIME-WEB/DESIGN.md), which is why the browser shell was
+lifted the same way.
+
+The second user is the crowd view with a small status display, a tick counter and a body count, as its own app.
+It is chosen because it shares nothing with the V1 game: a 2D scene, an interface, no sky kit and no cooked
+valley. The same program is run from the window and the page too, so whatever those shells, engine capture and
+the packaging script still assume of the V1 game is found here and made a property of the game. The status
+display is added in a package of its own, so `examples/crowd-2d-view` keeps drawing through the sprite interface
+alone.
+
+*Range.* The simulator proves function, never speed, and no physical iPhone is run. Nothing here is specific to
+2D: a 3D game with the sky kit uses the same shell, as the V1 game's app shows.
+
 ### Check that it can work
 
 - **One more use of the sprite pass.** `RENDER-2D` provides the pass "at another stage" with a target, a view
@@ -527,6 +553,7 @@ compiles nothing.
 | The font product, its cooker and runtime view; font sheets as leases | `CONTENT-LOOP` (`thrum-cook`, `thrum-asset`, `thrum-asset-gpu`), extended under ruling 3 |
 | Events, the output's extent, density and insets, text drops, the clipboard | The shells: `thrum-app`'s window and page (`CREATOR`), `examples/v1-game-ios` (`PLATFORM-RUNTIME-IOS`), extended under ruling 4 |
 | The interface scene | `SHOWCASE`'s `examples/v1-game`, extended under ruling 4 |
+| The iOS shell: lifecycle, touch, the render owner and its lease, rotation, recovery | `PLATFORM-RUNTIME-IOS`, moved into `thrum-app` under ruling 5 |
 | Demo controls and their panels | `thrum-controls`, unchanged |
 | What an activation means; whether a modal pauses; every screen | The game |
 
@@ -547,7 +574,7 @@ request, beside the list being drawn. The new sheets finish their copies and the
 next frame recorded is lent the new sheets, so the stage draws the prepared list. The shell reads that frame
 submitted and the prepared layout becomes the one it draws and hit-tests.
 
-**A level-up, in order.** The player holds D and walks. The game opens the choice as an exclusive scope,
+**A modal choice, in order.** The player holds D and walks. The game opens the choice as an exclusive scope,
 disarmed for a moment. The game is told its input was interrupted and stops the player; D is suspended. Focus
 is on the first card. The player presses the right arrow and Enter: focus moves, then the second card is
 activated. The game turns that into its command and closes the scope. The game is told D is still down, and the
@@ -572,7 +599,7 @@ Provided, as [the module list](../ARCHITECTURE.md#interfaces-track-3) names them
 
 Asked of other modules. Each is new work inside state another module owns, settled as a
 [seam ruling in the module list](../ARCHITECTURE.md#seam-rulings-for-game-ui): this module's builder builds it,
-after the owner's last milestone is Done, with the behaviour defined here, and it then belongs to the owner.
+on what the owning module has landed by then, with the behaviour defined here, and it then belongs to the owner.
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): the interface stage in both display modes, the
    float mode's inside the present pass that `APPLE-PRESENTATION` M6 builds. Built in M1.
@@ -583,6 +610,8 @@ after the owner's last milestone is Done, with the behaviour defined here, and i
    scene selection, off by default; events, extent, density and insets, text drops and the clipboard from each
    shell. Built in M1 to M5. The shells' translation of their own events sits behind a feature of `thrum-app`,
    so a game with no interface links none of this module.
+5. **The iOS shell for a second game** (`PLATFORM-RUNTIME-IOS`, `CREATOR`): the shell moves into `thrum-app`,
+   generic over a game, as [mechanism 12](#12-one-shell-for-every-game) says. Built in M6.
 
 **Contracts.** No contract's text changes. C11 already gives the interface the first chance at an event and
 keeps a global pause the game's. C06 and C07 are met by the stage being a declared stage of the one executor,
@@ -653,7 +682,7 @@ How a menu feels under the hand is not measured here. It needs a person, and is 
   `scripts/check_v1_browser.mjs`, which needs a browser launch the Codex sandbox grants for each run. `ios-sim`
   for function only, in M5, through the existing iOS shell.
 - **The interface scene** is a selection in `examples/v1-game`, off by default, over `RENDER-2D`'s sprite scene:
-  a status display (a health bar, a timer, three counters), a level-up choice of four cards, a join screen, and
+  a status display (a health bar, a timer, three counters), a modal choice of four cards, a join screen, and
   a player row that the game moves from the input it is passed. A second form puts text and a panel over the
   valley. Its screens are game code; no engine crate names them.
 - **Events in proofs.** In Chrome they are real: the script sends key, mouse and touch events through the
@@ -717,7 +746,7 @@ Each has its reason beside it.
 |---|---|
 | Does each target's sRGB view return authored codes exactly? | M1.1 and M1.8 |
 | What does the stage's pass cost on the Mac and in Chrome? | M1 records it |
-| Does the output half after V1 offer exactly the 8-bit mode and the float mode as designed, for a 2D scene too? | M1's first reading; M1.5's question |
+| Does the output half, once `APPLE-PRESENTATION` M6 has landed, offer exactly the 8-bit mode and the float mode as designed, for a 2D scene too? | M1's first reading; M1.5's question |
 | Does the present pass as built let the stage's rows share its render pass? | M1; M1.10 records which |
 | Can text over a scrim be read over an EDR highlight? | Not judged here; owed with the EDR panel's look, at `SWARM`'s close |
 | Is small text clear at a scale of 1? | M2.11 and M2.12 |

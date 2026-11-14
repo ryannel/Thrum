@@ -2027,7 +2027,10 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "depends_on": [],
+      "depends_on": [
+        "APPLE-PRESENTATION:M7",
+        "APPLE-PRESENTATION:M8"
+      ],
       "quality_bar": "A finished sea: the craft driving through a gale at low Sun, wake and foam behind it, as the sea of Sea of Thieves looks at its best, sharp and stable under MetalFX and smooth on the built-in 120 Hz display. And the island seen whole: sea, beach, lake and channel as one water.",
       "items": [
         {

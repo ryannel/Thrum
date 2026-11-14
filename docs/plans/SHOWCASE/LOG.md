@@ -29,3 +29,5 @@
   script no longer writes. M7.1 now names the five milestones M7 builds on, a new M8.12 names the eleven the
   exit rests on, and both read `RECORD.json`. Both checks were run and fail, as they should until those
   milestones are Done. The design is unchanged.
+- 2026-11-14 M7 now waits for `APPLE-PRESENTATION:M11`, which has a done-when entry from today, in place of the
+  stand-in `APPLE-PRESENTATION:M3`. M7.1 is unchanged. The design is unchanged.

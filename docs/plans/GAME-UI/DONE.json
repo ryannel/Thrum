@@ -5,7 +5,8 @@
       "id": "M1",
       "name": "Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing",
       "depends_on": [
-        "RENDER-2D:M5"
+        "RENDER-2D:M5",
+        "APPLE-PRESENTATION:M6"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
@@ -486,7 +487,7 @@
     },
     {
       "id": "M4",
-      "name": "A level-up choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game",
+      "name": "A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -497,7 +498,7 @@
           "id": "M4.1",
           "statement": "Every contact has one owner from press to release. For any interleaving of presses, moves and releases of keys, pointer buttons and touches with scopes opening and closing: the game is never given a release for a contact it does not hold, and nothing while an exclusive scope is open; opening an exclusive scope tells the game once that its input was interrupted; closing the last one tells it exactly the contacts still down that worked no control, with each touch's position; a lost focus interrupts the game and cancels every press in the interface.",
           "check": "cargo test --locked --offline -p thrum-ui --test routing",
-          "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a level-up, and a touch held on a stick while a second finger chooses, written out as cases?",
+          "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a modal choice, and a touch held on a stick while a second finger chooses, written out as cases?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -537,7 +538,7 @@
         },
         {
           "id": "M4.5",
-          "statement": "On the Mac, in the game's window shell with events entering where the window's own do, the player row moves only from input the game was passed. Through a level-up opened while a direction is held, the player stops at once, each of the four cards can be chosen by keys alone and by pointer alone with exactly one activation each, the held direction moves the player again when the choice closes, and no event the interface consumed appears in the game's input record.",
+          "statement": "On the Mac, in the game's window shell with events entering where the window's own do, the player row moves only from input the game was passed. Through a modal choice opened while a direction is held, the player stops at once, each of the four cards can be chosen by keys alone and by pointer alone with exactly one activation each, the held direction moves the player again when the choice closes, and no event the interface consumed appears in the game's input record.",
           "check": "python3 scripts/game_ui.py route --target mac-metal",
           "ask": "Do the scripted events enter at the same function the window's own key and pointer events enter, with positions in the window's own units? Is the player's position read from the game, and the activation count from what the game was handed?",
           "lock": "gpu",
@@ -561,7 +562,7 @@
         },
         {
           "id": "M4.7",
-          "statement": "In Chrome, with key, mouse and touch events sent through the browser, the same level-up passes by keys, by mouse and by touch, a second touch chooses while a first is held and the first is handed back on close, nothing consumed reaches the game, and a replaced device leaves focus on the same card. A ticket arrives from the page address's fragment and from a paste event.",
+          "statement": "In Chrome, with key, mouse and touch events sent through the browser, the same modal choice passes by keys, by mouse and by touch, a second touch chooses while a first is held and the first is handed back on close, nothing consumed reaches the game, and a replaced device leaves focus on the same card. A ticket arrives from the page address's fragment and from a paste event.",
           "check": "node scripts/check_v1_browser.mjs --case interface-modal",
           "lock": "gpu",
           "target": "chrome-webgpu",
@@ -572,7 +573,7 @@
         },
         {
           "id": "M4.8",
-          "statement": "On the Mac the level-up choice reads at a glance in every state: four cards of equal size with their text inside them, the focused one unmistakable, pressed and disabled cards distinct from it, the scrim even, and the crowd still legible behind.",
+          "statement": "On the Mac the modal choice reads at a glance in every state: four cards of equal size with their text inside them, the focused one unmistakable, pressed and disabled cards distinct from it, the scrim even, and the crowd still legible behind.",
           "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
           "target": "mac-metal",
           "evidence": "",
@@ -583,7 +584,7 @@
         {
           "id": "M4.9",
           "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
-          "inspect": "Capture the scripted level-up at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
+          "inspect": "Capture the scripted modal choice at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -637,7 +638,7 @@
     },
     {
       "id": "M5",
-      "name": "The status display, the level-up choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide",
+      "name": "The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -728,6 +729,105 @@
           "builder_result": "open"
         }
       ]
+    },
+    {
+      "id": "M6",
+      "name": "A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses",
+      "items": [
+        {
+          "id": "M6.1",
+          "statement": "On the iPhone simulator the crowd view runs as its own app through the shared shell. It draws `SIM-2D`'s Crowd trace at 2,000 bodies with every live body a world row, shows a status display of a tick counter and a body count inside the safe area in both orientations, pans by a real touch drag that the interface did not consume, and carries on through a rotation and a trip to the background and back, ending at the trace's retained digest. Function only: no time decides the result.",
+          "check": "python3 scripts/game_ui_sim.py second-app",
+          "lock": "gpu",
+          "ask": "Is the touch a real one made by the UI test, and is the digest read from the app's own record?",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.2",
+          "statement": "The V1 game's iPhone app passes every simulator check that other milestones left for it, unchanged, now that both apps use one shell.",
+          "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch'",
+          "lock": "gpu",
+          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.3",
+          "statement": "The iOS shell both apps use is in `thrum-app`, generic over a game, and names nothing of either program. Neither app keeps a copy of its lifecycle, touch delivery, surface lease, rotation, device-loss recovery or its reports of extent, density and insets.",
+          "ask": "Where does the shared shell live? Does it name a type, string or file of the V1 game or of the crowd view? What iOS code is left in each app's package, and is any of it the same policy written twice?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.4",
+          "statement": "On the Mac the same program, a 2D scene with an interface and no sky kit, runs from `thrum-app`'s window, takes key and pointer events through the interface, and is recorded by engine capture, with nothing in the window shell or the capture scripts naming the V1 game where a second game needs them.",
+          "check": "python3 scripts/game_ui.py second-app --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.5",
+          "statement": "In Chrome the same program is packaged by the script every game uses, runs from the page shell at device pixel ratios of 1 and 2, takes key, mouse and touch events through the interface, and is recorded by engine capture.",
+          "check": "python3 scripts/game_ui.py second-app --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.6",
+          "statement": "On the simulator's screen, in portrait and in landscape, the crowd and its status display are upright and inside the screen, clear of the Dynamic Island, the rounded corners and the home indicator, with crisp text.",
+          "inspect": "Take `simctl` screenshots of the crowd view's app in both orientations, before and after a rotation. Judge each whole and in native-size crops of the status display and each corner.",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.7",
+          "statement": "The creator guide tells a game maker how to give a game a window, a page and an iPhone app from the shared shells, and the maturity ledger says what the shared iOS shell proved and that a physical iPhone is owed.",
+          "ask": "Could a game maker make the iPhone app of a new game from the guide without reading `examples/v1-game-ios`? Does the ledger keep simulator function apart from any device claim?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M6.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "An app runner as indifferent to which game it runs as Bevy's or Godot's: a second game gets a window, a page and an iPhone app by naming itself, with the lifecycle, touch, rotation and recovery it would otherwise copy. On the phone the picture sits clear of the Dynamic Island and the home indicator, as a native game's does."
     }
   ]
 }

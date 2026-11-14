@@ -11,7 +11,7 @@ five engine modules was built, so start each milestone by reading what they left
 
 ## Open for the human
 
-- Assumption: SWARM waits for the V1 exit, as all of track 3 does. Its first milestone, your pick of a concept, could be made earlier if you want the choice in before the engine work ends.
+- Assumption: SWARM waits for the V1 exit, as you said on 14 November, and that includes its first milestone, your pick of a concept. The engine modules it stands on no longer wait.
 - Assumption: "upgrades between waves" means upgrades are chosen only in the break between two waves, as in Brotato. Nothing pauses in the middle of a wave, and there is no Vampire Survivors style level-up during play.
 - Assumption: "thousands on screen at once" means at least 2,000 enemies and projectiles inside one player's view at the run's peak. That makes a common enemy small: about a fiftieth of the screen's height, 22 pixels at 1080p. The concepts in M1 show this at real size, and you can trade count for size there. A window of another shape shows less of the field, never more.
 - Assumption: the game is one arena and one run of about ten minutes, with four heroes, six kinds of enemy and a boss, six weapons and about twenty upgrades. A run is won by killing the last wave's boss or by outlasting that wave. Nothing is kept between runs: no unlocks, no currency, no saved progress.
@@ -24,8 +24,7 @@ five engine modules was built, so start each milestone by reading what they left
 - Assumption: enemies hurt a hero and never push it, so that your own character can answer at once in co-op without being corrected all the time.
 - Assumption: the iPhone simulator proves that the game works, never its speed. A simulator player dropped from a four-player match for being too slow is recorded and is not a failure.
 - Assumption: "smooth" is judged from frame records and real-time engine capture, with no frame time as a pass mark (brief decision 3). A measurement on the built-in panel itself needs someone at the Mac and is named as not run.
-- Assumption: four changes the game needs inside other modules are built by SWARM's own builder under rulings in the module list: a repository guard that admits a second game, a window and page for a game with no sky kit, an iOS shell moved into `thrum-app` so both games share it, and a world that steps when a match says. No milestone is added to those modules.
-- Assumption: builders and reviewers ask to run Chrome, the simulator and sockets outside the Codex sandbox, one request for each run. The other choices are owner decision 11 in the module list.
+- Assumption: two changes the game needs inside other modules are built by SWARM's own builder under rulings in the module list: a repository guard that admits a second game, and whatever the window and page still assume of the V1 game. The shared iPhone shell and a world that steps when a match says are engine work, built before the game in `GAME-UI` M6 and `SESSION` M7.
 - Assumption: you are asked twice: to pick the concept in M1, and to play the finished game in M8. Track 3 closes only on your acceptance, and changes you ask for come first unless you say they can wait.
 
 ## M1 The owner picks the game's name, premise and look from three or more concepts, each shown with its own art in a crowded arena
@@ -80,18 +79,17 @@ leave it and `thrum-transport` as they are.
 
 Criteria: M6.1–M6.6 in the done-when file.
 
-The iOS shell is `examples/v1-game-ios` (`src/ios.rs`, `lease.rs`, `gesture.rs`, `world_policy.rs` and the
-`ios/` scripts), owned by `PLATFORM-RUNTIME-IOS` and extended by `COOKED-DRAW`, `RENDER-2D` and `GAME-UI`. It
-moves into `thrum-app` under seam ruling 3; those modules' simulator checks are M6.3's and stay as they are.
+`GAME-UI` M6 left the iOS shell in `thrum-app`, generic over a game, with the V1 game's app and the crowd
+view's as its users. `swarm-ios` is the third. A change the shell needs is a proposal in the log, not an edit
+here.
 
 ## M7 A player hosting on this Mac and a friend who opens a link in Chrome play a run together over a real connection, each hero answering at once
 
 Criteria: M7.1–M7.11 in the done-when file.
 
-The world lane is `crates/thrum-core/src/sim/world_lane.rs` with `clocked_world.rs`, and the frame host reads
-a world through `FrameWorld` in `crates/thrum-render/src/runtime.rs`; the lane's task already owns its clock,
-so read how far that carries a driven world before changing anything under seam ruling 4. `TRANSPORT` left the
-socket adapters, the relay and `scripts/transport_link.py`, which shows how a page reaches a host.
+`SESSION` M7 left the driven world in `thrum-core` and `thrum-app`, and a windowed match of the reference
+crowd that shows a driver fed by a session. `TRANSPORT` left the socket adapters, the relay and
+`scripts/transport_link.py`, which shows how a page reaches a host.
 
 ## M8 Two to four players on a Mac, in Chrome and on the iPhone simulator play a whole run together through delay and loss, the owner has played and accepted it, and track 3 is closed
 

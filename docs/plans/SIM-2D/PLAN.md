@@ -11,7 +11,6 @@ its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: SIM-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it edits `crates/`.
 - Assumption: "thousands" is proved at 2,000, 5,000 and 10,000 bodies, and 10,000 is the largest crowd claimed.
 - Assumption: the devices are the Mac, Chrome and the iPhone simulator. The simulator shares the Mac's processor, so it proves only that the rules build and run there. A physical iPhone, an x86 PC, Android and other browsers are designed for and not run.
 - Assumption: bodies are circles. Boxes and capsules are shapes a game can ask about, and no rigid-body physics (stacking, joints, spinning) is built.

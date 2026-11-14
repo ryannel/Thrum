@@ -247,6 +247,785 @@
       "diagnoses": 0,
       "status": "in_progress",
       "quality_bar": "Antialiasing as stable as a shipped game's temporal AA at native scale: clean edges and thin features on the held route, no ghosting behind moving things, no crawl on stars or foliage-thin geometry, no brightness lag as time of day changes. Judged in motion from the running game on portable, in words."
+    },
+    {
+      "id": "M4",
+      "name": "The valley fills the window at any size, and keeps presenting while the window is resized",
+      "items": [
+        {
+          "id": "D4.1",
+          "statement": "On the Mac, on both native recipes, the render extent is the window's backing size: at 1280×720 and 1920×1080 points and at full screen the submitted frame covers every backing pixel with no band, one render pixel to one output pixel at scale 1.0, and no host is created at the old fixed 640×360 unless a caller names that extent.",
+          "check": "python3 scripts/apple_presentation.py extent --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does the arm read the submitted frame through engine capture's tap at each size, and compare the extent the host resolved with the window's backing size? Do offscreen, capture and exact-baseline paths still name their own extents, so that no retained image moved?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.2",
+          "statement": "On the iPhone simulator the render extent follows the oriented surface in portrait and in landscape, and the band and the moiré the G3b route recorded are gone. Function only.",
+          "check": "python3 scripts/apple_presentation.py extent --target ios-sim",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.3",
+          "statement": "In Chrome the render extent is the canvas's backing size at device pixel ratios of 1 and 2, follows a canvas resize, and the first frame at a new size carries no history from the old one.",
+          "check": "node scripts/check_v1_browser.mjs --case extent",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.4",
+          "statement": "Through a resize driven by a scripted clock, the host presents the old generation, scaled with linear filtering into the resized drawable, until the new one is ready. The surface is reconfigured at most once a display tick and only while no surface texture is held. A build starts when the extent has been stable for the debounce, on the preparation thread. A newer extent cancels a running build, whose result is never bound. The render thread creates no texture, view, bind group or pipeline at any point.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test generation_transition",
+          "lock": "gpu",
+          "ask": "Read the test. Does it drive the host's own resize and frame calls, count creations by thread, and include a control in which the build runs on the render thread and the count sees it? Is a superseded build's result shown never to reach a frame?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.5",
+          "statement": "A finished build is taken only if it was made for the current device generation and the latest request. Device loss during a build drops the build, and recovery starts a new one. A build that fails leaves the old generation presenting and is reported. The old generation is retired only when its frames in flight have completed. History resets in the first frame of the new generation and in no other frame of the transition.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test generation_transition",
+          "lock": "gpu",
+          "ask": "Read the test. Is each of the four cases driven through the host's own calls, and is the history reset shown by comparing the first new frame with an independently reset one, with a control that keeps history across the switch failing?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.6",
+          "statement": "In the Mac game window, on both native recipes, a resize sweep made in code and a forced backing-scale change on the display record each keep frames presenting throughout, the old generation scaled until the new one is ready. Every display tick without a present during the sweep carries its reason in the frame record, and none is a wait for a build or for frames in flight to drain. Render-thread frame times through the sweep are on record beside the run without one, a spike is flagged as a tripwire, and no time decides the result.",
+          "check": "python3 scripts/apple_presentation.py transition --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does the arm resize a real game window and read the engine's frame records, with the console state recorded as a witness and not as a pass condition? Does it fail when the transition is forced back to the synchronous path?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D4.7",
+          "statement": "On the Mac a resize reads cleanly: while the edge moves the old picture is scaled smoothly, and the switch to the new size shows no black frame, flash, stretch that snaps, or ghost of the old picture.",
+          "inspect": "Capture the resize sweep and the backing-scale change with T2 engine capture in `realtime` mode on each native recipe. Judge the frames around every switch whole and in native-size crops of the terrain silhouette, the grid fixture and a thin prop. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A window that behaves as a shipped Mac game's does: the picture fills it at the display's own pixel size, with no band and no blocky scaling, and dragging its edge never freezes or blanks the picture, as in Baldur's Gate 3 or Resident Evil Village on macOS. Judged from the running game on the Mac, with Chrome and the iPhone simulator for function."
+    },
+    {
+      "id": "M5",
+      "name": "Render scale steps during play with no hitch and no history reset",
+      "items": [
+        {
+          "id": "D5.1",
+          "statement": "On the route with TAAU the scale steps through 1.0, 0.85, 0.75, 0.67 and 0.5 during play, on the Mac's portable recipe. No step resets history: the frame after each step differs from a history-reset frame, and a control that resets history at the step is detected by the same comparison.",
+          "check": "python3 scripts/apple_presentation.py scale --target mac-metal",
+          "lock": "gpu",
+          "ask": "Read the scale arm. Is the frame after a step compared with an independently reset render of the same state, and is the jitter sequence shown to continue across the step?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.2",
+          "statement": "A scale change creates no texture, view, bind group or pipeline on any thread: the creation counters are flat across every step, with attachments allocated once at scale 1.0.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test dynamic_scale",
+          "lock": "gpu",
+          "ask": "Read the test. Does a control that reallocates at a step make the counters move?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.3",
+          "statement": "At every scale, motion, the sky, aerial lookups and reconstruction address the drawn subrectangle only: M1's zero-motion and sky-pan witnesses hold, a border outside the subrectangle filled with a marker colour changes no output pixel, and material sampling uses the mip bias log2(render/output) − 1 from the view record.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test dynamic_scale",
+          "lock": "gpu",
+          "ask": "Read the test. Is the marker border written into the attachments themselves, outside the subrectangle, at each of the five scales, and compared against a run without it over the whole output?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.4",
+          "statement": "At each still route checkpoint the design's colour difference to the reconstruction reference is on record for each of the five scales. Scale 1.0 still meets M3's tolerance; no bound is set below it.",
+          "check": "python3 scripts/apple_presentation.py scale --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.5",
+          "statement": "In Chrome the five steps run on the route with TAAU, with no history reset and no creation at a step.",
+          "check": "node scripts/check_v1_browser.mjs --case scale",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.6",
+          "statement": "On the Mac a step between any two neighbouring scales is not seen as an event: no hitch, flash or jump in the picture, and at 0.67 and 0.5 the terrain silhouette, the grid fixture and thin props are softer but do not break up, crawl or shimmer.",
+          "inspect": "Capture the route with a scripted scale trace that visits every step, with T2 engine capture in `realtime` mode. Watch each step at 1x and judge native-size crops of the three features just before and after it. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D5.7",
+          "statement": "On the Mac, GPU time for forward and sky, for TAAU and for the atmosphere is on record at each scale against the drawn area, from two separate runs with build and load. A departure from the design's cost account is flagged as a tripwire. No time decides the result.",
+          "check": "python3 scripts/apple_presentation.py scale-costs --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does the command succeed or fail on the record being complete, and never on a time?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Dynamic resolution as in a shipped game that hides it well, such as Spider-Man 2 or Forza Horizon 5: the picture softens a little at lower scale and never pops, flashes, shimmers at the step or loses its history. Judged in motion from the running game on the Mac and in Chrome."
+    },
+    {
+      "id": "M6",
+      "name": "Highlights go brighter than SDR white on the built-in XDR display",
+      "items": [
+        {
+          "id": "D6.1",
+          "statement": "When a session starts on a display whose potential headroom is above 1, the game's surface is `Rgba16Float` in extended linear sRGB. The platform sets the layer's EDR properties on the main thread through a layer reference it keeps itself, never through wgpu's surface. The game can read the resolved display mode and the current headroom H.",
+          "check": "python3 scripts/apple_presentation.py edr --target mac-metal",
+          "lock": "gpu",
+          "ask": "Where are `preferredDynamicRange` and `contentsHeadroom` set, on which thread, and through which reference to the layer? Does any path take wgpu's layer lock? Is the display's real record kept as a witness beside the forced one the arm uses?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.2",
+          "statement": "The EDR transform is the design's. On a CPU reference and in the shader, for exposed values from 0 to 2^18 and H of 1, 1.5, 2, 4, 8 and 16: the output equals the SDR curve below the knee, never exceeds H, is continuous with a continuous slope at the knee, never decreases as a colour's largest channel grows, and at H = 1 is the SDR curve to float rounding.",
+          "check": "cargo test --locked --offline -p thrum-render --test edr_transform",
+          "lock": "gpu",
+          "ask": "Read the test. Is the CPU reference written from the design's formula and not from the shader? Is the shader's output read back from a float target for the same inputs?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.3",
+          "statement": "With H forced to 1, the EDR branch's submitted frame, encoded to 8-bit sRGB without dither, is within one code of the SDR branch's undithered frame at every pixel of each still route checkpoint, on both native recipes.",
+          "check": "python3 scripts/apple_presentation.py edr-identity --target mac-metal",
+          "lock": "gpu",
+          "ask": "Are both frames taken from one scene state through engine capture's tap, and is the float frame the one the surface was given?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.4",
+          "statement": "A display record forced to a potential headroom of 1 keeps the EDR surface with H = 1, reconfigures nothing and creates no pipeline. A session started with EDR unavailable selects the prepared 8-bit surface at its generation build. A window on the 8-bit surface that reaches a display with potential headroom above 1 changes surface through a generation transition.",
+          "check": "python3 scripts/apple_presentation.py edr-modes --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.5",
+          "statement": "A forced change of current headroom reaches the present pass within one display tick with no creation, and no submitted pixel is ever above the record's current headroom.",
+          "check": "python3 scripts/apple_presentation.py edr-headroom --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.6",
+          "statement": "On the route at H of 2 and 8, the float frame read through engine capture's tap has values above 1.0 on the Sun disk, in the sunset sky beside the Sun and on local lights, none above H, and every pixel whose exposed value is below the knee equals the H = 1 frame's.",
+          "check": "python3 scripts/apple_presentation.py edr-route --target mac-metal",
+          "lock": "gpu",
+          "ask": "Does engine capture read the float target the surface was given in this mode, without changing what it records in the 8-bit mode?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.7",
+          "statement": "On the iPhone simulator the game runs the 8-bit SDR path, and a headroom value forced on the iOS display record reaches the render owner through the polling path without touching the surface lease.",
+          "check": "python3 scripts/apple_presentation.py edr --target ios-sim",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D6.8",
+          "statement": "In false colour and scaled down to SDR for viewing, the EDR frames at H of 2 and 8 show highlights that keep their colour and shape: the Sun's disc is round with a soft edge of sky around it, the sunset sky grades without a flat clipped patch or a band, and each lamp is a point with its own colour.",
+          "inspect": "From the float captures of D6.6 make, for the sunset and the night-lights stops, a false-colour image of values above 1.0 and an image divided by H. Judge each whole and in native-size crops of the Sun, the sky beside it and two lamps, beside the SDR frame of the same state.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to judge, in M11."
+    },
+    {
+      "id": "M7",
+      "name": "The governor holds the display rate under forced load, then recovers step by step",
+      "items": [
+        {
+          "id": "D7.1",
+          "statement": "Driven by scripted frame samples in virtual time, the governor's policy lowers scale after three consecutive frames over budget, recovers at most one step in each minimum period, changes nothing while samples stay inside the budget, takes its budget from the display interval so that a refresh change moves only the budget, freezes from the start of a generation build to the first frame after the switch, and drops samples that span a switch.",
+          "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
+          "ask": "Read the test. Is the policy a function of samples, missed ticks and the display record alone, with no clock of its own? Is each of the six behaviours a separate case with a control?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.2",
+          "statement": "On the route on the Mac a forced GPU load from the debug-load pass makes the governor lower scale within its panic window, after which display ticks without a present return to the rate of the run without the load. When the load lifts, scale recovers one step in each minimum period. The trace is retained, and the frame record carries the governor's state: scale, tier, each knob's value and the reason for the last change.",
+          "check": "python3 scripts/apple_presentation.py governor --target mac-metal",
+          "lock": "gpu",
+          "ask": "Are ticks without a present counted by the frame host from display-link ticks, and labelled as a render-side proxy? Does the arm fail with the governor off under the same load?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.3",
+          "statement": "With no forced load, the route on the Mac shows at most two scale changes, at the display rate the run records.",
+          "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.4",
+          "statement": "The world's state hash and tick count at the end of the route are identical with the governor on, off and under the forced load.",
+          "check": "python3 scripts/apple_presentation.py governor-identity --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.5",
+          "statement": "A crate outside `thrum-render` registers a quality knob through the public interface, a cadence or a step budget with its declared history invalidation, and the governor commits the knob's values between frames with no creation. The aerial lookup's cadence is registered through the same interface. A cadence change keeps effect histories and marks their age; a tier change resets the history of each effect whose algorithm it changes and no other. No knob changes simulation state or what a query returns.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test governor_knobs",
+          "lock": "gpu",
+          "ask": "Read the test. Is registration open to a crate that `thrum-render` does not name, as the module list's quality-knobs interface requires for `WATERS` and `CLOUDS`? Does the test register a knob from a test contribution and watch its value change under load?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.6",
+          "statement": "A thermal state forced through the platform's record lowers the effect tier and the aerial cadence without creating a pipeline, and a return to nominal restores them step by step.",
+          "check": "python3 scripts/apple_presentation.py governor-thermal --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.7",
+          "statement": "In Chrome the governor lowers scale under the forced load and recovers, from GPU timestamps where the page has them and from animation-frame intervals where it does not. The run records which it used.",
+          "check": "node scripts/check_v1_browser.mjs --case governor",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D7.8",
+          "statement": "In real time on the Mac, through the forced load and the recovery, the motion stays smooth and the picture shows no oscillation, pop or flash: a viewer who is not told cannot point to the frame of a scale step.",
+          "inspect": "Capture the forced-load run with T2 engine capture in `realtime` mode, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops of thin features across each step the trace names. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices."
+    },
+    {
+      "id": "M8",
+      "name": "MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback",
+      "items": [
+        {
+          "id": "D8.1",
+          "statement": "On the Apple recipe the MetalFX temporal scaler runs inside the native segment on the route, at scales from 1.0 to 0.5. It is created with synchronous initialisation, in generation builds only; no native object is created during play; Metal's validation reports no error; and the game reports MetalFX as the resolved reconstructor.",
+          "check": "python3 scripts/apple_presentation.py metalfx --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is the scaler encoded on the native segment's own command buffer, as APPLE-TILE's boundary requires? Are creations counted by phase, with Metal's validation layer on for the run?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.2",
+          "statement": "A translating-object scene confirms the motion sign and scale and the jitter's Y sign: on the object's edges MetalFX's output follows TAAU's and the reference, and a control with either sign flipped fails.",
+          "check": "python3 scripts/apple_presentation.py metalfx-motion --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.3",
+          "statement": "Through a time-of-day scrub, and through a storage scale forced to step, MetalFX's frame is no further in mean luminance from the frame drawn without reconstruction than TAAU's is, beyond the noise the first run records between two identical runs. If the exposure texture alone does not meet that, the design's normalising pre-pass is on: it hands the pre-tone input its colour with the matching constant exposure, tone is unchanged, its GPU time is on record, and the game reports which path is in use.",
+          "check": "python3 scripts/apple_presentation.py metalfx-exposure --target mac-metal",
+          "lock": "gpu",
+          "ask": "Was the noise floor recorded before either path was judged? With the pre-pass on, does any second exposure or tone step exist, and does a still frame equal the frame without the pre-pass to within float rounding of the tone input?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.4",
+          "statement": "At each still route checkpoint, MetalFX's colour difference to the reconstruction reference is on record beside TAAU's at each of the five scales.",
+          "check": "python3 scripts/apple_presentation.py metalfx-quality --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.5",
+          "statement": "A forced provider rejection selects the prepared TAAU twin with no pipeline created, and the game reports TAAU with the reason.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test metalfx_fallback",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.6",
+          "statement": "A frame discarded after a failed acquisition resets the MetalFX provider before its next encode, and a failed submission and a generation change do the same. Each is counted beside the portable recipe's drop, and the frame after each equals a history-reset frame.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test metalfx_reset",
+          "lock": "gpu",
+          "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.7",
+          "statement": "On the iPhone simulator a frame dropped in the background resets reconstruction history, and the drop is counted.",
+          "check": "python3 scripts/apple_presentation.py reset --target ios-sim",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D8.8",
+          "statement": "On the Mac's Apple recipe, M3's five motion sequences and a sequence across a governor scale step show no ghosting, crawl, shimmer or brightness lag beyond TAAU's on the same sequence.",
+          "inspect": "Capture each sequence with T2 engine capture in `realtime` mode with MetalFX and again with TAAU. Watch each pair at 1x and judge native-size crops of trailing edges, the revealed background, the spawned object's first frames, single stars and the sky during the scrub. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M11"
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences."
+    },
+    {
+      "id": "M9",
+      "name": "Surface, device and display changes create nothing during play, and launch-to-ready time is on record",
+      "items": [
+        {
+          "id": "D9.1",
+          "statement": "Launch-to-ready on this Mac is on record cold, with the system's Metal shader cache for the game cleared, and warm, split into WGSL translation, MSL compilation and pipeline-state creation, with synchronous MetalFX creation apart, from two separate runs of each with build and load. The figures are baselines: no time decides the result.",
+          "check": "python3 scripts/apple_presentation.py launch --target mac-metal",
+          "lock": "gpu",
+          "ask": "How does the arm clear the cache and show that the cold run was cold? Does the command succeed or fail on the record being complete, and never on a time?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D9.2",
+          "statement": "Each of these takes its designed path with no creation on the render thread and no pipeline compiled after readiness: a replaced surface; a new device generation; a forced refresh change, which moves only the governor's budget; a forced display move, which changes only H; and a resize while MetalFX is the reconstructor.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test prepared_paths",
+          "lock": "gpu",
+          "ask": "Read the test. Is there one case for each of the five, each asserting the counters by thread and phase and the one thing the design says changes?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D9.3",
+          "statement": "After readiness a whole route on each native recipe compiles no pipeline and creates no shader module: the counters after readiness are zero, and a control that builds one pipeline late is counted.",
+          "check": "python3 scripts/apple_presentation.py no-compile --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D9.4",
+          "statement": "In Chrome a whole route creates no pipeline and no shader module after the page reports ready, counted where the page calls the device.",
+          "check": "node scripts/check_v1_browser.mjs --case no-compile",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window, the display or the device does."
+    },
+    {
+      "id": "M10",
+      "name": "Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel",
+      "items": [
+        {
+          "id": "D10.1",
+          "statement": "Every pipeline on the route's manifest takes its shader from a Metal library cooked ahead of time, through passthrough, with no WGSL fallback in a parity run on both native recipes, and every still route checkpoint is byte for byte the frame the WGSL-built pipelines draw.",
+          "check": "python3 scripts/apple_presentation.py metallib --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is the manifest the set of pipelines the route really creates, taken from the creation counters and not written by hand? Are fallbacks counted where the loader falls back?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D10.2",
+          "statement": "What is carried with a library includes, for each entry point, its binding indices and its threadgroup memory lengths: a compute dispatch that uses threadgroup memory gives the same result through a cooked library as through WGSL, and a library whose reflection is missing is refused by name.",
+          "check": "cargo test --locked --offline -p thrum-render --test metallib_reflection",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D10.3",
+          "statement": "A library is used only when its key matches what the running game would translate: the shader's source, the translator's version and options, and the Metal language version. On a mismatch the pipeline is built from WGSL before readiness and the fallback is counted; nothing is built from WGSL during play.",
+          "check": "cargo test --locked --offline -p thrum-render --test metallib_keys",
+          "lock": "gpu",
+          "ask": "Read the test. Is each part of the key changed in turn, and is the pipeline that results shown to draw?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D10.4",
+          "statement": "Pipelines are prepared across worker threads before readiness. With that on and off the set of pipelines ready is the manifest's, and launch-to-ready is on record for WGSL in series, cooked libraries, and cooked libraries prepared in parallel, cold and warm, from two separate runs of each with build and load. No time decides the result.",
+          "check": "python3 scripts/apple_presentation.py launch --target mac-metal --paths",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D10.5",
+          "statement": "The library cook is a step of the cooker and the build, no shipping package links it, and Chrome's build and its checks are unchanged.",
+          "ask": "Which package holds the cook, and does `scripts/g5_shipping_links.py` or its equal find it in no shipping package? Does the web bundle differ only where it must?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Launch as a shipped Metal game prepares it, following Apple's guidance to build GPU binaries ahead of time: the shaders the game needs were compiled when it was built, they are exactly the ones the running game asks for, and a library that does not match is rebuilt before play and never during it."
+    },
+    {
+      "id": "M12",
+      "name": "A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run",
+      "items": [
+        {
+          "id": "D12.1",
+          "statement": "A pinned copy of wgpu's Metal backend backs a pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, its data survives a write to a file and a read in a new process, and the pin and its difference from the released crate are registered where the design says.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test pipeline_archive",
+          "lock": "gpu",
+          "ask": "Where is the pinned copy, how is it selected in the workspace, and is its whole difference from wgpu 30.0.1 kept as a patch a reader can review? Does any shipping path write the archive during play?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D12.2",
+          "statement": "The strict warm witness passes: a fresh process opens the archive read-only, with harvest, write-back and compilation on a miss all off so that a miss is an error, creates every pipeline of the manifest and reaches readiness. The same witness fails on an empty archive and on one that lacks a single pipeline of the manifest. Harvest is a separate command.",
+          "check": "python3 scripts/apple_presentation.py archive-witness --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is a miss made an error by Metal's own option on the pipeline, not by a counter read afterwards? Are the two failing cases run by the same command as the passing one?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D12.3",
+          "statement": "An archive with a stale key, one whose payload is corrupted at the same length, and a valid archive that holds only part of the manifest each end in a game that reaches readiness and plays the route with no pipeline compiled during play. Each is counted by its cause, apart from device errors.",
+          "check": "python3 scripts/apple_presentation.py archive-faults --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D12.4",
+          "statement": "Launch-to-ready on the final manifest is on record for WGSL in series, cooked libraries prepared in parallel, and the archive, cold and warm, under stated cache conditions, from two separate runs of each with build and load. The path the game takes by default is the one the record shows fastest, chosen through the registry. No time decides the result.",
+          "check": "python3 scripts/apple_presentation.py launch --target mac-metal --final",
+          "lock": "gpu",
+          "ask": "Does the default follow the record, and can each path still be forced for a comparison?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back."
+    },
+    {
+      "id": "M11",
+      "name": "Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes",
+      "items": [
+        {
+          "id": "D11.1",
+          "statement": "Paired route rows compare the Apple recipe with MetalFX and EDR against the portable recipe with TAAU, SDR at H = 1, on this Mac, alternating, under one replayed scale trace. They record GPU pass and segment times, display ticks without a present and present intervals, the governor's trace, creation counters by thread and phase, the colour difference to the reference, graph-declared traffic and measured traffic (or the word unmeasured) at two scales, the cost of the float drawable on an SDR display, and the recipe and registry digest, with build and load.",
+          "check": "python3 scripts/apple_presentation.py paired --target mac-metal",
+          "lock": "gpu",
+          "ask": "Are the two arms run alternately in one session from the same commit and scale trace? Is every row either a figure with its conditions or marked as not measured, with none left blank?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.2",
+          "statement": "In Chrome the route runs with TAAU, dynamic scale and the governor on, at the canvas's backing size, and creates nothing after the page reports ready.",
+          "check": "node scripts/check_v1_browser.mjs --case g4-route",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.3",
+          "statement": "On the iPhone simulator the game runs reconstruction and the SDR path at the surface's extent through a rotation and a trip to the background and back. Function only: the evidence says that iPhone EDR and timing are owed.",
+          "check": "python3 scripts/apple_presentation.py g4 --target ios-sim",
+          "lock": "gpu",
+          "target": "ios-sim",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.4",
+          "statement": "The registry's default reconstructor on the Apple recipe is the one the paired record supports, recorded as promotion evidence, and every tripwire this module raised has an assigned follow-up.",
+          "ask": "Which reconstructor does the Apple recipe resolve by default at the closing commit, and which rows of D11.1's record support that? List each open tripwire and where its follow-up is written.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.5",
+          "statement": "Gate G4 holds as the brief words it, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. The physical iPhone and external-display rows are named as owed.",
+          "ask": "Take the brief's G4 sentence clause by clause: which item of M3 to M12 proves each, and is any clause proved only by a forced override that the ledger does not label?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.6",
+          "statement": "In real time on the Mac's Apple recipe, with MetalFX, EDR and the governor on at full screen, the route is sharp and stable: clean edges on the terrain silhouette and thin props, steady stars, no ghost behind a moving prop, no brightness lag through the time-of-day scrub, and no hitch.",
+          "inspect": "Capture the route with T2 engine capture in `realtime` mode at the built-in display's pixel size, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops at each stop. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.7",
+          "statement": "In real time in Chrome the route under TAAU with the governor on is sharp and stable in the same places.",
+          "inspect": "Capture the route with T2 engine capture in `realtime` mode in Chrome and judge the same crops. Note any stop where Chrome differs from the Mac.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D11.8",
+          "statement": "On the built-in XDR display the owner sees the Sun, the sky beside it at sunset and the lamps at night brighter than white, with the rest of the picture unchanged against SDR.",
+          "inspect": "The owner runs the showcase on the built-in display, switches EDR on and off at the sunset and night-lights stops, and says whether the highlights read brighter and the mid-tones unchanged. The reviewer reads the owner's recorded reply, with the display's brightness setting and headroom recorded at the time, and does not judge the panel from captures.",
+          "target": "mac-metal",
+          "needs": {
+            "type": "human_feedback",
+            "what": "Look at the showcase on the built-in display with EDR on and off at the sunset and night stops, and say whether highlights are brighter than white and the rest unchanged. No agent can see what the panel emits."
+          },
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [
+        "APPLE-TILE:M12"
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights brighter than white on the XDR panel, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed."
     }
   ]
 }

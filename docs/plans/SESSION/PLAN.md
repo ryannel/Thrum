@@ -11,7 +11,7 @@ was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: SESSION waits for the V1 exit, because the modules it stands on do: `SIM-2D` and `TRANSPORT` both wait for `SHOWCASE` M8, since the owner's page puts the game after V1.
+- Assumption: a world that steps when a match says is engine work, so it is built here (M7) with the reference crowd in a window, and not later inside the game. It is the one milestone of this module that needs the GPU, and it waits for `RENDER-2D` M5.
 - Assumption: each player sees their own character answer at once, and sees the crowd and the other players a little late: about 80 ms behind the host on a 100 ms connection. Rewinding and re-stepping the whole crowd to hide that delay is not built, because at 10,000 enemies one correction costs about six frames. How the delay feels is yours to judge in the game.
 - Assumption: a native process hosts, and the match ends when it stops. Chrome and the iPhone simulator only join. Host migration, matchmaking and accounts are not built.
 - Assumption: anyone who has the host's join ticket and the same build can take a free place. There are no passwords, and no way to remove a player.
@@ -19,7 +19,6 @@ was thrown away on purpose, so build from the design.
 - Assumption: a player whose machine or browser tab cannot keep up with the match is dropped from it. The match never slows down for one player.
 - Assumption: a player who loses their connection gets their place back if they return within a grace period the game sets; their character stands idle meanwhile.
 - Assumption: a match is proved with a host and four players for ten minutes at 10,000 bodies, between separate processes on this Mac, through `TRANSPORT`'s relay. No second machine or internet path is run.
-- Assumption: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as `TRANSPORT`'s do. The other choices are owner decision 11 in the module list.
 
 ## M1 A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step
 
@@ -79,6 +78,16 @@ Criteria: M6.1–M6.8 in the done-when file.
 The owning design is `docs/design/modules/NETWORKING.md`, the contract is C13 in `docs/design/CONTRACTS.md`, the
 decision records are the A0 and A5 files in `docs/design/decisions/`, and the maturity ledger is
 `docs/design/maturity.json`.
+
+## M7 The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match
+
+Criteria: M7.1–M7.8 in the done-when file.
+
+The world lane is `crates/thrum-core/src/sim/world_lane.rs` with `clocked_world.rs`, and the frame host reads a
+world through `FrameWorld` in `crates/thrum-render/src/runtime.rs`; the lane's task already owns its clock, so
+read how far that carries a driven world before changing anything under seam ruling 3. `RENDER-2D` left the
+crowd view in `examples/crowd-2d-view`, a program on `thrum-app`'s window and page; the windowed match is that
+view with a session attached, in a package of its own so the view still links no network crate.
 
 Stop rules, for every milestone:
 - If peers cannot be held equal, keep the first differing tick, the component and both digests, and end `BLOCKED`. Do not compare fewer ticks, send state to a client, or drop a target.

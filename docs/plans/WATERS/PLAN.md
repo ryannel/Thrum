@@ -21,7 +21,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: the three sea cues the 10 November spikes left open stay parked.
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind it, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists, and no timing figure decides an item (brief decision 3).
-- Assumption: the module closes only after `APPLE-PRESENTATION`'s unplanned governor and MetalFX milestones.
+- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones.
 
 ## M1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 

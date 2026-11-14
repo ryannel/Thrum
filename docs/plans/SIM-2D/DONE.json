@@ -4,9 +4,7 @@
     {
       "id": "M1",
       "name": "A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator",
-      "depends_on": [
-        "SHOWCASE:M8"
-      ],
+      "depends_on": [],
       "items": [
         {
           "id": "M1.1",

@@ -13,13 +13,11 @@ design.
 
 ## Open for the human
 
-- Assumption: TRANSPORT waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it adds a crate and lockfile entries.
 - Assumption: "over the network" is proved between separate processes on this Mac, over real QUIC and WebTransport on loopback, through a relay that adds 100 ms of round trip, ±20 ms of jitter and 2% loss. No second machine, Wi-Fi, home router or internet path is run, and a public host stays the owner's to order.
 - Assumption: Chrome is the only browser run, and A0's WebSocket fallback is not built. Safari and Firefox now have WebTransport and are designed for, not tried.
 - Assumption: a player joins with a join ticket, which is the host's address and its certificate's fingerprint, about a hundred characters to put in a link or paste. A ticket stops working when its host stops. A short code a player could type needs a directory service, which is not built.
 - Assumption: a host holds up to four players, and "hold a session" is proved for ten minutes with four clients (two on the Mac, one in Chrome, one in the iPhone simulator).
 - Assumption: the iPhone simulator proves that the link works there, never its speed. A physical iPhone, where the local-network permission applies, is not run.
-- Assumption: builders and reviewers ask to run the socket proofs outside the Codex sandbox, one request for each run, as they do today for the GPU. Every socket proof is behind one command to keep that to one kind of request. The other choices, full access for the sandbox or a Claude builder for this module, are owner decision 11 in the module list.
 
 ## M1 A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop
 

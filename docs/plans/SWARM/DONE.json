@@ -756,7 +756,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "GAME-UI:M5"
+        "GAME-UI:M6"
       ],
       "quality_bar": "A game that sits on a phone as a native one does: steered by a thumb, with cards big enough to tap and nothing under the Dynamic Island, the rounded corners or the home indicator. Function only on the simulator, never speed.",
       "items": [
@@ -785,9 +785,9 @@
         },
         {
           "id": "M6.3",
-          "statement": "The V1 game's iOS app still passes the simulator checks other modules left for it, unchanged, now that both apps use one shell.",
-          "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch'",
-          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `RENDER-2D` and `GAME-UI` name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
+          "statement": "The V1 game's and the crowd view's iPhone apps still pass the simulator checks other milestones left for them, unchanged, now that a third app uses the shared shell.",
+          "check": "sh -c 'python3 scripts/render2d_sim.py && python3 scripts/game_ui_sim.py layout && python3 scripts/game_ui_sim.py touch && python3 scripts/game_ui_sim.py second-app'",
+          "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `RENDER-2D` and `GAME-UI` name for the V1 app and the crowd view's? Does each pass at the claimed commit, and was any of those scripts or tests edited by this milestone?",
           "lock": "gpu",
           "target": "ios-sim",
           "builder_result": "open",
@@ -797,8 +797,8 @@
         },
         {
           "id": "M6.4",
-          "statement": "The iOS shell that both apps use names nothing of either game, and neither game keeps a copy of its lifecycle, touch, surface or recovery code.",
-          "ask": "Where does the shared iOS shell live? Does it name a type, string or file of the V1 game or of this one? What iOS code is left in `examples/v1-game-ios` and in `swarm-ios`, and is any of it the same policy written twice?",
+          "statement": "The game's iPhone app is a user of the shared iOS shell that `GAME-UI` M6 left in `thrum-app`. It keeps no lifecycle, touch delivery, surface lease, rotation or recovery code of its own, and the shell still names nothing of any game.",
+          "ask": "Does anything iOS-specific in `swarm-ios` repeat policy the shared shell holds? Did this milestone add a type, string or file of the game to `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -836,15 +836,15 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SESSION:M6"
+        "SESSION:M7"
       ],
       "quality_bar": "Joining as plain as Factorio's or Stardew Valley's: a link, a short wait that says what it is doing, and you are in. Play that feels local for your own hero, as Factorio's latency hiding does, with the same crowd on both screens.",
       "items": [
         {
           "id": "M7.1",
-          "statement": "A world can be driven. With a scripted driver in virtual time, the game's host and client worlds commit exactly the ticks the driver names at each advance (none, one, or several up to the cap on catch-up), draw at the interpolation the driver gives, and raise no overload for ticks nobody asked for. A world on the fixed clock behaves as before.",
+          "statement": "The game's host and client worlds are driven by their sessions through the engine's driven world. With a scripted session in virtual time they commit exactly the ticks it names at each advance (none, one, or several up to the cap on catch-up) and draw at its playout interpolation, and a game played alone still steps on the fixed clock. No engine crate was changed for it.",
           "check": "cargo test --locked --offline -p swarm --test driven_world",
-          "ask": "Where was the driven world built under seam ruling 4? Does anything added to `thrum-core`, `thrum-render` or `thrum-app` for it name a session, a link or the game? Do the fixed-clock world's existing tests pass unchanged?",
+          "ask": "Are the host's and the client's drivers the game's own code, on the public driven-world interface `SESSION` M7 left? Did this milestone change `thrum-core`, `thrum-render` or `thrum-app`?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

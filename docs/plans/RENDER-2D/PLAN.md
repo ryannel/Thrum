@@ -12,12 +12,12 @@ written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: RENDER-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game") and this module changes the frame runtime every V1 module builds on.
-- Assumption: the three changes RENDER-2D needs inside other modules (choosing a 2D scene in the frame runtime, a sprite-sheet product in the content loop, a sprite scene in the V1 game and its shells) are built by RENDER-2D's own builder after V1, under rulings in the module list. No milestone is added to `APPLE-TILE`, `CONTENT-LOOP` or `APPLE-PRESENTATION`, so no V1 plan changes while V1 is being built. The other choice adds a milestone to each of those modules.
+- Assumption: RENDER-2D is built beside V1, as you asked on 14 November, in files V1's builders are also working in: the frame runtime (`APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M4 to M12) and the content loop (`CONTENT-LOOP` M2 and M3). Each side builds on what the other has landed and keeps its tests passing. If that slows V1 too much, say so and M1 waits for `APPLE-TILE` M12.
+- Assumption: the three changes RENDER-2D needs inside other modules (choosing a 2D scene in the frame runtime, a sprite-sheet product in the content loop, a sprite scene in the V1 game and its shells) are built by RENDER-2D's own builder, under rulings in the module list. No milestone is added to `APPLE-TILE`, `CONTENT-LOOP` or `APPLE-PRESENTATION`. The other choice adds a milestone to each of those modules.
 - Assumption: "2D support in the engine" means a sprite path for top-down and side-on games: sprites in layers, a view that pans and zooms, frame animation, tint, hit flash, transparency and additive glow. 2D lights, tile-map tools, skeletal animation, a particle system, a rotating view, sprites inside a 3D scene and a game that switches between 2D and 3D are not built.
 - Assumption: "thousands" is proved at 2,000, 5,000 and 10,000 moving sprites, and 10,000 is the largest crowd claimed, as in `SIM-2D`.
 - Assumption: both pixel art and smooth painted art are supported, because the game's look is not chosen yet.
-- Assumption: the sprite path is proved on the Mac and in Chrome, and on the iPhone simulator for function only, inside the V1 game's iOS shell. The reference crowd is drawn on the Mac and in Chrome; no iOS app exists yet for a second game, which is `CREATOR`'s work for `SWARM`.
+- Assumption: the sprite path is proved on the Mac and in Chrome, and on the iPhone simulator for function only, inside the V1 game's iOS shell. The reference crowd is drawn on the Mac and in Chrome; no iOS app exists yet for a second game, which `GAME-UI` M6 builds.
 - Assumption: "at full refresh" is judged from the engine's frame records and real-time engine capture at the built-in display's pixel size, with no frame time as a pass mark (brief decision 3). A measurement on the panel itself needs someone at the Mac and is left to `SWARM`'s close.
 - Assumption: sprites blend in linear light, as the rest of the engine does. Half-transparent art looks lighter over dark than in Aseprite or Photoshop (white at half alpha over black is 188, not 128); hard-edged pixel art is unaffected. The other choice blends in display space, matches paint tools, and gives up the shared output path.
 - Assumption: bright effects clip at white on an SDR display. The frame keeps values above white for an EDR display, and how they look on the XDR panel is not judged in this module.
@@ -29,8 +29,8 @@ written; its code was thrown away on purpose, so build from the design.
 
 Criteria: M1.1–M1.11 in the done-when file.
 
-Start by reading what V1 left: the design was written before `APPLE-TILE` M10 to M12 and `APPLE-PRESENTATION` M3
-to M11 were built. `FrameHost` in `crates/thrum-render/src/runtime.rs` held one prepared 3D scene when this was
+Start by reading what has landed: the design was written before `APPLE-TILE` M10 to M12 and `APPLE-PRESENTATION`
+M3 to M12 were built, and their builders work in these files beside you, so rebase often. `FrameHost` in `crates/thrum-render/src/runtime.rs` held one prepared 3D scene when this was
 planned, and the tone stage took one bound scene-linear colour with its exposure (`synthetic/display.rs`,
 `synthetic_display.wgsl`). Scene-kind selection, the display-referred transfer and a scene with no reconstruction
 are built in those files under ruling 1; the 3D kind stays the default and must compile to the same passes. C07's

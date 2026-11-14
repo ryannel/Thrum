@@ -250,3 +250,5 @@
   M1.12 says clear where it said zero. The design now says a placed shape's extents are its geometry and step
   at its silhouette, which M1.4 leaves out by name. The M1.6 fix on `build/clouds` (`08184d54`) stands. No
   other item, seam or bound changed; `ATMOSPHERE`, `WATERS` and the rest read none of these answers.
+- 2026-11-14 M12 now waits for `APPLE-PRESENTATION:M7` and `M8`, the governor and MetalFX, which have done-when
+  entries from today. M12.1 is unchanged. The design is unchanged.

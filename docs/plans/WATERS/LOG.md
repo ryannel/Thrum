@@ -214,3 +214,5 @@
   nodes a point where the scan took 40; M13.2 names the bed's pyramid. The breaker's look, the lags and every
   seam with `SEA`, `RIVERS`, `PUDDLES`, `SCENE-VIEWS`, `ATMOSPHERE` and `CLOUDS` are unchanged. Neither
   Suggestion was taken: M16's waterline crossing and a lake's surf by eye stay as the review left them.
+- 2026-11-14 M11 now waits for `APPLE-PRESENTATION:M7` and `M8`, the governor and MetalFX, which have done-when
+  entries from today. M11.1 is unchanged. The design is unchanged.

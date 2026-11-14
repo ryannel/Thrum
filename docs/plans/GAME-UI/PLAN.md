@@ -13,7 +13,8 @@ written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: GAME-UI waits for all of `RENDER-2D`, and so for the V1 exit, because it draws with the sprite path and changes files `RENDER-2D`'s builder works in. The module list said its first milestone would do; starting then would put two builders in the same files.
+- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first milestone runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` M5 leaves in the shells. It also waits for `APPLE-PRESENTATION` M6, because the interface is drawn inside the EDR present pass that milestone builds.
+- Assumption: an iPhone app for a second game is engine work, so it is built here (M6) with the crowd view, and not later inside the game.
 - Assumption: "2D support in the engine" includes text and interface drawn in the frame, and this module builds the smallest part of that the game uses: text in Latin letters with accents (the languages of Western and Central Europe), bars, panels, buttons, one level of modal, and a join screen. Other scripts (Arabic, Hebrew, Chinese, Japanese, Korean, Indic), right-to-left text, translation tools, typed text, screen readers, scrolling lists and animated transitions are not built.
 - Assumption: keys, pointer and touch only. No gamepad.
 - Assumption: nobody types a join ticket, because it is about a hundred characters. It is pasted, or it arrives in a link that opens the game. There is no text field and no on-screen keyboard. On an iPhone it arrives by link only.
@@ -60,7 +61,7 @@ The Mac shell reports only an extent to a game today (`crates/thrum-app/src/app.
 insets are added there and to the page under ruling 4, behind the feature the design names. M3.14 extends M2's
 prepared layout from runs to boxes.
 
-## M4 A level-up choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game
+## M4 A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game
 
 Criteria: M4.1–M4.13 in the done-when file.
 
@@ -70,7 +71,7 @@ The Mac shell passes a game key codes and nothing else, and the page keeps its o
 mouse and touch events. The join screen shows states the scene scripts; it links neither `SESSION` nor
 `TRANSPORT`.
 
-## M5 The status display, the level-up choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide
+## M5 The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide
 
 Criteria: M5.1–M5.8 in the done-when file.
 
@@ -78,3 +79,13 @@ The iOS shell is `examples/v1-game-ios`: its `gesture.rs` turns touches into one
 receives only what the interface passes, and `ios/uitest` holds the UI test that makes real touches.
 `RENDER-2D:M5` left the sprite scene running there and `scripts/render2d_sim.py` to drive it. The creator guide
 is `docs/design/ENGINE-EXPERIENCE.md` and the ledger is `docs/design/maturity.json`.
+
+## M6 A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses
+
+Criteria: M6.1–M6.8 in the done-when file.
+
+The iOS shell is `examples/v1-game-ios` (`src/ios.rs`, `lease.rs`, `gesture.rs`, `world_policy.rs` and the
+`ios/` scripts), owned by `PLATFORM-RUNTIME-IOS` and extended by `COOKED-DRAW`, `RENDER-2D` and this module. It
+moves into `thrum-app` under seam ruling 5; those modules' simulator checks are M6.2's and stay as they are.
+The crowd view is `examples/crowd-2d-view`; give its status display and its iPhone app packages of their own,
+registered in `.config/architecture.toml`.

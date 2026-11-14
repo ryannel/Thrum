@@ -36,6 +36,11 @@ designs this module depends on with their probes, and [a planning probe](../../e
 run for it. `SIM-2D` and `TRANSPORT` are designed and not yet built, so what this design says of their code is
 what their designs promise.
 
+**14 November 2026.** The owner said: "Let's move the 2d engine side of things to before v1 and decouple them.
+But we don't want to start working on the swarm game till v1 lands." This module is engine work and waits for
+nothing of V1's. One piece of engine work the game's plan had carried, a world that steps when a match says,
+moved here as [mechanism 12](#12-a-driven-world) and M7, so that it is built and proved without the game.
+
 ## Purpose and scope
 
 Players on separate machines hold out against one crowd. Each sees the same enemies in the same places, each
@@ -468,6 +473,33 @@ and its pages are never written by prediction.
 game's crowd is small enough that the replay is a small part of a frame on every target, a later plan can add
 whole-world prediction as a client's choice; nothing here prevents it.
 
+### 12. A driven world
+
+The engine's world lane (`thrum-core`'s `world_lane.rs` and `clocked_world.rs`, run by `thrum-app`) advances on
+a fixed clock and raises an overload when it falls behind. A host's and a client's world must instead commit the
+ticks the session names, and draw at its [playout](#6-the-playout-clock) position. So a world may be **driven**:
+
+- its **driver**, which the game supplies, says at each advance how many ticks to commit (none, one, or several
+  up to the cap on catch-up) and where the presentation stands between the last two committed ticks;
+- a driven world raises no overload for ticks nobody asked for, and the frame host draws at the driver's
+  position in place of the lane clock's;
+- a world on the fixed clock behaves as it did, and its tests pass unchanged.
+
+The engine side names no session and no link. A game's driver asks its session how many ticks to commit now and
+passes the answer on, which is three lines of game code and is in the guide. The session stays driven by time
+from the world's task, which drains the link at the barrier as
+[`TRANSPORT`'s design](../TRANSPORT/DESIGN.md#4-the-world-lane-never-waits-on-the-network) expects.
+
+This is new work in core's and the app runner's state, built in M7 under
+[seam ruling 3](../ARCHITECTURE.md#seam-rulings-for-session). It is proved with the reference crowd drawn by
+`RENDER-2D`'s crowd view, on a Mac host, a Mac client and a Chrome page, so no game is needed to prove it. It
+is M7 and not part of M5 because M1 to M6 need no window and no GPU, and this needs both.
+
+*Range.* A driver may name no tick for as long as it likes; the world holds its last pair and the picture holds
+still. The cap on catch-up is the session's, already bounded by [mechanism 10](#10-slow-silent-and-hostile-peers).
+A hidden browser tab stops its driver; when it returns it is the session that decides between catching up and a
+repair, and the world only does what it is told.
+
 ## The system as it runs
 
 | State | Owner | Kind |
@@ -476,6 +508,7 @@ whole-world prediction as a client's choice; nothing here prevents it.
 | Staged future frames, pending commands, each client's ring of unacknowledged sets, baselines in flight | `thrum-network`, on the host | Session, capped |
 | The lead and the authoring tick, the playout clock, the buffer of sets, the predicted controller's ring | `thrum-network`, on a client | Session, local, capped |
 | The world image's encoding and restore | `thrum-core`, by [seam ruling](../ARCHITECTURE.md#seam-rulings-for-session) | Engine code; no stored state |
+| A driven world: which ticks the lane commits and where the frame stands between them | `thrum-core` and `thrum-app`, by seam ruling 3; the driver is the game's | Engine code; the driver holds no state of its own here |
 | The tick, committed state, pages, the digest | `thrum-core`, as G2S and `SIM-2D` leave them | Authority |
 | A link, its lanes and counters | `thrum-transport` | Runtime |
 | The proof programs for the three targets, the scripted players, the match command | `examples/match-proof` and `scripts/` (this module) | Proof tooling |
@@ -545,9 +578,8 @@ modes are not used by a deterministic match and stay in `thrum-network` as they 
 envelope.
 
 **For `SWARM`'s planner.**
-- The engine's world lane steps by its own clock. A client's world has to step when the session says, so the app
-  runner needs a world that takes its ticks from the session. That ask is in
-  [the module list](../ARCHITECTURE.md#what-track-3-asks-of-existing-modules).
+- The engine's world lane steps by its own clock. A client's world has to step when the session says, which
+  [a driven world](#12-a-driven-world) allows from M7. The game supplies only the driver.
 - A hero the crowd can push is corrected every tick it is pushed. Keep the hero's movement a function of its own
   state and input where the game allows.
 - The crowd is drawn at the confirmed tick and the hero ahead of it, by the lead plus the confirmed delay. M4 and

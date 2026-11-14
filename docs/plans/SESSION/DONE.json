@@ -695,6 +695,107 @@
       "diagnoses": 0,
       "status": "not_started",
       "quality_bar": "As easy to start from as Godot's high-level multiplayer guide, and as plain about its limits as Factorio's notes on desyncs. The guide is enough to put a second game in a match without reading engine source, the contracts and the ledger say exactly what was proved, and, as with Godot's or Unreal's networking, a single-player build carries none of it."
+    },
+    {
+      "id": "M7",
+      "name": "The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match",
+      "items": [
+        {
+          "id": "M7.1",
+          "statement": "A world can be driven. With a scripted driver in virtual time, a driven world commits exactly the ticks the driver names at each advance (none, one, or several up to the cap on catch-up), reports the presentation position the driver gives between the last two, and raises no overload for ticks nobody asked for. A world on the fixed clock behaves as before.",
+          "check": "cargo test --locked --offline -p thrum-core --test driven_world",
+          "ask": "Read the test. Is the driver the test's own, with no session or link in it? Does anything added to `thrum-core`, `thrum-render` or `thrum-app` for this name a session, a link or a game? Do the fixed-clock world's existing tests pass unchanged?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.2",
+          "statement": "A frame host that observes a driven world draws each frame at the driver's position between the last two committed ticks: over a scripted run of advances the frames' interpolation values are the driver's, and a frame with no new tick draws the same pair again.",
+          "check": "cargo test --locked --offline -p thrum-render --test driven_world_observer",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.3",
+          "statement": "On the Mac a process that hosts a match and draws the reference crowd in its window, and a second process that joins it and draws, hold equal digests at every digest tick for 3,600 ticks over sockets through the relay under A0's profile. Each world is driven by its session, and each window's frame record shows the session's playout interpolation.",
+          "check": "python3 scripts/session_match.py windowed --target mac-metal",
+          "lock": "gpu",
+          "ask": "Is each window's world stepped only by the driver the session feeds, with the lane's own clock off? Are the digests read from each peer's own record?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.4",
+          "statement": "A Chrome page that joins the same host draws the crowd with equal digests. A tab hidden for less than the absence limit and shown again catches up, or is repaired, without an overload and without drawing a tick twice.",
+          "check": "python3 scripts/session_match.py windowed --target chrome-webgpu",
+          "lock": "gpu",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.5",
+          "statement": "In real time on a Mac client under A0's profile the crowd moves as smoothly as the crowd view does alone: no stutter at the tick rate, no jump when several ticks arrive together, and no freeze beyond the playout stalls the run's record names.",
+          "inspect": "Capture the client's window and the crowd view alone with T2 engine capture in `realtime` mode, the same trace and size. Watch both at 1x, then step through the frames around each burst and each stall the record names. Say that you watched motion.",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.6",
+          "statement": "In real time in Chrome the joined page's crowd moves as smoothly as the crowd view's page does alone.",
+          "inspect": "Capture both pages with T2 engine capture in `realtime` mode and judge them as on the Mac. Note where Chrome differs.",
+          "target": "chrome-webgpu",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.7",
+          "statement": "The guide tells a game maker how to drive a world from a session in a windowed game and on a page, the networking design and the maturity ledger say what was proved, and the crowd view built without a match still links neither `thrum-network` nor `thrum-transport`.",
+          "check": "python3 scripts/session_match.py closure --windowed",
+          "ask": "Could a game maker wire a driver from the guide alone? Does the ledger keep the windowed match's function apart from any claim about speed?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "M7.8",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        }
+      ],
+      "depends_on": [
+        "RENDER-2D:M5"
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "A networked game that draws as smoothly as it does alone, as Factorio's multiplayer does: the client's world advances only when the match says, the picture glides between confirmed ticks at the display's refresh, a burst of late ticks does not jump and a short stall does not stutter. The engine side names no session: any game can drive a world."
     }
   ]
 }

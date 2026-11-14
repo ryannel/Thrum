@@ -40,6 +40,16 @@ the designs of `APPLE-TILE`, `EFFECT-GRAPH`, `CONTENT-LOOP` and `SIM-2D`; and
 names the behaviour it needs from them and never one of their APIs, and the builder of each milestone first reads
 what was actually built ([handoff](#proof-and-builder-handoff)).
 
+**Built beside V1 (14 November 2026).** The owner said: "Let's move the 2d engine side of things to before v1
+and decouple them. But we don't want to start working on the swarm game till v1 lands." So this module no
+longer waits for the V1 exit. A milestone waits only for what it uses: M1 for `EFFECT-GRAPH:M3`, whose
+after-opaque stage it refuses in a 2D scene, and `APPLE-PRESENTATION:M3`, whose reconstruction a 2D scene
+declares none of; M4 for `CONTENT-LOOP:M1`, whose lease and publication a sheet uses; M5 for `SIM-2D:M1`, whose
+crowd it draws. `APPLE-TILE` M10 to M12, `APPLE-PRESENTATION` M4 to M12 and `CONTENT-LOOP` M2 and M3 are built
+in the same files at the same time. Whichever lands second builds on the first and keeps its tests passing; in
+particular a governor or a reconstructor that lands after M1 gives a 2D scene no scale, no jitter and no
+history, as [C07's no-reconstruction form](#2-the-view-and-the-output-pixel) says.
+
 ## Purpose and scope
 
 A game declares a 2D scene, hands over sheets of sprites and maps its simulated entities to sprite rows. The
@@ -64,9 +74,9 @@ output is dithered.
 3D scene, or one run that switches between a 2D and a 3D scene. A view that rotates. Culling of rows that are off
 screen: every row is ordered and submitted, and the GPU clips. Snapping of positions to a pixel grid. Blend modes
 other than alpha and additive. Multisampling. Nine-slice panels, text layout and the interface stage, which are
-`GAME-UI`'s. A window, page or iOS app for a second game, and a one-command 2D starter, which are
-[`CREATOR`'s ask for `SWARM`](../ARCHITECTURE.md#what-track-3-asks-of-existing-modules). Any change to the 3D
-scene's output.
+`GAME-UI`'s. An iOS app for a second game, which is
+[`GAME-UI` M6](../ARCHITECTURE.md#seam-rulings-for-game-ui), and a one-command 2D starter, which nobody plans.
+Any change to the 3D scene's output.
 
 **Words used here.** A **scene kind** is 2D or 3D. A **sheet** is a set of sprite images cooked together: its
 **pages** are the layers of one array texture, and a **frame** is one named rectangle on a page. A **sprite row**
@@ -419,7 +429,7 @@ Provided, as [the module list](../ARCHITECTURE.md#interfaces-track-3) names them
 
 Asked of other modules. Each is new work inside state another module owns, settled as a
 [seam ruling in the module list](../ARCHITECTURE.md#seam-rulings-for-render-2d): this module's builder builds it,
-after the owner's last V1 milestone is Done, with the behaviour defined here, and it then belongs to the owner.
+on what the owning module has landed by then, with the behaviour defined here, and it then belongs to the owner.
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
    transfer, and a scene that declares no reconstruction. Built in M1.
