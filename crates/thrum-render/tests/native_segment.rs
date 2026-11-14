@@ -372,6 +372,9 @@ fn whole_raw_encoder_copy_select_matches_prepared_wgsl_in_one_submit() {
         no_native[1], no_native[3],
         "no-op native work must fail exact history"
     );
+    println!(
+        "M10 boundary: exact 1024-byte output and history; no-op native and omitted native storage-write controls rejected"
+    );
 }
 
 fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
@@ -393,6 +396,7 @@ fn fixture(skip_native: bool, skip_tile: bool) -> (Vec<Vec<u8>>, Vec<u8>) {
             .request_adapter(&wgpu::RequestAdapterOptions::default())
             .await
             .expect("Metal adapter");
+        println!("M10 Metal adapter: {:?}", adapter.get_info());
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor::default())
             .await
