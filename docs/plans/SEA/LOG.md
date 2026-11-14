@@ -105,3 +105,16 @@ combined source. The merge gate runs the full repository check again.
 - 2026-11-14 [The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) now says the sea's methods are this
   design's and Broadsides is a resource; its cloud half was left for `CLOUDS`' planner. The water decision's
   open-sea row and the module list's licence line were brought into step.
+- 2026-11-14 Owner, through the lead, about this module: "Please make sure the sea work is actually thinking about
+  water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built
+  cohesively."
+- 2026-11-14 Re-planned on those words. Water is designed as one system in [`WATERS`](../WATERS/DESIGN.md), and
+  this module is narrowed to the part that never depended on where water lies: the wind's wave field. M1 and M2
+  are unchanged, word for word, so M1 as it is being built stands. M3 to M10 were removed here and written again
+  in `WATERS` as its M2 to M11, generalised to every body of water.
+- 2026-11-14 The design was cut to the wave field. Its sections on the surface, the query, the wake, whitewater,
+  optics, capabilities, cost and risks moved to `WATERS`' design, with what changed there said in that design's
+  table of verdicts. Once M2 is Done, `thrum-sea-model` and `thrum-sea` pass to `WATERS`.
+- 2026-11-14 The assumptions that were about the surface, wake, optics, cost and the close moved to
+  [`WATERS`' plan](../WATERS/PLAN.md#open-for-the-human). The one on body-only reflection was replaced there:
+  water now reflects what is on screen.

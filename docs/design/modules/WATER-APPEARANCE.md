@@ -1,5 +1,9 @@
 # Causal whitewater and breaking presentation
 
+**14 November 2026: retained as research.** Thrum's water is now designed as one system in
+[WATERS' design](../../plans/WATERS/DESIGN.md), which judged this document as evidence and is the authority for
+how water works. Nothing below is commissioned.
+
 1 November 2026. **Selected production approximation, unimplemented and uncalibrated.** Refines WAT-02/04/08
 under the [water commission](WATER.md), [dynamics](WATER-DYNAMICS.md) and [optical transport](WATER-OPTICS.md).
 Published precedents, derived accounting and authored coefficients have different status. Predictive entrainment,

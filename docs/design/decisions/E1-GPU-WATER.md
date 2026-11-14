@@ -8,7 +8,14 @@ This record owns:
 * what water promises to replay;
 * how players share it in multiplayer.
 
-These documents select the numerical methods: the [sea and cloud port decision](SEA-AND-CLOUD-PORT.md),
+**14 November 2026.** Water is now designed as one system for every body of water in
+[WATERS' design](../../plans/WATERS/DESIGN.md), which selects the methods, with the wave field in
+[SEA's](../../plans/SEA/DESIGN.md). It keeps this record's requirements and seams with one departure, which is
+[open for the owner](../../plans/WATERS/PLAN.md#open-for-the-human): a river's bulk flow is worked out once and
+stored, not simulated on the GPU while the game runs. Wakes, rings and foam on a river still run on the GPU.
+Where the method tables below differ from that design, the design holds.
+
+Before that date these documents selected the numerical methods: the [sea and cloud port decision](SEA-AND-CLOUD-PORT.md),
 [E1's initial operators](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river), and
 [WATER-DYNAMICS](../modules/WATER-DYNAMICS.md), [WATER-APPEARANCE](../modules/WATER-APPEARANCE.md) and
 [WATER-OPTICS](../modules/WATER-OPTICS.md).
@@ -48,9 +55,9 @@ of live water.
 
 | Domain | GPU state | Method |
 |---|---|---|
-| Open sea | Analytic long waves + FFT short-wave cascades | [SEA's design](../../plans/SEA/DESIGN.md): functions of time, evaluated every presented frame at the display's time, the long waves into a camera-centred field clipmap |
-| Sea interaction | Two-level dispersive wake solver | eWave-style spectral propagation (Tessendorf, SIGGRAPH 2014 course): a near level of about 0.25 m cells, a far level of about 2 m cells, 256² each |
-| Rivers, lakes, pools | Finite shallow water / generalised heightfield | WATER-DYNAMICS' selected methods and the initial HLL patch, run as GPU compute |
+| Waves on any body | Analytic long waves + FFT short-wave cascades, at each body's gains | [SEA's design](../../plans/SEA/DESIGN.md): functions of time, evaluated every presented frame at the display's time; [gains](../../plans/WATERS/DESIGN.md#waves-on-a-body-gains) by fetch and depth |
+| Interaction on any body | Two-level dispersive solver | eWave-style spectral propagation (Tessendorf, SIGGRAPH 2014 course): a near level of about 0.25 m cells, a far level of about 2 m cells, 256² each, computed at a few depths and blended ([WATERS](../../plans/WATERS/DESIGN.md#interaction-waves)) |
+| Lakes, pools, rivers | [The water map](../../plans/WATERS/DESIGN.md#the-water-map): a level, a bed and a current, prepared and not stepped | A lake is a level in a hollow; a river is a chart `RIVERS`' solver prepares once |
 | Whitewater | Fresh foam, aged foam, aeration, slick | One transported field per domain, fed by one deposition pass |
 
 The CPU keeps a f64 evaluator of the analytic long waves:

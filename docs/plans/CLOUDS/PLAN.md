@@ -16,11 +16,11 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: cloud light takes its first-order phase from the droplets, not the retained reference's lobe. Near the Sun and away from it the sky will differ from Broadsides' accepted stills: a tighter silver lining, and brighter clouds with the Sun behind the viewer.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the twelve volumes and growth track included. They enter this repository as the example's content with their licence record, which grants nothing to third parties; their terms if Thrum's source is published are the owner's to say. Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: the owner's words of 13 November, "you can bring that across when it makes sense", mean this plan decides when the work starts: M1 and M2 once the design is approved, later milestones when their dependencies are Done, which can be before G7.
-- Assumption: "the sky over the V1 valley and the sea scene" is a cloud selection inside `examples/v1-game` and `examples/sea`, off by default, not a new scene. The V1 exit scene is unchanged unless the selection is turned on.
+- Assumption: "the sky over the V1 valley and the sea scene" is a cloud selection inside `examples/v1-game` and `examples/water`, off by default, not a new scene. The V1 exit scene is unchanged unless the selection is turned on.
 - Assumption: finished clouds excludes the Broadsides game's ten genera, squall and warm front, a cloud a simulation writes, and a cloud held in place against the wind.
 - Assumption: a finished sky keeps the camera and all solid geometry below the lowest cloud base. Mountains that rise into cloud, light shafts in haze and a camera in cloud are not planned. The time-lapse control runs from 1× to 60×, and "continuous to the horizon" means to the horizon of the cloud tops, about 200 km.
 - Assumption: the full-refresh cost account is recorded on the Mac only, at 2560×1440 until the showcase's own extent exists (M12 repeats it there). Chrome is held to the same look and behaviour, and its frame intervals are recorded. No timing figure decides an item or stops a milestone (brief decision 3).
-- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones, which are not planned yet, and its sea milestone waits for `SEA` M8. Everything a visitor sees over the valley is finished by M10.
+- Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones, which are not planned yet, and its sea milestone waits for `WATERS` M8. Everything a visitor sees over the valley is finished by M10.
 
 ## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly
 
@@ -94,7 +94,7 @@ names each shape's intended read and its accepted weaknesses, which are not this
 
 ## M11 Clouds drift over the open sea, shade it and show in its reflections
 
-`examples/sea` is `SEA`'s: add the selection and change nothing else of that module's.
+`examples/water` is `WATERS`': add the selection and change nothing else of that module's.
 
 ## M12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 

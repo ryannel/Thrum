@@ -1,5 +1,9 @@
 # Interactive water dynamics
 
+**14 November 2026: retained as research.** Thrum's water is now designed as one system in
+[WATERS' design](../../plans/WATERS/DESIGN.md), which judged this document as evidence and is the authority for
+how water works. Nothing below is commissioned.
+
 1 November 2026. **Selected engineering recommendation for a wider, bounded provider; unimplemented and
 unqualified.** This is D2-water B beneath the [water commission](WATER.md), not a replacement for the smaller
 [initial sea/shallow specification](../PLAY-ENVIRONMENT-SPEC.md). Relationships labelled derived or authored below

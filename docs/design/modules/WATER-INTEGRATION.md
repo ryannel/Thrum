@@ -1,5 +1,9 @@
 # Water integration and proof plan
 
+**14 November 2026: retained as research.** Thrum's water is now designed as one system in
+[WATERS' design](../../plans/WATERS/DESIGN.md), which judged this document as evidence and is the authority for
+how water works. Nothing below is commissioned.
+
 **V1 reset (3 November 2026): the regional-optics portion below is parked with R3, and water dynamics follow V1.**
 
 1 November 2026, revised 2 November. **D2-water B/C specification for bounded

@@ -1182,14 +1182,14 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "SEA:M8"
+        "WATERS:M8"
       ],
       "quality_bar": "A sea under a living sky as in Sea of Thieves: cloud shadows sliding over the swell, the clouds themselves in the water, and the horizon closing in haze under both.",
       "items": [
         {
           "id": "M11.1",
-          "statement": "`examples/sea` has a cloud selection, off by default. With it on, the scene keeps a weather state in its world, adds the cloud contribution after the sea, and the labelled stand-in shade provider is not used. With it off, the scene's world, page, compiled graph and frames are what they were.",
-          "check": "cargo test --locked --offline -p sea-scene --features thrum-render/creation-counters --test clouds_selection_gpu",
+          "statement": "`examples/water` has a cloud selection, off by default. With it on, the scene keeps a weather state in its world, adds the cloud contribution after the sea, and the labelled stand-in shade provider is not used. With it off, the scene's world, page, compiled graph and frames are what they were.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test clouds_selection_gpu",
           "ask": "Does the scene reach clouds only through public interfaces, with its presets and type table in the scene? Did any item or test of `SEA` change? None may.",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1201,7 +1201,7 @@
         {
           "id": "M11.2",
           "statement": "The cloud trace treats the sea's written depth as geometry, so no cloud is composed over a water pixel. The sea's sunlight takes the provider's factor once, and its reflection reads the product that holds the overlay.",
-          "check": "cargo test --locked --offline -p sea-scene --test clouds_sea_gpu",
+          "check": "cargo test --locked --offline -p water-scene --test clouds_sea_gpu",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1232,7 +1232,7 @@
         {
           "id": "M11.5",
           "statement": "In Chrome the sea scene with clouds reaches its first frame with no validation error and passes M11.3's list at noon.",
-          "check": "node scripts/check_sea_browser.mjs --case clouds",
+          "check": "node scripts/check_water_browser.mjs --case clouds",
           "inspect": "Capture the noon `fixed` stills in Chrome. Judge them by M11.3's list.",
           "lock": "gpu",
           "target": "chrome-webgpu",
