@@ -1,5 +1,14 @@
 # TRANSPORT log
 
+- 2026-11-15 Resumed M1 from `6e3f7425` and retained [target evidence](../../evidence/TRANSPORT/M1.md):
+  complete Mac, Chrome and simulator conformance, the ten-minute four-client session, both release cost matrices,
+  virtual-time tests and dependency closure pass. Native and Wasm Clippy pass after the documentation-only
+  rebase. Ten items are marked passed; M1.10 still needs CONTENT-LOOP's socket tests removed from the default
+  gate by their owner, and M1.12 still waits for the shared GPU. The merge attempt rebased but refused to push
+  for lack of an exact-baseline proof. The documentation gate separately reproduces missing evidence links in
+  CREATOR, CULLING and CLOUDS. [Handoff](../../evidence/TRANSPORT/M1-handoff.md) records the jobs and next steps;
+  these are verified failures and pending checks, not an acceptance claim.
+
 - 2026-11-14 Dependency proposal for M1.10: its whole-workspace no-socket claim is false before TRANSPORT.
   `thrum-cook/tests/serve_and_watch.rs` has ordinary ungated tests that call `DevServer::start` and
   `TcpStream::connect`; its manifest has no opt-in test gate. `./dev check` runs `cargo test --workspace`, and
