@@ -1,5 +1,10 @@
 # SEA M2 recovery note
 
+This is historical recovery context. On 14 November, the full exact verifier
+passed at `da942df9`; [the retained proof](M2-baselines.json) and [M2 record](M2.md)
+supersede the pending qualification below. All nine builder items now pass.
+The qualification helper is completing gated integration from that proof.
+
 Finish M2 with every item proved on its target and the work merged through
 `agent_loop.py merge --worktree .`. Leave its status `in_progress`; the lead's
 script owns the later status and review. M2.1–M2.7 and M2.9 are passed. M2.8,
