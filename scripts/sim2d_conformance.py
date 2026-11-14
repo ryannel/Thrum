@@ -189,6 +189,7 @@ def control(target):
 
 
 def measure(target):
+    measured_source = source_key()
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
     runner = Runner(target)
@@ -206,7 +207,8 @@ def measure(target):
             row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > previous["tick_ms_per_neighbour"]
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
-    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": source_key(), "timings_are_baselines": True}
+    assert source_key() == measured_source, "simulation sources changed during measurement"
+    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
 
 
 def costs(target):

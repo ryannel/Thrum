@@ -103,10 +103,10 @@ pub struct Vector {
 
 /// Integer-only FNV-1a encoding accumulator, with explicitly ordered bytes.
 #[derive(Clone, Copy, Debug)]
-pub struct Digest(u64);
+pub struct Digest(u64, bool);
 impl Default for Digest {
     fn default() -> Self {
-        Self(0xcbf2_9ce4_8422_2325)
+        Self(0xcbf2_9ce4_8422_2325, true)
     }
 }
 impl Digest {
@@ -127,18 +127,25 @@ impl Digest {
 pub trait StateEncode {
     /// Append canonical bytes, with lengths encoded as u64.
     fn encode(&self, digest: &mut Digest);
-    /// Whether all nested profile values are finite.
+    /// Whether all nested profile values are finite. The default validates the
+    /// complete encoding. An override must propagate every nested value's validity.
     fn is_finite(&self) -> bool {
-        true
+        let mut digest = Digest::default();
+        self.encode(&mut digest);
+        digest.1
     }
 }
 macro_rules! integers {
     ($($ty:ty),*) => { $(impl StateEncode for $ty {
         fn encode(&self, digest: &mut Digest) { digest.bytes(&self.to_le_bytes()); }
+        fn is_finite(&self) -> bool { true }
     })* };
 }
 integers!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 impl StateEncode for bool {
+    fn is_finite(&self) -> bool {
+        true
+    }
     fn encode(&self, digest: &mut Digest) {
         u8::from(*self).encode(digest);
     }
@@ -158,6 +165,7 @@ impl<T: StateEncode, const N: usize> StateEncode for [T; N] {
 }
 impl StateEncode for Number {
     fn encode(&self, digest: &mut Digest) {
+        digest.1 &= self.0.is_finite();
         self.0.to_bits().encode(digest);
     }
     fn is_finite(&self) -> bool {

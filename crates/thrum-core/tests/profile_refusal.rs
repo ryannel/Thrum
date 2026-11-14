@@ -7,7 +7,7 @@ use thrum_core::{
 };
 
 #[test]
-fn infinity_and_nan_refuse_atomically_then_a_valid_tick_commits() {
+fn nested_infinity_and_nan_refuse_atomically_then_a_valid_tick_commits() {
     for invalid in [Number::ONE / Number::ZERO, Number::ZERO / Number::ZERO] {
         let (mut runtime, mut game, mut candidate) = support::setup(1);
         let before = support::digest(&runtime, &game);
