@@ -149,10 +149,10 @@
       "aerial_ground_transport": {
         "implementation": "M9 continues the one aerial producer below the model ground using signed altitude, the density laws and the transmittance chart's near-surface optical-depth slope; diffuse and night sources use the ground point above. Sky charts and lent decoders are unchanged.",
         "correctness": "M9.1 and M9.2 pass on Metal: the declared 60-degree near-ground reads match the production product's own column within the unchanged allowance, the stopped-column controls fail, above-ground stored bytes are preserved, and continued values are finite with non-increasing stored transmittance. The 90-degree and 0.5-degree-Sun records are diagnostics only.",
-        "visuals": "The look at sea level is not yet judged; WATERS M2 owns that review. M9's changed-image inspection is still pending.",
-        "device": "Apple M3 Max Metal numerical proof. Native and hardware Chrome first cost arms are retained; the consecutive paired record and current Chrome handoff recheck remain pending. No physical cadence or whole-device budget claim.",
+        "visuals": "M9's native and Chrome before/after inspection finds changed bytes only on distant low terrain; sky, stars, near ground, props and letterbox bars are preserved. The look at sea level is not yet judged; WATERS M2 owns that review.",
+        "device": "Apple M3 Max Metal numerical proof and hardware Chrome H1-H5 pass. Consecutive paired ABBA aerial-pass timing records approximately 29% more GPU time on native and Chrome, with added integration work and Sun-chart reads investigated. No physical cadence or whole-device budget claim.",
         "unqualified": "Solar aerial transport remains unqualified against an independent all-orders reference; the own-column comparison does not close that gap. The joint view volume, haze, fog and local-light transport are not qualified by M9.",
-        "evidence": ["../evidence/ATMOSPHERE/M9-numerical.md", "../evidence/ATMOSPHERE/M9-cost.md"]
+        "evidence": ["../evidence/ATMOSPHERE/M9-numerical.md", "../evidence/ATMOSPHERE/M9-cost.md", "../evidence/ATMOSPHERE/M9-images.md", "../evidence/ATMOSPHERE/M9-checks.md"]
       },
       "evidence": [
         "../evidence/v1-workload/G3S-FIRST-LIGHT-2026-11-06.md",

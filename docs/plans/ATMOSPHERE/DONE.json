@@ -177,10 +177,10 @@
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.5",
@@ -198,10 +198,10 @@
           "statement": "Only the air moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel is low terrain kilometres away, which the volume's descending lines reach. The sky, the stars, the near ground, the props and the letterbox bars hold their old bytes. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: differences on distant low terrain only, none in the sky, on the near ground, on a prop or in the bars. Then read the builder's Chrome difference images for the day and night checkpoints the same way, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-images.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.7",
@@ -209,30 +209,30 @@
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.8",
           "statement": "The aerial pass's GPU time on the valley is on record before and after, on the Mac and in Chrome: paired in one session between the starting commit and the claimed one, with load and order. A pass about 25% over its time before has its investigation beside it. No figure in the record decides this item.",
           "ask": "Is the record in `docs/evidence/ATMOSPHERE/M9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-cost.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.9",
           "statement": "The maturity ledger's atmosphere rows say what this milestone proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/design/maturity.json; docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-cost.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ]
     },

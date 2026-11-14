@@ -320,3 +320,51 @@
   The normal checked merge will integrate the completed evidence while D10.5 awaits responsive app access.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-14 — ATMOSPHERE M9 reference refresh.** The aerial producer continues
+  descending columns below the model ground. The before verifier passed before the
+  shader change; native and Chrome changed-byte inspection finds distant low terrain
+  only. All five registered sets moved; none stayed wholly unchanged. The registry,
+  owner capture/comparison scripts and their sampling are unchanged. Final verifier
+  and full checks follow this checkpoint. Evidence: [inspection](../../evidence/ATMOSPHERE/M9-images.md),
+  [audit](../../evidence/ATMOSPHERE/M9-baseline-refresh.json),
+  [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md), and
+  [paired costs and investigation](../../evidence/ATMOSPHERE/M9-cost.md).
+
+  Each moved reference follows, with SHA-256 before and after:
+
+  - `docs/evidence/render/apple-tile-m0/native-baseline/night-linear/checkpoint-0.rgba16f.gz`
+    old `eb70fa5ad17acd15bcbacf2377e4879f6c2d6f10caf61024d9c5cddd821db3f5`; new `ea423fbc8c322de0e3dde7ebc87ee085ac094f32f1693fffdc9bb81aab9281c8`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/night-linear-off/checkpoint-0.rgba16f.gz`
+    old `196f42feb0a65f8e155bb39546afcc4d6574c71c5fdd661636c67743df19e443`; new `43a548d2078baf54d44b3f83dd0f9772fcbdcbc81fccf22cdee7631baf6b5416`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/night-sdr/checkpoint-0.png`
+    old `5725a4c543c47957e66510b0fd16884b51e63ebb3a06d70be301a24d1bead4af`; new `50ed2adf8d1a28b49786c9b5171f03ff6e5f938c20edf4b0cf52d00fcf673271`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/night-sdr-off/checkpoint-0.png`
+    old `1d419e4339899cf52ce80a61ef88c5aabd2349f728ed1e69a24383a371442a6f`; new `639605c0a251050b830573cf72fe4179392bba3459e451997104a681d73ec795`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.rgba16f.gz`
+    old `c1cb22dbb95b2c61adb5db2ed7b0aa91bbaa44b9d987376a7ddcc4ccf00c638a`; new `8eae3bd77211422435a354e3d672be4c8b00a9471dd22aee3180e05347351946`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/post-cut.surface-bgra8.gz`
+    old `82b340daf33420462a6120f22226a7c53124d2d66961641978faca2b26399d55`; new `05460b840dc804370b8301a4ea74c122ddf2793e4793ef277acbda317b7cbe24`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.rgba16f.gz`
+    old `73133597b4ab1fc397fdbad34d3c64f4b32cd0de95a96d3f456a4d9f55848ae8`; new `638207ee8c632f87e18f689ef49d6facac5b3039de9f252b5adefd4f06434a2b`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/scene-linear-1/pre-cut.surface-bgra8.gz`
+    old `25cad579d02c3afc9e6d838bab31278213bdb365d3d4a5a7d61fc5518ed2b87f`; new `a1f20cb5dac2b15f0e89a2d58db0ae2e94d750446deebbb46fa6178085fc5a26`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.png`
+    old `fd5213dedae57f3d3d05369e1cec6545cf5baced0dd7ba9302ead03a8697e06a`; new `853eebf24e96001d874f69e4ccc1a78ffe368d66fc0811674e7983fb1671c0c7`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/post-cut.surface-bgra8.gz`
+    old `82b340daf33420462a6120f22226a7c53124d2d66961641978faca2b26399d55`; new `05460b840dc804370b8301a4ea74c122ddf2793e4793ef277acbda317b7cbe24`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.png`
+    old `bd92dc5dde08473ae688d8d15577750960e5fd2bd4fc59528fc58a2122aafb2c`; new `2d552a1f33d3b6759bd438383187ffce43b2e2af84fe30ab3a9c53a3c013829a`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sdr-1/pre-cut.surface-bgra8.gz`
+    old `25cad579d02c3afc9e6d838bab31278213bdb365d3d4a5a7d61fc5518ed2b87f`; new `a1f20cb5dac2b15f0e89a2d58db0ae2e94d750446deebbb46fa6178085fc5a26`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sun-linear/checkpoint-0.rgba16f.gz`
+    old `64724d54cc6c24362f2c3a87e8c893dbdf23c7b0b2fa0fd2678638a1ff5cf09c`; new `91dcea065e7721119e7ad364564017814f547ec0388900e1c9fe54328c9687aa`.
+  - `docs/evidence/render/apple-tile-m0/native-baseline/sun-sdr/checkpoint-0.png`
+    old `e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65`; new `599aa56d52c8ddd0cc3aa4f5fdeb9d9b295b87538ea400c7018e6bb99e6a72cd`.
+  - `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz`
+    old `1aaad66d4beb26aef9f2c605c92390a4330e5236290ee3673b7a0e9de1a7f296`; new `a271f7fa87ebb84ef7810260a7a0d7a6a99c7caa38ac997cdd24aec962cb2b17`.
+  - `docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-linear-3/manifest.json.gz`
+    old `78d95bb28d09d0b4826dc7456a14ba936ef12bc8925bde914656857f4818bc42`; new `d211fb7eef514bf59cfaeb57d7770b021ce20a0980028c9f5e2941a91bbdaa99`.
+  - `docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-sdr/manifest.json.gz`
+    old `b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da`; new `c116bd12245d58623a169fd6cca98dcd6b07ea8e162e44a75fd4da5d3bf96c89`.
+  - `docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz`
+    old `b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a`; new `b3d2fd039f22fe8a1ada579a18c55445155a26f02be79835392042d682df84ff`.
