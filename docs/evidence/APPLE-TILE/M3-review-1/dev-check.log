@@ -1,0 +1,1177 @@
+PASS exact-baseline gate: no covered-path change beyond origin/main
+Gate seconds: 0.027732; load: (2.8974609375, 2.88330078125, 2.94873046875)
+test_digest_and_byte_modes_and_failures (__main__.ChromeTests.test_digest_and_byte_modes_and_failures) ... ok
+test_covered_change_refuses_until_exact_proof (__main__.GateTests.test_covered_change_refuses_until_exact_proof) ... ok
+test_covered_rebase_invalidates_proof (__main__.GateTests.test_covered_rebase_invalidates_proof) ... ok
+test_missing_base_and_dirty_inputs_fail_closed (__main__.GateTests.test_missing_base_and_dirty_inputs_fail_closed) ... fatal: Not a valid object name refs/remotes/origin/main
+ok
+test_no_covered_change_passes_without_proof (__main__.GateTests.test_no_covered_change_passes_without_proof) ... ok
+test_uncovered_rebase_preserves_proof (__main__.GateTests.test_uncovered_rebase_preserves_proof) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.949s
+
+OK
+note: crates/thrum-app/src/app.rs: 1321 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/publication.rs: 1378 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/registered_world.rs: 1814 code lines; check it still holds one responsibility
+note: crates/thrum-core/src/sim/runtime.rs: 1730 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/graph.rs: 1261 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime/tests/device.rs: 1307 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/runtime.rs: 1382 code lines; check it still holds one responsibility
+note: crates/thrum-render/src/synthetic.rs: 2408 code lines; check it still holds one responsibility
+Repository checks passed: 708 Markdown files, 3921 local links, 30 module records, crate policy and current design hashes.
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.403s
+
+OK
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 0.012s
+
+OK
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.106s
+
+OK
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `thrum-cook` (lib test) generated 1 warning
+warning: `thrum-cook` (test "cook_loop") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "serve_and_watch") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (bin "thrum-cook") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "hostile_products") generated 1 warning (1 duplicate)
+warning: `thrum-cook` (test "edit_to_visible") generated 1 warning (1 duplicate)
+   Compiling v1-game-ios v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game-ios)
+warning: `v1-game` (test "cooked_texture_quality") generated 1 warning (1 duplicate)
+warning: `v1-game` (test "cooked_material_gpu") generated 1 warning (1 duplicate)
+warning: `v1-game` (test "cooked_assets_gpu") generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.21s
+     Running unittests src/lib.rs (target/debug/deps/asset_loop-dfdda71a33b0a3eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/asset_loop-3960902f927aa0c6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_app-bfab80055db16375)
+
+running 53 tests
+test app::device::tests::public_destroy_delivers_immutable_generation_without_a_window_or_callback_cycle ... ok
+test app::edit_flow::tests::a_frame_in_flight_during_an_edit_cannot_revert_it ... ok
+test app::edit_flow::tests::an_edit_cancelled_by_gpu_replacement_is_applied_after_recovery ... ok
+test app::pause::tests::health_during_pending_resume_is_classified_after_its_acknowledgement ... ok
+test app::pause::tests::manual_pause_during_overload_remains_paused_until_manual_resume ... ok
+test app::pause::tests::only_nonrepeated_press_changes_intent ... ok
+test app::pause::tests::overload_drains_before_resuming_and_busy_retains_the_request ... ok
+test app::pause::tests::overload_reuses_pending_manual_pause_and_preserves_later_resume ... ok
+test app::pause::tests::pending_pause_preserves_a_later_resume_and_busy_preserves_intent ... ok
+test app::pause::tests::rapid_toggles_and_invalid_ack_leave_the_accepted_request_intact ... ok
+test app::recovery::tests::candidate_loss_before_reply_cannot_publish_ready_or_restart_old_generation ... ok
+test app::recovery::tests::generation_exhaustion_keeps_the_last_device_identity ... ok
+test app::recovery::tests::loss_is_single_flight_busy_retains_queue_and_retry_is_explicit ... ok
+test app::recovery::tests::lost_profiles_are_explicit_and_never_create_present_calls_or_timings ... ok
+test app::render_actor::tests::final_wait_reports_observed_loss_but_preserves_genuine_wait_failures ... ok
+test app::render_actor::tests::only_gpu_failures_with_a_device_loss_signal_become_recovery ... ok
+test app::render_actor::tests::shutdown_gate_refuses_work_without_a_gpu_or_world_operation ... ok
+test app::tests::a_bounded_run_that_never_presents_still_fails ... ok
+test app::tests::a_run_until_closed_is_bounded_only_when_its_variable_is_set ... ok
+test app::tests::a_window_closed_before_any_present_ends_a_run_until_closed_normally ... ok
+test app::tests::a_window_the_display_never_drove_says_why_it_drew_nothing ... ok
+test app::tests::frame_count_for_present_qualification_is_bounded ... ok
+test app::tests::percentiles_of_no_samples_are_nan_not_a_panic ... ok
+test capture_writer::tests::live_encoding_reports_the_disk_error_after_its_io_channel_closes ... ok
+test capture_writer::tests::lossless_spool_reconstructs_every_byte_and_hash_and_refuses_changed_record_sizes ... ok
+test capture_writer::tests::slow_output_has_finite_leases_nonblocking_refusal_and_a_finalization_deadline ... ok
+test capture_writer::tests::write_flush_and_output_limit_failures_cannot_finalize_successfully ... ok
+test file_watch::tests::a_burst_of_writes_is_delivered_once ... ok
+test file_watch::tests::a_delete_then_create_save_is_delivered_once_and_a_lasting_absence_is_delivered ... ok
+test file_watch::tests::a_file_missing_at_start_is_delivered_when_created ... ok
+test file_watch::tests::a_parameter_save_never_reloads_the_game_and_l_reloads_both_in_order ... ok
+test file_watch::tests::a_rename_save_is_delivered_once ... ok
+test file_watch::tests::a_save_landing_during_shutdown_is_dropped ... ok
+test file_watch::tests::a_touch_or_an_identical_rewrite_is_never_delivered ... ok
+test file_watch::tests::an_in_place_save_is_delivered_once_with_its_kind ... ok
+test file_watch::tests::nothing_to_watch_starts_no_thread ... ok
+test file_watch::tests::saves_to_both_kinds_before_the_event_loop_runs_coalesce_into_one_take ... ok
+test file_watch::tests::stopping_joins_without_waiting_for_a_tick_and_no_wake_follows ... ok
+test sky::capture::tests::a_capture_refuses_a_parameter_file_with_a_refused_entry ... ok
+test sky::tests::loader_failures_after_the_first_draw_are_reported_once_with_the_kept_generation ... ok
+test sky::tests::missing_or_uncooked_stores_name_the_next_step ... ok
+test sky::tests::png_is_a_valid_stored_rgb_image ... ok
+test sky::tests::sun_bearing_is_clockwise_from_north_with_y_up ... ok
+test sky::tests::the_ground_is_one_wide_slab_with_its_top_at_zero ... ok
+test sky::tests::the_sky_and_ground_render_through_every_pass ... ok
+test sky::tests::undrawable_skies_are_refused_by_field ... ok
+test sky::tests::update_sends_only_changed_drawable_skies ... ok
+test web_clock::tests::a_play_change_moves_the_last_admitted_time ... ok
+test web_clock::tests::a_timestamp_before_the_last_admitted_one_is_clamped_and_counted ... ok
+test web_clock::tests::an_unapplied_transition_is_not_recorded ... ok
+test web_clock::tests::invalid_timestamps_are_refused ... ok
+test web_clock::tests::the_first_timestamp_is_the_origin ... ok
+test web_clock::tests::visibility_and_pause_compose ... ok
+
+test result: ok. 53 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.30s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_asset-2a85175571dd7319)
+
+running 9 tests
+test bytes::tests::owned_copy_is_aligned_and_exact ... ok
+test hash::tests::hex_round_trips_and_refuses_bad_text ... ok
+test head::tests::head_round_trips_and_refuses_damage ... ok
+test remote::tests::a_later_publication_fetches_only_what_changed_and_preferences_apply ... ok
+test remote::tests::first_poll_loads_only_the_preferred_products_and_then_long_polls ... ok
+test remote::tests::generations_never_go_backwards_within_an_epoch ... ok
+test remote::tests::head_statuses_are_classified ... ok
+test remote::tests::tampered_bytes_are_refused_and_the_resident_generation_stays ... ok
+test remote::tests::urls_are_built_from_a_checked_origin ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dev_server_browser.rs (target/debug/deps/dev_server_browser-2499a472ecd496f4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dev_server_wasm.rs (target/debug/deps/dev_server_wasm-384b9caec06eb422)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_asset_gpu-63fc0a252be2ccf3)
+
+running 24 tests
+test draw::tests::metal_cooked_march_uses_each_world_sample_and_preserves_sky ... ok
+test draw_path_tests::only_known_indirect_support_selects_indirect ... ok
+test load::tests::a_retired_loader_publishes_no_observation ... ok
+test material::tests::a_burst_during_a_compile_supersedes_waiting_requests_before_they_compile ... ok
+test material::tests::a_failed_compile_spawn_settles_the_jobs_queued_behind_it ... ok
+test material::tests::a_ready_request_stops_being_ready_once_it_has_an_outcome ... ok
+test material::tests::a_replaced_device_queues_its_restore_behind_an_outstanding_old_device_compile ... ok
+test material::tests::a_scene_without_one_hook_point_keeps_the_accepted_hook_and_recovers_to_built_in ... ok
+test material::tests::an_accepted_hook_that_fails_on_a_rebuilt_surface_leaves_the_built_in_material ... ok
+test material::tests::an_unconsumed_candidate_replaced_by_a_newer_one_is_superseded ... ok
+test material::tests::an_unvalidated_restore_keeps_the_accepted_intent_across_another_rebuild ... ok
+test material::tests::naga_messages_lose_their_combined_source_rendering ... ok
+test material::tests::offsets_become_hook_lines_and_character_columns ... ok
+test material::tests::one_compile_runs_and_only_the_newest_request_waits ... ok
+test material::tests::the_hook_wraps_the_single_material_read_and_follows_the_glue ... ok
+test placement::tests::a_turn_that_names_no_rotation_is_refused_by_name ... ok
+test placement::tests::built_placements_are_rigid_and_compose_in_call_order ... ok
+test placement::tests::finite_axes_turn_however_long_or_short ... ok
+test placement::tests::finite_transforms_too_large_to_derive_from_are_refused ... ok
+test placement::tests::non_rigid_transforms_are_refused_by_name_and_cause ... ok
+test placement::tests::resting_placements_put_the_lowest_vertex_at_their_height ... ok
+test staging::tests::a_volume_slice_larger_than_the_copy_unit_splits_into_block_rows ... ok
+test staging::tests::copies_pack_in_order_into_aligned_chunks_and_never_span_two ... ok
+test staging::tests::small_slices_group_and_2d_levels_split_by_rows ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_content_runtime-e77cef3a533e34ba)
+
+running 1 test
+test tests::checked_product_rejects_bad_light_and_keeps_revision ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_controls-009c63435becb1a9)
+
+running 13 tests
+test display::tests::clock_shows_day_fraction_as_hours_and_minutes ... ok
+test display::tests::degrees_and_scaled_units_round_trip ... ok
+test tests::a_repeated_person_edit_is_still_reported ... ok
+test tests::code_edits_refuse_invalid_values_without_changing_state ... ok
+test tests::consumers_see_only_controls_changed_since_their_revision ... ok
+test tests::declarations_refuse_bad_keys_labels_ranges_and_duplicates ... ok
+test tests::parameter_files_apply_valid_entries_and_explain_the_rest ... ok
+test tests::people_edits_of_the_wrong_kind_are_explained ... ok
+test tests::people_edits_snap_clamp_and_count ... ok
+test tests::people_edits_with_another_models_id_are_refused ... ok
+test tests::views_get_authored_numbers_not_f32_noise ... ok
+test tests::views_get_display_units_and_formatted_text ... ok
+test tests::views_group_controls_by_first_declared_prefix ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_cook-51e701b82fa26b25)
+
+running 11 tests
+test cooker::tests::a_source_edited_during_its_cook_is_not_cached_under_the_old_key ... ok
+test mesh::tests::mirrored_nodes_keep_front_faces_counter_clockwise_and_normals_outward ... ok
+test server::tests::a_malformed_allowed_origin_is_refused_by_name ... ok
+test server::tests::allowed_origins_are_exact_page_origins ... ok
+test tripwire::tests::a_load_free_metric_is_judged_against_every_class_and_non_finite_values_fail ... ok
+test tripwire::tests::a_metric_is_seeded_then_checked_against_its_own_load_class ... ok
+test tripwire::tests::history_lines_round_trip_and_malformed_lines_are_skipped ... ok
+test tripwire::tests::the_floor_holds_for_tiny_timings_and_a_missing_metric_fails ... ok
+test write::tests::container_sections_are_aligned_and_refused_when_damaged ... ok
+test write::tests::ktx2_reader_refuses_inexact_levels_and_truncation ... ok
+test write::tests::ktx2_round_trips_through_the_runtime_reader ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/thrum_cook-649bb881e7946dbc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cook_loop.rs (target/debug/deps/cook_loop-386bebc6293da674)
+
+running 15 tests
+test a_broken_source_keeps_the_previous_product_published ... ok
+test a_damaged_head_does_not_restart_generations ... ok
+test a_damaged_product_behind_an_action_record_is_recooked_not_republished ... ok
+test a_partial_block_source_is_refused_by_compressed_profiles_and_served_portable ... ok
+test a_planning_failure_keeps_the_previous_mesh_published ... ok
+test a_running_reader_follows_a_store_that_is_wiped_and_recreated ... ok
+test an_edit_recooks_only_its_asset_and_old_readers_stay_valid ... ok
+test block_compressed_profiles_refuse_partial_blocks_but_the_portable_product_publishes ... ok
+test full_cook_publishes_every_kind_and_profile_and_the_runtime_accepts_them ... ok
+test hidden_files_named_by_the_watcher_are_not_sources ... ok
+test only_one_cooker_may_write_a_store ... ok
+test reopening_removes_damaged_products_and_recooks_them ... ok
+test the_stat_cache_notices_an_atomic_save_with_identical_size_and_time ... ok
+test two_sources_for_one_name_fail_and_keep_the_previous_product ... ok
+test unchanged_sources_reuse_everything_and_do_not_republish ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s
+
+     Running tests/edit_to_visible.rs (target/debug/deps/edit_to_visible-d87bc6f0beba73f5)
+
+running 1 test
+test texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+     Running tests/hostile_products.rs (target/debug/deps/hostile_products-fedfa689e5f08964)
+
+running 1 test
+test mutated_products_are_rejected_or_parsed_safely ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/serve_and_watch.rs (target/debug/deps/serve_and_watch-1a8c7095e8e1f35d)
+
+running 4 tests
+test only_listed_page_origins_beyond_loopback_may_read_the_dev_server ... ok
+test the_dev_server_serves_head_verified_products_and_long_polls ... ok
+test the_watcher_publishes_an_edited_source ... ok
+test web_pages_cannot_read_the_dev_server ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_core-a14db7f162218d7c)
+
+running 71 tests
+test sim::clocked_world::tests::configured_cap_controls_each_call_and_pause_preserves_accepted_backlog ... ok
+test sim::clocked_world::tests::display_samples_do_not_admit_world_time_and_clock_faults_preserve_state ... ok
+test sim::clocked_world::tests::failed_tick_remains_queued_and_prior_commits_are_not_repeated ... ok
+test sim::clocked_world::tests::first_overload_survives_native_adoption_and_clears_only_after_resume ... ok
+test sim::clocked_world::tests::invalid_controls_are_refused_before_game_control_replacement ... ok
+test sim::clocked_world::tests::native_updates_preserve_actual_publication_identity_and_recovery_signal ... ok
+test sim::clocked_world::tests::optional_publication_recovers_without_an_additional_tick_or_duplicate_output ... ok
+test sim::clocked_world::tests::paused_adoption_drains_only_the_already_accepted_backlog ... ok
+test sim::clocked_world::tests::recovery_failure_does_not_repeat_previously_committed_ticks ... ok
+test sim::clocked_world::tests::resident_lane_adopts_the_existing_clock_and_phase ... ok
+test sim::clocked_world::tests::task_lifecycle_is_idempotent_without_weakening_the_strict_clock_api ... ok
+test sim::clocked_world::tests::zero_change_recovery_is_still_a_new_publication ... ok
+test sim::column_store::tests::ordinary_store_has_no_index_and_an_index_never_selects_absent_values ... ok
+test sim::column_store::tests::predicate_index_tracks_presence_replacement_and_direct_mutation_across_words ... ok
+test sim::column_store::tests::row_swap_carries_values_presence_and_activity_together ... ok
+test sim::column_store::tests::undo_removal_and_restore_maintain_the_predicate_index ... ok
+test sim::dense_directory::tests::clone_from_reuses_same_capacity_maps_and_copies_membership ... ok
+test sim::dense_directory::tests::forward_replay_matches_transitions_and_undo_restores_the_start ... ok
+test sim::dense_directory::tests::full_capacity_and_reuse_preserve_the_bijection ... ok
+test sim::dense_directory::tests::interleaved_slots_pack_and_deactivate_at_the_boundary ... ok
+test sim::dense_directory::tests::inverse_replay_restores_every_intermediate_layout ... ok
+test sim::dense_directory::tests::same_state_is_a_noop_and_equal_row_changes_are_reversible ... ok
+test sim::dense_directory::tests::shared_layout_identity_is_conservative_and_does_not_change_world_hash ... ok
+test sim::publication::page_tests::cold_page_captures_checked_identity_and_generic_selected_columns ... ok
+test sim::publication::page_tests::generation_reuse_emits_ordered_lifecycle_even_when_component_values_match ... ok
+test sim::publication::page_tests::held_pages_deferred_union_and_reverted_endpoint_keep_exact_temporal_pair ... ok
+test sim::publication::page_tests::parallel_warm_capture_matches_serial_for_endpoint_and_temporal_columns_without_a_directory ... ok
+test sim::publication::page_tests::partitioned_boundary_deletion_and_reuse_preserve_neighbor_identity ... ok
+test sim::publication::page_tests::partitioned_pages_keep_held_values_and_exact_pairs_across_independent_layouts ... ok
+test sim::publication::page_tests::partitioned_rewind_swaps_neighbors_without_reporting_layout_changes ... ok
+test sim::publication::page_tests::partitioned_warm_two_hundred_spawns_keep_reservations_and_existing_neighbors ... ok
+test sim::publication::page_tests::sparse_inverse_patch_compares_selected_source_and_rejects_stale_generations ... ok
+test sim::publication::page_tests::stopped_rows_reset_previous_when_a_warm_page_has_no_new_world_dirty_bits ... ok
+test sim::publication::page_tests::transient_identity_is_absent_from_net_lifecycle_and_component_diff ... ok
+test sim::publication::page_tests::warm_two_hundred_spawn_burst_preserves_page_reservations ... ok
+test sim::publication::tests::bitset_refresh_unions_component_and_structural_slots ... ok
+test sim::publication::tests::fused_capture_matches_separate_refresh_and_exact_pair_oracle ... ok
+test sim::publication::tests::pair_diff_reports_stopped_and_oscillating_previous_values_independently ... ok
+test sim::publication::tests::registered_snapshot_callback_keeps_nested_page_values_independent ... ok
+test sim::publication::tests::selection_rejects_unknown_and_duplicate_types_without_changing_policy ... ok
+test sim::publication::tests::selective_refresh_and_exact_diff_preserve_reverted_and_unselected_values ... ok
+test sim::publication::tests::source_endpoint_tracks_same_timeline_and_retired_publications ... ok
+test sim::publication::tests::temporal_pair_uses_final_tick_first_preimages_after_deferred_ticks ... ok
+test sim::registered_world::tests::backward_shift_keeps_colliding_ids_reachable_after_removal ... ok
+test sim::registered_world::tests::checked_identity_and_registered_components_survive_churn ... ok
+test sim::registered_world::tests::component_ticks_survive_tentative_abort_committed_undo_and_slot_reuse ... ok
+test sim::registered_world::tests::dense_activity_keeps_handles_and_replays_layout_through_delta_and_undo ... ok
+test sim::registered_world::tests::duplicate_component_refuses_without_consume_or_partial_spawn ... ok
+test sim::registered_world::tests::refusing_visit_refreshes_the_written_rows_active_bit ... ok
+test sim::registered_world::tests::tentative_upsert_restores_absence_and_first_value_after_repeated_writes ... ok
+test sim::schedule::tests::indexed_registration_selects_its_factory_and_rejection_preserves_it ... ok
+test sim::schedule::tests::noncopy_column_delta_overlays_values_membership_and_independent_copy ... ok
+test sim::snapshot_ring::tests::batched_changes_merge_separate_components_and_preserve_immediate_marks ... ok
+test sim::snapshot_ring::tests::batched_changes_survive_busy_capture_and_rewind_without_mutating_leases ... ok
+test sim::snapshot_ring::tests::capture_skips_a_weak_leased_cursor_and_preserves_its_payload ... ok
+test sim::snapshot_ring::tests::component_unions_are_separate_and_structural_changes_refresh_every_component ... ok
+test sim::snapshot_ring::tests::held_pages_refuse_without_calling_fill_and_resume_after_release ... ok
+test sim::snapshot_ring::tests::page_unions_accumulate_independently_and_outbound_is_exact ... ok
+test sim::snapshot_ring::tests::rewind_patch_retires_source_and_consumes_only_selected_page_changes ... ok
+test sim::snapshot_ring::tests::rewind_retains_diff_source_without_exposing_a_stale_current_endpoint ... ok
+test sim::snapshot_ring::tests::weak_lease_does_not_block_later_reusable_page_or_claim_false_readiness ... ok
+test sim::undo::tests::first_preimage_wins_after_multiple_writes_and_seen_storage_is_reusable ... ok
+test sim::world_lane::tests::lifecycle::failed_drain_never_acknowledges_success_and_releases_pending_poll_to_fault ... ok
+test sim::world_lane::tests::lifecycle::ordered_pause_drains_real_clock_backlog_and_resume_excludes_paused_time ... ok
+test sim::world_lane::tests::lifecycle::overloaded_owner_drains_exact_admissions_then_resumes_without_restart ... ok
+test sim::world_lane::tests::lifecycle::paused_recovery_publishes_and_wakes_without_another_tick ... ok
+test sim::world_lane::tests::lifecycle::refused_resume_is_consumed_without_faulting_authority_or_leaving_busy ... ok
+test sim::world_lane::tests::lifecycle::shutdown_with_a_pending_request_is_observable_without_waiting_for_task ... ok
+test sim::world_lane::tests::panicking_owner_wakes_health_only_observer_and_stops_controls ... ok
+test sim::world_lane::tests::panicking_wake_stops_owner_without_retrying_callback_during_unwind ... ok
+test sim::world_lane::tests::stale_page_never_borrows_newer_tick_and_progress_is_consumed_once ... ok
+
+test result: ok. 71 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+     Running tests/a1_schedule.rs (target/debug/deps/a1_schedule-eb0d33d6cf7be034)
+
+running 5 tests
+test batches_expose_only_conflict_free_ready_systems_with_stage_barriers ... ok
+test explicit_dependencies_external_resources_and_graph_failures_are_validated ... ok
+test read_only_access_does_not_conflict_and_failure_cannot_reach_publish ... ok
+test registration_keeps_game_component_accesses_distinct_and_refuses_unknown_types ... ok
+test stage_order_wins_registration_order_and_conflicts_add_dependency_edges ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/clock.rs (target/debug/deps/clock-8c5586e4173348fe)
+
+running 11 tests
+test a_game_can_select_a_higher_world_update_rate ... ok
+test deadline_driven_callbacks_do_one_update_each_without_idle_polling ... ok
+test display_callbacks_do_not_set_simulation_rate ... ok
+test display_target_lead_changes_only_interpolation_not_world_time ... ok
+test failed_step_is_retained_and_retry_runs_once ... ok
+test next_due_delay_tracks_fractional_time_rate_and_stopped_backlog ... ok
+test overload_is_explicit_and_needs_a_fresh_origin ... ok
+test pause_ignores_hidden_time_and_rejects_clock_reversal ... ok
+test pause_preserves_and_drains_already_admitted_work ... ok
+test presentation_fraction_advances_between_world_ticks_without_extra_steps ... ok
+test transferred_phase_samples_future_display_without_advancing_authority ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/g2_edit_ownership.rs (target/debug/deps/g2_edit_ownership-e681e6c866f657a6)
+
+running 5 tests
+test final_preflight_checks_payload_type_and_handle_after_later_callback_changes ... ok
+test foreign_component_edit_rolls_back_direct_write_and_retry_retains_first_preimage ... ok
+test later_callback_cannot_append_another_systems_structural_edit ... ok
+test later_callback_updates_are_the_final_payload_of_an_earlier_descriptor ... ok
+test ordered_parallel_merge_cannot_append_another_systems_structural_edit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/g2_runtime.rs (target/debug/deps/g2_runtime-2749f8991bddb676)
+
+running 1 test
+test game_owned_components_rules_and_pages_commit_once_after_rejection_and_churn ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/g2s_chunked_kernel.rs (target/debug/deps/g2s_chunked_kernel-9b7a22e01203c687)
+
+running 5 tests
+test a_kernel_panic_restores_every_chunk_in_every_mode ... ok
+test a_runtime_whose_commit_unwound_refuses_reuse ... ok
+test earlier_writers_and_unchanged_rows_restore_exactly_in_every_mode ... ok
+test forced_rayon_runs_independent_chunks_at_the_same_time ... ok
+test serial_rayon_and_forced_chunks_commit_refuse_and_rewind_identically ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+
+     Running tests/v1_workload.rs (target/debug/deps/v1_workload-f984206f2f97f7be)
+
+running 1 test
+test representative_scaffold_is_deterministic_and_allocation_free_after_setup ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/thrum_lighthouse-b160457b25cf0b24)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_network-2689954c99ef1c53)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/envelope.rs (target/debug/deps/envelope-9d8a7ebd13fe651e)
+
+running 3 tests
+test exact_golden_header_and_borrowed_payload ... ok
+test hello_zero_identity_and_exact_size_caps ... ok
+test malformed_header_and_length_refuse ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/future_input.rs (target/debug/deps/future_input-3b733d9465884fd1)
+
+running 2 tests
+test future_frames_stage_out_of_order_and_leave_w1_due_order_explicit ... ok
+test invalid_identity_axes_and_reconnect_do_not_replace_a_future_frame ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/input_batch.rs (target/debug/deps/input_batch-61f4b852aac30443)
+
+running 3 tests
+test every_truncation_refuses_and_unknown_action_requires_game_validation ... ok
+test exact_little_endian_oracle_and_game_declared_action_round_trip ... ok
+test quantizer_boundaries_and_invalid_axes_are_explicit ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/state_ack.rs (target/debug/deps/state_ack-85d79d8e515416fc)
+
+running 2 tests
+test independent_little_endian_ack_bytes ... ok
+test truncated_extended_and_zero_identity_refuse ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/state_delta.rs (target/debug/deps/state_delta-f5d0821cbbc39249)
+
+running 4 tests
+test full_image_rebuilds_membership_from_checked_bytes ... ok
+test golden_mask_bits_and_canonical_actor_differences ... ok
+test malformed_or_stale_bytes_never_change_the_base_image ... ok
+test noncanonical_records_and_out_of_range_fields_refuse ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-245c907cad00ed4d)
+
+running 242 tests
+test atmosphere::cloud::tests::advection_samples_the_supplied_time_without_changing_source_or_contents ... ok
+test atmosphere::cloud::tests::invalid_optical_depth_or_mapping_is_rejected_before_upload ... ok
+test atmosphere::cloud::tests::unsupported_advection_disables_the_sample_without_nonfinite_gpu_values ... ok
+test atmosphere::environment::tests::epoch_tracks_profile_model_and_resource_replacement_without_tracking_time ... ok
+test atmosphere::environment::tests::raw_source_crosses_sunset_continuously_while_surface_light_extinguishes ... ok
+test atmosphere::environment::tests::simulation_time_rejects_nonfinite_samples ... ok
+test atmosphere::gpu::tests::aerial::aerial_storage_matches_float32_transport_and_consumer_units ... Sun=+2deg low[1e-9,1e-5)=1024 raw_zero=0 raw_error>1%=0 raw_L1=3.0483363e-5 gain_L1=2.8193708e-6
+worst layer=1 xy=(2, 25) channel=2 ref=6.615931e-6 raw=6.556511e-6 gain1024=6.6123903e-6 raw_rel=8.981354e-3 gain_rel=5.351723e-4 raw_scene_error_at_127klux=7.546342e-3
+Sun=+0deg low[1e-9,1e-5)=4096 raw_zero=0 raw_error>1%=1572 raw_L1=1.342851e-4 gain_L1=8.549084e-6
+worst layer=1 xy=(1, 14) channel=1 ref=1.9059771e-6 raw=1.847744e-6 gain1024=1.905486e-6 raw_rel=3.05529e-2 gain_rel=2.5767734e-4 raw_scene_error_at_127klux=7.395607e-3
+Sun=-2deg low[1e-9,1e-5)=16384 raw_zero=0 raw_error>1%=7124 raw_L1=4.7754587e-4 gain_L1=1.8350536e-5
+worst layer=1 xy=(8, 31) channel=0 ref=1.4991342e-7 raw=1.1920929e-7 gain1024=1.4982652e-7 raw_rel=2.0481241e-1 gain_rel=5.796638e-4 raw_scene_error_at_127klux=3.8994243e-3
+Sun=-4deg low[1e-9,1e-5)=46178 raw_zero=2048 raw_error>1%=24506 raw_L1=1.384418e-3 gain_L1=5.7871956e-5
+worst layer=1 xy=(0, 0) channel=0 ref=1.8843776e-8 raw=0e0 gain1024=1.8801074e-8 raw_rel=1e0 gain_rel=2.2660978e-3 raw_scene_error_at_127klux=2.3931595e-3
+Sun=-6deg low[1e-9,1e-5)=91606 raw_zero=9216 raw_error>1%=61682 raw_L1=2.600259e-3 gain_L1=6.8020665e-5
+worst layer=1 xy=(0, 0) channel=0 ref=1.7699322e-9 raw=0e0 gain1024=1.7462298e-9 raw_rel=1e0 gain_rel=1.3391685e-2 raw_scene_error_at_127klux=2.2478138e-4
+Sun=-9deg low[1e-9,1e-5)=91136 raw_zero=50824 raw_error>1%=89610 raw_L1=2.227933e-3 gain_L1=4.19923e-6
+worst layer=2 xy=(0, 0) channel=2 ref=2.5984745e-9 raw=0e0 gain1024=2.561137e-9 raw_rel=1e0 gain_rel=1.4368994e-2 raw_scene_error_at_127klux=3.3000627e-4
+ok
+test atmosphere::gpu::tests::aerial::finite_night_radiance_survives_the_aerial_composite ... 1 km: 1.2416223e-6 vs 1.2416652e-6 (0.003%)
+10 km: 1.17821355e-5 vs 1.1780591e-5 (0.013%)
+30 km: 3.1503496e-5 vs 3.150029e-5 (0.010%)
+ok
+test atmosphere::gpu::tests::diffuse::analytic_fields_preserve_direction_colour_and_physical_units ... ok
+test atmosphere::gpu::tests::diffuse::shipping_sky_projection_separates_sampling_from_sh_truncation ... ok
+test atmosphere::gpu::tests::encoded_constant_sky_integrates_in_physical_illuminance_units ... ok
+test atmosphere::gpu::tests::ground::gpu_ground_quadrature_boundary_zero_units_and_profile_cache ... ok
+test atmosphere::gpu::tests::mapping::gpu_horizon_rows_roundtrip_endpoints_azimuth_and_never_cross_filter_halves ... ok
+test atmosphere::gpu::tests::multiple_interpolation::multiple_sun_columns_report_same_model_transport_and_irradiance_error ... ok
+test atmosphere::gpu::tests::reference::gpu::gpu_transport_reference_reports_every_prescribed_row ... ok
+test atmosphere::gpu::tests::reference::gpu::night::night_profile_survives_sky_sampling_and_the_incident_reduction ... height=0 m max ray error=0.136% incident=6.711892783641815e-4 lx
+height=1800 m max ray error=0.071% incident=6.914641708135605e-4 lx
+height=15000 m max ray error=0.413% incident=7.57747795432806e-4 lx
+ok
+test atmosphere::gpu::tests::reference::multiple::conservative_feedback_matches_escape_probability ... ok
+test atmosphere::gpu::tests::reference::multiple::continuous_multiple_reports_requested_refinements ... ok
+test atmosphere::gpu::tests::reference::multiple::sphere_mean_phase_and_zero_scattering_have_analytic_normalizations ... ok
+test atmosphere::gpu::tests::reference::multiple::vacuum_ground_local_closure_self_feedback_is_not_transport_truth ... ok
+test atmosphere::gpu::tests::reference::tests::adaptive_refinement_and_direct_first_order_monte_carlo_agree ... ok
+test atmosphere::gpu::tests::reference::tests::falsifiers::adverse_twilight_radiance_refines_below_the_old_absolute_floor ... ok
+test atmosphere::gpu::tests::reference::tests::falsifiers::cosine_sampling_and_exactly_one_ground_interaction_scale_linearly ... ok
+test atmosphere::gpu::tests::reference::tests::falsifiers::finite_interaction_query_preserves_each_order_with_roulette ... ok
+test atmosphere::gpu::tests::reference::tests::falsifiers::shared_roulette_matches_independent_geometric_emission_series ... ok
+test atmosphere::gpu::tests::reference::tests::frozen_rng_open_uniforms_and_separate_streams ... ok
+test atmosphere::gpu::tests::reference::tests::phase_normalization_moments_and_backward_sampling_convention ... ok
+test atmosphere::gpu::tests::reference::tests::safety_caps_refuse_the_whole_estimate_instead_of_zeroing_samples ... ok
+test atmosphere::gpu::tests::reference::tests::sphere_visibility_shadow_splits_and_beer_lambert_are_independent ... ok
+test atmosphere::gpu::tests::reference::tests::vacuum_lambert_ground_and_zero_batches_are_explicit ... ok
+test atmosphere::gpu::tests::transmittance::near_ground_sun_lookup_and_producer_endpoints_agree_with_cpu_authority ... ok
+test atmosphere::gpu::tests::transmittance::surface_sun_uses_receiver_height_and_local_horizon_not_camera_transmission ... ok
+test atmosphere::model::tests::shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate ... ok
+test atmosphere::model::tests::sky_mapping_matches_planet_horizon_and_angular_spans ... ok
+test atmosphere::products::tests::diffuse::metal_h3_lent_diffuse_meets_independent_hemisphere_integral ... ok
+test atmosphere::products::tests::filtered::metal_h2_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query ... ok
+test atmosphere::products::tests::filtered::metal_h2_sampler_precision_report ... ok
+test atmosphere::products::tests::filtered::metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query ... ok
+test atmosphere::products::tests::metal_contribution_compiles_all_lent_operations_and_observes_environment_replacement ... ok
+test atmosphere::products::tests::night::metal_lent_night_sky_diffuse_and_finite_aerial_preserve_absolute_units ... ok
+test atmosphere::products::tests::reflection::metal_h5_lent_reflection_direction_roughness_source_night_and_exposure ... ok
+test atmosphere::products::tests::sun::metal_h1_lent_receiver_matrix_at_two_camera_origins ... ok
+test atmosphere::products::tests::sun::metal_h1_lent_sun_meets_low_altitude_f64_quadrature ... ok
+test atmosphere::reflection::tests::gpu_reflection_constant_all_faces_mips_and_independent_dfg ... ok
+test atmosphere::reflection::tests::independent_hemisphere_integral_has_analytic_smith_limits ... ok
+test atmosphere::tests::aerial_transport_changes_a_distant_surface_in_the_live_forward_pass ... ok
+test atmosphere::tests::cache::metal_reflection_cache_tracks_sky_but_not_amplitude_view_or_unsubmitted_work ... ok
+test atmosphere::tests::orthographic_sky_keeps_a_finite_solar_disk ... ok
+test atmosphere::tests::portable_lut_graph_renders_live_sun_and_rejects_mode_changes ... ok
+test atmosphere::tests::sample_admission_and_direct_transport_have_physical_limits ... ok
+test capabilities::recipe::tests::recipe_requires_known_backend_facts_and_explicit_request ... ok
+test frame::native::tests::busy_slot_retains_request_and_reply_order ... ok
+test frame::native::tests::close_wakes_an_idle_worker_even_when_start_and_shutdown_race ... ok
+test frame::native::tests::delayed_worker_classifies_a_consumed_display_target_as_late ... ok
+test frame::native::tests::panicking_job_closes_worker_and_wakes_the_window ... ok
+test frame::native::tests::panicking_wake_does_not_retry_or_leave_a_live_worker ... ok
+test frame::native::tests::shutdown_does_not_wait_forever_for_an_in_flight_job ... ok
+test frame::target_tests::bad_or_far_targets_degrade_without_panicking ... ok
+test frame::target_tests::worker_consumption_uses_current_target_slack ... ok
+test graph::storage_tests::only_live_variant_uses_determine_attachment_storage ... ok
+test graph::storage_tests::transient_storage_respects_locked_wgpu_layer_and_mip_restrictions ... ok
+test graph::tests::attachment_store_follows_the_first_live_consumer_and_overwrite ... ok
+test graph::tests::compiled_order_keeps_the_producer_before_its_consumer ... ok
+test graph::tests::cycle_and_invalid_dependency_refuse_before_execution ... ok
+test graph::tests::explicit_prerequisite_survives_culling_with_its_output ... ok
+test graph::tests::history_pair_reads_prior_side_and_publishes_alternate_without_aliasing ... ok
+test graph::tests::later_declared_producer_executes_before_its_live_consumer ... ok
+test graph::tests::live_outputs_cull_dead_work_and_reuse_disjoint_transients ... ok
+test graph::tests::persistent_history_write_is_live_and_stored_for_the_next_frame ... ok
+test graph::tests::persistent_identity_cannot_name_a_second_resource_or_history_pair ... ok
+test graph::tests::published_motion_does_not_force_unused_depth_to_store ... ok
+test graph::tests::selecting_an_older_writer_requires_moving_later_writes_after_the_read ... ok
+test graph_record::tests::binder_refuses_missing_duplicate_dead_and_wrong_kind_recorders ... ok
+test graph_record::tests::bound_closures_follow_live_compiled_order_without_frame_lookup ... ok
+test graph_record::tests::execution_stops_before_later_passes_when_a_recorder_fails ... ok
+test graph_record::tests::split_tests::late_surface_requires_only_phase_two_binding_and_preserves_order ... ok
+test graph_record::tests::split_tests::unrelated_scene_cannot_be_declared_post_acquire_or_depend_on_surface ... ok
+test present::tests::letterbox_preserves_aspect_and_nonzero_viewport ... ok
+test runtime::tests::changing_mapping_at_a_fixed_world_source_reextracts_and_uploads_the_new_rows ... ok
+test runtime::tests::creation_sites::every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing ... ok
+test runtime::tests::creation_sites::every_production_pipeline_in_the_renderer_goes_through_the_seam ... ok
+test runtime::tests::creation_sites::production_raw_device_escapes_are_the_listed_ones ... ok
+test runtime::tests::creation_sites::the_scanner_flags_unwrapped_sites_and_escapes_and_ignores_the_seam_call ... ok
+test runtime::tests::device::a_missing_surface_binding_has_one_drop_and_one_scene_commit_on_both_routes ... ok
+test runtime::tests::device::a_refused_contribution_keeps_the_prepared_replacement_usable ... ok
+test runtime::tests::device::extent::coupled_extent_changes_real_targets_projection_and_history_atomically ... ok
+test runtime::tests::device::extent::detached_device_refits_scene_and_presenter_and_refreshes_current_camera ... ok
+test runtime::tests::device::gpu_device_replacement_abandons_slots_and_isolates_old_candidates_and_callbacks ... ok
+test runtime::tests::device::gpu_device_replacement_refuses_wrong_host_mode_and_failed_setup_without_losing_inputs ... ok
+test runtime::tests::device::gpu_pending_capture_is_caller_owned_and_retired_with_its_generation ... ok
+test runtime::tests::device::gpu_pending_capture_is_refused_by_another_device_with_the_same_generation ... ok
+test runtime::tests::device::lost_encoded_frame_abandons_staging_without_a_queue_submit ... ok
+test runtime::tests::device::metal::a_late_mapping_is_never_attributed_to_the_next_frame_on_its_slot ... ok
+test runtime::tests::device::metal::culled_modes_survive_surface_resize_and_device_replacement ... ok
+test runtime::tests::device::metal::culling_counts_never_hold_render_slots_or_cross_a_replacement ... ok
+test runtime::tests::device::metal::metal_frame_timestamps_survive_an_empty_instance_set ... ok
+test runtime::tests::device::metal::metal_frustum_timestamps_drain_populated_then_empty_prefixes ... ok
+test runtime::tests::device::metal::metal_occlusion_timestamps_count_the_prepass_with_and_without_a_contribution ... ok
+test runtime::tests::device::metal::occlusion_keeps_a_blended_contribution_on_top ... ok
+test runtime::tests::device::split_graph::metal_both_recipes_prepare_one_graph_and_reuse_scene_textures_on_surface_resize ... ok
+test runtime::tests::device::view_history::a_skipped_camera_cut_resets_only_the_first_submitted_view_in_its_epoch ... ok
+test runtime::tests::full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late ... ok
+test runtime::tests::invalid_lighting_retains_upload_work_after_cpu_scene_mutation ... ok
+test runtime::tests::lagging_or_replayed_publication_is_shed_before_camera_scene_mutation_or_submission ... ok
+test runtime::tests::refused_policy_keeps_changed_rows_pending_for_a_same_source_retry ... ok
+test runtime::tests::reused_source_ticks_do_not_hide_earlier_completed_submissions ... ok
+test runtime::tests::submitted_capture::abandoned_unsubmitted_capture_releases_its_slot_without_lost_queue_work ... ok
+test runtime::tests::submitted_capture::disabled_capture_frame_hook_allocates_nothing_and_has_no_readback_graph_pass ... ok
+test runtime::tests::submitted_capture::linear_capture_allowance_is_validated_before_target_replacement ... ok
+test runtime::tests::submitted_capture::pending_capture_device_loss_is_rejected_without_polling_the_lost_queue ... ok
+test runtime::tests::submitted_capture::pending_scene_grid_pixels_keep_their_identity_across_surface_viewport_resize ... ok
+test runtime::tests::submitted_capture::saturated_cpu_and_gpu_leases_do_not_stop_ordinary_submissions ... ok
+test runtime::tests::submitted_capture::scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr ... ok
+test runtime::tests::submitted_capture::stopping_admission_drains_in_submission_order_while_rendering_continues ... ok
+test runtime::tests::submitted_capture::submitted_tap_matches_the_actual_odd_width_surface_and_preserves_history ... ok
+test runtime::tests::without_rendering::authority_only_pause_drains_backlog_and_preserves_resume_refusal_and_overload ... ok
+test runtime::tests::without_rendering::destroyed_device_with_pending_work_does_not_block_authority_or_touch_presentation ... ok
+test runtime::tests::without_rendering::invalid_time_and_partial_world_failure_do_not_repeat_committed_ticks ... ok
+test synthetic::buckets::tests::a_bad_mapping_leaves_the_live_layout_and_an_unchanged_one_is_reused ... ok
+test synthetic::buckets::tests::admission_bounds_buckets_ranges_and_device_limits ... ok
+test synthetic::buckets::tests::members_follow_upload_activity_churn ... ok
+test synthetic::buckets::tests::segments_are_aligned_ordered_and_padded ... ok
+test synthetic::buckets::tests::the_determinant_picks_the_pipeline_class ... ok
+test synthetic::buckets::tests::unknown_keys_are_refused_and_leave_the_slot ... ok
+test synthetic::camera_culling::tests::a_blended_contribution_stays_on_top_while_occlusion_hides_a_slot ... ok
+test synthetic::camera_culling::tests::an_entering_slot_on_a_tie_is_drawn_by_the_final_list_alone ... ok
+test synthetic::camera_culling::tests::the_depth_prepass_writes_the_forward_depth_of_the_same_list ... ok
+test synthetic::camera_culling::tests::the_grazing_view_hides_slots_and_replays_its_visible_set ... ok
+test synthetic::cluster::tests::empty_table_has_no_references ... ok
+test synthetic::cluster::tests::gpu_bounds_repack_has_fixed_capacity_and_counts_excess_sources ... ok
+test synthetic::cluster::tests::initially_dark_light_activates_without_growing_cpu_buffers ... ok
+test synthetic::cluster::tests::malformed_light_refuses_before_gpu_preparation ... ok
+test synthetic::cluster::tests::overlapping_sources_are_bounded_and_diagnosed ... ok
+test synthetic::cluster::tests::perspective_bounds_cover_translated_rotated_and_near_plane_samples ... ok
+test synthetic::cluster::tests::perspective_translated_camera_keeps_strong_nearby_light_on_overflow ... ok
+test synthetic::cluster::tests::rebuilt_overflow_matches_fresh_view_without_old_references ... ok
+test synthetic::display::tests::gpu::gpu_exposure_zones_band_exposed_luminance_for_every_tone_map_and_gain ... ok
+test synthetic::display::tests::gpu::gpu_sdr_ramps_match_f64_and_legacy_pixels_across_checked_gain_range ... ok
+test synthetic::display::tests::input::identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads ... ok
+test synthetic::display::tests::input::prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sdr_pixels ... ok
+test synthetic::display::tests::overlay_uses_only_its_selector_bits_and_off_keeps_every_policy_byte ... ok
+test synthetic::display::tests::tone_choice_changes_only_reserved_policy_word_for_fixed_and_incident_views ... ok
+test synthetic::display::tests::tone_reference_has_identity_shadows_continuous_knee_and_bounded_highlights ... ok
+test synthetic::exposure::tests::gpu::attachment::dim_lambert_equivalent_survives_hdr_display_and_exposure_side_reuse ... dim control: serial=2 scale=64 HDR=0.00013661385 SDR=21
+dim control: serial=3 scale=64 HDR=0.00013661385 SDR=21
+ok
+test synthetic::exposure::tests::gpu::attachment::falling_twilight_radiance_does_not_brighten_the_metered_sky ... ok
+test synthetic::exposure::tests::gpu::gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs ... ok
+test synthetic::exposure::tests::gpu::gpu_meter_follows_cached_light_policy_submission_cancellation_and_capture ... ok
+test synthetic::exposure::tests::policy_graph_reads_the_actual_diffuse_write_before_tone ... ok
+test synthetic::exposure::tests::policy_preserves_fixed_reciprocal_and_leaves_metered_value_gpu_owned ... ok
+test synthetic::exposure::tests::policy_refuses_unrepresentable_or_reversed_ev_settings ... ok
+test synthetic::exposure::tests::policy_shader_layouts_validate_without_a_device ... ok
+test synthetic::frame_stats::tests::a_contribution_compute_pass_is_reported_apart_from_the_scene_sequence ... ok
+test synthetic::frame_stats::tests::camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward ... ok
+test synthetic::frame_stats::tests::cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket ... ok
+test synthetic::frame_stats::tests::occlusion_passes_are_required_once_each_and_counted_in_forward ... ok
+test synthetic::frame_stats::tests::reflection_queries_keep_raw_identity_and_the_existing_sky_bucket ... ok
+test synthetic::frame_stats::tests::the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket ... ok
+test synthetic::frame_stats::tests::the_horizon_height_pass_reports_in_the_far_shadow_bucket ... ok
+test synthetic::history_gpu::tests::metal_motion_history_follows_submitted_frames_and_resets ... ok
+test synthetic::history_gpu::tests::metal_motion_history_uses_interpolated_display_samples ... ok
+test synthetic::mesh_arena::tests::base_vertices_stay_within_a_draw ... ok
+test synthetic::mesh_arena::tests::bounds_come_from_the_referenced_vertices ... ok
+test synthetic::mesh_arena::tests::growth_keeps_every_row_and_its_offsets ... ok
+test synthetic::mesh_arena::tests::malformed_meshes_are_refused_before_anything_is_written ... ok
+test synthetic::mesh_arena::tests::the_arena_refuses_growth_past_its_limits ... ok
+test synthetic::mesh_arena::tests::the_cube_rows_match_the_shader_cube ... ok
+test synthetic::mesh_arena::tests::the_packed_vertex_matches_the_shader_struct ... ok
+test synthetic::mesh_route::tests::admission::invalid_selections_are_refused_and_a_valid_one_prepares ... ok
+test synthetic::mesh_route::tests::caster_cull::per_pass_caster_lists_draw_the_unculled_depth_and_image ... ok
+test synthetic::mesh_route::tests::casters::a_distant_off_screen_pyramid_shades_through_the_height_layer ... ok
+test synthetic::mesh_route::tests::casters::an_off_screen_pyramid_casts_its_own_shape_in_the_cascades ... ok
+test synthetic::mesh_route::tests::frustum_buckets_follow_a_growing_member_list ... ok
+test synthetic::mesh_route::tests::frustum_buckets_match_bucket_direct_on_a_mixed_field ... ok
+test synthetic::mesh_route::tests::grazing::mirrored_meshes_repair_grazing_normals_like_ordinary_ones ... ok
+test synthetic::mesh_route::tests::members_follow_activity_churn_like_the_legacy_route ... ok
+test synthetic::mesh_route::tests::mirrored_classes_against_the_legacy_route ... ok
+test synthetic::mesh_route::tests::one_ordinary_bucket_draws_the_legacy_image ... ok
+test synthetic::mesh_route::tests::several_class_buckets_draw_the_legacy_image_without_ties ... ok
+test synthetic::motion_tests::metal_perspective_geometry_sky_and_stars_are_zero_under_static_jitter ... ok
+test synthetic::motion_tests::metal_sky_pan_and_solar_sidereal_phase_match_independent_projection ... ok
+test synthetic::motion_tests::metal_static_jitter_is_zero_at_every_texel_and_motion_control_is_nonzero ... ok
+test synthetic::readback::tests::metal_readback_preserves_sdr_and_linear_channels_and_removes_row_padding ... ok
+test synthetic::scene_source::tests::a_missing_or_repeated_hook_point_is_refused_by_name ... ok
+test synthetic::scene_source::tests::every_forward_variant_holds_the_material_hook_point_once_in_shade ... ok
+test synthetic::shadow::tests::both_cascades_use_32_bit_float_depth ... ok
+test synthetic::shadow::tests::caster_bounds_use_rendered_basis_at_both_translation_endpoints ... ok
+test synthetic::shadow::tests::disk::overlapping_half_disk_casters_leave_one_quarter_open ... ok
+test synthetic::shadow::tests::fitted_sun_support_and_surface_tolerance_keep_world_units ... ok
+test synthetic::shadow::tests::horizon::a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain ... ok
+test synthetic::shadow::tests::last_cascade_covers_a_narrow_view_receiver_with_an_excluded_caster ... ok
+test synthetic::shadow::tests::only_the_last_cascade_pads_for_distant_finite_sun_blockers ... ok
+test synthetic::shadow::tests::penumbra::finite_sun_shadow_width_tracks_blocker_distance_and_tilted_receivers ... ok
+test synthetic::shadow::tests::penumbra::near_and_last_cascades_cover_complementary_blocker_distances ... ok
+test synthetic::shadow::tests::penumbra::near_clip_plane_hands_excluded_blockers_to_the_last_cascade ... ok
+test synthetic::shadow::tests::practical_split_and_reverse_light_depth ... ok
+test synthetic::shadow::tests::shared_caster_bounds_enclose_every_affine_cube_corner ... ok
+test synthetic::shadow::tests::sub_texel_camera_translation_keeps_shadow_xy_stable ... ok
+test synthetic::stars::tests::above_horizon_control_separates_daylight_from_night ... ok
+test synthetic::stars::tests::bright_incident_view_drops_the_star_pass_until_exposure_or_light_changes ... ok
+test synthetic::stars::tests::opaque_depth_store_and_star_pass_follow_the_current_target_view ... ok
+test synthetic::stars::tests::optics::production_star_pipeline_conserves_flux_and_masks_depth_edges ... ok
+test synthetic::stars::tests::optics::resolved_night_footprints_keep_the_magnitude_order ... ok
+test synthetic::target_storage::tests::metal_recipe_replacement_retains_old_target_and_exact_channels ... ok
+test synthetic::tests::cloud::metal_cloud_factor_uses_receiver_ray_and_returns_exact_clear_support ... ok
+test synthetic::tests::cloud::metal_production_surface_shade_dims_only_direct_sun_once_at_each_receiver ... ok
+test synthetic::tests::exposure_refuses_invalid_input_and_derived_gain ... ok
+test synthetic::tests::light_preparation_normalizes_extremes_and_refuses_bad_sources ... ok
+test synthetic::tests::photometric_pack_preserves_units_and_counts_presentation_clamps ... ok
+test synthetic::upload::tests::changed_slots_form_bounded_contiguous_writes ... ok
+test synthetic::upload::tests::packed_rows_put_active_slots_first_without_changing_logical_identity ... ok
+test synthetic::upload::tests::reflected_or_degenerate_rows_need_the_two_sided_fallback ... ok
+test synthetic::upload::tests::shared_pack_validation_refuses_invalid_updates ... ok
+test synthetic::view::temporal_tests::continuous_halton_values_and_exact_record_layout ... ok
+test synthetic::view::temporal_tests::spatial_output_retains_the_sequence_and_both_matrices ... ok
+test synthetic::view::tests::celestial_basis_accepts_rotation_and_refuses_reflection ... ok
+test synthetic::view::tests::degenerate_camera_refuses ... ok
+test synthetic::view::tests::finite_reverse_depth_and_inverse_round_trip ... ok
+test synthetic::view::tests::live_view_packet_retains_the_last_submitted_projection ... ok
+test synthetic::view::tests::view_exposure_is_checked_and_packed_without_replacing_the_camera ... ok
+test timing::tests::completed_callback_drop_cannot_poison_concurrent_reuse ... ok
+test timing::tests::completion_reports_failed_and_dropped_callbacks_and_reuses_the_owner ... ok
+test timing::tests::distinct_timing_owners_complete_independently ... ok
+test timing::tests::named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers ... ok
+test timing::tests::pass_names_reuse_slots_across_batches_and_replace_changed_roles ... ok
+test visibility::occlusion_reference::tests::a_misaligned_rectangle_reads_its_whole_footprint ... ok
+test visibility::occlusion_reference::tests::equality_and_the_near_plane_stay_visible ... ok
+test visibility::occlusion_reference::tests::every_texel_is_the_min_of_its_footprint ... ok
+test visibility::occlusion_reference::tests::never_hides_a_visible_box ... ok
+test visibility::occlusion_reference::tests::previous_pow2_keeps_exact_powers ... ok
+test visibility::pyramid::tests::every_gpu_mip_equals_the_reference ... ok
+test visibility::pyramid::tests::gpu_footprint_widening_matches_the_reference ... ok
+test visibility::pyramid::tests::gpu_slack_matches_the_reference_at_its_boundary ... ok
+test visibility::pyramid::tests::gpu_test_decisions_equal_the_reference ... ok
+test visibility::tests::a_capture_between_displays_keeps_the_displayed_history ... ok
+test visibility::tests::compaction_matches_reference_across_changed_cameras ... ok
+test visibility::tests::history_words_never_outlive_a_shrink_or_capture ... ok
+test visibility::tests::member_indexed_buckets_match_the_flat_list ... ok
+test visibility::tests::occlusion_phases_never_lose_a_slot_in_view ... ok
+test visibility::tests::partial_workgroups_and_shrinking_active_prefix ... ok
+test visibility::tests::the_final_cull_uses_the_full_clip_magnitude ... ok
+test visibility::tests::the_final_cull_widens_the_footprint_by_the_clip_bound ... ok
+test visibility::tests::unready_depth_hides_nothing ... ok
+
+test result: ok. 242 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 72.92s
+
+     Running tests/contracts.rs (target/debug/deps/contracts-531163e374ef6418)
+
+running 11 tests
+test abi_encodes_semantic_offsets_and_rejects_wrong_references ... ok
+test adjacent_writes_initialize_union_but_discard_invalidates_only_its_range ... ok
+test disjoint_same_pass_buffer_usages_follow_whole_buffer_compatibility ... ok
+test histories_advance_only_for_exact_submitted_and_accepted_samples ... ok
+test read_write_ordering_and_disjoint_ranges ... ok
+test reuse_requires_exact_descriptor_nonoverlap_and_transient_ownership ... ok
+test separate_pass_buffer_hazards_and_same_pass_texture_usage_keep_ranges ... ok
+test texture_class_and_storage_capacity_are_not_silently_truncated ... ok
+test texture_subresources_require_their_own_producer ... ok
+test undefined_read_load_and_conflicting_same_pass_refuse ... ok
+test wrong_graph_bounds_usage_and_unprepared_generations_refuse ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/extract.rs (target/debug/deps/extract-b3a1117fcc64cf9d)
+
+running 14 tests
+test adjacent_patch_preserves_pose_and_repairs_churned_dense_rows ... ok
+test changed_identity_cannot_inherit_pose_even_if_a_generation_is_reused ... ok
+test low_slot_replacement_at_capacity_uses_full_page_order ... ok
+test patch_visual_replacement_and_overflow_degrade_then_rebuild ... ok
+test presentation_overflow_invalid_coordinates_and_duplicates_degrade_with_counts ... ok
+test prior_sample_requires_adjacent_tick_stable_id_and_visual_revision ... ok
+test repeating_one_tick_preserves_its_prior_pose_for_display_interpolation ... ok
+test replay_generation_blocks_adjacent_pose_reuse ... ok
+test skipped_page_or_origin_change_rebuilds_instead_of_patching ... ok
+test slot_reuse_invalidates_pose_and_retired_slots_are_reported_once ... ok
+test sparse_visuals_can_occupy_high_physical_slots ... ok
+test ten_thousand_adjacent_visuals_patch_without_allocations ... ok
+test ten_thousand_visuals_reuse_all_allocations_after_warmup ... ok
+test visual_generation_change_resets_prior_pose_even_at_the_same_world_tick ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/gpu.rs (target/debug/deps/gpu-6ab49adfbe8f2e84)
+
+running 8 tests
+test cascade_overlap_keeps_caster_occlusion_across_split ... ok
+test clustered_local_light_changes_only_its_receiver_region ... ok
+test live_frame_matches_fresh_preparation_without_recreating_the_target ... ok
+test perspective_cluster_and_target_aux_light_visible_pixels ... ok
+test prepared_scene_pixels_timestamps_and_disabled_path ... ok
+test scene_depth_uses_32_bit_float ... ok
+test two_submitted_views_keep_their_own_camera_and_exposure_pixels ... ok
+test two_sun_cascades_shadow_near_and_far_receivers_from_off_camera_casters ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.87s
+
+     Running tests/upload_gpu.rs (target/debug/deps/upload_gpu-10a0ce6f56e20b1f)
+
+running 4 tests
+test active_prefix_matches_fresh_scene_through_churn_and_slot_reuse ... ok
+test changed_slot_updates_pixels_and_invalid_row_keeps_prior_draw ... ok
+test front_raster_surface_repairs_a_smoothed_normal_behind_the_view ... ok
+test mirrored_row_uses_two_sided_fallback_and_keeps_near_surface ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+
+     Running tests/visibility.rs (target/debug/deps/visibility-0d3e1a089c48640a)
+
+running 9 tests
+test a_box_flush_with_a_prepass_wall_keeps_its_ties_near_and_far ... ok
+test equal_depth_ties_keep_direct_order_whichever_slot_enters ... ok
+test frustum_pass_is_timed_within_the_scene_pass_budget ... ok
+test full_and_empty_visibility_match_direct_draw ... ok
+test near_plane_crossings_match_direct_draw ... ok
+test occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame ... ok
+test offscreen_sun_casters_still_shadow_visible_receivers ... ok
+test partial_visibility_matches_direct_draw ... ok
+test stale_bits_after_a_swap_or_a_reveal_keep_direct_images ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.59s
+
+     Running unittests src/main.rs (target/debug/deps/thrum_starter-337b61400317fec9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/thrum_stones-3c9e07bc4e284fe8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/v1_game-582a9f4f47e5dc02)
+
+running 59 tests
+test camera::route::tests::refusals ... ok
+test camera::route::tests::start_must_match_the_authored_pose ... ok
+test camera::route::tests::worked_cut_example_and_clamp ... ok
+test camera::tests::authored_pose_keeps_target_centred_and_reverse_depth_interval ... ok
+test camera::tests::invalid_authored_cameras_are_refused_before_activation ... ok
+test camera::tests::resizing_changes_horizontal_field_while_preserving_eye_and_vertical_field ... ok
+test controls::tests::a_pending_edit_survives_an_observation ... ok
+test controls::tests::edits_are_reported_once_and_observations_are_not_edits ... ok
+test controls::tests::keys_wrap_time_and_yaw_and_stop_pitch ... ok
+test controls::tests::sun_elevation_follows_the_observed_clock ... ok
+test controls::tests::the_example_parameter_file_applies_cleanly_and_typos_are_explained ... ok
+test controls::tests::yaw_slider_carries_subdegree_edits_and_keys_keep_their_turn ... ok
+test environment::tests::committed_day_has_continuous_sunrise_noon_sunset_and_night ... ok
+test environment::tests::equatorial_basis_follows_sun_and_preserves_the_pole_across_wrap ... ok
+test environment::tests::rendered_solar_time_uses_the_same_previous_to_current_interval_as_lighting ... ok
+test field::tests::flythrough_turns_and_cuts_are_flagged ... ok
+test field::tests::layout_is_deterministic_and_spans_far_beyond_the_view ... ok
+test field::tests::walls_stand_halfway_between_static_prop_lines ... ok
+test field_meshes::tests::closed_meshes_wind_outward ... ok
+test field_meshes::tests::meshes_have_realistic_counts_and_stay_in_the_unit_box ... ok
+test host::scene_source::tests::authored_camera_is_fixed_across_ticks_and_preserves_the_world_sun ... ok
+test host::scene_source::tests::diagnostic_camera_keeps_its_original_pose_and_bob ... ok
+test host::scene_source::tests::installed_route_moves_the_authored_camera_and_refuses_edits ... ok
+test host::scene_source::tests::reflection_subject_keeps_authoritative_material_and_static_history ... ok
+test host::scene_source::tests::route_overlay_changes_only_its_bases_and_light_zero ... ok
+test host::tests::abandoned_advanced_frame_keeps_its_tick_and_counts_the_skipped_view ... ok
+test host::tests::abandoned_encoded_scene_reuses_slot_and_timestamp_batch ... ok
+test host::tests::abandoned_overload_frame_counts_its_completed_queued_ticks ... ok
+test host::tests::capture_after_abandoned_fractional_view_uses_last_submitted_sample ... ok
+test host::tests::capture_refreshes_the_latest_committed_world_after_an_unsent_view ... ok
+test host::tests::held_publication_drops_one_view_then_recovers_on_a_paused_zero_tick_callback ... ok
+test host::tests::lifecycle_gpu::threaded_pause_keeps_pixels_still_camera_live_and_resume_advances_the_same_world ... ok
+test host::tests::recovery_gpu::destroyed_gpu_replacement_keeps_paused_world_camera_sky_and_held_input ... ok
+test host::tests::recovery_gpu::destroyed_gpu_replacement_keeps_the_exposure_zones_overlay ... ok
+test host::tests::recovery_gpu::mixed_mesh_field_keeps_its_meshes_through_gpu_replacement ... ok
+test host::tests::recovery_gpu::running_world_advances_while_its_destroyed_gpu_is_replaced ... ok
+test host::world::tests::a_new_inline_pause_cancels_deferred_resume ... ok
+test host::world::tests::exhausted_sequence_refuses_before_admitting_input_and_keeps_the_tick_queued ... ok
+test host::world::tests::inline_overload_reports_once_and_drains_over_display_drives ... ok
+test host::world::tests::threaded_control_equality_preserves_inline_signed_zero_admission ... ok
+test host::world_thread::tests::conversion_preserves_held_controls_until_a_new_valid_input ... ok
+test host::world_thread::tests::first_overload_refusal_remains_visible_after_stopped_clock_polls ... ok
+test host::world_thread::tests::inline_lifecycle_facade_explicitly_refuses_a_threaded_world ... ok
+test host::world_thread::tests::native_pause_retains_authority_and_controls_without_render_callbacks ... ok
+test host::world_thread::tests::world_advances_and_accepts_controls_while_render_is_idle ... ok
+test projection::tests::catch_up_retains_each_projection_and_overflow_demands_baseline ... ok
+test projection::tests::matching_rewind_source_stays_a_selective_projection ... ok
+test projection::tests::projection_copies_changes_from_exact_page_and_releases_lease ... ok
+test projection::tests::rewind_invalidates_queued_old_branch_before_projection_poll ... ok
+test scene::tests::four_peers_share_one_tick_authority_and_keep_independent_held_controls ... ok
+test scene::tests::motion_witness_moves_in_the_real_world_and_leaves_the_old_proof_alone ... ok
+test scene::tests::physical_slot_is_used_instead_of_stable_identity_as_gpu_slot ... ok
+test scene::tests::published_deltas_match_full_visual_extraction_through_churn_and_skips ... ok
+test scene::tests::repeated_display_samples_keep_simulation_endpoints_without_extra_upload ... ok
+test scene::tests::reused_slot_retags_gpu_history_even_when_pose_is_unchanged ... ok
+test scene::tests::route_overlay_reseeds_only_its_slots_and_off_matches_the_fixture ... ok
+test scene::tests::skipped_replay_baseline_invalidates_render_pose_history ... ok
+test simulation::history::tests::a_misrouted_permit_refuses_the_whole_tick ... ok
+test simulation::history::tests::capture_metadata_distinguishes_absent_velocity_from_present_zero ... ok
+
+test result: ok. 59 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.08s
+
+     Running unittests src/bin/apple_tile_residency.rs (target/debug/deps/apple_tile_residency-3579e22b0295f714)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/v1_game-72d74b43fbfcf2a3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-9a6e4e62ce3c1370)
+
+running 13 tests
+test a_fetched_edit_swaps_in_and_reuses_unchanged_products ... ok
+test a_fetched_generation_draws_like_the_mapped_store ... ok
+test a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin ... ok
+test a_newer_publication_supersedes_an_upload_still_being_filled ... ok
+test a_publication_larger_than_staging_streams_through_the_bounded_ring ... ok
+test a_replaced_device_restages_and_draws_the_current_set ... ok
+test adapter_less_public_host_selects_direct ... ok
+test captures_never_establish_history_and_cull_counts_follow_their_set ... ok
+test contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets ... ok
+test cooked_edits_become_visible_in_the_game_with_its_lighting ... ok
+test cooked_mesh_outside_camera_casts_onto_visible_terrain ... ok
+test discarded_frames_leave_no_trace_on_cooked_uploads ... ok
+test off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 66.26s
+
+     Running tests/cooked_material_gpu.rs (target/debug/deps/cooked_material_gpu-97c20e93c4feb515)
+
+running 8 tests
+test a_burst_during_a_compile_compiles_only_the_outstanding_and_the_newest_request ... ok
+test a_hook_that_writes_non_finite_factors_draws_the_placement_material ... ok
+test a_material_ready_before_content_is_drawn_only_with_the_first_mesh ... ok
+test a_replaced_device_draws_the_last_accepted_hook_and_retires_the_outstanding_reload ... ok
+test a_skipped_frame_never_promotes_a_ready_material ... ok
+test material_hooks_reload_visibly_and_invalid_hooks_keep_the_last_pixels ... ok
+test requests_before_the_first_frame_wait_for_the_scene_and_the_newest_draws ... ok
+test the_identity_hook_draws_the_built_in_material ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.53s
+
+     Running tests/cooked_texture_quality.rs (target/debug/deps/cooked_texture_quality-13c9b098aeb71ea1)
+
+running 1 test
+test every_compressed_product_level_clears_the_quality_floor_and_substitutes_do_not ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.82s
+
+     Running tests/field_gpu.rs (target/debug/deps/field_gpu-ec6a696c55657cb9)
+
+running 2 tests
+test field_culling_matches_direct_along_the_flythrough ... ok
+test mixed_mesh_field_frustum_matches_bucket_direct_along_the_flythrough ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 328.04s
+
+     Running tests/frame_alloc.rs (target/debug/deps/frame_alloc-6e95a005bf99e5b8)
+
+running 2 tests
+test autonomous_world_and_render_callback_report_warm_allocations ... ok
+test late_surface_submit_reports_main_thread_allocation_cost ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.50s
+
+     Running tests/host_gpu.rs (target/debug/deps/host_gpu-3e8d77cb89ad0821)
+
+running 5 tests
+test autonomous_world_page_drives_the_existing_gpu_scene ... ok
+test committed_ticks_drive_latest_gpu_frame_and_overload_is_explicit ... ok
+test game_atmosphere_capture_has_visible_finite_pixels ... ok
+test local_controls_use_validated_input_and_hold_until_replaced ... ok
+test repeated_display_target_reuses_world_columns_but_advances_interpolation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.84s
+
+     Running tests/simulation.rs (target/debug/deps/simulation-05c70f2048f19d54)
+
+running 42 tests
+test admission_rejects_finite_motion_beyond_game_speed_limit_without_consuming_sequence ... ok
+test capture_after_churn_replays_input_and_structure_to_the_same_endpoint ... ok
+test corrected_retained_peer_input_matches_the_straight_player_row ... ok
+test damage_then_health_command_rewinds_to_the_original_value ... ok
+test delayed_publication_retains_adjacent_previous_transform ... ok
+test direct_query_refusal_restores_earlier_rows_and_keeps_the_tick_retriable ... ok
+test failed_game_tick_preserves_input_and_page_then_churn_reuses_checked_slot ... ok
+test four_peer_ten_thousand_entity_serial_and_rayon_replay_match ... ok
+test four_tick_page_catch_up_keeps_old_lease_and_current_dirty_flags ... ok
+test held_control_reasserts_after_a_game_velocity_command ... ok
+test history_rejects_same_numeric_resource_revision_on_restored_branch ... ok
+test history_seals_setup_and_detects_external_peer_registration ... ok
+test leased_pages_drop_publication_but_never_block_authority_or_lose_recovery_baseline ... ok
+test mover_index_tracks_velocity_replacement_and_history_replay ... ok
+test old_page_reuse_after_journal_horizon_refreshes_membership_without_a_baseline ... ok
+test one_tick_impulse_reverts_to_held_axes_on_the_following_tick ... ok
+test parallel_movers_match_the_straight_corrected_run_after_churn_and_refusal ... ok
+test parallel_page_capture_publishes_identical_pages_in_every_mode ... ok
+test position_command_overrides_motion_without_a_false_change_or_double_count ... ok
+test recorded_delayed_publication_retains_adjacent_previous_transform ... ok
+test refused_tick_keeps_the_deferred_publication_previous_transform ... ok
+test rejected_retained_correction_keeps_original_replay_record ... ok
+test repeated_mover_preimages_restore_the_first_state_and_replay ... ok
+test replay_publishes_only_the_final_reconstructed_tick ... ok
+test restore_after_swap_remove_preserves_canonical_dirty_order ... ok
+test restore_rebuilds_warm_unleased_pages_from_cold_authority ... ok
+test restore_with_every_old_page_leased_keeps_old_views_and_publishes_a_new_baseline ... ok
+test retained_replay_refuses_fourth_peer_conflict_without_partial_admission ... ok
+test reused_page_recovers_an_older_position_edit_without_republishing_it ... ok
+test rewind_after_partial_replay_retains_the_remaining_future ... ok
+test rewind_patch_restores_changed_peer_health_and_velocity ... ok
+test rewind_with_every_page_leased_keeps_authority_live_and_defers_view ... ok
+test rolling_history_has_bounded_reused_storage_at_game_scales ... ok
+test rolling_history_refuses_a_divergent_same_tick_future ... ok
+test rolling_history_reuses_deltas_and_replays_after_churn ... ok
+test sparse_history_readmits_four_peer_inputs_once_after_churn ... ok
+test ten_thousand_entity_retained_correction_matches_the_straight_complete_world ... ok
+test ten_thousand_recorded_churn_ticks_reuse_undo_and_page_storage ... ok
+test ten_thousand_running_game_ticks_reuse_allocations ... ok
+test thousand_randomized_world_ticks_replay_identically_in_serial_and_rayon ... ok
+test unchanged_mutable_query_row_does_not_publish_a_position_change ... ok
+test warmed_spawn_churn_reuses_tick_storage ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.31s
+
+     Running tests/surface_gpu.rs (target/debug/deps/surface_gpu-73d4c4eaf0884e1a)
+
+running 2 tests
+test surface_pass_letterboxes_and_preserves_sdr_bytes_across_srgb_formats ... ok
+test unavailable_surface_drops_only_views_and_resize_reuses_preparation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.92s
+
+     Running unittests src/lib.rs (target/debug/deps/v1_game_ios-72372927b7bdeb7c)
+
+running 13 tests
+test gesture::tests::a_cancelled_touch_clears_the_held_axes ... ok
+test gesture::tests::a_drag_deflects_and_a_release_returns_to_rest ... ok
+test gesture::tests::a_second_finger_does_not_steal_the_stick ... ok
+test gesture::tests::a_stale_release_after_suspend_cannot_change_the_resumed_game ... ok
+test gesture::tests::clearing_at_rest_sends_nothing ... ok
+test lease::tests::an_old_epoch_cannot_enter_a_section ... ok
+test lease::tests::install_take_and_reinstall_advance_the_epoch ... ok
+test lease::tests::observed_extent_round_trips_full_u32_sides ... ok
+test lease::tests::the_shell_never_waits_for_a_held_section_and_the_section_sees_revocation ... ok
+test world_policy::tests::a_mismatched_reply_is_refused ... ok
+test world_policy::tests::background_pauses_and_foreground_resumes_in_order ... ok
+test world_policy::tests::overload_drains_then_resumes_once_per_episode ... ok
+test world_policy::tests::overload_while_backgrounded_stays_paused ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/rustc_receipt.rs (target/debug/deps/rustc_receipt-3960b95387bad8f9)
+
+running 6 tests
+test candidate::tests::actual_child_receives_only_the_captured_environment_bytes ... ok
+test candidate::tests::binary_preserves_argument_and_environment_bytes_and_incomplete_marker ... ok
+test candidate::tests::child_exit_and_signal_failures_remain_distinct ... ok
+test candidate::tests::receipt_is_exclusive_and_appends_completion ... ok
+test candidate::tests::recognizes_cargo_version_file_name_and_config_probes ... ok
+test candidate::tests::refuses_wrong_rustc_response_files_and_limits_before_receipt ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/xtask-fd887e56201bb2d6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests asset_loop
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests thrum_app
+
+running 1 test
+test crates/thrum-app/src/sky.rs - sky (line 13) - compile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 1.46s; merged doctests compilation took 1.18s
+   Doc-tests thrum_asset
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests thrum_asset_gpu
+
+running 1 test
+test crates/thrum-asset-gpu/src/placement.rs - placement::MeshPlacement (line 26) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.55s; merged doctests compilation took 0.27s
+   Doc-tests thrum_content_runtime
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests thrum_controls
+
+running 1 test
+test crates/thrum-controls/src/lib.rs - (line 9) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.53s; merged doctests compilation took 0.25s
+   Doc-tests thrum_cook
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests thrum_core
+
+running 1 test
+test crates/thrum-core/src/sim/transaction.rs - sim::transaction::EditWriter (line 36) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+   Doc-tests thrum_network
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests thrum_render
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests v1_game
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game)
+warning: linker stderr: ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[5](kernel_ispc.o)', assuming: macOS
+         ld: no platform load command found in '/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/target/debug/deps/libintel_tex_2-ad87d7835ed898ef.rlib[6](kernel_astc_ispc.o)', assuming: macOS
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `v1-game` (test "cooked_assets_gpu") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.09s
+     Running tests/cooked_assets_gpu.rs (target/debug/deps/cooked_assets_gpu-df1f129eb280c7bf)
+
+running 13 tests
+test a_fetched_edit_swaps_in_and_reuses_unchanged_products ... ok
+test a_fetched_generation_draws_like_the_mapped_store ... ok
+test a_mirrored_node_draws_with_the_facing_and_lighting_of_its_plain_twin ... ok
+test a_newer_publication_supersedes_an_upload_still_being_filled ... ok
+test a_publication_larger_than_staging_streams_through_the_bounded_ring ... ok
+test a_replaced_device_restages_and_draws_the_current_set ... ok
+test adapter_less_public_host_selects_direct ... ok
+test captures_never_establish_history_and_cull_counts_follow_their_set ... ok
+test contributed_frames_keep_complete_gpu_timings_and_reset_history_for_new_sets ... ok
+test cooked_edits_become_visible_in_the_game_with_its_lighting ... ok
+test cooked_mesh_outside_camera_casts_onto_visible_terrain ... ok
+test discarded_frames_leave_no_trace_on_cooked_uploads ... ok
+test off_screen_meshlets_are_culled_and_bc7_is_drawn_where_supported ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 68.71s
+

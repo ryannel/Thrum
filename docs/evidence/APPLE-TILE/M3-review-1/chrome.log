@@ -1,0 +1,19 @@
+Removed verified owned spool bytes 0
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-day-sdr/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 600226958 encoded bytes
+PASS 481 exact Chrome digest records
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-day-scene-linear/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 1831779176 encoded bytes
+PASS 481 exact Chrome digest records
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-night-sdr/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 356349232 encoded bytes
+PASS 481 exact Chrome digest records
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-night-scene-linear/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 1498186693 encoded bytes
+PASS 481 exact Chrome digest records
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-day-realtime/ThrumCapture.app: replacing existing signature
+PASS complete capture; 482 exact submitted images, 601513171 encoded bytes
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-night-realtime/ThrumCapture.app: replacing existing signature
+PASS complete capture; 482 exact submitted images, 357163234 encoded bytes
+/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/tmp/apple-tile-m3-review-chrome/chrome-resize/ThrumCapture.app: replacing existing signature
+PASS complete capture; 481 exact submitted images, 600179435 encoded bytes

@@ -1,0 +1,28 @@
+{
+  "bounds": {
+    "x": 8,
+    "y": 8,
+    "width": 1000,
+    "height": 800,
+    "backing_width": 1000,
+    "backing_height": 800,
+    "dpr": 1,
+    "page_ms": 9313.400000095367
+  },
+  "review_resize": {
+    "page_ms": 2766.9000000953674,
+    "width": 1000,
+    "height": 800
+  },
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/157.0.8103.40",
+    "revision": "@6f75a8afa26ce5537c82b4887f152dfdc7183e05",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+    "jsVersion": "15.7.112.23"
+  },
+  "stage": "Chrome composed canvas after final submitted frame; separate from T2 engine pixels",
+  "clock": "page performance.now milliseconds",
+  "targetId": "EAD697FAD9C171213669E26D21FE28CC",
+  "sessionId": "E6236DF7831D4F2DD050BC0D886017C0"
+}

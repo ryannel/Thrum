@@ -1,0 +1,43 @@
+[
+  {
+    "name": "render-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "thrum-render",
+      "--lib"
+    ],
+    "exit": 0,
+    "seconds": 79.87359285354614
+  },
+  {
+    "name": "native",
+    "command": [
+      "python3",
+      "docs/evidence/APPLE-TILE/M3-review/run-native.py"
+    ],
+    "exit": 0,
+    "seconds": 764.8280510902405
+  },
+  {
+    "name": "moving",
+    "command": [
+      "python3",
+      "scripts/run_v1_showcase.py",
+      "moving"
+    ],
+    "exit": 0,
+    "seconds": 77.05132412910461
+  },
+  {
+    "name": "dev-check",
+    "command": [
+      "./dev",
+      "check"
+    ],
+    "exit": 0,
+    "seconds": 635.3849160671234
+  }
+]

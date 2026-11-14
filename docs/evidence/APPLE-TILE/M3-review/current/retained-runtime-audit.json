@@ -1,0 +1,101 @@
+{
+  "apple-tile-render-stall": {
+    "complete": true,
+    "image_count": 450,
+    "gpu_samples": 449,
+    "all_named": true,
+    "star_present": 0,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "apple-tile-route": {
+    "complete": true,
+    "image_count": 964,
+    "gpu_samples": 963,
+    "all_named": true,
+    "star_present": 963,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "apple-tile-variants": {
+    "complete": true,
+    "image_count": 481,
+    "gpu_samples": 480,
+    "all_named": true,
+    "star_present": 240,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "chrome-day": {
+    "complete": true,
+    "image_count": 481,
+    "gpu_samples": 0,
+    "all_named": null,
+    "star_present": 0,
+    "unavailable": [],
+    "note": "This capture runtime has no GPU timing rows; consumer schema was traced in Rust, not inferred from an empty list."
+  },
+  "chrome-night": {
+    "complete": true,
+    "image_count": 475,
+    "gpu_samples": 0,
+    "all_named": null,
+    "star_present": 0,
+    "unavailable": [],
+    "note": "This capture runtime has no GPU timing rows; consumer schema was traced in Rust, not inferred from an empty list."
+  },
+  "chrome-resize": {
+    "complete": true,
+    "image_count": 481,
+    "gpu_samples": 0,
+    "all_named": null,
+    "star_present": 0,
+    "unavailable": [],
+    "note": "This capture runtime has no GPU timing rows; consumer schema was traced in Rust, not inferred from an empty list."
+  },
+  "portable-render-stall": {
+    "complete": true,
+    "image_count": 450,
+    "gpu_samples": 449,
+    "all_named": true,
+    "star_present": 0,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "portable-route": {
+    "complete": true,
+    "image_count": 959,
+    "gpu_samples": 958,
+    "all_named": true,
+    "star_present": 958,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  },
+  "portable-variants": {
+    "complete": true,
+    "image_count": 481,
+    "gpu_samples": 480,
+    "all_named": true,
+    "star_present": 240,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ]
+  }
+}

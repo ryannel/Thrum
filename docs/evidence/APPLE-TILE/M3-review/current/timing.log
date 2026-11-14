@@ -1,0 +1,12 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-03d3b364ede92dd5)
+
+running 5 tests
+test timing::tests::completed_callback_drop_cannot_poison_concurrent_reuse ... ok
+test timing::tests::completion_reports_failed_and_dropped_callbacks_and_reuses_the_owner ... ok
+test timing::tests::distinct_timing_owners_complete_independently ... ok
+test timing::tests::named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers ... ok
+test timing::tests::pass_names_reuse_slots_across_batches_and_replace_changed_roles ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 248 filtered out; finished in 0.00s
+

@@ -1,0 +1,10 @@
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/crates/thrum-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.74s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-03d3b364ede92dd5)
+
+running 2 tests
+test synthetic::display::tests::input::identity_pre_tone_rebind_preserves_exact_linear_and_sdr_bytes_and_rejects_foreign_reads ... ok
+test synthetic::display::tests::input::prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sdr_pixels ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 251 filtered out; finished in 0.21s
+

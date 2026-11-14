@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/apple-tile-scene-linear-approach.reference",
+    "file_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
+    "pixels_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/apple-tile-scene-linear/checkpoints/approach.rgba16f",
+    "file_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
+    "pixels_sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

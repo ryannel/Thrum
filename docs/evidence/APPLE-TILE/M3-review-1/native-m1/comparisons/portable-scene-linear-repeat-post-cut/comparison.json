@@ -1,0 +1,29 @@
+{
+  "reference": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/portable-scene-linear-repeat-post-cut.reference",
+    "file_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
+    "pixels_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "candidate": {
+    "file": "/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/docs/evidence/APPLE-TILE/M3-review/native-m1/portable-scene-linear-repeat/checkpoints/post-cut.rgba16f",
+    "file_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
+    "pixels_sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d",
+    "extent": [
+      1280,
+      720
+    ],
+    "bytes_per_pixel": 8,
+    "encoding": "rgba16f"
+  },
+  "equal": true,
+  "scope": "exact stored pixel bytes only; target/sample/exposure/history identity must be established by the caller",
+  "changed_pixels": 0,
+  "changed_bytes": 0,
+  "bounds_xyxy_exclusive": null
+}

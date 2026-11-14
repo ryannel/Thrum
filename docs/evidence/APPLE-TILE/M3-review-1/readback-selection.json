@@ -1,0 +1,930 @@
+{
+  "retained": "selected lossless PNGs, two mirror-light linear sources, original-time movies, exact per-checkpoint hashes/identities and comparison results; complete matched M0 references remain in the repository",
+  "removed": [
+    {
+      "path": "native-m1/apple-tile-sdr-near-plane.reference",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-approach.reference",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/apple-tile-night-sdr.reference",
+      "bytes": 8294400,
+      "sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8"
+    },
+    {
+      "path": "native-m1/apple-tile-sun-linear.reference",
+      "bytes": 16588800,
+      "sha256": "8c10014da4a1de4e89f3ca8700bce6fe8ef19bb7f77ca6d09137e363aa6cf6fb"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr-approach.reference",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat-pre-cut.reference",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear-post-cut.reference",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/portable-sun-linear.reference",
+      "bytes": 16588800,
+      "sha256": "8c10014da4a1de4e89f3ca8700bce6fe8ef19bb7f77ca6d09137e363aa6cf6fb"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat-near-plane.reference",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr-post-cut.reference",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-post-cut.reference",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/portable-night-linear.reference",
+      "bytes": 16588800,
+      "sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear-approach.reference",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear-pre-cut.reference",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat-post-cut.reference",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-mirror-light.reference",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/apple-tile-night-linear.reference",
+      "bytes": 16588800,
+      "sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-near-plane.reference",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/portable-sdr-post-cut.reference",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat-mirror-light.reference",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat-near-plane.reference",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/portable-sdr-near-plane.reference",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr-pre-cut.reference",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/portable-sun-sdr.reference",
+      "bytes": 8294400,
+      "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513"
+    },
+    {
+      "path": "native-m1/portable-sdr-mirror-light.reference",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat-post-cut.reference",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat-approach.reference",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-pre-cut.reference",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/portable-sdr-pre-cut.reference",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/portable-sdr-approach.reference",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/portable-night-sdr.reference",
+      "bytes": 8294400,
+      "sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat-mirror-light.reference",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear-mirror-light.reference",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr-mirror-light.reference",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/apple-tile-sun-sdr.reference",
+      "bytes": 8294400,
+      "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear-near-plane.reference",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat-approach.reference",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat-pre-cut.reference",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/portable-sun-sdr/checkpoint-0.rgba8",
+      "bytes": 8294400,
+      "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513"
+    },
+    {
+      "path": "native-m1/portable-night-sdr/checkpoint-0.rgba8",
+      "bytes": 8294400,
+      "sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8"
+    },
+    {
+      "path": "native-m1/apple-tile-sun-linear/checkpoint-0.rgba16f",
+      "bytes": 16588800,
+      "sha256": "8c10014da4a1de4e89f3ca8700bce6fe8ef19bb7f77ca6d09137e363aa6cf6fb"
+    },
+    {
+      "path": "native-m1/portable-sun-linear/checkpoint-0.rgba16f",
+      "bytes": 16588800,
+      "sha256": "8c10014da4a1de4e89f3ca8700bce6fe8ef19bb7f77ca6d09137e363aa6cf6fb"
+    },
+    {
+      "path": "native-m1/apple-tile-night-sdr/checkpoint-0.rgba8",
+      "bytes": 8294400,
+      "sha256": "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8"
+    },
+    {
+      "path": "native-m1/portable-night-linear/checkpoint-0.rgba16f",
+      "bytes": 16588800,
+      "sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e"
+    },
+    {
+      "path": "native-m1/apple-tile-sun-sdr/checkpoint-0.rgba8",
+      "bytes": 8294400,
+      "sha256": "48567e05345d833b5cd35e64473ee0d063d1bd2aaf8414b9b362707395f73513"
+    },
+    {
+      "path": "native-m1/apple-tile-night-linear/checkpoint-0.rgba16f",
+      "bytes": 16588800,
+      "sha256": "7f2be0f560c6bba5c7227553d78243fa5c1ec3c01579151223ca84dfe1dedb5e"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/near-plane.rgba16f",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/pre-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/approach.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/mirror-light.rgba16f",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/post-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/portable-scene-linear/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/near-plane.rgba16f",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/pre-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/approach.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/mirror-light.rgba16f",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/post-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/portable-scene-linear-repeat/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m1/portable-sdr-repeat/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/near-plane.rgba16f",
+      "bytes": 7372800,
+      "sha256": "15c237b6e2953c02c66fef86666b503d82d2b02f4d5f2f5008930cfa4b8c554b"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/pre-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "0464181e03b9b55b0ca824dd19ad0229b539864eeea4d7535b3e25492a5b01ec"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/approach.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e506413f84ef4445df7241d6f29d74ad37fe945cf8b7c94707246bd2f553778a"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/mirror-light.rgba16f",
+      "bytes": 7372800,
+      "sha256": "bd895bc0bd5d8b8777620f576c577b94775c97a9f2193bfeaf366f14a81d3e73"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/post-cut.rgba16f",
+      "bytes": 7372800,
+      "sha256": "e6cec37fa59ee447ef4ecd69a2e7c516e21a19804914849beb4e14bf1644858d"
+    },
+    {
+      "path": "native-m1/apple-tile-scene-linear/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m1/portable-sdr/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/approach.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "bbbf3d06a7242729dcdbae554b03a4426ba8f5fdbcfdeb3753bfa73b779e053b"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "91810afc80d07e1ff43660d09b53a9226f432cc3bc7ea4fffcb814e8c420615d"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "9c45e7ca597c8a4b95b58c319e68784529a7536602f4364198dbd723cb049c4e"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "6b4a72e59361b3bbe194eae5b2f0bbdac0b14df89598035438246309c1666bd0"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m1/apple-tile-sdr/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3686400,
+      "sha256": "8c559c353616bf428de9a6d6638b300b642b94e893fb38c4cec5ec95f28593c2"
+    },
+    {
+      "path": "native-m2/portable-bgra8-mirror-light.reference",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-mirror-light.reference",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb-mirror-light.reference",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb-mirror-light.reference",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/approach.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "60f8582b9f5d42daad4a603fbbdbb2ab0985537b4e54c1810cf205b78262cfd1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "571ba36e34fd6161effd29d672e3b57c0dbe97844ce2fbfc5d125dc898a8beb9"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "b4a7cceb8d4a2f5c58dc5c45db89bca36866048c0ec9d699ea05b62703a83293"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/approach.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "60f8582b9f5d42daad4a603fbbdbb2ab0985537b4e54c1810cf205b78262cfd1"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "571ba36e34fd6161effd29d672e3b57c0dbe97844ce2fbfc5d125dc898a8beb9"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "b4a7cceb8d4a2f5c58dc5c45db89bca36866048c0ec9d699ea05b62703a83293"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m2/portable-bgra8/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/approach.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "60f8582b9f5d42daad4a603fbbdbb2ab0985537b4e54c1810cf205b78262cfd1"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "571ba36e34fd6161effd29d672e3b57c0dbe97844ce2fbfc5d125dc898a8beb9"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "b4a7cceb8d4a2f5c58dc5c45db89bca36866048c0ec9d699ea05b62703a83293"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m2/portable-bgra8-srgb/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/mirror-light.rgba8",
+      "bytes": 3686400,
+      "sha256": "719ef93e987a6dedf9b74e17f0d878fa0dc2647cc40cce681033fc2a85c3b213"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/mirror-light.ppm",
+      "bytes": 2764816,
+      "sha256": "fc182c378b1a60cba4efc97a7e5b819ea7b0ec63041313cc65fc80b77ceb1fa4"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/pre-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "8fd76e0c80846c02c8c97fd504fea90aa3e255a5d8fc079e035108071f553879"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/post-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "5b2a3dfe7e27cad9b828d64c013dca00540c796d68731e6e2ba2505190ad09eb"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/post-cut.rgba8",
+      "bytes": 3686400,
+      "sha256": "9d09e38d9a27f1b41434bc3bc4198e686896e7ed8fdca8f1fbccb21ab93a744c"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/approach.ppm",
+      "bytes": 2764816,
+      "sha256": "124d5fbea2ad6c48e5274918301067b02950eb4e3ee67b00bf72f65ad356f752"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/approach.rgba8",
+      "bytes": 3686400,
+      "sha256": "168a804e069d23d94a01d3ce413aa947a13f5d34a5e02ad8f34a1cec97e1b084"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/near-plane.rgba8",
+      "bytes": 3686400,
+      "sha256": "302094d02247a3f2a217fd57c4a91a5542f8a05e450d76252abbb170142cab3b"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/pre-cut.ppm",
+      "bytes": 2764816,
+      "sha256": "c65a9a4ba73f442cd2082d405b7ed35f82e583d22d1ea506b130be081d69ac55"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/approach.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "09264740ea216ec7e45320fdbba4569bcdee4a09104d6a1193c47b7671686cfe"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/pre-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "60f8582b9f5d42daad4a603fbbdbb2ab0985537b4e54c1810cf205b78262cfd1"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/post-cut.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "571ba36e34fd6161effd29d672e3b57c0dbe97844ce2fbfc5d125dc898a8beb9"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/near-plane.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "b4a7cceb8d4a2f5c58dc5c45db89bca36866048c0ec9d699ea05b62703a83293"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/near-plane.ppm",
+      "bytes": 2764816,
+      "sha256": "5f63d0eda7b09c466c727dbe3bdcbedb3266a0b9b7e04147c45572cb0fd7446b"
+    },
+    {
+      "path": "native-m2/apple-tile-bgra8-srgb/checkpoints/mirror-light.surface-bgra8",
+      "bytes": 3200000,
+      "sha256": "47b36b1ccce1f0e73547d7ed53eebf34572af01fa59405765ed36d5f47dc1ca1"
+    }
+  ]
+}

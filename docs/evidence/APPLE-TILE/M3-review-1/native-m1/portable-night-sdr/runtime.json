@@ -1,0 +1,98 @@
+{
+  "active_pacing": false,
+  "adapter": "Apple M3 Max",
+  "backend": "Metal",
+  "complete": true,
+  "control_actions": [],
+  "diagnostic_actions": [],
+  "diagnostic_clouds": false,
+  "disk_limit_Bps": null,
+  "duration_including_drain_ns": 27263917,
+  "enabled_features": "Features { features_wgpu: FeaturesWGPU(MAPPABLE_PRIMARY_BUFFERS), features_webgpu: FeaturesWebGPU(TEXTURE_COMPRESSION_BC | TEXTURE_COMPRESSION_BC_SLICED_3D | TEXTURE_COMPRESSION_ASTC | TIMESTAMP_QUERY) }",
+  "extent": [
+    1920,
+    1080
+  ],
+  "gpu": [],
+  "images": [
+    {
+      "alpha": 1.0,
+      "current_endpoint_tick": 0,
+      "device_generation": 1,
+      "epoch": 1,
+      "exposure_gpu_words": [
+        1111085850,
+        1010206234,
+        3235383541,
+        976275536,
+        0,
+        258,
+        0,
+        1
+      ],
+      "history_epoch": 0,
+      "map_observed_ns": 4609125,
+      "pixel_source": "Sdr",
+      "presentation_lead_ns": 0,
+      "previous_endpoint_tick": null,
+      "readback_copy_gpu_bracket_ns": 1409084.0,
+      "submission_id": 257,
+      "submit_ns": 0,
+      "surface_generation": 1,
+      "tick": 0,
+      "timeline": 0,
+      "visual_revision": null
+    }
+  ],
+  "initial_controls": {
+    "accepted_ns": -3006449292,
+    "request_ns": -3008012250
+  },
+  "interval_end_ns": 4614500,
+  "last_scenario_ns": 0,
+  "max_sampled_textures_per_shader_stage": 16,
+  "mode": "still",
+  "opportunities": [
+    {
+      "accepted_ns": null,
+      "accepted_yaw_degrees": 0.0,
+      "id": 0,
+      "primed": true,
+      "request_ns": -763417,
+      "requested_yaw_degrees": 0.0,
+      "scenario_ns": 0,
+      "submission_id": 257,
+      "submitted": true,
+      "tick": 0
+    }
+  ],
+  "pixel_source": "Sdr",
+  "presentation_lead_policy": "engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
+  "recipe": "Ok(Portable)",
+  "registry_digest": "f8fa043b9369e8dc",
+  "requested_hz": 120,
+  "ring_omissions": 0,
+  "route": null,
+  "scenario": "pan",
+  "spool_encoding": "ZstdDelta",
+  "surface_generation_scope": "engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
+  "thread_qos_after": 33,
+  "thread_qos_before": 21,
+  "unified_memory": true,
+  "world_origin_before_run_ns": 3008038083,
+  "writer_omissions": 0,
+  "writer_result": {
+    "Ok": {
+      "bytes": 8294400,
+      "encoded_bytes": 1237424,
+      "encoded_queue_peak": 1,
+      "flush_ns": 15811417,
+      "frame_sha256": [
+        "b1e45c6ebe8e76cbe0942cc3ffb419abf4dc964e0f4c141ca0c887a48a1610a8"
+      ],
+      "frames": 1,
+      "io_ns": 638333,
+      "write_ns": 5289709
+    }
+  }
+}

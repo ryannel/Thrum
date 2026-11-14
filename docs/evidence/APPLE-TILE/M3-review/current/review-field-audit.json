@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "changes": [
+    [
+      "/milestones/3/items/0/verdict",
+      "",
+      "pass"
+    ],
+    [
+      "/milestones/3/items/0/review",
+      "",
+      "docs/evidence/APPLE-TILE/M3-review.md"
+    ],
+    [
+      "/milestones/3/items/1/verdict",
+      "",
+      "pass"
+    ],
+    [
+      "/milestones/3/items/1/review",
+      "",
+      "docs/evidence/APPLE-TILE/M3-review.md"
+    ],
+    [
+      "/milestones/3/items/2/verdict",
+      "",
+      "pass"
+    ],
+    [
+      "/milestones/3/items/2/review",
+      "",
+      "docs/evidence/APPLE-TILE/M3-review.md"
+    ],
+    [
+      "/milestones/3/items/3/verdict",
+      "",
+      "pass"
+    ],
+    [
+      "/milestones/3/items/3/review",
+      "",
+      "docs/evidence/APPLE-TILE/M3-review.md"
+    ],
+    [
+      "/milestones/3/status",
+      "ready_for_review",
+      "done"
+    ]
+  ]
+}

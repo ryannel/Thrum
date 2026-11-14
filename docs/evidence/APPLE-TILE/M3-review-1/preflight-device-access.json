@@ -1,0 +1,13 @@
+{
+  "screen_recording_granted": true,
+  "console_locked": true,
+  "unix_ns": 1794425377613182000,
+  "monotonic_ns": 2940359103016541,
+  "grant_requested": false,
+  "probe_pid": 72473,
+  "parent_pid": 68263,
+  "probe_executable": "/opt/homebrew/opt/python@3.15/bin/python3.15",
+  "api": "CGPreflightScreenCaptureAccess",
+  "host": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+  "observer_planned": "/usr/sbin/screencapture"
+}

@@ -1,0 +1,78 @@
+{
+  "verified_sessions": [
+    "portable-route",
+    "apple-tile-route",
+    "portable-variants",
+    "apple-tile-variants",
+    "apple-tile-render-stall"
+  ],
+  "metadata_archives": [
+    {
+      "file": "portable-route/manifest.json.gz",
+      "uncompressed_sha256": "27354b4ed26e6bb00b6364d5338a8e7f26222b93ce01d5b53a29ae7ee4fdff73"
+    },
+    {
+      "file": "portable-route/runtime.json.gz",
+      "uncompressed_sha256": "9edbeb866c7da66b44ea13983425005673efb19ad85b9067fffba60bdae2cb7a"
+    },
+    {
+      "file": "apple-tile-route/manifest.json.gz",
+      "uncompressed_sha256": "983f2b9336f8267dd1a1ec4dbddefc3dab97aad8165e5fc0d7b0cbe99ac97040"
+    },
+    {
+      "file": "apple-tile-route/runtime.json.gz",
+      "uncompressed_sha256": "5eeeb062e927641295b4280d0f7670ebdc0eaccb1ae106b89585e82027d9d595"
+    },
+    {
+      "file": "portable-variants/manifest.json.gz",
+      "uncompressed_sha256": "861bd330baf1027e88c8353ac33afd29d109484f9822ba5dac881279d22b73aa"
+    },
+    {
+      "file": "portable-variants/runtime.json.gz",
+      "uncompressed_sha256": "82799ac1028d60e3624a5fb3ace32cca42f0e8827deba5b0699fa55993e77858"
+    },
+    {
+      "file": "apple-tile-variants/manifest.json.gz",
+      "uncompressed_sha256": "bd57e463a1437f6c09eb58a678ff971d7e6fe6070ad317bed267f58171f38587"
+    },
+    {
+      "file": "apple-tile-variants/runtime.json.gz",
+      "uncompressed_sha256": "f2361163e6a5daae977cecd9b47ac1aec1cd32ab9d0417eee6908e42f73277cc"
+    },
+    {
+      "file": "apple-tile-render-stall/manifest.json.gz",
+      "uncompressed_sha256": "3fd3379c0c78d800cb740bc1b7cab51b427fb12dda4bba6a1688f0fab69661e9"
+    },
+    {
+      "file": "apple-tile-render-stall/runtime.json.gz",
+      "uncompressed_sha256": "28841c532b0cbaa4e0050eadd2d422d48a471fdc4b813128db657fbf4e9495e6"
+    }
+  ],
+  "removed_cook_store": "docs/evidence/APPLE-TILE/M3-review/current/valley",
+  "spool_removal": "After finish_t2 verified every source hash and every expanded PNG; per-run byte counts in results.json.",
+  "cook_files": [
+    "EPOCH",
+    "LOCK",
+    "HEAD",
+    "stat-cache.bin",
+    "actions/caf83891beadc7d7bac4d3cebfc7f0f084061753acda55cb4747ad7a40720d7a",
+    "actions/b6917be857ee236504096b296a3c0af8d15e5dbc4424072d197771aac986dc13",
+    "actions/4fe1baed10d1f5fac142e90b5a8eda95ecfd744bacb8191157fda957a36267bb",
+    "actions/ce0f7421280589069c9706d19a514f2848c9fbdf7280165cec9359863ccc5343",
+    "actions/c1812467617c9ce6ccf546d518917945af696433369ff09a2d4b7e866b417a38",
+    "actions/491fedd2514199c0a989eecf7d5d39d7d79dcd75bfeaa5427e33d3daef018d1d",
+    "actions/e9f04d807871e9e84d452cc558c4804e6f2ed7581aeaa9e2b03b08632e9c8dd7",
+    "actions/43db33fce4f4bdd411d5bb1fe739922f7eec9e3e9a70b19802e595cbbfa2dff3",
+    "actions/c707e4d3c066b6fa902f5b35bcf0824f31bf1a914eeb58110e21d6eb8a24e6f4",
+    "cas/0e/0ebb57aac289f58b54ca2be556c92ca2a983b6fc2aee35f182452b32a372d123",
+    "cas/5a/5a1b4d53f7396a7b1a5d4178f5f35eea8b1925e3127511a2bb05ba71c8fcd6ce",
+    "cas/17/17fce4d6e40c92d31c91fd2b95cd508bc5fd91212e9327d917ab0dee7a05b8dc",
+    "cas/7e/7e68ddc700b76bf4ea6cdafa4c8860256b2220a23afaf3590f7cbe198db4099a",
+    "cas/62/6216e9963e178c6b81dfc51989df2a12dc0450ca18da3ee8fb2451b570c9f3b4",
+    "cas/55/5530580e6997486b48062db7cc9a83df2f94f66ecf7dbe8ff547d6556aeaa0b1",
+    "cas/aa/aac56c20312862ff1954e87c656fdcff1c3ff5302ce46a4fe6c7368e01283eaa",
+    "cas/f8/f8cd990daedf3f166fb35b3ffcc8025805e14b7c7106188760ec9e1c67fa8638",
+    "cas/70/70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d",
+    "cas/14/14183bb6aee8e6f9080b0baf957cec5b7aa3bb245f7f6db50323dae12faeedb1"
+  ]
+}

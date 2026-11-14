@@ -1,0 +1,15 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/thrum_render-03d3b364ede92dd5)
+
+running 8 tests
+test synthetic::frame_stats::tests::a_contribution_compute_pass_is_reported_apart_from_the_scene_sequence ... ok
+test synthetic::frame_stats::tests::camera_visibility_is_required_by_the_culled_layout_and_counted_in_forward ... ok
+test synthetic::frame_stats::tests::cold_and_cached_ground_queries_keep_the_report_shape_and_profile_bucket ... ok
+test synthetic::frame_stats::tests::effect_queries_keep_names_without_changing_the_fixed_scene_buckets ... ok
+test synthetic::frame_stats::tests::occlusion_passes_are_required_once_each_and_counted_in_forward ... ok
+test synthetic::frame_stats::tests::reflection_queries_keep_raw_identity_and_the_existing_sky_bucket ... ok
+test synthetic::frame_stats::tests::the_caster_cull_is_required_once_and_counted_in_the_near_shadow_bucket ... ok
+test synthetic::frame_stats::tests::the_horizon_height_pass_reports_in_the_far_shadow_bucket ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 245 filtered out; finished in 0.00s
+

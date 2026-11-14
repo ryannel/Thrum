@@ -1,0 +1,85 @@
+{
+  "sessions": {
+    "chrome-day": {
+      "verified_frames": 481,
+      "selected_pngs": [
+        "000179.png",
+        "000419.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000443.png",
+        "000659.png"
+      ],
+      "metadata": [
+        {
+          "file": "manifest.json.gz",
+          "uncompressed_sha256": "36849e109c6f8cb391c77f9df9ff4e30a3bf8963101972dac0b2de96bf24891d"
+        },
+        {
+          "file": "runtime.json.gz",
+          "uncompressed_sha256": "02d1594816a3e96331a4a576a8307bf416966df581b665819365a1569b47c105"
+        }
+      ],
+      "removed": "Verified raw frame gzip files, launcher app, Swift cache, cooked copy and Chrome profile; selected originals and original-time preview retained."
+    },
+    "chrome-night": {
+      "verified_frames": 481,
+      "selected_pngs": [
+        "000179.png",
+        "000419.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000443.png",
+        "000659.png"
+      ],
+      "metadata": [
+        {
+          "file": "manifest.json.gz",
+          "uncompressed_sha256": "2afb1970dc9672153ae06b22eaf0ab2a8e91b6ee10bf540e870e66f8d7c2ab51"
+        },
+        {
+          "file": "runtime.json.gz",
+          "uncompressed_sha256": "e8ece06681573400b8690f1cc947fad6db00f9b64de7fee89c0c62b96c743537"
+        }
+      ],
+      "removed": "Verified raw frame gzip files, launcher app, Swift cache, cooked copy and Chrome profile; selected originals and original-time preview retained."
+    },
+    "chrome-resize": {
+      "verified_frames": 480,
+      "selected_pngs": [
+        "000179.png",
+        "000266.png",
+        "000267.png",
+        "000268.png",
+        "000269.png",
+        "000270.png",
+        "000271.png",
+        "000272.png",
+        "000273.png",
+        "000419.png",
+        "000438.png",
+        "000439.png",
+        "000440.png",
+        "000441.png",
+        "000442.png",
+        "000658.png"
+      ],
+      "metadata": [
+        {
+          "file": "manifest.json.gz",
+          "uncompressed_sha256": "71122e3a05c0b5707d55699d6f31694bbf40eb971b07a246696a003147c9f5a3"
+        },
+        {
+          "file": "runtime.json.gz",
+          "uncompressed_sha256": "d47ed3fa4bf7762340a46f74e043adfadf7e6cc6d95cd0dfb4c5b8b8e6033f82"
+        }
+      ],
+      "removed": "Verified raw frame gzip files, launcher app, Swift cache, cooked copy and Chrome profile; selected originals and original-time preview retained."
+    }
+  },
+  "removed_scratch": "tmp/apple-tile-m3-review-current"
+}

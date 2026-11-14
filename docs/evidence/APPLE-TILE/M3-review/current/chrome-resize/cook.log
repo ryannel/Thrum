@@ -1,0 +1,5 @@
+serving http://127.0.0.1:51313
+scan 6.838125ms (reused 0 hashed 10 unstable 0), cooked 9 reused 0 in 1.103658209s, publish 521.833µs -> generation 1
+  0 paths, event to publish 1.111044583s
+scan 6.660791ms (reused 0 hashed 10 unstable 0), cooked 0 reused 9 in 91.667µs, publish 259.333µs -> unchanged
+  5 paths, event to publish 15.715ms

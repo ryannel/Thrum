@@ -1,0 +1,94 @@
+{
+  "portable-route": {
+    "images": 964,
+    "gpu_samples": 963,
+    "recipe": "Ok(Portable)",
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "history_epochs": [
+      1,
+      2
+    ],
+    "star_present": 963,
+    "star_absent": 0,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ],
+    "preview": null
+  },
+  "apple-tile-route": {
+    "images": 964,
+    "gpu_samples": 963,
+    "recipe": "Ok(AppleTile)",
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "history_epochs": [
+      1,
+      2
+    ],
+    "star_present": 963,
+    "star_absent": 0,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ],
+    "preview": null
+  },
+  "portable-variants": {
+    "images": 481,
+    "gpu_samples": 480,
+    "recipe": "Ok(Portable)",
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "history_epochs": [
+      0
+    ],
+    "star_present": 240,
+    "star_absent": 240,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ],
+    "preview": null
+  },
+  "apple-tile-variants": {
+    "images": 481,
+    "gpu_samples": 480,
+    "recipe": "Ok(AppleTile)",
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "history_epochs": [
+      0
+    ],
+    "star_present": 240,
+    "star_absent": 240,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ],
+    "preview": null
+  },
+  "apple-tile-render-stall": {
+    "images": 449,
+    "gpu_samples": 448,
+    "recipe": "Ok(AppleTile)",
+    "adapter": "Apple M3 Max",
+    "backend": "Metal",
+    "history_epochs": [
+      0
+    ],
+    "star_present": 0,
+    "star_absent": 448,
+    "unavailable": [
+      "contribution upload",
+      "output readback",
+      "timestamp query resolve/readback"
+    ],
+    "preview": null
+  }
+}

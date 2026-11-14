@@ -1,0 +1,14 @@
+{
+  "selected": [
+    "approach",
+    "mirror-light",
+    "pre-cut",
+    "post-cut",
+    "near-plane",
+    "first",
+    "last"
+  ],
+  "verified_records": 481,
+  "removed_bulk": "frames and expanded png duplicates",
+  "retained": "selected lossless samples, complete identities/hashes and realtime preview where produced"
+}

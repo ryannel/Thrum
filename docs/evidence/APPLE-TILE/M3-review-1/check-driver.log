@@ -1,0 +1,8 @@
+RUN render-tests
+EXIT render-tests 0
+RUN native
+EXIT native 0
+RUN moving
+EXIT moving 0
+RUN dev-check
+EXIT dev-check 0

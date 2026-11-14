@@ -1,0 +1,7 @@
+   Compiling thrum-app v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/crates/thrum-app)
+   Compiling thrum-render v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/crates/thrum-render)
+   Compiling thrum-asset-gpu v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/crates/thrum-asset-gpu)
+   Compiling v1-game v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game)
+   Compiling v1-game-ios v0.1.0 (/Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/examples/v1-game-ios)
+    Finished `release` profile [optimized] target(s) in 6.87s
+Built /Users/ryannel/Workspace/thrum/.git/orchestrate/verify/APPLE-TILE/target/v1-game-ios-sim/ThrumV1.app

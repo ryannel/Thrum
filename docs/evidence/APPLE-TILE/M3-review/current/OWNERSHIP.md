@@ -1,0 +1,1 @@
+Owner: independent APPLE-TILE M3 review at 9d6318cf. Temporary Chrome captures and launcher/cache files. Expected peak below 4 GiB per serial session, with 16 GiB preflight. Retain compact manifests, verified selected images and movies in docs/evidence/APPLE-TILE/M3-review/current, then remove this owned scratch after inspecting and verifying promotion. No shared outputs owned.
