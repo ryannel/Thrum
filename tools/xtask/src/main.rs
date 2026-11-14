@@ -50,6 +50,23 @@ fn python(args: &[&str]) -> TaskResult {
 }
 
 fn check_web() -> TaskResult {
+    cargo(&[
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "thrum-transport",
+        "-p",
+        "link-proof",
+        "--lib",
+        "--features",
+        "thrum-transport/browser",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--",
+        "-D",
+        "warnings",
+    ])?;
     let lint = |features: &[&str]| {
         let mut args = vec![
             "clippy",

@@ -1,0 +1,28 @@
+[package]
+name = "thrum-transport"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+native = ["dep:quinn", "dep:rustls", "dep:rcgen", "dep:sha2", "dep:time", "dep:tokio", "dep:web-transport-quinn"]
+browser = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:js-sys"]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+quinn = { version = "=0.11.12", default-features = false, features = ["runtime-tokio", "rustls-ring"], optional = true }
+rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std"], optional = true }
+rcgen = { version = "=0.14.10", optional = true }
+sha2 = { version = "=0.10.9", optional = true }
+time = { version = "=0.3.55", optional = true }
+tokio = { version = "=1.54.1", features = ["rt", "net", "time", "sync", "macros", "io-util"], optional = true }
+web-transport-quinn = { version = "=0.13.6", default-features = false, features = ["ring"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "=0.2.129", optional = true }
+wasm-bindgen-futures = { version = "=0.4.79", optional = true }
+js-sys = { version = "=0.3.106", optional = true }

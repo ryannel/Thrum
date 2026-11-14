@@ -1,0 +1,35 @@
+[package]
+name = "link-proof"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+allocation-proof = []
+
+[[bench]]
+name = "allocations"
+harness = false
+required-features = ["allocation-proof"]
+
+[dev-dependencies]
+divan = "=0.1.21"
+
+[dependencies]
+thrum-transport = { path = "../../crates/thrum-transport" }
+serde_json = "=1.0.154"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+thrum-transport = { path = "../../crates/thrum-transport", features = ["native"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+thrum-transport = { path = "../../crates/thrum-transport", features = ["browser"] }
+wasm-bindgen = "=0.2.129"
+js-sys = "=0.3.106"

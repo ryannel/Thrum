@@ -1,5 +1,13 @@
 # TRANSPORT log
 
+- 2026-11-14 Builder checkpoint: added the dependency-free bounded link, caller-clock conditioned carrier,
+  versioned tickets, optional pinned Quinn/WebTransport carriers and shared Rust proof tooling. Four virtual-time
+  tests and strict native/Wasm Clippy pass. Real development exchanges reached Chrome 157 and the iOS 27.2
+  simulator; these dirty-tree runs are diagnostics, not M1 acceptance evidence. Final target proofs remain to run.
+- 2026-11-14 The repository check currently fails on pre-existing absent evidence links in CREATOR, CULLING and
+  CLOUDS. Those files are also absent on fetched main `2df2e3c5`; no evidence or acceptance claim was fabricated to
+  silence them. Transport-specific dependency-policy issues found during construction were fixed.
+
 - 2026-11-13 Planned from the lead's task (row 17 of the module list); no words of the owner's were passed on, so
   the design quotes the owner's page of 10 November. Two milestones replace the brief the module list carried,
   whose text is in git (`git show ee9ac160:docs/plans/ARCHITECTURE.md`). M1 waits on `SHOWCASE:M8`.

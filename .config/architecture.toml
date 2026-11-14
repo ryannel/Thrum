@@ -100,6 +100,14 @@ manifest = "crates/thrum-network/Cargo.toml"
 # The timed input window consumes the shared W1 InputFrame without owning gameplay truth.
 allowed_workspace_dependencies = ["thrum-core"]
 
+[packages.thrum-transport]
+manifest = "crates/thrum-transport/Cargo.toml"
+allowed_workspace_dependencies = []
+
+[packages.link-proof]
+manifest = "examples/link-proof/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-transport"]
+
 [packages.xtask]
 manifest = "tools/xtask/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -137,6 +145,42 @@ allowed_workspace_dependencies = ["v1-game", "thrum-render", "thrum-core", "thru
 # The check validates declarations; license/provenance review remains human work.
 [external_dependencies]
 
+[external_dependencies.quinn]
+requirement = "=0.11.12"
+license = "MIT OR Apache-2.0"
+purpose = "Opt-in raw QUIC and WebTransport native message carrier"
+target_cost = "Native adapter only: one I/O runtime per host/client, bounded buffers and packet encryption"
+
+[external_dependencies.rustls]
+requirement = "=0.23.46"
+license = "MIT OR Apache-2.0 OR ISC"
+purpose = "QUIC TLS with a mandatory pinned SHA-256 certificate verifier"
+target_cost = "Opt-in native handshake and per-packet crypto through ring; no default core dependency"
+
+[external_dependencies.rcgen]
+requirement = "=0.14.10"
+license = "MIT OR Apache-2.0"
+purpose = "Ephemeral 13-day P-256 host identity"
+target_cost = "Native adapter startup only; private key and certificate remain in memory"
+
+[external_dependencies.time]
+requirement = "=0.3.55"
+license = "MIT OR Apache-2.0"
+purpose = "Set the host certificate's validity interval"
+target_cost = "Native identity startup only"
+
+[external_dependencies.tokio]
+requirement = "=1.54.1"
+license = "MIT"
+purpose = "Single-threaded I/O runtime for opt-in native links"
+target_cost = "One network thread per host/client; no game-thread await"
+
+[external_dependencies.web-transport-quinn]
+requirement = "=0.13.6"
+license = "MIT OR Apache-2.0"
+purpose = "HTTP/3 WebTransport sessions on the host's existing QUIC endpoint"
+target_cost = "Native adapter only; adds HTTP/3 startup and WebTransport datagram prefix"
+
 [external_dependencies.serde]
 requirement = "=1.0.229"
 license = "MIT OR Apache-2.0"
@@ -170,8 +214,8 @@ target_cost = "Wasm only. V1 and the web shell: startup and device replacement o
 [external_dependencies.js-sys]
 requirement = "=0.3.106"
 license = "MIT OR Apache-2.0"
-purpose = "Promise and Uint8Array bindings for the G5 Wasm dev-server client (already transitive through wasm-bindgen-futures)"
-target_cost = "Wasm-only thrum-asset edge; one copy of each response body from the JS heap into 64-aligned Wasm memory, nothing per frame"
+purpose = "Promise and Uint8Array bindings for the G5 Wasm dev-server client and opt-in transport adapter"
+target_cost = "Wasm only: one copy of each fetched body into aligned asset memory, and one boundary per whole transport message; proof tools use Date for payload identity"
 
 [external_dependencies.wasm-bindgen-test]
 requirement = "=0.3.79"
