@@ -1,5 +1,10 @@
 # EFFECT-GRAPH log
 
+- 2026-11-14 Rebased the private M3 branch onto main `145cadb2` before final qualification. Incoming changes
+  affect documentation and Mac qualification scripts. Git confirms native-proof source `9096b368` has the
+  same crates, V1 game, M3 checker/campaign and engine-capture drivers. Replaced the still-queued individual
+  reservations with one audited batch of unchanged checks and the official full milestone check.
+
 - 2026-11-14 Resumed at implementation checkpoint `9096b368`. The submitted slab command passes on both
   Metal recipes; four fixed native noon/night images and twelve paired cost arms completed. The builder
   inspected every whole frame and native-size crossing strip. [Partial target proof](../../evidence/EFFECT-GRAPH/M3-proof.md)
