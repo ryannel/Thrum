@@ -71,6 +71,47 @@ Part K: a channel from a lake to the sea; cells of 1 m; steps in the surface bet
     source end: lake 6.0000 m, chart 6.0000 m
     mouth:      sea -0.5000 m at the crest, chart -0.5000 m
 
+  The assembled surface: the level plus each layer after the depth limit, at a crest of the swell and of the
+  short wind waves (0.40 m at sea, 0.16 m on the lake, 0.07 m on the chart's own gains); swash ratio 0.7.
+  Swash depth taken once for each body (the chart's is its own waves') against taken from the row at the point.
+  The design review's case, no wind, a mouth 0.25 m deep: sea 0.263033009 m, chart with its own swash depth 0.053033009 m, step 0.210000000 m; from the row, step 0.000000000 m
+  An end with the same bed and the same joined row either side, by the water's depth there, with the wind waves too:
+  end      depth     joined body    chart, one swash depth a body    step       chart, swash depth from the row    step
+  mouth    4.00 m    0.64142 m      0.64142 m                       0.00000 m   0.64142 m                         0.00000 m
+  mouth    1.00 m    0.57179 m      0.36395 m                       0.20784 m   0.57179 m                         0.00000 m
+  mouth    0.25 m    0.41269 m      0.12685 m                       0.28584 m   0.41269 m                         0.00000 m
+  mouth    0.00 m    0.35966 m      0.02079 m                       0.33887 m   0.35966 m                         0.00000 m
+  source   1.00 m    0.05657 m      0.05657 m                       0.00000 m   0.05657 m                         0.00000 m
+  source   0.25 m    0.05657 m      0.05657 m                       0.00000 m   0.05657 m                         0.00000 m
+  source   0.05 m    0.03437 m      0.02100 m                       0.01336 m   0.03437 m                         0.00000 m
+  source   0.00 m    0.02376 m      0.01039 m                       0.01336 m   0.02376 m                         0.00000 m
+  On the island, 1 mm either side of each end, through the stages:
+  lake stage  tide    depth at the mouth   step, one a body   step, from the row   depth at the source   step, one a body   step, from the row
+   +0.0 m    +0.0 m    2.00 m              0.0654 m           0.0000 m             1.14 m               0.0000 m           0.0000 m
+   +1.0 m    +0.0 m    2.00 m              0.0654 m           0.0000 m             2.14 m               0.0000 m           0.0000 m
+   -0.5 m    +0.0 m    2.00 m              0.0654 m           0.0000 m             0.64 m               0.0000 m           0.0000 m
+   +0.0 m    +1.0 m    3.00 m              0.0000 m           0.0000 m             1.14 m               0.0000 m           0.0000 m
+   +0.0 m    -1.0 m    1.00 m              0.2078 m           0.0000 m             1.14 m               0.0000 m           0.0000 m
+   +1.0 m    +1.0 m    3.00 m              0.0000 m           0.0000 m             2.14 m               0.0000 m           0.0000 m
+   -0.5 m    -1.0 m    1.00 m              0.2078 m           0.0000 m             0.64 m               0.0000 m           0.0000 m
+   +1.0 m    -1.0 m    1.00 m              0.2078 m           0.0000 m             2.14 m               0.0000 m           0.0000 m
+  (the island's source end is too deep for the limit to hold the lake's small waves; the table above it has a shallow sill)
+
+  Beside a mouth: beach sand 2 cm above the channel's own water, which the sea's sheet also reaches. The sea's
+  surface on that sand against the chart's, at a crest, as heights over the sand (nothing where it does not reach).
+  Backwater measured from the sea's still level, and from its level plus the reach of its run-up (0.2625 m for a margin height of 1.5 m):
+  chart's own level over the sea's   weight, still level   sea's sheet   chart's    step      weight, level plus reach   chart's    step
+   0.02 m                            0.982                 0.3112 m     0.3056 m   0.0056 m  1.000                      0.3112 m   0.0000 m
+   0.05 m                            0.896                 0.2748 m     0.2466 m   0.0282 m  1.000                      0.2748 m   0.0000 m
+   0.10 m                            0.648                 0.2142 m     0.1400 m   0.0742 m  1.000                      0.2142 m   0.0000 m
+   0.15 m                            0.352                 0.1536 m     0.0542 m   0.0994 m  1.000                      0.1536 m   0.0000 m
+   0.20 m                            0.104                 0.0930 m     0.0000 m   0.0930 m  1.000                      0.0930 m   0.0000 m
+   0.25 m                            0.000                 0.0324 m     0.0000 m   0.0324 m  1.000                      0.0324 m   0.0000 m
+   0.30 m                            0.000                 0.0000 m     0.0000 m   0.0000 m  0.939                      0.0000 m   0.0000 m
+   0.35 m                            0.000                 0.0000 m     0.0000 m   0.0000 m  0.718                      0.0000 m   0.0000 m
+  (two layers cresting together stand a few centimetres higher than one regular wave's run-up, as the row at
+   0.25 m shows; a chart beside sand they reach has a weight of 0.94 or more)
+
 Part L: a regular wave on a 1 in 10 beach at a fixed stage; the still waterline is at 0
   each layer's significant height is held to 0.6 of (depth + swash depth); swash depth = 0.7 of the body's
   significant height; a regular wave of amplitude A has significant height 2 sqrt(2) A
@@ -80,3 +121,30 @@ Part L: a regular wave on a 1 in 10 beach at a fixed stage; the still waterline 
    1.00 m       0.70 m       +0.122 m and -0.189 m                                3.11 m          +0.123 and -0.188 m
    2.14 m       1.50 m       +0.262 m and -0.404 m                                6.66 m          +0.262 and -0.403 m
   (first row: the limit with no swash depth, as first designed: the waterline does not move)
+
+Part M: foam in the swash. A plane beach at a fixed stage, the still waterline at 0, shoreward positive.
+  The sheet's thickness is the surface less the ground. While the sheet rises at a place, a line of equal
+  thickness travels at (rate of rise) / (slope of the thickness), toward thinner water; foam's drift gains that,
+  never more than sqrt(g x swash depth), at full weight above the still waterline and fading to none at the
+  depth the waterline draws back to. While the sheet falls the drift gains nothing. No wind, no current.
+  parcels, one regular wave of 60 m, stepped each tick; where each lies along the beach after 1, 2 and 3 waves
+  sea height  beach     run-up line   parcel from the draw-back line   from half way down    from the still waterline   fastest   bound
+   2.14 m     1 in 10    2.62 m       -4.03, -4.03, -4.03 m              1.76,  2.52,  2.62 m    2.53,  2.62,  2.62 m        2.41      3.83 m/s
+   1.00 m     1 in 10    1.23 m       -1.88, -1.88, -1.88 m              0.89,  1.21,  1.22 m    1.21,  1.22,  1.23 m        1.30      2.62 m/s
+   0.16 m     1 in 10    0.20 m       -0.30, -0.30, -0.30 m              0.12,  0.18,  0.19 m    0.18,  0.19,  0.20 m        0.73      1.05 m/s
+   2.14 m     1 in 4     1.05 m       -1.61, -1.61, -1.61 m              0.76,  1.04,  1.05 m    1.04,  1.05,  1.05 m        1.13      3.83 m/s
+   2.14 m     1 in 30    7.86 m       -12.10, -12.10, -12.10 m              1.06,  5.85,  7.23 m    5.66,  6.89,  7.86 m        3.83      3.83 m/s
+  (a parcel on the draw-back line is never bared and is not carried: seaward of the swash nothing moves foam shoreward)
+  two wave trains, 60 m and 25 m in equal parts, 2.14 m sea, beach of 1 in 10, 60 s:
+    parcel from -2.0 m ends at  3.42 m; the waterline's highest reach in that time is  3.43 m
+    parcel from +0.0 m ends at  3.42 m; the waterline's highest reach in that time is  3.43 m
+  foam cells of 0.25 m, a 1 m patch of cover laid just below the still waterline, 3 waves of 60 m, 2.14 m sea;
+  each cell's foam is moved along the drift for the whole step and shared between the cells it lands in
+  beach     step       drift                       patch's centre   leading edge   run-up line   foam kept   most in one cell
+  1 in 10   1 tick     the current and the wind    -0.50 m          -0.12 m        2.62 m        100.0 %     1.00
+  1 in 10   1 tick     with the rising sheet       +2.55 m          +2.62 m        2.62 m        100.0 %     3.00
+  1 in 10   8 ticks    with the rising sheet       +2.59 m          +2.62 m        2.62 m        100.0 %     3.47
+  1 in 4    1 tick     with the rising sheet       +1.04 m          +1.12 m        1.05 m        100.0 %     2.85
+  1 in 30   1 tick     with the rising sheet       +7.45 m          +7.88 m        7.86 m        100.0 %     1.31
+  1 in 30   8 ticks    with the rising sheet       +7.66 m          +7.88 m        7.86 m        100.0 %     1.68
+  (first row: the transport as reviewed. More than 1 in a cell is foam gathered past full cover, which the design drops.)

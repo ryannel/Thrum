@@ -55,3 +55,25 @@
 - 2026-11-14 The review's suggestions, both taken. Basin merging is a named seam question in `PUDDLES`' brief,
   and the plan's order now matches the module list (`RIVERS` is planned before M9). Foam on the lake's shore is
   in proportion to the power its waves lose, not none: M7.5 and M7.9 say so.
+- 2026-11-14 Second [design review](../../evidence/WATERS/design-review.md): Design Changes Requested, two Must
+  Fix findings. The swash depth, one number for each body, sat outside the join's mix, so the surface after its
+  depth limit could step at a shallow mouth (0.21 m in its case); and M7.9 asked foam to ride the sheet up the
+  sand while the transport said nothing carries it shoreward.
+- 2026-11-14 Re-planned for finding 1. A reader takes nothing from a body but its row: the swash depth, the wave
+  support and the depth limit follow from the row's gains at the point, so they meet across an end as the row
+  does. M1.4 says what a swell adds to a body's own gains (nothing) in place of "enters no basin and no chart".
+  M1.5, M1.12, M9.1 and M9.3 written again, with a shallow end in each join item. Part K now assembles the
+  surface after the limit: the review's 0.21 m becomes none.
+- 2026-11-14 Found while fixing finding 1, and fixed. Backwater measured from the sea's still level left the
+  sea's swash sheet up to 0.10 m from the chart's on a low bank beside a mouth. It is now measured from the
+  sea's reach, its level plus 0.175 of the margin height (part K, M1.12).
+- 2026-11-14 Re-planned for finding 2, by adding the mechanism and keeping M7.9's words. While the swash's sheet
+  rises at a place the foam's drift gains the velocity of its lines of equal thickness, bounded; while it falls,
+  nothing, so foam is pushed up the sand and left. The transport keeps what it moves. M7.2 written again, M7.16
+  added. Part M: a patch moves 3 m up a 1 in 10 beach in three waves, in steps of 1 and 8 ticks; with the
+  current's and wind's drift alone, not at all. Not chosen: narrowing M7.9 to foam born under the sheet.
+- 2026-11-14 The second review's suggestions, both taken. The film writes no scene depth, so M4.10's depth line
+  is the sheet's alone (M4.10, M7.15). Part J's leak figures are stated with their cases and as examples, not a
+  bound for every obstacle.
+- 2026-11-14 The plan's note under M5 was removed to keep the plan inside its word limit: the design already
+  says the craft and its physics are game code.

@@ -46,7 +46,7 @@
         },
         {
           "id": "M1.4",
-          "statement": "Each body takes four gains, for the long waves and the three cascades, from its declared fetch and the wind through `thrum-sea-model`'s spectrum. The most exposed body's are 1; none exceeds 1; each falls as the fetch shortens; at 10 m/s the long-wave gain is under 0.05 for a fetch of 5 km and the shortest cascade's is over 0.9 at 200 m. Swell enters no basin and no chart.",
+          "statement": "Each body takes four gains, for the long waves and the three cascades, from its declared fetch and the wind through `thrum-sea-model`'s spectrum. The most exposed body's are 1; none exceeds 1; each falls as the fetch shortens; at 10 m/s the long-wave gain is under 0.05 for a fetch of 5 km and the shortest cascade's is over 0.9 at 200 m. A swell adds nothing to a basin's or a chart's own gains: with a swell running and no wind their long-wave gain is zero, and adding a swell to a wind never raises the energy their long waves carry.",
           "check": "cargo test --locked --offline -p thrum-water-model --test gains",
           "ask": "Are the expected gains worked out in the test from fetch-limited growth relations and band integrals of its own, and not from the function under test?",
           "target": "mac-metal",
@@ -57,7 +57,7 @@
         },
         {
           "id": "M1.5",
-          "statement": "At any point each wave layer is held, longest first, so that its significant height is at most 0.6 of the depth plus the body's swash depth: untouched in deep water, a remainder at the still waterline, nothing where the ground stands a swash depth above the level, and continuous between. The swash depth is the profile's ratio times the significant height of the body's waves at its gains, and zero with no waves. The power the limit takes from each layer is reported, and is zero where the limit does not bind.",
+          "statement": "At any point each wave layer is held, longest first, so that its significant height is at most 0.6 of the depth plus the swash depth there: untouched in deep water, a remainder at the still waterline, nothing where the ground stands a swash depth above the level, and continuous between. The swash depth is the profile's ratio times the significant height the point's row gives the field at its gains, before the limit, never more than the margin height and zero with no waves. It is one value over a body away from a join and follows the mix inside one. The power the limit takes from each layer is reported, and is zero where the limit does not bind.",
           "check": "cargo test --locked --offline -p thrum-water-model --test gains",
           "target": "mac-metal",
           "builder_result": "open",
@@ -129,9 +129,9 @@
         },
         {
           "id": "M1.12",
-          "statement": "A chart meets the bodies it joins with no step. At every point on a source end's or a mouth's edge the chart's mixed row equals the joined body's row, in level, current, every gain and the surface's height under a swell, with the source's stage and the mouth's each at both ends of its range. Where the receiving body stands above the chart's own level the chart's row is that body's, and the weight toward it rises smoothly over the band below. Inside the footprint, away from the ends, the row is the chart's own.",
+          "statement": "A chart meets the bodies it joins with no step. At every point on a source end's or a mouth's edge the chart's mixed row equals the joined body's row, in level, current and every gain, and so does what follows from the row: the swash depth, the wave support and the surface's height after the depth limit. That holds under a swell and a wind, with the source's stage and the mouth's each at both ends of its range, at an end too deep for the limit to bind and at one 0.25 m deep. Wherever the receiving body's level plus the design's reach, 0.175 of the margin height, stands at or above the chart's own level, the chart's row is that body's, and the weight toward it falls smoothly to nothing over the 0.25 m above. Inside the footprint, away from the ends, the row is the chart's own.",
           "check": "cargo test --locked --offline -p thrum-water-model --test joins",
-          "ask": "Read the test. Does it compare the two sides of each end for a lake raised and lowered and a tide raised and lowered, under a swell, and would taking the chart over its neighbours with one stage of its own fail it, as part K of `docs/evidence/WATERS/design-proof/water_proof.py` shows?",
+          "ask": "Read the test. Does it compare the surface after the depth limit either side of each end, for a lake raised and lowered and a tide raised and lowered, under a swell, at a shallow end as well as a deep one? Would taking the chart over its neighbours with one stage of its own fail it, and would a swash depth kept once for each body fail it at the shallow mouth, as part K of `docs/evidence/WATERS/design-proof/water_proof.py` shows for both?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -438,7 +438,7 @@
         },
         {
           "id": "M4.10",
-          "statement": "The drawn waterline moves as the model's does. On a plane beach the test makes, under one regular wave at a fixed stage, the line where the water's written depth stands in front of the ground travels in submitted frames between the run-up and rundown lines `thrum-water-model` gives, to within a pixel and the bound M4.1 recorded, and holds still when the swash ratio is zero.",
+          "statement": "The drawn waterline moves as the model's does. On a plane beach the test makes, under one regular wave at a fixed stage, the line where the water's written depth stands in front of the ground travels in submitted frames between the run-up and rundown lines `thrum-water-model` gives, to within a pixel and the bound M4.1 recorded, and holds still when the swash ratio is zero. Only the sheet writes depth: the film a later milestone draws on bared sand writes none, so it is never on the water's side of this line.",
           "check": "cargo test --locked --offline -p thrum-water --test swash_gpu",
           "ask": "Is the expected waterline taken from `thrum-water-model` at each frame's display time, and not from the shader's own limit?",
           "lock": "gpu",
@@ -754,7 +754,7 @@
         },
         {
           "id": "M7.2",
-          "statement": "On Metal the foam follows the reference for a scripted set of causes, a patch moves with the drift by the distance the drift gives, and a window shift neither loses nor doubles foam inside the window.",
+          "statement": "On Metal the foam follows the reference for a scripted set of causes. A patch moves by the distance the drift gives: under a wind, and up a plane beach the test makes under one regular wave, where the rising sheet carries it as the reference does. A window shift neither loses nor doubles foam inside the window.",
           "check": "cargo test --locked --offline -p thrum-water --test foam_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -896,10 +896,21 @@
         },
         {
           "id": "M7.15",
-          "statement": "The film on sand the waves wash is drawn and is not water. It appears only inside a body's wave support, where the surface stands below the ground, with a weight of 1 at the still waterline that reaches 0 at the height the design gives. A query point under it answers dry, no foam is born on it, and foam the sheet left there ages out as the reference gives. With the waves left out there is no film.",
+          "statement": "The film on sand the waves wash is drawn and is not water. It appears only inside wave support, where the surface stands below the ground, with a weight of 1 at the still waterline that reaches 0 at the height the design gives. A query point under it answers dry, no foam is born on it, and foam the sheet left there ages out as the reference gives. With the waves left out there is no film. It writes no scene depth: under it the depth is the ground's.",
           "check": "cargo test --locked --offline -p water-scene --test foam_scene_gpu",
-          "ask": "Does the test read the query's answer and the foam's births under the film, and not only the film's drawn weight?",
+          "ask": "Does the test read the query's answer, the foam's births and the written depth under the film, and not only the film's drawn weight?",
           "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M7.16",
+          "statement": "The foam reference carries foam up a beach with the swash. On a plane beach of 1 in 10 under one regular wave, with no wind and no current, a thin patch laid between the draw-back line and the still waterline moves up the sand while the sheet over it rises and stays where it is while the sheet falls; after three waves its centre lies within 0.5 m of the model's run-up line, and it has lost no foam but what the chain aged away. A patch seaward of the draw-back line does not move, and no patch moves with the swash ratio at zero or the waves left out.",
+          "check": "cargo test --locked --offline -p thrum-water-model --test swash_foam",
+          "ask": "Is the expected path worked out in the test by following parcels under the design's rule from the surface model's height and the bed, and not read from the reference's own drift? Would a transport with only the current's and the wind's drift fail it, as the first grid row of part M of `docs/evidence/WATERS/design-proof/water_proof.py` does?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1049,9 +1060,9 @@
       "items": [
         {
           "id": "M9.1",
-          "statement": "The example has a channel from the lake to the sea whose chart is made by hand and labelled a stand-in for `RIVERS`' solver, with a source end on the lake and a mouth on the sea. The drawn surface stands at the map's level along its whole fall. In a trade wind with a swell running, and again with the lake's level and the tide each at both ends of its range, the depth the water writes either side of each end's edge differs by no more than `thrum-water-model`'s surface does between those places, beyond the bound M4.1 recorded: no step, gap or doubled water at either join. At high tide the lower channel is the sea's water.",
+          "statement": "The example has a channel from the lake to the sea whose chart is made by hand and labelled a stand-in for `RIVERS`' solver, with a source end on the lake and a mouth on the sea. The drawn surface stands at the map's level along its whole fall. In a trade wind with a swell running, and again with the lake's level and the tide each at both ends of its range, the depth the water writes either side of each end's edge differs by no more than `thrum-water-model`'s surface does between those places, beyond the bound M4.1 recorded: no step, gap or doubled water at either join. That holds at low tide too, when the water at the mouth is shallow enough for the depth limit to hold the swell. At high tide the lower channel is the sea's water.",
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
-          "ask": "Is the channel reached only through the chart a game can declare, with no code path in `thrum-water` that knows it is the example's or a stand-in? Does the test fail when the chart is taken over its neighbours with one stage of its own?",
+          "ask": "Is the channel reached only through the chart a game can declare, with no code path in `thrum-water` that knows it is the example's or a stand-in? Does the test fail when the chart is taken over its neighbours with one stage of its own? At low tide, does the depth limit hold the swell at the mouth in the test's own readings?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1074,7 +1085,7 @@
         {
           "id": "M9.3",
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
-          "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind, and one from 40 m above its whole length.",
+          "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

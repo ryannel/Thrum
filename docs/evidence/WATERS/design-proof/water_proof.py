@@ -1,4 +1,4 @@
-"""WATERS design, 14 November 2026: reproductions H to L (A to G are in ../../SEA/design-proof).
+"""WATERS design, 14 November 2026: reproductions H to M (A to G are in ../../SEA/design-proof).
 Pure Python, no dependencies. About a minute to run.
 
 Part H  Interaction waves on water of any depth: the finite-depth state update, the depth ladder and its
@@ -9,12 +9,19 @@ Part I  How much of each layer of an open sea's wave field a sheltered body take
 Part J  Dry ground: one transform over a whole window carries a wave across a bar of land; one solve for
         each connected region of water carries none. What thin land inside one region lets through.
 Part K  Joins: a channel from a lake to the sea on a 200 m by 120 m island, with the lake's stage and the
-        tide moved and a swell crest at the mouth. Steps in the surface where two bodies meet.
+        tide moved and a swell crest at the mouth. Steps in the surface where two bodies meet: in the raw
+        rows, then in the assembled surface after the depth limit, at shallow ends, with the swash depth
+        taken once for each body and taken from the row; and beside a mouth, where the sea's sheet lies
+        on a low bank.
 Part L  The swash: a regular wave on a plane beach under the depth limit with a swash depth. How far the
         waterline runs up and back.
+Part M  Foam in the swash: the drift a rising sheet gives foam, on parcels and on a grid of foam cells,
+        against the drift of the current and the wind alone, which is none.
 
 Part H replaces the first version of this file's part H, which blended scalar phases at one depth and
-qualified nothing about fields (design review, finding 4).
+qualified nothing about fields (first design review, finding 4). The assembled surface in part K and all of
+part M answer the second design review: its shallow-mouth case is reproduced in K, and M gives the foam the
+transport that review found missing.
 
 Run: python3 water_proof.py
 """
@@ -372,6 +379,23 @@ def part_k():
     print("\nPart K: a channel from a lake to the sea; cells of 1 m; steps in the surface between neighbouring wet cells")
     nx, ny, crest, band = 200, 120, 0.5, 0.25
     slope = (-2.0 - 4.2) / 108.0
+    root8 = 2 * math.sqrt(2)
+    margin, ratio = 1.5, 0.7                      # margin height taken for this run; the swash ratio
+    gl = 0.6 / root8
+    reach = gl / (1 + gl) * margin                # a regular wave's run-up at the largest swash depth
+    swell_hs, wind_hs = root8 * crest, 0.40       # the field: the swell, and its short wind waves at sea
+    own = {"sea": (1.0, 1.0), "lake": (0.0, 0.16 / wind_hs), "chart": (0.0, 0.07 / wind_hs)}   # (long, short) gains
+
+    def mix(a, b, w):
+        return tuple(p + w * (q - p) for p, q in zip(a, b))
+
+    def swash_of(gains):
+        return min(margin, ratio * math.hypot(gains[0] * swell_hs, gains[1] * wind_hs))
+
+    def surface(level, gains, bed_z, swash):
+        """The assembled surface at a crest of both layers: the level plus each layer held by the depth limit."""
+        cap = max(0.0, 0.6 * (level - bed_z + swash))
+        return level + (min(gains[0] * swell_hs, cap) + min(gains[1] * wind_hs, cap)) / root8
 
     def terrain(px, py):
         t = 7.0 if px < 60 else max(7.0 - 0.1 * (px - 60), -5.0)
@@ -385,6 +409,16 @@ def part_k():
     chart_level = lambda px: cut(px) + 0.4
     cells = [(i, j) for i in range(nx) for j in range(ny)]
     centre = lambda i, j: (i + 0.5, j + 0.5)
+
+    def chart_row(px, lake, sea, backwater_reach=reach):
+        """The chart's mixed row at a place along it: its level and its (long, short) gains. Backwater makes
+        the chart the sea's wherever the sea's level plus `backwater_reach` stands at or above the chart's own."""
+        lc = chart_level(px)
+        m_sea = max(smooth((px - 138) / 12), smooth((sea + backwater_reach - lc + band) / band))
+        m_lake = 1 - smooth((px - 48) / 12)
+        level = lc + m_sea * (sea - lc)
+        level += m_lake * (lake - level)
+        return level, mix(mix(own["chart"], own["sea"], m_sea), own["lake"], m_lake)
 
     def build(lake_stage, tide, joined):
         lake, sea = 5.0 + lake_stage, tide
@@ -405,11 +439,8 @@ def part_k():
             if in_chart(px, py):
                 lc = chart_level(px)
                 if joined:
-                    m_sea = max(smooth((px - 138) / 12), smooth((sea - lc + band) / band))
-                    m_lake = 1 - smooth((px - 48) / 12)
-                    level = lc + m_sea * (sea - lc)
-                    level += m_lake * (lake - level)
-                    gain = m_sea * (1 - m_lake)            # long-wave gain: 1 at sea, 0 in the chart and the lake
+                    level, gains = chart_row(px, lake, sea)
+                    gain = gains[0]                        # long-wave gain: 1 at sea, 0 in the chart and the lake
                 else:                                      # the chart as prepared for the reference stages
                     level = lc + smooth((0.0 - lc + band) / band) * (0.0 - lc)
                     level += (1 - smooth((px - 48) / 12)) * (5.0 - level)
@@ -452,11 +483,60 @@ def part_k():
     print("  (a step between bodies under joins is the 1 m cell: the blend weight is 1 on the end's edge and the")
     print("   sample is half a cell inside it. 1 mm either side of each end, lake +1 m and tide -1 m:)")
     lake, sea = 6.0, -1.0
-    lc = chart_level(48.001)
-    print(f"    source end: lake {lake:.4f} m, chart {lc + (1 - smooth(0.001 / 12)) * (lake - lc):.4f} m")
-    lc = chart_level(149.999)
-    m = max(smooth((149.999 - 138) / 12), smooth((sea - lc + band) / band))
-    print(f"    mouth:      sea {sea + crest:.4f} m at the crest, chart {lc + m * (sea - lc) + m * crest:.4f} m")
+    level, gains = chart_row(48.001, lake, sea)
+    print(f"    source end: lake {lake:.4f} m, chart {level:.4f} m")
+    level, gains = chart_row(149.999, lake, sea)
+    print(f"    mouth:      sea {sea + crest:.4f} m at the crest, chart {level + gains[0] * crest:.4f} m")
+
+    print("\n  The assembled surface: the level plus each layer after the depth limit, at a crest of the swell and of the")
+    print(f"  short wind waves ({wind_hs:.2f} m at sea, 0.16 m on the lake, 0.07 m on the chart's own gains); swash ratio {ratio}.")
+    print("  Swash depth taken once for each body (the chart's is its own waves') against taken from the row at the point.")
+    calm = (1.0, 0.0)
+    there, per_body = surface(0.0, calm, -0.25, swash_of(calm)), surface(0.0, calm, -0.25, 0.0)
+    print(f"  The design review's case, no wind, a mouth 0.25 m deep: sea {there:.9f} m, chart with its own swash depth "
+          f"{per_body:.9f} m, step {there - per_body:.9f} m; from the row, step {0.0:.9f} m")
+    print("  An end with the same bed and the same joined row either side, by the water's depth there, with the wind waves too:")
+    print("  end      depth     joined body    chart, one swash depth a body    step       chart, swash depth from the row    step")
+    for name, body, depths in (("mouth", "sea", (4.0, 1.0, 0.25, 0.0)), ("source", "lake", (1.0, 0.25, 0.05, 0.0))):
+        for d in depths:
+            there = surface(0.0, own[body], -d, swash_of(own[body]))
+            per_body = surface(0.0, own[body], -d, swash_of(own["chart"]))
+            from_row = surface(0.0, own[body], -d, swash_of(own[body]))
+            print(f"  {name:6s}  {d:5.2f} m   {there:8.5f} m     {per_body:8.5f} m                       {there - per_body:7.5f} m  "
+                  f"{from_row:8.5f} m                         {there - from_row:7.5f} m")
+    print("  On the island, 1 mm either side of each end, through the stages:")
+    print("  lake stage  tide    depth at the mouth   step, one a body   step, from the row   depth at the source   step, one a body   step, from the row")
+    for lake_stage, tide in ((0.0, 0.0), (1.0, 0.0), (-0.5, 0.0), (0.0, 1.0), (0.0, -1.0), (1.0, 1.0), (-0.5, -1.0), (1.0, -1.0)):
+        lake, sea = 5.0 + lake_stage, tide
+        out = []
+        for px, body, level_there in ((149.999, "sea", sea), (48.001, "lake", lake)):
+            bed_z = bed(px, 60.0)
+            level, gains = chart_row(px, lake, sea)
+            there = surface(level_there, own[body], bed_z, swash_of(own[body]))
+            out += [level_there - bed_z, abs(there - surface(level, gains, bed_z, swash_of(own["chart"]))),
+                    abs(there - surface(level, gains, bed_z, swash_of(gains)))]
+        print(f"  {lake_stage:+5.1f} m    {tide:+4.1f} m   {out[0]:5.2f} m              {out[1]:6.4f} m           {out[2]:6.4f} m            "
+              f"{out[3]:5.2f} m               {out[4]:6.4f} m           {out[5]:6.4f} m")
+    print("  (the island's source end is too deep for the limit to hold the lake's small waves; the table above it has a shallow sill)")
+
+    print("\n  Beside a mouth: beach sand 2 cm above the channel's own water, which the sea's sheet also reaches. The sea's")
+    print("  surface on that sand against the chart's, at a crest, as heights over the sand (nothing where it does not reach).")
+    print("  Backwater measured from the sea's still level, and from its level plus the reach of its run-up "
+          f"({reach:.4f} m for a margin height of {margin} m):")
+    print("  chart's own level over the sea's   weight, still level   sea's sheet   chart's    step      weight, level plus reach   chart's    step")
+    for over in (0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35):
+        sand = over + 0.02
+        sea_h = max(surface(0.0, own["sea"], sand, swash_of(own["sea"])) - sand, 0.0)
+        row = []
+        for r in (0.0, reach):
+            w = smooth((r - over + band) / band)
+            level, gains = over + w * (0.0 - over), mix(own["chart"], own["sea"], w)
+            h = max(surface(level, gains, sand, swash_of(gains)) - sand, 0.0)
+            row += [w, h, abs(sea_h - h)]
+        print(f"  {over:5.2f} m                            {row[0]:5.3f}                 {sea_h:6.4f} m     {row[1]:6.4f} m   {row[2]:6.4f} m  "
+              f"{row[3]:5.3f}                      {row[4]:6.4f} m   {row[5]:6.4f} m")
+    print("  (two layers cresting together stand a few centimetres higher than one regular wave's run-up, as the row at")
+    print("   0.25 m shows; a chart beside sand they reach has a weight of 0.94 or more)")
 
 
 # ---------------------------------------------------------------- the swash
@@ -490,9 +570,117 @@ def part_l():
     print("  (first row: the limit with no swash depth, as first designed: the waterline does not move)")
 
 
+# ---------------------------------------------------------------- foam in the swash
+
+def part_m():
+    print("\nPart M: foam in the swash. A plane beach at a fixed stage, the still waterline at 0, shoreward positive.")
+    print("  The sheet's thickness is the surface less the ground. While the sheet rises at a place, a line of equal")
+    print("  thickness travels at (rate of rise) / (slope of the thickness), toward thinner water; foam's drift gains that,")
+    print("  never more than sqrt(g x swash depth), at full weight above the still waterline and fading to none at the")
+    print("  depth the waterline draws back to. While the sheet falls the drift gains nothing. No wind, no current.")
+    root8 = 2 * math.sqrt(2)
+    gl = 0.6 / root8
+
+    def beach(hs, beta, waves, ratio=0.7):
+        """waves: (share of the variance's root, wavelength). Returns the surface, the swash drift and the bounds."""
+        s, a0 = ratio * hs, hs / root8
+        comps = [(w, 2 * math.pi / lam, math.sqrt(G * 2 * math.pi / lam)) for w, lam in waves]
+        draw_back = gl * s / (1 - gl)
+        bound = math.sqrt(G * s)
+
+        def eta(x, t):
+            amp = min(a0, max(0.0, 0.6 * (-beta * x + s)) / root8)
+            return amp * sum(w * math.cos(k * x - om * t) for w, k, om in comps)
+
+        def drift(x, t, on=True):
+            e = 1e-3
+            if not on or eta(x, t) <= beta * x:
+                return 0.0, 0.0
+            rise = (eta(x, t + e) - eta(x, t - e)) / (2 * e)
+            if rise <= 0:
+                return 0.0, 0.0
+            hx = (eta(x + e, t) - eta(x - e, t)) / (2 * e) - beta
+            d = -beta * x
+            weight = 1.0 if d <= 0 else max(0.0, 1 - d / draw_back)
+            raw = rise / abs(hx) if hx else 1e9
+            return (-1 if hx > 0 else 1) * weight * min(raw, bound), raw
+        return eta, drift, s, bound
+
+    def waterline_top(eta, beta, seconds):
+        top = -1e9
+        for i in range(int(seconds * 30)):
+            for j in range(-200, 1400):
+                x = j * 0.01
+                if eta(x, i / 30) > beta * x:
+                    top = max(top, x)
+        return top
+
+    print("  parcels, one regular wave of 60 m, stepped each tick; where each lies along the beach after 1, 2 and 3 waves")
+    print("  sea height  beach     run-up line   parcel from the draw-back line   from half way down    from the still waterline   fastest   bound")
+    for hs, slope in ((2.14, 10), (1.0, 10), (0.16, 10), (2.14, 4), (2.14, 30)):
+        beta = 1.0 / slope
+        lam = 2.8 if hs < 0.5 else 60.0
+        eta, drift, s, bound = beach(hs, beta, [(1.0, lam)])
+        period = 2 * math.pi / math.sqrt(G * 2 * math.pi / lam)
+        up, back = gl * s / (1 + gl) / beta, -gl * s / (1 - gl) / beta
+        cols, fastest = [], 0.0
+        for x in (back, back / 2, 0.0):
+            t, marks = 0.0, []
+            for i in range(int(3 * period / TICK)):
+                v = drift(x + drift(x, t)[0] * TICK / 2, t + TICK / 2)[0]
+                x, t, fastest = x + v * TICK, t + TICK, max(fastest, abs(v))
+                if (i + 1) % int(period / TICK) == 0:
+                    marks.append(x)
+            cols.append(", ".join(f"{m:5.2f}" for m in marks))
+        print(f"  {hs:5.2f} m     1 in {slope:<3d}  {up:5.2f} m       {cols[0]} m             {cols[1]} m   {cols[2]} m        "
+              f"{fastest:4.2f}      {bound:4.2f} m/s")
+    print("  (a parcel on the draw-back line is never bared and is not carried: seaward of the swash nothing moves foam shoreward)")
+
+    print("  two wave trains, 60 m and 25 m in equal parts, 2.14 m sea, beach of 1 in 10, 60 s:")
+    eta, drift, s, bound = beach(2.14, 0.1, [(math.sqrt(0.5), 60.0), (math.sqrt(0.5), 25.0)])
+    top = waterline_top(eta, 0.1, 60)
+    for x0 in (-2.0, 0.0):
+        x, t = x0, 0.0
+        for i in range(60 * 60):
+            v = drift(x + drift(x, t)[0] * TICK / 2, t + TICK / 2)[0]
+            x, t = x + v * TICK, t + TICK
+        print(f"    parcel from {x0:+.1f} m ends at {x:5.2f} m; the waterline's highest reach in that time is {top:5.2f} m")
+
+    print("  foam cells of 0.25 m, a 1 m patch of cover laid just below the still waterline, 3 waves of 60 m, 2.14 m sea;")
+    print("  each cell's foam is moved along the drift for the whole step and shared between the cells it lands in")
+    print("  beach     step       drift                       patch's centre   leading edge   run-up line   foam kept   most in one cell")
+    for slope, nt, on in ((10, 1, False), (10, 1, True), (10, 8, True), (4, 1, True), (30, 1, True), (30, 8, True)):
+        beta = 1.0 / slope
+        eta, drift, s, bound = beach(2.14, beta, [(1.0, 60.0)])
+        period = 2 * math.pi / math.sqrt(G * 2 * math.pi / 60.0)
+        dx, n = 0.25, 160
+        x = [(j - n // 2 + 0.5) * dx for j in range(n)]
+        c = [1.0 if -1.0 <= p <= 0.0 else 0.0 for p in x]
+        start, dt, t = sum(c), TICK * nt, 0.0
+        for _ in range(int(3 * period / dt)):
+            new = [0.0] * n
+            for j, p in enumerate(x):
+                if c[j] == 0.0:
+                    continue
+                q = (p + drift(p, t + dt / 2, on)[0] * dt - x[0]) / dx
+                k = int(math.floor(q))
+                if 0 <= k < n:
+                    new[k] += c[j] * (1 - (q - k))
+                if 0 <= k + 1 < n:
+                    new[k + 1] += c[j] * (q - k)
+            c, t = new, t + dt
+        total = sum(c)
+        centre = sum(p * v for p, v in zip(x, c)) / total
+        lead = max(p for p, v in zip(x, c) if v > 0.01 * max(c))
+        print(f"  1 in {slope:<3d}  {nt} tick{'s' if nt > 1 else ' '}    {'the current and the wind' if not on else 'with the rising sheet   '}   "
+              f"{centre:+6.2f} m         {lead:+6.2f} m       {gl * s / (1 + gl) / beta:5.2f} m        {100 * total / start:5.1f} %     {max(c):4.2f}")
+    print("  (first row: the transport as reviewed. More than 1 in a cell is foam gathered past full cover, which the design drops.)")
+
+
 if __name__ == "__main__":
     part_h()
     part_i()
     part_j()
     part_k()
     part_l()
+    part_m()
