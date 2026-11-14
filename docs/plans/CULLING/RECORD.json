@@ -243,7 +243,52 @@
     },
     "M3": {
       "definitions": "4d8cc4e46e33b52bc4c90aa18cbdaf78142a7b64d65a81b87aeee3a7055c39e7",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "21aa3fb764d1931b88ba2d08f919cd290d7adc82",
+          "review": "docs/evidence/CULLING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "fail",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass",
+            "M3.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Star visibility selects Direct for the cooked valley",
+              "item": "M3.3",
+              "repeat": false
+            },
+            {
+              "name": "Legacy culling cost benchmarks silently measure Direct twice",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.167.0-alpha.4.1",
+          "path": "headless",
+          "usage": {
+            "input": 382506,
+            "cached": 13723264,
+            "output": 34801,
+            "turns": 1
+          },
+          "at": "2026-11-14T02:33:42Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELIN",
