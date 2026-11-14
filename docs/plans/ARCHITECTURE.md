@@ -100,7 +100,7 @@ the road to the exit.
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
 | `SHOWCASE` | G7 | The exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds | [Design](EFFECT-GRAPH/DESIGN.md) |
-| `SEA` | track 2 | The sea model and its f64 oracle (`thrum-sea-model`); sea state on the GPU (long-wave field, spectral cascades, wake levels, foam stocks), the body-query ring, the sea surface and its optics (`thrum-sea`); the sea example scene (`examples/sea`) | [Design](SEA/DESIGN.md); [brief](SEA/BRIEF.md) |
+| `SEA` | track 2 | The sea model and its f64 oracle (`thrum-sea-model`); the sea on the GPU (long-wave field and spectral cascades evaluated each frame, wake levels and foam stocks as state), the body-query ring, the sea surface and its optics (`thrum-sea`); the sea example scene (`examples/sea`) | [Design](SEA/DESIGN.md); [brief](SEA/BRIEF.md) |
 | `CLOUDS` | track 2 | The weather field, its state's step and the f64 references (`thrum-cloud-model`); the weather map, cloud density and noise, the Sun-path optical-depth product, the cloud layer and its history, the sky overlay, placed-volume sampling (`thrum-clouds`); the cloud selection in `examples/v1-game` and `examples/sea` | [Design](CLOUDS/DESIGN.md); [brief](CLOUDS/BRIEF.md) |
 
 State that no module above owns stays where it is: committed world state and the tick page in `thrum-core`
@@ -212,8 +212,8 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Cooked products and placements | `CONTENT-LOOP` → games, `CREATOR`'s sky kit | C05, [G5 decision](../design/decisions/G5-CONTENT-ADDRESSED-LOOP.md) |
 | **Content publication**: one cooked generation changes through every reader a scene has (the placement set, each lease, each cooked mesh row) in one submitted frame. The scene's residency owns it: each reader prepares under its own bound without showing, the publication is ready when the slowest reader is, a ready publication is not superseded, and one a reader cannot take is refused for all. This is C05's qualified visual preview for cooked products; C05 is unchanged | `CONTENT-LOOP:M1` (placements and leases), `CONTENT-LOOP:M2` (rows) → `CULLING`'s route, lease consumers (`SEA`, `CLOUDS`), games | C05, [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) |
 | **Leases**: an engine module names a set of cooked textures and volumes; the scene's one residency uploads them and lends read-only views, as a whole set, only after the frame that recorded the last copy is submitted, in the frame the content publication switches placements and rows. Each product carries identity and a change serial; a consumer keeps a change pending until a submitted frame that advances history has used it. Placement and meaning are the consumer's inputs | `CONTENT-LOOP:M1` → `CLOUDS` (density volumes), `SEA` (foam texture); `RENDER-2D` and `GAME-UI` later | [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#leases-m1) |
-| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the state tick they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09, [SEA](SEA/DESIGN.md#bodies-and-the-query) |
-| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [SEA](SEA/DESIGN.md#recipes-limits-and-knobs) |
+| **Body query**: one batched asynchronous GPU query, one to two ticks late, with support and age. The game posts points with a footprint, a use tick and a body ID and generation in its tick page, and drains answers (height, slope, surface velocity and time derivative, valid at the use tick, with that tick, the times they were made from and a support flag per layer) from a mailbox; nothing waits on the GPU, and a request over capacity is a counted refusal | `SEA` → games and P3 | [E1 water decision](../design/decisions/E1-GPU-WATER.md), C09, [SEA](SEA/DESIGN.md#bodies-and-the-query) |
+| **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `SEA`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [SEA](SEA/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `SEA` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
@@ -921,9 +921,10 @@ Nothing below is decided by this plan.
    [an assumption](SEA/PLAN.md#open-for-the-human) the owner can overturn. `CLOUDS` is planned on the same
    reading, under [the same assumption](CLOUDS/PLAN.md#open-for-the-human).
 2. **Licence.** Broadsides code is marked `UNLICENSED` and its cloud library carries an owner-only licence.
-   Thrum's demos are meant to have public source. Lifting either into this repository needs the owner's licence
-   for it first. `SEA`'s plan is written so that it can be built without lifting, and nothing is copied until the
-   owner names the licence. `CLOUDS` can be built without lifting code, but its cue K5 names the twelve accepted
+   Thrum's demos are meant to have public source. On 14 November the owner said Broadsides may be copied and
+   reused as is. `SEA` reads that as the licence for what Broadsides' authors wrote, with third-party material
+   keeping its own, as [an assumption](SEA/PLAN.md#open-for-the-human). `CLOUDS`' lines here are as planned on
+   13 November, until its planner revisits them: `CLOUDS` can be built without lifting code, but its cue K5 names the twelve accepted
    volumes and their growth track: its M10 waits for the licence, and holds its sea milestone and its close.
 3. **The V1 exit stays as written.** Sea and clouds are not added to it. Adding them is the owner's call.
 4. **Builders.** The profile says one Codex builder. Steps 2–4 of the build order hold work that is safe beside
@@ -1075,3 +1076,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   far value, so its factor is continuous in the Sun's elevation and across the field's edge; the Sun-path row
   says the same. The note on stacked volumes states how far their mips stay inside a slab. No other ruling,
   contract, exact baseline or other module's done-when item changed.
+- 2026-11-14 `SEA` judged again from first principles, on the owner's words of 14 November quoted in
+  [its design](SEA/DESIGN.md#the-request): Broadsides is a resource to copy from where a design finds it useful,
+  and never dictates one. The layering, query, wake, foam and optics are kept. The ambient sea is now evaluated
+  every frame at the display's time, and each part beyond the open sea is a capability a scene can leave out.
+  [The port decision](../design/decisions/SEA-AND-CLOUD-PORT.md) and the water decision's open-sea row were
+  brought into step, and owner decision 2 now records the sea's reading of the licence. The body-query row says
+  "the times they were made from". No seam ruling, contract, exact baseline or other module's item changed.

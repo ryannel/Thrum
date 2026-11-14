@@ -1,37 +1,56 @@
 # Sea: an open sea that bodies float on, with wake and foam
 
-13 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
+13 November 2026, judged again from first principles on 14 November. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
 [module list](../ARCHITECTURE.md). C02, C04, C06, C07, C08, C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
 [the water decision](../../design/decisions/E1-GPU-WATER.md), [the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md)
 and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern.
 
 ## The request
 
-The lead's planning task of 13 November 2026:
+The owner, 10 November 2026, from [the brief](BRIEF.md): "wants water and clouds finished and consolidated". On 13
+November: "use the fable planner like normal but you can bring that across when it makes sense."
 
-> Plan the SEA module (docs/plans/SEA/BRIEF.md). The owner, asked whether SEA and CLOUDS planning could start now
-> rather than waiting on their port timing, said (13 Nov 2026): "On 2 use the fable planner like normal but you can
-> bring that across when it makes sense." Lead's reading, to record as an assumption: planning starts now, and the
-> owner leaves to this plan when the Broadsides Rust work is brought across, within
-> docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched).
-> Milestones that depend on unfinished modules wait on them as usual.
+The owner, 14 November 2026, in order:
 
-The owner's request of 10 November, from [the brief](BRIEF.md): "wants water and clouds finished and consolidated".
-The brief fixes where the sea is finished (in Thrum), what finished means (cues S1 to S7 below, in its words), what
-is not part of finished, and the commits Broadsides is read at. It leaves five decisions to this design, settled in
-[Mechanisms](#mechanisms): the cost account, the wake operator, where rigid bodies are integrated, the refraction
-source, and how much of the foam spike's open look work is inside S4.
+> You can fully use everything in broadsides. But we should make sure that it aligns with the approach we want. But
+> yes, you can copy that code out and reuse as is if it's useful.
 
-This is not a blind study. Read for it: the Broadsides water notes at `ae8c1ebb7` (`THRUM-PORT`, `TIMINGS`,
-`SURFACE-DESIGN`, `SEA-PARKED`, `PROGRESS`, the operator section of `DESIGN`, milestones M1 and M2 of
-`DESIGN-PLAN`), the foam spike's note at `2e5f47184`, and in this repository the designs of `EFFECT-GRAPH`,
-`ATMOSPHERE` (environment products), `CONTENT-LOOP` (leases), `APPLE-PRESENTATION` (seams 1 to 4) and `CREATOR`,
-with `contribution.rs` and the sky kit.
+> We can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate
+> design.
+
+> That's the approach we were going with in broadsides that might not be the right approach here. The agent should
+> look at that work from first principles and figure out how to design the best possible atmospheric system for the
+> thrum game engine. Maybe that's a flexible set of cloud capabilities built from what we did in broadsides, maybe it
+> isn't, but it should start from first principles.
+
+The last was said of clouds. The lead reads the last words as governing the sea too, which is
+[an assumption in the plan](PLAN.md#open-for-the-human): the design of 13 November, [the brief](BRIEF.md) and
+[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) describe the Broadsides approach and are inputs to
+judge, never constraints.
+
+So this design starts from what Thrum needs of a sea, chooses each mechanism against that, and only then asks what
+Broadsides has that serves it. [Judged from first principles](#judged-from-first-principles) gives the verdict on
+every choice the earlier design inherited: two changed, the rest are kept for reasons that do not rest on Broadsides
+having built them. [What Broadsides offers](#what-broadsides-offers) says what may be copied.
+
+It is not a blind study. Read for it: the design of 13 November and its two reviews; the Broadsides water notes at
+`ae8c1ebb7` (`THRUM-PORT`, `TIMINGS`, `SURFACE-DESIGN`, `SEA-PARKED`, `PROGRESS`, `DESIGN`), its sea, wake and
+transform kernels at that commit, and the foam spike at `2e5f47184`; Unity's and Crest's published water systems;
+and in this repository the designs of `EFFECT-GRAPH`, `ATMOSPHERE`, `CONTENT-LOOP`, `APPLE-PRESENTATION` and
+`CREATOR`, and the CPU model `SEA` M1 built.
 
 ## Purpose and scope
 
-A reusable engine sea: a game or demo adds it to a scene, sets wind and swell, and floats bodies on it. Consumers
-are the sea example scene built here, later teaching demos, and `CLOUDS`, which shades it.
+A reusable engine sea. Thrum's first outlet is teaching demos on the owner's website, then games
+([the brief](../BRIEF.md#purpose)), so the sea has three kinds of user, and each sets a requirement:
+
+| User | Needs | What that requires of the design |
+|---|---|---|
+| A teaching demo, often in Chrome: a sunset over water, how waves disperse, why a wake is a wedge | A sea that is right as well as good-looking, at the display's refresh, with only the parts the demo shows | Mechanisms with an oracle; every part beyond the open sea optional, at no cost when left out |
+| A game | Bodies that float, wakes they feel, the same forces whatever the camera or the device does | One physical profile on every recipe; forces from the sea's own state |
+| `CLOUDS` and `ATMOSPHERE` | A surface lit by the one sky and shaded once | No private sky, exposure or reconstruction |
+
+Consumers built now are the sea example scene and `CLOUDS`' sea milestone.
 
 **Commissioned:** cues S1 to S7, on `mac-metal` and `chrome-webgpu`, lit only by `ATMOSPHERE`'s products.
 
@@ -42,13 +61,17 @@ bodies, a second wake window set, saving the wake and foam fields, and a camera 
 water decision asks for are kept: causes are plain records with stable IDs, forces never depend on the camera, and
 no water state would cross a network.
 
-**What exists.** Thrum has no sea code. Broadsides has all of it at 21 ms of GPU time for the surface pass at
-1440p, which is why it is a reference and not a product ([brief](BRIEF.md#where-it-is-finished)).
+**What exists.** `thrum-sea-model`, the CPU model, is built by M1. Thrum has no sea on the GPU. Broadsides has a
+whole sea whose surface pass takes 21 ms of GPU time at 1440p ([brief](BRIEF.md#where-it-is-finished)): its
+kernels are a resource, and the way its frame is assembled is not.
 
 ## Cues
 
-The cue and range columns are the brief's, unchanged. The bar for every inspected cue is the sea and wakes of Sea
-of Thieves, in words, at the display's full refresh.
+The cues and ranges are the brief's. Judged again, each is something one of the users above needs, so none is
+dropped: S1, S5, S6 and S7 are the demo's sea, S2 is the game's, and S3 and S4 are asked for by the owner's
+[water decision](../../design/decisions/E1-GPU-WATER.md) ("Wakes are fully supported interactive water. Bodies feel
+them, they carry foam, and they outlive their source") and are the two subjects a water demo most wants to show. The
+bar for every inspected cue is the sea and wakes of Sea of Thieves, in words, at the display's full refresh.
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
@@ -87,33 +110,87 @@ What each source was read for, and how far.
   correctly from mipmaps. The authors name its limit: no persistence after a wave has broken.
 - **Ship wakes** (Rabaud and Moisy 2013, [abstract only](https://arxiv.org/abs/1304.2653)). The wake's bright ridge
   sits at Kelvin's 19.47° at low hull Froude number and narrows roughly as 1/Fr above about 0.5.
+- **Unity's HDRP water system** ([simulation](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.0/manual/water-water-system-simulation.html)
+  and [quality](https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@17.0/manual/water-quality-and-performance-decisions.html)
+  pages, as summarised by search; not read in full). An ocean is the sum of three periodic FFT bands, two of swell
+  and one of ripples. Scripts that float things read a second copy of the simulation run on the CPU, at half or
+  full resolution. It simulates the deformed plane only, with no wake solver.
+- **Crest** ([ocean simulation page, 4.11](https://crest.readthedocs.io/en/4.11/user/ocean-simulation.html), read
+  whole). Wave components are drawn into camera-centred levels of detail that the surface samples. Its dynamic
+  waves run a separate simulation in each level, whose wave speed comes from a gravity multiplier and a Courant
+  number. Foam is deposited where waves pinch and in shallows, and fades at a set rate.
 - **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (W1), its wake and query milestones M1
-  and M2, and the foam spike's five changes with blind verdicts are evidence that the mechanisms below make their
-  cues. Its timings are evidence of where cost went: a fused full-rate surface shader at about 2.35 ns a pixel, a
-  whole-scene copy, a full-screen reflection trace of about 3 ms, and world work regrouped per draw.
-- **Not read for this design:** the Atlas GDC 2019 slides (too large to fetch), Crest's source, and Horvath 2015 on
-  directional spectra. Nothing below rests on them.
+  and M2, and the foam spike's five changes with blind verdicts are evidence that mechanisms of this kind make
+  their cues. Its timings are evidence of where cost went: a fused full-rate surface shader at about 2.35 ns a
+  pixel, a whole-scene copy, a full-screen reflection trace of about 3 ms, and world work regrouped per draw. Four
+  cascades cost it about 0.5 ms an evaluation on this Mac.
+- **Not read for this design:** the Atlas GDC 2019 slides (over the fetch limit, twice), Crest's source, and
+  Horvath 2015 on directional spectra. A search for ocean or wake work published in 2024 to 2026 found none that
+  supersedes the sources above. Nothing below rests on what was not read.
 
-Three reproductions were run for this design and are kept with their output in
-[the evidence folder](../../evidence/SEA/design-proof/): `wake_proof.py`, `long_wave_precision.py` and
-`revision_proof.py`, whose five parts A to E are cited below by letter.
-[Check that it can work](#check-that-it-can-work) reports them.
+Four reproductions were run for this design and are kept with their output in
+[the evidence folder](../../evidence/SEA/design-proof/): `wake_proof.py`, `long_wave_precision.py`,
+`revision_proof.py`, whose five parts A to E are cited below by letter, and `first_principles_proof.py`, parts F
+and G. [Check that it can work](#check-that-it-can-work) reports them.
 
-**The wake operator, decided against the cues.**
+### Judged from first principles
+
+Every choice the design of 13 November took from the brief, the port decision or the Broadsides notes, judged
+against the users and cues above. "Keep" means it would be chosen again with Broadsides out of the room.
+
+| Inherited choice | Verdict | Why |
+|---|---|---|
+| Three layers: analytic long waves, FFT cascades, a wake | **Keep** | Forces and the vista come from long waves, which are few. They must be evaluated exactly at a point by a CPU, for the oracle and for an authority without a GPU, and must not repeat. Short waves are many and matter only as statistics, which is what a periodic FFT patch with moments gives. One method for both fails one of them: an all-FFT sea (Unity's) under the portable 256-point transform spans at most about 1.3 km while it still resolves a 20 m wave, and that repeats fifteen times across a 20 km vista; an all-analytic sea cannot hold the short waves |
+| The ambient sea computed once a tick and shown by blending two tick copies in the surface pass | **Change** | Long waves and cascades are functions of time and hold no state. Evaluating them at the display's time is exact, needs one copy and no lifecycle, and halves the ambient texture reads of the most repeated work in the frame, the sea pixel. A tick copy is the Broadsides frame, and the blend was a patch for showing it at 120 Hz. See [time](#time-functions-are-evaluated-at-the-displays-time-state-steps-on-the-tick) |
+| A field cache for the long waves | **Keep**, with no state | Vertices, pixels and foam births all want the long waves as a field, and one evaluation serves the three. Drawing components into camera-centred levels is also what Crest does. Evaluated whole each frame, it needs no wrapping history |
+| Cascade phase from a time in seconds | **Change** | In f32 it is 0.26 rad wrong for a 7 cm wave after 24 hours (part F), which a demo left open would show as stutter. Each bin turns a whole number of times in a declared loop, and the phase is an integer product that wraps |
+| Bodies read the GPU through one batched query, one to two ticks late | **Keep** | The owner's water decision puts all water on the GPU, and the wake exists nowhere else. A CPU copy of the waves (Unity's) cannot feel a wake |
+| The wake: eWave on two body-following windows with complementary bands | **Keep** | It was selected against five alternatives by reproduction, below, and nothing published since changes the table. Crest's per-level wave equation is the candidate that fails |
+| A wake source that is the body's own reaction force | **Keep** | The amplitude is physical and has no gain to tune |
+| Foam as four transported stocks | **Keep** | Each stock is one thing a viewer sees: white water, lace, pale water under it, and the smooth ribbon a hull leaves. All four live in one texture, so four cost what one does. The bar's foam, accumulated and blurred, has no ageing and no pale water |
+| Reflection and refraction of registered bodies only, with no scene copy | **Keep** | An open sea is optically thick and empty. A whole-scene copy ends a render pass on a tile GPU for pixels that reflect only sky |
+| Rigid bodies integrated by the game | **Keep** | Thrum has no physics owner, and the engine must hold no hull |
+| One sea, all of it or none | **Change** | A sunset demo needs neither wake, foam nor query. Each is a [capability](#capabilities-recipes-limits-and-knobs) a scene leaves out at no cost |
+| Nothing copied from Broadsides; assets made here | **Change** | The owner's words of 14 November. See below |
+
+### What Broadsides offers
+
+Broadsides code, shaders and assets may be copied into this repository and used as they are, wherever they
+implement a mechanism of this design as this design states it. Where they implement something else they are
+reading matter. The builder of each milestone judges fit file by file; this table says where to look. Paths are in
+the Broadsides repository at `ae8c1ebb7` unless a commit is given, and nothing there is ever changed.
+
+| Mechanism here | Where Broadsides has it | Expected fit |
+|---|---|---|
+| Spectrum, long-wave components, the f64 evaluator | `crates/sim/bw_water/src/ocean/` | M1 wrote these here from published sources. Nothing more is needed; its golden tests may be read for cases |
+| Cascade evolution to the frame's time with whole-cycle loop phases; the 256-point transform inside 16 KiB of workgroup memory with twiddles built in f64; packing; mips | `crates/render/bw_render_water/shaders/ocean_evolve.wesl`, `ocean_fft.wesl`, `ocean_assemble.wesl`, `ocean_mips.wesl` | Close. These already do what [the ambient sea](#the-ambient-sea) asks |
+| The eWave step: height and potential as one complex field, the exact turn, a source carried through the step, a damped border | `shaders/ocean_wake.wesl` and its CPU twin `crates/sim/bw_water/src/wake/grid.rs` | Close for one level. The two banded levels and the step of several ticks are this design's |
+| The batched query and its ring | `shaders/body_query.wesl`, `body_sea_query.wesl`; `crates/sim/bw_water/src/ocean/query.rs` | The kernels may fit; the mailbox and packing are written for Thrum's tick page |
+| Foam stocks, deposition, transport and the stochastic pattern sampler | At `2e5f47184`: `crates/gpu/bw_gpu/shaders/lib/sea_foam.wesl`, `foam_pattern.wesl`, `whitewater_medium.wesl`; `crates/render/bw_render_water/shaders/ocean_foam.wesl`, `ocean_deposition.wesl` | The two changes the spike passed are here. Check each rule against [whitewater](#whitewater) before copying |
+| The ranked foam pattern | At `2e5f47184`: `assets/textures/water-foam/ranked.png` (Git LFS) and its recipe in `factory/materials/water-foam/` | Usable as the example's pattern. It derives from Crest's foam texture under the MIT licence, and that notice comes with it |
+| Hydrostatics, hull stations, a hull | `crates/sim/bw_water/src/hull/`, `body.rs`; Broadsides' ship assets | Game-side code and content for `examples/sea` |
+| Water optics: Fresnel, in-scatter, the microfacet Sun | Functions in `shaders/ocean_surface.wesl`, `ocean_volume.wesl` | Take functions. The pass they sit in is where the 21 ms went and is not copied |
+| Sky, exposure, temporal AA, the Bevy host, `RenderModule`, `pass_list`, `TargetPool`, frame packets, lake and coast code | | Not used. Thrum has one owner for each |
+
+Broadsides shaders are WESL and Thrum's are WGSL, so a copied shader has its imports resolved into Thrum's
+modules; its algorithm is left as it is. [The handoff](#proof-and-builder-handoff) says how a copy is recorded.
+
+### The wake operator, decided against the cues
 
 | Candidate | Verdict |
 |---|---|
 | A wake decal or foam trail only (the bar's own) | Fails S3: nothing lifts a float |
-| Constant-speed wave equation on a grid (Crest's dynamic waves) | Fails S3. In the reproduction its ridge follows the Mach angle, 42° at 3 m/s and 17° at 6 m/s, and it has no transverse wave train |
+| Constant-speed wave equation on a grid, as in Crest's dynamic waves | Fails S3. In the reproduction its ridge follows the Mach angle, 42° at 3 m/s and 17° at 6 m/s, and it has no transverse wave train |
 | Steady Kelvin pattern evaluated per body | Fails S3: it has no memory, so it cannot persist through a stop or a turn |
 | Wave packets or wavelets (Jeschke and Wojtan 2017, 2018) | Correct dispersion, but cost grows with packets and a rasterised field is still needed for the surface and the query. Not selected |
 | Generalised shallow water with dispersive waves (Jeschke and Wojtan 2023) | The inland choice in [WATER](../../design/modules/WATER.md), for beds and shores. An open deep sea has neither, and pays its cost for nothing |
 | **eWave on body-following periodic windows, two levels with complementary bands** | **Selected.** Exact deep-water dispersion at any speed, a few FFTs a tick, and stable at any step |
 
-The water decision selects "a two-level dispersive (eWave) solver, about 0.25 m near and 2 m far", and the brief
-notes that Broadsides built a split-band variant. They are the same thing. Two overlapping periodic levels can
-only avoid carrying one wave twice if each owns a band of wavenumbers, and the reproduction shows what happens
-otherwise: two full-band levels summed are wrong by 69% of the field's RMS height, against 2.2% with the split.
+Two levels, because one 256² window cannot both resolve a 0.5 m ripple at the hull and hold a 25 m transverse
+wave: a 64 m window of 0.25 m cells does the first and a 512 m window of 2 m cells the second. Two overlapping
+periodic levels can only avoid carrying one wave twice if each owns a band of wavenumbers, and the reproduction
+shows what happens otherwise: two full-band levels summed are wrong by 69% of the field's RMS height, against 2.2%
+with the split.
 
 **What would change these selections.** A sea that must meet a shore reopens the operator, under WATER. A
 first-frame record that shows the surface's representation to be wrong, and not merely untuned, reopens it through
@@ -139,15 +216,39 @@ list of swells. Named presets are the game's.
 A wind or swell change moves each component's and each cascade bin's **power** toward the new spectrum over a
 declared response time and keeps its phase, so the sea changes with no pop and no restart.
 
-### Time: ticks own the state, the display blends two endpoints
+### Time: functions are evaluated at the display's time, state steps on the tick
 
-All sea state advances on the committed tick (C02) through `EFFECT-GRAPH`'s
+The sea holds two kinds of thing, and time reaches them differently.
+
+**Functions of time: the long waves, the cascades and the field cache.** Given the spectrum's powers and a time,
+each is fully determined. They are evaluated **every presented frame, at the display's time** `t = C − 1 + α` in
+ticks, where `C` is the frame's committed tick and `α` its interpolation alpha (C02); the CPU forms `t` in f64.
+They hold nothing a frame could not recompute from the model and `t`. Their passes are every-frame passes and
+not state producers in the seam's sense, so they run on a capture frame too, and no rule of commitment applies
+to them:
+
+| Frame | What the ambient layers show |
+|---|---|
+| Any presented frame, on a new tick or the same one | The model's sea at that frame's `t` |
+| A pause | The same `t`, so the same sea |
+| A hitch of any length, a backward tick, a new timeline | The model's sea at the new `t`. A step of more than one tick marks the sea's history invalid, because motion is not linear across it |
+| Discarded | Nothing is kept, so nothing is left behind |
+| Capture | The model's sea at the capture's own `t` |
+| A replaced device | The next frame, as any other |
+
+This is exact where a blend of two tick copies was not, and it is cheaper where cost is highest. A sea pixel is
+shaded about 440 million times a second at 2560×1440 and 120 Hz and reads every ambient layer; with two tick
+copies it reads each twice. The price is evaluating the cascades and the field cache on the frames between ticks
+as well, which is tick-rate work done twice as often on the Mac and no more often in Chrome
+([cost account](#cost-account)).
+
+**State: the wake and the foam.** Each is the integral of what bodies and breaking waves did, and advances on the
+committed tick through `EFFECT-GRAPH`'s
 [state table](../EFFECT-GRAPH/DESIGN.md#state-time-and-the-tentative-frame-m2). The seam runs a producer once in
 a frame, so each operator takes the number of ticks to advance as a parameter:
 
 | Layer | A frame *n* ticks ahead | A full frame: the first of an epoch, a backward tick, a new timeline, a replaced device |
 |---|---|---|
-| Long waves, cascades, field cache | Evaluated at the new tick's time; they are functions of time | Evaluated at the frame's tick |
 | Wake | One step of `min(n, 8)` ticks ([the wake](#the-wake)) | Reset to calm, and the scene's status says so |
 | Foam | One step of `min(n, 8)` ticks, each operator written for a step of any length ([whitewater](#whitewater)) | Reset to none |
 
@@ -156,32 +257,27 @@ the wake's waves and the foam's ageing are then that many ticks late, and nothin
 where the wake's one-step error is still small (part A: 0.16% of the field's RMS height after one 8-tick step,
 1.4% after one of 16).
 
-**Two endpoints.** The display runs faster than the tick, and a surface that stepped at 60 Hz under a 120 Hz
-camera would judder. So every displayed field is kept in two banks, the endpoints: the state at the committed
-tick `C`, and the state at the tick committed before it, `P`. Each bank carries the tick it holds, and the ticks
-commit with the frame. The surface draws the blend of the two at weight `w = clamp((t − P) / (C − P), 0, 1)`,
-where `t = C − 1 + α` is the display's time in ticks and `α` the frame's interpolation alpha.
+**Two endpoints, for state only.** State cannot be evaluated between ticks, and a wake that stepped at 60 Hz
+under a hull drawn at 120 Hz would judder against it. So the wake and the foam are each kept in two banks, the
+endpoints: the state at the committed tick `C`, and the state at the tick committed before it, `P`. Each bank
+carries the tick it holds, and the ticks commit with the frame. The surface draws the blend of the two at weight
+`w = clamp((t − P) / (C − P), 0, 1)`.
 
-| Frame | The banks once it is submitted | What the surface draws |
+| Frame | The banks once it is submitted | What the surface draws of the wake and foam |
 |---|---|---|
 | The same tick: a repeat frame, a pause | Unchanged | The blend at `w` |
-| *n* ticks ahead, *n* ≥ 1 | The bank that held `P` now holds the new tick: `(C, C + n)` | The blend at `w`. For *n* = 1 the endpoints are one tick apart and `w = α`. For *n* > 1 the older endpoint is *n* ticks old, `w` runs from `(n − 1)/n` to 1, and the sea's history is marked invalid |
-| A full frame | Both hold the frame's tick: the ambient layers evaluated there, the wake calm, no foam | That state, unblended, until the next tick. History is marked invalid |
+| *n* ticks ahead, *n* ≥ 1 | The bank that held `P` now holds the new tick: `(C, C + n)` | The blend at `w`. For *n* = 1 the endpoints are one tick apart and `w = α`. For *n* > 1 the older endpoint is *n* ticks old and `w` runs from `(n − 1)/n` to 1 |
+| A full frame | Both hold the frame's tick: the wake calm, no foam | That state, unblended, until the next tick. History is marked invalid |
 | Discarded | Unchanged: nothing commits, under the seam's tentative rule | Nothing |
-| Capture | Unchanged: the seam runs no producer and keeps the state, whatever the capture's tick | The committed endpoints at the capture's own `w`. A capture at another tick shows the committed sea, not that tick's |
+| Capture | Unchanged: the seam runs no producer and keeps the state, whatever the capture's tick | The committed endpoints at the capture's own `w`, under the ambient sea at the capture's `t`. A capture at another tick shows the committed wake and foam, not that tick's |
 
-Nothing recomputes the tick before a hitch's last one. For the ambient layers that would double a late frame's
-work, and for wake and foam it cannot be done without stepping twice in a frame, which the seam does not do. The
-older endpoint after a hitch is therefore the last committed state, for every layer, and the blend is weighted by
-time across the real span.
-
-**What the blend costs in accuracy.** For a wave of amplitude `A` and frequency `ω`, endpoints one tick apart
-misstate it by at most `A(ωΔt)²/8`: 0.5% for a 0.4 m wave at a 60 Hz tick. Endpoints `s` ticks apart, in the one
-tick that follows a hitch, misstate it by at most `A(ωΔt)²(s − 1)/2`, and never by more than `A(ωΔt + 2/s)`.
-At `s = 8` that is 0.04% for a 150 m swell, 0.3% for a 20 m wave, 3% for a 2 m wave and 15% for a 0.4 m ripple
-(part B). After a full frame the surface is held at the frame's tick for up to one tick, an error of at most
-`AωΔt`. Both are declared approximations: they last one tick, on frames whose history is already invalid, and
-they place the waves a hull rides to millimetres.
+A blend is right for these two. Under a moving hull the wake is forced, and a blend of two dents a few
+centimetres apart is the dent at the hull's interpolated place to second order; the free waves it misstates are
+small. For a wave of amplitude `A` and frequency `ω`, endpoints one tick apart misstate it by at most
+`A(ωΔt)²/8`: 0.5% for a 0.4 m wave at a 60 Hz tick (part G). Endpoints `s` ticks apart, in the one tick that
+follows a hitch, misstate it by at most `A(ωΔt)²(s − 1)/2`, and never by more than `A(ωΔt + 2/s)`: at `s = 8`,
+0.3% for a 20 m wave, 3% for a 2 m wave and 15% for a 0.4 m ripple (part B). Both are declared approximations of
+the wake alone, on frames whose history is already invalid.
 
 A history pair's bindings do not offer the older side on a frame whose producer was skipped, so the endpoints are
 two persistent banks, each written by its own skippable producer. On a frame that advances, the producer of the
@@ -189,23 +285,42 @@ bank that holds `P` runs; on a full frame both run. `EFFECT-GRAPH` needs no chan
 
 ### The ambient sea
 
-**Long waves.** Wave phase is computed in f64 on the CPU each tick and reduced to one period per component
-before upload, relative to a snapped anchor near the evaluation region. The GPU adds `k · (x − anchor)` in f32.
-The CPU evaluator in `thrum-sea-model` uses the same components and is the oracle.
+Each of the three is evaluated at the frame's `t`, and each also writes its **rate of change** at `t`: the motion
+vectors, the query's carry and a lowered cadence all use it.
+
+**Long waves.** Wave phase is computed in f64 on the CPU for the frame's `t` and reduced to one period per
+component before upload, relative to a snapped anchor near the evaluation region. The GPU adds `k · (x − anchor)`
+in f32. The CPU evaluator in `thrum-sea-model` uses the same components and is the oracle. The cascades, the wake
+and the foam are addressed from the same anchor, reduced modulo each patch length in f64 on the CPU, so no layer
+loses precision far from the origin.
 
 **Cascades.** Three patches of 256² with lengths near 160 m, 37 m and 9 m, in ratios that are not rational, each
-holding the band its texel size resolves. A tick evolves each spectrum, inverse-transforms displacement and its
-derivatives, and writes the tick's bank with mips. The mips hold slope moments (LEAN: the mean slope and its
-covariance) and the Jacobian's mean and variance, so a footprint larger than a texel reads variance, never
-aliased detail. Waves below the finest cascade add a constant slope variance from the spectrum's tail. Patch
-count, sizes and transform length come from the profile and are checked against the capability record; these
-values are the first profile and fit the portable limits.
+holding the band its texel size resolves. A frame evolves each spectrum to `t`, inverse-transforms displacement,
+its derivatives and its rate of change, and writes them with mips. The mips hold slope moments (LEAN: the mean
+slope and its covariance) and the Jacobian's mean and variance, so a footprint larger than a texel reads
+variance, never aliased detail. Waves below the finest cascade add a constant slope variance from the spectrum's
+tail. Patch count, sizes and transform length come from the profile and are checked against the capability
+record; these values are the first profile and fit the portable limits.
 
-**The field cache.** A camera-following, world-anchored wrapping clipmap of the long waves: displacement and
-slopes, in levels whose texel doubles outward, each level holding only the components it can resolve and passing
-the rest on as slope variance. It exists because the account favours it: about 18 million component evaluations
-a tick, against some 24 million a frame at twice the rate if the surface's vertices evaluated the components.
-It is a display cache. Nothing physical reads it.
+**Cascade phase is a whole number of turns in a loop.** A phase formed from seconds in f32 is 0.26 rad wrong for
+a 7 cm wave after 24 hours (part F). So the profile declares a loop, 1,024 s in the first profile, and each
+cascade bin's frequency is the deep-water value rounded to a whole number of cycles in that loop. The CPU sends
+the frame's time within the loop as a 32-bit fraction, and the GPU forms each bin's phase as an integer product
+that wraps: the error is under 10⁻⁵ rad at any session length, and the rounding changes a bin's speed by at most
+0.12% (part F). The cascades therefore repeat in time after one loop. The long waves never do. The model in
+`thrum-sea-model` uses the same rounded frequencies, so the oracle and the GPU agree by construction.
+
+**The spectrum's powers** belong to the CPU model, which moves them on a wind or swell change
+([one sea, three layers](#one-sea-three-layers-each-wave-carried-once)). What the GPU holds of them is a copy
+that the model can rebuild at any time.
+
+**The field cache.** A camera-centred clipmap of the long waves, each level snapped to its own texel grid in the
+world: displacement, slopes and rate of change, in levels whose texel doubles outward, each level holding only
+the components it can resolve and passing the rest on as slope variance. It exists because three readers want the long waves as a field: the surface's
+vertices, its pixels, and the foam's births, which need the summed displacement's Jacobian on half a million
+texels. One evaluation of about 18 million component terms a frame serves all three. Evaluating in the vertex
+shader alone would cost a like amount and leave the other two without. It is written whole each time it is
+evaluated, so it needs no wrapping history. It is a display cache: nothing that feeds a force reads it.
 
 ### The surface and the frame contract
 
@@ -220,8 +335,9 @@ The sea draws in `EFFECT-GRAPH`'s `after-opaque` stage, once, and writes the fra
 - **Depth.** The sea writes scene depth. Reconstruction's depth test and any later medium, such as a cloud march
   that must stop at the water, then see the sea as the nearest surface. This needs
   [a ruling](#what-the-sea-asks-of-other-modules).
-- **Motion.** From unjittered positions: where this surface point was at the previous presentation, from the
-  same two banks, extrapolated linearly when the previous presentation precedes the older tick.
+- **Motion.** From unjittered positions: where this surface point was at the previous presentation. For the
+  ambient layers that is their rate of change at `t` times the interval since the previous presentation; for the
+  wake it comes from its two endpoints.
 - **Reactive.** Foam, glitter and the reflection of moving bodies write reactive coverage.
 - **Reset.** A sea rebuild, a profile change, a full frame, an advance of more than one tick and a foam pattern
   change mark the sea's history invalid. A quality knob applies the invalidation it declares.
@@ -235,8 +351,8 @@ the answer will be used at, and the body's ID and generation. One compute dispat
 sea's own state, never from the field cache or the camera:
 
 - long waves, evaluated analytically at each point for the tick it will be used at;
-- cascades, read from the tick's bank at the mip that matches the point's footprint, so a 6 m hull does not
-  shake on ripples;
+- cascades, read from the frame's evaluation at the mip that matches the point's footprint, so a 6 m hull does
+  not shake on ripples;
 - the wake, read from its windows, with **the body's own static dent added back** (below).
 
 Crests sharpen because displacement is horizontal as well as vertical, so the surface above a world point is
@@ -244,11 +360,12 @@ found by fixed-point iteration on the horizontal displacement; the oracle iterat
 
 Each answer is height, slope, the surface's velocity and the time derivative of height, with one support flag
 per layer, and it is **valid at the use tick** its point asked for. The dispatch brings every layer to that tick
-before it sums them: the long waves are evaluated there, and the height of the cascades and the wake is carried
-there from the state tick by its time derivative. The answer carries the use tick and the state tick it was made
-from. A game that uses an answer at another tick moves the whole answer once, by its time derivative from the use
-tick, so no layer is extrapolated twice. For a wave of frequency `ω` carried `Δt` the remaining error is at most
-`½(ωΔt)²` of its amplitude, reported per profile.
+before it sums them: the long waves are evaluated there, the height of the cascades is carried there from the
+frame's `t` by its rate of change, and the wake's from its state tick. The answer carries the use tick and the
+times it was made from. A game that uses an answer at another tick moves the whole answer once, by its time
+derivative from the use tick, so no layer is extrapolated twice. For a wave of frequency `ω` carried `Δt` the
+remaining error is at most `½(ωΔt)²` of its amplitude, reported per profile. The cascades are carried at most
+three ticks: 0.4% for a 20 m wave and 3.8% for a 2 m wave, whose height is centimetres (part G).
 
 Results come back through a ring of mapped buffers one to two ticks later. A result older than the declared
 maximum is unavailable, and the game falls back to the conformance model in `thrum-sea-model` (long waves only)
@@ -304,8 +421,10 @@ sizing, stated as a limit ([plan](PLAN.md#open-for-the-human)).
 
 ### Whitewater
 
-Foam is transported material, never a function of the present wave shape. The model is the Broadsides
-four-stock one, with the two changes its spike passed.
+Foam is transported material, never a function of the present wave shape. It is held as four stocks, because a
+viewer sees four things: white water, the lace it ages into, pale water where air is still under the surface,
+and the smooth ribbon a hull leaves. The four are channels of one texture, so they cost what one would. Broadsides
+arrived at the same four, and its spike passed the two rules marked below.
 
 **Stocks**, per square metre, on two camera-following wrapping levels (0.25 m and 2 m cells): submerged air,
 fresh film, aged film, and slick. Fresh and aged film are shares of the surface, and their sum is the cover,
@@ -446,23 +565,39 @@ The declared approximations, and where they hold:
   camera-to-body in-scatter; the clamp keeps the result from going negative. A texel the forward pass clamped at
   the half-float ceiling stays clamped.
 
-### Recipes, limits and knobs
+### Capabilities, recipes, limits and knobs
 
-- **One physical profile on every recipe.** Component count, cascade layout, wake levels and query semantics are
-  the profile's, never a quality setting (C04). Chrome and the Mac float the same body on the same sea.
+- **Capabilities.** A scene's sea profile names the capabilities it wants. One it leaves out declares no pass and
+  no resource, and the surface's shader is prepared without its reads, so it costs nothing. Changing the set is a
+  profile change.
+
+  | Capability | What it adds | Needs |
+  |---|---|---|
+  | Open sea, always present | Long waves, cascades, the field cache, the surface, and the optics of sky, Sun and water | |
+  | Body query | The query dispatch, its ring and mailbox | |
+  | Wake | The two wake levels and their sources | Body records |
+  | Whitewater | The foam stocks, their births and transport, and the whitecap estimator beyond them | A foam pattern; hull births need body records, wake breaking needs the wake |
+  | Body optics | The gather and the body rays | Body records |
+
+  A sea with only the open sea shows no foam and floats nothing. It is the sea of a sunset demo.
+- **One physical profile on every recipe.** Component count, cascade layout and loop, wake levels and query
+  semantics are the profile's, never a quality setting (C04). Chrome and the Mac float the same body on the same
+  sea.
 - **Limits are inputs.** Transform length, workgroup memory, storage formats and counts, and sampled textures per
-  stage are read from the capability record and refused at preparation when exceeded. Banks and levels are array
-  layers so the surface pass stays inside sixteen sampled textures.
+  stage are read from the capability record and refused at preparation when exceeded. Levels and endpoints are
+  array layers so the surface pass stays inside sixteen sampled textures.
 - **Recipes.** Both recipes run the portable kernels first. An Apple-tile variant (f16 working precision, a
   different transform layout) is promoted only by a paired measured win with the oracle still inside tolerance.
 - **Knobs.** Each is a named runtime value in `EFFECT-GRAPH`'s list with a declared invalidation: surface mesh
-  density, field-cache reach and cadence, the cadence of cascades below the profile's smallest force wavelength,
-  foam cadence and level size, reflection steps, reach and slope allowance. None changes what a query returns.
+  density; field-cache reach; the cadence of the field cache and of cascades below the profile's smallest force
+  wavelength; foam cadence and level size; reflection steps, reach and slope allowance. A layer evaluated less
+  often than every frame is carried between evaluations by its rate of change, with its slopes held. None changes
+  what a query returns.
 
 ### Check that it can work
 
-- **S1.** The accepted Broadsides W1 sea used this layering. No tile: the long waves are not periodic, and the
-  cascades' joint period is far beyond the view. Vista: at 5 km a 150 m swell is under a pixel, so the vista is
+- **S1.** No tile: the long waves are not periodic, and the cascades' joint period is far beyond the view. The
+  accepted Broadsides W1 sea, which has this layering, is the evidence that it reads as open water. Vista: at 5 km a 150 m swell is under a pixel, so the vista is
   slope statistics, which the moments carry. Risk 2 covers a visible 160 m repeat.
 - **S2 and the oracle.** `long_wave_precision.py`: 192 components, 6 m significant height, points to 4 km from
   an anchor 50 km from the origin after 24 hours. The wrapped f32 evaluation differs from f64 by 0.05 mm, and by
@@ -486,8 +621,14 @@ The declared approximations, and where they hold:
   body's own rectangle, 92 to 2,010 of those sampled. The design review's case, a 2 m body 20 m from a camera 2 m up, is among them.
 - **S6.** Unrun. `EFFECT-GRAPH` M3 proves motion and reactive reach reconstruction; how the sea looks after it is
   first seen in M9.
-- **Hitches.** Parts A, B and D, reported under [time](#time-ticks-own-the-state-the-display-blends-two-endpoints),
-  [the wake](#the-wake) and [whitewater](#whitewater).
+- **Time.** `first_principles_proof.py`. Part F: after 24 hours a phase formed from f32 seconds is up to 0.26 rad
+  wrong, and the loop's integer phase 7 × 10⁻⁶ rad; rounding to whole cycles in 1,024 s changes a bin's speed by
+  at most 0.12%. Part G: a blend of endpoints one tick apart misstates a 0.4 m wave by 0.53% of its amplitude and
+  evaluation at the display's time by nothing; a cascade height carried three ticks by its rate of change is off
+  by 0.39% for a 20 m wave, 0.86% for 9 m and 3.8% for 2 m.
+- **Hitches.** Parts A, B and D, reported under
+  [time](#time-functions-are-evaluated-at-the-displays-time-state-steps-on-the-tick), [the wake](#the-wake) and
+  [whitewater](#whitewater).
 - **Cost.** Unrun. M3 is the first measurement. Until the showcase's own extent exists, records are taken at
   2560×1440, the extent Broadsides was measured at.
 
@@ -496,7 +637,7 @@ The declared approximations, and where they hold:
 | State | Owner |
 |---|---|
 | Spectrum, components, the f64 evaluators, the conformance model | `thrum-sea-model` (this module), no GPU dependency |
-| Sea GPU state, passes, the query ring, the surface, optics | `thrum-sea` (this module), an effect on `EFFECT-GRAPH`'s seam |
+| The sea's GPU fields and state, passes, the query ring, the surface, optics | `thrum-sea` (this module), an effect on `EFFECT-GRAPH`'s seam |
 | Presets, water types, the craft and floats, hull footprints, foam pattern, body integration, controls | The example scene `examples/sea` (package `sea-scene`); never in engine crates or their tests |
 | Stages, state commit, cadence, knob list | `EFFECT-GRAPH` |
 | Sky, Sun, aerial, reflection product, cloud factor | `ATMOSPHERE` |
@@ -504,20 +645,23 @@ The declared approximations, and where they hold:
 | The foam pattern's residency | `CONTENT-LOOP` |
 | The shell, typed controls, parameter files | `CREATOR` |
 
-**A tick frame, in order.** `upload` takes the page's body records, query points and sea parameters. `simulate`:
-long-wave phases; cascades into this tick's bank; the field cache; the wake step with its sources; foam births
-and transport; the query dispatch and its copy to the ring. Forward, sky and stars draw. `after-opaque`: the
-gather, if a body is on screen; the surface, which follows body rays where the mask marks them. Reconstruction,
-tone and present follow. On submission the sea commits its tick, each bank's tick and the anchors. A frame on the
-same tick runs the gather and the surface only.
+**A frame, in order.** `upload` takes the page's body records, query points and sea parameters, and the
+long-wave phases and loop time for the frame's `t`. `simulate`, every frame: the cascades and the field cache at
+`t`. `simulate`, only on a frame that advances the tick: the wake step with its sources; foam births and
+transport; the query dispatch and its copy to the ring. Forward, sky and stars draw. `after-opaque`: the gather,
+if a body is on screen; the surface, which follows body rays where the mask marks them. Reconstruction, tone and
+present follow. On submission the sea commits its tick and each endpoint's tick. A scene without a capability
+runs none of its steps.
 
 **The example scene** is a `Game` on `thrum-app`'s shell with a ticking world of its own, as `examples/v1-game`
 is, because the sky kit's world never ticks. It uses `thrum-controls`, a parameter file and
-`./dev scene examples/sea [--web]`. Its craft, floats and foam pattern are made in this repository.
+`./dev scene examples/sea [--web]`. Its craft, floats and foam pattern are the example's content: made here, or
+copied from Broadsides where [that serves](#what-broadsides-offers).
 
-**Creator journey.** A scene adds the sea contribution with a profile, puts sea parameters and body records in
-its tick page, and reads answers from the mailbox. Changing wind or swell needs no rebuild. Changing the profile
-rebuilds the sea and resets wake and foam.
+**Creator journey.** A scene adds the sea contribution with a profile that names its capabilities. A scene that
+floats things puts sea parameters and body records in its tick page and reads answers from the mailbox; a scene
+that only shows the sea sets wind, swell and the Sun. Changing wind or swell needs no rebuild. Changing the
+profile rebuilds the sea and resets wake and foam.
 
 ## What the sea asks of other modules
 
@@ -541,18 +685,25 @@ Estimates, unmeasured, at a 60 Hz tick. Broadsides' comparators are measured the
 
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
-| Long-wave phases | Tick, CPU | 192 components | Microseconds | |
-| Cascades | Tick | 3 × 256², four packed transforms, two dispatches each way | Under 0.3 ms | |
-| Field cache | Tick | 8 levels × 128², about 18 M evaluations | 0.2–0.3 ms | |
+| Long-wave phases | Frame, CPU | 192 components | Microseconds | |
+| Cascades | Frame | 3 × 256², packed transforms for displacement, derivatives and rate of change, two dispatches each way | About 0.4 ms | About 0.5 ms for four, as a whole-frame difference |
+| Field cache | Frame | 8 levels × 128², about 18 M evaluations | 0.2–0.3 ms | |
 | Wake | Tick | 2 × 256², one complex transform each way per level | Under 0.2 ms | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks | Under 0.2 ms | About 2.2 ms for first deposition |
 | Query | Tick | Up to 2,048 points, 32 B each | Under 0.1 ms; 64 KiB back | 0.03 ms |
 | Gather | Frame | The source rectangles of bodies on screen | Proportional to the bodies' own pixels; zero with none | A whole-scene copy and a 3 ms trace |
 | Body rays | Frame, inside the surface pass | Sea pixels the mask marks: two ray-against-box tests per marked body, and a short march only for a ray that meets a box | Unmeasured; M8 records it calm and in a gale with zero, one and nine bodies | |
-| Surface | Frame | Sea pixels at the render extent, about 200 k vertices | The largest term; M3 measures it | 10.5 ms at 1440p after the copy |
-| Memory | | Banks, working sets, wake, foam, cache | About 45 MiB, and the gather target, whose layout is the builder's: addressed by screen position at 2560×1440 it is about 44 MiB more, packed by rectangle far less | |
+| Surface | Frame | Sea pixels at the render extent, about 200 k vertices; one read set for each ambient layer, two for the wake and foam | The largest term; M3 measures it | 10.5 ms at 1440p after the copy |
+| Memory | | Cascades, working sets, wake, foam, cache | About 35 MiB, and the gather target, whose layout is the builder's: addressed by screen position at 2560×1440 it is about 44 MiB more, packed by rectangle far less | |
 
-Tick work lands on alternate frames at 120 Hz, so both frame kinds are recorded.
+Wake, foam and query work lands on alternate frames at 120 Hz, so both frame kinds are recorded.
+
+**Why the ambient layers run every frame.** Evaluating them on the tick and blending two copies would save about
+0.7 ms on every second frame at 120 Hz and nothing in Chrome, and would add a second read of every ambient layer
+to every sea pixel of every frame. At the 2.35 ns a pixel Broadsides measured for its surface, a full screen of
+sea at 2560×1440 costs 8.7 ms, so second reads that added a tenth to it would cost 0.9 ms on every frame. Both
+figures are estimates. M3's record has the surface's real cost, and the cadence knobs lower the ambient rate if a
+record favours that.
 
 **Records and tripwires, never gates** ([brief](../BRIEF.md#goal-and-exit-rule), decision 3). `scripts/sea_cost.py`,
 created in M3, takes a paired record of one scene at one view, capture off: the scene with the sea and with it
@@ -590,6 +741,9 @@ Presented cadence on the built-in panel is measured once, attended, in M10.
 8. **Body rays cost too much where receiving rectangles fill the screen.** Early sign: M8's record in a gale with
    nine bodies. The designed remedies are a shorter reach and a smaller allowance as the sea's slope variance
    rises, since a rough sea blurs a body's reflection away. The wrong fix is a march over every sea pixel.
+9. **The ambient layers cost more every frame than the reads they save.** Early sign: M3's record on repeat
+   frames. The designed remedy is the cadence knobs, which carry a layer by its rate of change. The wrong fix is
+   a second copy blended in the surface pass.
 
 ## Proof and builder handoff
 
@@ -609,11 +763,16 @@ Presented cadence on the built-in panel is measured once, attended, in M10.
 - **Exact baselines.** The sea adds crates and an example beside the existing scenes and moves no retained
   image. Every milestone carries the verifier as its claim-time check
   ([rules](../ARCHITECTURE.md#exact-baselines)).
-- **Broadsides.** Read it at the brief's commits; never change it. **Nothing is copied from it until the owner
-  has named the licence** ([plan](PLAN.md#open-for-the-human)). Until then write from the published sources and
-  this design. Once it is named, a lifted file goes through review, its tests are re-derived here, and
-  `docs/evidence/SEA/PROVENANCE.md` records its source commit, path and licence. Scheduling, allocation and host
-  glue are always rewritten.
+- **Broadsides.** A resource, read at the commits in [what Broadsides offers](#what-broadsides-offers) and never
+  changed. A builder may copy its code, shaders and assets as they are wherever they implement a mechanism of this
+  design, and writes from this design and the published sources wherever they do not: the design decides, and a
+  file is never a reason to change a mechanism. What a milestone has already written here is not replaced by a
+  copy without a reason an item gives. Every copied or translated file is listed in
+  `docs/evidence/SEA/PROVENANCE.md` with its source commit and path. The owner's words of 14 November cover what
+  Broadsides' authors wrote. Material in Broadsides that came from elsewhere keeps its own licence, which is
+  recorded with it, and none that is GPL or share-alike is copied. A copied kernel is held to this module's
+  oracles and items like any other code; Broadsides' tests do not stand in for them. Scheduling, allocation and
+  host glue are written for Thrum's seam.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** A ledger row for `E1.water` is added in M3 and kept current, with implementation, correctness,
   visuals and device apart.
@@ -623,7 +782,8 @@ Presented cadence on the built-in panel is measured once, attended, in M10.
 | Question | Settled by |
 |---|---|
 | What does the surface pass cost against the refresh interval? | M3 records it; M10 records it at the showcase extent on both recipes. Tuning is the later performance phase |
-| Does the bank scheme serve `EFFECT-GRAPH`'s cadence rules as built? | M2; a failure is a proposal there |
+| Do the wake's and the foam's two endpoints serve `EFFECT-GRAPH`'s cadence rules as built? | M6; a failure is a proposal there |
+| Is evaluating the ambient layers every frame cheaper than a second read of them in every sea pixel? | M3's record, on tick frames and repeat frames |
 | What do the body rays cost in a gale, where receiving rectangles are large? | M8 records it |
 | What tolerance do the cascades and the wake meet against their f64 references on Metal and in Chrome? | M2 and M6 measure first, then assert the recorded bound |
 | How many sampled textures does the lent environment group use? | M3 counts against the record |

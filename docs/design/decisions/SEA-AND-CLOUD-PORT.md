@@ -1,20 +1,63 @@
-# Sea and cloud providers: port profile from the Broadsides Rust work
+# Sea and clouds: Thrum's designs decide, and Broadsides is a resource
 
-6 November 2026. **Selected direction; the owner decides port timing when Thrum is ready.** Broadsides is building a Rust sea and Rust volumetric clouds that are intended to move into Thrum. This record fixes how that work maps onto Thrum's contracts and the [hardware-native decision](HARDWARE-NATIVE-ENGINE.md), so both sides prepare for a cheap, reviewed port.
+6 November 2026, revised 14 November 2026. **Selected direction.** Broadsides built a Rust sea and Rust volumetric
+clouds. This record was written as the profile for porting them. On 14 November the owner changed its standing:
 
-The reference revisions are committed Broadsides commits `70cf98122` (`codex/water-rust-system`) and `8b6262f13` (`codex/clouds-procedural-publish-20261104`). Broadsides is not a build dependency. Its earlier `THRUM-ALIGNMENT` mapping of the TypeScript lake lab is superseded.
+> We can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate
+> design.
 
-## Spectral sea profile
+> The agent should look at that work from first principles and figure out how to design the best possible
+> atmospheric system for the thrum game engine. Maybe that's a flexible set of cloud capabilities built from what we
+> did in broadsides, maybe it isn't, but it should start from first principles.
 
-This record adds a named `E1.water` profile. It sits beside the [prescribed sea](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river), and does not replace it or [WATER.md](../modules/WATER.md)'s inland designs.
+So each module's design starts from what Thrum needs, chooses its mechanisms against that, and then takes from
+Broadsides whatever serves them. What this record says of how Broadsides did something is evidence for those
+designs and never a constraint on them. It still fixes what both modules owe Thrum's contracts and the
+[hardware-native decision](HARDWARE-NATIVE-ENGINE.md), below.
 
-The [water decision](E1-GPU-WATER.md) owns where water runs, body forces, replay and multiplayer sharing. In short: all water simulation runs on the GPU, the network carries causes rather than water state, and water needs no exact replay.
+- **The sea** was judged this way on 14 November. Its methods are [SEA's design](../../plans/SEA/DESIGN.md), and
+  the section below summarises them.
+- **The clouds** section below is the profile of 6 November, as Broadsides approached it. `CLOUDS`' planner judges
+  it the same way, and until that design says otherwise the section is an input and not a selection.
 
-* **Authority.** The GPU sea is the authority: analytic long waves (at most 192 components, wavelength at least 20 m) plus FFT short-wave cascades with LEAN slope moments, evaluated once per tick into a camera-following field clipmap. Wave phase is computed in f64 and wrapped before upload. A CPU f64 evaluator of the same long-wave coefficients is the test oracle and part of the no-GPU conformance model; the GPU must match it within the declared tolerance. Bodies read the full GPU state through one batched query with asynchronous readback, one to two ticks late, with latency compensation and a declared error. Synchronous readback is forbidden.
-* **Interaction.** The wake is physical water state, not a residual. A two-level dispersive (eWave) solver, about 0.25 m near and 2 m far, takes hull pressure sources once per tick; bodies feel each other's wakes through the same query, and far bodies use GPU Kelvin packets. Hull loads still use strip theory and hydrostatics, integrated by P3 on the CPU. Emitters and sources carry stable IDs with generations; capacity overflow is a counted, reported refusal rather than a log line. The game supplies hull data.
-* **Whitewater.** Fresh and aged foam, aeration and slick form one transported field, fed by a deposition pass of wake and wave breaking rates, bow, stern-ribbon, cusp, wash and impact sources. Persistent GPU state advances from tick-derived time, not frame `dt`, and resets on rebuild or profile change.
-* **Inland water.** Rivers, lakes and pools run WATER-DYNAMICS' selected shallow-water and generalised-heightfield methods as GPU compute, and carry their own wakes.
-* **Optics.** Optics follow C08: water supplies ordered medium segments `(T,S)` and a reflection provider. Screen-space reflection is first. Ray query on desktop high is a later provider that emits hit distance.
+Broadsides is read at the commits the module designs name. It is not a build dependency and is never modified. Its
+earlier `THRUM-ALIGNMENT` mapping of the TypeScript lake lab is superseded.
+
+## The sea
+
+This record adds a named `E1.water` profile. It sits beside the [prescribed sea](../PLAY-ENVIRONMENT-SPEC.md#e1-analytic-sea-and-shallow-river),
+and does not replace it or [WATER.md](../modules/WATER.md)'s inland designs.
+
+The [water decision](E1-GPU-WATER.md) owns where water runs, body forces, replay and multiplayer sharing. In short:
+all water simulation runs on the GPU, the network carries causes rather than water state, and water needs no exact
+replay. [SEA's design](../../plans/SEA/DESIGN.md) owns the methods, with
+[the verdict on each choice](../../plans/SEA/DESIGN.md#judged-from-first-principles) this record used to make:
+
+* **Authority.** The GPU sea is the authority: analytic long waves (at most 192 components, wavelength at least
+  20 m) plus FFT short-wave cascades with LEAN slope moments. Both are functions of time, **evaluated every
+  presented frame at the display's time** and holding nothing between frames; this replaces "evaluated once per
+  tick". Long-wave phase is computed in f64 and wrapped before upload, and cascade phase is a whole number of turns
+  in a declared loop. A CPU f64 evaluator of the same long-wave coefficients is the test oracle and part of the
+  no-GPU conformance model; the GPU must match it within the declared tolerance. Bodies read the GPU through one
+  batched query with asynchronous readback, one to two ticks late, with latency compensation and a declared error.
+  Synchronous readback is forbidden.
+* **Interaction.** The wake is physical water state, not a residual. A two-level dispersive (eWave) solver, about
+  0.25 m near and 2 m far, each level owning a band of wavenumbers, takes each body's reaction as a pressure source
+  once per tick; bodies feel each other's wakes through the same query. The wake steps on the committed tick and is
+  drawn as a blend of its last two ticks. Far-body Kelvin packets are not built. The game integrates its bodies
+  until Thrum has a physics owner. Emitters and sources carry stable IDs with generations; capacity overflow is a
+  counted, reported refusal rather than a log line. The game supplies hull data.
+* **Whitewater.** Fresh and aged foam, submerged air and slick are four transported stocks in one field, born only
+  from booked causes as bounded rates. Persistent GPU state advances from tick-derived time, not frame `dt`, and
+  resets on rebuild or profile change.
+* **Capabilities.** The query, the wake, whitewater and body optics are each left out by a scene at no cost. The
+  open sea alone is a complete sea.
+* **Inland water.** Rivers, lakes and pools stay with WATER-DYNAMICS' selected shallow-water and
+  generalised-heightfield methods, and are not part of `SEA`.
+* **Optics.** Optics follow C08: water supplies ordered medium segments `(T,S)` and a reflection provider. The sea
+  reflects and refracts the bodies a scene registers, from a gather of their own screen rectangles, with the
+  environment product everywhere else and no whole-scene copy on any recipe. Ray query on desktop high is a later
+  provider that emits hit distance.
 
 ## Volumetric cloud profile
 
@@ -48,7 +91,7 @@ None of the game-owned content appears in engine crates or tests.
 
   The WebGPU defaults (256-point f32 FFT, 16 KiB workgroup memory, 16 sampled textures) become the portable recipe, not the design.
 * **Recipes.**
-  * **Apple tile:** f16 arithmetic and tile-friendly passes. The pre-water full scene copy is replaced by a recipe-specific refraction source.
+  * **Apple tile:** f16 arithmetic and tile-friendly passes. The sea takes no full scene copy on any recipe ([SEA](../../plans/SEA/DESIGN.md#optics)).
   * **Desktop high:** async-compute overlap for cascades, wake, foam, weather and shadow work, plus the later ray-query provider.
   * **Every recipe:** compute replaces fragment marching where measured faster.
 * **Governor knobs.** Every cadence and step budget is a runtime setting that the quality governor owns: weather update rate, march refresh fraction, shadow-cascade spread, capture interval, cascade and foam rate, and resolution. Each knob declares its history invalidation, and none changes physical profiles.
@@ -91,9 +134,27 @@ each readiness condition above ([table](../../plans/ARCHITECTURE.md#where-the-po
 Their briefs are [SEA-BRIEF](../../plans/SEA/BRIEF.md) and [CLOUDS-BRIEF](../../plans/CLOUDS/BRIEF.md). When builders
 start them is still the owner's decision, and the reference commits in those briefs supersede the two above.
 
-## Porting policy
+## First principles, 14 November
 
-Port module by module only when the owner schedules it. Keep the foundation converging on the readiness above; no automatic import at G7 and no Broadsides build dependency.
-* **Lift:** the `bw_water` maths and the WESL algorithms (FFT, LEAN, eWave, foam, density, lighting, phase), each through review. Re-derive the golden tests in Thrum. Record the source commit, path and licence for each lifted file.
-* **Rewrite:** the `RenderModule`, `pass_list` and `TargetPool` plumbing becomes the Thrum executor. The `bw_frame` packets become the tick page and `ViewPacket`. The Bevy host glue is rewritten.
-* **Never:** a wholesale import, or a Broadsides build dependency.
+The owner's words at the top of this record. `SEA` was judged on them the same day
+([log](../../plans/SEA/LOG.md)): the layering, the query, the wake, the foam stocks and the optics are kept for
+reasons its design gives, and two things changed. The ambient sea is evaluated at the display's time each frame in
+place of tick copies blended in the surface pass, and every part beyond the open sea is a capability a scene can
+leave out. `CLOUDS` is judged by its own planner.
+
+## Reuse policy
+
+Broadsides code, shaders and assets may be copied into Thrum and used as they are, wherever they implement a
+mechanism the module's design has chosen. The design decides; a file that exists is never a reason to choose a
+mechanism. There is no build dependency on Broadsides and it is never modified.
+
+* **Copy as is, where it fits:** maths, kernels, shaders and assets that do what the design states. Each module's
+  design names where to look. Record the source commit and path of every copied or translated file in the module's
+  provenance file.
+* **Licence.** The owner's words of 14 November cover what Broadsides' authors wrote. Material that came into
+  Broadsides from elsewhere keeps its own licence, recorded with it, and nothing GPL or share-alike is copied.
+* **Hold to Thrum's proof.** Copied code meets the module's oracles and done-when items like any other. A verdict
+  passed in Broadsides, under its sky, exposure and reconstruction, is not a verdict here.
+* **Write for Thrum:** scheduling, allocation, pass lists, target pools, frame packets and host glue. Thrum has one
+  owner for each: the executor, the tick page and `ViewPacket`, the one sky, the frame contract, the capability
+  registry and cooked products.
