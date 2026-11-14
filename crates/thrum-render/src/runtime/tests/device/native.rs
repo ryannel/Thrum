@@ -62,6 +62,7 @@ async fn sequence(
     queue: &wgpu::Queue,
     selection: NativeWitness,
     source: CaptureSource,
+    timing_requested: bool,
 ) -> Vec<Vec<u8>> {
     let mut host = host(
         capabilities,
@@ -72,6 +73,7 @@ async fn sequence(
         },
     )
     .await;
+    host.set_timing_requested(timing_requested);
     host.enable_submitted_capture_from(1, CaptureLimits::default(), source)
         .expect("native tap");
     let view = output(capabilities.device(), [64, 64]);
@@ -154,9 +156,21 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
             CaptureSource::NativeOutput,
             CaptureSource::NativeHistory,
         ] {
-            let twin = sequence(&capabilities, &queue, NativeWitness::Wgsl, source).await;
-            let metal = sequence(&capabilities, &queue, NativeWitness::Metal, source).await;
+            let twin = sequence(&capabilities, &queue, NativeWitness::Wgsl, source, true).await;
+            let metal = sequence(&capabilities, &queue, NativeWitness::Metal, source, true).await;
             assert!(metal == twin, "exact coordinator {source:?}");
+            let untimed_twin =
+                sequence(&capabilities, &queue, NativeWitness::Wgsl, source, false).await;
+            let untimed_metal =
+                sequence(&capabilities, &queue, NativeWitness::Metal, source, false).await;
+            assert!(
+                untimed_twin == twin,
+                "timing demand preserves WGSL {source:?}"
+            );
+            assert!(
+                untimed_metal == twin,
+                "native discard/reset and exact {source:?} survive timing demand off"
+            );
             if source != CaptureSource::Sdr {
                 for value in metal.iter().flat_map(|frame| frame.as_chunks::<2>().0) {
                     let value = half::f16::from_le_bytes([value[0], value[1]]);
@@ -172,7 +186,7 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
                     NativeWitness::StaleHistory,
                 ] {
                     assert_ne!(
-                        sequence(&capabilities, &queue, fault, source).await,
+                        sequence(&capabilities, &queue, fault, source, true).await,
                         twin,
                         "{fault:?} must fail exact {source:?}"
                     );
@@ -180,7 +194,7 @@ fn metal_coordinator_native_history_reset_discard_and_exact_twin() {
             }
         }
         println!(
-            "M10 coordinator: exact SDR, scene input, witness output/history; five controls rejected; healthy discard/background reset counters exact"
+            "M10 coordinator: exact timed/untimed SDR, scene input, witness output/history; five controls rejected; healthy discard/background reset counters exact"
         );
     });
 }
