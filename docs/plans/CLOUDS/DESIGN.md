@@ -1,11 +1,13 @@
 # Clouds: a weather-driven sky that shades and lights the world
 
-13 November 2026, revised 14 November. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
+13 November 2026, revised 14 November and judged again from first principles the same day. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [brief](BRIEF.md) ·
 [module list](../ARCHITECTURE.md). C02, C04, C06, C07, C08, C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md),
-[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md), [ENVIRONMENT](../../design/modules/ENVIRONMENT.md)
-and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern. This design replaces
-the implementation target in [CLOUDS.md](../../design/modules/CLOUDS.md); that page's ownership and transport
-rules stay in force and are restated where they bind.
+[ENVIRONMENT](../../design/modules/ENVIRONMENT.md) and
+[the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) govern.
+[The port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) records what this design selects and how
+Broadsides may be reused. This design replaces the implementation target in
+[CLOUDS.md](../../design/modules/CLOUDS.md); that page's ownership and transport rules stay in force and are
+restated where they bind.
 
 ## The request
 
@@ -18,52 +20,91 @@ The lead's planning task of 13 November 2026:
 > docs/design/decisions/SEA-AND-CLOUD-PORT.md (module by module, no wholesale import, Broadsides untouched).
 > Milestones that depend on unfinished modules wait on them as usual.
 
-The owner's request of 10 November, from [the brief](BRIEF.md): "Two cloud paths, a baked library and a procedural
-one ... The owner has now asked for both to be finished and consolidated." The brief fixes where clouds are
-finished (in Thrum, as one module), what finished means (cues K1 to K7 below, in its words), what is not part of
-finished, the shape of the consolidation, and the commits Broadsides is read at. It leaves four decisions to this
-design, settled in [Mechanisms](#mechanisms): the cost account before the march is chosen, how placed volumes and
-weather layers share one march, the Sun direction clouds are lit from, and which of the procedural path's opt-in
-looks become defaults.
+The owner, 14 November 2026, through the lead:
 
-This is not a blind study. Read for it: the Broadsides procedural notes at `b4d8250e6` (`THRUM-PORT`,
-`RUNTIME-DESIGN`, `COST-2026-11-06`, `COST-MODEL`, `ASSET-CONTRACT`, `PROCEDURAL-COMPLETION`, and
-`bw_core/src/weather.rs` with its data file), the baked path at `79637f789` (the library's README, licence and
-`B3-HANDOFF`, the growth proof and its motion review, the first sections of `PIPELINE-DESIGN`), and in this
-repository the designs of `EFFECT-GRAPH`, `ATMOSPHERE` (environment products), `CONTENT-LOOP` (leases), `SEA`,
-with `atmosphere/cloud.rs`, `cloud.wgsl` and the diagnostic provider in `examples/v1-game`.
+> You can fully use everything in broadsides. But we should make sure that it aligns with the approach we want.
+> But yes, you can copy that code out and reuse as is if it's useful.
+
+> We can fully reuse anything from broadsides, but it's there as a resource where it's useful, it shouldn't dictate
+> design.
+
+> So in broadsides you will find both a procedural cloud setup as well as pre-baked clouds. The idea being that we
+> could support both those two sky types as well as a hybrid as needed by the game being built.
+
+> That's the approach we were going with in broadsides that might not be the right approach here. The agent should
+> look at that work from first principles and figure out how to design the best possible atmospheric system for the
+> thrum game engine. Maybe that's a flexible set of cloud capabilities built from what we did in broadsides, maybe
+> it isn't, but it should start from first principles.
+
+The lead's reading, recorded as [assumptions](PLAN.md#open-for-the-human): the owner's last words govern; the
+design of 13 November, [the brief](BRIEF.md) of 10 November and the port decision describe the Broadsides
+approach and are inputs to judge, not constraints; Broadsides code, shaders and assets may be copied and reused
+as is wherever this design finds them useful; Broadsides itself stays unmodified.
+
+So this design starts from who uses a sky in Thrum and what each needs, chooses its mechanisms against that, and
+only then says what Broadsides has that serves them. [Judged from first principles](#judged-from-first-principles)
+gives the verdict on every choice the design of 13 November inherited: six changed, and the rest are kept for
+reasons that do not rest on Broadsides having built them. [What Broadsides offers](#what-broadsides-offers) says
+what may be copied.
+
+It is not a blind study. Read for it: the design of 13 November and [its review](../../evidence/CLOUDS/design-review.md);
+the Broadsides procedural notes at `b4d8250e6` (`THRUM-PORT`, `RUNTIME-DESIGN`, `COST-2026-11-06`, `COST-MODEL`,
+`ASSET-CONTRACT`, `PROCEDURAL-COMPLETION`, `bw_core/src/weather.rs` with its data file, and for this revision
+`bw_core/src/medium/scatter.rs`, `bw_render_clouds/src/phase.rs`, `cloud_lighting.ron` and the list of its cloud
+shaders); the baked path at `79637f789` (the library's README, licence record and `B3-HANDOFF`, the growth proof
+and its motion review, the first sections of `PIPELINE-DESIGN`); and in this repository the designs of
+`EFFECT-GRAPH`, `ATMOSPHERE` (environment products), `CONTENT-LOOP` (leases) and `SEA`, with
+`atmosphere/cloud.rs`, `cloud.wgsl` and the diagnostic provider in `examples/v1-game`.
 
 ## Purpose and scope
 
-A reusable engine sky: a game adds the cloud contribution to a scene, keeps a weather state in its world, and
-gets clouds, their shade on everything the Sun lights, and their light in the world's ambient and reflections.
-Consumers are the V1 valley and the sea scene (both behind a selection), later teaching demos, and `SEA`.
+A reusable engine sky. Thrum's first outlet is teaching demos on the owner's website, then games
+([the brief](../BRIEF.md#purpose)), so the sky has four kinds of user, and each sets a requirement:
+
+| User | Needs | What that requires of the design |
+|---|---|---|
+| A teaching demo, often in Chrome: a sunset, how weather changes a landscape's light, later how a cloud forms | A sky that is right as well as good-looking, composed for the shot, under a visitor's sliders, with only the parts the demo shows | Mechanisms with an oracle; light from the droplets' own optics; a cloud the demo can place; every part beyond the weather optional, at no cost when left out |
+| The showcase on this Mac | Skies at the bar of shipped games, smooth at the display's refresh | The work a ray does bounded by design; drift shown at the display's time |
+| A game | Weather it can read with no graphics device, the same on every device, and shade on a world that may show no sky at all | One deterministic field with a CPU query; one weather profile on every recipe; shade as a capability by itself |
+| `SEA` and `ATMOSPHERE` | Sunlight dimmed once, and clouds in ambient light and reflections | No private sky, exposure or reconstruction; one optical depth |
+
+A game adds the cloud contribution to a scene with the [capabilities](#capabilities-shadow-only-and-headless) it
+wants, keeps a weather state in its world, and gets clouds, their shade on everything the Sun lights, and their
+light in the world's ambient and reflections. Consumers built now are the V1 valley and the sea scene (both behind
+a selection) and `SEA`.
 
 **Commissioned:** cues K1 to K7 on `mac-metal` and `chrome-webgpu`, lit only by `ATMOSPHERE`'s products.
 
 **Not built**, from the brief: the ten cloud genera, cumulonimbus with anvil and rain shafts, the warm-front
 sequence and high ice layers; two-layer maritime decks from large-eddy simulation; rain, lightning, moonlit cloud
 and flying through cloud; a cloud-formation teaching demo. Also not built: a camera at or above the cloud base,
-opaque geometry that rises into the cloud layer, light shafts in haze, precipitation fields, and saving the
-weather state to disk.
+opaque geometry that rises into the cloud layer, light shafts in haze, precipitation fields, saving the weather
+state to disk, a cloud whose density a simulation writes each tick, and a cloud held over a place against the
+wind. The cloud-formation demo would be the first of those two: a [directed shape](#placed-volumes) whose slab an
+effect writes. The slab, its footprint and its place in the march are designed for it; the writer is not built.
 
 **What exists.** Thrum has no cloud renderer. `ATMOSPHERE` M5 applies one Sun-path optical depth on every
 direct-Sun receiver, fed today by a CPU-made diagnostic field in `examples/v1-game`. Broadsides has both paths:
-the procedural one at a median 289 ms a frame for its fair preset, and the baked one paused on its atlas reader,
-which is why both are references and not products ([brief](BRIEF.md#where-it-is-finished)).
+the procedural one at a median 289 ms a frame for its fair preset, and the baked one paused on its atlas reader
+([brief](BRIEF.md#where-it-is-finished)). Their maths, kernels and content are a resource; the way their frame is
+assembled is not.
 
 ## Cues
 
-The cue and range columns are the brief's, unchanged. The bar for every inspected cue is the skies of Red Dead
-Redemption 2 and Horizon Forbidden West, in words, at the display's full refresh.
+The cues and ranges are the brief's. Judged again, each is something one of the users above needs, so none is
+dropped: K1, K2, K4 and K7 are the demo's sky, K3 is what a game and the sea need of it, and K6 is the showcase's.
+K5 is restated as what the engine does (a cloud made as content stands in the sky, where the weather or the game
+puts it) with the accepted library as the content that proves it; the brief had it as the port of that library.
+K4's range gains the display's refresh. The bar for every inspected cue is the skies of Red Dead Redemption 2 and
+Horizon Forbidden West, in words, at the display's full refresh.
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
 | **K1** A weather-driven sky: scattered fair cumulus with shared bases and varied sizes, a broken deck, and overcast, each recognisable and continuous to the horizon | Clear, fair, broken and overcast presets and the transitions between them; ground and deck cameras 2–40 m up; the full look arc | A tiled cloud texture or a sky dome. Rejected by parallax between near and far clouds as the camera moves 40 m, and by a point query that agrees with what is drawn overhead |
 | **K2** Light that reads as cloud: bright sunlit sides grading into shadowed bases, a silver lining toward the Sun, and sunset and twilight colour taken from the sky | Noon, low Sun, backlit, sunset through twilight to night, on the one G3s Sun and sky | A lit albedo with a gradient. Rejected by one cloud seen from its Sun side and its far side, and by a tall cloud whose top is lit after its base has gone dark |
 | **K3** Shade that belongs to the clouds: patches of sunlight and shade cross terrain, objects and water in step with the clouds above | One optical depth applied once per receiver; also with visible clouds off (shadow-only) | A scrolling shadow texture. Rejected by a shade edge that lies under its cloud's edge along the Sun's ray at two Sun elevations, and by identical shade with visible clouds off |
-| **K4** Clouds that move and change: they drift with the wind in world space and form, grow and thin over time | 0–40 m/s wind; real time and a time-lapse control; no popping, sliding texture or periodic slots | Noise scrolled through a fixed mask. Rejected by tracking one cloud for its whole life in a time-lapse: it is born, rises, and thins away, and nothing reappears where it stood on a beat |
-| **K5** Placed volumes: clouds from the baked library stand in the same sky under the same light, and one grows through its staged track | The twelve accepted volumes and the congestus growth track, cooked as content products; placement by the weather field | A separate pass composited over the sky. Rejected by a placed cloud partly behind a procedural one with correct occlusion both ways, and by ground shade that has the placed cloud's outline |
+| **K4** Clouds that move and change: they drift with the wind in world space and form, grow and thin over time | 0–40 m/s wind; real time and a time-lapse control, both smooth at the display's refresh; no popping, sliding texture or periodic slots | Noise scrolled through a fixed mask. Rejected by tracking one cloud for its whole life in a time-lapse: it is born, rises, and thins away, and nothing reappears where it stood on a beat |
+| **K5** Shapes made as content: a cloud cooked from a density volume stands in the same sky under the same light, where the weather or the game puts it, and one grows through staged keys | A sky of weather alone, of shapes alone and of both; the example's library, which is the twelve accepted volumes and the congestus growth track, cooked as content products; placement by the weather field and by the game | A separate pass composited over the sky. Rejected by a placed cloud partly behind a procedural one with correct occlusion both ways, and by ground shade that has the placed cloud's outline |
 | **K6** Stable in motion: no shimmer, crawl or ghosting under reconstruction as the camera turns and time runs | TAAU on portable and Chrome, MetalFX on Apple tile; motion, reactive and reset written per the frame contract | Heavy history that hides noise while the camera is still. Rejected by a fast pan, a cut and a 60× time-lapse judged frame by frame |
 | **K7** Controls a visitor can use: coverage, cloud type, wind, time of day and an internal-field overlay, on Mac and in Chrome | The typed controls of `CREATOR` | A control that rebuilds the sky. Rejected by a coverage sweep in motion with no pop |
 
@@ -71,7 +112,7 @@ Finished also means, from the brief: the weather field is a deterministic functi
 wind travel and simulation time, with a CPU evaluator that answers point queries headless and a test that the GPU
 map matches it; all consumers share extinction in m⁻¹; aerial perspective is applied once; cloud and fog segments
 are ordered and disjoint; visible clouds off releases presentation resources and keeps shade; every cadence is a
-governor knob with a declared history invalidation; and the cost account holds at full refresh on this Mac at the
+governor knob with a declared history invalidation; a capability a scene leaves out costs it nothing; and the cost account holds at full refresh on this Mac at the
 showcase extent, with texture memory recorded, by paired records and tripwires rather than a budget gate.
 
 Two ranges the brief leaves unnumbered are fixed here. **Time-lapse** runs from 1× to 60×, the rates the
@@ -106,16 +147,27 @@ What each source was read for, and how far.
   time-sliced frames.
 - **The retained references** in [`scripts/reference/cloud/`](../../../scripts/reference/cloud/optical_reference.py):
   Beer segments and their composition, and a four-order liquid phase model (`WEIGHTS`, `BRANCH_B`, `LIQUID_G`).
-  They are the octave model above with fixed numbers, and they are this design's optical oracle.
+  They are the octave model above with fixed numbers, and they are this design's optical oracle for Beer
+  segments, their composition and the later orders. The first order's phase has its own closed form.
 - **Broadsides**, as what was tried. Its cost model counts 141.7 density evaluations a ray: 19.7 on the view ray,
   39.8 in a six-tap Sun cone and 82.2 in direct ambient. Lighting was 86% of the work, and removing both lighting
   terms still left 21 ms. Its accepted results are the twelve volumes, the growth track's blind motion review,
   and the rule that the true Sun, not the apparent surface light, lights a medium. Its fair preset's "flat, soft
   shelves" and four-band base look were not accepted.
+- **Jendersie and d'Eon 2023** ("An Approximate Mie Scattering Function for Fog and Cloud Rendering", SIGGRAPH
+  Talks). A water droplet's phase function as a Henyey–Greenstein lobe plus a Draine lobe, four parameters fitted
+  to droplet diameters of 5 to 50 µm. Read through Broadsides' `bw_core/src/medium/scatter.rs` at `b4d8250e6`,
+  which carries the fits and a test that reproduces the paper's parameters at 20 µm; the paper's own file could
+  not be opened in this session. Part E of the proof below evaluates it.
+- **Looked for, 14 November:** a successor to these methods published from 2024 to 2026. Found: a 2026 method that
+  relights clouds as meshes with a learned encoding (Olajos, Doggett and Goswami), and a hybrid of sparse voxels
+  and noise. Titles and abstracts only. Neither is shipped practice or runs in a browser's limits, and neither
+  changes a selection below.
 - **Not read:** the Red Dead Redemption 2 course notes (Bauer 2019; not found to fetch), the 2015 and 2017 Nubis
-  talks, and the Broadsides shaders. Nothing below rests on them.
+  talks, and the Broadsides cloud shaders beyond their names and sizes. Nothing below rests on them.
 
-Two reproductions were run for this design, the second for its revision, and are kept with their output in
+Three reproductions were run for this design, the second for its revision and the third for the first-principles
+judgement, and are kept with their output in
 [the evidence folder](../../evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
 reports them.
 
@@ -129,11 +181,56 @@ reports them.
 | A per-cloud cached volume (the earlier cohort lab) | 13 ms for one cloud on this Mac |
 | **2D weather fields with a vertical profile, noise for detail, light from one summed Sun-path product, traced at part of the render extent and reconstructed over frames** | **Selected.** Every part is shipped practice; the work a ray does is bounded by a few texture reads a sample |
 
+### Judged from first principles
+
+Every choice the design of 13 November took from the brief, the port decision or the Broadsides notes, judged
+against the users and cues above. "Keep" means it would be chosen again with Broadsides out of the room.
+
+| Inherited choice | Verdict | Why |
+|---|---|---|
+| The product is a consolidation of two paths, procedural layers and a baked library, as a hybrid | **Change** | That is the history of two Broadsides agents, not a requirement. What a sky needs is one medium: one density in m⁻¹ that every consumer reads, and one light. Where the density comes from is data. Cells, the deck and shapes are sources of the one field, and which a sky has is the game's type table and library, so a sky of weather alone, of shapes alone or of both is the same code. The engine has no sky types and no mode. See [capabilities](#capabilities-shadow-only-and-headless) |
+| A deterministic weather field with a CPU f64 query is the authority | **Keep** | It is the oracle the GPU is held to, the reason Chrome and the Mac show the same sky, and what a game reads with no graphics device. A sky that exists only in GPU textures gives none of the three |
+| Wind as travel integrated per tick, and every pattern in the air frame | **Keep** | Drift is then exact and costs nothing, and no texture can slide through a mask |
+| 2D fields with a vertical profile and noise, not a voxel sky | **Keep** | Every commissioned camera is below the cloud base, which is where the method shipped. Nubis³ measured a dense voxel sky at over 30 ms and built voxels for flying through cloud. A shape gives a true volume where one is wanted |
+| Light from one summed Sun-path product and a few local samples | **Keep** | Already a departure from Broadsides, whose cone taps and ambient rays were 86% of its work. One product also gives ground shade and long-distance shadow |
+| The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 46 times too dim inside the aureole, and two to three times too dim looking away from the Sun (part E). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
+| Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time, as `SEA` does its waves. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
+| A placed volume stands for one cell of the field | **Keep** | It is why the query, the picture and the shade agree on a shape's outline at any distance, and why a shape forms, drifts and thins like any cloud. It does not rest on the library existing |
+| Shapes are placed only by the field's hash | **Change** | A demo composes its sky: a tower beside the Sun at sunset. A profile places shapes by the hash or by the game's own list of [directed shapes](#placed-volumes), which are cells whose place, shape and life the game sets |
+| Shadow-only as the one reduced profile | **Change** | Shade, the visible sky, the world's light and shapes are each a capability, and a scene declares only those it uses. A sunset demo needs no library; a top-down game needs only shade |
+| Clouds shade and light the world through `ATMOSPHERE`, never by themselves | **Keep** | One owner applies each factor once. A private sky or a second shadow term is what made Broadsides' verdicts unusable here |
+| The layer ends at render extent and the engine reconstructs | **Keep** | One reconstructor sees every drawer's motion. Unreal, Frostbite and Decima all trace clouds below the render extent and hand a full-extent layer on |
+| Nothing copied from Broadsides until a licence is named; stand-in shapes first | **Change** | The owner's words of 14 November. The library is the example's content from M6. See below |
+
+### What Broadsides offers
+
+Broadsides code, shaders and assets may be copied into this repository and used as they are, wherever they
+implement a mechanism of this design as this design states it. Where they implement something else they are
+reading matter. The builder of each milestone judges fit file by file; this table says where to look. Paths are in
+the Broadsides repository at `b4d8250e6` unless a commit is given, and nothing there is ever changed. Of these,
+the planner opened `scatter.rs`, `phase.rs`, the library's licence record and handoff, and the notes named in
+[the request](#the-request); the shaders' fit is expected from their names and the notes, not read.
+
+| Mechanism here | Where Broadsides has it | Expected fit |
+|---|---|---|
+| The droplet phase: the published fit, both lobes written to stay exact near the forward peak, the Sun's disc as a spread, the mean cosine, and the energy-conserving step | `crates/core/bw_core/src/medium/scatter.rs`, with its tests; the GPU twin `crates/gpu/bw_gpu/shaders/lib/medium.wesl` | Close. This is [cloud light](#cloud-light)'s first order as stated |
+| Phases evaluated once and looked up by angle | `crates/render/bw_render_clouds/src/phase.rs`, `shaders/cloud_phase_table.wesl` | Useful if a table measures faster than the closed form; here the angle is one value a ray, so the closed form may be enough |
+| Integer hashes and noise | `bw_core::noise`; `shaders/cloud_noise.wesl` | May fit. The noise here must come from the same integer hash on every target |
+| The twelve accepted volumes, their records and the growth track's keys | At `79637f789`: `assets/clouds/heaped-fair/` (Git LFS; density is the PNG's red channel, 128³), `factory/clouds/heaped-fair/B3-HANDOFF.md` for axes, extents, placement and hashes, and `factory/clouds/heaped-fair/review/m2-authored-growth-v2/` for the track's manifest of eleven keys. The key volumes themselves are outside Git, in the Broadsides folder under `tmp/evidence-store/cloud-route-2026-11-08/m2-authored-growth-v2/`, and `factory/clouds/heaped-fair/coherent_growth.py` makes them again | The example's library, unchanged. Its licence record comes with it |
+| The shape record and its parser | `crates/core/bw_data/src/cloud_shape.rs` | Game-side, for reading the library's sidecars into the example's placement data |
+| Octave light, the density operators, the resolve's reprojection and clamp | `shaders/cloud_lighting.wesl`, `cloud_density.wesl`, `cloud_resolve.wesl`, `cloud_reconstruction.wesl`; CPU twins in `src/twin/` | Take functions where they state what this design states. The cone taps and ambient rays in the lighting are where the 289 ms went and are not copied |
+| The weather operator and presets | `crates/core/bw_core/src/weather.rs`, `crates/sim/bw_world/src/weather.rs`, `cloud_weather.ron` | Reading matter. The field here is the cell process and the deck of this design |
+| The packed Beer shadow, the atlas and pager, parcel and ambient caches, sky capture, the Bevy host, `module.rs` | | Not used. The Sun's path is a different product, slabs replace the atlas, and Thrum has one owner for the rest |
+
+Broadsides shaders are WESL and Thrum's are WGSL, so a copied shader has its imports resolved into Thrum's
+modules; its algorithm is left as it is. [The handoff](#proof-and-builder-handoff) says how a copy is recorded.
+
 **What would change these selections.** M3's record shows what the trace costs. If the frame is over the refresh
 interval there, M3 tries the remedies in [risk 1](#risks) that its record points at and records what each did,
 and building goes on; whether the layer's extent or the light model should then change is a planner's decision
 from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
-relief, its near level is refined or the local samples grow, here first.
+relief, its near level is refined or the local samples grow, here first. If a game needs hashed shapes and
+directed ones in one sky, the map's texel gains a second slot; nothing else moves.
 
 ## Mechanisms
 
@@ -142,14 +239,16 @@ relief, its near level is refined or the local samples grow, here first.
 The **weather field** is the single authority. It is a pure function in `thrum-cloud-model`, evaluated in f64
 with no GPU:
 
-`field(seed, parameters, travel, weather time, world point) → coverage, type, base, top, age, column optical depth`
+`field(seed, parameters, directed shapes, travel, weather time, world point) → coverage, type, base, top, age, column optical depth`
 
 - **The weather state** is a small record the game keeps in its world and steps once a tick: the seed; the
   current parameters (coverage 0–1, a type axis 0–1 from layered to heaped, wind as a velocity at cloud height,
   a time scale for time-lapse); their targets and a response time; the **travel**, wind integrated per tick in
   f64 metres; and the **weather time**, the tick duration times the time scale, integrated the same way. Wind is
   never multiplied by absolute time. A parameter moves toward its target over the response time, so a preset
-  change is a ramp. The state travels in the tick page (C02).
+  change is a ramp. The state also holds the travel of its last tick, for [time](#time-drift-at-the-displays-time-evolution-on-the-tick),
+  and, in a profile that places shapes itself, its list of [directed shapes](#placed-volumes). The state travels
+  in the tick page (C02).
 - **The air frame.** Every pattern is a function of `world point − travel` and weather time. So the whole field
   drifts with the wind in world space, exactly, and what changes in time is the weather and never a texture
   sliding through a mask. Noise that gives detail lives in the same frame.
@@ -187,6 +286,20 @@ this design are named where they are made: the GPU reads the field through filte
 over a point is a local average of the model's density over a texel, held to the model at stated points within
 a bound that is measured first; the [coarse density](#one-density-in-m¹) takes the detail noise at its mean; and
 the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean transmittance.
+
+### Time: drift at the display's time, evolution on the tick
+
+The weather state steps on the committed tick, and the display shows each 60 Hz tick twice or more. Travel is a
+function of time, so every presented frame takes it **at the display's time** `t = C − 1 + α` in ticks, where `C`
+is the frame's committed tick and `α` its interpolation alpha (C02):
+`travel(t) = travel(C) − (1 − α) · (travel(C) − travel(C − 1))`, formed on the CPU in f64 from the state.
+
+Travel enters a frame only through the anchors that place the air frame in the world: the trace's, the mapping of
+the ground field that `ATMOSPHERE` reads, the overlay's, and the motion a cloud writes. So a frame that shows the
+same tick again moves every cloud and its shade by the wind's travel since the last frame, and rewrites no texel:
+the weather map, the Sun's path and everything that evolves stay at the committed tick, as `EFFECT-GRAPH`'s state
+rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most 0.2% of
+its range in a tick (part F). On a cut, a seek or a new timeline the frame takes `travel(C)`.
 
 ### One density, in m⁻¹
 
@@ -276,14 +389,25 @@ frame.
 
 A sample's scattered radiance, integrated over its step with Frostbite's equation 17:
 
-`L = σ · [ Σₙ wₙ · E_sun(point) · exp(−bₙ·tau_sun) · HG(θ, gₙ) + L_ambient ]`
+`L = σ · [ Σₙ wₙ · E_sun(point) · exp(−bₙ·tau_sun) · Pₙ(θ) + L_ambient ]`
 
 - **Sun.** `E_sun` is the lent Sun light at a world position: the true Sun through the air, with no cloud factor.
   It is evaluated at the layer's base and top on each ray and interpolated by height, so a tall cloud's top
   stays lit after its base has gone into the Earth's shadow, and sunset colour comes from the sky's own
   transmittance.
-- **Orders.** Four, with the retained reference's `WEIGHTS`, `BRANCH_B` and `LIQUID_G`. Each order reuses the same
-  `tau_sun`, so multiple scattering costs no density read. The forward lobe gives the silver lining.
+- **Orders.** Four, with the retained reference's `WEIGHTS` and `BRANCH_B`. Each order reuses the same `tau_sun`,
+  so multiple scattering costs no density read. `Pₙ` is the order's phase.
+- **The first order's phase is the droplet's own**: a Henyey–Greenstein lobe plus a Draine lobe (Jendersie and
+  d'Eon 2023), `(1 − w)·HG(θ, g_HG) + w·Draine(θ, g_D, α)`, with the Henyey–Greenstein lobe widened by the Sun's
+  disc (its squared angle gains half the squared angular radius of the lent Sun), which bounds the forward peak.
+  The four parameters are type data, interpolated along the type axis. `thrum-cloud-model` gives the published fit
+  from a droplet diameter of 5 to 50 µm, so a table takes its phase from the droplet radius its extinction comes
+  from, and a game that wants another look gives its own four numbers. This lobe is the silver lining: a rim
+  within a few degrees of the Sun, not a glow 20° wide, and a brighter cloud with the Sun behind the viewer.
+- **The later orders** keep the reference's Henyey–Greenstein lobes, `LIQUID_G[1..3]`: light scattered many times
+  has forgotten the droplet.
+- **Once a ray.** The Sun is one direction, so the angle `θ` and all four phases are one evaluation a ray, in
+  f32 from `sin²(θ/2)` so the forward peak keeps its digits. No sample pays for the phase.
 - **Ambient.** Sky light from above and ground light from below, each dimmed by the diffuse transmittance of the
   cloud between: `1 / (1 + ¾(1 − g)·tau)`, the two-stream result for a layer that scatters without absorbing,
   with `tau` above and below the sample taken from the column already read. Bases darken and never go black. The
@@ -361,11 +485,24 @@ the shape, so the query, the picture and the shade agree on its outline at any d
   and highest occupied height. `thrum-cloud-model` derives it from the voxels with one function, the game keeps
   it with its placement data, and the library's footprints are an input of the field like the type table. A
   headless server needs the footprints and never the volumes.
-- **Placement.** A share of cells, set by the type table, are placed cells, chosen by hash, each with a shape the
-  hash picks: centred in its cell, its base on the shared condensation level, turned to the wind by yaw, scaled
-  uniformly. A voxel value of 1 is the type's extinction. At most one placed cell is chosen in each block of
-  lattice sites, a profile constant, and its footprint is held inside the block, so no point has two placed
-  shapes over it. None of this depends on the camera.
+- **Placement by the field.** A share of cells, set by the type table, are placed cells, chosen by hash, each with
+  a shape the hash picks: centred in its cell, its base on the shared condensation level, turned to the wind by
+  yaw, scaled uniformly. A voxel value of 1 is the type's extinction. At most one placed cell is chosen in each
+  block of lattice sites, a profile constant, and its footprint is held inside the block, so no point has two
+  placed shapes over it. A share of 0 is a sky of weather alone, and a share of 1 a sky whose every heaped cloud
+  is a shape. None of this depends on the camera.
+- **Placement by the game: directed shapes.** A profile places shapes by the field's hash or by the game, never
+  both, because the weather map names one shape a texel. In a directed profile the placed share is 0 and the
+  weather state holds a bounded list (16 in the first profile) of directed shapes. Each has a stable id, a centre
+  in the air frame, a library shape or growth track, a yaw, a uniform scale, and two targets from 0 to 1: its
+  **envelope** and, on a track, its **growth**. The state moves both toward their targets over the response time,
+  as it does every parameter. A shape is added at envelope 0 and dropped when its envelope and its target are
+  both 0, so it forms and thins and never switches. Its base sits on the shared condensation level, and it drifts
+  with the wind like every cloud; `thrum-cloud-model` turns a world point at the current tick into the air frame.
+  A directed shape is a placed cell in everything below: its column is its footprint and adds to the cells and
+  deck around it. The state refuses a shape whose footprint would overlap another directed shape's, or one beyond
+  the limit, and returns the refusal to the game, counted. With coverage at 0 the sky holds the directed shapes
+  alone.
 - **The query.** Over a placed cell the field's column is the footprint read at that point, scaled by the cell's
   envelope, and it adds to whatever other cloud is there. That is the bound of
   [what a query promises](#one-weather-field-in-the-air-frame), with the shape's true outline: zero outside
@@ -385,20 +522,32 @@ the shape, so the query, the picture and the shade agree on its outline at any d
   read. A cloud too far for that level is past the placed range and drawn in its column form. Growth keys are
   read the same way, and two keys are blended by weight, never filtered along the stack.
 - **Life.** The cell's envelope drives both forms' opacity and edge erosion, so the cloud forms and thins with
-  its cell. A growth-track instance blends its two keys around its age, and its footprint is the same blend of
-  theirs.
+  its cell. A growth-track instance blends its two keys around its age, or around its growth where the game
+  directs it, and its footprint is the same blend of theirs.
 - **Capacity.** The number of volume-form instances is a profile limit checked against the capability record.
   Placed cells beyond it, and every placed cell while no lease is resident, are drawn in their column form,
   nearest first, and the refusal is counted and reported. The query is the same either way.
 
-### Shadow-only and headless
+### Capabilities, shadow-only and headless
 
-- **Headless.** `thrum-cloud-model` answers point queries with no graphics device and allocates nothing.
-- **Shadow-only** is a profile: the weather map, the shape noise, the footprints and the Sun's path are built,
-  and the trace, the layer history, the detail noise, the overlay and the far-aerial use are not declared. The
-  Sun's path integrates the coarse density in both profiles, so its ground field is the same bytes as with
-  visible clouds on, under a sky whose full density the detail noise does erode. Changing between the two
-  rebuilds the effect and starts a new epoch.
+A scene's cloud profile names the capabilities it uses. One it leaves out declares no pass, resource or pipeline
+and costs nothing; changing the set rebuilds the effect and starts a new epoch.
+
+| Capability | What it adds | Needs |
+|---|---|---|
+| **Weather** | The state, its step and the point query, in `thrum-cloud-model`. No graphics device, nothing allocated | Always present |
+| **Shade** | The weather map, the shape noise and the Sun's path, with the ground field `ATMOSPHERE` applies | Weather |
+| **Sky** | The visible layer: the trace, the layer's history, the detail noise, the compose and the far-aerial use | Shade |
+| **World light** | The sky overlay and the haze scale | Sky |
+| **Shapes** | The library's footprints, with Shade; its leased volumes, with Sky. By the field's hash or by the game | Shade |
+
+- **Headless** is Weather alone: a server answers point queries, and needs a library's footprints and never its
+  volumes.
+- **Shadow-only** is Weather and Shade, with Shapes if the sky has them. The Sun's path integrates the coarse
+  density whatever else is declared, so its ground field is the same bytes with or without Sky and World light,
+  under a sky whose full density the detail noise does erode.
+- **A sky with no library** leaves Shapes out. No footprint, lease or slot exists, and the map's presentation
+  values are not written.
 
 ### Recipes, limits and knobs
 
@@ -460,13 +609,26 @@ From `revision_proof.py`, run for the revision of 14 November against
 - **Slabs.** Twelve slabs alternately empty and full, read at levels 0 to 7 with the stated hold, return their
   own value exactly; without the hold the error is half the range, and level 8 mixes every pair.
 
+From `first_principles_proof.py`, run for the judgement of 14 November:
+
+- **The first order's phase.** For a 20 µm droplet the phase integrates to 1 over the sphere with a mean cosine
+  of 0.88, against the reference lobe's 0.86, so the energy is the same and its direction is not. Against the
+  droplet, the reference lobe is 3.9 times too bright at 5° from the Sun and 3.4 times at 10°, 46 times too dim
+  at half a degree, and 2.0 to 3.4 times too dim from 140° to 180°. Averaged over the Sun's disc the droplet's
+  forward peak is 1,709 sr⁻¹, down from 2,743 for a point Sun.
+- **Drift.** At 60× in a 40 m/s wind a cloud 1,500 m off moves 37 pixels a tick at 1440 rows. Taken at the tick
+  it is shown as 0 then 37; at the display's time, as 18 then 18. At 1× the same wind gives 0 then 0.6 against
+  0.3 then 0.3.
+- **Directed shapes and capabilities.** Unrun. Both are the placed cell and the profile already reproduced, with
+  their inputs from the game; M1 and M8 prove them first.
+
 ## The system as it runs
 
 | State | Owner |
 |---|---|
 | The weather field, its state and step, the density function, the f64 references | `thrum-cloud-model` (this module), no GPU dependency |
 | The weather map, noise, the Sun's path, the layer and its history, the overlay, placed-volume sampling | `thrum-clouds` (this module), an effect on `EFFECT-GRAPH`'s seam |
-| The committed weather state | The game's world; it travels in the tick page |
+| The committed weather state, with any directed shapes | The game's world; it travels in the tick page |
 | Presets, the type table, looks, the library and its placement data, controls | The game (`examples/v1-game` behind its cloud selection; `examples/sea` behind its own); never in engine crates or their tests |
 | Sky, Sun, aerial, reflection and diffuse products; applying the cloud factor, the overlay and the haze scale | `ATMOSPHERE` |
 | Stages, state commit, cadence, the knob list | `EFFECT-GRAPH` |
@@ -474,7 +636,8 @@ From `revision_proof.py`, run for the revision of 14 November against
 | The residency of volume products | `CONTENT-LOOP` |
 | The shell, typed controls, parameter files | `CREATOR` |
 
-**A frame, in order.** `upload` takes the page's weather state. `simulate`: the due part of the weather map; the
+**A frame, in order.** `upload` takes the page's weather state and forms the travel at the display's time.
+`simulate`, on a new tick only: the due part of the weather map; the
 due tiles of the Sun's path and the ground field; the due part of the overlay. `ATMOSPHERE` filters its
 reflection and diffuse products with the overlay. Sun passes and forward draw, with the cloud factor on every
 direct-Sun term. Sky and stars draw. `after-opaque`: the sea, if the scene has one; then trace, resolve and
@@ -485,8 +648,9 @@ phase and the history side.
 state in its world, adds the cloud contribution after any sea, and shows cloud controls. With it off the game,
 its world, its page and every frame are what they were. The selection replaces the diagnostic shade provider.
 
-**Creator journey.** A scene adds the cloud contribution with a profile, a type table and, if it places shapes,
-their footprints; it steps a weather state in its world, and puts it in its page. Changing coverage, type, wind or time scale needs no rebuild. Changing the
+**Creator journey.** A scene adds the cloud contribution with a profile that names its capabilities, a type table
+and, if it has shapes, their footprints; it steps a weather state in its world, and puts it in its page. A scene
+that composes its sky adds directed shapes to that state. Changing coverage, type, wind or time scale needs no rebuild. Changing the
 profile or the library rebuilds the effect and resets its histories.
 
 ## What CLOUDS asks of other modules
@@ -519,7 +683,8 @@ there, not here.
 
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
-| Weather step | Tick, CPU | One record | Microseconds | |
+| Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
+| Phases | Frame, once a ray | Four closed forms | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
 | Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
@@ -566,8 +731,10 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
    goes to that module's log.
 6. **Chrome refuses a format, count or binding the Mac accepts.** Early sign: M2 runs under WebGPU's default
    limits on the Mac, and M4 is the first real Chrome run.
-7. **The library's licence does not arrive.** Then M10 waits, and with it M11 and M12. Everything a visitor sees
-   except the accepted shapes is finished by M9.
+7. **The droplet's forward peak aliases or flickers** in the part-extent trace, as a ring or a crawling aureole
+   around the Sun through thin cloud. Early sign: M5's stills and pan toward the Sun. The fix is in the phase's
+   evaluation (its precision, or the angle taken at the texel's centre), never a return to the wide lobe; a game
+   that wants a softer look gives its own four numbers.
 8. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
@@ -582,13 +749,16 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Exact baselines.** The module adds crates and a selection that is off by default, and moves no retained
   image. Every milestone carries the verifier as its claim-time check
   ([rules](../ARCHITECTURE.md#exact-baselines)).
-- **Broadsides.** Read it at the brief's commits; never change it. **Nothing is copied or translated from it,
-  code or content, until the owner has named the licence** ([plan](PLAN.md#open-for-the-human)). Until then
-  write from the published sources and this design. Once it is named, a lifted file goes through review, its
-  tests are re-derived here, and `docs/evidence/CLOUDS/PROVENANCE.md` records its source commit, path and
-  licence.
-- **Game content stays in the game.** Presets, type tables, looks and volumes never enter `thrum-cloud-model`,
-  `thrum-clouds` or their tests; tests make their own inputs.
+- **Broadsides.** Read it at the commits [What Broadsides offers](#what-broadsides-offers) names; never change
+  it, and never build against it. A file may be copied or translated where it does what this design states, on
+  the owner's words of 14 November. Each copied or translated file is listed in
+  `docs/evidence/CLOUDS/PROVENANCE.md` with its source commit and path, goes through review like any other code,
+  and meets this module's oracles and items: a verdict it passed in Broadsides is not a verdict here. Material
+  that came into Broadsides from elsewhere keeps its own licence, recorded with it, and nothing GPL or
+  share-alike is copied. The cloud library is read from Git LFS without changing the Broadsides checkout, and its
+  licence record is copied beside it.
+- **Game content stays in the game.** Presets, type tables, looks, volumes and the library never enter
+  `thrum-cloud-model`, `thrum-clouds` or their tests; tests make their own inputs.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** The ledger's `E1.clouds` row is kept current from M2, with implementation, correctness, visuals
   and device apart.
@@ -603,6 +773,7 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | What tolerance does the GPU weather map meet against the CPU field on Metal and in Chrome? | M2 and M4 measure first, then assert the recorded bound |
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
+| Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | Does the incident-light meter already see cloud shade? | M8 reads the code and measures |
 | Can the scene's residency take the library as a second source folder? | M6; if not, the proposal goes to `CONTENT-LOOP`'s log |
 | Is an Apple-tile kernel variant a measured win? | M12 |

@@ -16,7 +16,7 @@
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; the last milestone of modules 1 to 10 and 12 to finish |
 | 14 | SEA | An open sea from waterline to horizon, with floating bodies, wakes and foam | Nothing to start; EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion, and its governor and MetalFX milestones to close |
-| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; the owner's licence for the accepted library; SEA M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 15 | CLOUDS | A weather-driven sky from clear to overcast, with placed cloud volumes, that shades and lights the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; SEA M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 16 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 |
 | 17 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE |
 | 18 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones |
@@ -441,9 +441,10 @@ In one line each:
   the baked library with the same march and light, shades the world through one optical depth, lights correctly
   from noon to sunset under G3s, and runs shadow-only, at full refresh with governor knobs.
 
-**Consolidation** means one module per provider. The two cloud paths become one `CLOUDS` module in the shape the
-port decision already selected: the deterministic weather field is the authority and draws layers, and the baked
-library supplies placed volumes under the same optical contract.
+**Consolidation** means one module per provider. The two cloud paths become one `CLOUDS` module. Judged from first
+principles on 14 November, it is one medium and not a hybrid of two paths: the deterministic weather field is the
+authority, convective cells, a deck and shapes cooked from density volumes are sources of its one density, and
+which a sky has is the game's data ([CLOUDS](CLOUDS/DESIGN.md#judged-from-first-principles)).
 
 ## Module briefs
 
@@ -923,9 +924,10 @@ Nothing below is decided by this plan.
 2. **Licence.** Broadsides code is marked `UNLICENSED` and its cloud library carries an owner-only licence.
    Thrum's demos are meant to have public source. On 14 November the owner said Broadsides may be copied and
    reused as is. `SEA` reads that as the licence for what Broadsides' authors wrote, with third-party material
-   keeping its own, as [an assumption](SEA/PLAN.md#open-for-the-human). `CLOUDS`' lines here are as planned on
-   13 November, until its planner revisits them: `CLOUDS` can be built without lifting code, but its cue K5 names the twelve accepted
-   volumes and their growth track: its M10 waits for the licence, and holds its sea milestone and its close.
+   keeping its own, as [an assumption](SEA/PLAN.md#open-for-the-human). `CLOUDS` reads it the same way, under
+   [its own assumption](CLOUDS/PLAN.md#open-for-the-human): the twelve accepted volumes and their growth track
+   enter as the example's content from its M6, with their licence record, which grants nothing to third parties.
+   What terms the library carries if Thrum's source is published is the owner's to say.
 3. **The V1 exit stays as written.** Sea and clouds are not added to it. Adding them is the owner's call.
 4. **Builders.** The profile says one Codex builder. Steps 2–4 of the build order hold work that is safe beside
    `APPLE-TILE` if the owner allows a second.
@@ -1083,3 +1085,11 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   [The port decision](../design/decisions/SEA-AND-CLOUD-PORT.md) and the water decision's open-sea row were
   brought into step, and owner decision 2 now records the sea's reading of the licence. The body-query row says
   "the times they were made from". No seam ruling, contract, exact baseline or other module's item changed.
+- 2026-11-14 `CLOUDS` judged again from first principles, on the owner's words of 14 November quoted in
+  [its design](CLOUDS/DESIGN.md#the-request). Kept: the weather field and its CPU query, the Sun-path product,
+  placed volumes as cells of the field, and light and shade through `ATMOSPHERE`. Changed: one medium whose
+  sources are data in place of two paths and a hybrid, capabilities a scene leaves out, the droplets' own phase
+  for the first scattering order, drift at the display's time, shapes a game can place itself, and the accepted
+  library as the example's content from M6 with no licence wait. [The port decision](../design/decisions/SEA-AND-CLOUD-PORT.md)'s
+  cloud half, the module table's row and owner decision 2 were brought into step. No seam ruling, contract, exact
+  baseline or other module's item changed.

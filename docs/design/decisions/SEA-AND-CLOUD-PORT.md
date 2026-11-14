@@ -17,8 +17,8 @@ designs and never a constraint on them. It still fixes what both modules owe Thr
 
 - **The sea** was judged this way on 14 November. Its methods are [SEA's design](../../plans/SEA/DESIGN.md), and
   the section below summarises them.
-- **The clouds** section below is the profile of 6 November, as Broadsides approached it. `CLOUDS`' planner judges
-  it the same way, and until that design says otherwise the section is an input and not a selection.
+- **The clouds** were judged this way on 14 November. Their methods are
+  [CLOUDS' design](../../plans/CLOUDS/DESIGN.md), and the section below summarises them.
 
 Broadsides is read at the commits the module designs name. It is not a build dependency and is never modified. Its
 earlier `THRUM-ALIGNMENT` mapping of the TypeScript lake lab is superseded.
@@ -59,25 +59,28 @@ replay. [SEA's design](../../plans/SEA/DESIGN.md) owns the methods, with
   environment product everywhere else and no whole-scene copy on any recipe. Ray query on desktop high is a later
   provider that emits hit distance.
 
-## Volumetric cloud profile
+## The clouds
 
-This record selects weather-map volumetric clouds as the visible `E1.clouds` provider. ENVIRONMENT.md's projected optical-depth field stays as the portable and shadow-only representation.
+This record selects a weather-driven volumetric sky as the visible `E1.clouds` provider. ENVIRONMENT.md's projected optical-depth field stays as the meaning of cloud shade, and is what a scene with shade alone builds.
 
-Cloud presentation combines procedural weather layers with placed voxel volumes under the same E1 provider and light-transmittance contract. G5 cooks baked 3D volumes as content-addressed products, including cloud density: KTX2 BC4 on desktop, R8 or EAC slices on iPhone, and R8 for the portable recipe. Placement, product identity and history invalidation are explicit inputs; the weather field remains the source for headless queries and precipitation.
+[CLOUDS' design](../../plans/CLOUDS/DESIGN.md) owns the methods, with
+[the verdict on each choice](../../plans/CLOUDS/DESIGN.md#judged-from-first-principles) this record used to make:
 
-* **Authority.** The E1 cloud source is a deterministic weather field: a function of seed, preset, integrated wind travel and `t_sim`. Its outputs are coverage, genus, top height, age and column optical depth `τ`. A CPU evaluator answers point queries headless. A test asserts the GPU weather map matches it within tolerance. Wind travel is integrated per tick, never computed as mean wind × absolute time. Rain and precipitation derive from this field.
-* **Light.** Thrum G3s is the sole sky/Sun/atmosphere source for both clouds and water; no Broadsides sky is ported alongside it. One cloud transmittance product with `τ` semantics feeds V3 once, as `exp(-τ)`. Shadow-only mode omits the view march. Water reflection and cloud illumination consume the same environment identity.
-* **Presentation.** The march, Beer shadow map, multi-scattering octaves and sky capture are presentation. Aerial perspective is applied once. Cloud and froxel-fog `(T,S)` intervals must be ordered and disjoint.
+* **One medium, not two paths.** Broadsides built a procedural sky and a baked library and meant to offer each, and a hybrid, as sky types. Thrum has one density in m⁻¹ that every consumer reads and one light. Convective cells, a layered deck and shapes cooked from density volumes are sources of that one field, and which a sky has is the game's data: weather alone, shapes alone or both run the same code. G5 cooks the volumes as content-addressed products: KTX2 BC4 on desktop, R8 or EAC slices on iPhone, and R8 for the portable recipe.
+* **Authority.** The E1 cloud source is a deterministic weather field: a function of seed, parameters, integrated wind travel and weather time, with any shapes the game directs. Its outputs are coverage, type, base, top, age and column optical depth `τ`. A CPU evaluator answers point queries headless. A test asserts the GPU weather map matches it within a measured tolerance. Wind travel is integrated per tick, never computed as mean wind × absolute time, and is shown at the display's time each frame. Rain and precipitation would derive from this field.
+* **Light.** Thrum G3s is the sole sky/Sun/atmosphere source for both clouds and water; no Broadsides sky is ported alongside it. One Sun-path optical-depth product with `τ` semantics feeds V3 once, as `exp(-τ)`, and the same product is the clouds' own self-shadow. The first scattering order takes its phase from the droplets (Henyey–Greenstein plus Draine); later orders are octaves that reuse the same `τ`. Clouds reach the world's ambient light and reflections through `ATMOSPHERE`'s products, never by a capture of their own. Water reflection and cloud illumination consume the same environment identity.
+* **Presentation.** The visible layer is traced at part of the render extent and reconstructed over frames into a layer at render extent. Aerial perspective is applied once. Cloud and froxel-fog `(T,S)` intervals must be ordered and disjoint.
+* **Capabilities.** The weather query, shade, the visible sky, the world's light from clouds, and shapes are each left out by a scene at no cost. Shade alone omits the view march. A profile places shapes by the field's hash or by the game.
 
 ## Ownership
 
 The engine owns:
 * the spectral evaluator, cascades, and wake and foam machinery;
-* the weather operator, march, shadow, capture and history machinery.
+* the weather field, march, Sun-path product, sky overlay and history machinery.
 
 The game owns:
 * sea presets, hull and body data, and whitewater tables;
-* cloud genus tables, lighting presets and the look.
+* cloud type tables with their droplet optics, presets, the shape library and the look.
 
 None of the game-owned content appears in engine crates or tests.
 
@@ -94,11 +97,11 @@ None of the game-owned content appears in engine crates or tests.
   * **Apple tile:** f16 arithmetic and tile-friendly passes. The sea takes no full scene copy on any recipe ([SEA](../../plans/SEA/DESIGN.md#optics)).
   * **Desktop high:** async-compute overlap for cascades, wake, foam, weather and shadow work, plus the later ray-query provider.
   * **Every recipe:** compute replaces fragment marching where measured faster.
-* **Governor knobs.** Every cadence and step budget is a runtime setting that the quality governor owns: weather update rate, march refresh fraction, shadow-cascade spread, capture interval, cascade and foam rate, and resolution. Each knob declares its history invalidation, and none changes physical profiles.
+* **Governor knobs.** Every cadence and step budget is a runtime setting that the quality governor owns: weather update rate, march refresh fraction, Sun-path and sky-overlay cadence, cascade and foam rate, and resolution. Each knob declares its history invalidation, and none changes physical profiles.
 * **Frame contract.**
   * Motion vectors cover short waves and wake, evaluated at the previous presentation time.
   * Foam, glints and clouds write the reactive mask.
-  * Cuts, sea rebuilds, weather generations and pass toggles set reset flags.
+  * Cuts, sea rebuilds, weather seeks, cloud profile and library changes, and pass toggles set reset flags.
   * Cloud and water effects output at render resolution. V4's reconstructor upscales; there is no private upscaler.
 * **Effect history.** History keys include view, resolution and epoch. History uses ping-pong rather than per-frame full copies, and world-anchored wrapping where the effect is spatial.
 * **Evidence.** Restore per-pass GPU timestamps, and measure on iPhone and Mac for each recipe against portable.
@@ -140,7 +143,15 @@ The owner's words at the top of this record. `SEA` was judged on them the same d
 ([log](../../plans/SEA/LOG.md)): the layering, the query, the wake, the foam stocks and the optics are kept for
 reasons its design gives, and two things changed. The ambient sea is evaluated at the display's time each frame in
 place of tick copies blended in the surface pass, and every part beyond the open sea is a capability a scene can
-leave out. `CLOUDS` is judged by its own planner.
+leave out.
+
+`CLOUDS` was judged on them the same day ([log](../../plans/CLOUDS/LOG.md)). Kept, for reasons its design gives:
+the deterministic weather field with its CPU query, the air frame, 2D fields with a vertical profile, one Sun-path
+product for shade and self-shadow, a placed volume standing for a cell of the field, light and shade through
+`ATMOSPHERE` alone, and a layer that ends at render extent. Changed: the two Broadsides paths and their hybrid
+are one medium whose sources are data; the first scattering order takes the droplets' own phase; drift is shown
+at the display's time; a game can place shapes itself; and every part beyond the weather is a capability a scene
+can leave out. The accepted library of twelve volumes and its growth track is the example's content.
 
 ## Reuse policy
 
