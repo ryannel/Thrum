@@ -3,6 +3,16 @@
 14 November 2026. Initial boundary checkpoint: `1d21de31` (on top of `d9ca8c13`).
 This is an incomplete builder record, not milestone acceptance. All five items remain open.
 
+The resumed implementation checkpoint is `57e70e7c`. Three integrated Metal lifecycle tests pass at
+`d29d2667`: exact two-slot submitted history, retention until old-generation completion delivery, and
+failure/loss/extent replacement with exact output against a fresh WGSL twin.
+[Actual selected output and executable identity](lifecycle-d29d2667.txt) state their scope.
+The coordinator run first stopped on capture accounting before native/twin comparison: its three deliberately
+discarded candidates were counted as omissions, while the test expected zero. `342151fc` requires exactly
+those three omissions; no pixel metric changes. The corrected run, simulator native background race,
+T2 diagnostic captures and clean-tree native/Chrome baseline plus full repository check are queued.
+[Continuation and job IDs](../M10-handoff.md) record what remains. No complete item or merge is claimed.
+
 The first implementation is the small [native segment fixture](../../../../crates/thrum-render/tests/native_segment.rs).
 It prepares a Metal storage-writing tile kernel and a separate WGSL twin, initializes all textures through
 wgpu, then records a wgpu scene producer, one whole raw Metal encoder and a wgpu readback consumer.
@@ -40,14 +50,18 @@ or entering the raw encoder callback. This is a handle-access correction, not an
 The native MSL library/compute pipeline and the WGSL twin pipeline were prepared before that failing call;
 the runtime compiler therefore worked on this target despite the absent optional offline compiler.
 Two additional device tests require locked-wgpu to refuse mixed APIs in both directions, including a no-op
-raw callback. They compile and pass scoped Clippy; their device result remains pending.
+raw callback. Their actual device result is recorded below.
 
 The corrected fixture passed all three tests on the Apple M3 Max at `cdede389`, outside the sandbox under
 the shared `gpu` lock. [Selected output and exact scope](fixture-cdede389.txt). This permits route integration;
-it does not pass any complete milestone item by itself. No integrated device result,
-route/T2 capture, simulator native background race, full repository gate, baseline guard or merge is claimed.
+it does not pass any complete milestone item by itself. The separate integrated lifecycle result above
+does not replace route/T2 capture, simulator native background race, repository gate, baseline guard or merge.
 An earlier broad `graph::` test filter selected one Metal test in the sandbox, which found no adapter;
 the CPU-only filters were then run successfully. That refusal is not a native-boundary failure.
 
 D10.5 needs the owner's unlocked active Mac session and an existing Screen Recording grant for the
 OS-window observer. This background session cannot obtain attended approval. Do not automate grants.
+
+The [storage release receipt](m3-expired-bulk-release.json.gz) inventories superseded M3 resume bulk sources
+released after M3 acceptance and their through-review expiry. All selected historical evidence and the newer
+integrated source set remain. Released raw bytes are not claimed recoverable from hashes. No baseline changed.

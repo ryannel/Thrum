@@ -4,7 +4,9 @@ This is a resumable checkpoint while target proofs wait for the shared GPU. M10
 remains in_progress and every item remains open. Three integrated Metal lifecycle
 tests pass, but no complete item, repository gate or merge is claimed. Continue the
 existing worktree, not a new implementation. The latest code checkpoint is
-`342151fc`; later commits retain continuation and proof records.
+`57e70e7c`; later commits retain continuation and proof records. That last code
+change restricts the Metal-only device-test module to macOS, matching its target;
+it does not change the simulator implementation or Mac runtime behavior.
 
 The small same-submit fixture passed on the Apple M3 Max at `cdede389`; its
 [retained result](M10/fixture-cdede389.txt) permits the route integration now in
@@ -60,8 +62,8 @@ Existing work to resume, using the configured `agent_loop.py`:
   `tmp/g7-showcase/runs/moving-20261114-033128/store`, validated by the proof runner.
 
 The original long Mac presentation holder exited. At the latest observation the
-GPU holder was another builder's exact-baseline verification, child PID 81777
-under lock owner PID 65534; it was actively running, not diagnosed stuck. There
+GPU holder was another builder's exact-baseline verification, child PID 85789
+under lock owner PID 65983; it was actively running, not diagnosed stuck. There
 are other queued builders ahead of the corrected M10 diagnostic job. If a queued proof fails,
 diagnose its saved result and preserve the failure; never widen exact equality or
 replace target proof with unit tests. A native copying/ordering mechanism failure
