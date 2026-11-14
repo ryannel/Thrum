@@ -161,7 +161,7 @@ fn attach_selected(
                 .lock()
                 .map_err(|error| error.to_string())?
                 .controls
-                .slab_origin_scale = [0., 240., 0., 2.];
+                .slab_origin_scale = [0., 240., -6., 2.];
             witness
                 .lock()
                 .map_err(|error| error.to_string())?

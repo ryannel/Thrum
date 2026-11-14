@@ -448,7 +448,7 @@ impl BrowserGame {
         let contribution: Box<dyn thrum_render::contribution::SceneContribution> =
             if let Some(refraction) = effect_slab {
                 let (effect, witness) = crate::effect::DiagnosticEffect::new();
-                witness.lock().map_err(js_error)?.controls.slab_origin_scale = [0., 240., 0., 2.];
+                witness.lock().map_err(js_error)?.controls.slab_origin_scale = [0., 240., -6., 2.];
                 Box::new(thrum_render::contribution::SceneContributions::new(vec![
                     Box::new(assets),
                     Box::new(effect.with_slab(refraction)),
