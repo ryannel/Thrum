@@ -206,7 +206,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SCENE-VIEWS's design: Design Changes Requested · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
 - CLOUDS's design: Design Ready for Review · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
 - RIVERS's design: Design Changes Requested · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
-- PUDDLES's design: Design Ready for Review · [design](PUDDLES/DESIGN.md) · [plan](PUDDLES/PLAN.md)
+- PUDDLES's design: Design Changes Requested · [design](PUDDLES/DESIGN.md) · [plan](PUDDLES/PLAN.md)
 
 ### Recently done
 
@@ -253,7 +253,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 | Design Changes Requested |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Ready for Review |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Design Changes Requested |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M6 for the valley; WATERS M10, M14 and M16 to close | Design Ready for Review |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M6 for the valley; WATERS M10, M14 and M16 to close | Design Changes Requested |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | SHOWCASE M8, APPLE-TILE M12 and EFFECT-GRAPH M3 to start; CONTENT-LOOP M3 and SIM-2D M1 for its last two milestones | Waiting: On Dependency, SHOWCASE:M8, APPLE-TILE:M12, EFFECT-GRAPH:M3 |
