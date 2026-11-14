@@ -1,0 +1,26 @@
+APPLE-TILE M10 native lifecycle target result, 14 November 2026
+Source: d29d2667 (clean tree); actual Mac Metal device, outside sandbox, shared gpu lock.
+Test executable SHA-256: 642b37af0b2b0ee9bb958bfd4486ca3b59fa45be1a7c8e21b267f8318b1ebae7
+Command: agent_loop.py lock gpu -- sh -c 'rustup run 1.99.1 cargo test --locked --offline -p thrum-render metal_native -- --nocapture'
+
+Selected literal output:
+M10 native two-slot history: both frames submitted before completion polling; prior submitted side selected exactly
+test runtime::tests::device::native::metal_native_two_slots_select_submitted_history_before_completion ... ok
+M10 native generation retention: old provider/source/textures retained until old completion delivery, stale callback cannot mutate replacement
+test runtime::tests::device::native::metal_native_generation_resources_survive_until_completion_delivery ... ok
+M10 native failure/loss/extent: submission refusal and loss abandon discarded=2, no loss flush; new generation/extent reset before reuse
+test runtime::tests::device::native::metal_native_submission_failure_loss_and_extent_replacement_reset_history ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 256 filtered out; finished in 0.32s
+
+The failure/loss/extent test also compares the first replacement output exactly
+against a fresh WGSL twin at 96x48. The retention test holds old completion
+delivery across generation publication, requires the old provider/source/textures
+to remain alive until polling the old device, then requires their release and
+prevents old completion from changing new-provider counters. The two-slot test
+submits both frames before completion polling and compares exact history bytes.
+
+Separate coordinator run in background job 20261114-062934-64565 stopped on its
+capture-accounting assertion: expected 0 omissions, observed 3 from the deliberate
+healthy discard, background cancellation and acquire refusal. It had not reached
+native/twin byte comparison. Commit 342151fc requires exactly those 3 omissions;
+there is no pixel tolerance change. Rerun is pending in job 20261114-072259-82489.
