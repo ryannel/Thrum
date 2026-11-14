@@ -144,3 +144,9 @@
   All 14 item checks and the full project gate passed before integration; the detailed counts and revisions
   are in the evidence. Provenance was inspected with no Broadsides file copied. Integration rebased onto
   `145cadb2` and correctly requested a replacement baseline proof after two covered upstream scripts changed.
+
+- 2026-11-14 M1 integration refresh on `3cb38017` passed all 14 automated item checks. The exact verifier
+  reported `PASS exact baselines` in 919.17 seconds: 38 and 4 native comparisons and 481 records in each
+  Chrome set passed. The replacement covered-content key is
+  `35ee716d5af06cc0e5cdcbaac1a9fe42ad061651dcdf20136fea84744a3a2fcc`; complete check outputs are retained
+  under shared Git check key `fe466581b59a5ce1514b20dc`.
