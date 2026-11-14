@@ -189,3 +189,16 @@
   development build with `cargo clean --profile dev` removed 5.6 GiB (Cargo's reported logical size),
   restoring 20 GiB available. No references, bounds or capture preflights were changed. Verification
   below records the rerun; the earlier failure alone establishes no new baseline pass.
+
+- 2026-11-14 The resumed item check passed all 14 automated commands. Exact baselines on `41362d03`
+  passed in 914.51 seconds: 38 and 4 native comparisons, and 481 records in each of four Chrome sets.
+  The verifier used its normal filtered environment. Its covered-content key remains
+  `35ee716d5af06cc0e5cdcbaac1a9fe42ad061651dcdf20136fea84744a3a2fcc`, identical on `6ce3247b`
+  and the incoming main branch: the intervening SCENE-VIEWS, WATERS and RIVERS changes are plans,
+  contracts and design-proof documents, with no runtime or covered-source change. All 13 CPU/dependency
+  commands also passed on `6ce3247b`, under shared Git check key `3d502e1cc2edc60446e8eac2`.
+  A redundant queued image rerun was cancelled because these unaffected proofs still hold.
+  Two dangling links in the upstream APPLE-TILE handoff were changed to explicit worktree paths;
+  `./dev check-docs` passed. Integration retains the canonical `./dev check` gate under GPU exclusivity
+  and removes this worktree's reconstructible development builds before releasing that resource.
+  No retained baseline, sampling rule, numerical bound or M1 criterion changed.
