@@ -1,4 +1,4 @@
-use super::{Completion, PassNames, PassTiming, SceneGpuTimings, TimingError};
+use super::{Completion, PassExecution, PassNames, PassTiming, SceneGpuTimings, TimingError};
 use std::sync::Arc;
 
 #[test]
@@ -97,6 +97,19 @@ fn named_scene_timings_preserve_optional_pass_identity_and_unavailable_transfers
     ];
     let mut named = SceneGpuTimings::new(&passes);
     named.unmeasured(["contribution upload".to_owned()].into_iter());
+    named.effect_passes(["effect 0: skipped".to_owned()].into_iter());
+    assert_eq!(
+        named.execution("effect 0: skipped"),
+        Some(PassExecution::NotRun)
+    );
+    assert_eq!(
+        named.execution("synthetic tone encode"),
+        Some(PassExecution::Timed(0.0))
+    );
+    assert_eq!(
+        named.execution("contribution upload"),
+        Some(PassExecution::Unmeasured)
+    );
     assert_eq!(named.get("synthetic tone encode"), Some(0.0));
     assert_eq!(named.get("synthetic cluster build"), None);
     assert_eq!(named.forward(), 10.0);

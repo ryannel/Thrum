@@ -250,6 +250,8 @@ fn async_eligibility_refuses_non_compute_accesses() {
         A::AttachmentClear,
         A::CopyRead,
         A::CopyWrite,
+        A::VertexRead,
+        A::IndexRead,
     ] {
         graph.passes[0].accesses[0].kind = kind;
         assert_eq!(

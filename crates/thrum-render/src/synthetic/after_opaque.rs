@@ -13,6 +13,16 @@ pub(super) struct LateGraph {
     pub(super) last: usize,
 }
 
+impl super::OffscreenTarget {
+    pub(crate) fn first_late_pass(&self) -> Option<&str> {
+        self.graph(false)
+            .plan()
+            .pass_bindings()
+            .find(|(_, pass)| pass.pipeline.is_some_and(|key| key.role == 3000))
+            .map(|(_, pass)| pass.name.as_str())
+    }
+}
+
 impl PreparedSynthetic {
     pub(super) fn late_key(&self, index: usize) -> PipelineKey {
         PipelineKey {

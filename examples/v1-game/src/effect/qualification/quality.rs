@@ -22,7 +22,7 @@ pub(super) async fn run(
     {
         return Err("quality accepted an invalid request".into());
     }
-    host.advance(Duration::from_secs(200))
+    host.advance(Duration::from_secs(17))
         .map_err(error)?
         .encode_scene()
         .map_err(error)?
@@ -58,7 +58,7 @@ pub(super) async fn run(
     }
     host.set_quality_knob(&knobs[1].name, 2)?;
     host.world_mut().0.tick = 101;
-    host.advance(Duration::from_secs(201))
+    host.advance(Duration::from_secs(18))
         .map_err(error)?
         .encode_scene()
         .map_err(error)?
@@ -71,7 +71,7 @@ pub(super) async fn run(
     drop(host.poll_completed().map_err(error)?);
     host.set_quality_knob(&knobs[2].name, 4)?;
     host.world_mut().0.tick = 102;
-    host.advance(Duration::from_secs(202))
+    host.advance(Duration::from_secs(19))
         .map_err(error)?
         .encode_scene()
         .map_err(error)?

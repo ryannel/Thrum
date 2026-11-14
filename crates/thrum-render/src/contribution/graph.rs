@@ -89,6 +89,8 @@ impl EffectGraph {
                             | AccessKind::AttachmentClear
                             | AccessKind::CopyRead
                             | AccessKind::CopyWrite
+                            | AccessKind::VertexRead
+                            | AccessKind::IndexRead
                     )
                 {
                     return Err(format!("AsyncRequiresCompute: {}", pass.name));

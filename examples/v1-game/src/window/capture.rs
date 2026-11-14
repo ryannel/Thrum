@@ -197,6 +197,7 @@ impl Trace {
         while let Some(sample) = driver.completed()? {
             self.gpu.push(
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
+                "gpu_effect_boundary_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::effect_boundary_nanoseconds),
                 "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
             );
         }

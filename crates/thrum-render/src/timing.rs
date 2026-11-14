@@ -26,6 +26,7 @@ pub struct SceneGpuTimings {
     passes: Vec<PassTiming>,
     unmeasured: Vec<String>,
     not_run: Vec<String>,
+    effect_boundary: Option<f64>,
 }
 
 /// Named pass execution, preserving the difference between a skip and a zero timestamp delta.
@@ -45,6 +46,7 @@ impl SceneGpuTimings {
             passes: passes.to_vec(),
             unmeasured: Vec::new(),
             not_run: Vec::new(),
+            effect_boundary: None,
         }
     }
 
@@ -59,6 +61,16 @@ impl SceneGpuTimings {
                 self.not_run.push(name);
             }
         }
+    }
+    pub(crate) fn set_effect_boundary(&mut self, value: Option<f64>) {
+        self.effect_boundary = value;
+    }
+    /// Upper bracket from the preceding timed pass's end through the first late render pass.
+    /// Includes a requested refraction copy, the pass boundary and that render pass's work.
+    /// This overlaps `passes()` and must never be added to the scene sum.
+    #[must_use]
+    pub fn effect_boundary_nanoseconds(&self) -> Option<f64> {
+        self.effect_boundary
     }
     /// Execution of a named pass, absent only when it is outside this frame's graph.
     #[must_use]
@@ -326,6 +338,14 @@ pub struct GpuTimings {
     enabled: Option<Enabled>,
 }
 impl GpuTimings {
+    pub(crate) fn gap_before(&self, name: &str) -> Option<f64> {
+        let enabled = self.enabled.as_ref()?;
+        let index = enabled
+            .results
+            .iter()
+            .position(|pass| pass.name.as_ref() == name)?;
+        enabled.preceding_gaps[index]
+    }
     pub(crate) fn ready_to_resolve(&self) -> bool {
         self.enabled.as_ref().is_some_and(|e| {
             matches!(e.phase, Phase::Rendering) && e.completion.ready() == Ok(true)

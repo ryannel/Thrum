@@ -33,6 +33,8 @@ pub struct EffectControls {
     pub slab_reset: bool,
     /// Slab world origin and scale, fixed for a diagnostic capture.
     pub slab_origin_scale: [f32; 4],
+    /// Draw the slab; false retains its pass for paired pass-break measurements.
+    pub slab_draw: bool,
 }
 impl Default for EffectControls {
     fn default() -> Self {
@@ -44,6 +46,7 @@ impl Default for EffectControls {
             slab_offset: 0.0,
             slab_reset: false,
             slab_origin_scale: [0., 0., 0., 1.],
+            slab_draw: true,
         }
     }
 }
@@ -75,6 +78,7 @@ pub struct DiagnosticEffect {
     generation: u64,
     quality: thrum_render::contribution::QualitySettings,
     slab: Option<slab::Slab>,
+    opaque_visual: bool,
 }
 
 struct Prepared {
@@ -86,6 +90,12 @@ struct Prepared {
 }
 
 impl DiagnosticEffect {
+    /// Keep simulation without the opaque trail witness, for paired measurements.
+    #[must_use]
+    pub fn simulation_only(mut self) -> Self {
+        self.opaque_visual = false;
+        self
+    }
     /// Add the late slab witness, optionally requesting the shared refraction copy.
     #[must_use]
     pub fn with_slab(mut self, refraction: bool) -> Self {
@@ -126,6 +136,7 @@ impl DiagnosticEffect {
                 scripted: false,
                 generation: 0,
                 slab: None,
+                opaque_visual: true,
                 quality: thrum_render::contribution::QualitySettings::new(vec![
                     thrum_render::contribution::QualityKnob {
                         name: "cache interval".into(),
@@ -653,7 +664,7 @@ impl SceneContribution for DiagnosticEffect {
     fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
     fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
-        if self.slab.is_some() {
+        if self.slab.is_some() || !self.opaque_visual {
             return;
         }
         if let Some(gpu) = &self.gpu {
@@ -677,7 +688,14 @@ impl SceneContribution for DiagnosticEffect {
         }
     }
     fn draw_after_opaque(&self, _: usize, pass: &mut wgpu::RenderPass<'_>, _: &ContributionFrame) {
-        if let Some(slab) = &self.slab {
+        if let Some(slab) = &self.slab
+            && self
+                .witness
+                .lock()
+                .expect("diagnostic witness")
+                .controls
+                .slab_draw
+        {
             slab.draw(pass);
         }
     }

@@ -1864,6 +1864,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                                 pass_durations(passes, sample.surface_presented, slot.timing_layout)
                             {
                                 scene.effect_passes(slot.target.effect_pass_names());
+                                let boundary = slot.target.first_late_pass().and_then(|name| {
+                                    Some(slot.timings.gap_before(name)? + scene.get(name)?)
+                                });
+                                scene.set_effect_boundary(boundary);
                                 scene.unmeasured(slot.target.untimed_pass_names(
                                     slot.timing_readback,
                                     sample.surface_presented,
