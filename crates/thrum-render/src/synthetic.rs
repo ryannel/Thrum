@@ -1885,7 +1885,7 @@ impl PreparedSynthetic {
         presentation_alpha: f32,
     ) -> Result<(), RenderError> {
         self.check_owner(target)?;
-        let view = if scene.view.jitter_enabled() {
+        let view = if scene.view.jitter_enabled() || scene.view.reconstruction() {
             scene
                 .view
                 .at_jitter_phase(self.jitter_phase, target.extent())

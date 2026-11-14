@@ -28,6 +28,13 @@ pub(super) struct TaauTarget {
 }
 
 impl Taau {
+    pub(super) fn selection(&self) -> super::Reconstruction {
+        if self.reference {
+            super::Reconstruction::Reference
+        } else {
+            super::Reconstruction::Taau
+        }
+    }
     pub(super) fn new(device: &crate::runtime::DeviceSite, reference: bool) -> Self {
         let entries: Vec<_> = (0..=10)
             .filter(|binding| !reference || [0, 4, 6, 7, 9].contains(binding))
@@ -211,6 +218,12 @@ impl Taau {
 }
 
 impl PreparedSynthetic {
+    /// The provider actually prepared for this scene generation.
+    pub fn reconstruction(&self) -> super::Reconstruction {
+        self.taau
+            .as_ref()
+            .map_or(super::Reconstruction::Off, Taau::selection)
+    }
     pub(super) fn prepare_taau_target(
         &self,
         device: &wgpu::Device,

@@ -305,8 +305,6 @@ impl SyntheticView {
         } else {
             Reconstruction::Off
         };
-        self.temporal_inputs |= enabled;
-        self.raster_jitter = enabled;
         self
     }
 
@@ -320,6 +318,8 @@ impl SyntheticView {
         if enabled {
             self = self.with_reconstruction(true);
             self.reconstruction = Reconstruction::Reference;
+        } else if self.reconstruction == Reconstruction::Reference {
+            self.reconstruction = Reconstruction::Taau;
         }
         self
     }
@@ -333,7 +333,7 @@ impl SyntheticView {
     }
 
     pub(super) fn temporal_inputs(&self) -> bool {
-        self.temporal_inputs
+        self.temporal_inputs || self.reconstruction()
     }
 
     /// Set the reconstruction output grid independently of render scale.
@@ -433,7 +433,7 @@ impl SyntheticView {
     }
 
     pub(super) fn raster_jitter_enabled(&self) -> bool {
-        self.raster_jitter && self.jitter_enabled()
+        (self.raster_jitter || self.reconstruction()) && self.jitter_enabled()
     }
 
     pub(super) fn raster_projection(&self) -> Mat4 {

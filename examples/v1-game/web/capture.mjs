@@ -57,11 +57,22 @@ try {
   window.captureGame = game;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')));
   game.set_visible(true, 0);
-  // Fixed-time preparation stops exactly at the ordinary route installation barrier.
-  while (game.committed_tick() < route.origin_tick - 1) {
-    if (!game.route_slot_ready()) { await wait(1); continue; }
-    game.frame(game.route_step_ms(0.5));
-    await wait(1);
+  if (witness === 'off') {
+    // Fixed-time preparation stops at the ordinary route installation barrier.
+    while (game.committed_tick() < route.origin_tick - 1) {
+      if (!game.route_slot_ready()) { await wait(1); continue; }
+      game.frame(game.route_step_ms(0.5));
+      await wait(1);
+    }
+  } else {
+    game.set_paused(true,0);
+    const deadline = performance.now()+15000;
+    while (JSON.parse(game.cooked_status()).drawn !== 1) {
+      if (performance.now()>deadline) fail('reconstruction witness cooked residency deadline');
+      if (game.route_slot_ready()) game.frame(0);
+      await wait(1);
+    }
+    if (game.committed_tick() !== 0) fail('reconstruction witness advanced during residency');
   }
   if (witness === 'off') game.install_route(text);
   else {

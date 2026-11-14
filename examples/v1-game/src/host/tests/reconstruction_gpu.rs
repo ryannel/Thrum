@@ -133,7 +133,7 @@ async fn checkpoint(
         let mut held_exposure = None;
         for frame in 0..64 {
             if mode == "broken" {
-                host.set_scene_camera(host.scene_camera().unwrap()).unwrap();
+                host.inner.invalidate_history();
             }
             let (bytes, sample, exposure) = submitted(&mut host, device, surface);
             let state = (

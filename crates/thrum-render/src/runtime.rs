@@ -517,6 +517,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn source(&self) -> &V {
         &self.source
     }
+    /// The reconstruction provider prepared for the live scene generation.
+    pub fn reconstruction(&self) -> crate::synthetic::Reconstruction {
+        self.prepared.reconstruction()
+    }
     /// Change presentation policy between frames. Invalidate retained extraction
     /// and GPU correspondence because the mapping itself may have changed.
     pub fn source_mut(&mut self) -> &mut V {
@@ -1561,6 +1565,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.scene.view = self
             .view_with_history_reset(&frame_scene.view)
             .without_jitter();
+        if self.prepared.reconstruction() != crate::synthetic::Reconstruction::Off {
+            // This detached endpoint oracle owns no submitted temporal sample.
+            // The real T2 tap instead captures the ordinary reconstructed frame.
+            self.scene.view = self
+                .scene
+                .view
+                .with_reconstruction(false)
+                .with_history_reset(true);
+        }
         let applied = self
             .scene
             .apply_render_columns(self.extractor.frame(), &mut self.changed_slots);

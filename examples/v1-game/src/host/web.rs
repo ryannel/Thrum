@@ -199,6 +199,7 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
         .collect();
     serde_json::json!({
         "tick": committed_tick(shell),
+        "reconstruction": format!("{:?}",shell.host().reconstruction()),
         "committed_solar_hours": committed, "committed_solar_bits": committed.to_bits(),
         "callbacks": status.callbacks, "presented": status.presented,
         "timestamp_clamps": status.timestamp_clamps, "generation": status.generation,
