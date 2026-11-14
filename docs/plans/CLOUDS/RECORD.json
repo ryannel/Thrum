@@ -88,12 +88,12 @@
       }
     },
     "M8": {
-      "definitions": "a83c99cd7ac06455caf3424c94b2b2e2261637f32f3b08125f45893b71723239",
+      "definitions": "fb98ddbc443564d2c5217440140c8eaa8808c2485b0b080a01492ef14a7b07b8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T02:31:18Z"
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
       }
     },
     "M9": {
@@ -115,12 +115,12 @@
       }
     },
     "M11": {
-      "definitions": "8b1c66417b73553cb628a7399e77917bb6a249591600390723d6d8e97fa8cb44",
+      "definitions": "8472e4161ad914512f0d2ff4b7433487aee8ac38abf2f09a6e940a7e49ffb3a7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
-        "at": "2026-11-14T01:49:07Z"
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
       }
     },
     "M12": {
@@ -130,6 +130,42 @@
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
+      }
+    },
+    "M13": {
+      "definitions": "d5bda65c277ffdc606f30f6d481086fcdb63b3b9c370e0d1c7bd4d6e9f1dddd8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
+      }
+    },
+    "M14": {
+      "definitions": "d43beaf6903aa42b37c1a6bee703426bd40db799e48539514be393a897b8bb5c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
+      }
+    },
+    "M15": {
+      "definitions": "51ac00caa9e60c43d48f92f0f634769f719ee38215f1fc01bb16788212d5ba1c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
+      }
+    },
+    "M16": {
+      "definitions": "9b7409e57ef4b62b0d7258256c2a6f94c68598819be0e59c2b5d59c78a780432",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
+        "at": "2026-11-14T09:13:54Z"
       }
     }
   },
@@ -153,11 +189,15 @@
     {
       "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T02:31:18Z"
+    },
+    {
+      "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able to deliver on top quality atmosphere.\" Revise the plans so Thrum's atmosphere reaches the quality of shipped high-end games as a whole: sky, clouds, haze, and mist and fog (ground fog, valley mist, fog banks over water, low cloud the camera can enter), lit consistently and changing with the weather and time of day. Settle from first principles which module owns what across CLOUDS, ATMOSPHERE and any other affected module, keep one authority for each kind of state, and revise their designs, plans and done-when files. Broadsides is evidence, not a constraint. CLOUDS M1 is being built now; if your changes alter what it builds, say so plainly. Say which assumptions these choices replace.",
+      "at": "2026-11-14T09:13:54Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T02:31:18Z"
+    "at": "2026-11-14T09:13:54Z"
   },
   "design_history": [
     {
