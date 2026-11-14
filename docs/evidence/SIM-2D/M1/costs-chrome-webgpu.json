@@ -1,0 +1,139 @@
+{
+  "action": "measure",
+  "target": "chrome-webgpu",
+  "commit": "aa8dd9cbc8b15495b58b28c2203336d9db606458",
+  "dirty": false,
+  "utc": "2026-11-14T22:58:11.628294+00:00",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": [
+    87.603515625,
+    43.45361328125,
+    24.68701171875
+  ],
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "runs": [
+    {
+      "repeat": 1,
+      "load": [
+        21.97802734375,
+        54.8642578125,
+        43.72998046875
+      ],
+      "build": "release",
+      "rows": [
+        {
+          "bodies": 2000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.265,
+          "index_median_ms": 0.04,
+          "neighbours_per_tick": 29596.382183908045,
+          "replay_eight_ms": 6.825,
+          "rewind_eight_ms": 0.71,
+          "samples": 3480,
+          "tick_median_ms": 0.615,
+          "tick_ms_per_neighbour": 2.0779566778752568e-05,
+          "ticks": 3600,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 5000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.6849999999999999,
+          "index_median_ms": 0.10500000000000001,
+          "neighbours_per_tick": 65406.63103448276,
+          "replay_eight_ms": 19.400000000000002,
+          "rewind_eight_ms": 1.555,
+          "samples": 3480,
+          "tick_median_ms": 1.5,
+          "tick_ms_per_neighbour": 2.2933454548502755e-05,
+          "ticks": 3600,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": true
+        },
+        {
+          "bodies": 10000,
+          "clock_tripwire": false,
+          "digest_median_ms": 1.46,
+          "index_median_ms": 0.225,
+          "neighbours_per_tick": 469267.6465440357,
+          "replay_eight_ms": 86.13,
+          "rewind_eight_ms": 2.855,
+          "samples": 35880,
+          "tick_median_ms": 9.2,
+          "tick_ms_per_neighbour": 1.9605016599278124e-05,
+          "ticks": 36000,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "load": [
+        12.3515625,
+        24.56005859375,
+        32.75439453125
+      ],
+      "build": "release",
+      "rows": [
+        {
+          "bodies": 2000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.25999999999999995,
+          "index_median_ms": 0.04,
+          "neighbours_per_tick": 29596.382183908045,
+          "replay_eight_ms": 6.9350000000000005,
+          "rewind_eight_ms": 0.58,
+          "samples": 3480,
+          "tick_median_ms": 0.66,
+          "tick_ms_per_neighbour": 2.230002288451495e-05,
+          "ticks": 3600,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 5000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.67,
+          "index_median_ms": 0.115,
+          "neighbours_per_tick": 65406.63103448276,
+          "replay_eight_ms": 21.805,
+          "rewind_eight_ms": 1.06,
+          "samples": 3480,
+          "tick_median_ms": 1.655,
+          "tick_ms_per_neighbour": 2.530324485184804e-05,
+          "ticks": 3600,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": true
+        },
+        {
+          "bodies": 10000,
+          "clock_tripwire": false,
+          "digest_median_ms": 1.295,
+          "index_median_ms": 0.215,
+          "neighbours_per_tick": 469267.6465440357,
+          "replay_eight_ms": 72.965,
+          "rewind_eight_ms": 1.4300000000000002,
+          "samples": 35880,
+          "tick_median_ms": 8.675,
+          "tick_ms_per_neighbour": 1.848625206508019e-05,
+          "ticks": 36000,
+          "warmup_ticks": 120,
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        }
+      ]
+    }
+  ],
+  "artifact_sha256": "fb41d34ad4e519764eac880ae6aedb2632af1c2404e0e57711f360e86e1317da",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "cross_origin_isolated": true,
+  "source_sha256": "4e6f0072a13b8bc1ea13d28ede1e4567f3c1c5fc31eaaf3092f46a3e9d6e1c82",
+  "timings_are_baselines": true
+}

@@ -8,10 +8,18 @@
 - 2026-11-14 Verified before the first checkpoint. Core and crowd target tests, exhaustive input
   conversion boundaries, metadata mutation coverage, Clippy and documentation checks passed.
   Chrome's platform-sine control diverged at tick 1. Full target qualification, costs and exact
-  image verification follow at the source checkpoint. No timing or visual result is claimed yet.
+  image verification follow at the source checkpoint.
 - 2026-11-14 The documentation gate exposed ten dangling links in older CREATOR, CULLING and
   CLOUDS handoffs. Replaced the absent working-tree links with historical checkpoint/path references,
   preserving their evidence claims. This repair lets the repository documentation gate run.
+- 2026-11-15 M1 API audit fixed default composite finite validation and canonicalized NaN
+  encoding, preventing a diagnostic digest from observing a NaN payload. The registered-rule
+  refusal test uses a nested component and the arithmetic tests exercise distinct NaN encodings.
+- 2026-11-15 Full target qualification and two full-trace cost runs passed at `aa8dd9cb`.
+  [M1 evidence](../../evidence/SIM-2D/M1.md) retains receipts, tests and costs. The retained folds
+  stay `87496bd96b8c5be4`, `290bd104cb7a0409`, `8f66295acaf3bd0c`. Table-size growth explains
+  the 5,000-body neighbour-scaling tripwires. Shared-host load is recorded with both repeats.
+  Eight-tick replay at 10,000 costs 69 ms on the Mac and 73–86 ms in Chrome.
 
 - 2026-11-13 Planned from the lead's task (row 16 of the module list); no words of the owner's were passed on, so
   the design quotes the owner's page of 10 November. Three milestones replace the brief the module list carried,
@@ -64,3 +72,7 @@
 - 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 no longer waits for `SHOWCASE:M8` and waits for
   nothing. The assumption that held it is deleted. No item and no word of the design changed, so its approval
   stands.
+
+## M1 verification
+
+The milestone's scripted checks and exact-image verifier are pending. M1 remains `in_progress`.

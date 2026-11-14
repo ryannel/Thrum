@@ -4,6 +4,19 @@
   "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
+  "sim2d_m1": {
+    "scope": "SIM-2D M1 at aa8dd9cb, registered headless reference crowd",
+    "implementation": "feature_complete",
+    "functional_validation": "passed",
+    "experienced_quality": "not_applicable",
+    "correctness_targets": ["mac-metal", "chrome-webgpu", "ios-sim"],
+    "platform_cost_baselines": {
+      "mac-metal": "Two full-trace release runs, 2k/5k/10k, shared-host load recorded",
+      "chrome-webgpu": "Two full-trace release runs, 2k/5k/10k, isolated browser clock and shared-host load recorded",
+      "ios-sim": "Function on the Mac processor"
+    },
+    "evidence": "docs/evidence/SIM-2D/M1.md"
+  },
   "execution_plan": {
     "milestone": "V1: one beautiful single-player 10k scene on this Mac at 120 Hz with physical sky, cooked assets, shadows, MetalFX and EDR; Chrome portable at showcase quality; demo controls; headless multiplayer fitness; labelled iPhone proxies, physical iPhone pending",
     "active": [
