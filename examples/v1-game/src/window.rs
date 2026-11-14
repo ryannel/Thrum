@@ -155,7 +155,7 @@ impl Game for WindowGame {
         let content = crate::attach_cooked_scene(&mut host)?;
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
-            capture::prepare_route(&mut host, content, route, render_extent)?
+            capture::prepare_route(&mut host, content, route, render_extent, &gpu)?
         } else {
             std::time::Duration::ZERO
         };
