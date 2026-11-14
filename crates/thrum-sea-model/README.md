@@ -8,6 +8,12 @@ of identities: 192 nonperiodic long components and three 256-square bands.
 `Cascade` offers both direct sums and an inverse transform at texel centres.
 `SeaProvider` and `compare` measure per-axis errors over points and ticks.
 
+Cascade modes use `loop_cycles` and `cascade_frequency`: the nearest whole number
+of turns in `LOOP_SECONDS` (1,024 s), within half a cycle per loop of deep-water
+dispersion. Direct sums and transforms use that same frequency and return the
+time derivative of displacement in `Differential::velocity`. Long components
+retain the exact deep-water relation and do not repeat at the cascade loop.
+
 The height spectrum spans k=1e-5 to the finest patch's radial Nyquist. Long waves
 own k<2π/20; successive cascades own half-open bands up to each patch's Nyquist.
 The lengths are 160, 37√1.001 and 9√1.003 m. Shorter waves contribute a constant
@@ -40,7 +46,7 @@ needed by the later GPU implementation.
 
 Preparation is O(192*512 + 3*N²) work and O(3*N²) storage, excluding quadrature
 counts; it is not per point. A point query is O(components*iterations), with an
-allocated phase scratch vector. The scalar reference transform is O(8*N² log N),
-allocating an eight-channel complex grid and a column. There is no GPU or frame
-time claim in this milestone. [Provenance](../../docs/evidence/SEA/PROVENANCE.md)
+allocated phase scratch vector. The scalar reference transform is O(11*N² log N),
+allocating an eleven-channel complex grid and a column. GPU and frame-time evidence
+is in [SEA M2](../../docs/evidence/SEA/M2.md). [Provenance](../../docs/evidence/SEA/PROVENANCE.md)
 records the published sources and confirms no Broadsides code was lifted.

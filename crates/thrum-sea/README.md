@@ -37,7 +37,7 @@ Each field texel is three consecutive `vec4<f32>` values:
 
 | Product | First vec4 | Second vec4 | Third vec4 |
 | --- | --- | --- | --- |
-| Cascade | displacement xyz, Jacobian | slope xz, dX/dx, dX/dz | velocity xyz, dZ/dz |
+| Cascade | displacement xyz, Jacobian | parametric slope xz, dX/dx, dX/dz | velocity xyz, dZ/dz |
 | Long waves | horizontal displacement x, world height, horizontal displacement z, Jacobian | world slope xz, zero, zero | material velocity xyz, Eulerian height derivative |
 
 The long buffer starts with 4,096 query slots (unused slots are cleared without evaluation), followed
