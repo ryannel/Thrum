@@ -133,6 +133,10 @@ fn transitions_clear_samples_and_refresh_immediately_then_at_four_hz() {
     assert!(controls.revision() > revision);
     window.configure(false, 1, 5);
     assert!(window.intervals.is_empty());
+    assert_eq!(
+        window.rows(Duration::ZERO, 2, 1, false)[2].1,
+        "profiler off"
+    );
     assert!(
         window
             .rows(Duration::ZERO, 2, 1, false)

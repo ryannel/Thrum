@@ -171,11 +171,15 @@ impl ProfileWindow {
         };
         let mut rows = vec![(
             "Window".into(),
-            format!(
-                "median of latest {} / {CAPACITY} frames; newest #{}; 250 ms refresh",
-                self.samples.len(),
-                self.samples.back().map_or(0, |s| s.submission_order)
-            ),
+            if !self.enabled {
+                "profiler off; window cleared".into()
+            } else {
+                format!(
+                    "median of latest {} / {CAPACITY} frames; newest #{}; 250 ms refresh",
+                    self.samples.len(),
+                    self.samples.back().map_or(0, |s| s.submission_order)
+                )
+            },
         )];
         rows.push((
             "Callback interval".into(),
@@ -192,7 +196,11 @@ impl ProfileWindow {
         ));
         rows.push((
             "Present calls / missed callbacks (total)".into(),
-            format!("{presented} / {}", callbacks.saturating_sub(presented)),
+            if self.enabled {
+                format!("{presented} / {}", callbacks.saturating_sub(presented))
+            } else {
+                "profiler off".into()
+            },
         ));
         let stages: [CpuStage; 4] = [
             ("World tick", |s: &FrameSample| s.tick_cpu),
