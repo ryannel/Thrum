@@ -1,0 +1,79 @@
+{
+  "module": "RIVERS",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "36ffcdd9fa7b4290177f2417c6c3ff69940487d341a9270ad39e46ca82e59cc3",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M2": {
+      "definitions": "7f87ec78a3bbb2f5201cdfac994050b7c62f0875402ac5a4b23bcbf9a2a030a4",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M3": {
+      "definitions": "109cd50361870b683afe685e32f59b37174c4ca08c7af9eb126fd7c6ee481ca8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M4": {
+      "definitions": "1085e2582fc34bb10f4e88cbb65194cd5b1d9f5428dd255724a6e5ee839bace8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M5": {
+      "definitions": "a0ba7b8e5a3bcfb9c5a4ee9aace1d1946da645fed2c0ac465734775ad8c11cdb",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M6": {
+      "definitions": "9d894ea74f2b4d228c2b9e09e60d51bc9e107c415c696bc4a9d73b5d88d6acdd",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    },
+    "M7": {
+      "definitions": "52fed4930f3f5df33c05da69e1c07ffa505b7e8752bad5da462411959a025f18",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
+        "at": "2026-11-14T11:06:55Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as part of the one water system, at the quality of shipped high-end games. The owner, 14 Nov 2026: 'Please make sure the sea work is actually thinking about water as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built cohesively.'",
+      "at": "2026-11-14T11:06:55Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-14T11:06:55Z"
+  }
+}
