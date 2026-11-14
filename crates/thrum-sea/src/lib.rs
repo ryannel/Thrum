@@ -121,7 +121,6 @@ pub struct Ambient {
     mip_uniforms: Vec<wgpu::Buffer>,
     staging: wgpu::Buffer,
     upload: Vec<u8>,
-    query_count: u32,
     /// Exact world cache addresses for this frame's oracle and consumers.
     pub levels: [CacheLevel; LEVELS as usize],
 }
@@ -179,7 +178,7 @@ impl Ambient {
         pass.set_bind_group(1, &self.mip_groups[0], &[]);
         match index {
             0 => pass.dispatch_workgroups(
-                (self.query_count + LEVELS * CACHE_SIZE * CACHE_SIZE).div_ceil(64),
+                (MAX_QUERIES + LEVELS * CACHE_SIZE * CACHE_SIZE).div_ceil(64),
                 1,
                 1,
             ),

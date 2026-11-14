@@ -51,7 +51,7 @@ pub(super) fn frame(
     }
     sea.upload.fill(0);
     let fraction = (time.rem_euclid(LOOP_SECONDS) / LOOP_SECONDS * 4_294_967_296.0) as u32;
-    let query_count = MAX_QUERIES;
+    let query_count = u32::try_from(queries.len()).map_err(|_| "sea query count")?;
     let long_count = u32::try_from(spectrum.long.len()).map_err(|_| "sea component count")?;
     let data = &mut sea.upload;
     for (i, v) in [fraction, long_count, query_count, 0]
@@ -144,7 +144,6 @@ pub(super) fn frame(
         encoder.copy_buffer_to_buffer(&sea.staging, offset, buffer, 0, size);
         offset += size;
     }
-    sea.query_count = query_count;
     Ok(())
 }
 fn put(data: &mut [u8], offset: usize, value: [u8; 4]) {
