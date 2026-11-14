@@ -35,4 +35,33 @@ fn default_webgpu_limits_and_named_profile_refusals() {
                 .contains(name)
         );
     }
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::METAL,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+            .expect("Metal adapter");
+        let limits = wgpu::Limits {
+            max_storage_buffers_per_shader_stage: 7,
+            ..wgpu::Limits::default()
+        };
+        let (device, _queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                required_limits: limits,
+                ..Default::default()
+            })
+            .await
+            .expect("reduced limits device");
+        let site = thrum_render::runtime::DeviceSite::untracked(device);
+        let error = thrum_sea::Ambient::new(&site, thrum_sea::Profile::default())
+            .err()
+            .expect("refusal before shader preparation");
+        assert!(
+            error.contains("max_storage_buffers_per_shader_stage"),
+            "{error}"
+        );
+    });
 }
