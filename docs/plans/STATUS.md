@@ -105,6 +105,17 @@ A planner or the lead chose each of these where your words left it open. Each st
 - CLOUDS assumes: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km. ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3). ([plan](CLOUDS/PLAN.md))
 - CLOUDS assumes: the module closes only after `APPLE-PRESENTATION`'s unplanned governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8. ([plan](CLOUDS/PLAN.md))
+- RIVERS assumes: a waterfall has no mist or spray cloud. Shipped waterfalls have one; here it needs a seam with the weather (`CLOUDS`) that cannot be built until late in its plan. The fall already records what a mist would need. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: "built cohesively" reaches a river's link to its lake, so raising a lake swells its outlet river and its falls, by the outlet's own sill. The whole river answers at once: no rise travels downstream, and nothing floods or bursts. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: a river's flow is still worked out ahead and stored, once for each of a few source levels, never while the game runs. A page in Chrome loads stored rivers and never solves one. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: rivers are not fed by rain. Their sources are springs and lakes the game declares, and a spring's flow is a control. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: rapids have no spray and no standing waves that overturn, and nothing in a river surges by itself: the flow is steady, and what moves is its ripples, its foam and what it carries. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: a fall is one shape, a sheet that follows the water's free path or the rock's face, from 0.75 m to 12 m high. A lower drop is a chute in the stream. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: the island shows the solved rivers and the waterfall only when a selection is turned on, until `WATERS` closes, so that `WATERS`' own reviews see the island they were written for. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: this module builds inside `WATERS`' crates under seven rulings, and two of them replace what `WATERS`' design expected: a stream's ripples are made by its flow and not by the wind, and a reach follows its source's level. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: the module closes without waiting for the governor and MetalFX, which `WATERS`' last milestone waits for; its two quality controls are declared for the governor to use. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: a float does not ground on the bed, and running water makes no sound, because the engine has no physics or audio owner. ([plan](RIVERS/PLAN.md))
+- RIVERS assumes: cost is recorded on the Mac only, at 2560×1440, and no timing figure decides an item (brief decision 3). ([plan](RIVERS/PLAN.md))
 - SIM-2D assumes: SIM-2D waits for the V1 exit (`SHOWCASE` M8), because the owner's page puts the game after V1 ("Once V1 lands, the next goal is an original game"). It shares no file with the renderer, so it could start sooner if the owner says; each landing would still pay one exact-baseline verifier run, because it edits `crates/`. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: "thousands" is proved at 2,000, 5,000 and 10,000 bodies, and 10,000 is the largest crowd claimed. ([plan](SIM-2D/PLAN.md))
 - SIM-2D assumes: the devices are the Mac, Chrome and the iPhone simulator. The simulator shares the Mac's processor, so it proves only that the rules build and run there. A physical iPhone, an x86 PC, Android and other browsers are designed for and not run. ([plan](SIM-2D/PLAN.md))
@@ -180,6 +191,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - SCENE-VIEWS's design: Design Changes Requested · [design](SCENE-VIEWS/DESIGN.md) · [plan](SCENE-VIEWS/PLAN.md)
 - CLOUDS's design: Design Ready for Review · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
+- RIVERS's design: Design Ready for Review · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
 
 ### Recently done
 
@@ -225,7 +237,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Ready for Review |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M3, ATMOSPHERE M5 and EFFECT-GRAPH M3 | Design Changes Requested |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Ready for Review |
-| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream | Not planned yet |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Design Ready for Review |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M8 | Not planned yet |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | SHOWCASE M8 | Waiting: On Dependency, SHOWCASE:M8 |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE | Waiting: On Dependency, SHOWCASE:M8 |
