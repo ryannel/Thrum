@@ -330,6 +330,32 @@ async fn read_hello(recv: &mut RecvStream) -> IoResult<()> {
     }
     Ok(())
 }
+
+fn transport_reason(error: &(dyn std::error::Error + 'static)) -> CloseReason {
+    if let Some(web_transport_quinn::SessionError::ConnectionError(error)) =
+        error.downcast_ref::<web_transport_quinn::SessionError>()
+    {
+        return transport_reason(error);
+    }
+    if let Some(web_transport_quinn::WebTransportError::Closed(code, _)) =
+        error.downcast_ref::<web_transport_quinn::WebTransportError>()
+    {
+        return CloseReason::Peer(*code);
+    }
+    if let Some(error) = error.downcast_ref::<quinn::ConnectionError>() {
+        return match error {
+            quinn::ConnectionError::TimedOut => CloseReason::TimedOut,
+            quinn::ConnectionError::ApplicationClosed(close) => {
+                CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX))
+            }
+            _ => CloseReason::Transport,
+        };
+    }
+    error
+        .source()
+        .map_or(CloseReason::Transport, transport_reason)
+}
+
 async fn drive(
     link: Link,
     session: Session,
@@ -353,10 +379,10 @@ async fn drive(
                         .to_le_bytes(),
                 )
                 .await
-                .map_err(|_| CloseReason::Transport)?;
+                .map_err(|error| transport_reason(&error))?;
                 send.write_all(&bytes)
                     .await
-                    .map_err(|_| CloseReason::Transport)?;
+                    .map_err(|error| transport_reason(&error))?;
             } else {
                 tokio::time::sleep(Duration::from_millis(1)).await;
             }
@@ -369,7 +395,7 @@ async fn drive(
             let mut prefix = [0; 4];
             recv.read_exact(&mut prefix)
                 .await
-                .map_err(|_| CloseReason::Transport)?;
+                .map_err(|error| transport_reason(&error))?;
             let length = u32::from_le_bytes(prefix) as usize;
             if length == 0 || length > RELIABLE_LIMIT {
                 return Err::<(), _>(CloseReason::Protocol);
@@ -377,7 +403,7 @@ async fn drive(
             let mut bytes = vec![0; length];
             recv.read_exact(&mut bytes)
                 .await
-                .map_err(|_| CloseReason::Transport)?;
+                .map_err(|error| transport_reason(&error))?;
             loop {
                 let ready = {
                     let state = link.state.lock().expect("link state poisoned");
@@ -399,7 +425,7 @@ async fn drive(
             let bytes = session
                 .read_datagram()
                 .await
-                .map_err(|_| CloseReason::Transport)?;
+                .map_err(|error| transport_reason(&error))?;
             if bytes.is_empty() || bytes.len() > crate::DATAGRAM_LIMIT {
                 return Err::<(), _>(CloseReason::Protocol);
             }
@@ -430,7 +456,7 @@ async fn drive(
                 session
                     .send_datagram_wait(bytes.into())
                     .await
-                    .map_err(|_| CloseReason::Transport)?;
+                    .map_err(|error| transport_reason(&error))?;
             } else {
                 tokio::time::sleep(Duration::from_millis(1)).await;
             }
@@ -466,8 +492,8 @@ async fn drive(
         result = datagrams_in => result.err().unwrap_or(CloseReason::Transport),
         result = datagrams_out => result.err().unwrap_or(CloseReason::Transport),
         result = monitor => result.err().unwrap_or(CloseReason::Transport),
-        result = session.accept_bi() => if result.is_ok() { CloseReason::Protocol } else { CloseReason::Transport },
-        result = session.accept_uni() => if result.is_ok() { CloseReason::Protocol } else { CloseReason::Transport },
+        result = session.accept_bi() => result.map_or_else(|error| transport_reason(&error), |_| CloseReason::Protocol),
+        result = session.accept_uni() => result.map_or_else(|error| transport_reason(&error), |_| CloseReason::Protocol),
         error = connection.closed() => match error {
             quinn::ConnectionError::TimedOut => CloseReason::TimedOut,
             quinn::ConnectionError::ApplicationClosed(close) => CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX)),
@@ -493,7 +519,11 @@ async fn drive(
             )) => {
                 CloseReason::Peer(u32::try_from(close.error_code.into_inner()).unwrap_or(u32::MAX))
             }
-            _ => reason,
+            Some(error) => match transport_reason(&error) {
+                CloseReason::Transport => reason,
+                reason => reason,
+            },
+            None => reason,
         }
     };
     let code = if let CloseReason::Local(code) = reason {
@@ -510,3 +540,6 @@ async fn drive(
     // Dropping the last Session first turns a coded close into a critical-stream error in Chrome.
     drop(session.closed().await);
 }
+
+#[cfg(test)]
+mod tests;
