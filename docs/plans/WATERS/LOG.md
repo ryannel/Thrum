@@ -77,3 +77,36 @@
   bound for every obstacle.
 - 2026-11-14 The plan's note under M5 was removed to keep the plan inside its word limit: the design already
   says the craft and its physics are game code.
+- 2026-11-14 Owner, through the lead, overturning three assumptions of this plan: "Scenery reflections we must
+  have, that's a main stay in high quality modern games. That's the standard we're after. Camera being able to
+  go under water we need to support as well. Breaking waves is something we'd like to have as well."
+- 2026-11-14 Re-planned on those words. Replaced: "surf is not planned", "scenery off screen is not reflected;
+  no module plans the probe", and "a camera that stays above the water". Kept: one water surface in a column,
+  and no caustics, which the owner did not name. Cues W7 to W9 added, with their research and reproductions
+  N to Q in [the evidence folder](../../evidence/WATERS/design-proof/) (`surf_view_proof.py`).
+- 2026-11-14 Surf, decided. Each long wave carries a phase lag solved over the bed (an eikonal first arrival,
+  for the lattice's eight directions, wavelengths a factor of two apart and stages 0.5 m apart), a shoaling
+  height and an exposure, and a crest takes one breaker section by its breaking index, as Horizon bakes one. The depth
+  limit and the swash stand. Not chosen: a shore wave train apart from the sea's own, a pointwise transform
+  (crests drift), baked simulations along drawn fronts, and a live Boussinesq window, which stays the route
+  if the section cannot reach the look. Tried in part N and dropped: blending stages 1 m apart (14% off).
+- 2026-11-14 Mirrored scenery, decided. The scene is drawn again from the camera's mirror image, and the
+  water reads it with two fixed-point corrections against its depth (part P: 0.09% median error, where the
+  plain planar lookup is 11% off). The draw is a new module's, `SCENE-VIEWS`, with a brief and an interface
+  in the module list; only M14 waits for it. Not chosen: a probe (parts a reflection from its foot), ray
+  query (experimental on Metal in wgpu, absent from WebGPU), a screen trace alone.
+- 2026-11-14 Under water, decided. A lens test for each pixel against the surface's own function, the surface
+  drawn two-sided with Snell's window and total reflection, and the water between composed from the gather
+  in the water's own pass (part Q).
+- 2026-11-14 Milestones. Added M12 (surf on the CPU, after M1), M13 (surf drawn, after M7), M15 (under water,
+  after M9) and M14 (mirrored scenery, after M10, on `SCENE-VIEWS:M1`). Existing numbers are kept because
+  `CLOUDS` M11 and the briefs name them, so the file's order is the build order. Written again: M8.5, M10.8,
+  M10.9, M10.12, M11.2, M11.8 and M11.9; M10.14 added. M1 to M7 and M9 are unchanged, word for word.
+- 2026-11-14 M1 is not changed by this. Surf is a capability, so M1's model, items and tests stand without it,
+  and M12 extends the crate M1 creates. The section fades out inshore of the draw-back depth so that M1.13's
+  closed form holds with surf on (part O).
+- 2026-11-14 `SEA` is asked for nothing and its files are unchanged: the transform extends its two crates in
+  M13, after its last milestone. `CLOUDS` is unchanged.
+- 2026-11-14 Not read for the revision: a frame study of Red Dead Redemption 2 or Sea of Thieves, and Abreu
+  2010. Ruessink 2012, Komar and Gaughan's formula and McCowan's ratio are from memory or abstracts; part O
+  holds the second.

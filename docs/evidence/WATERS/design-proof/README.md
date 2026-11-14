@@ -18,3 +18,17 @@ Run `python3 water_proof.py`, about a minute; its output is `water-proof.txt`.
 | K | Joins: a channel from a lake to the sea, with the lake's stage and the tide moved under a swell crest. Hard precedence leaves steps of 0.5 to 1.5 m; joins in the map leave none. After the depth limit, a swash depth kept once for each body leaves 0.21 m at a mouth 0.25 m deep (the second review's case); taken from the row it leaves none. Beside a mouth, backwater from the sea's still level leaves its sheet up to 0.10 m from the chart's; from its reach, none |
 | L | The swash: under the depth limit with a swash depth, the waterline's run-up and rundown match the closed form; with the limit alone it does not move |
 | M | Foam in the swash: the drift a rising sheet gives carries parcels and a patch of foam cells to the run-up line and leaves them there, in steps of 1 and 8 ticks; the current's and the wind's drift alone moves nothing |
+
+## The revision for surf, mirror views and the view from under water
+
+Parts N to Q were run on 14 November 2026, when the owner asked for breaking waves, reflection of scenery that
+is off screen and a camera under water. Run `python3 surf_view_proof.py`, about ten seconds; its output is
+`surf-view-proof.txt`. They are the source of the bounds in M12 and M14. All are f64 arithmetic on sections
+and small grids; none is a GPU or a visual measurement.
+
+| Part | What it shows |
+|---|---|
+| N | The shore transform: a long wave's phase lag from an eikonal solve on the bed's grid is within 0.34 rad of Snell's closed form on a plane beach at 2 m cells, and its crests turn as Snell's law gives; lags kept for wavelengths a factor of two apart blend to within 2.0% of the true wavenumber; lags kept for stages 0.5 m apart blend to within 2.6% in a metre of water or more; round an island the transformed wave meets every shore from the sea, at most 60° off its normal, and the exposure of a 45° train calms the lee |
+| O | Breaking: a regular wave under linear shoaling breaks 9% under Komar and Gaughan's height; the largest crests of a set break furthest out; a crest thrown forward in proportion to its height overhangs and never crosses itself; the swash's closed form (part L) is unchanged with the transform on |
+| P | The mirror view: a reflected ray looked up in an image drawn from the camera's mirror image, corrected twice against the mirror's depth, lands within a median of 0.09% of the true ray's length under ripples and waves, where the plain planar lookup is 11% to 13% off |
+| Q | Under water: Snell's window at 48.6° and the Fresnel split from beneath; the closed form for light scattered into a path through water lit from above matches a numerical integral |
