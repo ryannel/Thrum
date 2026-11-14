@@ -9,7 +9,8 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
-        "REPO-RULES:M1"
+        "REPO-RULES:M1",
+        "TEST-SUPPORT:M1"
       ],
       "quality_bar": "The relationship Bevy, Godot and Fyrox have with the games built on them, kept honest by a gate in the manner of rust-lang's crater: the engine is checked alone, and a game is checked against the exact engine commit in question.",
       "items": [
@@ -297,10 +298,10 @@
         },
         {
           "id": "M4.7",
-          "statement": "The engine qualifies itself with the games repository unavailable: every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit with `THRUM_GAMES` pointing at nothing. This milestone moved no retained image, and the verifier reads no input from outside Thrum.",
+          "statement": "The engine qualifies itself with the games repository unavailable: every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit with `THRUM_GAMES` pointing at nothing, and the verifier hands that variable on to every command it starts. This milestone moved no retained image, and the verifier reads no input from outside Thrum.",
           "check": "sh -c 'THRUM_GAMES=/var/empty/no-games-repository python3 scripts/exact_baselines.py verify'",
           "lock": "gpu",
-          "ask": "Does the verifier, either native matrix, the Chrome capture or the web build read any file outside this repository, or call the gate? Is there any route but `THRUM_GAMES` and the gate by which a script in Thrum finds the games repository?",
+          "ask": "The verifier starts its commands with `THRUM_` variables removed: does `THRUM_GAMES`, and no other, now reach them, so that a command which looked for the games repository in this run would have found none? Does the verifier, either native matrix, the Chrome capture or the web build read any file outside this repository, or call the gate? Is there any route but `THRUM_GAMES` and the gate by which a script in Thrum finds the games repository?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

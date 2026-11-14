@@ -16,3 +16,10 @@
   Thrum as frozen qualification content, and M4 runs the verifier with the games repository unavailable. M4's
   exit check runs every command `SHOWCASE` M5.5 and M7.2 to M7.8 pinned, the live clauses included; frame and
   visual evidence stays `SHOWCASE`'s accepted history. The owner's decisions are unchanged.
+- 2026-11-15 Revised after [the second design review](../../evidence/GAME-SPLIT/design-review.md) (one Must
+  Fix). M1 now waits for `TEST-SUPPORT:M1` as well as `REPO-RULES:M1`, because M1.4's `boundary` runs that
+  milestone's `test-crate-edges` rule; the rule keeps one owner and no M1 item changed. Chosen over moving the
+  check to M2 because nothing uses the gate before M4, so the wait costs nothing, and the gate's whole boundary
+  is judged in one milestone. Suggestion taken: M4.7 has the verifier hand `THRUM_GAMES` to the commands it
+  starts, because it removes every `THRUM_` variable today and the item's check would otherwise pass whether or
+  not a child could reach the sibling games repository.

@@ -32,7 +32,7 @@
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 |
-| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 to start; TEST-SUPPORT M1, REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
+| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
 are the 2D and online engine work, which is built beside V1, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
@@ -1489,7 +1489,8 @@ for that milestone. Later milestones of those modules are built on what has land
 | Starts | Milestones | Because |
 |---|---|---|
 | At once | `REPO-RULES` M1; `REVIEW-ENGINE` M1, then M2 and M3 | Scripts and docs; `thrum-core`, the iPhone app's request, `thrum-sea`, `thrum-asset-gpu` and `thrum-cook`, where no builder is at work |
-| When `REPO-RULES` M1 is Done | `REPO-RULES` M2; `TEST-SUPPORT` M1; `GAME-SPLIT` M1; `REVIEW-ENGINE` M4 | They use the rule engine. None touches a held file |
+| When `REPO-RULES` M1 is Done | `REPO-RULES` M2; `TEST-SUPPORT` M1; `REVIEW-ENGINE` M4 | They use the rule engine. None touches a held file |
+| When `TEST-SUPPORT` M1 is Done | `GAME-SPLIT` M1 | The game gate's `boundary` runs `TEST-SUPPORT`'s `test-crate-edges` rule. It touches no held file |
 | When `ATMOSPHERE` M9, `APPLE-TILE` M10, `APPLE-PRESENTATION` M3, `EFFECT-GRAPH` M3 and `CULLING` M3 are Done | `REVIEW-RENDER` M1 to M5 | Every one of them holds files in `thrum-render` |
 | When those, less `ATMOSPHERE` M9, and `CREATOR` M3 are Done | `HOST` M1 to M5 | They hold `thrum-app`, the frame runtime and the V1 game's host and capture files |
 | When `CULLING` M3, `EFFECT-GRAPH` M3 and `APPLE-PRESENTATION` M3 are Done | `GAME-SPLIT` M2 | They hold the visibility tests, the game's effect and the temporal witness |
@@ -1562,7 +1563,9 @@ belongs to its owner.
     `proving` feature is on by default. M5 changes paths in `.config/exact-baselines.json` and no reference.
     Everything the verifier and its drivers read (the scenes, the valley's sources, the presets, the routes, the
     pages) stays in Thrum as the proving ground's frozen content; the game takes its own copies, and the
-    verifier passes with the games repository unavailable.
+    verifier passes with the games repository unavailable. The verifier is `BASELINE-GUARD`'s; `GAME-SPLIT` M4
+    has it hand `THRUM_GAMES`, alone of the `THRUM_` variables, to the commands it starts, and changes nothing
+    else in it.
 
 ### The proving ground, and where a game lives
 
@@ -1967,3 +1970,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
 - 2026-11-15 The ruling on `CULLING` M3 gained "Qualified before the push", after that design's review (MF2):
   the coverage output and the refreshed references are qualified on a local candidate and then pushed together.
   Ownership, the registry, the comparisons and every other module's items are unchanged.
+- 2026-11-15 `GAME-SPLIT` revised after its second design review (one Must Fix). `GAME-SPLIT` M1 now waits for
+  `TEST-SUPPORT:M1`, which delivers the `test-crate-edges` rule the game gate's `boundary` runs; the start order
+  and row 31 say so. Ruling 11 gained the verifier's one change: it hands `THRUM_GAMES` to the commands it
+  starts. No item of any other module changed.

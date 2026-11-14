@@ -18,7 +18,10 @@ Read [Mechanisms](DESIGN.md#mechanisms), [the rulings](../ARCHITECTURE.md#seam-r
 
 Nothing here needs the real games repository: the test makes its own in scratch. A probe while planning built one
 game against two engine trees through a folder of links; it left a lockfile in the game's folder, which is why
-the gate works from a detached copy. `./dev check` must not call the gate.
+the gate works from a detached copy. `./dev check` must not call the gate. `TEST-SUPPORT` M1 has landed the
+`test-crate-edges` rule and the `test_role` registration it reads: `boundary` runs that rule, and does not copy or
+change it. `thrum-fixtures` does not exist in the real tree until M2, so the scratch engine tree registers its
+own fixtures package.
 
 ## M2 No engine crate reaches into a game or an example, and the engine's tests build with the games taken away
 
@@ -46,7 +49,9 @@ nothing else outside Thrum. Do not add a remote or push it. The exit record is `
 change nothing else in it. `AGENTS.md` says to work only in this repository: it gains the games repository as the
 one named exception for a game module's builder. Copy to the game; do not move out of Thrum anything on
 [the frozen list](DESIGN.md#the-frozen-qualification-content). `scripts/exact_baselines.py` imports `store_root`
-from `scripts/run_v1_showcase.py`, so that helper stays engine-side when the launcher becomes a forward.
+from `scripts/run_v1_showcase.py`, so that helper stays engine-side when the launcher becomes a forward. The
+verifier is `BASELINE-GUARD`'s. By ruling 11 it keeps `THRUM_GAMES` in the environment of the commands it
+starts; change nothing else in it.
 
 ## M5 The proving ground carries its own name, the game's iPhone app has followed the game, and nothing in Thrum is called a game
 

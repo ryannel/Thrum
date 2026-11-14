@@ -1,6 +1,6 @@
 # Game split: the game in its own repository, the engine proved without it
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/GAME-SPLIT/design-review.md).
+14 November 2026, revised 15 November after [its design reviews](../../evidence/GAME-SPLIT/design-review.md).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md), theme T5 (H02, H13, H19, H20, M72, M73) ·
@@ -86,7 +86,8 @@ engine commit in question, when the game's manifests say `../../thrum/crates/…
 - `boundary` runs [REPO-RULES](../REPO-RULES/DESIGN.md)' shape rules on the game: its path dependencies are only
   packages under the engine's `crates/`, nothing reaches out of the game by any other route, and
   [TEST-SUPPORT](../TEST-SUPPORT/DESIGN.md)'s `test-crate-edges` holds, so a game may use the engine's test
-  packages in its tests and ship neither.
+  packages in its tests and ship neither. The gate has no rule of its own for this. The rule and the registration
+  it reads are `TEST-SUPPORT` M1's, so M1 waits for that milestone as well as for `REPO-RULES` M1.
 - With no games repository it says so and exits with its own code.
 
 **2. No hidden reach** (M2). `package-reach` goes to zero.
@@ -142,7 +143,10 @@ is the proving ground's from the move on. Today that is:
   engine script when the launcher's game half becomes a forward to the gate.
 
 The list is what was read at planning. The test is the behaviour, not the list: with the games repository
-unavailable, the verifier passes and every approved check that names the proving ground finds what it names. The
+unavailable, the verifier passes and every approved check that names the proving ground finds what it names.
+Unavailable has to mean to the whole run. The verifier starts its builds and captures with every `THRUM_`
+variable removed, so from M4 it keeps `THRUM_GAMES`, and that one only: a command it starts then looks for the
+games repository where the run was told to, and finds none. The
 game takes its own live copies of the presets, routes and sources it uses; from then on a change to the game's
 copy touches no engine reference, and a change to the engine's copy is a baseline change under
 [the baseline rules](../ARCHITECTURE.md#exact-baselines). No reference image is refreshed by the move.
