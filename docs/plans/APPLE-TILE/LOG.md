@@ -1,5 +1,11 @@
 # APPLE-TILE log
 
+- 2026-11-14 M3 integration closeout confirms official merge `8bf0515a` after the repository gate passed.
+  Refreshed both-recipe native and Chrome route/cut/night/stall/resize captures and all 15 focused tests pass.
+  The integrated artifacts match SEA M1's actual-target exact oracle run, with reuse explicitly attributed.
+  Builder inspected all chronological strips and selected full frames. [Evidence](../../evidence/APPLE-TILE/M3-resume/integration/README.md)
+  separates these results from unmeasured panel cadence, performance and current OS-window function.
+
 - 2026-11-14 Resumed M3 after the owner moved D3.5 to a later milestone. No engine change was needed.
   Clean source e41686a0 passes 42 native exact comparisons and 1,924 Chrome exact frames; 15 focused input/timing
   tests and fresh both-recipe/native plus Chrome day/night/resize source verification pass. Inspected full frames,
