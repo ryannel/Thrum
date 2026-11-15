@@ -9,6 +9,51 @@ use support::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Map, Stage};
 
 #[test]
+fn bilinear_saddle_opens_with_stage_and_drains_back_for_both_seeds() {
+    for seed in [[1.0, 1.0], [1.01, 1.01], [2.0, 2.0], [1.99, 1.99]] {
+        let mut b = body("saddle", BodyKind::Basin { seed }, -1.0);
+        b.stage.max = 1.5;
+        let mut p = profile();
+        p.margin_height = 0.0;
+        let mut map = Map::prepare(support::saddle_bed([0.0; 2], 1.0, false), vec![b], p).unwrap();
+        let other = if seed[0] < 1.5 {
+            [2.0, 2.0]
+        } else {
+            [1.0, 1.0]
+        };
+        let original = map.sample(seed);
+        let calm = support::field(0.0);
+        for level in [-1.0, 0.0, 0.01, 0.5, 0.0, -1.0] {
+            map.set_stage(0, level + 1.0).unwrap();
+            let answer = map.surface(&calm, other, 7.0).unwrap();
+            assert_eq!(
+                answer.body.is_some(),
+                level > 0.0,
+                "seed={seed:?}, saddle=0, level={level}"
+            );
+            assert_eq!(answer.wet, level > 0.0);
+            assert_eq!(map.sample(other).is_some(), level > 0.0);
+            if answer.wet {
+                close(answer.sample.height, level);
+                close(answer.depth, level + 2.0);
+            }
+        }
+        assert_eq!(map.sample(seed), original);
+    }
+}
+
+#[test]
+fn maximum_stage_refuses_a_diagonal_neck_to_the_bed_edge() {
+    let mut b = body("neck-spill", BodyKind::Basin { seed: [1.0, 1.0] }, -1.0);
+    b.stage.max = 1.5;
+    let error = Map::prepare(support::saddle_chain(4), vec![b], profile())
+        .err()
+        .unwrap();
+    assert_eq!(error.name, "neck-spill");
+    assert!(error.reason.contains("edge"));
+}
+
+#[test]
 fn moving_stage_floods_only_after_sill_and_drains_reversibly() {
     // Two wells separated by the x=10 sill at h=3; outer wall h=10.
     let bed = grid([21, 11], |x, z| {

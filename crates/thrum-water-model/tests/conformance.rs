@@ -1,4 +1,8 @@
 //! Provider fault injection: values and support disagreements remain observable.
+#[expect(
+    dead_code,
+    reason = "shared saddle fixture is used by map and stage tests"
+)]
 #[path = "support/fixtures.rs"]
 mod support;
 use support::{close, field};

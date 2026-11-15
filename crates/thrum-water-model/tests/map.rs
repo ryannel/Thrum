@@ -6,6 +6,134 @@ use support::{body, close, grid, profile};
 use thrum_water_model::{BodyKind, Chart, Map};
 
 #[test]
+fn basin_seed_selects_only_its_bilinear_component() {
+    // h = -8(u-1/2)(v-1/2), with saddle h=0. At level -1
+    // its two wet lobes are disconnected and distinguished by u < 1/2.
+    for flipped in [false, true] {
+        for (origin, spacing) in [([0.0; 2], 1.0), ([10.0, -3.0], 2.0)] {
+            let world = |u, v| {
+                [
+                    origin[0] + spacing * (1.0 + u),
+                    origin[1] + spacing * (1.0 + v),
+                ]
+            };
+            for [u, v] in [
+                [0.0, 0.0],
+                [0.01, 0.01],
+                [0.0, 0.01],
+                [0.01, 0.0],
+                [1.0, 1.0],
+                [0.99, 0.99],
+            ] {
+                let seed_u = if flipped { 1.0 - u } else { u };
+                let mut p = profile();
+                p.margin_height = 0.0;
+                let map = Map::prepare(
+                    support::saddle_bed(origin, spacing, flipped),
+                    vec![body(
+                        "seeded",
+                        BodyKind::Basin {
+                            seed: world(seed_u, v),
+                        },
+                        -1.0,
+                    )],
+                    p,
+                )
+                .unwrap();
+                for u in [0.0, 0.01, 0.1, 0.25, 0.4, 0.6, 0.75, 0.9, 0.99, 1.0] {
+                    for v in [0.0, 0.01, 0.1, 0.25, 0.4, 0.6, 0.75, 0.9, 0.99, 1.0] {
+                        let sign = if flipped { 8.0 } else { -8.0 };
+                        let height: f64 = sign * (u - 0.5) * (v - 0.5);
+                        if (height + 1.0).abs() < 1e-9 {
+                            continue;
+                        }
+                        let expected = height < -1.0 && (u - 0.5) * (seed_u - 0.5) > 0.0;
+                        let answer = map.sample(world(u, v));
+                        assert_eq!(
+                            answer.is_some(),
+                            expected,
+                            "flipped={flipped}, seed={seed_u},{v}, point={u},{v}"
+                        );
+                        if let Some(answer) = answer {
+                            close(answer.bed.unwrap(), height);
+                            close(answer.depth, -1.0 - height);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn diagonal_necks_propagate_beyond_the_seed_cell_only_when_open() {
+    for level in [-1.0, 0.0, 0.5] {
+        let mut p = profile();
+        p.margin_height = 0.0;
+        let map = Map::prepare(
+            support::saddle_chain(7),
+            vec![body("chain", BodyKind::Basin { seed: [1.0, 1.0] }, level)],
+            p,
+        )
+        .unwrap();
+        for i in [2.0, 3.0] {
+            assert_eq!(
+                map.sample([i, i]).is_some(),
+                level > 0.0,
+                "saddle=0, level={level}, point={i}"
+            );
+        }
+    }
+}
+
+#[test]
+fn basin_refuses_a_diagonal_connection_to_exterior_sea() {
+    // The boundary well (3,3) connects to (1,1) through two h=0 saddles
+    // at sea level 0.5, although all intervening orthogonal vertices are h=2.
+    let error = Map::prepare(
+        support::saddle_chain(4),
+        vec![
+            body("sea", BodyKind::Sea, 0.5),
+            body("open-hollow", BodyKind::Basin { seed: [1.0, 1.0] }, -1.0),
+        ],
+        profile(),
+    )
+    .err()
+    .unwrap();
+    assert_eq!(error.name, "open-hollow");
+    assert!(error.reason.contains("sea"));
+}
+
+#[test]
+fn a_shoreline_corner_cannot_flood_the_downhill_hollow() {
+    let bed = grid([7, 5], |x, z| {
+        if !(0.5..=5.5).contains(&x) || !(0.5..=3.5).contains(&z) {
+            10.0
+        } else if (x - 2.0).abs() < 0.5 {
+            0.0
+        } else {
+            -2.0
+        }
+    });
+    let map = Map::prepare(
+        bed,
+        vec![body("closed", BodyKind::Basin { seed: [1.0, 2.0] }, 0.0)],
+        profile(),
+    )
+    .unwrap();
+    assert!(
+        map.sample([2.0, 2.0]).is_some(),
+        "the sill is a shore margin"
+    );
+    for x in [2.01, 2.5, 2.99, 3.0] {
+        assert!(
+            map.sample([x, 2.0]).is_none(),
+            "ground descends beyond the level-zero sill at {x}"
+        );
+    }
+}
+
+#[test]
 fn cone_radius_and_disconnected_hollow_are_independent_oracles() {
     let map = support::basin();
     for x in [10.0, 10.3, 11.7, 12.999] {

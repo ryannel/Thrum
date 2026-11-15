@@ -1,4 +1,8 @@
 //! Surface values and time/spatial derivatives against analytic waves and SEA.
+#[expect(
+    dead_code,
+    reason = "shared saddle fixture is used by map and stage tests"
+)]
 #[path = "support/fixtures.rs"]
 mod support;
 use support::{body, close, field, grid, profile};

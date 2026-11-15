@@ -234,19 +234,28 @@ impl Map {
                 BodyKind::Basin { .. } => 1,
                 BodyKind::Chart(_) => 2,
             };
+            let row = self.supported_row(id, point);
             let supported = weights.is_some_and(|w| {
                 w.iter().any(|&(i, a)| {
-                    a > 1e-12
+                    a > 0.0
                         && self.support[id][i].is_some_and(|origin| {
-                            self.bed
-                                .reaches(i, w, self.row(id, self.bed.point(origin)).level)
+                            let level = self.row(id, self.bed.point(origin)).level;
+                            if matches!(b.kind, BodyKind::Basin { .. })
+                                && bed.is_some_and(|height| height < row.level)
+                            {
+                                self.bed.wet_reaches(i, w, level)
+                            } else {
+                                self.bed.reaches(i, w, level)
+                            }
                         })
                 })
             });
-            if !(supported || bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
+            // A chart declares its water pointwise; it has no seeded component.
+            let chart_water = matches!(&b.kind, BodyKind::Chart(c)
+                if self.in_chart(c, point) && bed.is_some_and(|height| height < row.level));
+            if !(supported || chart_water || bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
                 continue;
             }
-            let row = self.supported_row(id, point);
             if let BodyKind::Chart(c) = &b.kind
                 && !self.in_chart(c, point)
                 && bed.is_some_and(|h| h < row.level)
@@ -392,15 +401,15 @@ impl Map {
             && self.bed.height(seed).is_some_and(|h| h < level)
         {
             for (i, _) in w {
-                if self.bed.heights[i] < level && !blocked(i) {
+                if !blocked(i) && self.bed.wet_reaches(i, w, level) {
                     wet[i] = true;
                     q.push_back(i);
                 }
             }
         }
         while let Some(i) = q.pop_front() {
-            for j in self.bed.neighbours(i) {
-                if !wet[j] && !blocked(j) && self.bed.heights[j] < level {
+            for (j, weights) in self.bed.connections(i) {
+                if !wet[j] && !blocked(j) && self.bed.wet_reaches(i, weights, level) {
                     wet[j] = true;
                     q.push_back(j);
                 }
@@ -424,7 +433,7 @@ impl Map {
                     .filter_map(|(i, &w)| w.then_some(i))
                     .collect();
                 while let Some(i) = q.pop_front() {
-                    for j in self.bed.neighbours(i) {
+                    for (j, weights) in self.bed.connections(i) {
                         let h = self.bed.heights[j];
                         let row = self.row(
                             id,
@@ -432,7 +441,8 @@ impl Map {
                                 .point(origins[i].expect("queued centre has origin")),
                         );
                         if origins[j].is_none()
-                            && h >= self.bed.heights[i]
+                            && h >= row.level
+                            && self.bed.reaches(i, weights, row.level)
                             && h <= row.level + self.profile.margin_height
                         {
                             origins[j] = origins[i];
@@ -513,7 +523,7 @@ impl Map {
             .enumerate()
             .map(|(id, b)| {
                 if matches!(b.kind, BodyKind::Sea) {
-                    self.exterior_water(&wets[id])
+                    self.exterior_water(&wets[id], b.level + b.stage.value)
                 } else {
                     vec![false; self.bed.heights.len()]
                 }
@@ -574,7 +584,7 @@ impl Map {
         Ok(())
     }
 
-    fn exterior_water(&self, wet: &[bool]) -> Vec<bool> {
+    fn exterior_water(&self, wet: &[bool], level: f64) -> Vec<bool> {
         // A sealed basin may have its floor below sea level. Precedence owns that
         // column; a spill means connection to exterior sea, not merely low ground.
         let blocked = |i| {
@@ -591,8 +601,8 @@ impl Map {
             }
         }
         while let Some(i) = q.pop_front() {
-            for j in self.bed.neighbours(i) {
-                if wet[j] && !reached[j] && !blocked(j) {
+            for (j, weights) in self.bed.connections(i) {
+                if wet[j] && !reached[j] && !blocked(j) && self.bed.wet_reaches(i, weights, level) {
                     reached[j] = true;
                     q.push_back(j);
                 }

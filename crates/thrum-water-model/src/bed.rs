@@ -127,6 +127,40 @@ impl Bed {
     /// saddle. The endpoint slopes and that saddle decide monotone reach;
     /// comparing endpoint heights alone would bridge the far side of a crest.
     pub(crate) fn reaches(&self, corner: usize, weights: [(usize, f64); 4], level: f64) -> bool {
+        let [a, b, c, d] = self.path_coefficients(corner, weights);
+        let end = a + b + c + d;
+        if end.max(level) < a.max(level) || (a > level && b < 0.0 && c < 0.0) {
+            return false;
+        }
+        if b + d < 0.0 && c + d < 0.0 {
+            if end > level {
+                return false;
+            }
+            if b > 0.0 && c > 0.0 && a - b * c / d > level {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Connectivity in the strict sublevel set of the bilinear cell. Opposite
+    /// wet lobes connect only above the interior saddle, not at its dry point.
+    /// This also handles seeds on an edge/corner and corners of zero weight.
+    pub(crate) fn wet_reaches(
+        &self,
+        corner: usize,
+        weights: [(usize, f64); 4],
+        level: f64,
+    ) -> bool {
+        let end: f64 = weights.iter().map(|&(i, w)| self.heights[i] * w).sum();
+        if self.heights[corner] >= level || end >= level {
+            return false;
+        }
+        let [a, b, c, d] = self.path_coefficients(corner, weights);
+        !(b > 0.0 && c > 0.0 && b + d < 0.0 && c + d < 0.0 && a - b * c / d >= level)
+    }
+
+    fn path_coefficients(&self, corner: usize, weights: [(usize, f64); 4]) -> [f64; 4] {
         let h = weights.map(|(i, _)| self.heights[i]);
         let u = weights[1].1 + weights[3].1;
         let v = weights[2].1 + weights[3].1;
@@ -141,19 +175,30 @@ impl Bed {
         let b = (u - x) * (h[1] - h[0] + cross * z);
         let c = (v - z) * (h[2] - h[0] + cross * x);
         let d = cross * (u - x) * (v - z);
-        let end = a + b + c + d;
-        if end.max(level) < a.max(level) || (a > level && b < 0.0 && c < 0.0) {
-            return false;
-        }
-        if b + d < 0.0 && c + d < 0.0 {
-            if end > level {
-                return false;
-            }
-            if b > 0.0 && c > 0.0 && a - b * c / d > level {
-                return false;
-            }
-        }
-        true
+        [a, b, c, d]
+    }
+
+    /// All neighbouring centres sharing a bilinear cell, with weights for the
+    /// neighbour in that cell. Diagonal edges still need the wet/reach predicate.
+    pub(crate) fn connections(&self, i: usize) -> impl Iterator<Item = (usize, [(usize, f64); 4])> {
+        let [w, h] = self.size;
+        let (x, z) = (i % w, i / w);
+        let diagonals = [
+            (x > 0 && z > 0).then(|| i - w - 1),
+            (x + 1 < w && z > 0).then(|| i - w + 1),
+            (x > 0 && z + 1 < h).then(|| i + w - 1),
+            (x + 1 < w && z + 1 < h).then(|| i + w + 1),
+        ];
+        self.neighbours(i)
+            .chain(diagonals.into_iter().flatten())
+            .map(move |j| {
+                let cx = x.min(j % w).min(w - 2);
+                let cz = z.min(j / w).min(h - 2);
+                let first = cz * w + cx;
+                let weights = [first, first + 1, first + w, first + w + 1]
+                    .map(|k| (k, if k == j { 1.0 } else { 0.0 }));
+                (j, weights)
+            })
     }
 
     pub(crate) fn neighbours(&self, i: usize) -> impl Iterator<Item = usize> {

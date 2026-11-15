@@ -33,6 +33,28 @@ pub(crate) fn grid(size: [usize; 2], f: impl Fn(f64, f64) -> f64) -> Bed {
     )
     .expect("finite analytic grid")
 }
+
+pub(crate) fn saddle_bed(origin: [f64; 2], spacing: f64, flipped: bool) -> Bed {
+    let mut heights = vec![10.0; 25];
+    for (x, z, height) in [(1, 1, -2.0), (2, 2, -2.0), (2, 1, 2.0), (1, 2, 2.0)] {
+        let x = if flipped { 3 - x } else { x };
+        heights[z * 5 + x] = height;
+    }
+    Bed::new(origin, spacing, [5, 5], heights).expect("finite bilinear saddle")
+}
+
+pub(crate) fn saddle_chain(size: usize) -> Bed {
+    let mut heights = vec![10.0; size * size];
+    for i in 1..=3 {
+        heights[i * size + i] = -2.0;
+    }
+    for i in 1..3 {
+        heights[i * size + i + 1] = 2.0;
+        heights[(i + 1) * size + i] = 2.0;
+    }
+    Bed::new([0.0; 2], 1.0, [size, size], heights).expect("two saddle-zero necks")
+}
+
 pub(crate) fn basin() -> Map {
     Map::prepare(
         grid([41, 21], |x, z| {
