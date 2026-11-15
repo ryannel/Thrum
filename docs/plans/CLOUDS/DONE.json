@@ -223,8 +223,8 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_day",
           "ask": "Is the Sun's elevation an argument of the step, with no clock or renderer read inside the model?",
           "target": "mac-metal",
-        "builder_result": "pass",
-        "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
           "verdict": "fail",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
@@ -234,8 +234,8 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test visibility",
           "ask": "Are the deck's and the ground row's expected depths closed forms, and the shapes' the test's own sums over voxels it made, with only the cells' taken from M1.6's density? Does a segment cross each kind of condensate? Do the two shapes differ at the probed height, as the design review's pair does at 15 m?",
           "target": "mac-metal",
-        "builder_result": "pass",
-        "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
           "verdict": "fail",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
