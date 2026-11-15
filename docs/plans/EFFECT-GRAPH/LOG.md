@@ -118,3 +118,8 @@
   Proposed for HOST: own the shared device-request recipe; until it lands these witnesses reuse their
   existing example request policy. Fresh target and exact qualification remains required after integration.
   Pinned native/Wasm Clippy and both CPU tests pass; preparation source hashes and output are retained.
+- 2026-11-15 Rebased M3 onto main, preserving both maturity rows and current upstream handoffs/logs.
+  Planner-owned DONE fields match main. Tightened only the relocated native-request allowance and two
+  removed path attributes. Main's historical APPLE-PRESENTATION log links named unmerged artifacts;
+  verified them on its owner branch and kept their paths inline until that evidence lands.
+  Fresh combined-source checks, captures, costs and the normal merge gate remain required.
