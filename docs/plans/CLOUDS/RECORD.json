@@ -82,6 +82,35 @@
         "by": "plan",
         "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
         "at": "2026-11-14T17:36:17Z"
+      },
+      "ready_for_review": {
+        "commit": "32431a2b68ce0f702708176cb95da87b599668e6",
+        "checked": "32431a2b68ce0f702708176cb95da87b599668e6",
+        "at": "2026-11-15T05:42:50Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 249945,
+          "cached": 54241408,
+          "output": 141921,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 249945,
+          "cached": 54241408,
+          "output": 141921,
+          "turns": 2
+        }
       }
     },
     "M2": {
