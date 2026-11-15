@@ -105,8 +105,8 @@
         },
         {
           "id": "M1.10",
-          "statement": "`./dev check` lints the browser adapter for Wasm, and nothing it runs opens a socket, starts Chrome or calls the simulator.",
-          "ask": "Does `./dev check` run Clippy on thrum-transport's browser adapter for `wasm32-unknown-unknown`? Does any test that `cargo test --workspace` reaches bind or connect a socket?",
+          "statement": "`./dev check` lints the browser adapter for Wasm. No test or step this module adds to `cargo test`'s defaults or to `./dev check` opens a socket, starts Chrome or calls the simulator: its socket proofs run only through the proof command.",
+          "ask": "Does `./dev check` run Clippy on thrum-transport's browser adapter for `wasm32-unknown-unknown`? Among the tests of `thrum-transport` and `link-proof` that `cargo test --workspace` runs, and the steps this module added to `./dev check`, does any bind or connect a socket, start Chrome or call `simctl`? Tests other modules own, such as the cooker's dev-server tests, are outside this item.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

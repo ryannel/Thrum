@@ -42,8 +42,10 @@ the iPhone simulator or a page in Chrome, and a game can rehearse it with no soc
 **Consumers.** `SESSION` builds the match on the link and tests it first on the in-memory link. `SWARM` starts a
 host and hands players a join ticket. `GAME-UI` shows the link's state and takes the ticket.
 
-**What exists.** Byte codecs with no I/O. A conditioner that counts ticks inside one test crate. No socket, no TLS,
-no thread for the network, and no shipping crate that depends on an async runtime.
+**What exists.** Byte codecs with no I/O. A conditioner that counts ticks inside one test crate. No socket between
+players, no TLS, no thread for the network, and no shipping crate that depends on an async runtime. The one socket
+in the repository is the cooker's loopback HTTP dev server, which is `CONTENT-LOOP`'s, carries assets and is not
+used here.
 
 **Commissioned.** The nine mechanisms below, proved by one host holding Mac, Chrome and simulator clients on this
 Mac through A0's conditioner.
@@ -500,12 +502,14 @@ each application byte that grow with the length of a run.
 - **Targets.** The host always runs natively on the Mac. Clients run natively on the Mac, as a plain executable in
   the iPhone 18 Pro simulator through `simctl spawn`, and as Wasm in headless Chrome with no flag that touches
   certificates, QUIC or origins. None needs the GPU. The simulator proves function, never speed.
-- **The sandbox.** Sockets, Chrome and the simulator do not work inside Codex's `workspace-write` sandbox, and
-  nearly every proof here needs one of them. So every socket proof is behind the one proof command, which a
-  builder or a reviewer asks to run outside the sandbox, and nothing that opens a socket runs under `cargo test`'s
-  defaults or in `./dev check`, where it would fail every other module's builder. A reviewer whose request is
-  refused cannot judge those items, and the review goes to Claude. Fetching the new crates needs the
-  network once. [Whether to keep asking for each run is the owner's](../ARCHITECTURE.md#owner-decisions).
+- **What runs where.** This module's socket proofs start a host, a relay, Chrome and the simulator and run for
+  up to ten minutes, so every one is behind the one proof command. No test or step this module adds to
+  `cargo test`'s defaults or to `./dev check` opens a socket, starts Chrome or calls the simulator, because every
+  module's builder runs those on every change. The rule covers what this module adds and no other module's
+  tests: [each module decides where its own tests run](../ARCHITECTURE.md#build-order-after-the-v1-exit), and the cooker's
+  loopback dev-server tests stay in `./dev check`. [The project settings](../../../ORCHESTRATE.md) give Codex
+  full access, so a builder or a reviewer runs the proof command as it is. Fetching the new crates needs the
+  network once.
 - **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
 - **Stopping.** If the engine's Chrome adapter cannot hold datagrams to the local host, or the simulator cannot
   reach it, the builder keeps the measurements and ends `BLOCKED`. A planner then applies the fallback the module

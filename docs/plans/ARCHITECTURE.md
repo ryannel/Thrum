@@ -1386,11 +1386,18 @@ A lone builder takes the engine modules in that order: `SIM-2D`, `TRANSPORT`, `R
 **Reaching the targets.** `TRANSPORT`, `SESSION` and `SWARM` open local sockets and drive Chrome, which Codex's
 `workspace-write` sandbox does not allow without a request for each run. The owner settled it on 14 November:
 [the project settings](../../ORCHESTRATE.md) give Codex full access, so no request is needed. `TRANSPORT` puts every socket proof
-behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps sockets out of `./dev check`.
-`SESSION` does the same with [one match command](SESSION/DESIGN.md#proof-and-builder-handoff), through
+behind [one proof command](TRANSPORT/DESIGN.md#proof-and-builder-handoff) and keeps its own sockets out of
+`./dev check`. `SESSION` does the same with [one match command](SESSION/DESIGN.md#proof-and-builder-handoff), through
 `TRANSPORT`'s relay. `SWARM` puts every proof that needs a window, Chrome, the simulator or a socket behind
 [one command of its own](SWARM/DESIGN.md#proof-and-builder-handoff), which reuses `SESSION`'s match harness and
 the relay.
+
+**Who gates a socket test.** The module that owns a test decides whether it runs in `./dev check`, and no module
+makes a claim about another's tests. There is no repository-wide ban on sockets in `./dev check`: the cooker's
+loopback dev-server tests (`CONTENT-LOOP`: `thrum-cook`'s `serve_and_watch` and the fetched-store cases of
+`v1-game`'s `cooked_assets_gpu`) have run there since 6 November and stay. Where `TRANSPORT`, `SESSION` or `SWARM`
+says nothing in `./dev check` opens a socket, starts Chrome or calls the simulator, it means what that module
+adds.
 
 ### What finished means (track 3)
 

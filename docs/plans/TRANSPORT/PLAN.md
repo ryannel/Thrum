@@ -23,7 +23,10 @@ design.
 
 Criteria: M1.1–M1.12 in the done-when file.
 
-Nothing in the repository opens a socket today. `thrum-network` holds byte codecs that belong to `SESSION`; this
+[The first builder's handoff](../../evidence/TRANSPORT/M1-handoff.md) says what is on branch `build/transport`,
+what was tried and what to do first; start there and keep that work. The only sockets outside this module are the
+cooker's loopback dev-server tests, which are `CONTENT-LOOP`'s, run in `./dev check` and are not this milestone's
+to move or to answer for. `thrum-network` holds byte codecs that belong to `SESSION`; this
 milestone neither edits it nor depends on it, and the link carries opaque bytes. Its `MAX_MESSAGE_BYTES` and A5's
 1,000-byte datagram budget are where the two limits come from. `thrum-asset`'s `remote/browser.rs` shows the
 hand-written `wasm_bindgen` imports the browser adapter follows, and `thrum-network/examples/` shows the stdin
@@ -45,7 +48,7 @@ maturity ledger is `docs/design/maturity.json`.
 Stop rules, for both milestones:
 - If the engine's Chrome adapter cannot hold datagrams to the local host, or the simulator cannot reach it, keep the measurements and end `BLOCKED`. Do not move a lane onto the stream, drop a target or shorten the script.
 - Never relax a certificate check to make a client connect: no Chrome flag that touches certificates, QUIC or origins, and no option that skips the hash.
-- Nothing that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the proof command, outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
+- Nothing this module adds that opens a socket, starts Chrome or calls the simulator runs under `cargo test`'s defaults or in `./dev check`. Those proofs go through the proof command. If a launch fails, leave the item open and say so; do not substitute the in-memory link, Node or another target's result.
 - No time, byte count or allocation count stops the build (brief, decision 3). Record a row that trips a tripwire as measured, note what you found in the log, and keep building. The one figure that fails a run is the design's 90% floor on datagrams delivered in the script's lanes and load parts.
 - Record only runs of the commit being claimed, with the load on the machine.
 - Adding a dependency must not change the version of any crate already in the lockfile. Run the exact-baseline verifier before `land`, and again when `land` refuses a rebased commit for lack of a proof.

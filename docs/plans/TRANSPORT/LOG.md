@@ -59,3 +59,19 @@
 - 2026-11-14 Owner: "Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." M1 no longer waits for `SHOWCASE:M8` and waits for
   nothing. The assumptions about waiting for V1 and about asking to leave the Codex sandbox are deleted: the
   owner gave Codex full access the same day. No item and no word of the design changed, so its approval stands.
+- 2026-11-15 Re-plan after M1 ended `BLOCKED needs_dependency`: the builder found M1.10 false before this module
+  existed, and [its handoff](../../evidence/TRANSPORT/M1-handoff.md) asked `CONTENT-LOOP` to gate its tests or the
+  planner to settle the scope. The plan was at fault: it said nothing in the repository opened a socket, so
+  M1.10 claimed the whole of `./dev check`. The cooker's loopback dev-server tests have run there since 6 November.
+- 2026-11-15 Planner's ruling, in [the module list](../ARCHITECTURE.md#build-order-after-the-v1-exit): the module
+  that owns a test decides whether it runs in `./dev check`, and there is no repository-wide ban on sockets.
+  `CONTENT-LOOP` changes nothing. Not chosen: gating its tests, which takes the dev server's origin checks out of
+  the only gate and breaks `TEST-SUPPORT`'s promise that every test that ran still runs; a rule in `REPO-RULES`.
+- 2026-11-15 M1.10 is written again as this module's claim: the Wasm lint, and no socket, Chrome or simulator in
+  what it adds to `cargo test`'s defaults or `./dev check`. The design's sandbox paragraph is rewritten to match,
+  with the full access of 14 November, and "What exists" names the dev server. No other item or check changed.
+- 2026-11-15 Measured while planning: `cargo test -p thrum-cook --test serve_and_watch` passes its four loopback
+  tests in 5.3 s. Left as they are: `SWARM` M7.10 and a sentence of `SESSION`'s design carry the old wording,
+  which the module list now reads as each module's own additions; reword them when those plans next change.
+- 2026-11-15 The changed design and M1.10 have not been reviewed; no builder resumes M1 until a design review
+  returns Design Approved. `./dev check-docs` passes with these files.
