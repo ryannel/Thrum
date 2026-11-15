@@ -9,6 +9,23 @@ use thrum_render::{
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
 };
 
+/// A failure in the submitted-input diagnostic, including its GPU preparation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum QualificationError {
+    /// A check could not complete or its submitted result differed from the expectation.
+    CheckFailed(String),
+}
+
+impl std::fmt::Display for QualificationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::CheckFailed(detail) => write!(f, "after-opaque qualification failed: {detail}"),
+        }
+    }
+}
+
+impl std::error::Error for QualificationError {}
+
 pub(super) struct Scene {
     temporal: bool,
 }
@@ -91,6 +108,17 @@ pub(super) async fn host(
 /// # Errors
 /// Returns the first target mismatch or device error.
 pub async fn run(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    caps: &DeviceCapabilities,
+    instance: &wgpu::Instance,
+) -> Result<String, QualificationError> {
+    run_checks(device, queue, caps, instance)
+        .await
+        .map_err(QualificationError::CheckFailed)
+}
+
+async fn run_checks(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     caps: &DeviceCapabilities,
@@ -421,20 +449,12 @@ async fn replacement(
 ) -> Result<(), String> {
     let inputs = host.device_prepare_inputs().map_err(error)?;
     old.destroy();
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(error)?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(error)?;
-    let next = DeviceCapabilities::capture(&adapter, &device, caps.generation() + 1)
-        .with_recipe_override(match caps.recipe().map_err(error)? {
-            thrum_render::capabilities::Recipe::Portable => "portable",
-            thrum_render::capabilities::Recipe::AppleTile => "apple-tile",
-        })
-        .map_err(error)?;
+    let (device, queue, next) = super::qualification::replacement_device(
+        instance,
+        caps.generation() + 1,
+        caps.recipe().map_err(error)?,
+    )
+    .await?;
     let mut prepared = inputs
         .prepare(
             &next,

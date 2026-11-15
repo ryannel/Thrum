@@ -132,7 +132,7 @@ pub async fn read_texture(
 /// Returns a GPU mapping or device progress error.
 /// # Panics
 /// Panics if a private readback callback mutex is poisoned.
-pub async fn read_texture_bytes(
+pub(super) async fn read_texture_bytes(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     texture: &wgpu::Texture,
@@ -317,20 +317,8 @@ async fn replace_device(
     handle: &EffectHandle,
 ) -> Result<(), String> {
     let inputs = host.device_prepare_inputs().map_err(error)?;
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(error)?;
-    let (replacement, replacement_queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(error)?;
-    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation + 1)
-        .with_recipe_override(match recipe {
-            thrum_render::capabilities::Recipe::Portable => "portable",
-            thrum_render::capabilities::Recipe::AppleTile => "apple-tile",
-        })
-        .map_err(error)?;
+    let (replacement, replacement_queue, next_caps) =
+        replacement_device(instance, generation + 1, recipe).await?;
     let mut prepared = inputs
         .prepare(
             &next_caps,
@@ -367,6 +355,28 @@ async fn replace_device(
     }
     reset_kinds(&replacement, &replacement_queue, handle).await?;
     Ok(())
+}
+
+pub(super) async fn replacement_device(
+    instance: &wgpu::Instance,
+    generation: u64,
+    recipe: thrum_render::capabilities::Recipe,
+) -> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .map_err(error)?;
+    let (replacement, replacement_queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .map_err(error)?;
+    let next_caps = DeviceCapabilities::capture(&adapter, &replacement, generation)
+        .with_recipe_override(match recipe {
+            thrum_render::capabilities::Recipe::Portable => "portable",
+            thrum_render::capabilities::Recipe::AppleTile => "apple-tile",
+        })
+        .map_err(error)?;
+    Ok((replacement, replacement_queue, next_caps))
 }
 
 /// Run the explicit state-table script through the real frame host and GPU.

@@ -57,7 +57,7 @@ pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
 pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 pub use list::SceneContributions;
-pub use quality::{QualityInvalidation, QualityKnob, QualitySettings};
+pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
 
 /// The scene forward shader's material hook point: the fragment's one read of its material
@@ -266,8 +266,8 @@ pub trait SceneContribution: wgpu::WasmNotSend {
     /// Stage a named control for the next frame boundary.
     /// # Errors
     /// Refuses unknown names and values outside the declared range.
-    fn set_quality_knob(&mut self, _name: &str, _value: u32) -> Result<(), String> {
-        Err("UnknownQualityKnob".into())
+    fn set_quality_knob(&mut self, name: &str, _value: u32) -> Result<(), QualityError> {
+        Err(QualityError::UnknownKnob { name: name.into() })
     }
     /// Apply staged values before frame preparation. Effects reset their own state here.
     /// A view-history result also asks the host to invalidate reconstruction.

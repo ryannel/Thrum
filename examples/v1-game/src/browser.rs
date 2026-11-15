@@ -913,11 +913,15 @@ fn js_error(value: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&value.to_string())
 }
 
-/// Run the external diagnostic's exact state script on Chrome's WebGPU device.
-/// # Errors
-/// Returns a target preparation, state mismatch or recovery failure.
-#[wasm_bindgen]
-pub async fn qualify_effect_state() -> Result<String, JsValue> {
+async fn effect_diagnostic_device() -> Result<
+    (
+        wgpu::Instance,
+        wgpu::Device,
+        wgpu::Queue,
+        thrum_render::capabilities::DeviceCapabilities,
+    ),
+    JsValue,
+> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -928,6 +932,15 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
         .await
         .map_err(js_error)?;
     let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    Ok((instance, device, queue, caps))
+}
+
+/// Run the external diagnostic's exact state script on Chrome's WebGPU device.
+/// # Errors
+/// Returns a target preparation, state mismatch or recovery failure.
+#[wasm_bindgen]
+pub async fn qualify_effect_state() -> Result<String, JsValue> {
+    let (instance, device, queue, caps) = effect_diagnostic_device().await?;
     Box::pin(crate::effect::qualification::run(
         &device, &queue, &caps, &instance,
     ))
@@ -940,16 +953,7 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
 /// Returns a graph, depth, refraction or motion mismatch from the target.
 #[wasm_bindgen]
 pub async fn qualify_effect_after_opaque() -> Result<String, JsValue> {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(js_error)?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default())
-        .await
-        .map_err(js_error)?;
-    let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+    let (instance, device, queue, caps) = effect_diagnostic_device().await?;
     Box::pin(crate::effect::after_opaque::run(
         &device, &queue, &caps, &instance,
     ))

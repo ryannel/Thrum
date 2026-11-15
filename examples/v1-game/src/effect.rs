@@ -208,7 +208,11 @@ impl SceneContribution for DiagnosticEffect {
     fn quality_knobs(&self) -> Vec<thrum_render::contribution::QualityKnob> {
         self.quality.knobs().to_vec()
     }
-    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
+    fn set_quality_knob(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Result<(), thrum_render::contribution::QualityError> {
         self.quality.set(name, value)
     }
     fn commit_quality_knobs(&mut self) -> thrum_render::contribution::QualityInvalidation {

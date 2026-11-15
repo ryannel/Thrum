@@ -1,23 +1,12 @@
 //! Submitted late-stage qualification on both native recipes.
 #![cfg(not(target_arch = "wasm32"))]
+/// Shared native diagnostic device policy.
+pub mod support;
 #[test]
 fn submitted_slab_depth_refraction_motion_and_resets() {
     pollster::block_on(async {
         for recipe in ["portable", "apple-tile"] {
-            let instance =
-                wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-            let adapter = instance
-                .request_adapter(&wgpu::RequestAdapterOptions::default())
-                .await
-                .expect("target adapter");
-            let (device, queue) = adapter
-                .request_device(&wgpu::DeviceDescriptor::default())
-                .await
-                .expect("target device");
-            let caps =
-                thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1)
-                    .with_recipe_override(recipe)
-                    .expect("recipe");
+            let (instance, device, queue, caps) = support::device(recipe, false).await;
             let record = Box::pin(v1_game::effect::after_opaque::run(
                 &device, &queue, &caps, &instance,
             ))

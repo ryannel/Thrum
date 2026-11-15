@@ -13,7 +13,7 @@ pub(super) async fn run(
     }
     let count = host.pipeline_creation_count();
     let old = knobs[0].value;
-    host.set_quality_knob(&knobs[0].name, 7)?;
+    host.set_quality_knob(&knobs[0].name, 7).map_err(error)?;
     if host.quality_knobs()[0].value != old {
         return Err("quality changed outside a frame boundary".into());
     }
@@ -62,7 +62,7 @@ pub(super) async fn run(
             timing.execution("effect 2: consumer")
         );
     }
-    host.set_quality_knob(&knobs[1].name, 2)?;
+    host.set_quality_knob(&knobs[1].name, 2).map_err(error)?;
     host.world_mut().0.tick = 101;
     host.advance(Duration::from_secs(18))
         .map_err(error)?
@@ -75,7 +75,7 @@ pub(super) async fn run(
         return Err("effect-history quality change did not seed every history texel".into());
     }
     drop(host.poll_completed().map_err(error)?);
-    host.set_quality_knob(&knobs[2].name, 4)?;
+    host.set_quality_knob(&knobs[2].name, 4).map_err(error)?;
     host.world_mut().0.tick = 102;
     host.advance(Duration::from_secs(19))
         .map_err(error)?

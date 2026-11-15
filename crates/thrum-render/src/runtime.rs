@@ -427,10 +427,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Stage a quality value for the next frame boundary.
     /// # Errors
     /// Refuses an absent contribution, unknown name or out-of-range value.
-    pub fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
+    pub fn set_quality_knob(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Result<(), crate::contribution::QualityError> {
         self.contribution
             .as_mut()
-            .ok_or("NoSceneContribution")?
+            .ok_or(crate::contribution::QualityError::NoContribution)?
             .set_quality_knob(name, value)
     }
     /// Attach an engine module that draws into the scene's forward pass with the scene's

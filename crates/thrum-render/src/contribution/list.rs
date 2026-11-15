@@ -34,12 +34,13 @@ impl SceneContribution for SceneContributions {
             })
             .collect()
     }
-    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), String> {
-        let (member, local) = name.split_once('/').ok_or("UnknownQualityKnob")?;
-        let member: usize = member.parse().map_err(|_| "UnknownQualityKnob")?;
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), super::QualityError> {
+        let unknown = || super::QualityError::UnknownKnob { name: name.into() };
+        let (member, local) = name.split_once('/').ok_or_else(unknown)?;
+        let member: usize = member.parse().map_err(|_| unknown())?;
         self.entries
             .get_mut(member)
-            .ok_or("UnknownQualityKnob")?
+            .ok_or_else(unknown)?
             .set_quality_knob(local, value)
     }
     fn commit_quality_knobs(&mut self) -> super::QualityInvalidation {

@@ -111,3 +111,10 @@
   lossless controls; the new complete pass's comparisons, identities, digests and hashes were validated.
   Integration-base checks, fixed native crossings, paired costs and the full gate remain outstanding.
   Resolved failure bulk was released after byte-for-byte retained-root verification.
+- 2026-11-15 Integration preflight against main's new shape rules found M3's public string errors,
+  duplicated device requests and milestone-coded capture script. Added typed quality/diagnostic errors,
+  reused the existing diagnostic request sites, moved shared native support to normal modules and renamed
+  the capture tool by purpose. Two CPU tests prove typed refusals preserve valid staged values.
+  Proposed for HOST: own the shared device-request recipe; until it lands these witnesses reuse their
+  existing example request policy. Fresh target and exact qualification remains required after integration.
+  Pinned native/Wasm Clippy and both CPU tests pass; preparation source hashes and output are retained.

@@ -62,6 +62,8 @@ lists named integer values, inclusive ranges and invalidations. `set_quality_kno
 the strongest invalidation. The effect invalidates its own state there; `ViewHistory` also resets the host's
 reconstruction history until a frame submits. Ordered-list control names have a `member/` prefix.
 The example exposes cache interval, volume slices and bounded catch-up ticks.
+`QualityError` distinguishes invalid declarations, unknown controls, out-of-range values and an absent
+contribution. A refused request preserves both the committed value and any earlier valid staged request.
 
 When timestamps are available, `SceneGpuTimings::execution(name)` distinguishes `Timed(0)` from `NotRun`
 and `Unmeasured`. The last denotes transfers without counters. Disabled timing remains absent.

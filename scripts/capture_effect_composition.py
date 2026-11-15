@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EFFECT-GRAPH M3 fixed submitted images and paired native boundary-cost records.
+"""Fixed submitted effect-composition images and paired native boundary-cost records.
 
 Run under agent_loop.py lock gpu, after building the release game and cooker.
 """
