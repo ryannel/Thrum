@@ -297,3 +297,10 @@
   are restored. Simulator and actual-window qualification remain pending.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 inherited retry resource wait.** Revalidated sixteen exact comparisons, runtime inputs
+  and the qualified executable on `56619b42e`. Read-only preflight confirms unlocked Mac and existing observer grant.
+  Retry job `20261115-151351-41002` remains queued. CREATOR's helper holds GPU and merge reservations at its
+  operator-controlled window step, while the loop lists no live CREATOR agent. Recorded the resource evidence
+  and preserved the queued retry. D10.5 and the remaining new campaign stages await that reservation.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
