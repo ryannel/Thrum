@@ -3,8 +3,8 @@
 - 2026-11-15 M1 clean-checkout recovery: the reported gate failure came from
   APPLE-PRESENTATION M3 links to evidence absent from the merged checkout. Main's
   `b247eda7b` repair identifies those builder-branch paths explicitly. All twelve
-  M1 builder results and their retained target receipts are unchanged; integration
-  imports the repair and reruns the repository and milestone checks.
+  M1 builder results are pass. Integration refreshes exact-baseline evidence after
+  rebase and runs the repository gate on the combined tree.
   At `d1837acac`, documentation, Mac/Chrome/simulator conformance, the sine control
   and both cost-source checks pass. All 28 repaired-log links resolve to tracked files.
 
