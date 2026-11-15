@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 Integration job `20261115-021833-24319` terminated with SIGTERM before
+  merging. Lock inspection found an opposing GPU-then-merge caller. Updated the
+  retained integration wrapper to release GPU when a nonblocking merge acquisition
+  fails, then retry the pair. The isolated real-file-lock proof completes both
+  callers. The normal merge entry point and all checks still run. Integration and
+  real-window proof remain pending.
+
 - 2026-11-15 The official M3 gate at `19081f2a` passes both M3.3 and `./dev check`.
   Retained its complete compressed streams. Resolved integration's documentation
   conflicts with the upstream owners' link corrections. Covered source files are
