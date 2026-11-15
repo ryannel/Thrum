@@ -1,5 +1,13 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1 integrated SIM-2D's new consumers. The runtime retains its world digest and profile validation;
+  the new core fixture, crowd example and cost runner use the engine page and callback-free rewind API, with
+  assertions unchanged. At `56c14e94`, focused core rewind/digest/refusal tests, crowd conformance/input-route
+  tests and focused Clippy pass. The crowd runner also compiles for Wasm and iOS simulator with explicit pinned
+  rustc. Documentation checks pass. Mac target checks, refreshed simulator proof and integration remain queued;
+  [the handoff](../../evidence/REVIEW-ENGINE/M1-handoff.md) names the live batch. Its full project gate runs once
+  after the retained target proof is committed, then it merges before releasing the GPU lease.
+
 - 2026-11-15 M1 target proof resumed. The ordinary iPhone 18 Pro simulator run passed start, background/foreground,
   device recovery and both rotations at `3e7b9650`. The retained report names the actual ASTC profile and 29 storage
   buffers per stage. Builder inspection confirmed the cooked scene in the selected views. M1.2 is now passed,
