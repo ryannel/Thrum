@@ -154,7 +154,7 @@
     {
       "id": "M12",
       "name": "On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -292,7 +292,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "CREATOR process 36242 must release its operator-held GPU and merge leases so M12 can verify exact baselines and merge.",
+        "work": {
+          "commit": "582a153e6d6e04744bc74b64aed47e4fe3a500e0",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/WATERS/M12-handoff.md"
+      }
     },
     {
       "id": "M2",
