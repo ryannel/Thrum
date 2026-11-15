@@ -6,9 +6,8 @@
   waterline, keeping it out of chart-owned water. All 32 water-model tests,
   strict Clippy and documentation checks pass, including mirrored/translated
   seed cells, remote diagonal necks, reversible stages, surface answers and
-  stage/sea spill refusals. [M1 evidence](../../evidence/WATERS/M1.md) records
-  the source-identified CPU and Mac/Chrome regression proofs; GPU water quality
-  and performance remain unclaimed.
+  stage/sea spill refusals. [M1 evidence](../../evidence/WATERS/M1.md) identifies
+  CPU and Mac/Chrome proofs; GPU water quality and performance remain unclaimed.
 
 - 2026-11-15 Fixed both verified findings from the first M1 review. Triangle
   rasterization tracks actual intersections separately from the uncovered-cell
