@@ -1,5 +1,11 @@
 # SIM-2D log
 
+- 2026-11-15 M1 integration resumed with all twelve retained builder results passing.
+  Stopped the inherited, idle two-hour custom merge job without source changes.
+  M1.11 now cites the shared main-branch exact-images check required by current policy;
+  the earlier exact receipt remains historical evidence. The supported merge command
+  runs the integration gate; the lead checks the merged work before review.
+
 - 2026-11-15 M1 resumed qualification at `371450716`: fresh Mac, Chrome and simulator
   conformance, the sine control and all six focused test commands passed after the
   engine-owned publication API adaptation. Refreshed both two-repeat cost records.
