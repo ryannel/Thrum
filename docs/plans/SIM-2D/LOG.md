@@ -82,3 +82,10 @@ Its result is not yet known. The resumed session changed no implementation; its 
 cooker and Wasm release prebuilds passed in job `20261115-013723-7743`.
 Earlier continuation jobs `20261115-011045-87236` and `20261115-013953-9763` were
 cancelled while waiting, before they ran any checks or merge.
+
+The continuation holds the GPU lock while it checks and merges, and relies on cached item
+checks for the unchanged files outside `docs/plans/`. Keep those files unchanged until it
+exits: invalidating the M1.11 cache would make its nested check wait for its own GPU lock.
+Changes to this log and to the done-when results do not invalidate that cache. After the item
+job passes, retain its baseline summary here and mark M1.11 passed; observe the continuation's
+merge result and affected upstream files before reporting completion.
