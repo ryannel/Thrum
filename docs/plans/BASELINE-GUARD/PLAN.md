@@ -7,47 +7,37 @@ A change that alters another module's exact reference images is refused before i
 ## Open for the human
 
 - Assumption: the guard is its own module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items.
-- Assumption: every landing that changes a file a verified build or comparison reads pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures, about 17 minutes), and pays it again if another such change lands first. The time is recorded, not budgeted. Landings that touch only other files pay nothing.
+- Assumption: every landing that changes a covered path pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures, about 17 minutes), and pays it again if another covered change lands first. The time is recorded, not budgeted.
 - Assumption: "before landing" means before a push made through the loop's `land`, which reruns `./dev check` on the rebased commit. A thread that pushes with a plain `git push` is bound only by its own `./dev check` run; no Git hook or server-side check is built.
-- Assumption: "exactly the inputs ... and nothing else" (15 November) is met file by file only for Rust sources, where the compiler's own record says what a build read. Every other file in a linked package stays covered, and so does the whole of a package that has a build script, because nothing records what the cooker, the page build and the scripts read. On the night of 14 to 15 November this key changes at 11 of main's commits, where the listed one changed at 33.
-- Assumption: the workspace `Cargo.toml`, `Cargo.lock` and every workspace package's `Cargo.toml` stay covered as whole files, so a landing that adds a workspace member or changes any package's dependencies lapses every open proof. Cargo reads them all to load the workspace. A key over the resolved graph alone would have spared one of those 33 commits, and would trust a second derivation.
-- Assumption: MF3 is settled by covering, not by refusing. Every tracked file is in the key unless it is in a crate Cargo does not link, is a document (`docs/`, `.agents/`, `.claude/`, Markdown outside the crates) or is a script nothing reaches. So a data file a script reads through a computed path, only if present, or by listing a folder is covered with nobody declaring it. Refusing instead would need the verifier to see every lookup a script makes, and macOS shows that only to root.
-- Assumption: the price of covering by place is that a few files nothing reads lapse proofs too: `.gitignore`, the CI workflow, `clippy.toml`, `dev`, the shape baseline, a data file beside an unrelated script. With the next line it is about six more lapses in 493 commits since 11 November; covering `scripts/` whole would be 28.
-- Assumption: an unrelated script stays out of the key, and a tripwire stands in its place, so a verifier step that runs or imports one gets no proof. Adding, removing or renaming any script therefore lapses open proofs; changing one's content does not.
-- Assumption: one script input stays unguarded, because it cannot be closed while unrelated crates stay excluded. A comparison that reads a file of an unlinked crate, an unlisted document or a test source only if it is there, or by listing, does not see it in the scratch tree, and a later change to it keeps the proof. A read the script needs fails and gets no proof. The cure is to cover those files; for `docs/` that lapses every proof at nearly every commit.
+- Assumption: M2 is worth building for what it saves. Replayed over main since 11 November, M1's key changed at 204 commits and the smaller key changes at 186: it spares 18, all changes to `thrum-sea`, `thrum-cloud-model`, `thrum-water-model` or `thrum-sea-model` alone. On the night of 14 to 15 November it spares 5 of 65. Of the 186, 46 touched nothing covered but `scripts/`. Re-proving is likely to stay a bottleneck, and the fuller key is recorded as later work, not planned.
+- Assumption: "fails closed" includes what the compilers read. After its builds the verifier checks Cargo's own records and writes no proof if a build read a repository file the key does not hold, such as a shader a linked crate includes from an unlinked crate's folder. The task did not ask for this check; without it that file could change an image and keep a proof.
+- Assumption: one read stays unguarded, as the task's subtraction implies. A script, the cooker or the game at run time that reads a file in an unlinked crate's folder as data takes input the key does not hold, unless the registry lists the file. Nothing the verifier runs does so today, beyond hashing those files into records nothing compares. A Cargo build script that reads such a file undeclared is the same case.
+- Assumption: an unlinked crate's `Cargo.toml` stays in the key, since Cargo reads every member's manifest to load the workspace. No commit since 11 November changed one and no other covered path.
+- Assumption: "workspace crates and examples" removes no example today, because M1's key never held an example other than `v1-game`. A crate or example the game comes to link joins the key wherever it lies.
 - Assumption: macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside the key as before, so an update that moves an image shows as untouched main failing the verifier.
-- Assumption: one read stays unguarded. A Cargo build script could read, undeclared, a test source of another linked package, and a change to that file would keep a proof. One linked package has a build script and it reads one C file of its own. Closing it means building each such package from nothing on every verifier run.
-- Assumption: every verifier run builds in that scratch tree, which adds a second page build and whatever Cargo rebuilds because the sources moved. M2 records the time and disk beside M1's 17 minutes; none is budgeted.
 - Assumption: `SIM-2D`'s cost records keep their own source key, which is drawn wider than its inputs (the survey is in `docs/evidence/BASELINE-GUARD/M2-plan/README.md`). Narrowing it is a small change to `SIM-2D`'s script and plan, and is not planned here.
 
 ## M1 A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main: done
 [review](../../evidence/BASELINE-GUARD/M1-review.md)
 
-## M2 A proof of the exact images survives a rebase that brings in only code the verified game is not built from
+## M2 A proof of the exact images survives a rebase that brings in only changes to crates the verified game does not link
 
 The gate, the verifier and the key are in `scripts/exact_baselines.py`, their tests in
-`scripts/test_exact_baselines.py`, and the registry in `.config/exact-baselines.json`. `./dev check` runs the gate
-and the tests from `tools/xtask/src/main.rs`. [The planner's measurements](../../evidence/BASELINE-GUARD/M2-plan/README.md)
-give the linked packages, what one verifier build's dependency records list and where Cargo wrote them, and the
-scripts reached today; check your derivation against them.
+`scripts/test_exact_baselines.py`, and the registry in `.config/exact-baselines.json`, whose `covered_paths` are
+the listed paths. `./dev check` runs the gate and the tests from `tools/xtask/src/main.rs`.
 
-The item checks name test classes: `CoveredPathTests`, `UnreadSourceTests`, `FailClosedTests`,
-`GuardInterfaceTests`, `VerificationRootTests` and `ScriptInputTests` are new, and `GateTests` is M1's. M1's
-tests build a Git repository with no Cargo workspace in it, so their fixture has to become one; keep what each
-asserts.
+The item checks name test classes: `CoveredPathTests`, `ClosureTests`, `FailClosedTests`, `BuildReadTests` and
+`UnlinkedRebaseTests` are new, and `GateTests` is M1's. M1's tests build a Git repository with no Cargo
+workspace in it, so their fixture has to become one; keep what each asserts.
 
-Two design reviews found the same hole, a script input the key missed, so `ScriptInputTests` holds the three
-cases the last one ran; the design's [check that it can work](DESIGN.md#check-that-it-can-work) gives them.
-[The planner's estimate](../../evidence/BASELINE-GUARD/M2-plan/README.md#covering-by-place) lists what covering
-by place adds today, and its script holds a tripwire that worked in Python, Node and shell.
+[The planner's trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#the-smaller-step) holds what Cargo gave
+on a workspace made for it and on this one. `cargo metadata --no-deps` reads no lockfile and no registry cache
+and gives each member's declared dependencies; the resolved graph with every feature on gives the same nine
+packages today. The verifier's builds leave their records at `target/release/v1-game.d`,
+`target/release/thrum-cook.d` and `target/wasm32-unknown-unknown/release/v1_game.d`. A record names an included
+file by the path the compiler formed, with `..` in it.
 
-The verifier runs in the worktree today. [The planner's trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)
-of the verification root says what Cargo and Git needed there and what was not tried: no matrix or capture has
-drawn from a root yet, so make one full verifier pass in it early. The owners' scripts ask Git for the files it
-lists, tracked and untracked, for the revision and for a diff, and `capture_v1_browser.mjs` asks with no path
-filter. They belong to `APPLE-TILE` and `T2-CAPTURE` and do not change.
-
-M2.5 is made before the landing, on the branch, with the proof from the verifier pass that the landing needs
+M2.6 is made before the landing, on the branch, with the proof from the verifier pass that the landing needs
 anyway. The scratch main it rebases onto is a local bare repository.
 
 Other modules' scripts call the guard; [the design lists what they rely on](DESIGN.md#what-other-modules-use).

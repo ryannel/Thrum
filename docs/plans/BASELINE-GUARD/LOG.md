@@ -155,3 +155,34 @@
   among them, and `covered` fail before the work and none errors. The loop's `check --items-only` waited over
   ten minutes on the `gpu` lock for M2.6, with builders holding it, and was stopped; M2.6's check is M1.1's
   command, unchanged. `./dev check-docs` reports only the 18 missing links in `APPLE-PRESENTATION`'s log.
+
+- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of covering by place (commit
+  `76daae92`): changes requested, MF3 a third time and nothing else. Data a script reads only if present, or by
+  listing a folder, is still lost when it lies in a place the rules leave out, such as `docs/evidence/`.
+
+- 2026-11-15 The lead's task, a re-plan of M2: "Take the smaller step. Keep every path the exact-image key in
+  scripts/exact_baselines.py covers today, and subtract only workspace crates and examples that are outside the
+  build closure of what the verifier builds (v1-game and thrum-cook). Work out that closure from `cargo metadata`
+  when the check runs; don't keep a hand-written list. ... a crate the closure can't classify stays in the key,
+  so the check fails closed. ... The fuller derived key is out of scope here; record it as possible later work
+  if re-proving remains a bottleneck." The design quotes it whole.
+
+- 2026-11-15 M2 planned again from that task. The key is M1's listed paths, less the files of workspace
+  packages Cargo links into neither built package; their manifests stay. The verification root, unread
+  sources, document and script rules and tripwires are withdrawn, and the design's "Later work" records them.
+  All nine items were written again: M2.1 to M2.8 now.
+
+- 2026-11-15 Planner's decisions. The gate uses the commit's own graph only: the linked packages follow from
+  files that are covered, so no graph of the merge base is needed. Added beyond the task: the verifier checks
+  Cargo's dependency records after its builds and writes no proof if a build read a file outside the key,
+  because a linked crate can include a file from an unlinked crate's folder with no dependency. Left open, as
+  an assumption: a script or the game reading such a file as data at run time.
+
+- 2026-11-15 Measured at `5dbc2c10` ([README](../../evidence/BASELINE-GUARD/M2-plan/README.md#the-smaller-step)):
+  nine of 23 packages linked; 73 of 738 listed files leave the key. Since 11 November M1's key changed at 204
+  of main's commits and the smaller key at 186, so it spares 18, about one lapse in eleven. A fixture
+  workspace and the records of two real verifier builds bear out the build-read check.
+
+- 2026-11-15 M2's checks tried by running each command: the five test-class checks and `covered` fail before
+  the work and none errors. The loop's `check --items-only` waited seven minutes on the `gpu` lock for M2.7,
+  behind queued builders, and was stopped; M2.7's check is M1.1's command, unchanged. `./dev check-docs` passes.

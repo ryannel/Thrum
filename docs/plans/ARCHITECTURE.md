@@ -653,32 +653,28 @@ main. Every module's landings are covered from the day the gate exists, with no 
 
 <a id="the-covered-paths-are-derived"></a>
 
-**The covered paths are derived** (15 November 2026, on the owner's approval;
+**Unlinked crates leave the covered paths** (15 November 2026, on the lead's task;
 [design](BASELINE-GUARD/DESIGN.md#the-covered-paths)). The gate was built with covered paths listed by hand, and
-they took in every crate and every script, so a change to a crate the game never links lapsed every open proof.
-`BASELINE-GUARD` M2 derives them: every tracked file, except the files of a package Cargo does not link into
-what the verifier builds (its manifest stays covered), documents (`docs/`, `.agents/`, `.claude/` and Markdown
-outside the packages) and scripts nothing reaches from the verifier. A registered reference, a path the registry
-lists outright and a file a reached script names are covered wherever they lie. So a data file is covered for
-where it is, however a script finds it. The verifier does its builds, captures and comparisons in a scratch
-tree that holds only those files, its
-[verification root](BASELINE-GUARD/DESIGN.md#the-verification-root), so a script that needs any other tracked
-file fails there and gets no proof, and one that runs a script the key left out trips the tripwire standing in
-its place and gets none either. A proof also holds its
-**unread sources**, the Rust files of those packages that no build of the verifier read, and the gate accepts
-the proof for a later commit that differs from the proved one only in those files. So a rebase that brings in the
-sources of a crate the game does not link, a change to the content of a script the verifier never starts, a test
-file or a document outside those packages keeps the proof, and any change to a file a verified build or
-comparison reads still lapses it. So does adding, removing or renaming a script.
-`python3 scripts/exact_baselines.py covered` lists the covered paths of a commit. A proof the gate accepts for a
-later commit names the commit the verifier ran on; rule 3's check at the claim is unchanged. Where a ruling here
-lets a module change the registry's paths, that includes the package and script names it holds. Any module may
-add a path to the registry's listed paths for a script it owns, when the verifier fails in the root for a file
-that script is meant to read or a script it is meant to run; it says so in its log, and removing one needs a
-ruling here. No baseline, no
-comparison and no other module's item changes, and a design that calls `crates/` or `scripts/` a covered path
-stays right for the files in them that the verifier builds or runs. Until M2 is Done the listed paths in the
-table below apply.
+they took in every crate, so a change to a crate the game never links lapsed every open proof. `BASELINE-GUARD`
+M2 keeps the listed paths and takes one kind of file out of the key: a file in the folder of a workspace package
+that Cargo links into nothing the verifier builds (`v1-game` and `thrum-cook`). Cargo works that out, through
+`cargo metadata`, each time the gate or the verifier computes the key, and no list of crates is kept. So a
+crate joins the key in the commit that makes the game depend on it, and a file Cargo cannot place in an
+unlinked package stays covered. Such a package's `Cargo.toml` stays covered too. Everything else under the
+listed paths is covered as before, read or not: every file under `scripts/`, `tools/` outside a package,
+`.cargo/`, the workspace manifest, the lockfile, the toolchain file, the registry and the references.
+
+After its builds the verifier checks Cargo's dependency records, and writes no proof if a build read a
+repository file the key does not hold. A script, the cooker or the game must not read data from an unlinked
+package's folder unless the registry lists the file: any module may add such a path to the registry's listed
+paths for a file its script or build reads, and says so in its log; removing a listed path needs a ruling
+here. `python3 scripts/exact_baselines.py covered` prints the linked and the unlinked packages of a commit.
+Where a ruling here lets a module change the registry's paths, that includes the package names it holds. No
+baseline, no comparison and no other module's item changes, and a design that calls `crates/` or `scripts/` a
+covered path stays right for every crate the game links and for every script. Until M2 is Done the listed
+paths in the table below apply whole. A key that also leaves out scripts the verifier never runs and sources
+no build reads was designed and withdrawn after three design reviews;
+[the design](BASELINE-GUARD/DESIGN.md#later-work) records it as later work.
 
 **3. At the claim: the verifier again, as a planner-written check.** A builder cannot change an item's `check`,
 and the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that
@@ -689,7 +685,7 @@ an exact test changed by a module that does not own it, with no ruling here, rec
 
 | Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
-| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | [Derived](#the-covered-paths-are-derived) once `BASELINE-GUARD` M2 is Done. Until then, listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files |
+| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. Once `BASELINE-GUARD` M2 is Done, [less the files of crates the verifier's builds do not link](#the-covered-paths-are-derived) |
 | Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
 | `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
 | The exit baselines under `docs/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
@@ -2107,3 +2103,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   file is covered unless a rule withholds it, in place of a set found from the scripts' imports and quoted
   paths, so a script's optional and listed data files are in the key. A tripwire stands in the verification
   root for each script the key leaves out. No baseline, comparison or other module's item changed.
+- 2026-11-15 "The covered paths are derived" replaced by "Unlinked crates leave the covered paths", on the
+  lead's task after `BASELINE-GUARD`'s fifth design review returned MF3 a third time. M2 now keeps M1's listed
+  paths and leaves out only the files of workspace packages Cargo does not link into `v1-game` or
+  `thrum-cook`; the derived key, the verification root, unread sources and tripwires are withdrawn and recorded
+  as later work in that design. The paragraph keeps its anchor. No baseline, comparison or other module's item
+  changed.
