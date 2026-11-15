@@ -18,8 +18,8 @@
           "lock": "gpu",
           "ask": "Is the function under test the one the iPhone app calls for preparation and for recovery, with no second copy? Does anything still ask for `downlevel_defaults` limits on an Apple GPU?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/items.json; docs/evidence/REVIEW-ENGINE/M1/checks/M1.1.stderr.log",
           "verdict": "",
           "review": ""
         },
@@ -50,7 +50,7 @@
           "ask": "Read the new test. Does it compare whole pages, byte for byte, and does it cover a rewind that lands while a publication is deferred?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/core-tests.log; docs/evidence/REVIEW-ENGINE/M1/simulation.log",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/items.json; docs/evidence/REVIEW-ENGINE/M1/checks/M1.4.stdout.log",
           "verdict": "",
           "review": ""
         },
@@ -60,8 +60,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/baselines.json; docs/evidence/REVIEW-ENGINE/M1/checks/items.json",
           "verdict": "",
           "review": ""
         }

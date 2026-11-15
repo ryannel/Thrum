@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1's approved target checks all pass at `bd40a689`: the Mac request gives ASTC and adapter limits,
+  both deferred rewind cases and all 42 unchanged game simulation tests pass, and every native/Chrome exact
+  baseline matches. The refreshed simulator route and all four inspected views pass on that source, with ASTC
+  and 29 storage buffers. [The retained proof](../../evidence/REVIEW-ENGINE/M1/README.md) names source and binary.
+  M1.1 and M1.5 now have builder result `pass`; M1 stays `in_progress`. The first full gate failed on upstream
+  APPLE-PRESENTATION log links to unmerged evidence; those paths are preserved as branch references for retry.
+
 - 2026-11-15 M1 rebased onto REPO-RULES' new shape checks. Ordinary imports distinguish calls to the iPhone
   wrapper from the two underlying wgpu requests; `shape_rules.py tighten` records those two existing sites in
   their extracted file, with no increase in allowance. The shape checks pass. The full documentation check
