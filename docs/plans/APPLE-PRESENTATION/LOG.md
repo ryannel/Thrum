@@ -1,5 +1,105 @@
 # APPLE-PRESENTATION log
 
+- 2026-11-14 At `9b5e5ef4`, unconditional current-source reconstruction passes
+  five Metal still checkpoints but ties no AA at night in two runs; every negative
+  and cut control passes. All ten Mac arms complete, but builder and a fresh Sol
+  medium reader still find reveal speckling. The next bounded kernel preserves
+  the raw source with usable history and adds variance clipping; target proof is pending.
+  [Results and next experiment](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/variance-candidate.md).
+
+- 2026-11-14 CPU analysis of the saved `0c3b1bc6` reference failure locates 4,298
+  changed components in a narrow night terrain/horizon band. Both f32 means and
+  the locator are retained; the cause remains unconfirmed and the bound is unchanged.
+  [Failure evidence](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/reference-failure/README.md).
+
+- 2026-11-14 M3 resumed at `acc6a02b`: its traced Metal reconstruction and all ten
+  Mac capture arms complete, but builder and fresh-reader native inspection still
+  find reveal-edge speckling. Candidate `008fee6e` adds current-source reconstruction;
+  WGSL validation, native Clippy and Wasm build pass, with device proofs queued.
+  No item or integration is qualified by those compile checks.
+  [Current experiment and retained target evidence](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/current-filter.md).
+
+- 2026-11-14 M3 continuation confirms that reciprocal-only `18a20549` passes its
+  Metal depth probe and cut controls but fails noon's strict p99 improvement
+  (1.406131 versus no-AA 1.369814). The surface-tap experiment `ec453438` passes
+  shader validation; its Metal reconstruction run waits behind SEA's nested
+  GPU lock, confirmed by a stack sample of checker PID 4501. No current motion,
+  timing or integration pass is claimed. All M3 items remain open and M3 remains
+  `in_progress`. [Experiment evidence](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/README.md)
+  and [continuation handoff](../../evidence/APPLE-PRESENTATION/M3-handoff.md).
+
+- 2026-11-14 The range-based candidate at `959ada11` passes all 1,966 exact
+  comparisons in 939.25 seconds. The observed reveal fringe remains a failure of
+  the visual bar. A bounded candidate now interpolates reciprocal view depth
+  instead of accepting the whole foreground/background depth interval; shader
+  validation, strict renderer Clippy and `./dev check-web` pass. A test-only Metal probe includes
+  a projected plane and the former range test as a negative control. GPU and
+  visual execution are pending, so D3.2, D3.4 and D3.5 are reopened alongside
+  both motion items. [Hypothesis, cost and runner](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/README.md).
+
+- 2026-11-14 Chrome's ten real-time arms pass capture/packaging on `3f896417`.
+  The CPU audit verifies all 2,696 original frames. A fresh GPT-6.1 Sol medium
+  opinion and the builder find a fine ragged fringe on revealed blocks and the
+  moving cube, also visible on Mac. Both motion items remain open for repair;
+  stable star-core traces and zero-lag scrub fits are supporting diagnostics,
+  not substitutes for the visual bar. [Target observations](../../evidence/APPLE-PRESENTATION/m3/motion/chrome-review.md).
+
+- 2026-11-14 D3.5 passes at `3f896417`: the paired 640×360 moving route on
+  Metal has 361 matching-input samples per arm, TAAU resolve p50/p95
+  0.046709/0.049792 ms and scene p50 2.994001 ms on versus 2.778083 ms off.
+  Build, arm order and shared-host load are retained. The 0.420381 ms pixel-ratio
+  heuristic is within the 1080p estimate, with no measured 1080p or cadence claim.
+  [Target timing](../../evidence/APPLE-PRESENTATION/m3/README.md#moving-route-timing).
+
+- 2026-11-14 Resumed at `8fa5592d` and retained all ten Mac motion arms, native
+  source crops and independently decoded all-frame star/scrub diagnostics. The
+  scrub trace's best-fit lag is zero milliseconds; sampled spawn/reveal frames
+  show no persistent silhouette. Direct 1× visual observation has not occurred,
+  so D3.3 stays open. Documentation checks pass; fresh route, Chrome, timing and
+  integration qualification remain pending. [Inspection limits](../../evidence/APPLE-PRESENTATION/m3/motion/motion-review.md).
+
+- 2026-11-14 D3.2 and D3.4 pass on Metal at `c3d052a4`: all six full-frame p99
+  values improve on no AA and remain below 3; both linear reference cycles agree
+  bit for bit, all history-disabled controls are rejected, and cut/reset equality
+  plus the suppressed-reset control pass. Strict Clippy passes all native workspace
+  targets after preserving the field benchmark's explicit reconstruction-off setup.
+  Motion, actual moving-route timing and integration remain unqualified.
+  [Target proof](../../evidence/APPLE-PRESENTATION/m3/README.md#reconstruction-and-cut).
+
+- 2026-11-14 Independent GPT-6.1 Sol medium research separates the depth-rejection
+  failure from night's broad one-code green-channel p99 plateau. It finds no evidence
+  requiring a foundational design change and recommends evaluating the queued
+  half-float correction before another runtime edit; if it fails, capture the
+  pre-tone/history/validity values at plateau pixels. The reference and firm bound
+  remain unchanged. [Diagnosis](../../evidence/APPLE-PRESENTATION/m3/reconstruction-research.md).
+
+- 2026-11-14 M3's strengthened reference at `9c1349f2` proves bit-exact repeated
+  linear means and both cut controls, but four still comparisons fail. A diagnostic
+  without depth rejection improves five of six checkpoints. The next implementation
+  retains rejection across the complete reprojected depth footprint and introduces
+  unbiased half-float history rounding; WGSL validation passes, with target quality
+  still pending. [Second attempt](../../evidence/APPLE-PRESENTATION/m3/attempt-2/run.json).
+
+- 2026-11-14 The first M3 Metal reference run at `55ae06ee` fails the firm no-AA
+  comparison at all six checkpoints, despite meeting the absolute ΔE 3 bound.
+  Reference-cycle equality and both cut controls pass. Follow-up `5cffce8c`
+  corrects jittered depth addressing, steady-colour blend drift and retained GPU
+  storage-scale use; Clippy and shader validation pass, with target rerun pending.
+  [Retained failure](../../evidence/APPLE-PRESENTATION/m3/attempt-1/run.json).
+
+- 2026-11-14 M3 implementation checkpoint adds the portable temporal resolve, shared
+  submitted history, pre-tone integration, an independent linear reference accumulator
+  and the submitted game-host oracle. Focused native Clippy, shader validation and
+  pinned Wasm compilation pass. Target image quality, motion, timing, full checks and
+  integration remain unqualified. [Builder evidence](../../evidence/APPLE-PRESENTATION/m3/README.md).
+
+- 2026-11-14 M3 preparation follow-up separates continuous camera edits from cuts,
+  samples local lights from the same game endpoint as the view, and adds an opt-in
+  reconstruction witness with an authoritative tick-60 prop replacement. The
+  real Metal alternating-slot/reset execution test and both CPU fixture tests pass.
+  Native/Chrome motion drivers now expose the five required scenarios; their
+  output quality, the full reference oracle and integration remain unqualified.
+
 - 2026-11-10 Revised after [the design review](../../evidence/APPLE-PRESENTATION/design-review.md) at `4bbe44a4`
   (changes requested, one Must Fix), under the task "Revise APPLE-PRESENTATION's design and plan as
   docs/evidence/APPLE-PRESENTATION/design-review.md asks".
@@ -75,9 +175,8 @@
   submitted valley sequences and native crops were inspected, including a real simulation mover. Repository
   gate and milestone checks are recorded separately from visual self-review; no performance or G4 closure
   is claimed. [Builder evidence](../../evidence/APPLE-PRESENTATION/m1/README.md); lead review remains owed.
-- 2026-11-11 M1 integration recheck: the first land gate stopped at the final cooked draw-probe check; the identical pinned
-  binary passed all 13 isolated cases without changes. The final land gate serializes test cases, with every
-  assertion and explicit concurrency witness enabled; details are retained with the builder evidence.
+  Integration recheck: all 13 isolated cooked draw-probe cases pass on the identical pinned binary; the final
+  gate serializes cases with explicit concurrency witnesses retained. Details are in the builder evidence.
 
 - 2026-11-11 MF1 repair gates raster jitter on explicit temporal sampling while retaining submitted metadata.
   Metal tests prove consecutive paused colour byte-equality, advancing phases and a jittered positive control.
@@ -124,3 +223,19 @@
   Only M8 (`APPLE-TILE:M11`) and M11 (`APPLE-TILE:M12`) wait on another module. The owner's look at EDR is
   M11's last item. M1 to M3 are byte for byte as they were. The revised design needs its review; until it
   passes, the script holds the whole module, M3's next step included.
+
+- 2026-11-14 M3 continuation: variance clipping at `0190d760` fails four Metal still checkpoints. Adaptive source at `97b0315b` and graded depth-footprint support at `e8ff99af` pass all six still comparisons and both cut controls. Exact current images, independent f32 means and held records are retained; D3.2 and D3.4 pass. Builder and fresh readers still note reveal-edge stipple, so motion remains open. A separately pinned filtered-source history-on/off diagnostic is queued; its explanation is not yet established. Native Clippy, WGSL validation, Wasm release builds and documentation checks pass; full qualification and integration remain owed. [Current target evidence](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md).
+
+- 2026-11-14 M3 route follow-up at `55b8c270`: the restored production source passes the moving route on Mac Metal and Chrome, with 361 matching tick identities and exact repeat checkpoints. Paired 640×360 resolve p50/p95 is 0.064833/0.067708 ms; its nine-times heuristic trips the 1080p estimate warning, without failing D3.5 or claiming measured 1080p cost. D3.1 and D3.5 pass with retained records. The controlled reveal shows stair steps persist without feedback and resolves several apparent trails into neighboring geometry; full production motion remains to be judged. All five paired Mac/Chrome sequences are queued under one GPU reservation. [Current route proof](../../evidence/APPLE-PRESENTATION/m3/current-route/README.md) · [Diagnostic](../../evidence/APPLE-PRESENTATION/m3/depth-reprojection/history-ablation/README.md#target-comparison).
+
+- 2026-11-15 M3's complete production campaign at `b969d64e` captures all twenty arms. Fresh Sol medium readers find residual revealing-edge roughness and softened Chrome pan detail, so motion remains open. Rebased onto main, preserving native diagnostics and one target-preparation path; native compilation, strict affected Clippy and documentation checks pass. An analytic translation model motivates interpolating cubic history sampling; a quadratic-field control and full target qualification are next. Existing four passes are reopened for changed integrated source and cost. [Candidate and cost account](../../evidence/APPLE-PRESENTATION/m3/motion/history-filter.md).
+
+- 2026-11-15 M3 continuation confirms successful native, Web and release-oracle prebuilds at `dc361d2b`, but no new target proof. After several shared reservations advance, a confirmed cross-builder lock cycle prevents GPU progress: CREATOR holds merge and waits for GPU, while CLOUDS holds GPU and waits for merge. Only this worktree's pending jobs are stopped for an evidence checkpoint; other builders are untouched. All six items remain open. The source audit and inspection checklist are preparation, not acceptance. [Diagnosis and build identities](../../evidence/APPLE-PRESENTATION/m3/continuation/lock-cycle.md) · [Refreshed handoff](../../evidence/APPLE-PRESENTATION/M3-handoff.md).
+
+- 2026-11-15 The shared lock cycle clears by 02:48 UTC when the CREATOR process exits; CLOUDS proceeds into workspace GPU tests. M3's replacement qualification and CPU preparation are queued on unchanged renderer source. The historical diagnosis is retained, but it is no longer a reason to stop. No new target result is claimed.
+
+- 2026-11-15 CLOUDS's subsequent model-code merge changes the blanket exact-baseline content key. M3 qualification is requeued to acquire GPU first, integrate current main with abort on conflict, rebuild and then collect proof on that source. This prevents older queued merges from invalidating the key before capture begins. The current cubic renderer is unchanged and remains unqualified. A CPU-only affine-source model identifies a possible filter-support bias, without establishing a game defect or selecting a replacement.
+
+- 2026-11-15 M3 resumes at `e924fe69`: Metal helper probes, six still checkpoints and ten Mac motion arms passed; Chrome's spawn-off arm is incomplete with one export omission, so that campaign stopped before route timing and exact verification. Builder and a fresh Sol medium reader find no material reconstruction defect in the inspected Mac sequences, with residual small-edge roughness and a 70.871 ms spawn submission-gap caveat retained. Checkpoint `1248cac8` saves the actual inspected images and opinion. A replacement integrated-source qualification is queued under GPU; all six items remain open. The preparation documentation check fails only on old REPO-RULES links already repaired on main, which the queued rebase will import. [Recovery and current jobs](../../evidence/APPLE-PRESENTATION/M3-handoff.md).
+
+- 2026-11-15 M3 integrates SIM-2D's main changes cleanly. At `dc7eb2c0`, documentation, strict affected native/Wasm Clippy and the official web compile checks pass. Explicit pinned tool paths correct a direct invocation that selected Homebrew Clippy's non-Wasm sysroot. The motion runner now compares source with its saved campaign commit, so earlier rebases cannot hide stale captures. GPU qualification remains pending and all six items stay open. [CPU result](../../evidence/APPLE-PRESENTATION/m3/continuation/qualification/cpu/run.json).
