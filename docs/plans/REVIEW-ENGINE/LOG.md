@@ -1,5 +1,13 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1 target proof resumed. The ordinary iPhone 18 Pro simulator run passed start, background/foreground,
+  device recovery and both rotations at `3e7b9650`. The retained report names the actual ASTC profile and 29 storage
+  buffers per stage. Builder inspection confirmed the cooked scene in the selected views. M1.2 is now passed,
+  with proof committed at `2394f61d`. Documentation checks pass. M1.1, M1.5, the full gate and integration remain
+  pending because CREATOR holds the merge lock while waiting for the GPU and CLOUDS holds the GPU while waiting
+  for the merge lock. The live proof job and process identities are in the refreshed
+  [handoff](../../evidence/REVIEW-ENGINE/M1-handoff.md).
+
 - 2026-11-15 M1 implementation: the iPhone's preparation and recovery call one Mac-testable request with content
   features and adapter limits. Core now has only the engine page; game capture and rewind patch callbacks are
   removed, retaining deferred final-tick undo and previous poses. Verified on the Mac: core tests, the two new
