@@ -71,11 +71,11 @@
       "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
-      "quality_bar": "Input tracking as a build system does it, in the manner of Bazel's action keys and Ninja's depfiles: the key holds every file a verified build or comparison reads, a result is reused exactly when those files are unchanged, and a doubt about a file is settled by covering it.",
+      "quality_bar": "Input tracking as a build system does it, in the manner of Bazel's action keys and sandboxed working folders and Ninja's depfiles: the key holds every file a verified build or comparison reads, the work runs where only those files exist, a result is reused exactly when they are unchanged, and a doubt about a file is settled by covering it.",
       "items": [
         {
           "id": "M2.1",
-          "statement": "The covered paths of a commit are derived with Git and Cargo's resolver, not listed: the build configuration, every file of each package Cargo links into a build the registry names, the scripts reached from the verifier, the registry and every registered reference. The key changes when a linked package's source, a shader, a showcase asset, a reached script, a registered reference, the lockfile or the toolchain file changes, and when a package becomes linked. It does not change for a package that is not linked, a script nothing reaches, or a document.",
+          "statement": "The covered paths of a commit are derived with Git and Cargo's resolver, not listed: the build configuration with every workspace package's manifest, every file of each package Cargo links into a build the registry names, the scripts reached from the verifier, the registry with the paths it lists outright, and every registered reference. The key changes when a linked package's source, a shader, a showcase asset, a reached script, a registered reference, the lockfile or the toolchain file changes, and when a package becomes linked. It does not change for the sources of a package that is not linked, a script nothing reaches, or a document outside the linked packages and the listed paths.",
           "check": "python3 scripts/test_exact_baselines.py CoveredPathTests",
           "ask": "Read the tests. Is each case decided by the function the gate itself calls, with Cargo resolving a workspace made for the test? Does one case run on this repository's own tree and find a shader, a showcase asset and `scripts/apple_tile_m1.py` covered and a workspace package outside the closure not covered, without the test listing the closure's packages?",
           "target": "mac-metal",
@@ -86,7 +86,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "A proof holds its unread sources: the Rust files of linked packages that Cargo's dependency records show no build of the verifier read. A linked package with a build script has none. The gate accepts a proof for a commit whose covered paths match the proved ones in everything but those files, and refuses when any other covered path was changed, added or removed.",
+          "statement": "A proof holds its unread sources: the Rust files of linked packages that Cargo's dependency records show no build of the verifier read. A linked package with a build script has none, and no path the registry lists outright is one. The gate accepts a proof for a commit whose covered paths match the proved ones in everything but those files, and refuses when any other covered path was changed, added or removed.",
           "check": "python3 scripts/test_exact_baselines.py UnreadSourceTests",
           "ask": "Read the verifier and the tests. Do the unread sources come from the records of the builds that run made, for the game, the cooker and the Wasm module, and can anything but a `.rs` file of a linked package with no build script be among them? Do the tests build a workspace with Cargo, and does one take a file that is unread at the proof and compiled at a later commit, and show that commit refused?",
           "target": "mac-metal",
@@ -97,7 +97,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "The verifier writes no proof, and names the cause, when a build read a tracked file that is not a covered path, when a dependency record is missing, or when a linked package's source lies outside the repository. The gate refuses when Cargo cannot resolve the workspace or the registry cannot be read. No flag, environment variable or file other than the registry changes what is covered or unread.",
+          "statement": "The verifier writes no proof, and names the cause, when a dependency record is missing or lists a file outside the root and its build folder, when a linked package's source lies outside the repository, or when the root's tracked content, hashed from disk before the cook and after the last comparison, does not give the content key. The gate refuses when Cargo cannot resolve the workspace or the registry cannot be read. No flag, environment variable or file other than the registry changes what is covered, unread or in the root.",
           "check": "python3 scripts/test_exact_baselines.py FailClosedTests",
           "ask": "Read the gate. On which paths does it pass? Is each one either no covered difference from main, or a proof whose content key equals the commit's under that proof's own unread sources?",
           "target": "mac-metal",
@@ -119,7 +119,7 @@
         },
         {
           "id": "M2.5",
-          "statement": "A branch of this repository that holds a covered change has a proof from a full verifier pass. Rebased onto a scratch main that gained only a change to a package that is not linked, to an unread test source of a linked package, or to a document, the gate passes it by that proof. Rebased onto one that gained a change to a compiled source, a shader, a showcase asset, a script the verifier runs, a registered reference or the lockfile, the gate refuses it. The real remote is never pushed to.",
+          "statement": "A branch of this repository that holds a covered change has a proof from a full verifier pass. Rebased onto a scratch main that gained only a change to the sources of a package that is not linked, to an unread test source of a linked package, or to a document outside the linked packages, the gate passes it by that proof. Rebased onto one that gained a change to a compiled source, a shader, a showcase asset, a script the verifier runs, a registered reference or the lockfile, the gate refuses it. The real remote is never pushed to.",
           "ask": "Do the retained patches, commands and gate outputs show all nine cases run against the one named proof, each pass made by that proof and each refusal made for a changed content key, not for a dirty tree or an unresolved main?",
           "target": "mac-metal",
           "builder_result": "open",
@@ -129,7 +129,7 @@
         },
         {
           "id": "M2.6",
-          "statement": "The verifier passes on the claimed commit, and its proof names the content key, the number of covered paths and the unread sources.",
+          "statement": "The verifier passes on the claimed commit with every build, the cook, every capture and every comparison run in the verification root, and its proof names the content key, the number of covered paths and the unread sources.",
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "ask": "From the retained proof of a verifier pass on the claimed content, take five unread sources and five Rust files of linked packages that are not among them. By the code, is each of the first five compiled only for tests, benches, examples or another configuration, and each of the second five part of the game, the cooker or the Wasm module?",
@@ -141,9 +141,20 @@
         },
         {
           "id": "M2.7",
-          "statement": "One command prints the covered paths of the current commit with the reason each is covered and, when a proof covers the commit, the unread sources. `CONTRIBUTING.md`, `./dev help` and the engineering skill's building reference describe the derived key and name the command.",
+          "statement": "One command prints the covered paths of the current commit with the reason each is covered and, when a proof covers the commit, the unread sources. `CONTRIBUTING.md`, `./dev help` and the engineering skill's building reference describe the derived key, say what to do when a verifier step fails for a file the root does not hold, and name the command.",
           "check": "python3 scripts/exact_baselines.py covered",
           "ask": "Do the three documents and the table in the module list agree with the gate as built, and does none still say that `crates/`, `scripts/` or `tools/` is covered whole?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.8",
+          "statement": "The verifier runs every build, the cook, every capture and every comparison in a verification root that holds no tracked file but covered paths, as copies, and from the cook on only the files the content key covers. A build that includes an uncovered tracked file gets no proof, and neither does a comparison script that reads one through a path it computes or reads an unread Rust source as data. Once the registry lists the file the proof is written, and a change to the file changes the key. A script that lists a folder sees only its covered files, and a file added to a folder the registry lists changes the key.",
+          "check": "python3 scripts/test_exact_baselines.py VerificationRootTests",
+          "ask": "Read the verifier and the tests. Which steps of the verifier run outside the root, or from the worktree's copy of a script? Do the tests make their root and run their fixture scripts through the code the verifier itself uses?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

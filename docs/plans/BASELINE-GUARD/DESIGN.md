@@ -27,14 +27,15 @@ The lead's task of 15 November 2026, which the owner approved that day:
 > hand-list crates, so a new dependency of v1-game is covered automatically. The gate must still fail closed:
 > anything that can change a verified image forces a re-proof.
 
-[The covered paths](#the-covered-paths), [the unread sources](#the-unread-sources) and
-[the gate](#the-gate) answer it.
+[The covered paths](#the-covered-paths), [the verification root](#the-verification-root),
+[the unread sources](#the-unread-sources) and [the gate](#the-gate) answer it.
 
 ## What went wrong, and why a rule alone would not fix it
 
 Read: [APPLE-TILE M2's review](../../evidence/APPLE-TILE/M2-review.md),
 [APPLE-PRESENTATION M1's first review](../../evidence/APPLE-PRESENTATION/M1-review-1.md),
-[this design's first review](../../evidence/BASELINE-GUARD/design-review.md), `land` in the build skill's
+this design's [first](../../evidence/BASELINE-GUARD/design-review-1.md) and
+[latest](../../evidence/BASELINE-GUARD/design-review.md) reviews, `land` in the build skill's
 `agent_loop.py`, and `scripts/apple_tile_m0.py`, `apple_tile_m1.py`, `apple_tile_m2.py`,
 `apple_tile_m1_compare_browser.py` and `capture_v1_browser.mjs`.
 
@@ -66,8 +67,9 @@ comparison reads ([the planner's measurements](../../evidence/BASELINE-GUARD/M2-
    current commit and compares it with every registered exact baseline. On a full pass it writes a proof.
 2. **The gate.** `./dev check` refuses a commit that changes the covered paths unless a proof exists for exactly
    that content. `land` runs `./dev check` on the rebased commit, so nothing unproven is pushed.
-3. **The derived key.** The covered paths are worked out from the commit, and a proof stays good for a later
-   commit exactly when nothing a verified build or comparison reads has changed.
+3. **The derived key.** The covered paths are worked out from the commit, the verifier works where only they
+   exist, and a proof stays good for a later commit exactly when nothing a verified build or comparison reads
+   has changed.
 
 **Not commissioned:** changing any baseline, comparison or tolerance; toleranced baselines such as the G7 route's;
 visual judgement of any kind; the small image test inside `./dev check` that the first design proposed. The gate
@@ -92,9 +94,16 @@ to refresh them, stay with each baseline's owner module.
 - **Take the files from the compiler.** Make and Ninja learn a target's headers from the dependency file the
   compiler writes ([Ninja's depfiles](https://ninja-build.org/manual.html#ref_headers)), because no list kept by
   hand stays right. Cargo writes the same record for each artefact, and its own rebuild check trusts it.
-- **Bazel enforces declared inputs with a sandbox** that hides every other file. That is ruled out here:
-  `APPLE-TILE`'s and `T2-CAPTURE`'s scripts hash the whole source tree into their records, so a run that could
-  not read an uncovered file would fail, and a trace of what a run opens would list everything.
+- **Run the work where only the declared inputs exist.** Bazel runs each action "in a working directory that
+  only contains known inputs" ([sandboxing](https://bazel.build/docs/sandboxing)), so a read nobody declared
+  fails instead of going unseen. It needs no record of what a program opens, and it holds for a script in any
+  language. An earlier revision ruled this out because `APPLE-TILE`'s and `T2-CAPTURE`'s scripts hash the whole
+  source tree into their records. That was wrong: they hash the files Git lists, and in a folder that is its own
+  repository Git lists only what is there
+  ([the planner's trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)).
+- **Watching what a script opens was rejected.** Python and Node can report the files they open, but not what
+  Git lists for them, what a Swift launcher or the game reads, or a test for a file that is not there. Each gap
+  would need a rule of its own, and those same scripts open every source file to hash it.
 
 ## Mechanism
 
@@ -106,8 +115,9 @@ reference files, and how a fresh candidate is produced and compared. The table i
 
 It also names the roots the covered paths are derived from: the packages the verifier builds, and the scripts it
 starts. The verifier takes its build commands and its comparison scripts from the same entries, so what is built
-and what is keyed cannot drift apart. The registry may list a further path outright, for an input no rule below
-reaches. It has no entry that removes a path.
+and what is keyed cannot drift apart. The registry may list a further path outright, a file or a folder, for an
+input no rule below reaches. A listed folder covers every tracked file under it. The registry has no entry
+that removes a path.
 
 ### The covered paths
 
@@ -115,7 +125,8 @@ The **covered paths** of a commit are the tracked files a verified build or comp
 derived from the commit with Git and Cargo's resolver, with no build, in four parts:
 
 1. **The build configuration:** the workspace `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml` and `.cargo/`,
-   whole.
+   whole, and the `Cargo.toml` of every workspace package, linked or not, because Cargo reads them all to load
+   the workspace.
 2. **The linked packages.** Cargo resolves the workspace at that commit with every feature on and for every
    target platform, so no feature or target the verifier picks can link a package the derivation missed. A
    **linked package** is a package the registry says the verifier builds, or one reachable from it over normal
@@ -126,12 +137,43 @@ derived from the commit with Git and Cargo's resolver, with no build, in four pa
 3. **The verifier's scripts:** the verifier's own files, each script the registry names, and every tracked file
    one of those reaches. A script reaches a file by importing it, in Python or JavaScript, or by naming the
    file's path in a quoted string. The one script name resolved at run time, the native matrix, comes from the
-   registry. A quoted folder reaches nothing: the owners' scripts name `crates`, `examples` and `scripts` only to
-   hash them into their records, and the folders they read from are linked packages or references.
-4. **The registry and every registered reference file.**
+   registry. A quoted folder reaches nothing. This part decides only which scripts are covered; what a covered
+   script can read when it runs is settled by [the verification root](#the-verification-root).
+4. **The registry, every registered reference file and every path the registry lists outright.**
 
-A package Cargo does not link, a script nothing reaches, `tools/`, documents, plans and evidence other than the
-references are not covered.
+The sources of a package Cargo does not link, a script nothing reaches, documents, plans and evidence other than
+the references are not covered. Nor is `tools/`, beyond the manifest of the package in it.
+
+### The verification root
+
+Imports and quoted paths do not find everything a script reads. A script can build a path from its own name,
+list a folder and open what it finds, or test whether a file exists. So the verifier does none of its work in
+the worktree. It fills a **verification root**: a scratch folder that holds the covered paths, taken from the
+commit's objects in Git, and no other tracked file. Every build, the cook, every capture and every comparison
+runs there, from the root's own copies of the scripts.
+
+A file that is not a covered path therefore does not exist for anything the verifier runs. A script that reads
+one through a computed path fails, and no proof is written. A folder lists only its covered files. A test for
+an uncovered file answers no at every commit. The verdict cannot depend on such a file, whatever language the
+reader is written in, and nothing has to record what it opens. When a step fails this way and the read is
+meant, the path is listed in the registry, which makes it a covered path.
+
+Four properties make the root work:
+
+- **Its files are copies, never links.** The owners' scripts find the repository from their own resolved
+  location, so a link would lead them back to the worktree.
+- **Git, asked from inside it, answers for the root alone.** It lists the root's files, reports a clean tree
+  and names a commit of the root's own. The owners' scripts hash what Git lists into their records, so in the
+  root those hashes cover the root's files. Their manifests name the root's commit; the verifier's record names
+  it beside the repository's revision.
+- **Cargo can load it.** Cargo refuses a workspace when a member's manifest is missing, or when a target of any
+  member has no source file. Every member's manifest is a covered path. Wherever Cargo names a target's root
+  file that the root does not hold, an empty file stands in for it. The stand-ins are gone before the cook.
+- **It is kept between runs and brought up to date in place,** so Cargo rebuilds only what changed.
+
+The part of the verifier that runs in the worktree checks that the tree is clean, derives the covered paths,
+fills the root and writes the records and the proof. It runs no build, script or comparison there. The gate
+makes no root.
 
 ### The unread sources
 
@@ -141,16 +183,20 @@ every source file and every file an `include_str!` or `include_bytes!` pulled in
 
 After its builds, the verifier reads the records of the artefacts it built: the native game, the cooker and the
 Wasm module. An **unread source** is a covered `.rs` file, in a linked package that has no build script, that
-none of those records lists. Nothing else can be unread:
+none of those records lists and the registry does not list outright. Nothing else can be unread:
 
 - A file that is not Rust stays covered, read or not. The cooker, the page build, the scripts and the game at
   run time read such files and leave no record.
 - A package with a build script stays covered whole. The script can read any file in its package without
   declaring it, and Cargo itself treats the whole package as the script's input in that case.
 
-The records also check the derivation. If one lists a tracked file that is not a covered path, a linked package
-reads outside the linked packages: the verifier names the file and writes no proof. It does the same when a
-record is missing, or when a linked package's source is a path outside the repository.
+A compiler cannot read a tracked file that is not a covered path, because the root does not hold it: the build
+fails. The verifier names the cause and writes no proof when a record is missing, when one lists a file outside
+the root and its build folder, or when a linked package's source is a path outside the repository.
+
+Once the unread sources are known the verifier deletes them from the root, so no later step can read one as
+data. It then runs the page build again: Cargo has nothing to compile, and the page is assembled from what is left. From
+the cook on, the root holds exactly the files the content key covers, and the verifier checks that from disk.
 
 ### The content key and the proof
 
@@ -166,17 +212,22 @@ it is the only thing the gate accepts.
 One command, from a clean checkout:
 
 1. refuses a tree with uncommitted changes, and reports low disk space as its own named failure;
-2. builds the release game with the features the owners' scripts need, builds the Wasm page with
-   `examples/v1-game/web/build.sh`, and cooks the showcase valley fresh;
-3. reads the dependency records of those builds, checks them against the covered paths and works out the unread
-   sources;
-4. runs `APPLE-TILE`'s native matrices (`apple_tile_m1.py`, `apple_tile_m2.py`) unchanged;
-5. captures the four Chrome `fixed` runs with `capture_v1_browser.mjs` and compares each with its retained set;
-6. exits non-zero on any difference, naming the baseline, its owner and the comparison;
-7. on a full pass writes the proof, with the revision, the content key, the unread sources, the native binary's
-   hash, the Wasm artefact hashes and the cooked root.
+2. derives the covered paths and fills the verification root from the commit. Every later step runs in the
+   root;
+3. builds the release game with the features the owners' scripts need, and builds the Wasm page with
+   `examples/v1-game/web/build.sh`;
+4. reads the dependency records of those builds and works out the unread sources. It deletes them from the
+   root, runs the page build again, removes the stand-ins, and checks that the root's tracked content, hashed
+   from disk, gives the content key;
+5. cooks the showcase valley fresh and runs `APPLE-TILE`'s native matrices (`apple_tile_m1.py`,
+   `apple_tile_m2.py`) unchanged;
+6. captures the four Chrome `fixed` runs with `capture_v1_browser.mjs` and compares each with its retained set;
+7. exits non-zero on any difference, naming the baseline, its owner and the comparison;
+8. on a full pass hashes the root's content again, and writes the proof only if it still gives the content key.
+   The proof holds the revision, the content key, the unread sources, the native binary's hash, the Wasm
+   artefact hashes and the cooked root.
 
-It takes every input from the checkout and its own fresh outputs. It never reads another task's scratch. The
+It takes every input from the root and its own fresh outputs. It never reads another task's scratch. The
 record of every run that finished its builds names the content key, pass or fail, so two runs on the same content
 can be told to be so.
 
@@ -222,16 +273,33 @@ covered paths.
   a build reads. `land` rebases the first branch, so its content key changes under every proof it holds.
   `./dev check` finds no proof and fails, and `land` does not push. The builder runs the verifier on the rebased
   commit, which now draws the combined result, and lands again.
-- **A rebase that brings in nothing a build reads keeps the proof.** A change to a package Cargo does not link,
-  to a script nothing reaches or to a document is outside the covered paths. A change to an unread source is
+- **A rebase that brings in nothing a build reads keeps the proof.** A change to the sources of a package Cargo
+  does not link, to a script nothing reaches or to a document outside the linked packages and the listed paths
+  is outside the covered paths. A change to an unread source is
   left out of the key on both sides. The key is equal and the proof stands.
 - **Why an equal key means equal builds.** Equal keys under one unread list mean the same build configuration,
   the same manifests and so the same linked packages, and every covered file identical except files on the list.
   No covered file was added, because a new file is on no list, and none off the list was removed. A compiler reads a file only as a target's root or
   because a file it already read names it. Roots come from the manifests, which are equal, and from files Cargo
   finds by name; a newly found file is a new file, and changes the key. Every file read before is identical, so
-  each names the same files as before. The builds therefore read the same bytes with the same configuration, and
-  everything else the verifier reads is covered and identical.
+  each names the same files as before. The builds therefore read the same bytes with the same configuration.
+- **Why an equal key means an equal verdict.** The only tracked files outside the key that any step can reach
+  are the unread sources, and only while Cargo builds; the page is assembled again once they are gone. From
+  the cook on, the root's tracked content is the key's files and nothing else, checked from disk
+  before the cook and after the last comparison. Two commits with equal keys give the cook, the game, the
+  captures and the comparisons the same files at the same paths, the same listing of every folder and the same
+  answer to any test for a file. What is left to differ is outside the repository.
+- **A computed input, as the review traced it.** A registered comparison script loads a tracked JSON beside
+  itself with `Path(__file__).with_suffix('.json')`. No import or quoted path names the file, so it is not a
+  covered path and the root does not hold it. The script fails on the read, the verifier fails and no proof
+  exists to go stale. The builder lists the file in the registry. It is then a covered path, the proof is
+  written, and a later change to the file changes the key.
+- **The root was tried.** At main `1630751e` a folder holding only the covered paths, with an empty file at
+  each of the 56 target roots of the 14 packages that are not linked, gave Cargo the same resolved graph and
+  the same targets as the worktree, and built the cooker. As its own Git repository it held 577 files in
+  67 MB. The matrices, the native adapter and the Chrome comparator loaded from it, the cooker cooked the
+  showcase in it, and Git listed only its files. No GPU run was made there; M2.6 makes it
+  ([trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)).
 - **The numbers.** Cargo links nine packages into the two the verifier builds, and resolves the graph in 0.12 s.
   The dependency records of one verifier build list 251 repository files, every one inside those nine packages.
   176 of their 375 Rust files are unread. Imports and quoted paths reach 23 of the 107 files under `scripts/`.
@@ -268,6 +336,10 @@ Every module's builder runs these, and some call them from their own scripts
 - A proof's fields `passed`, `content_key`, `baselines`, `record` and `revision`, and the same `content_key` in
   the record it points to. After a rebase the proof still covers, `revision` is the commit the verifier ran on,
   not the current one.
+- The registry's listed paths. A module may add a path there for a script it owns, when the script reads a
+  tracked file no rule reaches, and says so in its log. Nobody removes one without a ruling in the module
+  list. An owner's script run by the verifier runs in the root: the manifests it writes there name the root's
+  commit, and the verifier's record gives the repository's revision. Run directly, it behaves as before.
 
 The ruling on [a frame that varies under load](../ARCHITECTURE.md#a-frame-that-varies-under-load) compares the
 content keys of a failed run and a passing one. Both records hold it, since each run finished its builds.
@@ -279,14 +351,22 @@ package; M5's change to the registry is the package's name and path, and the cov
 - A push of a commit that `./dev check` did not pass: `land --no-check`, or a plain `git push` after a rebase
   with no check. Rule 1 of the module list forbids both for a covered-path change.
 - A forged proof. The proof is a local file, as `./dev check` is local code.
-- A covered script that reads an uncovered tracked file through a path it computes or a folder it lists, or
-  reads an unread Rust source as data. Nothing records what a script reads, and the owners' scripts open every
-  source file to hash it. The registry lists such a path outright when one is found.
+- A step that leaves the root on purpose: an absolute path into the worktree or another checkout, a path taken
+  from the environment, or Git asked about another repository. The root contains reads made from a script's
+  own location, the working folder and what Git lists there, which is how every script reads today.
+- A Cargo build script that reads, as data and without declaring it to Cargo, a Rust file of another linked
+  package that no compiler reads. Build scripts run before the unread sources are known, and Cargo does not
+  run one again unless its own package changes. One linked package has a build script today, `thrum-app`,
+  and it reads one C file of its own package. Closing this means building every package with a build script
+  from nothing on each run.
+- A build step that acts on whether a target file exists in a package that is not linked. The empty stand-ins
+  are in the root while Cargo runs.
 - A change outside the repository: macOS, the GPU driver, Chrome, Node, `wasm-bindgen`, or the user's Cargo
   configuration and registry cache. See risk 1.
 
-The first three are caught after the fact by the claim-time item of rule 3, whose command a builder cannot
-change, and by the next builder's verifier run, which fails on main.
+The first two are caught after the fact by the claim-time item of rule 3, whose command a builder cannot
+change, and by the next builder's verifier run, which fails on main. The next three would change an image only
+through code a reviewer of that change reads; nothing catches them automatically.
 
 ## Cost
 
@@ -294,8 +374,13 @@ A landing that changes a covered file a build or comparison reads pays one verif
 two builds, a cook, the native matrices and four Chrome captures of 481 frames, 1,022 seconds when M1 measured
 it. A rebase that brings in another such change pays it again. A landing or a rebase that touches only other
 files pays the gate, which adds one Cargo resolve of about a tenth of a second to its Git queries. A change to
-the workspace manifest or the lockfile lapses every proof, a new workspace member included. The times are
-recorded, not budgeted. The scripts need 16 GiB free.
+the workspace manifest, a package's manifest or the lockfile lapses every proof, a new workspace member
+included. The times are recorded, not budgeted. The scripts need 16 GiB free.
+
+The root adds its files (67 MB in the trial), a second page build that compiles nothing, and whatever Cargo
+rebuilds because its sources moved. Disk is short on this machine, so the root's builds write to the worktree's
+own build folder unless that breaks a build, and the dependencies are not built or stored twice. M2 records
+the time and disk the root adds beside M1's figures.
 
 ## Risks
 
@@ -314,6 +399,13 @@ recorded, not budgeted. The scripts need 16 GiB free.
    sources of a real proof against the code, and shows a compiled-source change refused on this repository.
 7. **The landing that changes the key lapses every open proof once**, because the verifier itself is a covered
    path. Each builder with covered changes runs the verifier once more.
+8. **An owner's script cannot run in the root.** The trial loaded each one and ran the cook, but drew nothing.
+   If a script needs a tracked file, the registry lists it. If it needs something the root cannot give, such
+   as the repository's history, the builder ends `BLOCKED` with the cause and the proposal goes to the owner.
+   No step moves back to the worktree.
+9. **A game built in the root draws different bytes.** The sources and flags are the same and only paths
+   differ. The sign is that untouched main passes M1's verifier and fails in the root; the builder ends
+   `BLOCKED` with the comparison.
 
 ## Limits on builders
 
@@ -324,6 +416,9 @@ recorded, not budgeted. The scripts need 16 GiB free.
   comparator, `scripts/capture_v1_browser.mjs` or `examples/v1-game/web/build.sh`. They belong to other
   modules.
 - When unsure whether a file is an input, cover it. Leave a file out only on the evidence this design names.
+- When a step fails in the root for a file it does not hold, list the path in the registry if the step is meant
+  to read it. Never run a step in the worktree, link a root file to the worktree, or add a file to the root
+  that is not a covered path, to get past the failure.
 - Mutants, scratch commits and any demonstration of `land` never push to the real remote.
 - Chrome needs a browser launch outside the Codex sandbox. If a launch is refused, leave the item open and say
   so; do not substitute a Mac result.
@@ -334,6 +429,8 @@ recorded, not budgeted. The scripts need 16 GiB free.
 evidence in `docs/evidence/BASELINE-GUARD/`. Mutants run in scratch and are never merged. A demonstration of
 `land` or of the gate across a rebase runs in a scratch clone whose remote is a local bare repository, never
 against the real remote. The gate's tests build small Cargo workspaces of their own, offline, and need no GPU.
+The root's tests make a root for such a workspace and run fixture scripts in it, through the code the verifier
+uses, also with no GPU.
 
 ## Open questions
 

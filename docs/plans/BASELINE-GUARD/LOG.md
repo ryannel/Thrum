@@ -10,7 +10,7 @@
   there.
 - 2026-11-11 The planner did not run the guard's checks: they need a release build and the GPU. Each check was
   parsed as shell and the done-when file validated with the loop's own validator.
-- 2026-11-11 [Design review](../../evidence/BASELINE-GUARD/design-review.md): changes requested, two Must Fix.
+- 2026-11-11 [Design review](../../evidence/BASELINE-GUARD/design-review-1.md): changes requested, two Must Fix.
   MF1: `land` rebases, checks and pushes without handing control back, so the full matrix could only run after a
   failing push. MF2: the Chrome comparator needs 481 reference frames that exist only in another builder's scratch.
 - 2026-11-11 Design revised for both. MF1: the verifier writes a proof keyed by a digest of the covered paths, and
@@ -95,3 +95,29 @@
   The module list's exact-baseline rule 2 and table now describe the derived key. Tried with the loop's
   `check --items-only`: M2.1 to M2.4 and M2.7 fail before the work, none errors. M2.6's check, the verifier, was
   not run: the `gpu` lock had builders queued for over an hour, and the command is M1.1's, unchanged.
+
+- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the M2 revision: changes
+  requested, one Must Fix. MF3: a script's read through a computed path, a folder it lists or a Rust source
+  read as data escapes a key built from imports and quoted paths, so a proof could outlive a changed input.
+  S4: M2.1's "a document" should not invite a builder to drop a linked package's documents from the key.
+
+- 2026-11-15 Design revised for MF3. The verifier does every build, the cook, every capture and every
+  comparison in a verification root, a scratch tree that holds only the covered paths, so an uncovered file
+  does not exist for anything it runs and a read of one fails before a proof is written. Unread sources are
+  deleted from the root once known, and the root's content is hashed from disk against the key. Every
+  workspace package's manifest is now covered, because Cargo needs them all there. M2.8 is the fixture the
+  review asked for; M2.3 and M2.6 changed to match. S4 taken in M2.1 and M2.5.
+
+- 2026-11-15 Rejected for MF3: reporting opened files from Python and Node (misses what Git lists, native
+  readers and tests for absent files); builds in the worktree with only comparisons in the root (leaves the
+  page build's reads open); a sparse checkout (Git lists absent files, which one capture script then reads).
+  Left open, as an assumption in the plan: a Cargo build script reading another package's unread source.
+
+- 2026-11-15 The root was tried without the GPU
+  ([trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#a-root-that-holds-only-the-covered-paths)): Cargo
+  loads it with empty files at 56 target roots and resolves the same graph, the cooker builds and cooks there,
+  and the owners' scripts load. No matrix or capture has drawn from a root.
+
+- 2026-11-15 M2's checks tried by running each command: the five test-class checks, M2.8's included, and
+  `covered` fail before the work and none errors. M2.6's check, the verifier, was not run: it needs the `gpu`
+  lock and is M1.1's command, unchanged.
