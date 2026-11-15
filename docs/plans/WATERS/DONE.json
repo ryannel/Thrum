@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -21,7 +21,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
@@ -148,13 +148,6 @@
           "evidence": "docs/evidence/WATERS/M1.md",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Basin seeding floods disconnected cell corners",
-          "item": "M1.1",
-          "repeat": false
         }
       ]
     },

@@ -78,7 +78,7 @@
         {
           "verdict": "fail",
           "commit": "b552afe0fea07b4f145c424b499d5f4d96d6123d",
-          "review": "docs/evidence/WATERS/M1-review.md",
+          "review": "docs/evidence/WATERS/M1-review-2.md",
           "items": {
             "M1.1": "fail",
             "M1.2": "pass",
@@ -117,6 +117,42 @@
             "turns": 1
           },
           "at": "2026-11-15T07:39:30Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "6edd2823fd273ee49d7736873090f56410a22c44",
+          "review": "docs/evidence/WATERS/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass",
+            "M1.13": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 119641,
+            "cached": 1227520,
+            "output": 6466,
+            "turns": 1
+          },
+          "at": "2026-11-15T15:01:37Z"
         }
       ],
       "authorised": {
@@ -164,6 +200,13 @@
           "output": 354521,
           "turns": 11
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "6edd2823fd273ee49d7736873090f56410a22c44",
+        "review": "docs/evidence/WATERS/M1-review.md",
+        "checked": "110a84ec7061fb5a6e47225814547c03f3b95472",
+        "at": "2026-11-15T15:01:37Z"
       }
     },
     "M2": {
