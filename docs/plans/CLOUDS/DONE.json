@@ -288,7 +288,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-exact-baselines.json",
+          "evidence": "main-branch check exact-images; docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-exact-baselines.json",
           "verdict": "pass",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         }

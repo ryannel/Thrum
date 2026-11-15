@@ -1,5 +1,12 @@
 # CLOUDS log
 
+- 2026-11-15 Resumed M13 at `2b14b2b00` with all ten builder items passed.
+  Stopped inherited job `20261115-205432-68753`, still waiting for the GPU, because
+  its old integration helper holds a device lock across merges. Current integration
+  uses the canonical merge directly; M13.10 cites the shared main-branch exact-images
+  check, retaining the earlier target receipt as history. The two numerical fixes
+  and their CPU-only scope remain documented in [the evidence](../../evidence/CLOUDS/M13.md).
+
 - 2026-11-15 M13's rebase at `f0e05146` changes no cloud-model implementation or
   test. All ten item commands passed again, including 38/4 native comparisons and
   four Chrome sets of 481 records in 934.62 seconds. The fresh covered-content key is
