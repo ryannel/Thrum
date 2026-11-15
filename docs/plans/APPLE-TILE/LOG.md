@@ -368,3 +368,12 @@
     old `b741ba60d9eb54cf8838f276cc4eee3ba7c02a58c32e21723c0adc05184363da`; new `c116bd12245d58623a169fd6cca98dcd6b07ea8e162e44a75fd4da5d3bf96c89`.
   - `docs/evidence/render/apple-tile-m1/chrome/chrome-prechange-night-linear/manifest.json.gz`
     old `b67c799c5178e4079de901240618c73a2505aa7fe6734d09218e8c51e7f1138a`; new `b3d2fd039f22fe8a1ada579a18c55445155a26f02be79835392042d682df84ff`.
+
+- **2026-11-15 — ATMOSPHERE M9 final target proof.** Clean source `5b7842ff` passes
+  both native baseline matrices (38 and four comparisons) and all 1,924 Chrome
+  records in 957.45 seconds, plus the full Metal gate and its unchanged referees,
+  the 198-row report, Chrome H1–H5 and showcase. All M9 builder proofs are retained.
+  [Final evidence](../../evidence/ATMOSPHERE/M9-final-results.md) and
+  [paired timing](../../evidence/ATMOSPHERE/M9-cost.md) distinguish observed results
+  from the independent solar and sea-level look qualifications still owed.
+  Canonical integration follows; this entry does not claim a merge.

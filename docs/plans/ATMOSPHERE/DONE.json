@@ -166,10 +166,10 @@
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-final-results.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.4",
@@ -188,10 +188,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-final-results.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M9.6",

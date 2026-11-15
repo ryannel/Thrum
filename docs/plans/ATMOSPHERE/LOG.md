@@ -503,3 +503,12 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   milestone check unless every command already has a canonical saved pass. Its
   `--checks-only` option supports a final evidence-only commit without repeating costs.
 
+
+- **2026-11-15 — ATMOSPHERE M9 final target proof.** Clean source `5b7842ff` passes
+  both native baseline matrices (38 and four comparisons) and all 1,924 Chrome
+  records in 957.45 seconds, plus the full Metal gate and its unchanged referees,
+  the 198-row report, Chrome H1–H5 and showcase. All M9 builder proofs are retained.
+  [Final evidence](../../evidence/ATMOSPHERE/M9-final-results.md) and
+  [paired timing](../../evidence/ATMOSPHERE/M9-cost.md) distinguish observed results
+  from the independent solar and sea-level look qualifications still owed.
+  Canonical integration follows; this entry does not claim a merge.
