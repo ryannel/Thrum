@@ -75,4 +75,10 @@
 
 ## M1 verification
 
-The milestone's scripted checks and exact-image verifier are pending. M1 remains `in_progress`.
+The item-check job `20261115-002057-18054` is waiting for the shared GPU for M1.11.
+The continuation job `20261115-014512-10680` is queued under the GPU lock: once the
+item-check job has exited successfully, it runs the full milestone check and then merges.
+Its result is not yet known. The resumed session changed no implementation; its native game,
+cooker and Wasm release prebuilds passed in job `20261115-013723-7743`.
+Earlier continuation jobs `20261115-011045-87236` and `20261115-013953-9763` were
+cancelled while waiting, before they ran any checks or merge.
