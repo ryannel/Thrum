@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -19,9 +19,9 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test map",
           "ask": "Read the test. Are the expected answers closed forms worked out without the model: a cone-shaped hollow's shoreline radius at a level, a ridge between two hollows, a tilted chart? Would a model that floods every cell below the level, connected or not, fail it?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
@@ -92,7 +92,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
@@ -146,19 +146,14 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/WATERS/M1-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Triangle bed is clipped to the uncovered-cell fallback",
-          "item": "M1.8",
-          "repeat": false
-        },
-        {
-          "name": "Interpolated shore support crosses downhill over a ridge",
-          "item": "M1.13",
+          "name": "Basin seeding floods disconnected cell corners",
+          "item": "M1.1",
           "repeat": false
         }
       ]
