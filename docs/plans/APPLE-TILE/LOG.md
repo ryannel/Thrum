@@ -313,3 +313,10 @@
   Verified retained app hashes before and after cleaning the worktree target, removing 97,042 build files.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 evidence integration continuation.** The named retry is confirmed terminal at the
+  window-selection timeout, and current unlock/Screen Recording preflights still pass. Permission inspection
+  did not resolve the native Computer Use entry. Updated the owned merge helper to loop 2.2.5 and the existing
+  paired GPU/merge reservation shape, with ordinary exact-baseline verification after a stale-proof refusal.
+  The normal checked merge will integrate the completed evidence while D10.5 awaits responsive app access.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
