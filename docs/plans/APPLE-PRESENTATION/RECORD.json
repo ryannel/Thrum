@@ -280,66 +280,66 @@
       }
     },
     "M6": {
-      "definitions": "6600861e8dd40d74baefd35526bae78c45a66b7c5dfe466c5859e6a0f9473cec",
+      "definitions": "b44852d3d6b3a90fa3e17aaeab5ac27431ed541bd31b5474b1b9f0aa4d780b20",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M7": {
-      "definitions": "f86a49538f0f23f2ab405ab293d6e4076e40615782376a2ad1b143194b6c2a8e",
+      "definitions": "20091bb8989de763d9475448e9d0efd6ed6ac1728b4e05a02e11f992a86d1cef",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M8": {
-      "definitions": "d4f7dc1d3deca16ff5941bd2087b3454146637a11595fb7a55ece94ecdf9eeef",
+      "definitions": "5a81dde45cc2424bcfa2921c2d1d685aa46dfb184f2477eb72856864cf9f0662",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M9": {
-      "definitions": "9847c71b1961d43609eafeb678acbe713bc464c32ad1256a60a13439f454035b",
+      "definitions": "23171381ff2cc31047af4c16c6b9ba79eaca350ef34dd77d015b5934f965fdd6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M10": {
-      "definitions": "f1e11c27ce99713a9eb3d4e22ae2e73a0c46595b8d309b32d803d3361831395c",
+      "definitions": "960cee064db0694141c3ea6b5ced4390eef735e1d2149b0e87eefd21da679039",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M12": {
-      "definitions": "e1d5615cadd4774b264fd459f50df4099d61b34d832b33d21fdaefc744e5dcc6",
+      "definitions": "26a8d5ad6b86bd0b91b0322a9e4819bc6f854698de647e2cd9f47b6d945d85a6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     },
     "M11": {
-      "definitions": "2caf5014202f376d44f84c04b320637130f2016bb3314871bb0a0324d6782b77",
+      "definitions": "eace1861fc84a6ffa96e7043af89a9817529c5ea97bf9e8fc15d87a397bc1752",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
+        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
+        "at": "2026-11-15T08:54:22Z"
       }
     }
   },
@@ -355,11 +355,15 @@
     {
       "task": "Two tasks in one pass.\n1) Owner decision, 14 Nov 2026: \"Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands.\" Split the swarm-goal modules (SIM-2D, RENDER-2D, TRANSPORT, GAME-UI, SESSION, SWARM and any others from docs/design/NEXT-GOAL-SWARM-GAME.md) into reusable 2D engine work and swarm-game work. Engine work loses its gate on SHOWCASE:M8 and keeps only edges where it needs another milestone's actual output; where an engine milestone is shaped by the swarm game, state its requirement generically so the engine does not depend on game code. Game work (SWARM and any game-specific milestones) stays gated on SHOWCASE:M8. Where a module mixes both, move the game milestones into the game module rather than gating engine ones. Engine designs that change need their design reviews.\n2) APPLE-PRESENTATION M4 to M11 have no done-when entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them (docs/evidence/dependency-audit-2026-11-14/README.md). Write their done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3, which a builder holds.\nSay which milestones can start once this lands.",
       "at": "2026-11-14T21:26:25Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-15T08:54:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T21:26:25Z"
+    "at": "2026-11-15T08:54:22Z"
   },
   "design_history": [
     {
