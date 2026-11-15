@@ -1,5 +1,13 @@
 # WATERS log
 
+- 2026-11-15 Resumed the surviving integration job after its shared GPU wait.
+  It rebased cleanly onto main as `2c2679be` and refreshed every CPU item check,
+  the sea-model tests, strict Clippy and documentation checks; all passed.
+  Re-read the independent map, gains, conformance, joins and swash oracles and
+  the provenance declaration. The fresh exact verifier is running on this source;
+  [the retained target record](../../evidence/WATERS/M1-baselines.json) identifies
+  the complete pass once promoted, separately from the earlier failed captures.
+
 - 2026-11-15 Resolved the older CREATOR, CULLING and CLOUDS link repairs by
   retaining their upstream replacements; documentation checks passed. Consolidated
   unpublished WATERS work onto the current main base to avoid replaying superseded
