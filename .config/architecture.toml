@@ -40,6 +40,11 @@ manifest = "crates/thrum-water-model/Cargo.toml"
 # CPU water map, wave composition and query oracle; no graphics dependencies.
 allowed_workspace_dependencies = ["thrum-sea-model"]
 
+[packages.thrum-river-model]
+manifest = "crates/thrum-river-model/Cargo.toml"
+# Steady river flow solver, its energy account and the river file's writer; CPU only, no graphics dependencies.
+allowed_workspace_dependencies = ["thrum-water-model"]
+
 [packages.thrum-content-runtime]
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []
@@ -141,7 +146,7 @@ target_cost = "Cold scene/control parsing; native profiler evidence serializes o
 [external_dependencies.rayon]
 requirement = "=1.12.0"
 license = "MIT OR Apache-2.0"
-purpose = "Native frame extraction and optional parallel registered simulation jobs"
+purpose = "Native frame extraction, optional parallel registered simulation jobs and the river solve's rows"
 target_cost = "Native-only worker pool; the V1 simulation measures serial/Rayon crossover and the browser stays serial. Core-class affinity is selected by the platform runtime rather than assumed by a tick"
 
 [external_dependencies.wasm-bindgen]
@@ -243,7 +248,7 @@ target_cost = "Small native/test dependency; runtime startup blocking must be me
 [external_dependencies.blake3]
 requirement = "=1.8.7"
 license = "CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception"
-purpose = "G5 content addresses for cooked products, manifests, sources and cook actions"
+purpose = "G5 content addresses for cooked products, manifests, sources and cook actions; river file keys"
 target_cost = "Runtime: one hash per HEAD/manifest name check and optional product verification; NEON/AVX2/AVX-512 selected internally. Cooker adds the rayon feature for multi-core hashing of large sources"
 
 [external_dependencies.bytemuck]
