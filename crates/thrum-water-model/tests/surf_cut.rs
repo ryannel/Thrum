@@ -1,6 +1,8 @@
 //! Independently cut a forward sheet eight times finer, without the model's reach.
 #[path = "support/sheets.rs"]
 mod sheets;
+#[path = "support/surf_map.rs"]
+mod surf_map;
 use sheets::Trains;
 use thrum_water_model::{CutConfig, Sheet, SheetPoint, cut};
 
@@ -29,7 +31,7 @@ fn reference(
     spacing: f64,
 ) -> (Vec<f64>, Vec<usize>) {
     let cell = 0.03125;
-    let margin = 12.0;
+    let margin = 20.0;
     let start = origin.map(|p| p - margin);
     let width = spacing * (side - 1) as f64 + margin * 2.0;
     #[expect(
@@ -198,6 +200,68 @@ fn highest_cut_on_straight_crossing_and_shoaling_sheets() {
         "wrong substitutes: iteration {plain_failure:.4} m low, directional scan {scan_failure:.4} m low"
     );
     assert!(plain_failure > 0.5 && scan_failure > 0.2);
+}
+
+#[test]
+fn production_sheets_and_their_own_reach_match_forward_reference() {
+    for case in 0..3 {
+        let (map, field) = surf_map::fixture(case);
+        let sheet = map.surf_sheet(&field, 0, 0.0).unwrap();
+        let mut fold = None;
+        for z in 0..81 {
+            for x in 0..101 {
+                let p = if case == 2 {
+                    [-65.0 + f64::from(x) * 0.5, -10.0 + f64::from(z) * 0.5]
+                } else {
+                    [-10.0 + f64::from(x) * 0.2, -10.0 + f64::from(z) * 0.25]
+                };
+                let a = sheet.forward(p);
+                let b = sheet.forward([p[0] + 0.01, p[1]]);
+                let c = sheet.forward([p[0], p[1] + 0.01]);
+                let det = (b.world[0] - a.world[0]) * (c.world[1] - a.world[1])
+                    - (b.world[1] - a.world[1]) * (c.world[0] - a.world[0]);
+                if det < -1e-6 && fold.is_none() {
+                    fold = Some(a.world);
+                }
+                assert!(
+                    (a.world[0] - p[0]).hypot(a.world[1] - p[1]) <= sheet.reach(a.world) + 1e-9
+                );
+            }
+        }
+        let fold = fold.expect("each production sheet must actually overhang");
+        let origin = fold.map(|v| v - 1.0);
+        let side = 17;
+        let (fine, hits) = reference(&sheet, origin, side, 0.125);
+        let mut triples = 0;
+        for z in 2..side - 2 {
+            for x in 2..side - 2 {
+                let p = [origin[0] + x as f64 * 0.125, origin[1] + z as f64 * 0.125];
+                let column = cut(&sheet, p, CutConfig::default()).unwrap();
+                let (mut lo, mut hi) = (f64::INFINITY, f64::NEG_INFINITY);
+                for dz in z - 2..=z + 2 {
+                    for dx in x - 2..=x + 2 {
+                        lo = lo.min(fine[dz * side + dx]);
+                        hi = hi.max(fine[dz * side + dx]);
+                    }
+                }
+                assert!(
+                    column.height >= lo - 0.002 && column.height <= hi + 0.002,
+                    "production sheet {case} {p:?}: {} outside {lo}..{hi}",
+                    column.height
+                );
+                assert!(
+                    (map.surface(&field, p, 0.0).unwrap().sample.height - column.height).abs()
+                        < 0.002
+                );
+                if column.converged {
+                    assert!(column.residual <= 0.001);
+                }
+                triples += usize::from(hits[z * side + x] >= 3);
+            }
+        }
+        eprintln!("production sheet {case}: fold {fold:?}, {triples} columns with >=3 hits");
+        assert!(triples > 0);
+    }
 }
 
 fn old_scan(sheet: &Trains, p: [f64; 2]) -> f64 {

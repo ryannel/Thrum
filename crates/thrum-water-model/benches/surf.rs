@@ -1,6 +1,8 @@
 //! CPU preparation and highest-column costs. No graphics device is requested.
 #[path = "../tests/support/sheets.rs"]
 mod sheets;
+#[path = "../tests/support/surf_map.rs"]
+mod surf_map;
 use std::hint::black_box;
 use thrum_water_model::{
     Bed, BedPyramid, CutConfig, ShoreConfig, ShoreTransform, Source, Stage, cut,
@@ -76,5 +78,28 @@ fn column(bencher: divan::Bencher<'_, '_>, sheet: usize) {
     );
     bencher.bench_local(|| {
         black_box(cut(&sheet, black_box(point), CutConfig::default()).expect("covered column"))
+    });
+}
+
+#[divan::bench(args = [0, 1, 2], sample_count = 50, sample_size = 1)]
+#[expect(
+    clippy::print_stdout,
+    reason = "benchmark records production column nodes and hits"
+)]
+fn production_column(bencher: divan::Bencher<'_, '_>, case: usize) {
+    let (map, field) = surf_map::fixture(case);
+    let sheet = map
+        .surf_sheet(&field, 0, 0.0)
+        .expect("prepared surf capability");
+    let point = [[-6.67, -9.62], [-7.21, -8.20], [-24.34, -7.10]][case];
+    let first = cut(&sheet, point, CutConfig::default()).expect("covered production column");
+    println!(
+        "point={point:?}, cut_nodes={}, hits={}",
+        first.nodes, first.hits
+    );
+    bencher.bench_local(|| {
+        black_box(
+            cut(&sheet, black_box(point), CutConfig::default()).expect("covered production column"),
+        )
     });
 }
