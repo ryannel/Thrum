@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The queued batch acquired GPU but failed before proof on an obsolete APPLE-PRESENTATION
+  log-link repair during rebase. Both that repair and its reversal resolve to the current upstream log;
+  the rebase completes at `fc31fa95b`. Only WATERS' model changed upstream since the qualified source,
+  leaving iOS dependencies unchanged. Replacement batch `20261115-162847-73863` is queued for proof and
+  normal merge; [the handoff](../../evidence/REVIEW-ENGINE/M1-handoff.md) names its process.
+
 - 2026-11-15 The continuation at `8a92e3275` confirmed the existing device/publication code inspection and
   inspected all four retained simulator views. It claims no new target run. The proof-and-merge batch
   `20261115-144609-30539` remains queued behind active GPU work; the refreshed
