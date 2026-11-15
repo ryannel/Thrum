@@ -1,5 +1,14 @@
 # CREATOR log
 
+- 2026-11-15 Resolved the integration handoff conflict while preserving the
+  newer upstream handoff and all implementation/proof changes. Corrected
+  upstream APPLE-PRESENTATION references to name their worktree scope.
+  Documentation and pinned native/Wasm release builds pass. Integration job
+  `20261115-114309-70260` waits for GPU, with the Computer Use window host
+  requested after its checks under the same lease. M3.1 and M3.4 still need
+  target proof. The [handoff](../../evidence/CREATOR/M3-handoff.md) records the
+  successful access inventory, earlier connection stall and prepared exercise.
+
 - 2026-11-15 The console later reported unlocked and Computer Use listed native
   apps, but selecting Finder stalled for 901 seconds despite a ten-second
   timeout request. The script interrupted it. Native-app access remains
