@@ -4,8 +4,10 @@
   Sun paths, medium coefficients and haze to the renderer-free model. All nine CPU
   and dependency commands passed on `db3d8514` on mac-metal. The saturated-overcast
   regression and exact shore-margin probes pass. [Evidence](../../evidence/CLOUDS/M13.md)
-  and its receipt separate these results from the queued exact-image gate and
-  canonical integration; no fog visuals or performance are qualified.
+  and its receipt separate CPU correctness from visuals and performance, neither qualified.
+  M13.10 passed at `4e8e9f27`: 38/4 native comparisons and 481 records in each of four
+  Chrome sets, in 936.36 seconds. Its receipt retains the target artifact identities.
+  All ten builder items have target evidence; canonical integration remains queued.
 
 - 2026-11-15 The full milestone check passed all 15 automated commands on `e866a1d7`,
   including `./dev check`. M1.13 passed on `7e41bac7`: 38/4 native comparisons and 481
