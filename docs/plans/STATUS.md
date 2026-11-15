@@ -234,7 +234,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point (WATERS M1): Ready for Review · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M1-review.md)
 - Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see (CLOUDS M13): Not Started · [plan](CLOUDS/PLAN.md)
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1): In Progress · [plan](SIM-2D/PLAN.md)
-- TRANSPORT's design: Design Ready for Review · [design](TRANSPORT/DESIGN.md) · [plan](TRANSPORT/PLAN.md)
+- A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): Not Started · [plan](TRANSPORT/PLAN.md)
 - A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check` (REPO-RULES M1): In Progress · [plan](REPO-RULES/PLAN.md)
 - The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran (REVIEW-ENGINE M1): In Progress · [plan](REVIEW-ENGINE/PLAN.md)
 
@@ -289,7 +289,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Waiting: On Dependency, WATERS:M1 |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Waiting: On Dependency, WATERS:M1 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M1 of 3 · In Progress |
-| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Design Ready for Review |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M1 of 2 · Not Started |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, EFFECT-GRAPH:M3, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Waiting: On Dependency, SIM-2D:M3 |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
