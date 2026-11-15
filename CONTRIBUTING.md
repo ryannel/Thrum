@@ -109,7 +109,15 @@ cooks fresh content, and compares both native matrices and all four Chrome sets 
 names the baseline and its owner; only that owner can refresh retained references under
 [the baseline rules](docs/plans/ARCHITECTURE.md#exact-baselines).
 
-The [registry](.config/exact-baselines.json) lists references and covered paths. A full pass writes
+The [registry](.config/exact-baselines.json) lists references, path roots and the packages the verifier
+builds. Cargo derives their normal and build dependency closure, including optional and platform edges.
+The key covers tracked files under the listed paths and in linked packages, subtracting unlinked
+workspace packages' files. All member manifests stay covered, as do files inside a linked package
+and explicit registry entries inside an unlinked one. Unclassified files under listed paths stay covered.
+`python3 scripts/exact_baselines.py covered` prints linked packages, unlinked packages and the covered
+path count. Data a comparison, the cooker or the game reads must not live in an unlinked package's
+folder unless the registry lists it. The verifier also checks all three builds' Cargo dependency records
+and refuses uncovered compiler inputs. A full pass writes
 an untracked proof in `tmp/baseline-guard/proofs/`, keyed to Git objects for those paths. Compact
 records retain revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful
 bulk frames are removed after the owner publishes their comparisons or complete motion verification;

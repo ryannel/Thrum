@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "built_packages": ["v1-game", "thrum-cook"],
   "covered_paths": [
     "crates/", "examples/v1-game/", "scripts/", "tools/", ".cargo/",
     "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".config/exact-baselines.json",

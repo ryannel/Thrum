@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import time
+from exact_baselines_coverage import Coverage, check_build_reads
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = '.config/exact-baselines.json'
@@ -31,9 +32,7 @@ def registry(root=ROOT):
 
 
 def content_key(root=ROOT):
-    paths = registry(root)['covered_paths']
-    objects = subprocess.check_output(['git', 'ls-tree', '-r', '-z', 'HEAD', '--', *paths], cwd=root)
-    return hashlib.sha256(json.dumps(paths).encode() + b'\0' + objects).hexdigest()
+    return Coverage(root, registry(root)).key()
 
 
 def proof_path(root=ROOT):
@@ -42,12 +41,14 @@ def proof_path(root=ROOT):
 
 def gate(root=ROOT):
     """Fail closed when remote main or the exact covered-content proof is absent."""
-    paths = registry(root)['covered_paths']
-    if git('status', '--porcelain', '--untracked-files=all', '--', *paths, root=root):
+    coverage = Coverage(root, registry(root))
+    dirty = subprocess.check_output(['git', 'diff', 'HEAD', '--name-only', '-z'], cwd=root)
+    untracked = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '-z'], cwd=root)
+    if any(coverage.includes(p.decode()) for p in (dirty + untracked).split(b'\0') if p):
         raise ValueError('covered paths have uncommitted changes; commit before verifying')
     base = git('merge-base', 'HEAD', 'refs/remotes/origin/main', root=root)
-    changed = git('diff', '--name-only', base, 'HEAD', '--', *paths, root=root)
-    if not changed:
+    changed = subprocess.check_output(['git', 'diff', '--name-only', '-z', base, 'HEAD'], cwd=root)
+    if not any(coverage.includes(p.decode()) for p in changed.split(b'\0') if p):
         print('PASS exact-baseline gate: no covered-path change beyond origin/main')
         return
     path = proof_path(root)
@@ -126,6 +127,8 @@ def verify(root=ROOT):
               'target': 'mac-metal + chrome-webgpu', 'commands': [], 'comparisons': {},
               'diff_sha256': hashlib.sha256(subprocess.check_output(['git', 'diff', 'HEAD'], cwd=root)).hexdigest(),
               'load': os.getloadavg(), 'disk_free_before_bytes': shutil.disk_usage(root).free}
+    coverage = Coverage(root, registry(root))
+    report.update(coverage.summary())
     environment = {k: v for k, v in os.environ.items() if not k.startswith('THRUM_') and k not in
                    ['CARGO_TARGET_DIR', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTC', 'RUSTC_WRAPPER']}
     environment['RUSTC_WRAPPER'] = ''
@@ -168,6 +171,10 @@ def verify(root=ROOT):
                              '-p', 'v1-game', '--features', 'draw-probe,thrum-render/creation-counters'])
         run('cooker-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook'])
         run('web-build', ['sh', 'examples/v1-game/web/build.sh'])
+        report['build_read_checks'] = check_build_reads(root, coverage, [
+            'target/release/v1-game.d', 'target/release/thrum-cook.d',
+            'target/wasm32-unknown-unknown/release/v1_game.d'])
+        save(output / 'record.json', report)
         run('cook', ['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(output / 'valley')])
         from run_v1_showcase import store_root
         report.update(native_binary_sha256=sha(root / 'target/release/v1-game'),
@@ -226,11 +233,14 @@ def git_version_command(command, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['verify', 'gate'])
+    parser.add_argument('command', choices=['verify', 'gate', 'covered'])
     args = parser.parse_args()
     try:
         if args.command == 'verify':
             return verify()
+        if args.command == 'covered':
+            print(json.dumps(Coverage(ROOT, registry()).summary(), indent=2))
+            return 0
         start = time.monotonic()
         gate()
         print(f'Gate seconds: {time.monotonic() - start:.6f}; load: {os.getloadavg()}')

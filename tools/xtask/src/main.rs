@@ -288,9 +288,14 @@ fn main() -> TaskResult {
         return Err("expected one command; see ./dev help".into());
     }
     match args.first().map_or("help", String::as_str) {
-        "help" | "--help" | "-h" => println!(
-            "Thrum contributor commands:\n  check                  Exact-baseline proof gate, repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  Exact image verification (hold gpu lock): python3 scripts/exact_baselines.py verify\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
-        ),
+        "help" | "--help" | "-h" => {
+            println!(
+                "Thrum contributor commands:\n  check                  Exact-baseline proof gate, repository guards, fmt, Clippy, Rust tests (including Mac Metal), game Wasm Clippy\n  Exact image verification (hold gpu lock): python3 scripts/exact_baselines.py verify\n  check-docs             Links, metadata, design hashes and crate policy\n  baseline-inventory     Run G0 fixed budget baselines and list absent consumers on the M-series Mac\n  check-web              Lint/compile the V1 game and starter for wasm32-unknown-unknown\n  check-mobile-core      Compile the portable core for ARM64 iOS, iOS simulator and Android\n  fmt                    Apply rustfmt\n  scene <folder> [--web]  Build a scene package, cook and watch its assets/ and open its window (macOS)\n  starter [--web]        The same for examples/starter; --web serves Chrome\n  refresh-design-hashes  Refresh current digests after reviewing design changes"
+            );
+            println!(
+                "  Exact key coverage: python3 scripts/exact_baselines.py covered\n  Cargo derives linked normal/build packages (optional and platform edges included).\n  Listed paths and linked packages are covered; unlinked workspace files are subtracted,\n  retaining member manifests, linked nesting and explicit registry entries.\n  Data read by a comparison, cooker or game in an unlinked package must be listed in the registry."
+            );
+        }
         "check-docs" => python(&["scripts/repo_check.py"])?,
         "baseline-inventory" => baseline_inventory()?,
         "refresh-design-hashes" => python(&["scripts/design_hashes.py", "--write"])?,

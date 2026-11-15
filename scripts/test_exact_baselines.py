@@ -17,6 +17,171 @@ from unittest.mock import patch
 import exact_baselines as guard
 from exact_baselines_native import run_matrix
 from apple_tile_m1_compare_browser import IDENTITY, compare, compare_digest
+from exact_baselines_coverage import Coverage, check_build_reads
+
+
+def package(root, folder, name, dependencies=''):
+    directory = root / folder
+    (directory / 'src').mkdir(parents=True, exist_ok=True)
+    (directory / 'Cargo.toml').write_text(
+        f'[package]\nname = "{name}"\nversion = "0.1.0"\nedition = "2021"\n' + dependencies)
+    (directory / 'src/lib.rs').write_text('pub fn value() -> u32 { 1 }\n')
+
+
+def workspace(root):
+    (root / '.config').mkdir(exist_ok=True)
+    config = guard.registry()
+    config['built_packages'] = ['game', 'cooker']
+    guard.save(root / guard.REGISTRY, config)
+    (root / 'Cargo.toml').write_text('[workspace]\nresolver = "2"\nmembers = ["crates/game", "crates/cooker", "crates/linked", "crates/unlinked"]\n')
+    package(root, 'crates/game', 'game', '[dependencies]\nlinked = { path = "../linked" }\n')
+    package(root, 'crates/cooker', 'cooker')
+    package(root, 'crates/linked', 'linked')
+    package(root, 'crates/unlinked', 'unlinked')
+    (root / '.gitignore').write_text('/tmp/\n/target/\n')
+
+
+class WorkspaceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        workspace(self.root)
+        self.git('init')
+        self.commit()
+
+    def git(self, *args):
+        return GateTests.run_git(self, self.root, *args)
+
+    def commit(self):
+        self.git('add', '.')
+        self.git('commit', '--allow-empty', '-m', 'fixture')
+
+    def edit(self, path, text='changed\n'):
+        file = self.root / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(text)
+        self.commit()
+
+    def assert_key_edit(self, path, changes):
+        before = guard.content_key(self.root)
+        self.edit(path, (self.root / path).read_text() + '\n# edit\n')
+        self.assertEqual(before != guard.content_key(self.root), changes, path)
+
+
+class CoveredPathTests(WorkspaceTests):
+    def test_listed_inputs_and_unlinked_files(self):
+        for path in ['crates/linked/src/lib.rs', 'crates/linked/shader.wgsl',
+                     'crates/game/assets/data', 'scripts/unused.py', 'Cargo.lock',
+                     'docs/evidence/render/apple-tile-m0/native-baseline/ref',
+                     'crates/unlinked/src/lib.rs', 'crates/unlinked/shader.wgsl',
+                     'crates/unlinked/data', 'tools/nonpackage/file', '.cargo/config.toml']:
+            if not (self.root / path).exists():
+                self.edit(path, '# initial\n')
+            self.assert_key_edit(path, not path.startswith('crates/unlinked/'))
+        self.assert_key_edit('crates/unlinked/Cargo.toml', True)
+
+
+class ClosureTests(WorkspaceTests):
+    def test_all_dependency_kinds_and_transitive_edges(self):
+        for declaration, joins in [('[dependencies]\nunlinked = { path = "../unlinked" }', True),
+                                  ('[dependencies]\nunlinked = { path = "../unlinked", optional = true }', True),
+                                  ('[target.\'cfg(windows)\'.dependencies]\nunlinked = { path = "../unlinked" }', True),
+                                  ('[build-dependencies]\nunlinked = { path = "../unlinked" }', True),
+                                  ('[dev-dependencies]\nunlinked = { path = "../unlinked" }', False)]:
+            for parent in ['game', 'linked']:
+                package(self.root, 'crates/' + parent, parent, declaration + '\n')
+                if parent == 'linked':
+                    package(self.root, 'crates/game', 'game', '[dependencies]\nlinked = { path = "../linked" }\n')
+                self.commit()
+                self.assert_key_edit('crates/unlinked/src/lib.rs', joins)
+
+    def test_unknown_folders_nested_packages_and_explicit_registry(self):
+        self.edit('crates/no-package/file')
+        self.assert_key_edit('crates/no-package/file', True)
+        package(self.root, 'crates/outsider', 'outsider', '[workspace]\n')
+        (self.root / 'Cargo.toml').write_text(
+            '[workspace]\nresolver = "2"\nmembers = ["crates/game", "crates/cooker", "crates/linked", "crates/unlinked", "crates/linked/nested"]\nexclude = ["crates/outsider"]\n')
+        package(self.root, 'crates/linked/nested', 'nested')
+        self.commit()
+        self.assert_key_edit('crates/outsider/src/lib.rs', True)
+        self.assert_key_edit('crates/linked/nested/src/lib.rs', True)
+        self.edit('crates/unlinked/restored/file')
+        config = guard.registry(self.root)
+        config['covered_paths'].append('crates/unlinked/restored/')
+        guard.save(self.root / guard.REGISTRY, config)
+        self.commit()
+        self.assert_key_edit('crates/unlinked/restored/file', True)
+
+    def test_linked_package_outside_listed_paths(self):
+        package(self.root, 'outside', 'outside')
+        (self.root / 'Cargo.toml').write_text('[workspace]\nresolver = "2"\nmembers = ["crates/*", "outside"]\n')
+        self.commit()
+        self.assert_key_edit('outside/src/lib.rs', False)
+        package(self.root, 'crates/game', 'game', '[dependencies]\noutside = { path = "../../outside" }\n')
+        self.commit()
+        self.assert_key_edit('outside/src/lib.rs', True)
+
+
+class FailClosedTests(WorkspaceTests):
+    def test_bad_workspace(self):
+        self.edit('Cargo.toml', 'invalid toml')
+        with self.assertRaisesRegex(ValueError, 'Cargo cannot load workspace'):
+            guard.gate(self.root)
+
+    def test_missing_built_package(self):
+        config = guard.registry(self.root)
+        config['built_packages'] = ['absent']
+        guard.save(self.root / guard.REGISTRY, config)
+        self.commit()
+        with self.assertRaisesRegex(ValueError, 'built package.*absent'):
+            guard.gate(self.root)
+
+    def test_missing_registry_and_base(self):
+        (self.root / guard.REGISTRY).unlink()
+        with self.assertRaises(OSError):
+            guard.gate(self.root)
+        self.git('checkout', '--', guard.REGISTRY)
+        with self.assertRaises(subprocess.CalledProcessError):
+            guard.gate(self.root)
+
+    def test_external_linked_package(self):
+        with tempfile.TemporaryDirectory() as temp:
+            external = Path(temp)
+            package(external, 'external', 'external', '[workspace]\n')
+            package(self.root, 'crates/game', 'game',
+                    f'[dependencies]\nexternal = {{ path = "{external}/external" }}\n')
+            self.commit()
+            with self.assertRaisesRegex(ValueError, 'linked package outside repository'):
+                guard.gate(self.root)
+
+
+class BuildReadTests(WorkspaceTests):
+    def test_real_build_uncovered_include_and_registry_cure(self):
+        (self.root / 'crates/unlinked/data with spaces.txt').write_text('input')
+        (self.root / 'crates/game/src/lib.rs').write_text(
+            'pub const DATA: &str = include_str!("../../unlinked/data with spaces.txt");\n')
+        self.commit()
+        command = ['cargo', 'build', '--offline', '-p', 'game']
+        subprocess.run(command, cwd=self.root, check=True, capture_output=True)
+        records = ['target/debug/libgame.d']
+        with self.assertRaisesRegex(ValueError, 'uncovered file crates/unlinked/data with spaces.txt.*record'):
+            check_build_reads(self.root, Coverage(self.root, guard.registry(self.root)), records)
+        config = guard.registry(self.root)
+        config['covered_paths'].append('crates/unlinked/data with spaces.txt')
+        guard.save(self.root / guard.REGISTRY, config)
+        self.commit()
+        subprocess.run(command, cwd=self.root, check=True, capture_output=True)
+        result = check_build_reads(self.root, Coverage(self.root, config), records)
+        self.assertIn('crates/unlinked/data with spaces.txt', result[0]['repository_inputs'])
+        self.assert_key_edit('crates/unlinked/data with spaces.txt', True)
+        with self.assertRaisesRegex(ValueError, 'missing/unreadable.*absent.d'):
+            check_build_reads(self.root, Coverage(self.root, config), ['target/debug/absent.d'])
+
+    def test_unreadable_depfile_refuses(self):
+        self.edit('empty.d', 'not a depfile')
+        with self.assertRaisesRegex(ValueError, 'no inputs'):
+            check_build_reads(self.root, Coverage(self.root, guard.registry(self.root)), ['empty.d'])
 
 
 class GateTests(unittest.TestCase):
@@ -29,11 +194,8 @@ class GateTests(unittest.TestCase):
         self.writer = self.base / 'writer'
         self.run_git(self.base, 'clone', str(self.remote), str(self.writer))
         self.run_git(self.writer, 'checkout', '-b', 'main')
-        (self.writer / '.config').mkdir()
-        shutil.copyfile(guard.ROOT / guard.REGISTRY, self.writer / guard.REGISTRY)
-        (self.writer / 'crates').mkdir()
+        workspace(self.writer)
         (self.writer / 'crates/one').write_text('one')
-        (self.writer / '.gitignore').write_text('/tmp/\n')
         self.commit(self.writer, 'initial')
         self.run_git(self.writer, 'push', '-u', 'origin', 'main')
         self.builder = self.base / 'builder'
@@ -118,6 +280,28 @@ class GateTests(unittest.TestCase):
             guard.gate(self.builder)
         with self.assertRaisesRegex(ValueError, 'dirty tree'):
             guard.verify(self.builder)
+
+
+class UnlinkedRebaseTests(GateTests):
+    def test_unlinked_rebase_then_manifest_links_package(self):
+        (self.builder / 'crates/two').write_text('builder')
+        self.commit(self.builder, 'covered change')
+        self.seed_proof()
+        key = guard.content_key(self.builder)
+        (self.writer / 'crates/unlinked/src/lib.rs').write_text('pub fn new() {}\n')
+        self.commit(self.writer, 'unlinked source')
+        self.run_git(self.writer, 'push', 'origin', 'main')
+        self.assertTrue(self.land())
+        self.assertEqual(key, guard.content_key(self.builder))
+        # Keep a covered branch delta after the first successful push.
+        (self.builder / 'crates/two').write_text('builder second')
+        self.commit(self.builder, 'second covered change')
+        self.seed_proof()
+        self.run_git(self.writer, 'pull', '--ff-only')
+        package(self.writer, 'crates/game', 'game', '[dependencies]\nunlinked = { path = "../unlinked" }\n')
+        self.commit(self.writer, 'link formerly unlinked package')
+        self.run_git(self.writer, 'push', 'origin', 'main')
+        self.assertFalse(self.land())
 
 
 class RetentionTests(unittest.TestCase):

@@ -58,7 +58,13 @@ gates only done-when items about pacing.
   their verifier was still queued or running, which cost hours each.
 - **A change to a covered path** needs an exact-baseline proof before it lands: `python3 scripts/exact_baselines.py
   verify`, under the `gpu` lock. `CONTRIBUTING.md` lists the requirements, and `.config/exact-baselines.json` lists
-  the covered paths.
+  the listed path roots and built packages. Cargo derives the normal/build closure, including optional
+  and platform dependencies; only unlinked workspace package files are subtracted. Member manifests,
+  files in linked packages and explicit registry entries stay covered. Files Cargo cannot classify under
+  listed roots stay covered. `python3 scripts/exact_baselines.py covered` prints the linked and unlinked
+  packages and covered path count. Data a comparison, the cooker or the game reads must not live in an
+  unlinked package's folder unless the registry lists it. The verifier checks the three builds' Cargo
+  dependency records before publishing a proof.
 - **Regressions:** investigate a visible hitch, a regression of about 25% from a comparable baseline, or unexpected
   scaling.
 - **Status** goes in `docs/design/maturity.json`, with implementation, correctness, visuals and device recorded
