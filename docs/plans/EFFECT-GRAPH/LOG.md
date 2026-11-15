@@ -105,3 +105,8 @@
   at most two byte values, with matching lossless control bytes held. [The run audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
   retains both records and inspections. The new failure needs a later complete same-content pass; no
   reference or comparator changed, no new failed run is set aside, and all nine flags stay open.
+- 2026-11-15 The unchanged verifier on `58a6a0bb` passed both native matrices and all four 481-record
+  Chrome sets on the original content key, completing the day SDR ordinal-25 ruling as well as the night
+  record. [The audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md) retains both failed runs and their
+  lossless controls; the new complete pass's comparisons, identities, digests and hashes were validated.
+  Integration-base checks, fixed native crossings, paired costs and the full gate remain outstanding.
