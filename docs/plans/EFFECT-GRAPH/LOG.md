@@ -99,3 +99,9 @@
   and triangle-edge pattern meet tests 1–3 ([inspection](../../evidence/EFFECT-GRAPH/M3/night-linear-failure/builder-inspection.md)).
   Test 4 still needs a complete same-content verifier pass; no failed image run is set aside and all nine
   builder flags remain open. Native/Wasm preparation, all-target Clippy and documentation checks pass.
+- 2026-11-15 Audit found and validated a complete unchanged `f5b26a9e` verifier pass on the original
+  failed content key, completing that night-frame record. The retry on `bd3468d5` failed a new Chrome day
+  SDR image at ordinal 25. All 481 identities and hashes verify; only 528 opaque hill-edge pixels differ,
+  at most two byte values, with matching lossless control bytes held. [The run audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
+  retains both records and inspections. The new failure needs a later complete same-content pass; no
+  reference or comparator changed, no new failed run is set aside, and all nine flags stay open.
