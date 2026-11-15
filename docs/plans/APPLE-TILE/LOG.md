@@ -275,3 +275,10 @@
   The observer checkpoint is `f3dab046`; documentation checks and retained-proof hash verification pass.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 activation and rebase continuation.** The first-sample observer timed out before CUA
+  selection. Its handshake now activates the created app before waiting for the paused profiler sample.
+  The checked merge rebased to `abe1b8b1`, then failed on three REPO-RULES handoff links, which are repaired.
+  Runtime/build dependency audits match the qualified native and simulator inputs, and the native rebuild
+  retains the qualified executable hash. D10.1–D10.4 retain their proofs. D10.5 and the full gate remain pending.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md).
+
