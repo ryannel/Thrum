@@ -96,6 +96,15 @@
         "checked": "6945ae1758575899cdd0c1e573dc44e4e1b059d9",
         "at": "2026-11-12T07:32:49Z"
       }
+    },
+    "M2": {
+      "definitions": "4b16052d61d65b6b13b618dd1fa9978b755f0557794b5037396ac8394a7a386e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Add a BASELINE-GUARD milestone that narrows the exact-image merge gate's proof key, approved by the owner on 15 Nov.",
+        "at": "2026-11-15T08:39:29Z"
+      }
     }
   },
   "briefs": [
@@ -106,11 +115,15 @@
     {
       "task": "Revise the BASELINE-GUARD, CULLING and EFFECT-GRAPH designs and plans as their design reviews ask: docs/evidence/BASELINE-GUARD/design-review.md, docs/evidence/CULLING/design-review.md and docs/evidence/EFFECT-GRAPH/design-review.md. Address every finding or record why not. APPLE-TILE M2 has now passed, so CULLING and EFFECT-GRAPH can start as soon as their designs pass.",
       "at": "2026-11-11T15:55:43Z"
+    },
+    {
+      "task": "Add a BASELINE-GUARD milestone that narrows the exact-image merge gate's proof key, approved by the owner on 15 Nov.\n\nProblem: scripts/exact_baselines.py keys its covered-content proof (content_key) to the whole of covered_paths in .config/exact-baselines.json: crates/, examples/v1-game/, scripts/, tools/, .cargo/, Cargo files and the baseline evidence. Any change there on main invalidates every open branch's proof, so after each rebase a builder re-runs the full GPU verification. Main took 33 code commits on the night of 14-15 Nov and builders spent much of it re-proving; SIM-2D logged that a thrum-cloud-model change required a fresh covered-content proof. The verifier only builds and runs v1-game and thrum-cook. By cargo metadata on 15 Nov, v1-game's normal/build closure is thrum-app, thrum-asset, thrum-asset-gpu, thrum-content-runtime, thrum-controls, thrum-core, thrum-render; thrum-cloud-model, thrum-sim2d, thrum-water-model, thrum-sea, thrum-sea-model, thrum-network, the other examples and tools/xtask are outside it (check thrum-cook's own closure).\n\nOutcome: the proof key covers exactly the inputs that can change a registered exact image or the verifier's verdict (the build closures of what the verifier builds, the scripts and tools it runs, toolchain and lockfile, the cooked showcase assets, the registry and the baselines) and nothing else. Derive the set rather than hand-list crates, so a new dependency of v1-game is covered automatically. The gate must still fail closed: anything that can change a verified image forces a re-proof. Done when tests show the key changes for a linked-crate, shader, asset, script or baseline change and stays put for a change to an unlinked crate such as thrum-sim2d, and the gate's existing refusals still hold.\n\nAlso check, in the same pass, whether other merge-gate proofs keyed to a source identity (for example SIM-2D's retained cost records) are drawn wider than their inputs, and record what you find. Consumers to keep working: every module whose builders run the exact-baseline gate or verify under the GPU lock.",
+      "at": "2026-11-15T08:39:29Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-11T15:55:43Z"
+    "at": "2026-11-15T08:39:29Z"
   },
   "design_history": [
     {
