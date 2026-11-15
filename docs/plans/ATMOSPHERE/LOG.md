@@ -8,19 +8,14 @@
   captures, consecutive ABBA costs and Chrome handoff checks are queued in durable
   job `20261114-220537-78348`; no reference has been promoted yet.
 
-- 14 November, M9 continuation checkpoint `daf606ad`. The aerial pass now integrates
-  below ground using signed altitude and the density laws, and dims the direct Sun
-  with the chart's 0–50 m optical-depth slope. Diffuse and night sources use the
-  ground point above. The sky charts and decoders are unchanged. Native and Wasm
-  builds pass; numerical and changed-image qualification remain open. Metal proof
-  job `20261114-213944-66488` is queued under the shared GPU lock.
-  Before the shader change, the complete exact verifier passed at `976788ab`:
-  [record](../../evidence/ATMOSPHERE/M9-prechange-baselines/record.json).
-  The [four night-enabled Metal volumes](../../evidence/ATMOSPHERE/M9-volumes/identity.json)
-  were recorded there. First cost arms and their limits are in
-  [the cost record](../../evidence/ATMOSPHERE/M9-cost.md). The earlier verifier was
-  interrupted by a broken stdout pipe after its captures; its durable replacement
-  passed, without changing the verifier or its comparisons.
+- 14 November, M9 continuation checkpoint `daf606ad`. Signed altitude continues the
+  density laws below ground; the chart's 0–50 m slope dims the direct Sun there.
+  Diffuse/night sources use the ground above. Sky charts and decoders are unchanged.
+  Native/Wasm builds pass; numerical/image proof is queued as `20261114-213944-66488`.
+  Before the shader change, the exact verifier passed at `976788ab`:
+  [record](../../evidence/ATMOSPHERE/M9-prechange-baselines/record.json) and
+  [four recorded volumes](../../evidence/ATMOSPHERE/M9-volumes/identity.json); [first costs](../../evidence/ATMOSPHERE/M9-cost.md).
+  Its durable replacement passed after a stdout-pipe interruption, with comparisons unchanged.
 
 - 14 November, M9 preparation from `91cf8eae7587d811ee6ac2783df6385af3bc1aee`.
   Added the production-column referee and unchanged-volume recorder; scoped Clippy passes.
@@ -443,8 +438,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   only. All five registered sets moved; none stayed wholly unchanged. The registry,
   owner capture/comparison scripts and their sampling are unchanged. Final verifier
   and full checks follow this checkpoint. Evidence: [inspection](../../evidence/ATMOSPHERE/M9-images.md),
-  [audit](../../evidence/ATMOSPHERE/M9-baseline-refresh.json),
-  [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md), and
+  [audit](../../evidence/ATMOSPHERE/M9-baseline-refresh.json), [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md), and
   [paired costs and investigation](../../evidence/ATMOSPHERE/M9-cost.md).
 
   Each moved reference follows, with SHA-256 before and after:
@@ -549,3 +543,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   and Web build commands. The CPU build is prepared while the GPU job is queued,
   and its manifest and artifact hashes are checked again before timing.
   Historical measurements remain evidence of their named builds, not the new pair.
+
+- **2026-11-15 — M9 append conflict resolved.** Preserved both APPLE-TILE's newer
+  entries and M9's complete reference-hash list, and kept APPLE-PRESENTATION's
+  current log now that its evidence has landed. The runner retains its GPU lease
+  for up to 15 minutes for a rebase or gate repair, then retries the normal merge
+  and unchanged target checks. No check, reference or acceptance bound is bypassed.

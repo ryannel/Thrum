@@ -326,8 +326,7 @@
   only. All five registered sets moved; none stayed wholly unchanged. The registry,
   owner capture/comparison scripts and their sampling are unchanged. Final verifier
   and full checks follow this checkpoint. Evidence: [inspection](../../evidence/ATMOSPHERE/M9-images.md),
-  [audit](../../evidence/ATMOSPHERE/M9-baseline-refresh.json),
-  [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md), and
+  [audit](../../evidence/ATMOSPHERE/M9-baseline-refresh.json), [numerical proof](../../evidence/ATMOSPHERE/M9-numerical.md), and
   [paired costs and investigation](../../evidence/ATMOSPHERE/M9-cost.md).
 
   Each moved reference follows, with SHA-256 before and after:
