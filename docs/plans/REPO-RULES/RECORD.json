@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/REPO-RULES/design-review.md",
-    "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
-    "hash": "dff233b0c643f333992a87bbb296c20bcd1b55c1406c9d673e6973b7767cb480",
+    "commit": "0c23368e9e4962d74431a7cc109bfd58c5faf1e2",
+    "hash": "2fc7579ef58503d4bb116ff029e9bcbfc0b9d6009a62ef7d40bf0e8d085e0c63",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 88050,
-      "cached": 1001216,
-      "output": 5935,
+      "input": 68983,
+      "cached": 800512,
+      "output": 5205,
       "turns": 1
     },
-    "at": "2026-11-14T23:30:45Z"
+    "at": "2026-11-15T05:48:29Z"
   },
   "milestones": {
     "M1": {
@@ -102,6 +102,29 @@
         "turns": 1
       },
       "at": "2026-11-14T22:28:10Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/REPO-RULES/design-review-2.md",
+      "commit": "7a6877a6667a70ae8a3a7f248f585479ed2c01a5",
+      "hash": "dff233b0c643f333992a87bbb296c20bcd1b55c1406c9d673e6973b7767cb480",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 88050,
+        "cached": 1001216,
+        "output": 5935,
+        "turns": 1
+      },
+      "at": "2026-11-14T23:30:45Z"
     }
   ]
 }
