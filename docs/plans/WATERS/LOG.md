@@ -305,7 +305,7 @@
   entries from today. M11.1 is unchanged. The design is unchanged.
 - 2026-11-15 Built M12's CPU lag ladder, sector exposure, shoaling, breaker section and highest-sheet cut,
   with optional surf on the existing map and shared join weights. No GPU surf or game content was added.
-  [CPU proof](../../evidence/WATERS/M12.md) records 58 passing model tests, strict Clippy and independent
+  [CPU proof](../../evidence/WATERS/M12.md) records 59 passing model tests, strict Clippy and independent
   Snell, fetch, swash and fine forward-cut references, including the actual prepared surface and reach.
   [Cost](../../evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
   Exact baseline and integration results are recorded separately; the GPU surf implementation and its
