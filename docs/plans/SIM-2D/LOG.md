@@ -99,3 +99,12 @@ The selected [exact-baseline receipt](../../evidence/SIM-2D/M1/exact-baselines.j
 each proof's actual revision, covered-content key, comparisons and build identities.
 Canonical integration requires the verifier on rebased covered content and `./dev check`
 on the combined tree. The proof-and-merge runner refreshes that receipt before merging.
+
+The water-model workspace addition required another manifest rebase. The workspace list
+keeps the upstream water-model package and all three SIM-2D packages. Refreshed both full-trace
+cost records at `bf07e76e`, with two release runs per target and recorded shared-host load.
+Both records use source key `e58efdcdc45f183bcc2f6455d04dddc9d6e7d56ffd62c5aef05c3031f8ab835e`.
+The Mac and Chrome artifact hashes equal their retained conformance receipts. The rebuilt
+simulator binary also matches, at SHA-256 `fd393785c4318ee309ac5f0f5ed0e8dc28fef6570e8a54d54a6db2bc959c3bd1`.
+The 5,000-body neighbour-scaling flags remain explained by the grid table growing fourfold;
+measured index growth is 2.8–2.9 times. Clock and chronological quarter-regression flags are false.
