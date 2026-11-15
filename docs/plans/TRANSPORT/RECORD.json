@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "79c75bc3510214f44c0900fa951178da8c26e64b94f7d54080134c7bc3a5c304",
+      "definitions": "cd4d0f262d891447525973cec60b26c9be9c39b55859159fdbcf4bfd14525f5d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "TRANSPORT M1 needs something no plan provides yet. The builder wrote: CONTENT-LOOP must gate its default socket tests fo",
-        "at": "2026-11-15T00:21:07Z"
+        "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 1 Must Fix fin",
+        "at": "2026-11-15T00:29:02Z"
       }
     },
     "M2": {
@@ -59,11 +59,15 @@
     {
       "task": "TRANSPORT M1 needs something no plan provides yet. The builder wrote: CONTENT-LOOP must gate its default socket tests for M1.10. (Its other complaint, broken evidence links on main, is already fixed in e9bb09dd.) The builder's handoff, docs/evidence/TRANSPORT/M1-handoff.md, says what is finished, what was tried and what to do first; its work is on branch build/transport. Settle where the socket-test gating belongs with one owner, and keep log entries to 8 lines or fewer.",
       "at": "2026-11-15T00:21:07Z"
+    },
+    {
+      "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-15T00:29:02Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T00:21:07Z"
+    "at": "2026-11-15T00:29:02Z"
   },
   "design_history": [
     {
