@@ -228,6 +228,15 @@
   keeps merge and proof in one GPU reservation. D10.5 and final qualification remain pending.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-16 — M10 window access continuation.** The clean merged build created
+  portable window 53843 and passed unlock and Screen Recording preflights.
+  Exact-path Computer Use selection returned no state for 900.4 seconds before
+  interruption. The observer exited at its 180-second selection timeout.
+  D10.1–D10.4 retain their accepted proof. D10.5 needs responsive app access.
+  Cancelled three queued repeat campaigns under the current proof rules.
+  [Attempt](../../evidence/APPLE-TILE/M10/window-access-f819b7333/attempt.json) ·
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
 - **2026-11-14 — M10 second disk refusal.** After 8.66 GB of verified expired M3 bulk release, the retry
   acquired GPU exclusivity but refused capture below the unchanged 16 GiB floor; observed free space was 15.34 GiB.
   Both qualification jobs exited before check/merge. D10.1–D10.4 retain their passes; D10.5 is unrun despite
