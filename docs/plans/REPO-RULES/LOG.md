@@ -1,5 +1,10 @@
 # REPO-RULES log
 
+- 2026-11-16 Refreshed M1.5 at `6fec2d24b`, after main `81138094a` landed EFFECT-GRAPH and WATERS:
+  four path attributes were removed and two existing device requests moved. Every baseline entry equals its
+  present file count; the retained recipe and difference record attribute all changes to main's commits.
+  The first pending merge was withdrawn before admission so this record could accompany the landing.
+  The post-cleanup documentation gate passed 7,871 links. [M1's record](../../evidence/REPO-RULES/M1.md).
 - 2026-11-15 Resumed M1 under the proofs-run-once-on-main ruling. Stopped the old queued GPU helper before
   acquisition and removed its obsolete rebase/prove/merge helpers. M1.6 now cites `main-branch check exact-images`;
   the merged check supplies its target proof. Current inventory still equals every baseline entry and retains
