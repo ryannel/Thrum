@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The refreshed full gate passes, but its repeat inside merge at `15f0e49c` times out waiting for
+  cooker watcher generation 2. The exact failed binary passes all four tests in ten consecutive runs;
+  [the diagnostic record](../../evidence/REVIEW-ENGINE/M1/watcher-gate.json) preserves both results without
+  claiming a cause. Production code and test assertions/bounds are unchanged for the merge retry. The temporary
+  APPLE-PRESENTATION log-link repair is removed now that its evidence is present on main.
+
 - 2026-11-15 M1 integrated APPLE-PRESENTATION's landing. The normal merge refused the stale baseline key,
   so the batch refreshed simulator proof and all approved checks under its existing GPU lease. On `1d60e7b9`,
   the inspected simulator route, Mac request, both rewind tests, 42 unchanged game simulation tests and all
