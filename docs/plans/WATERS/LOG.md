@@ -303,3 +303,10 @@
   Suggestion was taken: M16's waterline crossing and a lake's surf by eye stay as the review left them.
 - 2026-11-14 M11 now waits for `APPLE-PRESENTATION:M7` and `M8`, the governor and MetalFX, which have done-when
   entries from today. M11.1 is unchanged. The design is unchanged.
+- 2026-11-15 Built M12's CPU lag ladder, sector exposure, shoaling, breaker section and highest-sheet cut,
+  with optional surf on the existing map and shared join weights. No GPU surf or game content was added.
+  [CPU proof](../../evidence/WATERS/M12.md) records 58 passing model tests, strict Clippy and independent
+  Snell, fetch, swash and fine forward-cut references, including the actual prepared surface and reach.
+  [Cost](../../evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
+  Exact baseline and integration results are recorded separately; the GPU surf implementation and its
+  appearance remain for M13, with no qualification inferred from this CPU model.

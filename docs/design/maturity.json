@@ -2745,6 +2745,18 @@
     {
       "id": "E1.water",
       "name": "Water regions and dynamics",
+      "waters_cpu_model": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "not_applicable",
+        "scope": "WATERS M1 map and M12 f64 surf oracle: prepared shore lags, fetch exposure, shoaling, validated breaker section and highest-sheet cut. Native CPU tests only; the GPU surf implementation remains for M13.",
+        "platform_cost_baselines": {
+          "mac-metal": "CPU preparation and column benchmarks on this M3 Max; no Metal surf or integrated frame-time qualification",
+          "chrome-webgpu": "not_run",
+          "ios-sim": "not_run"
+        },
+        "evidence": "../evidence/WATERS/M12.md"
+      },
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",
       "decision": "selected",
