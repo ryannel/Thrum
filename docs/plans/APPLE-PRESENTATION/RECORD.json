@@ -259,6 +259,38 @@
         "by": "plan",
         "task": "Revise APPLE-PRESENTATION's design and plan as docs/evidence/APPLE-PRESENTATION/design-review.md asks",
         "at": "2026-11-10T22:52:28Z"
+      },
+      "ready_for_review": {
+        "commit": "afce7a789340ba22fef568d20af724f6084289cd",
+        "checked": "afce7a789340ba22fef568d20af724f6084289cd",
+        "at": "2026-11-15T11:55:22Z",
+        "reused": [
+          "Test command",
+          "D3.1",
+          "D3.2",
+          "D3.4"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 2319445,
+          "cached": 389320320,
+          "output": 956583,
+          "turns": 10
+        },
+        "session_usage": {
+          "input": 2319445,
+          "cached": 389320320,
+          "output": 956583,
+          "turns": 10
+        }
       }
     },
     "M4": {
