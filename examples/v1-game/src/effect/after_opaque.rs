@@ -6,7 +6,7 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource},
-    synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
+    synthetic::{FrameLighting, Reconstruction, SyntheticLight, SyntheticScene, SyntheticView},
 };
 
 /// A failure in the submitted-input diagnostic, including its GPU preparation.
@@ -28,6 +28,7 @@ impl std::error::Error for QualificationError {}
 
 pub(super) struct Scene {
     temporal: bool,
+    reconstruction: bool,
 }
 impl SceneSource<SourceTick> for Scene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -56,6 +57,7 @@ impl SceneSource<SourceTick> for Scene {
             )
             .map_err(error)?
             .with_temporal_inputs(self.temporal)
+            .with_reconstruction(self.reconstruction)
             .with_jitter_phase(0, [64, 64])
             .with_history_reset(source.tick == 14),
             lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
@@ -80,6 +82,7 @@ pub(super) async fn host(
     caps: &DeviceCapabilities,
     queue: &wgpu::Queue,
     temporal: bool,
+    reconstruction: bool,
 ) -> Result<FrameHost<World, Scene>, String> {
     FrameHost::new(
         caps,
@@ -96,7 +99,10 @@ pub(super) async fn host(
             timeline: 3,
             tick: 10,
         }),
-        Scene { temporal },
+        Scene {
+            temporal,
+            reconstruction,
+        },
         SyntheticScene::grid(2).map_err(error)?,
         1.,
     )
@@ -142,13 +148,21 @@ async fn graph_cases(
     queue: &wgpu::Queue,
 ) -> Result<Vec<String>, String> {
     let mut record = Vec::new();
-    for (temporal, effect, refraction, count) in [
+    for (reconstruction, effect, refraction, count) in [
         (false, false, false, 0),
         (true, false, false, 0),
         (false, true, false, 0),
         (true, true, true, 1),
     ] {
-        let mut host = host(caps, queue, temporal).await?;
+        let mut host = host(caps, queue, false, reconstruction).await?;
+        let expected = if reconstruction {
+            Reconstruction::Taau
+        } else {
+            Reconstruction::Off
+        };
+        if host.reconstruction() != expected {
+            return Err("graph case did not prepare the selected reconstruction provider".into());
+        }
         if effect {
             let (effect, _) = DiagnosticEffect::new();
             host.set_scene_contribution(Box::new(effect.with_slab(refraction)))?;
@@ -166,17 +180,29 @@ async fn graph_cases(
         if names.iter().any(|name| name.ends_with("diagnostic slab")) != effect {
             return Err("absent slab adds a pass".into());
         }
+        if names.contains(&"portable TAAU") != reconstruction {
+            return Err("reconstruction graph does not match its selection".into());
+        }
+        if reconstruction && effect {
+            let slab = names
+                .iter()
+                .position(|name| name.ends_with("diagnostic slab"));
+            let resolve = names.iter().position(|name| *name == "portable TAAU");
+            if !matches!((slab, resolve), (Some(slab), Some(resolve)) if slab < resolve) {
+                return Err("reconstruction did not follow the slab".into());
+            }
+        }
         let storage = host.storage_report();
         let depth = storage
             .lines()
             .find(|line| line.contains("role=depth"))
             .ok_or("missing depth storage row")?;
         let sampled = depth.contains("TEXTURE_BINDING");
-        if sampled != (temporal || effect) {
+        if sampled != (reconstruction || effect) {
             return Err(format!("depth request union: {depth}"));
         }
         record.push(format!(
-            "temporal={temporal} effect={effect} refraction={refraction}: passes={names:?}; {depth}"
+            "reconstruction={expected:?} effect={effect} refraction={refraction}: passes={names:?}; {depth}"
         ));
     }
     Ok(record)
@@ -189,8 +215,8 @@ async fn slab_pixels(
     instance: &wgpu::Instance,
 ) -> Result<Vec<String>, String> {
     let mut record = Vec::new();
-    let mut host = host(caps, queue, true).await?;
-    let mut baseline = super::after_opaque::host(caps, queue, true).await?;
+    let mut host = host(caps, queue, true, false).await?;
+    let mut baseline = super::after_opaque::host(caps, queue, true, false).await?;
     let (effect, handle) = DiagnosticEffect::new();
     host.set_scene_contribution(Box::new(effect.with_slab(true)))?;
     for subject in [&mut host, &mut baseline] {
@@ -394,7 +420,7 @@ async fn refraction_pixels(
 }
 
 async fn shared_copy(caps: &DeviceCapabilities, queue: &wgpu::Queue) -> Result<String, String> {
-    let mut host = host(caps, queue, false).await?;
+    let mut host = host(caps, queue, false, false).await?;
     let (a, _) = DiagnosticEffect::new();
     let (b, _) = DiagnosticEffect::new();
     host.set_scene_contribution(Box::new(

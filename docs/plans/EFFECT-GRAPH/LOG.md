@@ -130,3 +130,8 @@
   at (114, 230). M3.9's builder proof passes; [the audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
   retains both failed records. Documentation checks pass. Fresh integration target checks and merge
   remain pending while the existing campaign waits for the shared GPU; no target result is inferred.
+- 2026-11-15 Privately rebased onto main `3042de93c`, integrating APPLE-PRESENTATION's TAAU path.
+  Kept upstream capture/pre-tone helpers and reconstruction capture controls. Late effects now precede
+  TAAU as well as native consumers. The graph witness selects actual reconstruction on/off, and the
+  late compute witness checks its final epilogue before TAAU. Native workspace all-target Clippy,
+  rustfmt and documentation checks pass. Fresh target proofs remain queued in the existing campaign.

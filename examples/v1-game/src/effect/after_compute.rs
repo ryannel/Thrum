@@ -495,7 +495,7 @@ pub(super) async fn run(
     queue: &wgpu::Queue,
     caps: &thrum_render::capabilities::DeviceCapabilities,
 ) -> Result<String, String> {
-    let mut host = host(caps, queue, true).await?;
+    let mut host = host(caps, queue, true, true).await?;
     let handle = Arc::new(Mutex::new(Witness {
         state: EffectState::new(1),
         textures: Vec::new(),
@@ -520,6 +520,14 @@ pub(super) async fn run(
         ]
     {
         return Err(format!("late compute stage order: {order:?}"));
+    }
+    let names = graph.pass_names().collect::<Vec<_>>();
+    let epilogue = names
+        .iter()
+        .position(|name| *name == "effect after 3: late compute epilogue");
+    let resolve = names.iter().position(|name| *name == "portable TAAU");
+    if !matches!((epilogue, resolve), (Some(epilogue), Some(resolve)) if epilogue < resolve) {
+        return Err("reconstruction did not follow the final late compute pass".into());
     }
     host.enable_submitted_capture_from(
         41,
@@ -588,7 +596,7 @@ pub(super) async fn run(
             }
         }
     }
-    Ok("late compute trace -> history resolve -> render -> compute epilogue: exact submitted depth masks, run/skip/discard/retry and composition pixels".into())
+    Ok("late compute trace -> history resolve -> render -> compute epilogue -> portable TAAU: exact submitted depth masks, run/skip/discard/retry and composition pixels".into())
 }
 
 #[cfg(test)]
