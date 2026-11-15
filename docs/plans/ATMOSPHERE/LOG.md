@@ -524,3 +524,7 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - The queued job subsequently exited on sandbox-denied Git metadata writes.
   Verified an escalated fetch and relaunched the same merge/check command outside
   the sandbox as `20261115-044357-75419`; target results and M9 status are unchanged.
+- The escalated merge rebased successfully but stopped at the exact-baseline
+  proof gate after upstream CPU model/workspace changes. The retained
+  [integration runner](../../evidence/ATMOSPHERE/M9-integrate.py) orders fresh
+  canonical proofs before retrying that gate, with no check or field changed.
