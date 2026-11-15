@@ -38,3 +38,9 @@
   its newer source and evidence, and main's BASELINE-GUARD status-link correction. The finishing helper
   refreshes M1's inventory and retained target proofs when upstream changes covered content, then uses
   the normal merge and check. [Reconciliation record](../../evidence/REPO-RULES/M1-link-repair.json).
+- 2026-11-15 Rebased the continuation onto current main. Nine fixture groups, five ratchet groups and the
+  whole-tree rule check passed at `db4a38fce`. Both native matrices and Chrome day SDR then passed, but
+  Chrome day scene-linear refused one tick/alpha identity despite all 481 image hashes matching.
+  [The retained observation](../../evidence/REPO-RULES/M1-identity-observation.md) distinguishes the measured
+  result from the possible tick-work-yield cause. Retried the unchanged full verifier through the normal
+  finishing helper; neither references nor comparison keys were changed.
