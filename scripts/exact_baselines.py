@@ -36,7 +36,11 @@ def content_key(root=ROOT):
 
 
 def proof_path(root=ROOT):
-    return root / SCRATCH / 'proofs' / (content_key(root) + '.json')
+    return _proof_path(root, content_key(root))
+
+
+def _proof_path(root, key):
+    return root / SCRATCH / 'proofs' / (key + '.json')
 
 
 def gate(root=ROOT):
@@ -51,14 +55,15 @@ def gate(root=ROOT):
     if not any(coverage.includes(p.decode()) for p in changed.split(b'\0') if p):
         print('PASS exact-baseline gate: no covered-path change beyond origin/main')
         return
-    path = proof_path(root)
+    key = coverage.key()
+    path = _proof_path(root, key)
     try:
         proof = json.loads(path.read_text())
     except (OSError, ValueError) as error:
         raise ValueError('no exact-baseline proof for this content; run under the GPU lock: '
                          'python3 scripts/exact_baselines.py verify') from error
     expected = [entry['id'] for entry in registry(root)['baselines']]
-    if (proof.get('content_key') != content_key(root) or proof.get('passed') is not True
+    if (proof.get('content_key') != key or proof.get('passed') is not True
             or proof.get('baselines') != expected):
         raise ValueError('invalid exact-baseline proof; run python3 scripts/exact_baselines.py verify')
     print(f'PASS exact-baseline gate: proof {path.relative_to(root)}')
@@ -114,8 +119,9 @@ def archive_completed_runs(directory, output):
 def verify(root=ROOT):
     if git('status', '--porcelain', '--untracked-files=all', root=root):
         raise ValueError('dirty tree: verifier requires a clean checkout (including untracked sources)')
-    key = content_key(root)
-    proof = proof_path(root)
+    coverage = Coverage(root, registry(root))
+    key = coverage.key()
+    proof = _proof_path(root, key)
     # A failed attempt must not leave a previous proof for the attempted content.
     proof.unlink(missing_ok=True)
     if shutil.disk_usage(root).free < 16 * 1024**3:
@@ -127,7 +133,6 @@ def verify(root=ROOT):
               'target': 'mac-metal + chrome-webgpu', 'commands': [], 'comparisons': {},
               'diff_sha256': hashlib.sha256(subprocess.check_output(['git', 'diff', 'HEAD'], cwd=root)).hexdigest(),
               'load': os.getloadavg(), 'disk_free_before_bytes': shutil.disk_usage(root).free}
-    coverage = Coverage(root, registry(root))
     report.update(coverage.summary())
     environment = {k: v for k, v in os.environ.items() if not k.startswith('THRUM_') and k not in
                    ['CARGO_TARGET_DIR', 'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'RUSTC', 'RUSTC_WRAPPER']}
