@@ -44,6 +44,12 @@ def workspace(root):
 def resolve_fixture(root):
     # Update only the fixture lockfile before committing dependency mutations.
     # Deliberately broken Cargo fixtures are committed too, for refusal tests.
+    changed = subprocess.run(['git', 'diff', '--name-only', 'HEAD'], cwd=root, capture_output=True, text=True)
+    untracked = subprocess.run(['git', 'ls-files', '--others', '--exclude-standard'],
+                               cwd=root, capture_output=True, text=True)
+    if (changed.returncode == 0 and (root / 'Cargo.lock').exists() and
+            not any(p.endswith('Cargo.toml') for p in (changed.stdout + untracked.stdout).splitlines())):
+        return
     subprocess.run(['cargo', 'metadata', '--all-features', '--offline', '--format-version', '1'],
                    cwd=root, capture_output=True)
 
