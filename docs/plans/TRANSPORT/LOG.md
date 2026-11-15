@@ -89,3 +89,14 @@
 - 2026-11-15 No item's statement, check or question changed; M1's `depends_on` did. `SESSION`'s files are
   unchanged, and its M2 onward now wait for V1 through `TRANSPORT:M1`. The work on `build/transport` stays for
   the builder that resumes M1. The design has not been reviewed again; no builder starts until Design Approved.
+- 2026-11-15 Owner, on transport's timing: "it can come before V1 if we have space for it, but it's not urgent".
+  This overturns the planner's assumption of `c7882c36` that the brief's decision 1 keeps transport after V1.
+  M1 no longer waits for `SHOWCASE:M8` and waits for nothing; the assumption is deleted from the plan.
+- 2026-11-15 Priority, from the lead with that ruling: `TRANSPORT` is the lowest, and the lead starts its builder
+  only when a builder slot is free. The design's "When it is built" says so, with the owner's words. The brief's
+  decision 1 and its "Not part of this" list, and the module list's row 21, split, edge table, build order,
+  entry and owner decision 7, carry the ruling. Transport is still no part of the V1 exit.
+- 2026-11-15 No item's statement, check or question changed; M1's `depends_on` and one paragraph of the design
+  did. `SESSION`'s files are unchanged: its M2 onward wait on `TRANSPORT:M1` alone, not on V1. The work on
+  `build/transport` stays for the builder that resumes M1, as the plan's note says. The changed paragraph has
+  not been reviewed; no builder starts until a design review returns Design Approved.

@@ -13,7 +13,6 @@ design.
 
 ## Open for the human
 
-- Assumption: M1 waits for the V1 exit (`SHOWCASE` M8), because the brief's decision 1 says "transport stays after V1" and the owner's words of 14 November moved "the 2d engine side of things" before V1, which does not name transport. M1 uses nothing `SHOWCASE` builds, so if the owner means transport too, the brief's two lines change and this one edge is removed.
 - Assumption: "over the network" is proved between separate processes on this Mac, over real QUIC and WebTransport on loopback, through a relay that adds 100 ms of round trip, ±20 ms of jitter and 2% loss. No second machine, Wi-Fi, home router or internet path is run, and a public host stays the owner's to order.
 - Assumption: Chrome is the only browser run, and A0's WebSocket fallback is not built. Safari and Firefox now have WebTransport and are designed for, not tried.
 - Assumption: a player joins with a join ticket, which is the host's address and its certificate's fingerprint, about a hundred characters to put in a link or paste. A ticket stops working when its host stops. A short code a player could type needs a directory service, which is not built.

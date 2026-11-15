@@ -22,7 +22,7 @@
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | |
-| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | SHOWCASE M8 |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 |
@@ -35,7 +35,7 @@
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
-are the 2D and online engine work, which is built beside V1 except `TRANSPORT` and the milestones of `SESSION` that use it, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
+are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. `Needs` names the milestones a module waits on in other modules; each milestone's `needs` in
 its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
 loop writes.
 
@@ -1011,8 +1011,8 @@ games. Rain seen falling is not planned and is [the owner's](#owner-decisions).
 ## Track 3: the swarm-survival game, after V1
 
 Added 10 November 2026. [The brief](../design/NEXT-GOAL-SWARM-GAME.md) is the owner's page; this section turns it into
-modules. Nothing here gates the exit. Until 14 November nothing here started before it either; since then the 2D
-engine modules do, and the game and transport wait.
+modules. Nothing here gates the exit. Until 14 November nothing here started before it either; since then the
+engine modules do, transport among them since 15 November, and only the game waits.
 
 <a id="the-split-of-14-november-2026"></a>
 
@@ -1023,28 +1023,27 @@ don't want to start working on the swarm game till v1 lands."
 
 | Part | Modules | Starts |
 |---|---|---|
-| Reusable engine work | `SIM-2D`, `RENDER-2D`, `SESSION`, `GAME-UI` | As soon as the milestones it uses are Done. None has an edge to `SHOWCASE` of its own |
-| Transport | `TRANSPORT`, and through it `SESSION` from its second milestone on | When `SHOWCASE:M8` is Done, until the owner says otherwise |
+| Reusable engine work | `SIM-2D`, `RENDER-2D`, `SESSION`, `GAME-UI` | As soon as the milestones it uses are Done. None waits for `SHOWCASE` |
+| Transport | `TRANSPORT` | Before or after V1, when a builder slot is free. It waits for no milestone and is last in line for a builder |
 | The game | `SWARM`, all eight milestones, the owner's pick of a concept included | When `SHOWCASE:M8` is Done |
 
-**Why transport still waits.** [The brief](BRIEF.md#goal-and-exit-rule), decision 1, says "transport stays after
-V1", and its "Not part of this" list puts "transport and sockets" outside the work before the exit. The owner's
-words above name "the 2d engine side of things" and not transport. On 14 November this plan read them as
-covering `TRANSPORT` and released its first milestone; `TRANSPORT`'s design review of 15 November found that
-reading against the brief, which only the owner changes, so the edge is back. It is the one edge here that is
-scheduling and not use: `TRANSPORT`'s proof programs need nothing `SHOWCASE` builds. Whether transport may
-start before V1 is [the owner's](#owner-decisions), decision 7.
+<a id="transports-timing"></a>
 
-An engine milestone otherwise keeps an edge only where it uses another milestone's output:
+**Transport's timing.** The owner, 15 November 2026: "it can come before V1 if we have space for it, but it's
+not urgent". So `TRANSPORT` M1 has no edge to `SHOWCASE`, and `TRANSPORT` is the lowest priority of every
+module: the lead starts its builder only when a builder slot is free. The ruling replaces "transport stays after
+V1" in decision 1 of [the brief](BRIEF.md#goal-and-exit-rule), on which this plan had held M1 behind
+`SHOWCASE:M8` since `TRANSPORT`'s design review earlier that day. Transport is still no part of the V1 exit.
+
+An engine milestone keeps an edge only where it uses another milestone's output:
 
 | Milestone | Waits for | Because |
 |---|---|---|
-| `SIM-2D` M1 | Nothing | Core's simulation (G2S) and the shells it runs in are Done |
-| `TRANSPORT` M1 | `SHOWCASE:M8` | The brief's decision 1, as above. It uses nothing of `SHOWCASE`'s |
+| `SIM-2D` M1, `TRANSPORT` M1 | Nothing | Core's simulation (G2S) and the shells they run in are Done. `TRANSPORT` M1 starts when a builder slot is free, [as above](#transports-timing) |
 | `RENDER-2D` M1 | `EFFECT-GRAPH:M3`, `APPLE-PRESENTATION:M3` | It refuses a contribution that declares the after-opaque stage, which M3 defines, and it declares a scene with no reconstruction, which exists in the game from TAAU on. It no longer waits for `APPLE-TILE:M12`: it uses the split graph and the pre-tone input, which are Done, and nothing of M10 to M12 |
 | `RENDER-2D` M4 | `CONTENT-LOOP:M1` | The sheet product is lent as a lease and switched by the publication, both M1's. It no longer waits for `CONTENT-LOOP:M3`, which closes G5 and adds nothing a sheet uses |
 | `RENDER-2D` M5 | `SIM-2D:M1` | It draws the Crowd trace |
-| `SESSION` M1, M2, M5 | `SIM-2D:M3`, `TRANSPORT:M1`, `TRANSPORT:M2` | As before. M1 is built beside V1; M2 and what follows it wait for V1 through `TRANSPORT` |
+| `SESSION` M1, M2, M5 | `SIM-2D:M3`, `TRANSPORT:M1`, `TRANSPORT:M2` | As before. M2 and what follows it wait on `TRANSPORT`, which is last in line for a builder, and not on V1 |
 | `SESSION` M7 | `RENDER-2D:M5` | The windowed match is the crowd view with a session attached |
 | `GAME-UI` M1 | `RENDER-2D:M5`, `APPLE-PRESENTATION:M6` | It runs the sprite pass a second time over the sprite scene M5 leaves, and it draws inside the EDR present pass, which M6 builds |
 
@@ -1365,16 +1364,16 @@ review passes. Changes to a numbered contract are settled with its producers and
 ### Build order after the V1 exit
 
 This heading is kept for the pages that link to it. Since [14 November](#the-split-of-14-november-2026) steps
-1 to 4 below are built beside V1, each milestone as soon as the ones it uses are Done. What waits for
-`SHOWCASE` is step 5, the game, and `TRANSPORT` with the `SESSION` milestones that follow it, which
-[the brief keeps after V1](#the-split-of-14-november-2026). A design that changed that day needs a review that returns Design Approved before a
-builder starts its module.
+1 to 4 below are built beside V1, each milestone as soon as the ones it uses are Done, and only step 5, the
+game, waits for `SHOWCASE`. `TRANSPORT` is the exception in priority, not in edges: it starts
+[when a builder slot is free](#transports-timing). A design that changed needs a review that returns Design
+Approved before a builder starts its module.
 
 1. **The two proofs that can overturn the plan.** `SIM-2D`, first milestone: one input trace gives equal digests
    on Mac, in Chrome and on the iOS simulator at the brief's crowd size, with tick, rewind and replay costs
-   recorded. `TRANSPORT`, first milestone, after `SHOWCASE:M8`: one native host holds a Mac client, a Chrome
-   client and an iOS-simulator client over real sockets under the A0 conditioner. They share no files with each
-   other or with the renderer.
+   recorded. `TRANSPORT`, first milestone, when a builder slot is free: one native host holds a Mac client, a
+   Chrome client and an iOS-simulator client over real sockets under the A0 conditioner. They share no files
+   with each other or with the renderer.
 2. **Sprites.** `RENDER-2D`, which builds its asks of `APPLE-TILE` and `CONTENT-LOOP` itself under
    [the seam rulings](#seam-rulings-for-render-2d). It starts after `EFFECT-GRAPH:M3` and
    `APPLE-PRESENTATION:M3`; its last milestone draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first.
@@ -1392,9 +1391,10 @@ builder starts its module.
    co-op on sockets on its last, and the close. It builds its asks of the guard and the shells itself under
    [the seam rulings](#seam-rulings-for-swarm).
 
-A lone builder takes the engine modules in that order: `SIM-2D`, `RENDER-2D`, `SESSION`'s first milestone and
-`GAME-UI` beside V1, then `TRANSPORT` and the rest of `SESSION` after it. With two builders, V1's milestones
-come first whenever one can start.
+A lone builder takes the engine modules in that order, with transport last: `SIM-2D`, `RENDER-2D`, `SESSION`'s
+first milestone and `GAME-UI`, then `TRANSPORT` and the rest of `SESSION`. With two builders, V1's milestones
+come first whenever one can start, and `TRANSPORT` takes a slot only when no other module has a milestone
+ready for it ([the owner, 15 November](#transports-timing)).
 
 **Reaching the targets.** `TRANSPORT`, `SESSION` and `SWARM` open local sockets and drive Chrome, which Codex's
 `workspace-write` sandbox does not allow without a request for each run. The owner settled it on 14 November:
@@ -1468,8 +1468,8 @@ three choices this brief carried: Quinn with `web-transport-quinn` on the host a
 browser's `WebTransport`; one I/O thread that meets the world lane only at bounded queues; and no WebSocket
 fallback. [A probe](../evidence/TRANSPORT/planning-probe.md) reached one host from the Mac, Chrome and the
 simulator with datagrams, so the fallback this brief named, input on the reliable stream for Chrome, is held in
-reserve and not built. Two milestones, the first after `SHOWCASE:M8` as
-[the brief's decision 1 has it](#the-split-of-14-november-2026); `SESSION` needs M1 for the in-memory conditioned link and M2 before its socket
+reserve and not built. Two milestones, the first waiting for nothing and started
+[when a builder slot is free](#transports-timing); `SESSION` needs M1 for the in-memory conditioned link and M2 before its socket
 milestones. M1 also delivers the three socket adapters and a cost record under each congestion controller. Four findings bind `SESSION`: a join's baseline
 should flow from the host down; a frozen browser page keeps its link open, so silent input is `SESSION`'s to time
 out; a datagram can arrive long after it was sent, so old input and state are rejected by content; and a close can
@@ -1754,11 +1754,9 @@ For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
 7. **When track 3 starts.** Decided on 14 November 2026: the engine modules are built beside V1 and the game
    after it ([the split](#the-split-of-14-november-2026)). This plan reads "the swarm game" as all of `SWARM`,
-   the owner's pick of a concept included; the owner can ask for that pick sooner. **Still the owner's:**
-   whether "the 2d engine side of things" takes transport with it. The brief's decision 1 says "transport stays
-   after V1", so `TRANSPORT` M1 waits for `SHOWCASE:M8`, and `SESSION` from its second milestone waits with it.
-   If the owner says transport may start now, the brief's two lines change and that one edge is removed; nothing
-   else in either module does. Whether the game goes before,
+   the owner's pick of a concept included; the owner can ask for that pick sooner. Transport's timing was
+   decided on 15 November 2026: "it can come before V1 if we have space for it, but it's not urgent", so
+   `TRANSPORT` waits for nothing and is [last in line for a builder](#transports-timing). Whether the game goes before,
    after or beside sea and clouds is still the owner's order to set.
 8. **The game's identity.** Its name, premise, characters and look are the owner's taste. `SWARM`'s first
    milestone lays out options and waits for the owner's pick. Its last waits for the owner to play the game.
@@ -2063,3 +2061,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   name the 2D engine side. The split, the edge table, the build order, row 21 and owner decision 7 say so.
   `SESSION`'s files are unchanged: its M2 onward wait through `TRANSPORT:M1`, and the sentence in its design
   that it "waits for nothing of V1's" now holds for its own edges only; reword it when that plan next changes.
+- 2026-11-15 The owner ruled on transport's timing: "it can come before V1 if we have space for it, but it's not
+  urgent". `TRANSPORT` M1 no longer waits for `SHOWCASE:M8`, and `TRANSPORT` is the lowest priority: the lead
+  starts its builder only when a builder slot is free. Row 21, the split, the edge table, the build order, its
+  entry and owner decision 7 say so, and the brief's decision 1 carries the ruling. `SESSION`'s files are
+  unchanged: its M2 onward wait on `TRANSPORT:M1` alone, so its design's "waits for nothing of V1's" holds again.

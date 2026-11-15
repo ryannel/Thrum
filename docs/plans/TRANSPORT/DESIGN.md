@@ -26,13 +26,12 @@ moves bytes between those processes. The module list's brief for it, which
 WebTransport crate, where the network's thread sits beside the world lane, and whether A0's WebSocket fallback is
 built.
 
-**When it is built.** After the V1 exit: M1 waits for `SHOWCASE:M8`. [The brief](../BRIEF.md#goal-and-exit-rule),
-decision 1, says "transport stays after V1", and its "Not part of this" list puts "transport and sockets" outside
-the work before the exit. On 14 November 2026 the owner said: "Let's move the 2d engine side of things to before
-v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." Those words name the
-2D side and not transport, so the brief's line stands until the owner changes it, and
-[the plan](PLAN.md#open-for-the-human) puts the question to them. The edge is scheduling only: nothing here uses
-anything `SHOWCASE` builds, and the proof programs run without the game.
+**When it is built.** Before or after the V1 exit, whenever a builder slot is free: M1 waits for no other
+module's milestone. The owner, 15 November 2026, on transport's timing: "it can come before V1 if we have space
+for it, but it's not urgent". So this module is last in line for a builder, and the lead starts one only when a
+slot is free. The ruling replaces "transport stays after V1", which decision 1 of
+[the brief](../BRIEF.md#goal-and-exit-rule) carried until that day; transport is still no part of the V1 exit
+and never gates it. Nothing here uses anything `SHOWCASE` builds, and the proof programs run without the game.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope and the
 input, state and acknowledgement codecs, none of which opens a socket), the tick-quantised `LinkConditioner` in

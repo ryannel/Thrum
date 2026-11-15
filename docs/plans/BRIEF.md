@@ -29,6 +29,9 @@ That is the build plan's purpose, as it stood on 10 November 2026. Later stateme
 - **10 November 2026.** The next goal after V1 is [a swarm-survival test game](../design/NEXT-GOAL-SWARM-GAME.md),
   with 2D support and online multiplayer built up towards it. From that page: "A swarm survivor", "2D support in
   the engine" and "Multiplayer. Several players play together over the network."
+- **15 November 2026.** On transport's timing, the owner: "it can come before V1 if we have space for it, but it's
+  not urgent". Decision 1 read "transport stays after V1" until then. Transport is still no part of the V1 exit;
+  [the module list](ARCHITECTURE.md#transports-timing) builds it when a builder slot is free.
 
 ## Why
 
@@ -60,8 +63,9 @@ Each is carried from the build plan unless it names another source.
    controls; cooked meshes/textures; live camera, lights and cascaded shadows; GPU culling; MetalFX, EDR and a
    quality governor; display-link interpolation; hot reload, profiler and native/browser demo UI. Keep 10,000
    entities and 1,000–2,000 movers as the representative scene. Headless corrected-run replay proves multiplayer
-   fitness; transport stays after V1. A fresh agent builds a small scene from public docs alone. The initial 60 Hz
-   game clock is configurable, not an engine ceiling.
+   fitness; transport is not part of the exit, and "can come before V1 if we have space for it, but it's not
+   urgent" (the owner, 15 November 2026). A fresh agent builds a small scene from public docs alone. The initial
+   60 Hz game clock is configurable, not an engine ceiling.
 2. **When a gate closes.** Its outcome runs in the game on the named target, correctness, lifecycle and required
    oracle checks pass, `./dev check` is green, and independent code, evidence and agent visual review pass.
 3. **Numeric performance and allocation figures are baselines, not gates.** The owner, 6 November 2026
@@ -136,7 +140,8 @@ Engine capture for all of them is `T2-CAPTURE`.
 
 ## Not part of this
 
-- **Before the exit:** transport and sockets; sea and clouds; physical iPhone qualification; Android and
+- **Before the exit:** transport and sockets, which the exit does not need and which may be built before it when
+  there is space (the owner, 15 November 2026); sea and clouds; physical iPhone qualification; Android and
   desktop-high recipes; numeric performance tuning, which belongs to a dedicated AI performance phase that profiles
   whole frames, derives targets, and revisits retained commands, mapped uploads and complete native recording.
 - **After the game:** teaching demos, chosen one at a time: cloud formation, water and others under
