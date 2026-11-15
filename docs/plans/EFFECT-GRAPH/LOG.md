@@ -92,3 +92,10 @@
   `APPLE-TILE` owes nothing and no dependency was added. [The module list](../ARCHITECTURE.md#a-frame-that-varies-under-load)
   gained a ruling on setting such a run aside, the design a paragraph, and M3 the item M3.9. M3.1 to M3.8 are
   unchanged. The plan file took the current shape, without task lists. No GPU check was run for this revision.
+- 2026-11-15 Builder resumed the revised plan on the failed run's exact content key. The unchanged verifier
+  on `f5b26a9e` passed both native matrices and all Chrome day SDR records, then its day scene-linear capture
+  stopped at the visibility guard before comparison ([record](../../evidence/EFFECT-GRAPH/M3/capture-interruption/README.md)).
+  Independently regenerated and inspected the original night-linear difference: its identities, matching bytes
+  and triangle-edge pattern meet tests 1–3 ([inspection](../../evidence/EFFECT-GRAPH/M3/night-linear-failure/builder-inspection.md)).
+  Test 4 still needs a complete same-content verifier pass; no failed image run is set aside and all nine
+  builder flags remain open. Native/Wasm preparation, all-target Clippy and documentation checks pass.
