@@ -79,3 +79,9 @@
   hold them all. Ruling 5 says so. M6.10 is unchanged and still measures a turning window.
 - 2026-11-14 Not run by the planner: the solver's own samples with a lip that starts to run, wetting gauges
   on the GPU, and waves blended between three carriage currents.
+- 2026-11-15 M1 built ([evidence](../../evidence/RIVERS/M1.md)). Verified: the valley holds discharge to 0.139%,
+  pool level to 5.3 mm at 1.73 critical depths over the sill; closed forms within the items' bounds; WATERS
+  takes the chart; one and eight threads give the same bytes; 1.31 s on one thread, 9,798 updates a wet cell.
+  By construction, not measured: the energy account closes because the face-based head loss telescopes;
+  friction power is computed apart in the test. M1 limits: first order in space; a mouth must be one straight
+  row or column. Suspected, not tested: the active-span cost stays flat for rectangles much larger than 2×.

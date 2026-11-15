@@ -1,0 +1,60 @@
+{
+  "what": "A solve of the RIVERS M1.1 test valley (48 m by 14 m, 0.3 m3/s) at 0.25 m cells, from pools filled to their sills, to the first profile's stopping rule.",
+  "commit": "dfc45004fa0383be4426a5ec8a132bc1dd188620",
+  "solver_sources_dirty": false,
+  "build": "release (cargo --release, opt-level 3)",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)",
+  "machine": {
+    "cpu": "Apple M3 Max",
+    "system": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "logical_cpus": 14
+  },
+  "load": {
+    "before_1_5_15_min": [
+      8.01,
+      15.45,
+      16.4
+    ],
+    "after_1_5_15_min": [
+      8.01,
+      15.45,
+      16.4
+    ],
+    "note": "Other builders share this Mac, so seconds are noisy; cell updates are exact."
+  },
+  "runs": [
+    {
+      "cell_size_m": 0.25,
+      "rectangle_cells": 10752,
+      "wet_cells": 2088,
+      "steps": 8020,
+      "cell_updates": 20458914,
+      "seconds": 1.3072,
+      "level_rate": 9.961313756372617e-06,
+      "imbalance": 0.001392742492089796,
+      "threads": 1
+    },
+    {
+      "cell_size_m": 0.25,
+      "rectangle_cells": 10752,
+      "wet_cells": 2088,
+      "steps": 8020,
+      "cell_updates": 20458914,
+      "seconds": 0.9143,
+      "level_rate": 9.961313756372617e-06,
+      "imbalance": 0.001392742492089796,
+      "threads": 14
+    }
+  ],
+  "part5_comparison": {
+    "part5": {
+      "wet_cells": 22400,
+      "steps": 24267,
+      "cell_updates": 544000000.0
+    },
+    "part5_updates_per_wet_cell": 24286,
+    "valley_updates_per_wet_cell": 9798,
+    "valley_steps": 8020,
+    "words": "The valley takes 8020 steps and 20.5 million cell updates for 2088 wet cells, 9798 updates a wet cell. Part 5 estimated 24,267 steps for a 350 m stream, 24286 updates a wet cell, scaled from a 120 m section; the valley is 40 m long, so it needs fewer steps for its signals to cross it, and its updates also count the dry cells beside the water that each step works on."
+  }
+}
