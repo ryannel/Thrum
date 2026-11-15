@@ -264,6 +264,45 @@
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
         "at": "2026-11-14T16:17:06Z"
+      },
+      "ready_for_review": {
+        "commit": "c06427bf0ed8ba1741b9e9c7f455b1beb4980d34",
+        "checked": "c06427bf0ed8ba1741b9e9c7f455b1beb4980d34",
+        "at": "2026-11-15T19:13:31Z",
+        "reused": [
+          "Test command",
+          "M13.1",
+          "M13.2",
+          "M13.3",
+          "M13.4",
+          "M13.5",
+          "M13.6",
+          "M13.7",
+          "M13.8",
+          "M13.9",
+          "M13.10"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 643845,
+          "cached": 181490304,
+          "output": 290953,
+          "turns": 8
+        },
+        "session_usage": {
+          "input": 643845,
+          "cached": 181490304,
+          "output": 290953,
+          "turns": 8
+        }
       }
     },
     "M14": {
