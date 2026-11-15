@@ -86,8 +86,15 @@ and the fresh cooked root was `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e
 The source checkout was clean, using Rust 1.99.1 and macOS 26.6.2 (25G83).
 
 Item-check job `20261115-002057-18054` exited zero with all 11 commands passed and zero
-failures, errors or timeouts. The continuation job `20261115-014512-10680` is queued under
-the GPU lock to run the full milestone check and then merge. Its result is pending.
+failures, errors or timeouts. Continuation job `20261115-014512-10680` acquired the GPU
+and started the full milestone check before merging. Its result is pending.
+
+Upstream now includes changes to `thrum-cloud-model`, so integration will require a fresh
+covered-content proof after rebasing. Follow-up job `20261115-042446-70084` is queued under
+the GPU lock. If the preceding merge fails for a missing exact-baseline proof, it runs the
+verifier on the rebased checkout and retries the merge. It checks the current CPU proof gate
+to identify that failure. A different failure stops that job
+for inspection. Observe both jobs before reporting completion and retain the final proof here.
 
 The continuation holds the GPU lock while it checks and merges, and relies on cached item
 checks for the unchanged files outside `docs/plans/`. Keep those files unchanged until it
