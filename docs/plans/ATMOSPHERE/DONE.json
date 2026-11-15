@@ -142,7 +142,7 @@
           "lock": "gpu",
           "ask": "Is the reference a column stored by the production pass for a camera turned so that a texel's centre lies on the point's line, and is the read an f64 evaluation of the lent operation's blend on the volume read back, so that no expected value comes from the test's own model of the air? Are the cases, the four Suns and the allowance the design's, unchanged? Under the ground, does the pass follow the density law below zero altitude and dim the Sun's light with depth, and not hold the surface's air or its light?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -154,7 +154,7 @@
           "lock": "gpu",
           "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -166,10 +166,10 @@
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-final-results.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M9.4",
@@ -177,7 +177,7 @@
           "check": "node scripts/check_v1_browser.mjs --case environment",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -188,7 +188,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-final-results.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -198,7 +198,7 @@
           "statement": "Only the air moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel is low terrain kilometres away, which the volume's descending lines reach. The sky, the stars, the near ground, the props and the letterbox bars hold their old bytes. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and of the claimed one.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: differences on distant low terrain only, none in the sky, on the near ground, on a prop or in the bars. Then read the builder's Chrome difference images for the day and night checkpoints the same way, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-images.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -209,17 +209,17 @@
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M9.8",
           "statement": "The aerial pass's GPU time on the valley is on record before and after, on the Mac and in Chrome: paired in one session between the starting commit and the claimed one, with load and order. A pass about 25% over its time before has its investigation beside it. No figure in the record decides this item.",
           "ask": "Is the record in `docs/evidence/ATMOSPHERE/M9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-cost.md",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-cost.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -229,7 +229,7 @@
           "statement": "The maturity ledger's atmosphere rows say what this milestone proved, implementation, correctness, visuals and device apart: the aerial product's read near the ground against its own column, on Metal. They still name solar aerial transport as not qualified against an independent reference, and the look at sea level as not yet judged.",
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "evidence": "docs/design/maturity.json; docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-cost.md",
+          "evidence": "docs/design/maturity.json; docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-cost.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

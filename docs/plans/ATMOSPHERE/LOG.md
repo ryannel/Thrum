@@ -564,3 +564,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   Collection failures still enter the bounded repair wait; normal gates remain.
   Earlier cost prose is explicitly historical. Python parsing and documentation
   checks pass; the queued GPU job has not yet run this continuation's target proofs.
+
+- **2026-11-15 — M9 fresh target proofs and publication failure.** On `75fcf270`,
+  both Metal referees, hardware Chrome H1–H5, all exact baselines and 273 direct
+  renderer tests pass, with all 198 solar rows and eight paired timing arms retained.
+  The full gate repeatedly fails cooker watcher publication; the showcase times out
+  on an edited cooked publication in Chrome. M9.3 and M9.7 remain open; no merge
+  is claimed. [Results](../../evidence/ATMOSPHERE/M9-continuation.md) and
+  [handoff](../../evidence/ATMOSPHERE/M9-handoff.md) separate facts from the host-event hypothesis.
