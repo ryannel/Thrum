@@ -98,12 +98,12 @@
       }
     },
     "M2": {
-      "definitions": "4b199daf8ea5d9c6b25afa62be2cd0aa3862bcaea25c1d80984793fd41625d8b",
+      "definitions": "490f864ae41862145e1dbed880db571415f96af6a2e9d27f99a9757beee6f540",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 1 Mu",
-        "at": "2026-11-15T09:56:01Z"
+        "task": "Re-plan BASELINE-GUARD M2, whose design review has failed three times on MF3: a fully derived key can miss semantic data",
+        "at": "2026-11-15T17:26:32Z"
       }
     }
   },
@@ -127,11 +127,15 @@
     {
       "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nMF3 has now been raised twice. Settle it this time: the reviewer accepts either covering optional and enumerated script inputs in the key, or making any input the key cannot resolve block the proof from being published (fail closed). Pick whichever is simpler to make provably complete, and keep excluding the unrelated crates and scripts.",
       "at": "2026-11-15T09:56:01Z"
+    },
+    {
+      "task": "Re-plan BASELINE-GUARD M2, whose design review has failed three times on MF3: a fully derived key can miss semantic data inputs in locations it excludes, such as data under docs/.\n\nTake the smaller step. Keep every path the exact-image key in scripts/exact_baselines.py covers today, and subtract only workspace crates and examples that are outside the build closure of what the verifier builds (v1-game and thrum-cook). Work out that closure from `cargo metadata` when the check runs; don't keep a hand-written list. That way a crate re-enters the key the moment the verified game depends on it, and a crate the closure can't classify stays in the key, so the check fails closed. Non-crate paths (scripts/, tools/ except unlinked crates, .cargo/, Cargo.toml, Cargo.lock, the toolchain, the registry, the baselines and their evidence) stay covered exactly as now.\n\nDone when: tests show the key changes for an edit to a linked crate, a shader or asset it loads, scripts/, the lockfile and a baseline; and stays the same for an edit to an unlinked crate such as thrum-sim2d or thrum-network. The fuller derived key is out of scope here; record it as possible later work if re-proving remains a bottleneck.",
+      "at": "2026-11-15T17:26:32Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T09:56:01Z"
+    "at": "2026-11-15T17:26:32Z"
   },
   "design_history": [
     {
