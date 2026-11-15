@@ -183,3 +183,73 @@ fn identical_footprints_do_not_make_identical_visibility() {
     assert_ne!(exact[0], exact[1]);
     assert_eq!(footprints[0], footprints[1]);
 }
+
+#[test]
+fn footprint_sum_survives_erosion_scale_rotation_and_partial_envelopes() {
+    let shape = support::shape();
+    for erosion in [0.0, 0.4, 1.0] {
+        let field = support::field(5, erosion);
+        let weather = Weather {
+            field: &field,
+            surface: None,
+            ground: None,
+        };
+        for scale in [0.5, 1.0, 3.0] {
+            for yaw in [0.0_f64, 0.7, 1.8] {
+                for envelope in [0.25, 1.0] {
+                    let mut state = support::state(0.0, 0.0);
+                    let mut placed = support::directed(&shape, 1, [35.0, -17.0]);
+                    placed.scale = scale;
+                    placed.yaw = yaw;
+                    placed.target = envelope;
+                    state.add(placed).expect("placed");
+                    state.step(1, 10.0).expect("form");
+                    for local in [[-30.0, -20.0], [30.0, -20.0], [0.0, 10.0], [100.0, 0.0]] {
+                        // Independent placement transform and footprint lookup.
+                        let x = 35.0 + scale * (local[0] * yaw.cos() - local[1] * yaw.sin());
+                        let z = -17.0 + scale * (local[0] * yaw.sin() + local[1] * yaw.cos());
+                        let column = shape.footprint().column(local);
+                        let tau = weather
+                            .optical_depth(
+                                [x, 700.0, z],
+                                [x, 700.0 + 120.0 * scale, z],
+                                &state,
+                                12_000,
+                                Density::Coarse,
+                                |_| None,
+                            )
+                            .expect("footprint integral");
+                        support::close(tau.value, column[0] * scale * envelope * 0.05, 2e-8);
+                        assert_eq!(
+                            tau.fidelity,
+                            if column[0] > 0.0 {
+                                Fidelity::Footprint
+                            } else {
+                                Fidelity::Exact
+                            }
+                        );
+                        for height in [-1.0, 121.0] {
+                            assert_eq!(
+                                weather
+                                    .extinction([x, 700.0 + height * scale, z], &state, |_| None)
+                                    .value,
+                                0.0
+                            );
+                        }
+                        // Supplying voxels still uses the unchanged Field path.
+                        let p = [x, 700.0 + 15.0 * scale, z];
+                        assert_eq!(
+                            weather
+                                .extinction(p, &state, |_| Some(&shape))
+                                .value
+                                .to_bits(),
+                            field
+                                .density(p, &state, Density::Coarse, |_| Some(&shape), 1.0)
+                                .to_bits()
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

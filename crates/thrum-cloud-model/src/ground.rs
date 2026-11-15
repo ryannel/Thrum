@@ -452,7 +452,10 @@ impl GroundState {
     /// Current row amount; missing controls are absent.
     pub fn amount(&self, row: usize, radiative: bool) -> f64 {
         if radiative {
-            smooth((self.cooling + self.moisture - 1.0) / 0.5)
+            // Even saturated air needs finite cooling to condense. Warming
+            // approaches zero asymptotically, so a zero threshold would leave
+            // a positive amount throughout every clear saturated afternoon.
+            smooth((self.cooling + 0.5 * self.moisture - 1.0) / 0.5)
         } else {
             self.amounts.get(row).copied().unwrap_or(0.0)
         }

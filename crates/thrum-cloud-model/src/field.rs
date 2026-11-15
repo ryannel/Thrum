@@ -253,6 +253,20 @@ impl Field {
         volume: impl Fn(u64) -> Option<&'a Shape>,
         weight: f64,
     ) -> f64 {
+        self.density_with_footprint(point, state, fidelity, volume, weight, false)
+    }
+
+    // Visibility knows a missing volume only by its integral and outline.
+    // Preserve that column sum without changing the older Field density API.
+    pub(crate) fn density_with_footprint<'a>(
+        &self,
+        point: [f64; 3],
+        state: &State,
+        fidelity: Density,
+        volume: impl Fn(u64) -> Option<&'a Shape>,
+        weight: f64,
+        preserve_footprint: bool,
+    ) -> f64 {
         let air = state.to_air([point[0], point[2]]);
         let p = state.parameters();
         let extinction = self.kind(p.kind).extinction();
@@ -275,7 +289,12 @@ impl Field {
             let column = self.placed_column(air, shape, p);
             let column_sigma = column_density(column, point[1]);
             let local = local(air, shape);
-            let volume_sigma = volume(shape.id).map_or(column_sigma, |v| {
+            let voxels = volume(shape.id);
+            if preserve_footprint && voxels.is_none() {
+                sigma += column_sigma;
+                continue;
+            }
+            let volume_sigma = voxels.map_or(column_sigma, |v| {
                 v.density([
                     local[0],
                     (point[1] - self.kind(p.kind).base) / shape.scale,

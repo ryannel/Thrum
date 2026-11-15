@@ -117,6 +117,8 @@ impl Weather<'_> {
     }
 
     /// One density, with optional ground sources added before attenuation.
+    /// Missing placed volumes retain their footprint's uneroded column sum;
+    /// erosion cannot be inferred from a footprint's integral and bounds.
     pub fn density<'v>(
         &self,
         point: [f64; 3],
@@ -127,7 +129,8 @@ impl Weather<'_> {
         let cloud = if state.parameters().coverage == 0.0 && state.shapes().is_empty() {
             0.0
         } else {
-            self.field.density(point, state, fidelity, volume, 1.0)
+            self.field
+                .density_with_footprint(point, state, fidelity, volume, 1.0, true)
         };
         match (self.surface, self.ground) {
             (Some(s), Some(g)) => {

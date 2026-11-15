@@ -30,13 +30,19 @@ fn days(dt: f64, coverage: f64, wind: f64, moisture: f64) -> (Vec<(f64, f64)>, S
 
 #[test]
 fn radiative_day_is_deterministic_suppressed_and_tick_continuous() {
-    let (values, state) = days(60.0, 0.0, 1.0, 0.5);
-    assert_eq!((values.clone(), state), days(60.0, 0.0, 1.0, 0.5));
+    for moisture in [0.25, 0.5, 0.75, 1.0] {
+        check_day(moisture);
+    }
+}
+
+fn check_day(moisture: f64) {
+    let (values, state) = days(60.0, 0.0, 1.0, moisture);
+    assert_eq!((values.clone(), state), days(60.0, 0.0, 1.0, moisture));
     let peak = values
         .iter()
         .max_by(|a, b| a.1.total_cmp(&b.1))
         .expect("samples");
-    assert!(peak.1 > 0.8);
+    assert!(peak.1 > 0.0);
     assert!((5.0..6.0).contains(&peak.0), "peak at {peak:?}");
     assert!(
         values
@@ -45,7 +51,15 @@ fn radiative_day_is_deterministic_suppressed_and_tick_continuous() {
             .all(|v| v.1 == 0.0)
     );
     let at = |hour: f64| values.iter().find(|v| v.0 >= hour).expect("hour").1;
-    assert!(at(22.0) > at(20.0) && at(20.0) > at(18.0));
+    assert!(at(5.0) > at(22.0) && at(22.0) >= at(20.0) && at(20.0) >= at(18.0));
+    assert!(
+        values
+            .iter()
+            .filter(|v| v.0 >= 18.0)
+            .collect::<Vec<_>>()
+            .windows(2)
+            .all(|v| v[1].1 >= v[0].1)
+    );
     for (c, w, m) in [
         (1.0, 1.0, 0.5),
         (1.0, 1.0, 0.7),
@@ -61,7 +75,7 @@ fn radiative_day_is_deterministic_suppressed_and_tick_continuous() {
             .fold(0.0_f64, f64::max)
     };
     support::close(
-        max_delta(&days(30.0, 0.0, 1.0, 0.5).0) / max_delta(&values),
+        max_delta(&days(30.0, 0.0, 1.0, moisture).0) / max_delta(&values),
         0.5,
         0.005,
     );
