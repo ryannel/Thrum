@@ -518,3 +518,6 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   CREATOR and CLOUDS subsequently formed a confirmed GPU/merge lock cycle.
   [Handoff](../../evidence/ATMOSPHERE/M9-handoff.md) names the processes, observed
   wait states and queued continuation. No merge or new target run is claimed.
+- On continuation, revalidated the cycle and terminated only the stalled CREATOR
+  wrapper (PID 24326), releasing the merge lock to CLOUDS. M9's existing GPU-first
+  integration job remains queued; no other worktree's files changed.
