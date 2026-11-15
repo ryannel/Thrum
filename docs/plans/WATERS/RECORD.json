@@ -31,6 +31,47 @@
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
         "at": "2026-11-14T04:10:30Z"
+      },
+      "ready_for_review": {
+        "commit": "2f9ee7e0e69ce9a0e0df9c005f393fb1854eaf28",
+        "checked": "2f9ee7e0e69ce9a0e0df9c005f393fb1854eaf28",
+        "at": "2026-11-15T04:54:39Z",
+        "reused": [
+          "Test command",
+          "M1.1",
+          "M1.2",
+          "M1.3",
+          "M1.4",
+          "M1.5",
+          "M1.6",
+          "M1.7",
+          "M1.8",
+          "M1.9",
+          "M1.11",
+          "M1.12",
+          "M1.13"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 620886,
+          "cached": 178923008,
+          "output": 126628,
+          "turns": 4
+        },
+        "session_usage": {
+          "input": 620886,
+          "cached": 178923008,
+          "output": 126628,
+          "turns": 4
+        }
       }
     },
     "M2": {
