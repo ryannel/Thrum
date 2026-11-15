@@ -36,7 +36,7 @@ fn world_factors_stay_at_the_shore_while_banks_travel() {
                     let b =
                         ground.density(&shifted, &field, [p[0] - travel, y, 0.0], &still, fidelity);
                     assert_eq!(a.to_bits(), b.to_bits(), "travel {travel}, point {p:?}");
-                    if p[0] > 60.0 || y < surface.sample([p[0], 0.0])[0] {
+                    if p[0] > 40.0 || y < surface.sample([p[0], 0.0])[0] {
                         assert_eq!(a, 0.0);
                     }
                 }
@@ -48,7 +48,7 @@ fn world_factors_stay_at_the_shore_while_banks_travel() {
                     Density::Uneroded,
                 );
                 witnessed_wrong_shore |=
-                    (travel - 200.0).abs() < 1e-12 && p[0] > 60.0 && wrong > 0.0;
+                    (travel - 200.0).abs() < 1e-12 && p[0] > 40.0 && wrong > 0.0;
             }
         }
         if (travel - 200.0).abs() < 1e-12 {

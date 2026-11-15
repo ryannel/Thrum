@@ -46,7 +46,13 @@ fn radiative_day_is_deterministic_suppressed_and_tick_continuous() {
     );
     let at = |hour: f64| values.iter().find(|v| v.0 >= hour).expect("hour").1;
     assert!(at(22.0) > at(20.0) && at(20.0) > at(18.0));
-    for (c, w, m) in [(1.0, 1.0, 0.5), (0.0, 9.0, 0.5), (0.0, 1.0, 0.0)] {
+    for (c, w, m) in [
+        (1.0, 1.0, 0.5),
+        (1.0, 1.0, 0.7),
+        (1.0, 1.0, 1.0),
+        (0.0, 9.0, 1.0),
+        (0.0, 1.0, 0.0),
+    ] {
         assert!(days(60.0, c, w, m).0.iter().all(|v| v.1 < 0.1 * peak.1));
     }
     let max_delta = |v: &[(f64, f64)]| {

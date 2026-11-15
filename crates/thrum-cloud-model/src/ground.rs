@@ -480,7 +480,9 @@ impl GroundState {
         let night = 1.0 - smooth((sun - p.twilight[0]) / (p.twilight[1] - p.twilight[0]));
         let calm = 1.0
             - smooth((state.wind[0].hypot(state.wind[1]) - p.calm[0]) / (p.calm[1] - p.calm[0]));
-        let target = night * (1.0 - 0.85 * state.coverage) * calm;
+        // A closed sky removes this radiative source even at saturated
+        // moisture; residual cooling would otherwise form fog under overcast.
+        let target = night * (1.0 - state.coverage) * calm;
         let response = if target > self.cooling {
             p.cooling_seconds
         } else {
