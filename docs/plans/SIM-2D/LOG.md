@@ -1,5 +1,11 @@
 # SIM-2D log
 
+- 2026-11-15 M1 clean-checkout recovery: the reported gate failure came from
+  APPLE-PRESENTATION M3 links to evidence absent from the merged checkout. Main's
+  `b247eda7b` repair identifies those builder-branch paths explicitly. All twelve
+  M1 builder results and their retained target receipts are unchanged; integration
+  imports the repair and reruns the repository and milestone checks.
+
 - 2026-11-14 M1 implementation. Added the binary32 profile number and vector, Philox2x32-10,
   portable state encoding, registered-component finite validation, and the committed world digest.
   The reference crowd uses registered edits and eight-tick engine history. Straight corrected Mac
