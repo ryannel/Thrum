@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 The resumed integration rebased to `66c7147c` and correctly refused
+  its stale exact proof. The retained helper now refreshes that proof and retries
+  the normal merge under the same resource locks, then runs the real-window
+  journey and official M3 check. The contention proof and documentation checks
+  pass at `3ae008e1`. The [handoff](../../evidence/CREATOR/M3-handoff.md) names
+  the queued continuation and the unresolved fresh-agent exercise.
+
 - 2026-11-15 Integration job `20261115-021833-24319` terminated with SIGTERM before
   merging. Lock inspection found an opposing GPU-then-merge caller. Updated the
   retained integration wrapper to release GPU when a nonblocking merge acquisition
