@@ -351,7 +351,7 @@ impl Field {
         clippy::cast_sign_loss,
         reason = "clamped type table coordinate"
     )]
-    fn kind(&self, kind: f64) -> Type {
+    pub(crate) fn kind(&self, kind: f64) -> Type {
         let position = kind.clamp(0.0, 1.0) * (self.types.len() - 1) as f64;
         let i = (position.floor() as usize).min(self.types.len() - 2);
         let a = self.types[i];
@@ -395,7 +395,7 @@ impl Field {
         clippy::cast_possible_truncation,
         reason = "noise lattice uses integer floor coordinates"
     )]
-    fn noise(&self, point: [f64; 3], stream: u32) -> f64 {
+    pub(crate) fn noise(&self, point: [f64; 3], stream: u32) -> f64 {
         let index = point.map(|p| p.floor() as i64);
         let f = point.map(|p| smooth(p - p.floor()));
         let mut sum = 0.0;
@@ -419,7 +419,7 @@ impl Field {
     }
 }
 
-fn local(air: [f64; 2], shape: &Directed) -> [f64; 2] {
+pub(crate) fn local(air: [f64; 2], shape: &Directed) -> [f64; 2] {
     let x = (air[0] - shape.centre[0]) / shape.scale;
     let z = (air[1] - shape.centre[1]) / shape.scale;
     let (s, c) = shape.yaw.sin_cos();

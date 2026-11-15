@@ -160,6 +160,18 @@ pub struct PhaseTable {
 }
 
 impl PhaseTable {
+    /// f64 interpolation of the prepared table for CPU medium references.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "bounded table coordinate"
+    )]
+    pub fn reference(&self, sin_half_squared: f64) -> f64 {
+        let x = sin_half_squared.clamp(0.0, 1.0).sqrt().sqrt() * (self.values.len() - 1) as f64;
+        let i = (x as usize).min(self.values.len() - 2);
+        let f = x - i as f64;
+        f64::from(self.values[i]) * (1.0 - f) + f64::from(self.values[i + 1]) * f
+    }
     /// Prepare a disc-averaged table; 1,025 entries are the design proof's size.
     /// # Errors
     /// Rejects invalid radius or fewer than two entries.

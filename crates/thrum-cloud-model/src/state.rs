@@ -60,6 +60,7 @@ pub struct State {
     shapes: Vec<Directed>,
     limit: usize,
     refusals: u64,
+    ground: crate::GroundState,
 }
 
 impl State {
@@ -81,6 +82,7 @@ impl State {
             shapes: Vec::with_capacity(limit),
             limit,
             refusals: 0,
+            ground: crate::GroundState::default(),
         })
     }
 
@@ -126,11 +128,51 @@ impl State {
         self.time += elapsed;
         self.parameters = parameters;
         self.tick = tick;
+        self.ground.ramp(rate);
         for shape in &mut self.shapes {
             shape.envelope = approach(shape.envelope, shape.target, rate);
             shape.growth = approach(shape.growth, shape.growth_target, rate);
         }
         self.shapes.retain(|s| s.envelope != 0.0 || s.target != 0.0);
+        Ok(())
+    }
+
+    /// Replace ground controls; a scene supplies one amount per fog-table row.
+    pub fn set_ground(&mut self, ground: crate::GroundState) {
+        self.ground = ground;
+    }
+
+    /// Committed ground and haze controls.
+    pub fn ground(&self) -> &crate::GroundState {
+        &self.ground
+    }
+
+    /// Mutable access for setting ground-control targets.
+    pub fn ground_mut(&mut self) -> &mut crate::GroundState {
+        &mut self.ground
+    }
+
+    /// Commit a weather tick and radiative cooling using the supplied true Sun
+    /// elevation in degrees. No environment, renderer or wall clock is read.
+    /// # Errors
+    /// Rejects invalid Sun or the same invalid operations as `step`, atomically.
+    pub fn step_day(
+        &mut self,
+        tick: u64,
+        dt: f64,
+        sun: f64,
+        ground: &crate::Ground,
+    ) -> Result<(), Error> {
+        if !sun.is_finite() || !(-90.0..=90.0).contains(&sun) {
+            return Err(Error::Invalid);
+        }
+        self.step(tick, dt)?;
+        self.ground.day(
+            ground,
+            dt * self.parameters.time_scale,
+            sun,
+            self.parameters,
+        );
         Ok(())
     }
 
