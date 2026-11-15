@@ -75,3 +75,17 @@
   which the module list now reads as each module's own additions; reword them when those plans next change.
 - 2026-11-15 The changed design and M1.10 have not been reviewed; no builder resumes M1 until a design review
   returns Design Approved. `./dev check-docs` passes with these files.
+- 2026-11-15 Design review of `4e9956d6` (commit `d686fe75`): design changes, one Must Fix and one suggestion
+  carried forward. The socket-test ruling and M1.10 stood.
+- 2026-11-15 Must Fix, transport start conflicts with the approved brief: M1 waits for `SHOWCASE:M8` again. The
+  brief's decision 1 says "transport stays after V1", only the owner changes the brief, and the owner's words of
+  14 November name "the 2d engine side of things". The edge is scheduling, not use. Not chosen: rewording the
+  brief, which is the owner's page. The design says when the module is built, the plan carries the question as
+  an assumption, and the module list's split, edge table, build order, row 21 and owner decision 7 follow.
+- 2026-11-15 Suggestion, shorten the expiry wording: taken, since the design was open anyway. The script's
+  expiry part now lists what must be seen, with Chrome's exception beside it, and leaves how much to send to the
+  builder. Nothing asked changed: expiry with sending stopped, the three sender counts kept apart from loss and
+  lateness, some expiry on Quinn and the in-memory link, none required in Chrome.
+- 2026-11-15 No item's statement, check or question changed; M1's `depends_on` did. `SESSION`'s files are
+  unchanged, and its M2 onward now wait for V1 through `TRANSPORT:M1`. The work on `build/transport` stays for
+  the builder that resumes M1. The design has not been reviewed again; no builder starts until Design Approved.

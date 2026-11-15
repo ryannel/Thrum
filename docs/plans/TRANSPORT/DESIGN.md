@@ -1,6 +1,6 @@
 # TRANSPORT: two processes exchange messages over real internet protocols, one of them a browser
 
-13 November 2026, revised the same day after [its design review](../../evidence/TRANSPORT/design-review.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
+13 November 2026, revised the same day and on 15 November after its design reviews, which [the log](LOG.md) lists. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the brief](../BRIEF.md). C11, C12 and C13 in [CONTRACTS](../../design/CONTRACTS.md),
 [the networking design](../../design/modules/NETWORKING.md#transport-and-overload),
 [the A0 decision](../../design/decisions/A0-N1-TRANSPORT-CODEC.md) and
@@ -25,6 +25,14 @@ moves bytes between those processes. The module list's brief for it, which
 [its entry](../ARCHITECTURE.md#transport) now replaces with a pointer here, left three choices to this planner: the
 WebTransport crate, where the network's thread sits beside the world lane, and whether A0's WebSocket fallback is
 built.
+
+**When it is built.** After the V1 exit: M1 waits for `SHOWCASE:M8`. [The brief](../BRIEF.md#goal-and-exit-rule),
+decision 1, says "transport stays after V1", and its "Not part of this" list puts "transport and sockets" outside
+the work before the exit. On 14 November 2026 the owner said: "Let's move the 2d engine side of things to before
+v1 and decouple them. But we don't want to start working on the swarm game till v1 lands." Those words name the
+2D side and not transport, so the brief's line stands until the owner changes it, and
+[the plan](PLAN.md#open-for-the-human) puts the question to them. The edge is scheduling only: nothing here uses
+anything `SHOWCASE` builds, and the proof programs run without the game.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-network` (the envelope and the
 input, state and acknowledgement codecs, none of which opens a socket), the tick-quantised `LinkConditioner` in
@@ -331,16 +339,23 @@ the contract there. Its parts:
 2. **Limits.** A send over a limit or of nothing is refused at the call. A reliable lane driven to its cap returns
    `Full`, then drains with nothing lost. A datagram burst that overfills the queue is counted as dropped at the
    cap, oldest first.
-3. **Expiry.** In each direction the path stalls, and the script sends datagrams of the limit's size, faster than
-   the game would, until the sender's queue has backed up, which its depth counter shows. It sends for one age
-   limit more and then stops. With the path still stalled and another age limit gone, the sender's queue is empty,
-   and its counters account for every datagram the script sent: handed on, expired, or dropped at the cap. So the
-   last ones queued expire with no later send to push them out. Then the stall ends, before the idle timeout.
-   The receiver gets no more than were handed on. A datagram handed on that never arrives is a loss, and one that
-   arrives after the stall is late; neither is expiry, and the record holds the sender's three counts beside the
-   receiver's tally and, on sockets, the relay's dropped packets. On the in-memory link and the Quinn ends some
-   must expire, and on the in-memory link, with the profile's loss off, exactly what the stack allowance held
-   arrives, late. In Chrome the accounting must hold, and the record says whether the page's queue backed up.
+3. **Expiry.** In each direction, while the path is stalled, the script sends datagrams of the limit's size
+   faster than the game would, and then stops. The stall outlasts the last send by more than one age limit and
+   ends before the idle timeout. What must be seen:
+   - **Accounting, on every adapter.** One age limit after the last send, with the path still stalled, the
+     sender's queue is empty and its three counts, handed on, expired and dropped at the cap, add up to every
+     datagram the script sent. The receiver gets no more than were handed on.
+   - **Expiry with nothing more sent, on the in-memory link and the Quinn ends.** The sender's queue holds
+     datagrams when sending stops, which its depth counter shows, and some expire: with no later send to push
+     them out, only the timer can have emptied it. How much sending backs the queue up is the stack's to decide
+     and the builder's to find: BBR took 273 to 451 KB into a cut in the second probe, so no fixed count does.
+   - **In Chrome, no expiry is required.** The browser discards what it holds at the age limit itself, uncounted
+     ([mechanism 5](#5-bounds-backpressure-and-liveness)), so the page's queue need not back up. The accounting
+     above must hold, and the record says whether the queue backed up.
+   - **Lost and late are not expired.** A datagram handed on that never arrives is a loss, and one that arrives
+     after the stall is late. The record holds the sender's three counts beside the receiver's tally and, on
+     sockets, the relay's dropped packets. On the in-memory link, with the profile's loss off, exactly what the
+     stack allowance held arrives, late.
 4. **Identity.** A ticket with one bit of the hash changed is refused, and so is another version.
 5. **Lifecycle.** A link that opens at both ends while neither game sends, and on which the first reliable message
    is then the host's. A link opened into a cut path, which closes as timed out at the startup timeout. A close

@@ -4,7 +4,9 @@
     {
       "id": "M1",
       "name": "A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop",
-      "depends_on": [],
+      "depends_on": [
+        "SHOWCASE:M8"
+      ],
       "items": [
         {
           "id": "M1.1",
