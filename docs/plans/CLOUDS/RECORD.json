@@ -259,7 +259,53 @@
     },
     "M13": {
       "definitions": "814be0b2e6f37d5e623b94f8a830b55e8272963aa5fb5998585e2f7b4111f99e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "497bd188324313ec25ae4cb3d5ad7378ea1a3d07",
+          "review": "docs/evidence/CLOUDS/M13-review.md",
+          "items": {
+            "M13.1": "pass",
+            "M13.2": "pass",
+            "M13.3": "pass",
+            "M13.4": "fail",
+            "M13.5": "fail",
+            "M13.6": "pass",
+            "M13.7": "pass",
+            "M13.8": "pass",
+            "M13.9": "pass",
+            "M13.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "footprint_column_sum_eroded",
+              "item": "M13.5",
+              "repeat": false
+            },
+            {
+              "name": "saturated_radiative_day_does_not_clear",
+              "item": "M13.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 122891,
+            "cached": 1465472,
+            "output": 6801,
+            "turns": 1
+          },
+          "at": "2026-11-15T19:40:46Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
