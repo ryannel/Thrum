@@ -10,10 +10,10 @@ def inside(path, folder):
     return path == folder or path.startswith(folder.rstrip('/') + '/')
 
 
-def metadata(root, manifest=None):
-    command = ['cargo', 'metadata', '--no-deps', '--offline', '--format-version', '1']
-    if manifest:
-        command += ['--manifest-path', str(manifest)]
+def metadata(root):
+    # Resolve overrides as well as declared path edges. No platform filter means all
+    # targets; all features enables optional dependencies. Locked keeps the gate read-only.
+    command = ['cargo', 'metadata', '--all-features', '--locked', '--offline', '--format-version', '1']
     result = subprocess.run(command, cwd=root, capture_output=True, text=True)
     if result.returncode:
         raise ValueError('Cargo cannot load workspace: ' + result.stderr.strip())
@@ -26,35 +26,40 @@ class Coverage:
         self.listed = registry['covered_paths']
         graph = metadata(self.root)
         members = set(graph['workspace_members'])
-        packages = {Path(p['manifest_path']).resolve().parent: p for p in graph['packages']}
+        packages = {p['id']: p for p in graph['packages']}
+        nodes = {n['id']: n for n in graph['resolve']['nodes']}
         built = registry['built_packages']
         pending = []
         for name in built:
-            matches = [folder for folder, p in packages.items() if p['name'] == name and p['id'] in members]
+            matches = [identity for identity, p in packages.items() if p['name'] == name and identity in members]
             if len(matches) != 1:
                 raise ValueError(f'built package {name!r} is not a unique workspace member')
             pending.extend(matches)
         linked = {}
+        visited = set()
         while pending:
-            folder = pending.pop()
-            if folder in linked:
+            identity = pending.pop()
+            if identity in visited:
                 continue
-            if not folder.is_relative_to(self.root):
-                raise ValueError(f'linked package outside repository: {folder}')
-            if folder not in packages:
-                extra = metadata(self.root, folder / 'Cargo.toml')
-                packages.update({Path(p['manifest_path']).resolve().parent: p for p in extra['packages']})
-            if folder not in packages:
-                raise ValueError(f'Cargo cannot classify linked package: {folder}')
-            package = packages[folder]
-            linked[folder] = package
-            # Declared edges include disabled optional and all platform dependencies.
-            # Registry/git dependencies cannot own files tracked in this repository.
-            pending.extend(Path(d['path']).resolve() for d in package['dependencies']
-                           if d.get('path') and d.get('kind') != 'dev')
+            visited.add(identity)
+            if identity not in packages or identity not in nodes:
+                raise ValueError(f'Cargo cannot classify linked package: {identity}')
+            package = packages[identity]
+            if package['source'] is None:
+                folder = Path(package['manifest_path']).resolve().parent
+                if not folder.is_relative_to(self.root):
+                    raise ValueError(f'linked package outside repository: {folder}')
+                linked[folder] = package
+            # Traverse registry nodes too: they can depend on local patched packages.
+            pending.extend(d['pkg'] for d in nodes[identity]['deps']
+                           if any(k['kind'] != 'dev' for k in d['dep_kinds']))
         self.linked = {str(f.relative_to(self.root)): p['name'] for f, p in linked.items()}
-        self.unlinked = {str(f.relative_to(self.root)): p['name'] for f, p in packages.items()
-                         if p['id'] in members and f not in linked and f.is_relative_to(self.root)}
+        self.unlinked = {}
+        for identity in members:
+            package = packages[identity]
+            folder = Path(package['manifest_path']).resolve().parent
+            if folder not in linked and folder.is_relative_to(self.root):
+                self.unlinked[str(folder.relative_to(self.root))] = package['name']
 
     def includes(self, path):
         if any(inside(path, folder) for folder in self.linked):

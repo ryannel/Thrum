@@ -41,6 +41,13 @@ def workspace(root):
     (root / '.gitignore').write_text('/tmp/\n/target/\n')
 
 
+def resolve_fixture(root):
+    # Update only the fixture lockfile before committing dependency mutations.
+    # Deliberately broken Cargo fixtures are committed too, for refusal tests.
+    subprocess.run(['cargo', 'metadata', '--all-features', '--offline', '--format-version', '1'],
+                   cwd=root, capture_output=True)
+
+
 class WorkspaceTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -54,6 +61,7 @@ class WorkspaceTests(unittest.TestCase):
         return GateTests.run_git(self, self.root, *args)
 
     def commit(self):
+        resolve_fixture(self.root)
         self.git('add', '.')
         self.git('commit', '--allow-empty', '-m', 'fixture')
 
@@ -83,6 +91,13 @@ class CoveredPathTests(WorkspaceTests):
 
 
 class ClosureTests(WorkspaceTests):
+    def test_local_registry_override_is_linked(self):
+        package(self.root, 'crates/game', 'game', '[dependencies]\nunlinked = "=0.1.0"\n')
+        with (self.root / 'Cargo.toml').open('a') as stream:
+            stream.write('\n[patch.crates-io]\nunlinked = { path = "crates/unlinked" }\n')
+        self.commit()
+        self.assert_key_edit('crates/unlinked/src/lib.rs', True)
+
     def test_all_dependency_kinds_and_transitive_edges(self):
         for declaration, joins in [('[dependencies]\nunlinked = { path = "../unlinked" }', True),
                                   ('[dependencies]\nunlinked = { path = "../unlinked", optional = true }', True),
@@ -209,6 +224,7 @@ class GateTests(unittest.TestCase):
         return subprocess.check_output(['git', *args], cwd=root, stderr=subprocess.STDOUT, env=env).decode().strip()
 
     def commit(self, root, name):
+        resolve_fixture(root)
         self.run_git(root, 'add', '.')
         self.run_git(root, 'commit', '-m', name)
 
