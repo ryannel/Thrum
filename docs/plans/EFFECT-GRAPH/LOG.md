@@ -153,3 +153,7 @@
   tests unchanged. [Diagnosis](../../evidence/EFFECT-GRAPH/M3/watcher-retry/record.json) retains the
   failed gate and reruns; the cause is unconfirmed. No cooker source changed. Target proofs remain
   valid because integration brought only plan/status changes. A fresh normal merge gate is required.
+- 2026-11-15 Resumed from the retained target proof. Cancelled the old GPU-queued merge wrapper
+  before it started; current project rules require the official merge without an outer device lock.
+  M3.8 now cites the shared main-branch exact-images check, as those rules require. Historical full
+  verifier passes and both variation audits remain retained. No engine or fixture source changed.
