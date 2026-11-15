@@ -118,10 +118,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.12",

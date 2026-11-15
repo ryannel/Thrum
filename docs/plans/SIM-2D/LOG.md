@@ -75,17 +75,22 @@
 
 ## M1 verification
 
-The item-check job `20261115-002057-18054` is waiting for the shared GPU for M1.11.
-The continuation job `20261115-014512-10680` is queued under the GPU lock: once the
-item-check job has exited successfully, it runs the full milestone check and then merges.
-Its result is not yet known. The resumed session changed no implementation; its native game,
-cooker and Wasm release prebuilds passed in job `20261115-013723-7743`.
-Earlier continuation jobs `20261115-011045-87236` and `20261115-013953-9763` were
-cancelled while waiting, before they ran any checks or merge.
+M1.11 passed on `b7fd7d5301bf3ea3bffed9084cc0d508acb12ed6` on this Mac and in Chrome.
+The verifier passed 38 native M1 comparisons, four native M2 comparisons and all 481 records
+in each of Chrome's day SDR, day scene-linear, night SDR and night scene-linear sets.
+Every build, cook and comparison command exited zero. The run took 922.214 seconds.
+The covered-content key was `9e786b91d631ad087e813df1b346739747da9a26e0f7cadc558145a5d2bbce2b`.
+The native binary SHA-256 was `25b90d1de2473c2dab2af2626b02c93fca3adca7d04eb9a5722a1b98e13c1e85`,
+the Wasm SHA-256 was `7d3419e2de3271340331d1342f5a8b9a17f10f295bfff19227acc58f0ad8ad68`,
+and the fresh cooked root was `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d`.
+The source checkout was clean, using Rust 1.99.1 and macOS 26.6.2 (25G83).
+
+Item-check job `20261115-002057-18054` exited zero with all 11 commands passed and zero
+failures, errors or timeouts. The continuation job `20261115-014512-10680` is queued under
+the GPU lock to run the full milestone check and then merge. Its result is pending.
 
 The continuation holds the GPU lock while it checks and merges, and relies on cached item
 checks for the unchanged files outside `docs/plans/`. Keep those files unchanged until it
 exits: invalidating the M1.11 cache would make its nested check wait for its own GPU lock.
-Changes to this log and to the done-when results do not invalidate that cache. After the item
-job passes, retain its baseline summary here and mark M1.11 passed; observe the continuation's
+Changes to this log and to the done-when results preserve that cache. Observe the continuation's
 merge result and affected upstream files before reporting completion.
