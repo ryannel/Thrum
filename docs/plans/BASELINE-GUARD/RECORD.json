@@ -1,10 +1,10 @@
 {
   "module": "BASELINE-GUARD",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/BASELINE-GUARD/design-review.md",
-    "commit": "76daae923d793ce01755a7c43d45ed66c6a804de",
-    "hash": "a5683d2fb9f0cb127b179d4fb95e2e69743db00134a80207aefe7b09c3f4b335",
+    "commit": "eb175e7f01739922cebe8f8c99b80505033febda",
+    "hash": "1ed3a4d0bd0942ba697891c6d79ef4a9a3e51dad85c16eb5a8981c317b6814fa",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 105091,
-      "cached": 1135232,
-      "output": 8355,
+      "input": 89666,
+      "cached": 1077120,
+      "output": 8724,
       "turns": 1
     },
-    "at": "2026-11-15T10:00:59Z"
+    "at": "2026-11-15T17:31:36Z"
   },
   "milestones": {
     "M1": {
@@ -229,6 +229,29 @@
         "turns": 1
       },
       "at": "2026-11-15T09:18:01Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/BASELINE-GUARD/design-review-5.md",
+      "commit": "76daae923d793ce01755a7c43d45ed66c6a804de",
+      "hash": "a5683d2fb9f0cb127b179d4fb95e2e69743db00134a80207aefe7b09c3f4b335",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 105091,
+        "cached": 1135232,
+        "output": 8355,
+        "turns": 1
+      },
+      "at": "2026-11-15T10:00:59Z"
     }
   ]
 }
