@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -21,8 +21,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -31,8 +31,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -41,8 +41,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -52,8 +52,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -62,8 +62,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -72,8 +72,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -82,18 +82,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.8",
           "statement": "A bed grid built from triangles holds in each cell the highest ground over the cell's centre. Built from a tilted plane and from a bowl, it matches their closed forms to within the height the ground spans across one cell.",
           "check": "cargo test --locked --offline -p thrum-water-model --test bed",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -103,8 +103,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -113,8 +113,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -124,8 +124,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -135,8 +135,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -144,10 +144,22 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test swash",
           "ask": "Are the expected heights the closed form, worked out in the test without the model, and would a limit that takes the waves to nothing at the still waterline fail it?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M1.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/WATERS/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Triangle bed is clipped to the uncovered-cell fallback",
+          "item": "M1.8",
+          "repeat": false
+        },
+        {
+          "name": "Interpolated shore support crosses downhill over a ridge",
+          "item": "M1.13",
+          "repeat": false
         }
       ]
     },

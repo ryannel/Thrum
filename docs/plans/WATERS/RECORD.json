@@ -26,7 +26,56 @@
   "milestones": {
     "M1": {
       "definitions": "b49194933fd7682c9e31ebce69ac2ed052671c0598dc0289cfa614499be52a73",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3b9f5da0ae009b9eec9ec19901c02425f906fbc8",
+          "review": "docs/evidence/WATERS/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "fail",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass",
+            "M1.13": "fail"
+          },
+          "findings": [
+            {
+              "name": "Triangle bed is clipped to the uncovered-cell fallback",
+              "item": "M1.8",
+              "repeat": false
+            },
+            {
+              "name": "Interpolated shore support crosses downhill over a ridge",
+              "item": "M1.13",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 128900,
+            "cached": 1298432,
+            "output": 6494,
+            "turns": 1
+          },
+          "at": "2026-11-15T04:59:05Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
