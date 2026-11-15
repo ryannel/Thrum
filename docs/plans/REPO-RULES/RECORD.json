@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "af6cec048db05e3bcbe4c8ffea26d3c0c62608221cc835d990133f2462e84dab",
+      "definitions": "3a1bf83213811dc6c7d615ef71ae5f090918bcd4b929d39230fb90fbbb273e4a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
-        "at": "2026-11-14T23:26:02Z"
+        "task": "REPO-RULES M1 needs something no plan provides yet. The builder wrote: WATERS must remove its eight new test path attrib",
+        "at": "2026-11-15T05:43:16Z"
       }
     },
     "M2": {
@@ -69,11 +69,15 @@
     {
       "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for changes (16 Must Fix findings in all): see docs/evidence/<MODULE>/design-review.md for each. Fix every Must Fix so the designs pass, resolving the GAME-SPLIT/TEST-SUPPORT interface conflicts together (one authority for each shared fixture). Keep the owner's decisions recorded in those plans: no Git history rewrite, the game moves to /Users/ryannel/Workspace/thrum-games with path dependencies, CLOUDS and WATERS unchanged. Retained device evidence outranks the review's suggestion where they conflict (REVIEW-RENDER MF1). Say which milestones can start at once.",
       "at": "2026-11-14T23:26:02Z"
+    },
+    {
+      "task": "REPO-RULES M1 needs something no plan provides yet. The builder wrote: WATERS must remove its eight new test path attributes before REPO-RULES M1 can merge. The builder's handoff, docs/evidence/REPO-RULES/M1-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/repo-rules at bd1ad61fed3e, which isn't merged; read it with `git show`.",
+      "at": "2026-11-15T05:43:16Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T23:26:02Z"
+    "at": "2026-11-15T05:43:16Z"
   },
   "design_history": [
     {
