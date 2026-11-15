@@ -1,10 +1,10 @@
 {
   "module": "TRANSPORT",
   "design": {
-    "verdict": "changes",
+    "verdict": "ok",
     "review": "docs/evidence/TRANSPORT/design-review.md",
-    "commit": "4e9956d6dbae7bc5facfd4dca2bbaaa1a6e85a7a",
-    "hash": "d62a824a707b898992b568f5175c7892321136563f20691718976287f51c5b73",
+    "commit": "6c01e8cadca9be4ef2e9be3376e3838a96468488",
+    "hash": "c3981c8da6327787b36885bd59a0c0322662feac18c8c339a4e68465114541c7",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 69495,
-      "cached": 717312,
-      "output": 5368,
+      "input": 71699,
+      "cached": 734720,
+      "output": 4363,
       "turns": 1
     },
-    "at": "2026-11-15T00:25:10Z"
+    "at": "2026-11-15T00:31:52Z"
   },
   "milestones": {
     "M1": {
@@ -115,6 +115,29 @@
         "turns": 1
       },
       "at": "2026-11-13T17:13:19Z"
+    },
+    {
+      "verdict": "changes",
+      "review": "docs/evidence/TRANSPORT/design-review-3.md",
+      "commit": "4e9956d6dbae7bc5facfd4dca2bbaaa1a6e85a7a",
+      "hash": "d62a824a707b898992b568f5175c7892321136563f20691718976287f51c5b73",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.169.0-alpha.11.1",
+      "path": "headless",
+      "usage": {
+        "input": 69495,
+        "cached": 717312,
+        "output": 5368,
+        "turns": 1
+      },
+      "at": "2026-11-15T00:25:10Z"
     }
   ]
 }
