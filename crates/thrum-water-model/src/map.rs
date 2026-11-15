@@ -1,4 +1,4 @@
-use crate::{Bed, WaterError};
+use crate::{Bed, Hollows, HollowsProfile, WaterError};
 use std::collections::VecDeque;
 
 /// Bounded additive stage in metres.
@@ -90,6 +90,9 @@ pub enum BodyKind {
     },
     /// Authored steady flow.
     Chart(Chart),
+    /// Puddles in the hollows of a rectangle of ground with its own bed; the body's
+    /// `level`, `stage` and `gains` are unused, and its levels are set with `set_levels`.
+    Hollows(Hollows),
 }
 
 /// Named declaration. Engine code contains no game-specific water presets.
@@ -129,9 +132,14 @@ pub struct Map {
     pub(crate) profile: Profile,
     pub(crate) surf: Option<crate::surf::Surf>,
     // Each margin centre remembers the water centre whose row it carries.
-    support: Vec<Vec<Option<usize>>>,
+    pub(crate) support: Vec<Vec<Option<usize>>>,
     /// Number of stage requests held at a range endpoint.
     pub clamped_stages: u64,
+    pub(crate) hollows_profile: HollowsProfile,
+    pub(crate) generations: Vec<u64>,
+    /// Number of hollows level tables held at the last table because they stood two
+    /// levels in wet cells that touch.
+    pub held_level_tables: u64,
 }
 
 impl Map {
@@ -139,6 +147,19 @@ impl Map {
     /// # Errors
     /// Names invalid inputs, overlapping kinds, escaping basins and uncontained charts.
     pub fn prepare(bed: Bed, bodies: Vec<Body>, profile: Profile) -> Result<Self, WaterError> {
+        Self::prepare_with(bed, bodies, profile, HollowsProfile::default())
+    }
+
+    /// Prepare with explicit limits on hollows bodies.
+    /// # Errors
+    /// As [`Map::prepare`], and names a hollows body over the limits or one with a cell in
+    /// another body's water or shore margin anywhere in that body's stage range.
+    pub fn prepare_with(
+        bed: Bed,
+        bodies: Vec<Body>,
+        profile: Profile,
+        hollows_profile: HollowsProfile,
+    ) -> Result<Self, WaterError> {
         if !profile.margin_height.is_finite()
             || profile.margin_height < 0.0
             || !profile.swash_ratio.is_finite()
@@ -153,7 +174,11 @@ impl Map {
             surf: None,
             support: Vec::new(),
             clamped_stages: 0,
+            generations: Vec::new(),
+            hollows_profile,
+            held_level_tables: 0,
         };
+        map.generations = vec![0; map.bodies.len()];
         map.validate_inputs()?;
         let stages: Vec<_> = map.bodies.iter().map(|b| b.stage.value).collect();
         for b in &mut map.bodies {
@@ -168,6 +193,7 @@ impl Map {
         map.rebuild();
         map.validate_topology()?;
         map.validate_banks(&minimum_fills)?;
+        map.validate_hollows()?;
         for (b, s) in map.bodies.iter_mut().zip(stages) {
             b.stage.value = s;
         }
@@ -183,6 +209,12 @@ impl Map {
             .bodies
             .get_mut(body)
             .ok_or_else(|| WaterError::new("stage", "unknown body"))?;
+        if matches!(b.kind, BodyKind::Hollows(_)) {
+            return Err(WaterError::new(
+                &b.name,
+                "hollows body has levels, not a stage",
+            ));
+        }
         if !stage.is_finite() {
             return Err(WaterError::new(&b.name, "nonfinite stage"));
         }
@@ -209,7 +241,9 @@ impl Map {
             .bodies
             .iter()
             .map(|body| {
-                if matches!(body.kind, BodyKind::Sea) && body.fetch >= forcing.fetch {
+                if matches!(body.kind, BodyKind::Hollows(_)) {
+                    Ok([0.0; 4])
+                } else if matches!(body.kind, BodyKind::Sea) && body.fetch >= forcing.fetch {
                     Ok([1.0; 4])
                 } else {
                     crate::shelter(forcing, body.fetch)
@@ -227,6 +261,9 @@ impl Map {
         if point.iter().any(|v| !v.is_finite()) {
             return None;
         }
+        if let Some(answer) = self.sample_hollows(point) {
+            return answer.0;
+        }
         let bed = self.bed.height(point);
         let weights = self.bed.weights(point);
         let mut best: Option<(usize, Row, u8)> = None;
@@ -235,6 +272,7 @@ impl Map {
                 BodyKind::Sea => 0,
                 BodyKind::Basin { .. } => 1,
                 BodyKind::Chart(_) => 2,
+                BodyKind::Hollows(_) => continue,
             };
             let row = self.supported_row(id, point);
             let supported = weights.is_some_and(|w| {
@@ -331,6 +369,15 @@ impl Map {
     /// A body's continued row, including joins; useful on the two sides of a mesh seam.
     pub fn row(&self, body: usize, point: [f64; 2]) -> Row {
         let b = &self.bodies[body];
+        if let BodyKind::Hollows(h) = &b.kind {
+            return Row {
+                level: h.cell(point).and_then(|i| h.level_at(i)).map_or_else(
+                    || h.cell(point).map_or(f64::NEG_INFINITY, |i| h.bed[i]),
+                    |(level, _)| level,
+                ),
+                ..Row::default()
+            };
+        }
         let mut row = Row {
             level: b.level + b.stage.value,
             current: [0.0; 2],
@@ -396,12 +443,18 @@ impl Map {
                 })
                 .collect();
         }
+        if matches!(b.kind, BodyKind::Hollows(_)) {
+            return vec![false; self.bed.heights.len()];
+        }
         self.still_fill(id, b.stage.value)
     }
 
     pub(crate) fn still_fill(&self, id: usize, stage: f64) -> Vec<bool> {
         let n = self.bed.heights.len();
         let b = &self.bodies[id];
+        if matches!(b.kind, BodyKind::Hollows(_)) {
+            return vec![false; n];
+        }
         let level = b.level + stage;
         let blocked = |i| {
             self.bodies
@@ -514,6 +567,9 @@ impl Map {
                         return Err(fail("invalid chart grid"));
                     }
                     for e in &c.ends {
+                        if e.body < id && matches!(self.bodies[e.body].kind, BodyKind::Hollows(_)) {
+                            return Err(fail("chart joins a hollows body"));
+                        }
                         if e.body >= id
                             || !e.length.is_finite()
                             || e.length <= 0.0
@@ -712,6 +768,8 @@ impl Map {
                                 other.footprint[j]
                                     && self.bed.heights[j] < other.levels[j] + b.stage.min
                             }
+                            // Refused in validate_inputs: no water joins a hollows body.
+                            BodyKind::Hollows(_) => false,
                         };
                         e.distance(p) <= 1e-8 && wet
                     });

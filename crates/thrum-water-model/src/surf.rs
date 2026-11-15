@@ -80,7 +80,7 @@ impl Map {
             .iter()
             .enumerate()
             .map(|(id, b)| {
-                if matches!(b.kind, BodyKind::Chart(_)) {
+                if matches!(b.kind, BodyKind::Chart(_) | BodyKind::Hollows(_)) {
                     return Ok(None);
                 }
                 ShoreTransform::prepare(

@@ -3,6 +3,7 @@
 mod bed;
 mod conformance;
 mod cut;
+mod hollows;
 mod map;
 mod pyramid;
 mod river;
@@ -14,6 +15,7 @@ mod waves;
 pub use bed::Bed;
 pub use conformance::{Conformance, Provider, compare};
 pub use cut::{Column, CutConfig, Sheet, SheetPoint, cut};
+pub use hollows::{Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
 pub use pyramid::BedPyramid;
 pub use river::{RIVER_FORMAT, RIVER_MAGIC, RiverEnd, RiverFile, RiverReach};

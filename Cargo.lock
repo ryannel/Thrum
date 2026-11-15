@@ -2374,6 +2374,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-rain-model"
+version = "0.1.0"
+dependencies = [
+ "thrum-sea-model",
+ "thrum-water-model",
+]
+
+[[package]]
 name = "thrum-render"
 version = "0.1.0"
 dependencies = [
