@@ -142,3 +142,9 @@
   `DisplayOverlay::TemporalInputs` when it needs that reader, retaining actual TAAU and ordering checks.
   Pinned native/Wasm Clippy pass. [The retained failure](../../evidence/EFFECT-GRAPH/M3/reconstruction-witness-failure.md)
   records the target result. Fresh qualification remains required for M3.1–M3.8.
+- 2026-11-15 Fresh target qualification at `8134e6973` passed every M3 check, the affected
+  M2 Chrome recovery consumer, the complete unchanged exact verifier and the official full milestone
+  check including `./dev check`. Inspected all five fixed whole frames and native-size crossings.
+  Retained twelve paired cost arms with load; transfer-only cost and reconstructed motion are unclaimed.
+  [Target proof](../../evidence/EFFECT-GRAPH/M3-proof.md) separates checks, visual judgment and costs.
+  All builder items pass; normal integration follows this evidence checkpoint, with review owned by the lead.

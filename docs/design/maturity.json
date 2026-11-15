@@ -69,16 +69,19 @@
       ]
     },
     "EFFECT_GRAPH_seam": {
-      "implementation": "M3_after_opaque_render_and_compute_requests_async_metadata_quality_controls_implemented;_integration_pending",
-      "functional_validation": "324586ee_M3_1_to_M3_5_checks_passed;_original_night_ordinal_1_and_bd3468d5_day_SDR_ordinal_25_failures_meet_all_four_ruling_tests;_complete_unchanged_58a6a0bb_same_content_verifier_passed_both_native_matrices_and_all_four_481_record_Chrome_sets;_retained_comparisons_identities_digests_manifests_and_reference_hashes_validated;_M3_9_builder_proof_passes_after_independent_reinspection;_M3_1_to_M3_8_open;_final_integration_unqualified",
-      "experienced_quality": "historical_86d0c1a3_builder_inspected_four_T2_fixed_native_noon_night_whole_frames_and_native_size_crossings_on_both_recipes_and_Chrome_fixed_noon_crossings;_fresh_campaign_stopped_before_native_captures;_independent_review_pending;_reconstructed_motion_not_claimed",
+      "implementation": "M3_after_opaque_render_and_compute_requests_async_metadata_quality_controls_implemented",
+      "functional_validation": "8134e6973_M3_1_to_M3_5_and_affected_M2_Chrome_recovery_passed_on_targets;_official_milestone_check_and_dev_check_passed;_complete_exact_verifier_passed_38_plus_4_native_comparisons_and_four_481_record_Chrome_sets;_M3_9_historical_failures_have_all_four_ruling_tests",
+      "experienced_quality": "8134e6973_builder_inspected_all_five_T2_fixed_whole_frames_and_native_size_sky_prop_terrain_crossings;_both_native_recipes_noon_and_night_and_Chrome_noon_clean_occlusion_refraction_and_single_attenuation;_independent_review_pending;_reconstructed_motion_not_claimed",
       "platform_performance": {
-        "mac": "twelve_capture_OFF_paired_arms_on_86d0c1a3;_depth_boundary_brackets_0.972-1.097ms_copy_plus_boundary_1.025-1.165ms;_raw_named_pass_sum_copy_minus_depth_54-72us;_load_retained;_no_isolated_transfer_cost_speedup_or_frame_latency_claim",
-        "browser": "86d0c1a3_submitted_inputs_and_fixed_T2_capture_passed;_builder_inspected_whole_frame_and_native_size_crossings;_no_performance_claim",
+        "mac": "8134e6973_twelve_capture_OFF_paired_arms_with_load;_depth_boundary_1.075_to_1.130ms_copy_plus_boundary_1.147_to_1.154ms;_refraction_minus_depth_named_pass_sum_68.6_to_111.4us;_no_isolated_transfer_speedup_or_display_latency_claim",
+        "browser": "8134e6973_submitted_inputs_and_T2_fixed_capture_passed;_whole_frame_and_native_size_crossings_inspected;_no_performance_claim",
         "ios": "not_targeted"
       },
       "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate.",
-      "evidence": ["docs/EFFECTS.md", "docs/evidence/EFFECT-GRAPH/M3-proof.md"]
+      "evidence": [
+        "docs/EFFECTS.md",
+        "docs/evidence/EFFECT-GRAPH/M3-proof.md"
+      ]
     },
     "G0_boundary": {
       "implementation": "complete_boundary_and_integrity_cleanup",
