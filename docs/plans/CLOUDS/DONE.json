@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -19,8 +19,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -30,8 +30,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -40,8 +40,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -51,8 +51,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -61,8 +61,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -72,8 +72,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -83,8 +83,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -94,8 +94,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -104,8 +104,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -115,8 +115,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -125,8 +125,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -136,8 +136,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -147,8 +147,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.14",
@@ -158,8 +158,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         },
         {
           "id": "M1.15",
@@ -169,20 +169,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M1.md",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "density-does-not-implement-designed-erosion",
-          "item": "M1.6",
-          "repeat": false
-        },
-        {
-          "name": "top-continuity-proof-substitutes-depth",
-          "item": "M1.4",
-          "repeat": false
+          "verdict": "pass",
+          "review": "docs/evidence/CLOUDS/M1-review.md"
         }
       ]
     },
