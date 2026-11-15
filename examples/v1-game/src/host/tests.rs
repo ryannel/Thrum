@@ -10,6 +10,7 @@ mod reconstruction_gpu;
 mod recovery_gpu;
 
 #[test]
+#[cfg(not(target_arch = "wasm32"))]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
         let (_adapter, device, queue) =
