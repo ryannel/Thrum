@@ -1,5 +1,13 @@
 # TRANSPORT log
 
+- 2026-11-15 Final source checkpoint `95eca774`: all eight non-GPU M1 check commands pass again on a clean
+  tree, including all three conformance targets, the ten-minute session and both cost matrices. Repetition found
+  an intermittent Chrome idle-cut reason: the HTTP/3 capsule task can replace a timeout with `LocallyClosed`.
+  Preserve wrapped error sources and disambiguate that teardown after the receive-idle deadline. A unit regression,
+  ten consecutive real Chrome trials and strict Clippy pass. The selected [evidence](../../evidence/TRANSPORT/M1.md)
+  is refreshed; [handoff](../../evidence/TRANSPORT/M1-handoff.md) retains M1.10's CONTENT-LOOP dependency and the
+  still-pending GPU proof. No merged or baseline-verifier pass is claimed.
+
 - 2026-11-15 Resumed M1 from `6e3f7425` and retained [target evidence](../../evidence/TRANSPORT/M1.md):
   complete Mac, Chrome and simulator conformance, the ten-minute four-client session, both release cost matrices,
   virtual-time tests and dependency closure pass. Native and Wasm Clippy pass after the documentation-only
