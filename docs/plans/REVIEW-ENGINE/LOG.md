@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1's final batch reproduced all approved checks on `d2139ca2`: the Mac request and both rewind
+  tests pass, all 42 unchanged simulation tests pass, and all 1,966 exact native/Chrome comparisons pass in
+  949.94 seconds. Proof is retained at `e26b9199`; the simulator remains applicable because every iOS dependency
+  is unchanged from its inspected build. [The compact evidence](../../evidence/REVIEW-ENGINE/M1/README.md)
+  names each item and its target records. The full gate and normal merge continue under the same GPU lease.
+
 - 2026-11-15 M1's approved target checks all pass at `bd40a689`: the Mac request gives ASTC and adapter limits,
   both deferred rewind cases and all 42 unchanged game simulation tests pass, and every native/Chrome exact
   baseline matches. The refreshed simulator route and all four inspected views pass on that source, with ASTC
