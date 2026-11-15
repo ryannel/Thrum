@@ -19,8 +19,7 @@ the criteria. New proof arms go in one script, `scripts/apple_presentation.py`, 
 - Assumption: seams 1–4 of the design are accepted as written, with the G4 builder making the motion-only edit in the atmosphere shaders (seam 4) and the third forward target across contributors (seam 3) itself.
 - Assumption: the numbers the drafts carried stay as drafted: a 100 ms resize debounce, three frames over budget before the governor drops scale, one recovery step a second, and at most two scale changes on an unloaded route. None came from you, and none is a frame-time gate.
 - Assumption: from M4 the game draws at the window's full pixel size, three milestones before the governor exists (M7). At full screen the frame rate may dip in between. Times are recorded, not gated.
-- Assumption: the pipeline archive (M12) needs a patched copy of wgpu's Metal backend kept in this repository. Nothing is posted upstream; that stays yours (U1).
-- Assumption: you are asked once, at the end of M11, to look at EDR on the built-in display, because no agent can see what the panel emits. Nothing earlier waits for you.
+- Assumption: a patched copy of wgpu's Metal backend (wgpu-hal 30.0.1) is kept in this repository from M10, one milestone earlier than planned, because the released backend cannot run shaders compiled ahead of time; M12 adds the archive to the same copy. Nothing is posted upstream; that stays yours (U1).
 
 ## M1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../evidence/APPLE-PRESENTATION/M1-review.md)
@@ -71,7 +70,9 @@ with the display asleep.
 The aerial lookup's cadence knob is built in `ATMOSPHERE`'s files under the ruling for seam 7 if that module has
 not declared one; its items do not change. `WATERS` and `CLOUDS` register their own knobs later through the same
 interface, so keep it free of any module's name. Frame samples and pass timing are the frame runtime's feed
-(`timing.rs`), which `CREATOR`'s profiler also reads: leave its timing-demand switch working.
+(`timing.rs`), which `CREATOR`'s profiler also reads: leave its timing-demand switch working. The generation
+build's lifecycle in the frame host is M4's; marking held frames on it is this milestone's, and D4.5's test
+already forces the failed build D7.9 needs.
 
 ## M8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback
 
@@ -87,14 +88,17 @@ baseline M10 and M12 are judged against, so record it before changing how anythi
 
 ## M10 Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel
 
-The cooker is `thrum-cook`, `CONTENT-LOOP`'s; the library cook is a new step beside it and must stay out of every
-shipping package, which `scripts/g5_shipping_links.py` checks. Register anything new in
-`.config/architecture.toml`.
+wgpu is 30.0.1 from crates.io with no patch today; this milestone brings in the pinned copy of wgpu-hal, which
+every module then builds against, so `./dev check`'s exact baselines must not move. The passthrough path to
+change is `load_shader` and `create_compute_pipeline` in its `metal/device.rs`. The cooker is `thrum-cook`,
+`CONTENT-LOOP`'s; the library cook is a new step beside it and must stay out of every shipping package, which
+`scripts/g5_shipping_links.py` checks. The Metal toolchain is installed, but plain `xcrun metal` fails on this
+Mac: `xcrun --toolchain Metal metal` runs it.
 
 ## M12 A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run
 
-wgpu is 30.0.1 from crates.io with no patch today. Keep the pinned copy's difference small and reviewable, since
-the owner may offer it upstream. Post nothing, and open no issue or pull request.
+The pinned copy of wgpu-hal is M10's. Keep the archive patch small and apart from M10's, since the owner may
+offer it upstream. Post nothing, and open no issue or pull request.
 
 ## U1 The Metal pipeline-cache change is offered upstream by the owner
 
@@ -104,5 +108,5 @@ Later, and not part of V1. After M12 is proved; the owner writes and approves ev
 
 `APPLE-TILE` M12's record holds the fixed-extent baseline and the eligibility rows this proof reruns with real
 reconstruction readers and scale steps. The evidence page is `docs/evidence/render/G4-PAIRED-<date>.md`, and the
-ledger is `docs/design/maturity.json`. Do every other item before stopping for the owner's look (D11.8), with the
-ledger not yet saying G4 is closed; add that afterwards, quoting the reply.
+ledger is `docs/design/maturity.json`. Ask for the owner's look at the panel in the evidence page and in your
+report, and never wait for it: G4 closes on the agent and device evidence, with the look recorded as outstanding.

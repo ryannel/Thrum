@@ -288,8 +288,10 @@ tests passing.
 - seam 8 (MetalFX as a provider in `APPLE-TILE`'s native segment) is built in M8, after `APPLE-TILE:M11`, under
   [the boundary decision](../design/decisions/G3T-METAL-BOUNDARY.md);
 - seam 9 (pipeline preparation: the library cook as a step beside `CONTENT-LOOP`'s cooker, the passthrough
-  loader, and a pinned copy of wgpu's Metal backend for the archive) is built in M10 and M12. No shipping
-  package links the cook, and nothing is posted upstream.
+  loader, and a pinned copy of wgpu's Metal backend) is built in M10 and M12. The pinned copy arrives in M10,
+  where it carries stage records to shaders compiled ahead of time, and M12 adds the archive to it. From M10
+  every module builds against that copy, and its patches leave the WGSL path and every exact baseline as they
+  are. No shipping package links the cook, and nothing is posted upstream.
 
 **Seam ruling for `CREATOR` M2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s
@@ -954,7 +956,8 @@ M5 (dynamic scale), M6 (EDR), M7 (the governor and its knob registry), M8 (Metal
 launch-to-ready), M10 (cooked shader libraries and parallel preparation), M12 (the pipeline archive) and M11
 (the paired proof, which closes G4). Only two wait on another module: M8 on `APPLE-TILE:M11` and M11 on
 `APPLE-TILE:M12`. `SHOWCASE` M7 now waits for `APPLE-PRESENTATION:M11`, and `WATERS` M11 and `CLOUDS` M12 for
-its M7 and M8. The owner's look at EDR on the built-in display is the last item of M11.
+its M7 and M8. The owner's look at EDR on the built-in display is asked for in M11 and recorded as an
+observation; under decision 4 of [the brief](BRIEF.md#decisions) it gates nothing, G4's close included.
 
 ### CULLING (G3c)
 

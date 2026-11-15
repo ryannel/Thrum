@@ -533,7 +533,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "not_started",
-      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to judge, in M11."
+      "quality_bar": "HDR output as a shipped Mac game does it on an XDR display, such as Death Stranding or Resident Evil Village: the Sun, the sky beside it and lamps carry values above white and keep their colour and shape, while everything below the highlights is exactly the SDR picture. What the panel emits is the owner's to observe, and no item waits for that."
     },
     {
       "id": "M7",
@@ -541,9 +541,9 @@
       "items": [
         {
           "id": "D7.1",
-          "statement": "Driven by scripted frame samples in virtual time, the governor's policy lowers scale after three consecutive frames over budget, recovers at most one step in each minimum period, changes nothing while samples stay inside the budget, takes its budget from the display interval so that a refresh change moves only the budget, freezes from the start of a generation build to the first frame after the switch, and drops samples that span a switch.",
+          "statement": "Driven by scripted frame samples in virtual time, the governor's policy lowers scale after three consecutive frames over budget, recovers at most one step in each minimum period, changes nothing while samples stay inside the budget, and takes its budget from the display interval so that a refresh change moves only the budget. It holds while a generation build runs, changing nothing and admitting no sample or missed tick from a frame encoded in the hold. It resumes after the first frame of a new generation, or at the next frame when the build ended with none (failed, or cancelled back to the current generation), with its committed values and an empty sample window, and lowers scale under load from then on.",
           "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
-          "ask": "Read the test. Is the policy a function of samples, missed ticks and the display record alone, with no clock of its own? Is each of the six behaviours a separate case with a control?",
+          "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -627,6 +627,18 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "D7.9",
+          "statement": "Through the frame host's own calls, a resize whose build is forced to fail leaves the old generation presenting, and with the request left unchanged a forced load then lowers the governor's scale and the load's lifting recovers it. The same is true after a build cancelled by a resize back to the current extent.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test governor_transition",
+          "lock": "gpu",
+          "ask": "Read the test. Is the failed build the one D4.5's test forces, reached through the host's resize and frame calls and not by setting the governor's state? Does a control whose hold never ends fail it?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [],
@@ -665,10 +677,10 @@
         },
         {
           "id": "D8.3",
-          "statement": "Through a time-of-day scrub, and through a storage scale forced to step, MetalFX's frame is no further in mean luminance from the frame drawn without reconstruction than TAAU's is, beyond the noise the first run records between two identical runs. If the exposure texture alone does not meet that, the design's normalising pre-pass is on: it hands the pre-tone input its colour with the matching constant exposure, tone is unchanged, its GPU time is on record, and the game reports which path is in use.",
+          "statement": "Through a time-of-day scrub, and through a storage scale forced to step, MetalFX's frame is no further in mean luminance from the frame drawn without reconstruction than TAAU's is, beyond the noise the first run records between two identical runs. If the exposure texture alone does not meet that, the design's normalising pre-pass is on: it hands the pre-tone input its colour with the matching constant exposure, tone is unchanged, it clamps to the half-float range with its high clamps, low clamps and non-finite repairs counted, its GPU time is on record, and the game reports which path is in use.",
           "check": "python3 scripts/apple_presentation.py metalfx-exposure --target mac-metal",
           "lock": "gpu",
-          "ask": "Was the noise floor recorded before either path was judged? With the pre-pass on, does any second exposure or tone step exist, and does a still frame equal the frame without the pre-pass to within float rounding of the tone input?",
+          "ask": "Was the noise floor recorded before either path was judged? With the pre-pass on, does any second exposure or tone step exist, does a still frame equal the frame without the pre-pass to within float rounding of the tone input, and is an exposed value just above 65504/K clamped to the largest finite half value and counted while one just below it is not?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -758,10 +770,10 @@
         },
         {
           "id": "D9.2",
-          "statement": "Each of these takes its designed path with no creation on the render thread and no pipeline compiled after readiness: a replaced surface; a new device generation; a forced refresh change, which moves only the governor's budget; a forced display move, which changes only H; and a resize while MetalFX is the reconstructor.",
+          "statement": "Each of these takes its designed path with no creation on the render thread and no pipeline compiled: a replaced surface; a forced refresh change, which moves only the governor's budget; a forced display move, which changes only H; and a resize while MetalFX is the reconstructor. A new device generation makes its pipelines again in recovery preparation, counted as its own phase, is ready before it draws, and compiles nothing after that readiness.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test prepared_paths",
           "lock": "gpu",
-          "ask": "Read the test. Is there one case for each of the five, each asserting the counters by thread and phase and the one thing the design says changes?",
+          "ask": "Read the test. Is there one case for each of the five, each asserting the counters by thread and phase and the one thing the design says changes? Is readiness taken for each device generation, with recovery preparation counted apart from play?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -796,7 +808,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "not_started",
-      "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window, the display or the device does."
+      "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window or the display does, and a lost device is prepared again behind the same readiness before play resumes."
     },
     {
       "id": "M10",
@@ -816,9 +828,10 @@
         },
         {
           "id": "D10.2",
-          "statement": "What is carried with a library includes, for each entry point, its binding indices and its threadgroup memory lengths: a compute dispatch that uses threadgroup memory gives the same result through a cooked library as through WGSL, and a library whose reflection is missing is refused by name.",
+          "statement": "Through the pinned backend, a pipeline stage made from a cooked blob gets the stage record the WGSL path computes: the function's name, the workgroup size, the threadgroup memory lengths, the sized bindings and the immutable-buffer mask. A compute dispatch that uses threadgroup memory, and a stage that takes the length of a runtime-sized storage array, give the same results from a cooked blob as from WGSL, for a fixture and for the route's own `visibility.wgsl` and `atmosphere/diffuse.wgsl`. A blob with no record for the function is refused by name.",
           "check": "cargo test --locked --offline -p thrum-render --test metallib_reflection",
           "lock": "gpu",
+          "ask": "Read the test. Do the Metal source and the record both come from the backend's own translation call, with no second implementation of its options? Would a backend that dropped the threadgroup lengths or the sized bindings fail it?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -857,6 +870,17 @@
           "verdict": "",
           "review": "",
           "builder_result": "open"
+        },
+        {
+          "id": "D10.6",
+          "statement": "The pinned copy of wgpu-hal is version 30.0.1 with the patch files kept beside it applied and nothing else, selected by a `[patch]` entry and registered in `.config/architecture.toml`. In M10 its only patch is the passthrough stage record, which leaves the WGSL path's code unchanged.",
+          "check": "python3 scripts/apple_presentation.py wgpu-pin",
+          "ask": "Does the command rebuild the copy from the released crate's source and the patch files without the network, and fail on one changed byte? Read the patch: does it change anything outside the passthrough shader path?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
         }
       ],
       "depends_on": [],
@@ -872,10 +896,10 @@
       "items": [
         {
           "id": "D12.1",
-          "statement": "A pinned copy of wgpu's Metal backend backs a pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, its data survives a write to a file and a read in a new process, and the pin and its difference from the released crate are registered where the design says.",
+          "statement": "The pinned backend's second patch backs wgpu's pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, and its data survives a write to a file and a read in a new process. The archive change is its own patch file beside M10's, and D10.6's pin check passes with both.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test pipeline_archive",
           "lock": "gpu",
-          "ask": "Where is the pinned copy, how is it selected in the workspace, and is its whole difference from wgpu 30.0.1 kept as a patch a reader can review? Does any shipping path write the archive during play?",
+          "ask": "Is the archive change one patch a reader can review apart from M10's? Does any shipping path write the archive during play?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -975,7 +999,7 @@
         },
         {
           "id": "D11.5",
-          "statement": "Gate G4 holds as the brief words it, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. The physical iPhone and external-display rows are named as owed.",
+          "statement": "Gate G4 holds as the brief words it, on the evidence the design's closing table names, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. EDR is recorded as values above SDR white given to a layer configured for EDR, not as light the panel emitted. The physical iPhone and external-display rows are named as owed.",
           "ask": "Take the brief's G4 sentence clause by clause: which item of M3 to M12 proves each, and is any clause proved only by a forced override that the ledger does not label?",
           "target": "mac-metal",
           "evidence": "",
@@ -1005,13 +1029,9 @@
         },
         {
           "id": "D11.8",
-          "statement": "On the built-in XDR display the owner sees the Sun, the sky beside it at sunset and the lamps at night brighter than white, with the rest of the picture unchanged against SDR.",
-          "inspect": "The owner runs the showcase on the built-in display, switches EDR on and off at the sunset and night-lights stops, and says whether the highlights read brighter and the mid-tones unchanged. The reviewer reads the owner's recorded reply, with the display's brightness setting and headroom recorded at the time, and does not judge the panel from captures.",
+          "statement": "The owner's look at EDR on the built-in display is asked for and recorded as an observation that gates nothing. The evidence page says how to see EDR on and off at the sunset and night-lights stops and what to note. The ledger carries the observation's status, outstanding or the owner's words with the display's brightness and headroom at the time, apart from what agents proved.",
+          "ask": "Does the evidence page carry the request, and the ledger its status, kept apart from the agent and device evidence? Does any sentence there, or in the closing report, offer captured values as proof of what the panel emits, or make G4's close wait for the owner?",
           "target": "mac-metal",
-          "needs": {
-            "type": "human_feedback",
-            "what": "Look at the showcase on the built-in display with EDR on and off at the sunset and night stops, and say whether highlights are brighter than white and the rest unchanged. No agent can see what the panel emits."
-          },
           "evidence": "",
           "verdict": "",
           "review": "",
@@ -1025,7 +1045,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "not_started",
-      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights brighter than white on the XDR panel, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed."
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed."
     }
   ]
 }

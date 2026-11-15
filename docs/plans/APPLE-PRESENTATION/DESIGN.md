@@ -310,9 +310,13 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - Live drag-resizes are debounced: the build starts once the extent has been stable for 100 ms.
 - The switch happens at a frame boundary after the build completes, and history resets there.
 - Pipelines are extent-independent and never rebuilt.
-- "During play" in checks means the render thread's steady frames. Transition-phase creations are counted separately
-  by thread.
-- Device loss uses the existing recovery, then the same build.
+- **Readiness is per device generation.** A device generation is ready when its prepared part and its first
+  generation are built. "During play" in checks means the render thread's steady frames of a ready device generation.
+  Creations are counted by thread and by phase: launch preparation, recovery preparation, generation build and play.
+- Device loss uses the existing recovery, then the same build. Recovery preparation makes the pipelines again, as C06
+  requires, and is counted as its own phase. It may run where it runs today, on the render thread, because a lost
+  device has nothing to present. Play resumes only when the new device generation is ready, and compiles nothing
+  after that.
 - *Surface reconfigure during a drag.* Today `render_actor.rs:244-257` reconfigures only after every in-flight frame
   completes, so it skips frames on each resize step. G4 changes the rule, with G3b owner review:
   - reconfigure when no `SurfaceTexture` is held, not when GPU work is pending;
@@ -326,8 +330,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
   The new generation's frame buffers start empty and take one full upload on the first frame after the switch.
   A newer extent cancels a running build, whose result is dropped. Device loss during a build drops the build and takes
   the recovery path.
-- *Governor during transitions.* The governor freezes from build start to the first frame after the switch, and
-  discards timing samples that span the switch.
+- *Governor during transitions.* The governor holds while a build runs and resumes when the build ends, whether or
+  not a generation was taken. [The rule](#the-governor-across-a-build-m4-and-m7) is below.
 - *Occlusion.* A fully occluded window stops the display link and so stops encoding. Presentation drop covers only
   transient acquisition failures, so no GPU time goes to frames nobody sees.
 
@@ -387,9 +391,9 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 **Archives and cold start.**
 - G4's native objects are MetalFX scalers. They take no binary archive, and their cost is synchronous creation in
   generation builds.
-- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the pipeline preparation work: offline
-  metallibs and parallel pre-warm, and M12 local archive qualification, all within V1. Their mechanism is
-  [settled below](#pipeline-preparation-m10-and-m12).
+- M9 takes a planning baseline of launch-to-ready. M10 then builds and proves the pipeline preparation work: the
+  pinned backend, offline metallibs and parallel pre-warm, and M12 local archive qualification, all within V1. Their
+  mechanism is [settled below](#pipeline-preparation-m10-and-m12).
 - Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 M10/U1.
 
 **What would change these choices:**
@@ -423,8 +427,9 @@ the device generation. The frame host holds the latest request, and one build at
 |---|---|---|
 | Steady | A generation is current and matches the request | Draws it |
 | Debouncing | The request's extent changed during a live resize | Draws the current generation, scaled with linear filtering into the drawable; reconfigures the surface at most once a display tick and only while no surface texture is held |
-| Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor is frozen |
-| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, swaps the generation in, resets history and reconstruction, and unfreezes the governor after that frame |
+| Building | The extent has been stable for 100 ms, or the request changed for any other reason (backing scale, display mode, a recovered device), which starts at once | The same. The preparation thread creates the new generation's targets, frame buffers, bind groups and providers from the shared, immutable prepared part. The governor holds |
+| Ready | The build finished and its request is still the latest for the current device generation | At the next frame boundary, swaps the generation in and resets history and reconstruction |
+| Unmet | The build for the latest request failed, and the request has not changed | Draws the current generation, scaled into the drawable where the extents differ. No build runs, and the governor runs |
 | Retiring | The swap happened | Keeps the old generation, providers included, until its frames in flight complete, as retirement works today |
 
 - **Cancellation.** A newer request sets the running build's cancel flag, which the builder reads between
@@ -434,10 +439,32 @@ the device generation. The frame host holds the latest request, and one build at
   makes the device and the prepared part again and then issues a new request. A result for an old device
   generation is never taken.
 - **Failure.** A build that cannot allocate leaves the current generation drawing and is reported with its
-  request. The next change of request starts a new build; the same request is not retried in a loop.
+  request. The host is then in Unmet. The next change of request starts a new build; the same request is not
+  retried in a loop.
 - **The switch** is pointer swaps on the render thread, with one full upload of the new frame buffers in its
   first frame. No texture, view, bind group or pipeline is created on the render thread at any point of a
-  transition, which the creation counters prove by thread.
+  transition, which the creation counters prove by thread. Recovery preparation after a lost device is not a
+  transition, and is counted apart.
+
+### The governor across a build (M4 and M7)
+
+Build work loads the GPU and the CPU, so a frame encoded while a build runs says nothing about steady cost. The
+governor therefore **holds** through a build: it commits no change, and it never admits a sample or a missed tick
+from a frame encoded in the hold. The frame host marks those frames, so the rule follows the frame and not the
+time its sample arrives.
+
+A build ends in one of four ways: its generation is taken, it fails, it is cancelled, or its result is dropped as
+stale. If the next build starts at once, the hold continues. Otherwise the hold ends:
+
+- **with a switch**, after the new generation's first frame, whose sample carries the full upload and is not
+  admitted;
+- **with no switch** (a failed build, or one cancelled or dropped because the request returned to the current
+  generation), at the next frame boundary. The current generation stays, and the governor's scale applies to it.
+
+Either way the governor resumes with its committed scale, tier and knob values, an empty sample window and an
+over-budget count of zero. So no ending of a build leaves it held: after a failed build it answers load on the
+retained generation with no further change of request. M7 builds both halves on M4's lifecycle: the frame
+host's marking of held frames, and the policy that obeys it.
 
 ### The EDR transform and its H = 1 identity (M6)
 
@@ -487,29 +514,63 @@ constant 0.25, the storage scale's own key. Then:
 - its output is in the same domain, and goes to APPLE-TILE's pre-tone input together with the exposure that
   matches it, which is the constant K. The tone pass divides by the exposure it is handed, as it does today, so
   it computes the same exposed colour and no second exposure or tone step exists;
-- n is a quarter of the exposed colour, so it has the range the stored colour has wherever p is not clamped: an
-  exposed value up to 2^18 fits the half-float target;
+- n is a quarter of the exposed colour, and it is stored in a half-float target, whose largest finite value is
+  65504. So n is exact to rounding only for exposed values up to 65504/K = 262,016, a little under 2^18. The
+  pre-pass follows RENDER-SPEC's storage rule: finite arithmetic, then a clamp to the half-float range, with
+  high clamps, low clamps and non-finite repairs counted for the pass. Where `K/A` is above 1 it can clamp a
+  value the stored colour held, so M8 records the counts on the route and tests a value on each side of the
+  limit;
 - TAAU, the reference and the portable recipe are untouched.
 
 Which path is in use is a resolved selection the game reports. The pre-pass's cost is recorded when it is on.
 
 ### Pipeline preparation (M10 and M12)
 
+**What the released backend does.** In wgpu-hal 30.0.1's Metal backend, a WGSL shader is turned into Metal
+source when a pipeline is created, once for each stage of that pipeline, under options taken from the pipeline:
+its layout's binding slots, its vertex layout, its topology class, its constants and its checks. The same call
+yields a **stage record** that the backend keeps and uses afterwards: the translated function's name, the
+workgroup size, the threadgroup memory lengths, the list of bindings whose buffer sizes the shader is passed,
+and the mask of buffers it never writes. A passthrough library gets only the name and the workgroup size
+(`metal/device.rs`, `load_shader` and `create_compute_pipeline`); the other three are left empty, and
+wgpu-core passes the backend nothing else. So through the released backend a cooked compute shader with a
+workgroup array, such as `atmosphere/diffuse.wgsl` or `visibility.wgsl`, gets no threadgroup memory, and a
+shader with a runtime-sized storage array, such as the forward pass's `synthetic.wgsl`, gets no buffer sizes
+for its bounds checks.
+
+**The pinned backend (from M10).** A copy of wgpu-hal 30.0.1 is kept in the repository, selected by a `[patch]`
+entry and registered in `.config/architecture.toml`. Its difference from the release is kept beside it as
+patch files a reader can review, one for each change, and the copy is exactly the release with those patches
+applied. wgpu, wgpu-core, wgpu-types and naga stay the released crates. M10 adds the first patch and M12 the
+second:
+
+1. *Stage records for passthrough (M10).* The translation call is the only source of Metal source and stage
+   records: the patch lets the cook take both from it, and nothing re-implements its options. A cooked library
+   travels as one blob, the stage record of each of its functions followed by the Metal library, in the bytes
+   wgpu-core already hands the backend. The pinned loader splits the blob, and pipeline creation fills the same
+   fields the WGSL path fills, so the encoder binds threadgroup memory and buffer sizes through the code it
+   already has. Bytes with no record section behave as in the release. The WGSL path is not changed.
+2. *The archive (M12)*, below.
+
 Three techniques, each behind the registry, each kept only if M9's and M12's launch records show it wins:
 
-1. **Libraries cooked ahead of time (M10).** A build step translates each shader the game ships exactly as the
-   running game would (the same translator, version and options), compiles the Metal source to a library, and
-   stores it with its **key**: a hash of the shader's source, the translator's version and options and the
-   Metal language version, with the reflection the runtime needs for each entry point (binding indices and
-   threadgroup memory lengths). At preparation the runtime computes the key it would translate under. On a match
-   it creates the module by passthrough from the library; on any mismatch, or missing reflection, it translates
-   the WGSL then and counts a fallback. That happens before readiness, never in play. The **manifest** is the
-   set of pipelines the route creates, taken from the creation counters.
+1. **Libraries cooked ahead of time (M10).** The unit is a pipeline stage, not a WGSL file, because the Metal
+   source depends on the pipeline. For each stage of each pipeline on the manifest, the cook takes the Metal
+   source and the stage record from the pinned backend's own translation, compiles the source with the Metal
+   toolchain under the language version and invariance option the backend passes, and stores the blob under
+   its **key**: a hash of the WGSL source, the entry point and stage, the pipeline facts the translation reads
+   (bind group layout entries, vertex layout, topology class, constants, check flags), the wgpu and naga
+   versions and the Metal language version. `thrum-render` computes the key from the pipeline's description
+   with one function, used by the cook and at launch, and it needs no translation to do so. At preparation, on
+   a match the runtime creates the module by passthrough from the blob; on any mismatch, or a blob without a
+   record for the function, it builds from WGSL then and counts a fallback. That happens before readiness,
+   never in play. The **manifest** is the set of pipelines the route creates, taken from the creation counters.
+   The cook therefore runs on a Mac with a Metal device and the Metal toolchain, and never in a shipping
+   package.
 2. **Parallel preparation (M10).** The pipelines of the manifest are created across worker threads before
    readiness. The set that is ready does not depend on the thread count.
-3. **The archive (M12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. A pinned copy of its Metal
-   backend, selected by a `[patch]` entry and kept in the repository with its difference from the release as a
-   reviewable patch, backs that cache with an `MTLBinaryArchive`. In **harvest**, a separate command, pipelines
+3. **The archive (M12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The second patch backs that
+   cache with an `MTLBinaryArchive` on Metal. In **harvest**, a separate command, pipelines
    are created with the archive attached and added to it, and it is written to a file whose header carries the
    device, the OS build and the manifest's digest. In a normal launch the header is checked first: a stale or
    unreadable archive is set aside and the launch prepares its pipelines the other way, counted by cause. In the
@@ -517,12 +578,30 @@ Three techniques, each behind the registry, each kept only if M9's and M12's lau
    option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to the
    device that harvested it; nothing is shipped to another device in V1.
 
-The patch is not posted upstream by any agent: U1 is the owner's.
+No patch is posted upstream by any agent: U1 is the owner's, and it concerns the archive patch alone. The blob
+keeps the pin to one crate; typed fields on wgpu's passthrough descriptor would be the upstream form of the
+first patch, and would mean pinning wgpu-types and wgpu-core as well.
 
-### What the owner judges (M11)
+### What closes G4, and what the owner observes (M11)
 
-Engine capture proves the values the surface was given, never what the panel emits. So the look of EDR on the
-built-in display is one item of M11, marked as needing the owner, and M6 closes on captures and tests.
+G4 closes on evidence agents and the device produce. The brief's sentence is proved clause by clause:
+
+| The brief's clause | Proved by | What that evidence is |
+|---|---|---|
+| MetalFX through the native boundary | D8.1–D8.8 | Device function, records, and agents' review of motion |
+| EDR | D6.1–D6.6, D6.8 | The layer's configuration, the transform, and the float values the surface was given, with agents' inspection of those captures. The real display record is a witness, and no pass depends on it |
+| Binary archives | D12.1–D12.4 | A fresh-process run that is not allowed to fall back |
+| The governor reacts to GPU, thermal and present evidence | D7.1–D7.9 | Policy tests and forced-load runs on the device |
+| Apple tile compared with portable, with image tolerance and counters | D11.1, D11.4 | Paired rows on this Mac |
+| No pipeline compilation during play | D9.2–D9.4, D11.2 | Creation counters by thread and phase |
+| The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture |
+
+Engine capture proves the values the surface was given, never the light the panel emits, and no agent can see
+the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
+C12, which never gates ([brief](../BRIEF.md#decisions), decision 4). M11's evidence page asks for it and says
+how to see it, and the ledger carries its status, outstanding or answered in the owner's words, apart from what
+was proved. No milestone, G4's close included, waits for the reply. A reply that reports a defect is new work.
+The physical iPhone and external-display rows stay owed in the same way.
 
 ## The system as it runs
 
@@ -595,7 +674,7 @@ built-in display is one item of M11, marked as needing the owner, and M6 closes 
 | Traffic at s = 0.67 (0.92 Mpx) | Attachment writes 0.44× native; reconstruction input reads about 21 B per render pixel (19 MB); history read and write 33 MB |
 | Forward plus sky at s = 0.67 | About 0.85 ms if pixel-bound, from 1.94 ms native |
 | Atmosphere | Unchanged: fixed-size LUTs |
-| TAAU at 1080p output | Estimated 0.2–0.5 ms. MetalFX cost is unpublished. Both are measured (M3, M8). |
+| TAAU at 1080p output | Estimated 0.2–0.5 ms. MetalFX cost is unpublished. M3 measures TAAU at its own 640×360 extent; M5 (D5.7) measures it at the window's extent, once M4 has given one; M8 measures MetalFX. |
 
 With the forward saving against the reconstruction estimate, the expected net GPU saving at s = 0.67 is about
 0.4–0.9 ms on the valley. At s = 1.0, reconstruction is pure cost. Full-screen play at s = 1.0 is about 3.6× the
@@ -613,7 +692,10 @@ pixels of the window, which is why the governor exists before the paired proof.
   counters by thread; a resize sequence.
 - **The governor oscillates or hides regressions.** Guard: hysteresis plus a minimum period. Tripwires compare at a
   replayed scale trace.
-- **EDR changes SDR appearance.** Guard: the H = 1 identity; the owner's visual check.
+- **EDR changes SDR appearance.** Guard: the H = 1 identity (D6.3) and the agents' inspection of the float
+  captures (D6.8). The owner's look at the panel is an observation, and it gates nothing.
+- **The pinned backend drifts from the release, or changes the WGSL path.** Guard: the pin check (D10.6), which
+  rebuilds the copy from the release and the retained patches, and the exact baselines under `./dev check`.
 - **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 M2.
 - **The reactive target is declared but inert, or history advances before submission, on one target only.** Nothing
   visible changes until M3. Guard: the temporal-input witness on the Mac and in Chrome.
@@ -665,8 +747,10 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
 8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t M11).
-9. **Pipeline preparation and archives.** Owned by G4 M10 and M12 under the G3t boundary: the measured split, offline metallibs through
-   passthrough, and the Metal `PIPELINE_CACHE` in a pinned patch; upstream later. V1's archive item stays as written.
+9. **Pipeline preparation and archives.** Owned by G4 M10 and M12 under the G3t boundary: the measured split; a
+   pinned copy of wgpu-hal from M10, whose first patch carries stage records for offline metallibs through
+   passthrough and whose second (M12) is the Metal `PIPELINE_CACHE`; upstream later. V1's archive item stays as
+   written.
 
 ## Open questions
 
@@ -675,7 +759,7 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
   baseline with real reconstruction readers and scale steps, where M0
   proved a capture method.
 - Is the TAAU 1080p estimate right? M3 records TAAU's time at its own 640×360 extent, kept apart from this
-  estimate; the 1080p figure is settled when M4 gives the surface extent.
+  estimate; M5 (D5.7) records the 1080p figure, once M4 has given the surface extent.
 - Does MetalFX's history track a GPU-written exposure texture under a changing storage scale? Settled by M8.
 
 ## Game outcomes
@@ -731,7 +815,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
-| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, wgpu-hal Metal `PipelineCache` patch | G4 M10 pipeline preparation; every pipeline site |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, the pinned wgpu-hal copy with its stage-record patch (M10) and its Metal `PipelineCache` patch (M12) | G4 M10 pipeline preparation; every pipeline site; every module's exact baselines, which the pin must not move |
 
 Review order:
 1. History protocol.
@@ -761,7 +845,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | M8 MetalFX temporal | **G3t M11**, seam 8, M5 | M9 |
 | M9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after M4–M8 | G3t M12 |
 | M10 offline metallibs, pre-warm | D9.1 | M2–M9 (own files) |
-| M12 local archive | M10 | none |
+| M12 local archive | M10 (the pinned backend) | none |
 | M11 paired proof | M1–M10 and M12, G3t M12 | none |
 
 Under the loop a module's milestones run one at a time, in the order M4, M5, M6, M7, M8, M9, M10, M12, M11, so
