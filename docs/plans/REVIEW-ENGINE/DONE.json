@@ -28,8 +28,8 @@
           "statement": "On the iPhone simulator the game still starts, draws the cooked scene, rotates and comes back from the background, and its report names the texture profile and the storage-buffer limit it got.",
           "inspect": "the simulator run at the claimed commit: engine output at start, after a rotation and after background and foreground, with the game's report beside it. Function only; nothing here is a speed claim",
           "target": "ios-sim",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/simulator/report.json",
           "verdict": "",
           "review": ""
         },
