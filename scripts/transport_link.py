@@ -538,5 +538,15 @@ def main():
     print(output / "record.json")
 
 
+def stop_on_signal(number, _frame):
+    # Children run in their own sessions, so a runner's group kill doesn't reach them. Exiting through
+    # SystemExit runs each proof's `finally`, which stops its hosts, relays, clients and browsers.
+    for each in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(each, signal.SIG_IGN)
+    raise SystemExit(128 + number)
+
+
 if __name__ == "__main__":
+    for number in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(number, stop_on_signal)
     main()
