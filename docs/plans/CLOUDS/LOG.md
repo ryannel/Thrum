@@ -1,45 +1,21 @@
 # CLOUDS log
 
-- 2026-11-15 M1.13 passed unchanged on `7e41bac72726c7942b34084d52f2f917ebbec088` in 960.25 seconds:
-  38 and 4 native comparisons, and all 481 records in each of the four Chrome sets.
-  The exact-baseline gate also passed. The covered-content key is
-  `701dda2dac327d33c5c856b248dcdef2d27b5b25f151096c03cfcb71515cfad1`.
-  Native binary SHA-256: `ba220134bd42b0b1d20ee084310cdf7de2200539655e92186e4253be77d1e127`;
-  Wasm SHA-256: `73ba68ab3a76c0afa3d76e6809e6df76b30beea58a06d994af0f63b83b82e121`;
-  cooked root: `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d`.
-  The complete verifier record remains at `tmp/baseline-guard/verify-20261114T232332.821353Z/record.json`.
-  Every M1 builder item now has target evidence. The project check and canonical integration
-  output are retained in shared Git job `20261114-233453-29572`; its merge must report
-  `MERGED` before completion is claimed. Earlier capture failures remain historical
-  diagnostics, not image regressions or a guarantee that the capture observer never omits.
-  Their owned scratch is deliberately retained for capture-admission diagnosis; release
-  it after that investigation has retained its selected records.
-
-- 2026-11-14 The unchanged retry on `03a5b1e1` stopped earlier, in native
-  `portable-route-motion`: backend Metal, adapter Apple M3 Max, 960 GPU records, 871 images,
-  90 readback-ring omissions and zero writer omissions. The runtime correctly reported
-  incomplete, so no native baseline pass is claimed for this attempt. The binary hash
-  `ba220134bd42b0b1d20ee084310cdf7de2200539655e92186e4253be77d1e127` and cooked root
-  `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e9bd92dd5f30e21d` are identical to
-  the preceding run that passed both native matrices. This is a capture admission failure,
-  not an observed image mismatch. Its complete diagnostics remain in
-  `tmp/baseline-guard/verify-20261114T222954.571297Z/`; M1.13 stays open. A further unchanged
-  verifier run is needed, with the same GPU lock and strict comparisons.
-
-- 2026-11-14 Baseline attempt on `d360fbcf` passed 38/4 native comparisons and all 481
-  records in Chrome day SDR, day linear and night SDR. Night linear failed identity at
-  ordinal 170: tick/source_tick 289 and alpha 1 rather than 290 and alpha 0. Its 481
-  manifest pixel hashes all match the retained reference. A separate decode/hash pass over
-  all 481 stored gzip frames also found zero raw digest differences; the candidate manifest
-  SHA-256 is `e6702ba57b62779c01499d3986fcdb6344e9d23a2be8f12442e504f7f653a923`.
-  No baseline or comparator was
-  changed. The browser world's configured 2 ms elapsed work slice can defer the second of
-  two due ticks, which is consistent with this equivalent endpoint; no tick-cost witness
-  was exported, so that cause is an inference, not a measured attribution. Chrome was
-  157.0.8103.51 (reference .40). The complete failed record is retained at
-  `tmp/baseline-guard/verify-20261114T213410.775605Z/record.json`. Shared check stderr under
-  key `212e9f1f636916305ff19efa` holds the latest attempt. M1.13 remains open while the unchanged verifier is
-  retried; the CPU model is not a renderer input and no rendered cloud is qualified here.
+- 2026-11-15 The full milestone check passed all 15 automated commands on `e866a1d7`,
+  including `./dev check`. M1.13 passed on `7e41bac7`: 38/4 native comparisons and 481
+  records in each of four Chrome sets, in 960.25 seconds. Every builder item has target
+  evidence. [Verification identities and diagnostics](../../evidence/CLOUDS/M1-final-verification.json)
+  retain the binary, Wasm, cooked-root and check-log identities. No cloud visual or speed
+  qualification follows from this CPU milestone.
+- 2026-11-15 Canonical integration found duplicate handoff-link repairs; rebasing onto
+  `0f8cdd18` kept the upstream CREATOR and CULLING versions. Cloud-model sources, optical
+  references, M1 planner fields and the covered-content key are unchanged, and the exact
+  baseline gate passed after rebase. The project gate must pass on the combined tree and
+  canonical merge must report `MERGED` before completion is claimed.
+- 2026-11-14 Earlier unchanged capture attempts failed separately: Chrome night linear
+  differed only in tick/alpha identity (all 481 decoded frame hashes matched), then native
+  route capture reported 90 readback-ring omissions. Neither attempt counts as a pass.
+  The retained verification record distinguishes the measured facts from the browser
+  work-slice inference and names the owned failed scratch and its release condition.
 
 - 2026-11-14 M1 resumed against the planner's revised clear-column convention. Source
   `f188edfc` retains the weather's type/base and sets clear top=base; `0b097fab` explicitly
