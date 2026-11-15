@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1 rebased onto REPO-RULES' new shape checks. Ordinary imports distinguish calls to the iPhone
+  wrapper from the two underlying wgpu requests; `shape_rules.py tighten` records those two existing sites in
+  their extracted file, with no increase in allowance. The shape checks pass. The full documentation check
+  currently reports missing links from upstream APPLE-PRESENTATION and STATUS plan edits. Target proof stays
+  queued behind ATMOSPHERE's GPU lease.
+
 - 2026-11-15 M1 integrated SIM-2D's new consumers. The runtime retains its world digest and profile validation;
   the new core fixture, crowd example and cost runner use the engine page and callback-free rewind API, with
   assertions unchanged. At `56c14e94`, focused core rewind/digest/refusal tests, crowd conformance/input-route

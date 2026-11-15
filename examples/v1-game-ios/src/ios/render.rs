@@ -29,7 +29,10 @@ const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 const HOLD_SLICE: Duration = Duration::from_millis(20);
 use wgpu::{CurrentSurfaceTexture, TextureViewDescriptor};
 
-use crate::lease::{Leased, SurfaceLease};
+use crate::{
+    device::request_device,
+    lease::{Leased, SurfaceLease},
+};
 
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
 /// Completed samples polled per job; the host retains at most this many frames.
@@ -420,8 +423,7 @@ impl Owner {
             return Err("iOS render owner is already prepared".into());
         }
         self.instance = Some(instance.clone());
-        let (adapter, device, queue) =
-            crate::device::request_device(instance).map_err(|e| e.to_string())?;
+        let (adapter, device, queue) = request_device(instance).map_err(|e| e.to_string())?;
         let watch = Watch::register(&device, FIRST_GENERATION, &self.lost_wake);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, FIRST_GENERATION);
         // Every CAMetalLayer accepts Bgra8Unorm; prefer it as before, and check
@@ -604,8 +606,8 @@ impl Owner {
         let inputs = gpu.host.device_prepare_inputs().map_err(fail)?;
         let generation = self.next_generation;
         self.next_generation += 1;
-        let (adapter, device, queue) = crate::device::request_device(&instance)
-            .map_err(|e| RecoverFault::Failed(e.to_string()))?;
+        let (adapter, device, queue) =
+            request_device(&instance).map_err(|e| RecoverFault::Failed(e.to_string()))?;
         let watch = Watch::register(&device, generation, &self.lost_wake);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
         if watch.is_lost() {
