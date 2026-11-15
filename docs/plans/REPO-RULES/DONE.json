@@ -71,7 +71,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-landing-baselines.json",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

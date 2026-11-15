@@ -68,7 +68,7 @@
     {
       "id": "M2",
       "name": "A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh",
-      "status": "in_progress",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "quality_bar": "A lockfile's checksum, as in Cargo.lock or go.sum: a pinned file changes only in a commit that also changes its recorded digest, and the failure names the file, its owner and the rule.",

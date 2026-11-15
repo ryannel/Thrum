@@ -1,5 +1,10 @@
 # REPO-RULES log
 
+- 2026-11-15 Resumed M1 under the proofs-run-once-on-main ruling. Stopped the old queued GPU helper before
+  acquisition and removed its obsolete rebase/prove/merge helpers. M1.6 now cites `main-branch check exact-images`;
+  the merged check supplies its target proof. Current inventory still equals every baseline entry and retains
+  all main-commit attributions. Earlier CPU passes and failed captures remain separate historical evidence in
+  [M1's record](../../evidence/REPO-RULES/M1.md). M1 remains `in_progress` for the lead's checks.
 - 2026-11-14 Planned from the owner's request to plan and drive the 14 November code review's fixes ("can you not
   just plan and drive that work?"). The lead's task set the H03 decision: no history rewrite, untrack at HEAD,
   keep links resolvable. Measured while planning: 9,054 tracked evidence files, 3.71 GiB, of which 730 files over
