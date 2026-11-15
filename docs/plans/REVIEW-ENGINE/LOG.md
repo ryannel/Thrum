@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The continuation rebases cleanly onto CREATOR's main at `bcdc75f4a`. The standard iOS build,
+  native verifier build and Web build pass on `48f92ecc4`; these prove compilation only. The queued batch
+  must refresh simulator and Mac qualification for the changed sky facade. CREATOR and APPLE-TILE release
+  GPU; SIM-2D's workspace gate is active. M1 product code and assertions are unchanged, and the live batch
+  remains `20261115-162847-73863`. [The handoff](../../evidence/REVIEW-ENGINE/M1-handoff.md) names the current wait.
+
 - 2026-11-15 The queued batch acquired GPU but failed before proof on an obsolete APPLE-PRESENTATION
   log-link repair during rebase. Both that repair and its reversal resolve to the current upstream log;
   the rebase completes at `fc31fa95b`. Only WATERS' model changed upstream since the qualified source,
