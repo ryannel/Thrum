@@ -68,7 +68,7 @@
     {
       "id": "M2",
       "name": "A proof of the exact images survives a rebase that brings in only changes to crates the verified game does not link",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "quality_bar": "Change detection by package graph as guppy's determinator does it for a Cargo workspace: a package outside the dependency graph of what is built does not invalidate a result, a file the graph cannot place does, and the graph is checked against what the compilers read, as Ninja takes a target's inputs from the compiler's depfile.",
@@ -161,16 +161,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "No new verifier output yet. I\u2019m continuing the queued job.",
-        "work": {
-          "commit": "83f557b915544c719e0df2f8f9dd0ed9321782e2",
-          "branch": "build/baseline-guard",
-          "pushed": true
-        }
-      }
+      ]
     }
   ]
 }
