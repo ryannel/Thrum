@@ -276,10 +276,10 @@
           "inspect": "For each record, make the difference image yourself from its two lossless frames (`docs/evidence/EFFECT-GRAPH/M3-replan/difference.py` is one way) and judge it whole and in a native-size crop of its densest part, beside the failed frame: thin lines along the triangle edges of opaque geometry, no patch filled, and none in the sky, among the stars or in the letterbox bars.",
           "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M3/variation-runs.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
