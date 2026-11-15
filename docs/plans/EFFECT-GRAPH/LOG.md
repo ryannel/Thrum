@@ -148,3 +148,8 @@
   Retained twelve paired cost arms with load; transfer-only cost and reconstructed motion are unclaimed.
   [Target proof](../../evidence/EFFECT-GRAPH/M3-proof.md) separates checks, visual judgment and costs.
   All builder items pass; normal integration follows this evidence checkpoint, with review owned by the lead.
+- 2026-11-15 The later official merge gate at `99e9fb125` failed the cooker's generation-2
+  watcher deadline. The exact workspace binary then passed three focused reruns and all four suite
+  tests unchanged. [Diagnosis](../../evidence/EFFECT-GRAPH/M3/watcher-retry/record.json) retains the
+  failed gate and reruns; the cause is unconfirmed. No cooker source changed. Target proofs remain
+  valid because integration brought only plan/status changes. A fresh normal merge gate is required.
