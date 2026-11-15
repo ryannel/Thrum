@@ -289,3 +289,11 @@
   retains the qualified executable hash. D10.1–D10.4 retain their proofs. D10.5 and the full gate remain pending.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md).
 
+- **2026-11-15 — M10 checked merge and capture recovery.** The official merge passes at `3042de93`,
+  followed by all ordinary baselines and sixteen exact native/twin comparisons. The final Apple-tile
+  realtime export has 26 ring omissions, so the complete campaign remains pending. The retry preserves
+  failed output and requires identical executable/runtime inputs and zero omissions. Verified spool
+  hard links recover 16.86 GB while preserving every original path and byte. Published evidence links
+  are restored. Simulator and actual-window qualification remain pending.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
