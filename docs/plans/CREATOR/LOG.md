@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-15 The follow-up continuation confirmed the integration worker live
+  and still GPU-queued after an official 55-second wait. The separate window
+  worker has stopped. The last Computer Use result confirms a locked Mac, so
+  M3.4 remains access-blocked. M3.1 still needs its fresh-agent exercise.
+  The [handoff](../../evidence/CREATOR/M3-handoff.md) preserves the current handles.
+
 - 2026-11-15 Replaced the queued integration job with a continuation that runs
   normal merge and M3 checks, leaving the window drag to Computer Use. Stopped
   two queued Swift-input continuations before window interaction. Computer Use
