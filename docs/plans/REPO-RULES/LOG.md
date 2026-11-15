@@ -34,7 +34,7 @@
   gained a ruling that lets such a run be set aside with a record. No milestone was added anywhere and no item
   changed; M1's note says what to do next. [The reading](../../evidence/REPO-RULES/M1-replan/README.md).
 - 2026-11-15 M1's subsequent clean-main gate found newer APPLE-PRESENTATION log links without their evidence.
-  Restored the referenced historical records from `09a34295`, with byte-identical source snapshots for two
-  not-yet-landed renderer files; production source and other modules' plan records are unchanged. Main already
-  corrected the BASELINE-GUARD status-link assumption. The local-link audit passes; integration is rechecked
-  through the normal gate. [Provenance and checks](../../evidence/REPO-RULES/M1-link-repair.json).
+  The prepared restoration was superseded while queued by APPLE-PRESENTATION's own M3 landing. Preserved
+  its newer source and evidence, and main's BASELINE-GUARD status-link correction. The finishing helper
+  refreshes M1's inventory and retained target proofs when upstream changes covered content, then uses
+  the normal merge and check. [Reconciliation record](../../evidence/REPO-RULES/M1-link-repair.json).
