@@ -549,3 +549,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   current log now that its evidence has landed. The runner retains its GPU lease
   for up to 15 minutes for a rebase or gate repair, then retries the normal merge
   and unchanged target checks. No check, reference or acceptance bound is bypassed.
+
+- **2026-11-15 — M9 checkpoint evidence collection.** The collector now accepts
+  the integration runner's exact-revision closeout request before the job exits,
+  retaining its full six-command pass and target artifacts. The saved starting
+  builds match revision `976788ab` and their manifest hashes; removed their clean
+  disposable source worktree and build cache, recovering about 4.3 GiB.
+  [Handoff](../../evidence/ATMOSPHERE/M9-handoff.md) identifies the queued durable
+  job and closeout procedure. No new target run or successful merge is claimed.
