@@ -308,5 +308,5 @@
   [CPU proof](../../evidence/WATERS/M12.md) records 59 passing model tests, strict Clippy and independent
   Snell, fetch, swash and fine forward-cut references, including the actual prepared surface and reach.
   [Cost](../../evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
-  A CREATOR operator-held GPU/merge lease prevented the first baseline and integration runs; their
-  unrun scope is retained separately. GPU surf and its appearance remain for M13.
+  Earlier incomplete baseline captures remain diagnostic history; the current shared main-branch
+  `exact-images` check supplies M12.10's proof after integration. GPU surf and its appearance remain for M13.

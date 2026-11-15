@@ -286,8 +286,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+      "builder_result": "pass",
+      "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
