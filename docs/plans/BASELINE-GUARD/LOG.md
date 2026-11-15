@@ -186,3 +186,8 @@
 - 2026-11-15 M2's checks tried by running each command: the five test-class checks and `covered` fail before
   the work and none errors. The loop's `check --items-only` waited seven minutes on the `gpu` lock for M2.7,
   behind queued builders, and was stopped; M2.7's check is M1.1's command, unchanged. `./dev check-docs` passes.
+
+- 2026-11-15 M2 builder implemented Cargo-derived coverage, compiler-input validation and unchanged public
+  gate/proof calls. All 28 focused tests pass on the resumed branch, including real Cargo includes and symlink
+  indirections. [Evidence](../../evidence/BASELINE-GUARD/M2.md) records the source and commands. The obsolete
+  pre-rebase verifier was stopped without claiming its results; current-content GPU qualification is queued.
