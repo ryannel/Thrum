@@ -135,3 +135,5 @@
   TAAU as well as native consumers. The graph witness selects actual reconstruction on/off, and the
   late compute witness checks its final epilogue before TAAU. Native workspace all-target Clippy,
   rustfmt and documentation checks pass. Fresh target proofs remain queued in the existing campaign.
+  Release native/Web builds and pinned native/Wasm Clippy pass at `7aea52c74`, with source/build
+  hashes and repaired preparation failures in [the record](../../evidence/EFFECT-GRAPH/M3/reconstruction-integration-preparation.json).
