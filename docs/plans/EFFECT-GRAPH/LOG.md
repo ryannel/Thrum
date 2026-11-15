@@ -110,3 +110,4 @@
   record. [The audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md) retains both failed runs and their
   lossless controls; the new complete pass's comparisons, identities, digests and hashes were validated.
   Integration-base checks, fixed native crossings, paired costs and the full gate remain outstanding.
+  Resolved failure bulk was released after byte-for-byte retained-root verification.
