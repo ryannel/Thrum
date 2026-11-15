@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 M1 integrated APPLE-PRESENTATION's landing. The normal merge refused the stale baseline key,
+  so the batch refreshed simulator proof and all approved checks under its existing GPU lease. On `1d60e7b9`,
+  the inspected simulator route, Mac request, both rewind tests, 42 unchanged game simulation tests and all
+  1,966 exact comparisons pass; verifier time is 939.78 seconds. Proof is retained at `bde949ae`, including
+  the newly inspected simulator views. [The evidence](../../evidence/REVIEW-ENGINE/M1/README.md) follows the
+  retained records; the full gate and normal merge are running again on the integrated source.
+
 - 2026-11-15 M1's final batch reproduced all approved checks on `d2139ca2`: the Mac request and both rewind
   tests pass, all 42 unchanged simulation tests pass, and all 1,966 exact native/Chrome comparisons pass in
   949.94 seconds. Proof is retained at `e26b9199`; the simulator remains applicable because every iOS dependency
