@@ -49,3 +49,7 @@
   APPLE-TILE resolves the tick/alpha identity at unchanged image hashes, with its comparison intact.
   M1.1–M1.5 have refreshed CPU and inventory records; M1.6 is open and the continuation is unmerged.
   [The handoff](../../evidence/REPO-RULES/M1-handoff.md) names the failed proof and next step.
+- 2026-11-15 Resumed under the planner's stalled-capture ruling: the failed run's
+  [record](../../evidence/REPO-RULES/M1-identity-observation.md) now links its complete image/identity
+  reading, callback times and the landing proof. The full verifier runs unchanged; this record sets
+  the failure aside only when that full run passes. No reference or comparison is changed.
