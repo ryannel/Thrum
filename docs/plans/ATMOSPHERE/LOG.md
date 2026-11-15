@@ -542,3 +542,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   runner now refreshes the consecutive paired aerial costs when that rebase needs
   a fresh baseline proof, then runs every unchanged M9 check before retrying merge.
   No new target result or successful merge is claimed by this checkpoint.
+
+- **2026-11-15 — M9 timing provenance tightened.** The prior paired record used
+  unchanged-shader builds from `64480ea7`; the starting verifier is `976788ab`.
+  The fresh pair now rebuilds that exact starting revision with its recorded native
+  and Web build commands. The CPU build is prepared while the GPU job is queued,
+  and its manifest and artifact hashes are checked again before timing.
+  Historical measurements remain evidence of their named builds, not the new pair.
