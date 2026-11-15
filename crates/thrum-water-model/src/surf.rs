@@ -1,0 +1,479 @@
+use crate::{
+    BedPyramid, BodyKind, BreakerSection, CutConfig, Field, Map, MapSample, Sheet, SheetPoint,
+    ShoreConfig, ShoreTransform, Source, Surface, WaterError, cut, limit, shoaling,
+};
+use std::f64::consts::{FRAC_PI_4, TAU};
+use thrum_sea_model::Sample;
+
+/// Authored surf capability. Omitting it leaves the original model untouched.
+pub struct SurfProfile {
+    /// Minimum dispersion depth, metres.
+    pub lag_floor: f64,
+    /// Breaking height/depth ratio.
+    pub breaker_ratio: f64,
+    /// Periodic phase/index section table.
+    pub section: BreakerSection,
+    /// Highest-column controls.
+    pub cut: CutConfig,
+}
+
+impl Default for SurfProfile {
+    fn default() -> Self {
+        Self {
+            lag_floor: 0.5,
+            breaker_ratio: 0.78,
+            section: BreakerSection::first(),
+            cut: CutConfig::default(),
+        }
+    }
+}
+
+pub(crate) struct Surf {
+    profile: SurfProfile,
+    transforms: Vec<Option<ShoreTransform>>,
+    pyramid: BedPyramid,
+}
+
+impl Map {
+    /// Forward long-wave sheet for content tools and conformance references.
+    /// # Errors
+    /// Refuses a disabled capability, unknown body or nonfinite time.
+    pub fn surf_sheet<'a>(
+        &'a self,
+        field: &'a Field,
+        body: usize,
+        time: f64,
+    ) -> Result<SurfSheet<'a>, WaterError> {
+        if body >= self.bodies.len() || !time.is_finite() {
+            return Err(WaterError::new("surf sheet", "invalid body or time"));
+        }
+        Ok(SurfSheet {
+            surf: self
+                .surf
+                .as_ref()
+                .ok_or_else(|| WaterError::new("surf sheet", "surf is disabled"))?,
+            map: self,
+            field,
+            body,
+            time,
+        })
+    }
+
+    /// Prepare surf for every declared still body and stage range.
+    /// Stage and forcing updates keep the prepared content.
+    /// # Errors
+    /// Rejects invalid controls, preserving the previous capability on failure.
+    pub fn enable_surf(&mut self, profile: SurfProfile) -> Result<(), WaterError> {
+        if !profile.lag_floor.is_finite()
+            || profile.lag_floor <= 0.0
+            || !profile.breaker_ratio.is_finite()
+            || profile.breaker_ratio <= 0.0
+            || !profile.cut.cell.is_finite()
+            || profile.cut.cell <= 0.0
+            || !profile.cut.tolerance.is_finite()
+            || profile.cut.tolerance <= 0.0
+        {
+            return Err(WaterError::new("surf", "invalid surf profile"));
+        }
+        let transforms = self
+            .bodies
+            .iter()
+            .map(|b| {
+                if matches!(b.kind, BodyKind::Chart(_)) {
+                    return Ok(None);
+                }
+                ShoreTransform::prepare(
+                    self.bed.clone(),
+                    ShoreConfig {
+                        level: b.level,
+                        stage: b.stage,
+                        margin: self.profile.margin_height,
+                        floor: profile.lag_floor,
+                        fetch: b.fetch,
+                        seed: if let BodyKind::Basin { seed } = b.kind {
+                            Some(seed)
+                        } else {
+                            None
+                        },
+                        source: Source::Water,
+                    },
+                )
+                .map(Some)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        self.surf = Some(Surf {
+            profile,
+            transforms,
+            pyramid: BedPyramid::new(&self.bed),
+        });
+        Ok(())
+    }
+}
+
+impl Surf {
+    pub(crate) fn surface(
+        &self,
+        map: &Map,
+        field: &Field,
+        point: [f64; 2],
+        time: f64,
+        row: MapSample,
+    ) -> Result<Surface, WaterError> {
+        if !time.is_finite() || point.iter().any(|v| !v.is_finite()) {
+            return Err(WaterError::new("surf", "nonfinite point or time"));
+        }
+        let sheet = SurfSheet {
+            surf: self,
+            map,
+            field,
+            time,
+            body: row.body,
+        };
+        let (rest, height) = if sheet.can_throw(point) {
+            let column = cut(&sheet, point, self.profile.cut)?;
+            (column.rest, column.height)
+        } else {
+            let mut rest = point;
+            let mut converged = false;
+            for _ in 0..4096 {
+                let forward = sheet.forward(rest);
+                let next = std::array::from_fn(|a| point[a] - (forward.world[a] - rest[a]));
+                let error = (next[0] - rest[0]).hypot(next[1] - rest[1]);
+                rest = next;
+                if error < 1e-11 {
+                    converged = true;
+                    break;
+                }
+            }
+            if !converged {
+                return Err(WaterError::new(
+                    "surf",
+                    "plain displacement did not converge",
+                ));
+            }
+            (rest, sheet.forward(rest).height)
+        };
+        let mut sample = sheet.derivatives(rest);
+        sample.height = height + row.row.level;
+        for (a, b) in sample
+            .slope
+            .iter_mut()
+            .zip(map.level_slope(row.body, point))
+        {
+            *a += b;
+        }
+        sample.velocity[0] += row.row.current[0];
+        sample.velocity[2] += row.row.current[1];
+        let gains = limit(row.row, row.depth, field.variances(), map.profile).gains;
+        for (i, layer) in field.layers.iter().enumerate().skip(1) {
+            let wave = layer
+                .scaled(gains[i])
+                .and_then(|l| l.evaluate(point, time))
+                .map_err(|_| WaterError::new("surf", "invalid short waves"))?;
+            sample.height += wave.height;
+            sample.height_dt += wave.height_dt;
+            for (a, b) in sample.slope.iter_mut().zip(wave.slope) {
+                *a += b;
+            }
+            for (a, b) in sample.velocity.iter_mut().zip(wave.velocity) {
+                *a += b;
+            }
+        }
+        Ok(Surface {
+            body: Some(row.body),
+            sample,
+            depth: row.depth,
+            current: row.row.current,
+            wet: row.bed.is_none_or(|bed| sample.height > bed),
+        })
+    }
+
+    fn transform(
+        &self,
+        map: &Map,
+        body: usize,
+        point: [f64; 2],
+        direction: usize,
+        wavelength: f64,
+    ) -> (f64, f64) {
+        if let Some(transform) = &self.transforms[body] {
+            let stage = map.bodies[body].stage.value;
+            return (
+                transform.sample(direction, wavelength, stage, point).0,
+                transform.exposure(direction, stage, point),
+            );
+        }
+        let mut answer = (0.0, 1.0);
+        if let BodyKind::Chart(chart) = &map.bodies[body].kind {
+            let mut total = 1.0;
+            let own_level = map.bed.weights(point).map_or(
+                map.bodies[body].level + map.bodies[body].stage.value,
+                |w| {
+                    w.iter().map(|&(i, a)| chart.levels[i] * a).sum::<f64>()
+                        + map.bodies[body].stage.value
+                },
+            );
+            for end in &chart.ends {
+                let other_row = map.row(end.body, point);
+                let w = map.join_weight(end, point, own_level, other_row.level);
+                if w <= 0.0 {
+                    continue;
+                }
+                let other = self.transform(map, end.body, point, direction, wavelength);
+                if w >= 1.0 {
+                    return other;
+                }
+                let relative = w / (1.0 - w);
+                total += relative;
+                let f = relative / total;
+                answer = (
+                    answer.0 * (1.0 - f) + other.0 * f,
+                    answer.1 * (1.0 - f) + other.1 * f,
+                );
+            }
+        }
+        answer
+    }
+}
+
+fn smooth(x: f64) -> f64 {
+    let t = x.clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
+}
+
+/// Borrowed assembled long-wave sheet, including transformation and shaping.
+pub struct SurfSheet<'a> {
+    surf: &'a Surf,
+    map: &'a Map,
+    field: &'a Field,
+    time: f64,
+    body: usize,
+}
+
+impl SurfSheet<'_> {
+    fn evaluate(&self, rest: [f64; 2], time: f64) -> SheetPoint {
+        let row = self.map.row(self.body, rest);
+        let depth = self
+            .map
+            .bed
+            .height(rest)
+            .map_or(f64::INFINITY, |h| row.level - h);
+        let limited = limit(row, depth, self.field.variances(), self.map.profile);
+        let swash = limited.swash_depth;
+        let c = 0.6 / (2.0 * 2.0_f64.sqrt());
+        let draw = c * swash / (1.0 - c);
+        let fade = if swash > 0.0 {
+            smooth((depth - draw) / (0.5 * swash - draw))
+        } else {
+            f64::from(depth > 0.0)
+        };
+        let mut re = 0.0;
+        let mut im = 0.0;
+        let mut gx = [0.0; 2];
+        let mut gy = [0.0; 2];
+        let mut displacement = [0.0; 2];
+        let mut variance = 0.0;
+        let mut terms = Vec::new();
+        for component in self.field.layers[0].components() {
+            let k0 = component.wave_vector[0].hypot(component.wave_vector[1]);
+            let wavelength = TAU / k0;
+            let angle = component.wave_vector[1]
+                .atan2(component.wave_vector[0])
+                .rem_euclid(TAU);
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "wrapped lattice direction"
+            )]
+            let direction = (angle / FRAC_PI_4).round() as usize % 8;
+            let (lag, exposure) = self
+                .surf
+                .transform(self.map, self.body, rest, direction, wavelength);
+            let eligible = (20.0..=640.0).contains(&wavelength) && lag.is_finite() && fade > 0.0;
+            let lag = if eligible { lag * fade } else { 0.0 };
+            let gain = if eligible {
+                1.0 + (shoaling(k0, depth.max(self.surf.profile.lag_floor)) * exposure.sqrt() - 1.0)
+                    * fade
+            } else {
+                1.0
+            };
+            let amplitude = component.amplitude * row.gains[0] * gain;
+            let phase = component.anchored_phase(rest, time) + k0 * lag;
+            let (sin, cos) = phase.sin_cos();
+            re += amplitude * cos;
+            im += amplitude * sin;
+            variance += 0.5 * amplitude.powi(2);
+            let step = self.map.bed.spacing * 0.01;
+            let vector: [f64; 2] = std::array::from_fn(|axis| {
+                let mut a = rest;
+                a[axis] -= step;
+                let mut b = rest;
+                b[axis] += step;
+                let delta = if eligible {
+                    let lo = self
+                        .surf
+                        .transform(self.map, self.body, a, direction, wavelength)
+                        .0;
+                    let hi = self
+                        .surf
+                        .transform(self.map, self.body, b, direction, wavelength)
+                        .0;
+                    if lo.is_finite() && hi.is_finite() {
+                        (hi - lo) / (2.0 * step) * fade
+                    } else {
+                        0.0
+                    }
+                } else {
+                    0.0
+                };
+                component.wave_vector[axis] + k0 * delta
+            });
+            let norm = vector[0].hypot(vector[1]);
+            for axis in 0..2 {
+                gx[axis] += amplitude * cos * vector[axis];
+                gy[axis] += amplitude * sin * vector[axis];
+            }
+            terms.push((amplitude, sin, vector, norm));
+        }
+        let envelope = re.hypot(im);
+        let index = 2.0 * envelope
+            / (self.surf.profile.breaker_ratio * depth.max(self.surf.profile.lag_floor));
+        let cap = 0.6 * (depth + swash).max(0.0);
+        let scale = if variance > 0.0 {
+            (cap / (4.0 * variance.sqrt())).min(1.0)
+        } else {
+            1.0
+        };
+        for (amplitude, sin, vector, norm) in terms {
+            if norm > 0.0 {
+                for axis in 0..2 {
+                    displacement[axis] -=
+                        self.field.layers[0].choppiness() * amplitude * scale * sin * vector[axis]
+                            / norm;
+                }
+            }
+        }
+        let phase = im.atan2(re);
+        let section = self.surf.profile.section.sample(phase, index);
+        let height = re * scale + (section.height * envelope - re) * scale * fade;
+        let vector = std::array::from_fn::<_, 2, _>(|axis| gx[axis] * re + gy[axis] * im);
+        let norm = vector[0].hypot(vector[1]);
+        if norm > 1e-20 {
+            for axis in 0..2 {
+                displacement[axis] += section.throw * envelope * scale * fade * vector[axis] / norm;
+            }
+        }
+        SheetPoint {
+            world: std::array::from_fn(|a| rest[a] + displacement[a]),
+            height,
+        }
+    }
+
+    fn derivatives(&self, rest: [f64; 2]) -> Sample {
+        let h = 1e-4;
+        let jac: [[f64; 3]; 2] = std::array::from_fn(|axis| {
+            let mut a = rest;
+            a[axis] -= h;
+            let mut b = rest;
+            b[axis] += h;
+            let a = self.evaluate(a, self.time);
+            let b = self.evaluate(b, self.time);
+            [
+                (b.world[0] - a.world[0]) / (2.0 * h),
+                (b.world[1] - a.world[1]) / (2.0 * h),
+                (b.height - a.height) / (2.0 * h),
+            ]
+        });
+        let a = self.evaluate(rest, self.time - h);
+        let b = self.evaluate(rest, self.time + h);
+        let velocity = [
+            (b.world[0] - a.world[0]) / (2.0 * h),
+            (b.height - a.height) / (2.0 * h),
+            (b.world[1] - a.world[1]) / (2.0 * h),
+        ];
+        let det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+        let slope = [
+            (jac[0][2] * jac[1][1] - jac[1][2] * jac[0][1]) / det,
+            (jac[1][2] * jac[0][0] - jac[0][2] * jac[1][0]) / det,
+        ];
+        Sample {
+            height: self.evaluate(rest, self.time).height,
+            slope,
+            velocity,
+            height_dt: velocity[1] - slope[0] * velocity[0] - slope[1] * velocity[2],
+        }
+    }
+}
+
+impl Sheet for SurfSheet<'_> {
+    fn forward(&self, rest: [f64; 2]) -> SheetPoint {
+        self.evaluate(rest, self.time)
+    }
+
+    fn reach(&self, point: [f64; 2]) -> f64 {
+        let mut reach = self.ceiling(self.surf.profile.lag_floor).0;
+        for _ in 0..2 {
+            if let Some(range) = self.surf.pyramid.range(point, reach) {
+                let level = self.minimum_level();
+                reach = self
+                    .ceiling((level - range[1]).max(self.surf.profile.lag_floor))
+                    .0
+                    .min(reach);
+            }
+        }
+        reach
+    }
+}
+
+impl SurfSheet<'_> {
+    fn minimum_level(&self) -> f64 {
+        self.map
+            .bodies
+            .iter()
+            .map(|b| {
+                let base = if let BodyKind::Chart(c) = &b.kind {
+                    c.levels.iter().copied().fold(b.level, f64::min)
+                } else {
+                    b.level
+                };
+                base + b.stage.min
+            })
+            .fold(f64::INFINITY, f64::min)
+    }
+
+    fn ceiling(&self, depth: f64) -> (f64, bool) {
+        let amplitude: f64 = self.field.layers[0]
+            .components()
+            .iter()
+            .map(|c| {
+                let k0 = c.wave_vector[0].hypot(c.wave_vector[1]);
+                c.amplitude * shoaling(k0, depth).max(1.0)
+            })
+            .sum();
+        let throws = self
+            .surf
+            .profile
+            .section
+            .throws_below(2.0 * amplitude / (self.surf.profile.breaker_ratio * depth));
+        (
+            amplitude
+                * (if throws {
+                    self.surf.profile.section.maximum_throw()
+                } else {
+                    0.0
+                } + self.field.layers[0].choppiness()),
+            throws,
+        )
+    }
+
+    fn can_throw(&self, point: [f64; 2]) -> bool {
+        let depth = self
+            .surf
+            .pyramid
+            .range(point, self.reach(point))
+            .map_or(self.surf.profile.lag_floor, |range| {
+                (self.minimum_level() - range[1]).max(self.surf.profile.lag_floor)
+            });
+        self.ceiling(depth).1
+    }
+}

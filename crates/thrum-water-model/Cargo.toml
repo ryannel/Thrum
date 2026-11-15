@@ -10,3 +10,10 @@ thrum-sea-model = { path = "../thrum-sea-model" }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+divan = "=0.1.21"
+
+[[bench]]
+name = "surf"
+harness = false

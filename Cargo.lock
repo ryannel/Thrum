@@ -2429,6 +2429,7 @@ dependencies = [
 name = "thrum-water-model"
 version = "0.1.0"
 dependencies = [
+ "divan",
  "thrum-sea-model",
 ]
 

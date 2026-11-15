@@ -122,6 +122,21 @@ impl Map {
         time: f64,
         map: MapSample,
     ) -> Result<Surface, WaterError> {
+        if let Some(surf) = &self.surf
+            && map.bed.is_some()
+        {
+            return surf.surface(self, field, point, time, map);
+        }
+        self.plain_surface_on_row(field, point, time, map)
+    }
+
+    pub(crate) fn plain_surface_on_row(
+        &self,
+        field: &Field,
+        point: [f64; 2],
+        time: f64,
+        map: MapSample,
+    ) -> Result<Surface, WaterError> {
         let gains = limit(map.row, map.depth, field.variances(), self.profile).gains;
         let mut sample = Sample {
             height: map.row.level,

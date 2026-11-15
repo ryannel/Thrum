@@ -3,6 +3,11 @@ members = ["crates/thrum-core", "crates/thrum-asset", "crates/thrum-app", "crate
 default-members = ["crates/thrum-core"]
 resolver = "3"
 
+# Dense f64 shore-lag proofs visit millions of cells. Keep debug assertions and
+# test semantics while optimizing this numerical model's test artifacts only.
+[profile.test.package.thrum-water-model]
+opt-level = 2
+
 [workspace.package]
 version = "0.1.0"
 edition = "2024"

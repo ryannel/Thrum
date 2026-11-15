@@ -127,6 +127,7 @@ pub struct Map {
     pub(crate) bed: Bed,
     pub(crate) bodies: Vec<Body>,
     pub(crate) profile: Profile,
+    pub(crate) surf: Option<crate::surf::Surf>,
     // Each margin centre remembers the water centre whose row it carries.
     support: Vec<Vec<Option<usize>>>,
     /// Number of stage requests held at a range endpoint.
@@ -149,6 +150,7 @@ impl Map {
             bed,
             bodies,
             profile,
+            surf: None,
             support: Vec::new(),
             clamped_stages: 0,
         };
@@ -345,14 +347,7 @@ impl Map {
             let mut total = 1.0;
             for end in &c.ends {
                 let other = self.row(end.body, point);
-                let mut weight = 1.0 - smooth(end.distance(point) / end.length);
-                if end.mouth {
-                    weight = weight.max(
-                        1.0 - smooth(
-                            (own_level - other.level - 0.175 * self.profile.margin_height) / 0.25,
-                        ),
-                    );
-                }
+                let weight = self.join_weight(end, point, own_level, other.level);
                 if weight >= 1.0 {
                     return other;
                 }
@@ -364,6 +359,23 @@ impl Map {
             }
         }
         row
+    }
+
+    pub(crate) fn join_weight(
+        &self,
+        end: &End,
+        point: [f64; 2],
+        own_level: f64,
+        other_level: f64,
+    ) -> f64 {
+        let weight = 1.0 - smooth(end.distance(point) / end.length);
+        if end.mouth {
+            weight.max(
+                1.0 - smooth((own_level - other_level - 0.175 * self.profile.margin_height) / 0.25),
+            )
+        } else {
+            weight
+        }
     }
 
     fn in_chart(&self, c: &Chart, p: [f64; 2]) -> bool {

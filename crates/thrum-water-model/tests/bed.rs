@@ -6,7 +6,30 @@
 #[path = "support/fixtures.rs"]
 mod support;
 use support::close;
-use thrum_water_model::Bed;
+use thrum_water_model::{Bed, BedPyramid};
+
+#[test]
+fn pyramid_encloses_bilinear_ground_on_partial_odd_blocks() {
+    let bed = support::grid([17, 13], |x, z| (x * 0.7).sin() * 3.0 + z * 0.2);
+    let pyramid = BedPyramid::new(&bed);
+    for point in [[0.2, 0.3], [7.3, 6.7], [15.9, 11.9]] {
+        for radius in [0.0, 0.2, 1.5, 3.7] {
+            let [lo, hi] = pyramid.range(point, radius).unwrap();
+            for z in -10..=10 {
+                for x in -10..=10 {
+                    let p = [
+                        point[0] + f64::from(x) * radius / 10.0,
+                        point[1] + f64::from(z) * radius / 10.0,
+                    ];
+                    if let Some(h) = bed.height(p) {
+                        assert!(h >= lo - 1e-10 && h <= hi + 1e-10);
+                    }
+                }
+            }
+        }
+    }
+    assert!(pyramid.range([-10.0; 2], 1.0).is_none());
+}
 
 #[test]
 fn fallback_only_fills_uncovered_centres() {

@@ -22,6 +22,8 @@ where
 pub struct Conformance {
     /// Largest absolute errors in height, slope components, velocity and height rate.
     pub surface: thrum_sea_model::Sample,
+    /// Every point and tick with a different surface value, without a hidden tolerance.
+    pub surface_differences: Vec<([f64; 2], u64)>,
     /// Largest depth error.
     pub depth: f64,
     /// Largest bulk current error per axis.
@@ -50,6 +52,9 @@ pub fn compare(
         for &point in points {
             let a = reference.answer(point, tick)?;
             let b = provider.answer(point, tick)?;
+            if a.sample != b.sample {
+                out.surface_differences.push((point, tick));
+            }
             for s in [a, b] {
                 if [s.sample.height, s.sample.height_dt]
                     .into_iter()

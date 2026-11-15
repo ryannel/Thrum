@@ -97,6 +97,11 @@ impl LongWaves {
         &self.components
     }
 
+    /// Horizontal orbital displacement as a share of each component's amplitude.
+    pub fn choppiness(&self) -> f64 {
+        self.choppiness
+    }
+
     /// Amplitude-scaled copy preserving component identities and choppiness.
     /// # Errors
     /// Rejects a nonfinite gain, a gain outside zero to one, or invalid waves.

@@ -2,12 +2,22 @@
 //! Preparation owns connectivity; queries share rows with the surface and conformance harness.
 mod bed;
 mod conformance;
+mod cut;
 mod map;
+mod pyramid;
+mod section;
+mod shore;
+mod surf;
 mod waves;
 
 pub use bed::Bed;
 pub use conformance::{Conformance, Provider, compare};
+pub use cut::{Column, CutConfig, Sheet, SheetPoint, cut};
 pub use map::{Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
+pub use pyramid::BedPyramid;
+pub use section::{BreakerSection, SectionPoint};
+pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};
+pub use surf::{SurfProfile, SurfSheet};
 pub use waves::{Field, Limited, Surface, limit, shelter};
 
 /// Invalid authored water, with the declaration's name and actionable cause.
