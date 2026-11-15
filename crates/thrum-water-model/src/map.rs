@@ -56,7 +56,7 @@ pub struct End {
 }
 
 impl End {
-    fn distance(&self, p: [f64; 2]) -> f64 {
+    pub(crate) fn distance(&self, p: [f64; 2]) -> f64 {
         let [a, b] = self.segment;
         let d = [b[0] - a[0], b[1] - a[1]];
         let t = (((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) / (d[0] * d[0] + d[1] * d[1]))

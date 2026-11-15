@@ -78,12 +78,13 @@ impl Map {
         let transforms = self
             .bodies
             .iter()
-            .map(|b| {
+            .enumerate()
+            .map(|(id, b)| {
                 if matches!(b.kind, BodyKind::Chart(_)) {
                     return Ok(None);
                 }
                 ShoreTransform::prepare(
-                    self.bed.clone(),
+                    self.shore_bed(id),
                     ShoreConfig {
                         level: b.level,
                         stage: b.stage,
@@ -107,6 +108,52 @@ impl Map {
             pyramid: BedPyramid::new(&self.bed),
         });
         Ok(())
+    }
+
+    fn shore_bed(&self, id: usize) -> crate::Bed {
+        let mut bed = self.bed.clone();
+        let body = &self.bodies[id];
+        // A still body's water stops at a chart. Continue its phase only through
+        // the part of the chart that can blend toward it, over all declared stages.
+        // In particular a basin must not become edge-fed through its outlet.
+        for chart_body in &self.bodies {
+            let BodyKind::Chart(chart) = &chart_body.kind else {
+                continue;
+            };
+            let joined: Vec<_> = chart
+                .footprint
+                .iter()
+                .enumerate()
+                .map(|(i, &inside)| {
+                    if !inside {
+                        return false;
+                    }
+                    let point = bed.point(i);
+                    chart.ends.iter().any(|end| {
+                        end.body == id
+                            && (end.distance(point) < end.length
+                                || end.mouth
+                                    && chart.levels[i] + chart_body.stage.min
+                                        < body.level
+                                            + body.stage.max
+                                            + 0.175 * self.profile.margin_height
+                                            + 0.25)
+                    })
+                })
+                .collect();
+            for (i, &inside) in chart.footprint.iter().enumerate() {
+                if !inside {
+                    continue;
+                }
+                // Bilinear reads and their gradient probes need finite corner
+                // lags for the whole interval in which the join has weight.
+                let padding = bed.connections(i).any(|(j, _)| joined[j]);
+                if !joined[i] && !padding {
+                    bed.heights[i] = body.level + body.stage.max + self.profile.margin_height + 1.0;
+                }
+            }
+        }
+        bed
     }
 }
 
@@ -252,7 +299,16 @@ pub struct SurfSheet<'a> {
 
 impl SurfSheet<'_> {
     fn evaluate(&self, rest: [f64; 2], time: f64) -> SheetPoint {
-        let row = self.map.row(self.body, rest);
+        // Horizontal displacement may carry a rest place across a chart seam.
+        // Both sides must evaluate that place from the map's one owning row,
+        // rather than continuing two different bodies through the same column.
+        let owner = if self.map.bodies.len() > 1 {
+            self.map.sample(rest)
+        } else {
+            None
+        };
+        let body = owner.map_or(self.body, |s| s.body);
+        let row = owner.map_or_else(|| self.map.row(body, rest), |s| s.row);
         let depth = self
             .map
             .bed
@@ -288,7 +344,7 @@ impl SurfSheet<'_> {
             let direction = (angle / FRAC_PI_4).round() as usize % 8;
             let (lag, exposure) = self
                 .surf
-                .transform(self.map, self.body, rest, direction, wavelength);
+                .transform(self.map, body, rest, direction, wavelength);
             let eligible = (20.0..=640.0).contains(&wavelength) && lag.is_finite() && fade > 0.0;
             let lag = if eligible { lag * fade } else { 0.0 };
             let gain = if eligible {
@@ -310,14 +366,18 @@ impl SurfSheet<'_> {
                 let mut b = rest;
                 b[axis] += step;
                 let delta = if eligible {
-                    let lo = self
-                        .surf
-                        .transform(self.map, self.body, a, direction, wavelength)
-                        .0;
-                    let hi = self
-                        .surf
-                        .transform(self.map, self.body, b, direction, wavelength)
-                        .0;
+                    let lag_at = |p| {
+                        let owner = if self.map.bodies.len() > 1 {
+                            self.map.sample(p).map_or(body, |s| s.body)
+                        } else {
+                            body
+                        };
+                        self.surf
+                            .transform(self.map, owner, p, direction, wavelength)
+                            .0
+                    };
+                    let lo = lag_at(a);
+                    let hi = lag_at(b);
                     if lo.is_finite() && hi.is_finite() {
                         (hi - lo) / (2.0 * step) * fade
                     } else {

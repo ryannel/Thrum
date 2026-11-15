@@ -40,3 +40,35 @@ fn transformed_and_shaped_surface_meets_at_both_ends_and_stage_extremes() {
         }
     }
 }
+
+#[test]
+fn outlet_does_not_replace_the_lakes_own_wave_sources() {
+    let mut field = field(0.5);
+    field.layers[0] =
+        thrum_sea_model::LongWaves::new(field.layers[0].components().to_vec(), 0.5).unwrap();
+    let (bed, mut bodies) = declarations(0.0, 0.0, 4.0);
+    bodies[0].gains[0] = 0.5;
+    bodies[0].fetch = 10.0;
+    let mut map = Map::prepare(bed, bodies, profile()).unwrap();
+    map.enable_surf(SurfProfile::default()).unwrap();
+    let mut lo = f64::INFINITY;
+    let mut hi = f64::NEG_INFINITY;
+    for tick in 0..32 {
+        let t = f64::from(tick) * 0.25;
+        let height = map.surface(&field, [10.0, 10.0], t).unwrap().sample.height;
+        lo = lo.min(height);
+        hi = hi.max(height);
+        for x in [20.0, 24.0, 25.0, 44.0] {
+            let a = map.surface(&field, [x - 1e-7, 10.0], t).unwrap();
+            let b = map.surface(&field, [x + 1e-7, 10.0], t).unwrap();
+            assert!(
+                (a.sample.height - b.sample.height).abs() < 1e-5,
+                "nonzero lake waves step at {x}: {a:?} {b:?}"
+            );
+        }
+    }
+    assert!(
+        hi - lo > 0.1,
+        "a declared nonzero lake train became flat: {lo}..{hi}"
+    );
+}
