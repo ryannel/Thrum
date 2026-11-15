@@ -1,5 +1,12 @@
 # CLOUDS log
 
+- 2026-11-15 M13's rebase at `f0e05146` changes no cloud-model implementation or
+  test. All ten item commands passed again, including 38/4 native comparisons and
+  four Chrome sets of 481 records in 934.62 seconds. The fresh covered-content key is
+  `5d0a42e74391bc3cf13989e264c11fd4d572afd3ec66347369ec95d79971ac7b`.
+  Canonical integration then found unpublished APPLE-PRESENTATION M3 evidence links.
+  Upstream now carries that repair. Its wording is kept during integration.
+
 - 2026-11-15 M13 adds surface/datum and fog references, radiative cooling, visibility,
   Sun paths, medium coefficients and haze to the renderer-free model. All nine CPU
   and dependency commands passed on `db3d8514` on mac-metal. The saturated-overcast
