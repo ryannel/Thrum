@@ -32,7 +32,9 @@ pub struct Light {
     pub sun_depth: f64,
     /// Vertical depths above and below for the diffuse two-stream term.
     pub vertical_depths: [f64; 2],
-    /// Sky and ground hemispheric irradiance, with no cloud feedback.
+    /// Sky and ground hemispheric source radiances, with no cloud feedback.
+    /// For isotropic scattering, incident hemisphere irradiance E contributes
+    /// E / (2π); perform that conversion once when preparing these inputs.
     pub ambient: [f64; 2],
     /// Droplet mean cosine.
     pub mean_cosine: f64,

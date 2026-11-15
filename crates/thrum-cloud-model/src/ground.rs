@@ -289,6 +289,8 @@ impl Ground {
     }
 
     /// Uneroded bottom and top of one row. Empty amount has zero depth.
+    /// # Panics
+    /// Panics if `row` is outside this table, as with indexing any authored row.
     pub fn column(&self, row: usize, surface: &Surface, point: [f64; 2], amount: f64) -> [f64; 2] {
         let [height, datum, _] = surface.sample(point);
         let r = self.rows[row];
