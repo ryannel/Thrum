@@ -22,6 +22,11 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-sea/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-sea-model", "thrum-render"]
 
+[packages.thrum-water-model]
+manifest = "crates/thrum-water-model/Cargo.toml"
+# CPU water map, wave composition and query oracle; no graphics dependencies.
+allowed_workspace_dependencies = ["thrum-sea-model"]
+
 [packages.thrum-content-runtime]
 manifest = "crates/thrum-content-runtime/Cargo.toml"
 allowed_workspace_dependencies = []

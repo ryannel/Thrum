@@ -1,0 +1,230 @@
+//! Map oracles and named refusal cases.
+#[expect(dead_code, reason = "shared wave fixture is used by surface tests")]
+#[path = "support/fixtures.rs"]
+mod support;
+use support::{body, close, grid, profile};
+use thrum_water_model::{BodyKind, Chart, Map};
+
+#[test]
+fn cone_radius_and_disconnected_hollow_are_independent_oracles() {
+    let map = support::basin();
+    for x in [10.0, 10.3, 11.7, 12.999] {
+        let s = map.sample([x, 10.0]).unwrap();
+        assert_eq!(s.body, 0);
+        close(s.row.level, 3.0);
+        close(s.bed.unwrap(), x - 10.0);
+        close(s.depth, 13.0 - x);
+    }
+    // Cone h=r has shoreline r=level=3, rather than a cell boundary.
+    close(map.sample([13.0, 10.0]).unwrap().depth, 0.0);
+    assert!(
+        map.sample([30.0, 10.0]).is_none(),
+        "the equally deep, disconnected cone must stay dry"
+    );
+    assert!(map.sample([20.0, 10.0]).is_none());
+}
+
+#[test]
+fn sealed_basin_with_subsea_floor_takes_precedence_without_spilling() {
+    let bed = grid([21, 21], |x, z| {
+        let r = (x - 10.0).hypot(z - 10.0);
+        if r < 4.0 {
+            -3.0 + 0.5 * r
+        } else if r < 7.0 {
+            10.0
+        } else {
+            -2.0
+        }
+    });
+    let map = Map::prepare(
+        bed,
+        vec![
+            body("sea", BodyKind::Sea, 0.0),
+            body("sealed", BodyKind::Basin { seed: [10.0, 10.0] }, 1.0),
+        ],
+        profile(),
+    )
+    .unwrap();
+    let lake = map.sample([10.0, 10.0]).unwrap();
+    assert_eq!(lake.body, 1);
+    close(lake.row.level, 1.0);
+    close(lake.depth, 4.0);
+    let sea = map.sample([0.0, 0.0]).unwrap();
+    assert_eq!(sea.body, 0);
+    close(sea.depth, 2.0);
+}
+
+#[test]
+fn chart_margin_needs_reachable_wet_ground_and_does_not_descend() {
+    let chart = Chart {
+        levels: vec![0.0; 169],
+        currents: vec![[1.0, 0.0]; 169],
+        footprint: (0..169)
+            .map(|i| (3..=9).contains(&(i % 13)) && (3..=5).contains(&(i / 13)))
+            .collect(),
+        ends: vec![],
+    };
+    let bed = grid([13, 13], |x, z| {
+        if !(3.0..=9.0).contains(&x) || !(3.0..=5.0).contains(&z) {
+            5.0
+        } else if x < 6.0 {
+            -1.0
+        } else if x < 7.0 {
+            1.0
+        } else {
+            0.5
+        }
+    });
+    let map = Map::prepare(
+        bed,
+        vec![body("flow", BodyKind::Chart(chart.clone()), 0.0)],
+        profile(),
+    )
+    .unwrap();
+    assert!(map.sample([4.0, 4.0]).unwrap().depth > 0.0);
+    assert!(map.sample([6.0, 4.0]).is_some());
+    assert!(map.sample([8.0, 4.0]).is_none());
+    let dry = || grid([13, 13], |_, _| 1.0);
+    let map = Map::prepare(
+        dry(),
+        vec![body("dry", BodyKind::Chart(chart.clone()), 0.0)],
+        profile(),
+    )
+    .unwrap();
+    assert!(map.sample([4.0, 4.0]).is_none());
+    let error = Map::prepare(
+        dry(),
+        vec![
+            body("a", BodyKind::Chart(chart.clone()), 0.0),
+            body("b", BodyKind::Chart(chart), 0.0),
+        ],
+        profile(),
+    )
+    .err()
+    .unwrap();
+    assert_eq!(error.name, "b");
+    assert!(error.reason.contains("overlap"));
+}
+
+#[test]
+fn sea_is_unbounded_and_its_plane_bed_is_continuous() {
+    let map = Map::prepare(
+        grid([11, 11], |x, z| x * 0.2 + z * 0.1 - 2.0),
+        vec![body("ocean", BodyKind::Sea, 0.0)],
+        profile(),
+    )
+    .unwrap();
+    for x in [2.999_999, 3.0, 3.000_001] {
+        let s = map.sample([x, 4.2]).unwrap();
+        close(s.bed.unwrap(), x * 0.2 + 0.42 - 2.0);
+    }
+    let s = map.sample([-1e6, 9e5]).unwrap();
+    assert_eq!(s.body, 0);
+    assert_eq!(s.bed, None);
+    assert!(s.depth.is_infinite());
+    assert!(map.sample([f64::NAN, 0.0]).is_none());
+}
+
+#[test]
+fn tilted_chart_has_analytic_level_current_and_precedence() {
+    let bed = grid([11, 7], |x, z| {
+        if (2.0..=8.0).contains(&x) && (2.0..=4.0).contains(&z) {
+            -2.0
+        } else {
+            5.0
+        }
+    });
+    let chart = Chart {
+        levels: (0..77).map(|i| 1.0 - 0.05 * f64::from(i % 11)).collect(),
+        currents: (0..77).map(|i| [0.1 * f64::from(i % 11), 0.0]).collect(),
+        footprint: (0..77)
+            .map(|i| (2..=8).contains(&(i % 11)) && (2..=4).contains(&(i / 11)))
+            .collect(),
+        ends: vec![],
+    };
+    let map = Map::prepare(
+        bed,
+        vec![
+            body("ocean", BodyKind::Sea, -3.0),
+            body("flow", BodyKind::Chart(chart), 0.0),
+        ],
+        profile(),
+    )
+    .unwrap();
+    for x in [3.999_999, 4.0, 4.000_001, 5.7] {
+        let s = map.sample([x, 3.0]).unwrap();
+        assert_eq!(s.body, 1);
+        close(s.row.level, 1.0 - 0.05 * x);
+        close(s.row.current[0], 0.1 * x);
+        close(s.depth, 3.0 - 0.05 * x);
+    }
+}
+
+#[test]
+fn named_refusals_for_overlaps_spills_and_open_banks() {
+    let rejects = |bed, bodies: Vec<thrum_water_model::Body>, name, reason| {
+        let error = Map::prepare(bed, bodies, profile()).err().unwrap();
+        assert_eq!(error.name, name);
+        assert!(error.reason.contains(reason), "{}", error.reason);
+    };
+    rejects(
+        grid([9, 9], |_, _| -1.0),
+        vec![body("a", BodyKind::Sea, 0.0), body("b", BodyKind::Sea, 1.0)],
+        "b",
+        "overlap",
+    );
+    rejects(
+        grid([9, 9], |_, _| -1.0),
+        vec![body("spill", BodyKind::Basin { seed: [4.0, 4.0] }, 0.0)],
+        "spill",
+        "edge",
+    );
+    let bowl = || grid([11, 11], |x, z| (x - 5.0).hypot(z - 5.0));
+    rejects(
+        bowl(),
+        vec![
+            body("a", BodyKind::Basin { seed: [5.0, 5.0] }, 2.0),
+            body("b", BodyKind::Basin { seed: [5.0, 5.0] }, 3.0),
+        ],
+        "b",
+        "overlap",
+    );
+    rejects(
+        bowl(),
+        vec![
+            body("sea", BodyKind::Sea, 6.0),
+            body("wet", BodyKind::Basin { seed: [5.0, 5.0] }, 2.0),
+        ],
+        "wet",
+        "sea",
+    );
+    let c = Chart {
+        levels: vec![0.0; 81],
+        currents: vec![[0.0; 2]; 81],
+        footprint: (0..81)
+            .map(|i| (3..=5).contains(&(i % 9)) && (3..=5).contains(&(i / 9)))
+            .collect(),
+        ends: vec![],
+    };
+    rejects(
+        grid([9, 9], |_, _| -1.0),
+        vec![body("unheld", BodyKind::Chart(c.clone()), 0.0)],
+        "unheld",
+        "bank",
+    );
+    rejects(
+        grid([9, 9], |x, z| {
+            if (3.0..=5.0).contains(&x) && (3.0..=5.0).contains(&z) {
+                -1.0
+            } else {
+                5.0
+            }
+        }),
+        vec![
+            body("a", BodyKind::Chart(c.clone()), 0.0),
+            body("b", BodyKind::Chart(c), 0.0),
+        ],
+        "b",
+        "overlap",
+    );
+}

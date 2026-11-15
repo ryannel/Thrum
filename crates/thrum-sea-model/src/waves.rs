@@ -97,6 +97,20 @@ impl LongWaves {
         &self.components
     }
 
+    /// Amplitude-scaled copy preserving component identities and choppiness.
+    /// # Errors
+    /// Rejects a nonfinite gain, a gain outside zero to one, or invalid waves.
+    pub fn scaled(&self, gain: f64) -> Result<Self, SeaError> {
+        if !gain.is_finite() || !(0.0..=1.0).contains(&gain) {
+            return Err(SeaError::InvalidInput);
+        }
+        let mut components = self.components.clone();
+        for c in &mut components {
+            c.amplitude *= gain;
+        }
+        Self::new(components, self.choppiness)
+    }
+
     /// Evaluate at a world point, inverting horizontal displacement to 1e-11 m.
     /// `velocity` follows the material label; `height_dt` holds world x/z fixed.
     ///

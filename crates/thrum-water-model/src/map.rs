@@ -1,0 +1,710 @@
+use crate::{Bed, WaterError};
+use std::collections::VecDeque;
+
+/// Bounded additive stage in metres.
+#[derive(Clone, Copy, Debug)]
+pub struct Stage {
+    /// Lowest permitted offset.
+    pub min: f64,
+    /// Highest permitted offset.
+    pub max: f64,
+    /// Initial offset.
+    pub value: f64,
+}
+
+/// Water's spatial preparation parameters.
+#[derive(Clone, Copy, Debug)]
+pub struct Profile {
+    /// Maximum shore rise reached monotonically from still water, metres.
+    pub margin_height: f64,
+    /// Swash depth as a fraction of the row's significant wave height.
+    pub swash_ratio: f64,
+}
+
+/// Continuous quantities shared by every reader of a body.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Row {
+    /// Water level in metres.
+    pub level: f64,
+    /// Current in x/z metres per second.
+    pub current: [f64; 2],
+    /// Amplitude gains for long waves and three cascades.
+    pub gains: [f64; 4],
+}
+
+impl Row {
+    fn mix(self, other: Self, w: f64) -> Self {
+        Self {
+            level: self.level * (1.0 - w) + other.level * w,
+            current: std::array::from_fn(|i| self.current[i] * (1.0 - w) + other.current[i] * w),
+            gains: std::array::from_fn(|i| self.gains[i] * (1.0 - w) + other.gains[i] * w),
+        }
+    }
+}
+
+/// A segment on a chart footprint's boundary joining an earlier declaration.
+#[derive(Clone, Debug)]
+pub struct End {
+    /// Joined body's index. Earlier indices make cyclic joins impossible.
+    pub body: usize,
+    /// End segment endpoints in world x/z.
+    pub segment: [[f64; 2]; 2],
+    /// Smooth transition distance inside the chart, metres.
+    pub length: f64,
+    /// Whether receiving-body reach also raises the mix (a mouth).
+    pub mouth: bool,
+}
+
+impl End {
+    fn distance(&self, p: [f64; 2]) -> f64 {
+        let [a, b] = self.segment;
+        let d = [b[0] - a[0], b[1] - a[1]];
+        let t = (((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) / (d[0] * d[0] + d[1] * d[1]))
+            .clamp(0.0, 1.0);
+        (p[0] - a[0] - t * d[0]).hypot(p[1] - a[1] - t * d[1])
+    }
+}
+
+/// A flow solver's prepared level/current grid and footprint, on the bed's lattice.
+#[derive(Clone, Debug)]
+pub struct Chart {
+    /// Level at each bed centre, row-major.
+    pub levels: Vec<f64>,
+    /// Current at each bed centre.
+    pub currents: Vec<[f64; 2]>,
+    /// Centres belonging to the footprint.
+    pub footprint: Vec<bool>,
+    /// Source and receiving ends; a spring may omit its source.
+    pub ends: Vec<End>,
+}
+
+/// Declaration of one kind of water.
+#[derive(Clone, Debug)]
+pub enum BodyKind {
+    /// An unbounded level sea.
+    Sea,
+    /// Connected fill from a world x/z seed.
+    Basin {
+        /// World seed inside the bed.
+        seed: [f64; 2],
+    },
+    /// Authored steady flow.
+    Chart(Chart),
+}
+
+/// Named declaration. Engine code contains no game-specific water presets.
+#[derive(Clone, Debug)]
+pub struct Body {
+    /// Unique diagnostic name.
+    pub name: String,
+    /// Kind and authored spatial data.
+    pub kind: BodyKind,
+    /// Base level (charts use their grid instead).
+    pub level: f64,
+    /// Declared stage range and initial value.
+    pub stage: Stage,
+    /// Exposed wind fetch in metres. Used by `Map::set_forcing` to update shelter.
+    pub fetch: f64,
+    /// Fetch-selected wave gains, recomputed by the caller when forcing changes.
+    pub gains: [f64; 4],
+}
+
+/// An answer on still water or on a shore margin; depth may be negative.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MapSample {
+    /// Index of the owning declaration; a chart keeps ownership through a join.
+    pub body: usize,
+    /// Mixed row at this point.
+    pub row: Row,
+    /// Ground height; none beyond the bed extent.
+    pub bed: Option<f64>,
+    /// Still depth, infinite beyond the bed.
+    pub depth: f64,
+}
+
+/// Prepared water and its current stage connectivity. No graphics device is used.
+pub struct Map {
+    pub(crate) bed: Bed,
+    pub(crate) bodies: Vec<Body>,
+    pub(crate) profile: Profile,
+    // Each margin centre remembers the water centre whose row it carries.
+    support: Vec<Vec<Option<usize>>>,
+    /// Number of stage requests held at a range endpoint.
+    pub clamped_stages: u64,
+}
+
+impl Map {
+    /// Validate declarations over their stage ranges and prepare initial connectivity.
+    /// # Errors
+    /// Names invalid inputs, overlapping kinds, escaping basins and uncontained charts.
+    pub fn prepare(bed: Bed, bodies: Vec<Body>, profile: Profile) -> Result<Self, WaterError> {
+        if !profile.margin_height.is_finite()
+            || profile.margin_height < 0.0
+            || !profile.swash_ratio.is_finite()
+            || profile.swash_ratio < 0.0
+        {
+            return Err(WaterError::new("profile", "invalid margin or swash ratio"));
+        }
+        let mut map = Self {
+            bed,
+            bodies,
+            profile,
+            support: Vec::new(),
+            clamped_stages: 0,
+        };
+        map.validate_inputs()?;
+        let stages: Vec<_> = map.bodies.iter().map(|b| b.stage.value).collect();
+        for b in &mut map.bodies {
+            b.stage.value = b.stage.min;
+        }
+        let minimum_fills: Vec<_> = (0..map.bodies.len()).map(|id| map.flood(id)).collect();
+        // At maximum stages all possible basin connectivity is included. Chart containment
+        // is also tested at minima and maxima of each joined row, independently below.
+        for b in &mut map.bodies {
+            b.stage.value = b.stage.max;
+        }
+        map.rebuild();
+        map.validate_topology()?;
+        map.validate_banks(&minimum_fills)?;
+        for (b, s) in map.bodies.iter_mut().zip(stages) {
+            b.stage.value = s;
+        }
+        map.rebuild();
+        Ok(map)
+    }
+
+    /// Set a stage, counting range clamps and rebuilding stage-dependent support.
+    /// # Errors
+    /// Refuses an unknown body or nonfinite stage without changing state.
+    pub fn set_stage(&mut self, body: usize, stage: f64) -> Result<(), WaterError> {
+        let b = self
+            .bodies
+            .get_mut(body)
+            .ok_or_else(|| WaterError::new("stage", "unknown body"))?;
+        if !stage.is_finite() {
+            return Err(WaterError::new(&b.name, "nonfinite stage"));
+        }
+        b.stage.value = stage.clamp(b.stage.min, b.stage.max);
+        if stage < b.stage.min || stage > b.stage.max {
+            self.clamped_stages += 1;
+        }
+        self.rebuild();
+        Ok(())
+    }
+
+    /// Recompute every body's own gains from its declared fetch and the world's forcing.
+    /// The exposed sea takes the complete field; basins and charts take wind energy
+    /// only, including when the field also carries swell. Joins then mix those rows.
+    /// The caller supplies the same forcing used to build the world's SEA field.
+    /// # Errors
+    /// Refuses invalid forcing without changing any body's gains.
+    pub fn set_forcing(&mut self, forcing: &thrum_sea_model::Forcing) -> Result<(), WaterError> {
+        // Validate even when every declaration is an exposed sea.
+        forcing
+            .band_variances()
+            .map_err(|_| WaterError::new("waves", "invalid forcing"))?;
+        let gains: Result<Vec<_>, _> = self
+            .bodies
+            .iter()
+            .map(|body| {
+                if matches!(body.kind, BodyKind::Sea) && body.fetch >= forcing.fetch {
+                    Ok([1.0; 4])
+                } else {
+                    crate::shelter(forcing, body.fetch)
+                }
+            })
+            .collect();
+        for (body, gains) in self.bodies.iter_mut().zip(gains?) {
+            body.gains = gains;
+        }
+        Ok(())
+    }
+
+    /// Query the continuous row and bed at a world point.
+    pub fn sample(&self, point: [f64; 2]) -> Option<MapSample> {
+        if point.iter().any(|v| !v.is_finite()) {
+            return None;
+        }
+        let bed = self.bed.height(point);
+        let weights = self.bed.weights(point);
+        let mut best: Option<(usize, Row, u8)> = None;
+        for (id, b) in self.bodies.iter().enumerate() {
+            let rank = match b.kind {
+                BodyKind::Sea => 0,
+                BodyKind::Basin { .. } => 1,
+                BodyKind::Chart(_) => 2,
+            };
+            let origin = weights.and_then(|w| {
+                w.into_iter()
+                    .filter(|&(_, a)| a > 1e-12)
+                    .filter_map(|(i, _)| self.support[id][i])
+                    .min_by(|&a, &c| {
+                        let pa = self.bed.point(a);
+                        let pc = self.bed.point(c);
+                        (pa[0] - point[0])
+                            .hypot(pa[1] - point[1])
+                            .total_cmp(&(pc[0] - point[0]).hypot(pc[1] - point[1]))
+                    })
+            });
+            if origin.is_none() && !(bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
+                continue;
+            }
+            let row = self.supported_row(id, point);
+            if let BodyKind::Chart(c) = &b.kind
+                && !self.in_chart(c, point)
+                && bed.is_some_and(|h| h < row.level)
+            {
+                continue;
+            }
+            if bed.is_some_and(|h| h > row.level + self.profile.margin_height) {
+                continue;
+            }
+            if best.is_none_or(|(_, old, r)| {
+                if bed.is_some_and(|h| h >= row.level && h >= old.level) {
+                    row.level > old.level
+                } else {
+                    rank > r || (rank == r && row.level > old.level)
+                }
+            }) {
+                best = Some((id, row, rank));
+            }
+        }
+        best.map(|(body, row, _)| MapSample {
+            body,
+            row,
+            bed,
+            depth: bed.map_or(f64::INFINITY, |h| row.level - h),
+        })
+    }
+
+    fn supported_row(&self, id: usize, point: [f64; 2]) -> Row {
+        let mut row = self.row(id, point);
+        if let BodyKind::Chart(c) = &self.bodies[id].kind
+            && !self.in_chart(c, point)
+            && let Some(weights) = self.bed.weights(point)
+        {
+            // Continue the same water-origin rows onto the bank for both height
+            // and its slope, without nearest-centre steps.
+            let mut total = 0.0;
+            for (i, w) in weights {
+                if let Some(origin) = self.support[id][i]
+                    && w > 0.0
+                {
+                    total += w;
+                    row = row.mix(self.row(id, self.bed.point(origin)), w / total);
+                }
+            }
+        }
+        row
+    }
+
+    pub(crate) fn level_slope(&self, body: usize, point: [f64; 2]) -> [f64; 2] {
+        let BodyKind::Chart(chart) = &self.bodies[body].kind else {
+            return [0.0; 2];
+        };
+        for end in &chart.ends {
+            if end.distance(point) <= 1e-8 {
+                return self.level_slope(end.body, point);
+            }
+        }
+        // The CPU oracle differentiates the complete joined/continued level.
+        // At a bilinear cell crease this gives the symmetric derivative. Gains'
+        // spatial derivatives remain omitted as declared by the design.
+        let step = self.bed.spacing * 1e-4;
+        std::array::from_fn(|axis| {
+            let mut lo = point;
+            let mut hi = point;
+            lo[axis] -= step;
+            hi[axis] += step;
+            (self.supported_row(body, hi).level - self.supported_row(body, lo).level) / (2.0 * step)
+        })
+    }
+
+    /// A body's continued row, including joins; useful on the two sides of a mesh seam.
+    pub fn row(&self, body: usize, point: [f64; 2]) -> Row {
+        let b = &self.bodies[body];
+        let mut row = Row {
+            level: b.level + b.stage.value,
+            current: [0.0; 2],
+            gains: b.gains,
+        };
+        if let BodyKind::Chart(c) = &b.kind {
+            if let Some(w) = self.bed.weights(point) {
+                row.level = b.stage.value + w.iter().map(|&(i, a)| c.levels[i] * a).sum::<f64>();
+                row.current = std::array::from_fn(|axis| {
+                    w.iter().map(|&(i, a)| c.currents[i][axis] * a).sum()
+                });
+            }
+            let own_level = row.level;
+            let mut total = 1.0;
+            for end in &c.ends {
+                let other = self.row(end.body, point);
+                let mut weight = 1.0 - smooth(end.distance(point) / end.length);
+                if end.mouth {
+                    weight = weight.max(
+                        1.0 - smooth(
+                            (own_level - other.level - 0.175 * self.profile.margin_height) / 0.25,
+                        ),
+                    );
+                }
+                if weight >= 1.0 {
+                    return other;
+                }
+                // Relative weights preserve each end's exact boundary even when
+                // transition regions overlap. A single end still mixes by weight.
+                let relative = weight / (1.0 - weight);
+                total += relative;
+                row = row.mix(other, relative / total);
+            }
+        }
+        row
+    }
+
+    fn in_chart(&self, c: &Chart, p: [f64; 2]) -> bool {
+        self.bed
+            .weights(p)
+            .is_some_and(|w| w.iter().all(|&(i, a)| a <= 1e-12 || c.footprint[i]))
+    }
+
+    fn flood(&self, id: usize) -> Vec<bool> {
+        let n = self.bed.heights.len();
+        let b = &self.bodies[id];
+        if let BodyKind::Chart(c) = &b.kind {
+            return c
+                .footprint
+                .iter()
+                .enumerate()
+                .map(|(i, &inside)| {
+                    inside && self.bed.heights[i] < self.row(id, self.bed.point(i)).level
+                })
+                .collect();
+        }
+        let level = b.level + b.stage.value;
+        let blocked = |i| {
+            self.bodies
+                .iter()
+                .any(|b| matches!(&b.kind,BodyKind::Chart(c) if c.footprint[i]))
+        };
+        if matches!(b.kind, BodyKind::Sea) {
+            return self.bed.heights.iter().map(|&h| h < level).collect();
+        }
+        let mut wet = vec![false; n];
+        let mut q = VecDeque::new();
+        if let BodyKind::Basin { seed } = b.kind
+            && let Some(w) = self.bed.weights(seed)
+            && self.bed.height(seed).is_some_and(|h| h < level)
+        {
+            for (i, _) in w {
+                if self.bed.heights[i] < level && !blocked(i) {
+                    wet[i] = true;
+                    q.push_back(i);
+                }
+            }
+        }
+        while let Some(i) = q.pop_front() {
+            for j in self.bed.neighbours(i) {
+                if !wet[j] && !blocked(j) && self.bed.heights[j] < level {
+                    wet[j] = true;
+                    q.push_back(j);
+                }
+            }
+        }
+        wet
+    }
+
+    fn rebuild(&mut self) {
+        self.support = (0..self.bodies.len())
+            .map(|id| {
+                let wet = self.flood(id);
+                let mut origins: Vec<_> = wet
+                    .iter()
+                    .enumerate()
+                    .map(|(i, &w)| w.then_some(i))
+                    .collect();
+                let mut q: VecDeque<_> = wet
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, &w)| w.then_some(i))
+                    .collect();
+                while let Some(i) = q.pop_front() {
+                    for j in self.bed.neighbours(i) {
+                        let h = self.bed.heights[j];
+                        let row = self.row(
+                            id,
+                            self.bed
+                                .point(origins[i].expect("queued centre has origin")),
+                        );
+                        if origins[j].is_none()
+                            && h >= self.bed.heights[i]
+                            && h <= row.level + self.profile.margin_height
+                        {
+                            origins[j] = origins[i];
+                            q.push_back(j);
+                        }
+                    }
+                }
+                origins
+            })
+            .collect();
+    }
+
+    fn validate_inputs(&self) -> Result<(), WaterError> {
+        for (id, b) in self.bodies.iter().enumerate() {
+            let fail = |reason| WaterError::new(&b.name, reason);
+            if b.name.is_empty() || self.bodies[..id].iter().any(|a| a.name == b.name) {
+                return Err(fail("duplicate or empty name"));
+            }
+            if [b.level, b.stage.min, b.stage.max, b.stage.value]
+                .iter()
+                .any(|v| !v.is_finite())
+                || !b.fetch.is_finite()
+                || b.fetch <= 0.0
+                || b.stage.min > b.stage.max
+                || !(b.stage.min..=b.stage.max).contains(&b.stage.value)
+                || b.gains
+                    .iter()
+                    .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+            {
+                return Err(fail("invalid level, stage or gains"));
+            }
+            match &b.kind {
+                BodyKind::Basin { seed } if self.bed.weights(*seed).is_none() => {
+                    return Err(fail("seed outside bed"));
+                }
+                BodyKind::Chart(c) => {
+                    if c.ends.iter().filter(|e| e.mouth).count() > 1
+                        || c.ends.iter().filter(|e| !e.mouth).count() > 1
+                    {
+                        return Err(fail("chart has multiple sources or mouths"));
+                    }
+                    let n = self.bed.heights.len();
+                    if c.levels.len() != n
+                        || c.currents.len() != n
+                        || c.footprint.len() != n
+                        || !c.footprint.iter().any(|&v| v)
+                        || c.levels
+                            .iter()
+                            .chain(c.currents.iter().flatten())
+                            .any(|v| !v.is_finite())
+                    {
+                        return Err(fail("invalid chart grid"));
+                    }
+                    for e in &c.ends {
+                        if e.body >= id
+                            || !e.length.is_finite()
+                            || e.length <= 0.0
+                            || e.segment.iter().flatten().any(|v| !v.is_finite())
+                            || (e.segment[0][0] - e.segment[1][0])
+                                .hypot(e.segment[0][1] - e.segment[1][1])
+                                < 1e-8
+                        {
+                            return Err(fail("invalid end or cyclic join"));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_topology(&mut self) -> Result<(), WaterError> {
+        let wets: Vec<_> = (0..self.bodies.len()).map(|id| self.flood(id)).collect();
+        let sea_reach: Vec<_> = self
+            .bodies
+            .iter()
+            .enumerate()
+            .map(|(id, b)| {
+                if matches!(b.kind, BodyKind::Sea) {
+                    self.exterior_water(&wets[id])
+                } else {
+                    vec![false; self.bed.heights.len()]
+                }
+            })
+            .collect();
+        for (id, b) in self.bodies.iter().enumerate() {
+            let fail = |reason| WaterError::new(&b.name, reason);
+            for j in 0..id {
+                let overlap = match (&b.kind, &self.bodies[j].kind) {
+                    (BodyKind::Chart(a), BodyKind::Chart(b)) => {
+                        a.footprint.iter().zip(&b.footprint).any(|(&a, &b)| a && b)
+                    }
+                    _ => wets[id].iter().zip(&wets[j]).any(|(&a, &b)| a && b),
+                };
+                if std::mem::discriminant(&b.kind) == std::mem::discriminant(&self.bodies[j].kind)
+                    && (matches!(b.kind, BodyKind::Sea) || overlap)
+                {
+                    return Err(fail("same-kind bodies overlap"));
+                }
+            }
+            if matches!(b.kind, BodyKind::Basin { .. }) {
+                if wets[id]
+                    .iter()
+                    .enumerate()
+                    .any(|(i, &w)| w && self.bed.edge(i))
+                {
+                    return Err(fail("basin reaches bed edge"));
+                }
+                for (i, &wet) in wets[id].iter().enumerate() {
+                    if !wet {
+                        continue;
+                    }
+                    // A connected path to sea below its maximum tide is a spill.
+                    if self
+                        .bodies
+                        .iter()
+                        .enumerate()
+                        .any(|(j, s)| matches!(s.kind, BodyKind::Sea) && sea_reach[j][i])
+                    {
+                        return Err(fail("basin reaches sea"));
+                    }
+                    for j in self.bed.neighbours(i) {
+                        for other in &self.bodies {
+                            if let BodyKind::Chart(c) = &other.kind
+                                && c.footprint[j]
+                                && !c.ends.iter().any(|e| {
+                                    e.body == id
+                                        && e.distance(self.bed.point(j)) <= self.bed.spacing * 1.01
+                                })
+                            {
+                                return Err(fail("basin reaches chart away from end"));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn exterior_water(&self, wet: &[bool]) -> Vec<bool> {
+        // A sealed basin may have its floor below sea level. Precedence owns that
+        // column; a spill means connection to exterior sea, not merely low ground.
+        let blocked = |i| {
+            self.bodies
+                .iter()
+                .any(|b| matches!(&b.kind,BodyKind::Chart(c) if c.footprint[i]))
+        };
+        let mut reached = vec![false; wet.len()];
+        let mut q = VecDeque::new();
+        for (i, &w) in wet.iter().enumerate() {
+            if w && self.bed.edge(i) && !blocked(i) {
+                reached[i] = true;
+                q.push_back(i);
+            }
+        }
+        while let Some(i) = q.pop_front() {
+            for j in self.bed.neighbours(i) {
+                if wet[j] && !reached[j] && !blocked(j) {
+                    reached[j] = true;
+                    q.push_back(j);
+                }
+            }
+        }
+        reached
+    }
+
+    fn validate_banks(&self, minimum_fills: &[Vec<bool>]) -> Result<(), WaterError> {
+        for id in 0..self.bodies.len() {
+            let BodyKind::Chart(c) = &self.bodies[id].kind else {
+                continue;
+            };
+            for end in &c.ends {
+                let joined = &self.bodies[end.body];
+                let mut edge_cells = 0;
+                for (i, &inside) in c.footprint.iter().enumerate() {
+                    if !inside || end.distance(self.bed.point(i)) > 1e-8 {
+                        continue;
+                    }
+                    if !self.bed.neighbours(i).any(|j| !c.footprint[j]) {
+                        return Err(WaterError::new(
+                            &self.bodies[id].name,
+                            "join is not on footprint edge",
+                        ));
+                    }
+                    edge_cells += 1;
+                    let level = match &joined.kind {
+                        BodyKind::Chart(other) => other.levels[i] + joined.stage.min,
+                        _ => joined.level + joined.stage.min,
+                    };
+                    if self.bed.heights[i] >= level {
+                        return Err(WaterError::new(
+                            &self.bodies[id].name,
+                            "join sill stands above minimum stage",
+                        ));
+                    }
+                    // One row cannot equal two different receivers simultaneously.
+                    // Test the chart's lowest own stage against the receiving reach
+                    // at its highest stage, not just today's mix.
+                    let p = self.bed.point(i);
+                    let own_min = c.levels[i] + self.bodies[id].stage.min;
+                    if c.ends.iter().any(|other| {
+                        other.body != end.body
+                            && (other.distance(p) <= 1e-8
+                                || (other.mouth
+                                    && own_min
+                                        <= self.row(other.body, p).level
+                                            + 0.175 * self.profile.margin_height))
+                    }) {
+                        return Err(WaterError::new(
+                            &self.bodies[id].name,
+                            "conflicting fully weighted joins",
+                        ));
+                    }
+                }
+                if edge_cells == 0 {
+                    return Err(WaterError::new(
+                        &self.bodies[id].name,
+                        "join misses footprint edge",
+                    ));
+                }
+            }
+            for (i, &inside) in c.footprint.iter().enumerate() {
+                if !inside {
+                    continue;
+                }
+                if self.bed.edge(i) {
+                    return Err(WaterError::new(
+                        &self.bodies[id].name,
+                        "chart reaches bed edge",
+                    ));
+                }
+                for j in self.bed.neighbours(i).filter(|&j| !c.footprint[j]) {
+                    let p = self.bed.point(i);
+                    let own = c.levels[i] + self.bodies[id].stage.max;
+                    // A raised source can lift a bank inside its blend even when
+                    // the chart's own prepared level would remain contained.
+                    let highest = own.max(self.row(id, p).level);
+                    let joined = c.ends.iter().any(|e| {
+                        let b = &self.bodies[e.body];
+                        let min = b.level + b.stage.min;
+                        let wet = match &b.kind {
+                            BodyKind::Sea => self.bed.heights[j] < min,
+                            BodyKind::Basin { .. } => {
+                                // Max-stage connectivity must also have a wet sill at minimum stage.
+                                minimum_fills[e.body][j] && self.bed.heights[j] < min
+                            }
+                            BodyKind::Chart(other) => {
+                                other.footprint[j]
+                                    && self.bed.heights[j] < other.levels[j] + b.stage.min
+                            }
+                        };
+                        e.distance(p) <= 1e-8 && wet
+                    });
+                    if self.bed.heights[j] <= highest && !joined {
+                        return Err(WaterError::new(
+                            &self.bodies[id].name,
+                            "chart bank does not contain water",
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn smooth(x: f64) -> f64 {
+    let x = x.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}

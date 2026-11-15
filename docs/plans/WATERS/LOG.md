@@ -1,5 +1,66 @@
 # WATERS log
 
+- 2026-11-15 Resolved the older CREATOR, CULLING and CLOUDS link repairs by
+  retaining their upstream replacements; documentation checks passed. Consolidated
+  unpublished WATERS work onto the current main base to avoid replaying superseded
+  integration repairs. CPU evidence is refreshed if its revision is no longer an
+  ancestor of the work being merged. Target proof and official merge remain owed.
+
+- 2026-11-15 CPU proofs passed on `32382d0a`. The exact verifier then stopped at
+  an incomplete native route capture: 434 submissions, 292 images and 142 ring
+  omissions, with host load near 100. This is not a fresh baseline pass.
+  [Diagnostic record](../../evidence/WATERS/M1-runtime-admission.json) retains
+  the identity and observed contention; references and comparisons are unchanged.
+
+- 2026-11-14 Resumed M1 with 91 GiB free, inspected the CPU oracle tests and
+  provenance, and resolved the integration-only handoff conflict on rebase.
+  The GPU-locked driver refreshes target proofs before the official merge;
+  [M1 evidence](../../evidence/WATERS/M1.md) retains the source identities.
+
+- 2026-11-14 After owned cache cleanup, retry `20261114-142437-51691` rebuilt all
+  verifier artifacts and cooked content on `3ec5e9f6`, then the first native
+  capture refused less than 16 GiB free. The observed remainder was 15.9546 GiB.
+  [Admission record](../../evidence/WATERS/M1-disk-admission.json) and
+  [handoff](../../evidence/WATERS/M1-handoff.md) preserve the source and remaining
+  requirement. Shared disk headroom is needed for M1.11 and integration; no fresh
+  baseline pass or merge is claimed. Owned rebuilt cache is selected for cleanup.
+
+- 2026-11-14 A strict retry stopped before capture at the 16 GiB disk-admission
+  floor. Verified all 481 decoded frames in the earlier identity-only failure;
+  kept its discrepant frame and metadata, releasing 1.49 GB of matching bulk.
+  Selected the owned reconstructible build cache for cleanup before retrying.
+  No reference, tolerance, criterion or other builder's scratch was changed.
+
+- 2026-11-14 Rebased with SEA's new crate registered alongside the water model.
+  Fresh verification on `7cb8dd05` passed both native matrices and three Chrome
+  sets. The fourth matched every pixel hash and exposure word but refused ordinal
+  62's tick/alpha identity (182/0 versus 181/1). This suggests an interpolation
+  boundary variation; its cause is unconfirmed. The failed candidate is retained
+  in `tmp/baseline-guard/verify-20261114T123313.738319Z/` for diagnosis; references
+  and tolerances are unchanged. [Continuation](../../evidence/WATERS/M1-handoff.md).
+
+- 2026-11-14 Resumed integration: both native baseline matrices and all four
+  Chrome sets passed on `343e6bd3` in 910.41 seconds; retained the fresh record and
+  CPU test log in [M1 evidence](../../evidence/WATERS/M1.md). The first merge gate
+  found two upstream APPLE-TILE handoff links to evidence not yet retained on main.
+  Preserved their paths as text so repository link checks can run without claiming
+  those artifacts are present. M1 criteria and builder results are unchanged.
+
+- 2026-11-14 M1 builder implemented the CPU map, stages, joined rows, wave limits,
+  surface oracle, triangle bed and conformance harness. All 24 water-model and ten
+  sea-model tests passed, with strict Clippy and documentation checks; an analytic
+  plane test covers the corrected chart level slope. [Evidence](../../evidence/WATERS/M1.md).
+  Both native matrices and all four Chrome baselines passed on `2aba4634`.
+  No GPU water surface, visual quality or device-performance result is claimed.
+
+- 2026-11-14 Integration resumed after CLOUDS registration conflicts and low-disk
+  admission. The rebase preserves both crates and the new design; M1 criteria are
+  unchanged. The next native attempt stopped before its night capture when free
+  space reached 15.989 GiB. All preceding comparisons matched. Removed 32 owned
+  duplicate reference copies and superseded scratch after checking retained proofs;
+  free space was then 20.7 GiB. `finish_m1.py` aligns the branch before verification,
+  promotes only matching target proofs and runs the GPU-locked full gate and merge.
+
 - 2026-11-14 Owner, through the lead, about `SEA`: "Please make sure the sea work is actually thinking about water
   as a whole. So puddles, rivers, water falls, streams, lakes, and more. We want something that's built
   cohesively." Earlier the same day, of clouds: "The agent should look at that work from first principles and

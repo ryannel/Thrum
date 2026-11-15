@@ -32,6 +32,24 @@ pub struct Forcing {
 }
 
 impl Forcing {
+    /// Height variance in the long band and the three cascade bands, without
+    /// allocating Fourier modes. Uses log-k quadrature over the profile's bands.
+    /// # Errors
+    /// Rejects nonfinite or out-of-range physical forcing.
+    pub fn band_variances(&self) -> Result<[f64; 4], SeaError> {
+        self.validate()?;
+        let edges = [
+            MIN_K,
+            SPLIT,
+            PI * 256.0 / 160.0,
+            PI * 256.0 / (37.0 * 1.001_f64.sqrt()),
+            PI * 256.0 / (9.0 * 1.003_f64.sqrt()),
+        ];
+        Ok(std::array::from_fn(|band| {
+            integrate(edges[band], edges[band + 1], 12288, |k| self.log_density(k))
+        }))
+    }
+
     fn validate(&self) -> Result<(), SeaError> {
         if !self.wind_speed.is_finite()
             || self.wind_speed < 0.0
