@@ -79,8 +79,8 @@
           "check": "python3 scripts/test_exact_baselines.py CoveredPathTests",
           "ask": "Read the tests. Is each case decided by `content_key`, the function the gate calls, with Cargo reading a workspace made for the test? Does the unlinked package of that workspace hold a Rust source, a shader and a data file, each edited with the key unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -90,8 +90,8 @@
           "check": "python3 scripts/test_exact_baselines.py ClosureTests",
           "ask": "Read the derivation. Does a package name appear anywhere but the registry's built packages? Can a feature or a target platform that a build of the verifier selects link a package the derivation leaves out?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -101,8 +101,8 @@
           "check": "python3 scripts/test_exact_baselines.py FailClosedTests",
           "ask": "Read the gate. On which paths does it pass? Is each one either no covered difference from main, or a proof that names the commit's content key?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -112,8 +112,8 @@
           "check": "python3 scripts/test_exact_baselines.py BuildReadTests",
           "ask": "Read the verifier and the tests. Do the tests build, with Cargo, a workspace in which a linked package includes a file from an unlinked package's folder, and judge the record Cargo wrote with the code the verifier uses? In the verifier, are the three records read after that run's own builds and before the proof is written?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -123,8 +123,8 @@
           "check": "python3 scripts/test_exact_baselines.py GateTests UnlinkedRebaseTests",
           "ask": "Do M1's five gate tests assert what they asserted, on a fixture that is now a Cargo workspace? Would `docs/evidence/WATERS/finish_m1.py` and `docs/evidence/SEA/qualify_m2_baselines.py` find their proof with no change to either?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -156,8 +156,8 @@
           "check": "python3 scripts/exact_baselines.py covered",
           "ask": "Do the three documents and rule 2 of the module list agree with the gate as built, and does none still say that every crate under `crates/` or `tools/` is covered?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         }
