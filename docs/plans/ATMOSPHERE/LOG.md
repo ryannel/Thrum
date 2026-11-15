@@ -535,3 +535,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   request with the local atmosphere test support and uses a descriptive input name.
   Repaired upstream links to unmerged evidence and a copied status-relative link.
   No production shader, reference, case or allowance changed; full qualification follows.
+
+- **2026-11-15 — M9 integration rebase resolved.** Resolved the older link repair
+  against the newer planner text at `5b805ff6`; documentation and shape checks pass.
+  Later main changes include renderer, host and capture code. The integration
+  runner now refreshes the consecutive paired aerial costs when that rebase needs
+  a fresh baseline proof, then runs every unchanged M9 check before retrying merge.
+  No new target result or successful merge is claimed by this checkpoint.
