@@ -22,7 +22,7 @@ pub(crate) struct Rules {
     pub next: Number,
     pub resource: u64,
 }
-impl TickGame<()> for Rules {
+impl TickGame for Rules {
     type Error = RegisteredWorldError;
     type Candidate = Scalar;
     type ParallelOutput = ();
@@ -58,12 +58,15 @@ fn rule(
     edits.push(Edit::replace(&game.write, game.handle, 0, |value, _| value));
     Ok(())
 }
-pub(crate) fn setup(epoch: u128) -> (GameRuntime<(), Rules>, Rules, Scalar) {
+pub(crate) fn setup(epoch: u128) -> (GameRuntime<Rules>, Rules, Scalar) {
     let mut registry = ComponentRegistry::default();
     let key = registry
         .register_profile::<Scalar>(ComponentSchemaId(123))
         .expect("schema");
-    let mut runtime = GameRuntime::new(
+    registry
+        .select_publication::<Scalar>(false)
+        .expect("published scalar");
+    let mut runtime = GameRuntime::new_published(
         WorldEpoch(epoch),
         4,
         registry,
@@ -79,7 +82,6 @@ pub(crate) fn setup(epoch: u128) -> (GameRuntime<(), Rules>, Rules, Scalar) {
             },
             rule,
         )],
-        || (),
     )
     .expect("runtime");
     let handle = runtime
@@ -98,7 +100,7 @@ pub(crate) fn setup(epoch: u128) -> (GameRuntime<(), Rules>, Rules, Scalar) {
     runtime.publish_initial(&mut game, &mut candidate);
     (runtime, game, candidate)
 }
-pub(crate) fn digest(runtime: &GameRuntime<(), Rules>, game: &Rules) -> u64 {
+pub(crate) fn digest(runtime: &GameRuntime<Rules>, game: &Rules) -> u64 {
     runtime
         .world_digest(&game.resource, |_, _| {})
         .expect("portable components")
