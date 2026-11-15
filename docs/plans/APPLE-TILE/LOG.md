@@ -260,3 +260,10 @@
   exact route-root match. Verified hard links retain all source bytes while sharing 17.10 GB of duplicate spools.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Continuation](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 window readiness correction.** The surviving observer reached an initial paused window,
+  then OS capture refused it despite an unlocked/granted preflight. Source inspection confirms pause acknowledgement
+  can precede the first frame sample; the observer now also requires the profiler tick title. The refusal and exact
+  observer/build identity are retained. Syntax and documentation checks pass; a fresh actual-window run and the
+  official checked merge remain required. D10.5 stays open; no renderer source or qualification changed.
+  [Evidence](../../evidence/APPLE-TILE/M10/window-startup-c7827ff4/README.md).
+
