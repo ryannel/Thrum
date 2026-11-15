@@ -159,106 +159,183 @@
       }
     },
     "M2": {
-      "definitions": "c6a9580bfcf44b66055e050fc2a35f3f188f4bf5fc3147c044479cb7429fbf7e",
+      "definitions": "ee2f945b1ca0823f8e023187ba7eb151a7288492047e5d62f7a25cef05ec6138",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M3": {
-      "definitions": "bf9ddf8b6ad66abb5a77dc0365ad968c5b3498f30b4c8e6e9979fe9c12537129",
+      "definitions": "68646e27135a996407bf40b4b65f59c66d345f53654d3d4ce62507d5298b2a67",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M4": {
-      "definitions": "ed1a1151a53651c6778bc1c1ee8f85fffbf9d1a2d69ac99213c0643bf8f55b41",
+      "definitions": "46c2a08db2a17729ef555e19e88c5aa7994a3151e5fb051c0f739a48a00a7563",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
         "at": "2026-11-13T23:34:13Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M5": {
-      "definitions": "c7e23df912710ce983522f9b98b30af6b3e64405dd9ffe3d9d37ea9d8e99ab45",
+      "definitions": "32bd03cadb65f1b8bf9c0f5043e998f0af6b9ce570a7c597cc1aaee0791a09fd",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
         "at": "2026-11-14T02:31:18Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M6": {
-      "definitions": "b21f4d2547adbaa4d728e53a4eee71b8287949173e25adfc3d93246245dd4ba8",
+      "definitions": "33694e805e171b53cc09f975137df599585158362bf45274b8ac4e7a15f59ec0",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
         "at": "2026-11-14T02:31:18Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M7": {
-      "definitions": "401ca04a7dcc71515769b3f8bfe54d26f643a5b40bdb672cc636aca40d30d615",
+      "definitions": "48ed531b1eb10d1487ae5461ea42ae034c303b6841423696aeea3e32688c24fe",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M8": {
-      "definitions": "fb98ddbc443564d2c5217440140c8eaa8808c2485b0b080a01492ef14a7b07b8",
+      "definitions": "541f81940c86f95939051cf2cd9d4f55db06f285763984544c503b6488a0b8ae",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
         "at": "2026-11-14T09:13:54Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M9": {
-      "definitions": "94aa8a82e6d69862032570cce5f49c770bf0b1d27a5229334f4a59093ae383b9",
+      "definitions": "c649dc2758bb98877e3277d59dc4848c535a4e7fc65d76cdc63d4d7240a539f0",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M10": {
-      "definitions": "d26bb65a5979541927c47817e0cf759a1cacecccba7e1687837940a429a42615",
+      "definitions": "911b55f054de348368551ed068dcc2525e4a7f5e17d88c55473f03d4bf4f7cb1",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
         "at": "2026-11-14T00:31:29Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M11": {
-      "definitions": "812651bedbf6799e3fe32ffa58b28f4d5bad5acf514ab6d31b85c56475498592",
+      "definitions": "b4422281057d70cce0e76c829ae2fb3b5742c36b2c17f94a8008eced7b3cb2c7",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
         "at": "2026-11-14T16:17:06Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M12": {
-      "definitions": "82844bfc09d5e9ffe520a0ee86c594f6f06483b47d57eebce057ee191d3db332",
+      "definitions": "f5b2c3f3bf4b480ba90779912264d675db214e746bb073da98c55a3d7d9bacc8",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
         "at": "2026-11-14T21:26:25Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M13": {
-      "definitions": "814be0b2e6f37d5e623b94f8a830b55e8272963aa5fb5998585e2f7b4111f99e",
+      "definitions": "a3fc5c654fbd40807cdf1e4a31c1b959f165c8b39bc6fc1c202ba6fb8783e151",
       "reviews": [
         {
           "verdict": "fail",
@@ -349,34 +426,62 @@
           "output": 290953,
           "turns": 8
         }
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M14": {
-      "definitions": "31da719b637fd49b8bae3d2cf8f9ad833c37ae066804f493f915e2e9c48a2684",
+      "definitions": "f4f61f87dbc7c60d8f91077fca316a4dae72e5c62d49b1e6910f72f6a7227a3d",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
         "at": "2026-11-14T16:17:06Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M15": {
-      "definitions": "f53472cd4e528891cdf1a18481ce09ca073c0874bcb5194d9d01c8f017ab6093",
+      "definitions": "23e436a6a721eac3dff27b72634a0381c10bdd2d704250baeba639044e2beebe",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
         "at": "2026-11-14T16:17:06Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M16": {
-      "definitions": "653b819ff9d25111452e5878014fb65a15d9387797a01a66ae646fb819fe0fdf",
+      "definitions": "70e0fa290db375a39b4d08ab663b342431c2f2d10b10f32651362dbbd675e050",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
         "at": "2026-11-14T16:17:06Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     }
   },
   "briefs": [
@@ -415,11 +520,15 @@
     {
       "task": "Two tasks in one pass.\n1) Owner decision, 14 Nov 2026: \"Let's move the 2d engine side of things to before v1 and decouple them. But we don't want to start working on the swarm game till v1 lands.\" Split the swarm-goal modules (SIM-2D, RENDER-2D, TRANSPORT, GAME-UI, SESSION, SWARM and any others from docs/design/NEXT-GOAL-SWARM-GAME.md) into reusable 2D engine work and swarm-game work. Engine work loses its gate on SHOWCASE:M8 and keeps only edges where it needs another milestone's actual output; where an engine milestone is shaped by the swarm game, state its requirement generically so the engine does not depend on game code. Game work (SWARM and any game-specific milestones) stays gated on SHOWCASE:M8. Where a module mixes both, move the game milestones into the game module rather than gating engine ones. Engine designs that change need their design reviews.\n2) APPLE-PRESENTATION M4 to M11 have no done-when entries, so no builder can be given them, and SHOWCASE M7-M8 (the V1 exit) sit behind them (docs/evidence/dependency-audit-2026-11-14/README.md). Write their done-when items and plans so they can be built, with honest dependencies. Do not change APPLE-PRESENTATION M3, which a builder holds.\nSay which milestones can start once this lands.",
       "at": "2026-11-14T21:26:25Z"
+    },
+    {
+      "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
+      "at": "2026-11-15T22:19:37Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T21:26:25Z"
+    "at": "2026-11-15T22:19:37Z"
   },
   "design_history": [
     {

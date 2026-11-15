@@ -25,67 +25,116 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "9b69329d691c91a91d26e6b09b4af1f28bdef17bf87fea04957356a3f57120ab",
+      "definitions": "f63eaadb53b968de03c89af930b3b872e62e343902a804158d9e4139212c6bd4",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
         "at": "2026-11-14T13:57:36Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M2": {
-      "definitions": "7f87ec78a3bbb2f5201cdfac994050b7c62f0875402ac5a4b23bcbf9a2a030a4",
+      "definitions": "d8a54e5d18706ea5c2e5b0ba1bf0be68af086595cf6bfa397b279722a7186662",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
         "at": "2026-11-14T11:06:55Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M3": {
-      "definitions": "560157529a1695ef354332a63add4b356d14a7b0c24e4c577d2b942f4f9f769b",
+      "definitions": "e7e8bb7bef311903d14219273122920582e407d07b02ff613ede60f49daacbd5",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
         "at": "2026-11-14T13:57:36Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M4": {
-      "definitions": "4c10e76ba3e1e70ef1b5f70b177b5621bf8e598f85b476d2bd26ce1b12a76a16",
+      "definitions": "90929fdc5f867ce45f8e6c41697b936aa25ef5ec0df848fdcf1a7ee11440e479",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
         "at": "2026-11-14T13:57:36Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M5": {
-      "definitions": "a0ba7b8e5a3bcfb9c5a4ee9aace1d1946da645fed2c0ac465734775ad8c11cdb",
+      "definitions": "d07910fbf33aafb5b0b4aad70a0b683665aaf2bfc09c81ca03b86bb04abc0a83",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
         "at": "2026-11-14T11:06:55Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M6": {
-      "definitions": "470e917ec32396ea205ea705195b51d196cdb5570c32afcdb5a291b01b6b9a54",
+      "definitions": "da02511cc25b2a07d53a671fc1e14d866330b804f950153fc8aa4f6015e79d1f",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
         "at": "2026-11-14T13:57:36Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     },
     "M7": {
-      "definitions": "e1fb0248421b8a89e1b48646a2c68d2422d11a496b58e9473bd2cc47b2f075b9",
+      "definitions": "1df6b5053a083da1fa17077b094f768097363b018251da673200584ae5911a22",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
         "at": "2026-11-14T13:57:36Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:38Z"
+        }
+      ]
     }
   },
   "briefs": [
@@ -96,11 +145,15 @@
     {
       "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/design-review.md) each found 1 Must Fix. Resolve both in the designs and plans, keeping them consistent with WATERS, PUDDLES and ATMOSPHERE. Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-14T13:57:36Z"
+    },
+    {
+      "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
+      "at": "2026-11-15T22:19:38Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T13:57:36Z"
+    "at": "2026-11-15T22:19:38Z"
   },
   "design_history": [
     {

@@ -25,51 +25,78 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "3ccedd4a8019020d38906398cfee7e1009502a894c1f4a5011fd0895806dcbe4",
+      "definitions": "e8e22fde9bfde2917562964e6e7c4f7e8d3a80f924223ef949f1c6a1ed74404a",
       "reviews": [],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/GAME-SPLIT/design-review.md",
         "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
         "at": "2026-11-14T23:37:07Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M2": {
-      "definitions": "6b7899f65b600411258114187869592062568c3254f578ff0ea2d10b825a1112",
+      "definitions": "1548a03a19c82b9cbc47321ee1a8f1f3d951af764784010d0abb05e10916fef2",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
         "at": "2026-11-14T23:26:02Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M3": {
-      "definitions": "ca045e85608df3ef78e9886d17a7677b892db1dfea1dbdf3878c9ce48f97d453",
+      "definitions": "d917e080f9d92146d506b846969c4aaf090f99d840778a8a3ece657e179de69c",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for change",
         "at": "2026-11-14T23:26:02Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M4": {
-      "definitions": "1c082a9ab1004f8bf4028e6e57a968502305f3557ac6d1849a141d407733e0bf",
+      "definitions": "596fde9917f50c8db3493735b1667597ea2acc06cd8c368fedc9505c4cb2c81e",
       "reviews": [],
       "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/GAME-SPLIT/design-review.md",
-        "commit": "080c5bf52ec0beb630548385fe590d94159cf37f",
-        "at": "2026-11-14T23:37:07Z"
+        "by": "plan",
+        "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+        "at": "2026-11-15T22:19:37Z"
       }
     },
     "M5": {
-      "definitions": "2423ff6273fb33100ecd32f82205678baf6f112b4439437c5ac2d0e24e8e4f4f",
+      "definitions": "a9812f40dcfbf7be89826260ab8ef2009e0c6c5a6f197426eb952ceb9f020e8e",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
         "at": "2026-11-14T22:15:19Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     }
   },
   "briefs": [
@@ -80,11 +107,15 @@
     {
       "task": "The first design reviews of GAME-SPLIT, HOST, REPO-RULES, REVIEW-ENGINE, REVIEW-RENDER and TEST-SUPPORT asked for changes (16 Must Fix findings in all): see docs/evidence/<MODULE>/design-review.md for each. Fix every Must Fix so the designs pass, resolving the GAME-SPLIT/TEST-SUPPORT interface conflicts together (one authority for each shared fixture). Keep the owner's decisions recorded in those plans: no Git history rewrite, the game moves to /Users/ryannel/Workspace/thrum-games with path dependencies, CLOUDS and WATERS unchanged. Retained device evidence outranks the review's suggestion where they conflict (REVIEW-RENDER MF1). Say which milestones can start at once.",
       "at": "2026-11-14T23:26:02Z"
+    },
+    {
+      "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
+      "at": "2026-11-15T22:19:37Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T23:26:02Z"
+    "at": "2026-11-15T22:19:37Z"
   },
   "design_history": [
     {

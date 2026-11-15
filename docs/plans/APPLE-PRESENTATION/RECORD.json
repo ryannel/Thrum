@@ -294,58 +294,100 @@
       }
     },
     "M4": {
-      "definitions": "f687e5ca1540ac5ad6fb942483f06695058a3e8bb4a8844c3ce106a924c259ef",
+      "definitions": "7d58b910698372ff4340b490035fc6f001eea73b1e8da33b34e0150a853a1119",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
         "at": "2026-11-14T21:26:25Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M5": {
-      "definitions": "dfdb2432524ced1b9c1b68151cdae057916ce8ef17d3a3937a778a4588acd5df",
+      "definitions": "3bb8bafb9b4d10ffa3a21de74ca5c659798302b60c79d97e5583a53801a4ede4",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
         "at": "2026-11-14T21:26:25Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M6": {
-      "definitions": "b44852d3d6b3a90fa3e17aaeab5ac27431ed541bd31b5474b1b9f0aa4d780b20",
+      "definitions": "3aa93e5ca207c4191e3df81ebb25146d5f664a5ea9c06951534ccb3fda30dced",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-15T08:54:22Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M7": {
-      "definitions": "20091bb8989de763d9475448e9d0efd6ed6ac1728b4e05a02e11f992a86d1cef",
+      "definitions": "725471207fa46c9e28621c4895d5fa7ea4ea7389c5c93074295b1dfc7c049a28",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-15T08:54:22Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M8": {
-      "definitions": "5a81dde45cc2424bcfa2921c2d1d685aa46dfb184f2477eb72856864cf9f0662",
+      "definitions": "17a4e593842da6b9d09be3f91857ca7228712e6519cc30e85ba41814d30505a8",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-15T08:54:22Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M9": {
-      "definitions": "23171381ff2cc31047af4c16c6b9ba79eaca350ef34dd77d015b5934f965fdd6",
+      "definitions": "53d9c99ba9b1ed9f667b93463d0b450c3911915c47104977a877d5633fd666d9",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-15T08:54:22Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M10": {
       "definitions": "960cee064db0694141c3ea6b5ced4390eef735e1d2149b0e87eefd21da679039",
@@ -366,13 +408,20 @@
       }
     },
     "M11": {
-      "definitions": "eace1861fc84a6ffa96e7043af89a9817529c5ea97bf9e8fc15d87a397bc1752",
+      "definitions": "51a62f65920d14b87fa0f5e7981b34aab6ae767d81f02df3cc020fddf0458f87",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-15T08:54:22Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     }
   },
   "briefs": [
@@ -391,11 +440,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve its Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-15T08:54:22Z"
+    },
+    {
+      "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
+      "at": "2026-11-15T22:19:37Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T08:54:22Z"
+    "at": "2026-11-15T22:19:37Z"
   },
   "design_history": [
     {

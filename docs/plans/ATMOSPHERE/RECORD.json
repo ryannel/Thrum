@@ -103,41 +103,69 @@
       }
     },
     "M6": {
-      "definitions": "7b3f2e02d52b706ae2467c525c056cb42d0a4c78f4b0038cb872a2cd369ec148",
+      "definitions": "5926128ef79b6c06e4f3d0a8cdb11772b2416043cb0c8dbec0f5711734524b72",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
         "at": "2026-11-10T22:38:33Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M7": {
-      "definitions": "82ec6847fe7e085a50432bb197debf0ae63d069a1e6c06870916ca657c67e944",
+      "definitions": "d2134e4a71d210a7aa66c0f7e6d4a45513b09b2eb36351405c75e530bc8a2117",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
         "at": "2026-11-14T15:25:42Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M8": {
-      "definitions": "cbb7cc9c3a9d23db8b70265555377a3d3203fe31dbf0c48baf1cda6fba8002a1",
+      "definitions": "02e501da21ad18f85ff8d5ab4baa783a6f872eea6b7f6e341cfae68db4a5f1f3",
       "reviews": [],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/ATMOSPHERE/design-review.md",
         "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
         "at": "2026-11-14T13:18:35Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     },
     "M9": {
-      "definitions": "9d4c35dc2beeb0f2352845b297b398b867d4f8a82ce768badec2d3534779a7a8",
+      "definitions": "26aa9f039dbf1d1d6c8382236fc9ca157489d29138f3907b9f0e5e0f65ad34db",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
         "at": "2026-11-14T16:54:40Z"
-      }
+      },
+      "run_changes": [
+        {
+          "by": "plan",
+          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
+          "at": "2026-11-15T22:19:37Z"
+        }
+      ]
     }
   },
   "briefs": [
@@ -168,11 +196,15 @@
     {
       "task": "Two tasks in one pass.\n1) Dependency audit. The owner (14 Nov 2026) says development is far behind pace: Codex quota use is about 5% a day against a target near 15%, because only 4 milestones can start at once. Go through every milestone dependency in docs/plans/*/PLAN.md and DONE.json, and remove each edge that only sets an order, keeping only those where a milestone needs another milestone's actual output (code, interface, data or a verified baseline it builds on). Where a milestone needs only part of another, depend on the earliest milestone that provides that part. Owner decision: keep the swarm-game modules (SIM-2D, SWARM, TRANSPORT, RENDER-2D, GAME-UI, SESSION) gated on SHOWCASE:M8 as they are now. Contention for the shared GPU lock and disk is not a reason for an edge; the script queues GPU work. List each edge you removed or kept with a one-line reason in the evidence folder, and say how many milestones can start once the running ones finish.\n2) ATMOSPHERE's latest design review (docs/evidence/ATMOSPHERE/design-review.md) found 1 Must Fix after the horizon-haze re-plan. Resolve it, keeping SCENE-VIEWS, WATERS and CLOUDS consistent.",
       "at": "2026-11-14T16:54:40Z"
+    },
+    {
+      "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
+      "at": "2026-11-15T22:19:37Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-14T16:54:40Z"
+    "at": "2026-11-15T22:19:37Z"
   },
   "design_history": [
     {
