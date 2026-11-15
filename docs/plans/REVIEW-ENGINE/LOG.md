@@ -1,5 +1,10 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The queued merge-only retry is replaced before it starts: APPLE-TILE's merge batch now holds
+  GPU and may change main. The replacement keeps rebase, affected proof, full gate and normal merge under
+  one lease, so another stale-proof refusal can be handled without releasing the resource. No running
+  proof or other builder's process was stopped. The handoff and build-loop record name the replacement.
+
 - 2026-11-15 The refreshed full gate passes, but its repeat inside merge at `15f0e49c` times out waiting for
   cooker watcher generation 2. The exact failed binary passes all four tests in ten consecutive runs;
   [the diagnostic record](../../evidence/REVIEW-ENGINE/M1/watcher-gate.json) preserves both results without
