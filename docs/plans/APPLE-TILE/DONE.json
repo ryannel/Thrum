@@ -324,8 +324,21 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
-      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model."
+      "status": "blocked",
+      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
+      "blocked": {
+        "reason": "needs_access",
+        "items": [
+          "D10.5"
+        ],
+        "what": "The proof entry point also revalidates successfully using the retained executable after cleanup. All sixteen comparisons and runtime-source identities pass. Integration remains queued for GPU.",
+        "work": {
+          "commit": "7d7e93f22be68388f8db83f6b62c6dc1d4a4be78",
+          "branch": "build/apple-tile-m0",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/APPLE-TILE/M10-handoff.md"
+      }
     },
     {
       "id": "M11",
