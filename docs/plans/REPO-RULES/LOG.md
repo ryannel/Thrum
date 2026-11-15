@@ -44,3 +44,8 @@
   [The retained observation](../../evidence/REPO-RULES/M1-identity-observation.md) distinguishes the measured
   result from the possible tick-work-yield cause. Retried the unchanged full verifier through the normal
   finishing helper; neither references nor comparison keys were changed.
+- 2026-11-15 The queued retry was cancelled before GPU acquisition (exit 143): the architecture's
+  load-variation exception requires every identity to match, which this refusal does not. Proposal:
+  APPLE-TILE resolves the tick/alpha identity at unchanged image hashes, with its comparison intact.
+  M1.1–M1.5 have refreshed CPU and inventory records; M1.6 is open and the continuation is unmerged.
+  [The handoff](../../evidence/REPO-RULES/M1-handoff.md) names the failed proof and next step.

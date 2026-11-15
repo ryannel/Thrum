@@ -70,8 +70,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-landing-baselines.json",
+          "builder_result": "open",
+          "evidence": "docs/evidence/REPO-RULES/M1.md; docs/evidence/REPO-RULES/M1-identity-observation.md; docs/evidence/REPO-RULES/M1-identity-failure-record.json",
           "verdict": "",
           "review": ""
         }
