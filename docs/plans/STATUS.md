@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-6 of 31 modules done · 12 in progress · 13 to come
+5 of 31 modules done · 13 in progress · 13 to come
 
 ### Needs you now
 
@@ -42,9 +42,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - ATMOSPHERE assumes: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out. ([plan](ATMOSPHERE/PLAN.md))
-- BASELINE-GUARD assumes: the guard is its own one-milestone module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items. It needs nothing and can be built first. ([plan](BASELINE-GUARD/PLAN.md))
-- BASELINE-GUARD assumes: every landing that changes the renderer, the game, the scripts or a baseline pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures), and pays it again if another such change lands first. The time is recorded, not budgeted. Landings that touch only other paths pay nothing. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: the guard is its own module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: every landing that changes a file a verified build or comparison reads pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures, about 17 minutes), and pays it again if another such change lands first. The time is recorded, not budgeted. Landings that touch only other files pay nothing. ([plan](BASELINE-GUARD/PLAN.md))
 - BASELINE-GUARD assumes: "before landing" means before a push made through the loop's `land`, which reruns `./dev check` on the rebased commit. A thread that pushes with a plain `git push` is bound only by its own `./dev check` run; no Git hook or server-side check is built. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: "exactly the inputs ... and nothing else" (15 November) is met file by file only for Rust sources, where the compiler's own record says what a build read. Every other file in a linked package stays covered, and so does the whole of a package that has a build script, because nothing records what the cooker, the page build and the scripts read. On the night of 14 to 15 November this key changes at 10 of main's commits, where the listed one changed at 33. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: the workspace `Cargo.toml` and `Cargo.lock` stay covered as whole files, so a landing that adds a workspace member or changes any dependency lapses every open proof. A key over the resolved graph alone would have spared one of those 33 commits, and would trust a second derivation. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: "the scripts and tools it runs" means files in this repository: the cooker, and the scripts reached from the verifier by an import or a quoted file path. A script that reads a file through a path it computes is not seen. macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside the key as before, so an update that moves an image shows as untouched main failing the verifier. ([plan](BASELINE-GUARD/PLAN.md))
+- BASELINE-GUARD assumes: `SIM-2D`'s cost records keep their own source key, which is drawn wider than its inputs ([what the survey found](../../evidence/BASELINE-GUARD/M2-plan/README.md#other-proofs-keyed-to-a-source-identity)). Narrowing it is a small change to `SIM-2D`'s script and plan, and is not planned here. ([plan](BASELINE-GUARD/PLAN.md))
 - CULLING assumes: G3c closes on the scenes that exist, the mixed-mesh field and the valley as it stands, before `SHOWCASE` assembles the exit scene. `SHOWCASE` reruns the same equivalence and cost commands there, and the default mode may change then by the same rule. ([plan](CULLING/PLAN.md))
 - CULLING assumes: "GPU culling" in the V1 exit is met by Frustum as the default with Occlusion selectable, if the measured rows do not favour Occlusion on any shipped scene. The gate's Hi-Z clause is met by Occlusion running, equal to Direct, on Mac and Chrome. ([plan](CULLING/PLAN.md))
 - CULLING assumes: the native-only culling recipes (subgroup compaction, first-instance draws) are not built for V1. They stay candidates for the performance phase the brief puts after the exit. ([plan](CULLING/PLAN.md))
@@ -229,6 +233,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - APPLE-PRESENTATION's design: Design Changes Requested · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome (ATMOSPHERE M9): Not Started · [plan](ATMOSPHERE/PLAN.md)
+- BASELINE-GUARD's design: Design Ready for Review · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3): Not Started · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
 - A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): In Progress · [plan](EFFECT-GRAPH/PLAN.md)
 - Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point (WATERS M1): In Progress · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M1-review.md)
@@ -277,7 +282,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | Design Changes Requested |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | Nothing for its M9; APPLE-PRESENTATION M3 for its M6 | M9 of 5 · Not Started |
-| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Done 12 Nov |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main |  | Design Ready for Review |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Not Started |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · In Progress |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
