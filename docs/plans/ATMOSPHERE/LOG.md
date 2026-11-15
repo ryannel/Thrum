@@ -512,3 +512,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   [paired timing](../../evidence/ATMOSPHERE/M9-cost.md) distinguish observed results
   from the independent solar and sea-level look qualifications still owed.
   Canonical integration follows; this entry does not claim a merge.
+
+- **2026-11-15 — M9 integration continuation.** All nine retained builder proofs
+  remain passing. Integration job `20261115-021403-21293` is queued GPU-first;
+  CREATOR and CLOUDS subsequently formed a confirmed GPU/merge lock cycle.
+  [Handoff](../../evidence/ATMOSPHERE/M9-handoff.md) names the processes, observed
+  wait states and queued continuation. No merge or new target run is claimed.
