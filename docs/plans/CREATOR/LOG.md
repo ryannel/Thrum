@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 Replaced the queued integration job with a continuation that runs
+  normal merge and M3 checks, leaving the window drag to Computer Use. Stopped
+  two queued Swift-input continuations before window interaction. Computer Use
+  confirms the Mac is currently locked. M3.1 still needs its fresh agent, with
+  delegation authorization unanswered. The [handoff](../../evidence/CREATOR/M3-handoff.md)
+  records the live job and the evidence still required.
+
 - 2026-11-15 Integration reached a REPO-RULES handoff conflict. The helper
   incorrectly refreshed baselines after the refused rebase, so its owned
   verification was stopped. Resolved the conflict using upstream wording and
