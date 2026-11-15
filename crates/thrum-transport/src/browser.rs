@@ -137,7 +137,7 @@ pub fn connect(ticket: &Ticket, profile: Profile) -> Result<Link, LinkError> {
                 if closed.is_open() {
                     CloseReason::Transport
                 } else {
-                    CloseReason::Refused
+                    unopened(started, startup_ms)
                 }
             }
         };
@@ -152,10 +152,22 @@ pub fn connect(ticket: &Ticket, profile: Profile) -> Result<Link, LinkError> {
             io.state
                 .lock()
                 .expect("link state poisoned")
-                .close(CloseReason::Refused);
+                .close(unopened(started, startup_ms));
         }
     });
     Ok(link)
+}
+/// How close to the startup deadline a failed opening counts as that deadline.
+const STARTUP_SLACK_MS: u64 = 250;
+/// Why a session that never opened failed. Chrome reports a refusal and a handshake that got no answer with the
+/// same opaque error, and gives up on an unanswered handshake at about four seconds, racing the startup timeout.
+/// A refusal answers within a round trip, so a failure that arrives at the startup deadline is that timeout.
+fn unopened(started: u64, startup_ms: u64) -> CloseReason {
+    if now().saturating_sub(started) >= startup_ms.saturating_sub(STARTUP_SLACK_MS) {
+        CloseReason::TimedOut
+    } else {
+        CloseReason::Refused
+    }
 }
 #[expect(
     clippy::cast_possible_truncation,
