@@ -1,49 +1,5 @@
 # TRANSPORT log
 
-- 2026-11-15 Final source checkpoint `95eca774`: all eight non-GPU M1 check commands pass again on a clean
-  tree, including all three conformance targets, the ten-minute session and both cost matrices. Repetition found
-  an intermittent Chrome idle-cut reason: the HTTP/3 capsule task can replace a timeout with `LocallyClosed`.
-  Preserve wrapped error sources and disambiguate that teardown after the receive-idle deadline. A unit regression,
-  ten consecutive real Chrome trials and strict Clippy pass. The selected [evidence](../../evidence/TRANSPORT/M1.md)
-  is refreshed; [handoff](../../evidence/TRANSPORT/M1-handoff.md) retains M1.10's CONTENT-LOOP dependency and the
-  still-pending GPU proof. No merged or baseline-verifier pass is claimed.
-
-- 2026-11-15 Resumed M1 from `6e3f7425` and retained [target evidence](../../evidence/TRANSPORT/M1.md):
-  complete Mac, Chrome and simulator conformance, the ten-minute four-client session, both release cost matrices,
-  virtual-time tests and dependency closure pass. Native and Wasm Clippy pass after the documentation-only
-  rebase. Ten items are marked passed; M1.10 still needs CONTENT-LOOP's socket tests removed from the default
-  gate by their owner, and M1.12 still waits for the shared GPU. The merge attempt rebased but refused to push
-  for lack of an exact-baseline proof. The documentation gate separately reproduces missing evidence links in
-  CREATOR, CULLING and CLOUDS. [Handoff](../../evidence/TRANSPORT/M1-handoff.md) records the jobs and next steps;
-  these are verified failures and pending checks, not an acceptance claim.
-
-- 2026-11-14 Dependency proposal for M1.10: its whole-workspace no-socket claim is false before TRANSPORT.
-  `thrum-cook/tests/serve_and_watch.rs` has ordinary ungated tests that call `DevServer::start` and
-  `TcpStream::connect`; its manifest has no opt-in test gate. `./dev check` runs `cargo test --workspace`, and
-  also runs `v1-game`'s cooked-asset tests with their loopback HTTP fetcher. These are CONTENT-LOOP's proofs.
-  CONTENT-LOOP must move its socket proofs out of the default gate while preserving an explicit way to run them,
-  or the planner must revise M1.10's scope. The builder has changed neither those tests nor the pinned criterion.
-  The TRANSPORT Wasm lint is installed, and its own default tests open no sockets; that is only part of M1.10.
-
-- 2026-11-14 The browser now timestamps accepted messages on its own monotonic clock, as the native adapter does;
-  only the virtual carrier takes queue time from the caller. The cost workload deliberately supplies zero queue
-  timestamps on both socket adapters, independently of its round-trip clock, to exercise that boundary.
-
-- 2026-11-14 Target diagnostics found and fixed close ordering: retain the native WebTransport session until its
-  CONNECT close capsule completes, and let the browser's session-close observer supply the peer's code before a
-  stream error wins. A direct Chrome coded close now passes. The reconnect harness waits for the host to observe
-  the old close before opening against its four-link cap; a live conditioned-host control test passes. Chrome
-  shutdown now terminates its owned process group. Allocation probing under A0 measured one 189-byte caller-thread
-  allocation per warmed reliable send/drain. These development checks are not promoted milestone evidence.
-
-- 2026-11-14 Builder checkpoint: added the dependency-free bounded link, caller-clock conditioned carrier,
-  versioned tickets, optional pinned Quinn/WebTransport carriers and shared Rust proof tooling. Four virtual-time
-  tests and strict native/Wasm Clippy pass. Real development exchanges reached Chrome 157 and the iOS 27.2
-  simulator; these dirty-tree runs are diagnostics, not M1 acceptance evidence. Final target proofs remain to run.
-- 2026-11-14 The repository check currently fails on pre-existing absent evidence links in CREATOR, CULLING and
-  CLOUDS. Those files are also absent on fetched main `2df2e3c5`; no evidence or acceptance claim was fabricated to
-  silence them. Transport-specific dependency-policy issues found during construction were fixed.
-
 - 2026-11-13 Planned from the lead's task (row 17 of the module list); no words of the owner's were passed on, so
   the design quotes the owner's page of 10 November. Two milestones replace the brief the module list carried,
   whose text is in git (`git show ee9ac160:docs/plans/ARCHITECTURE.md`). M1 waits on `SHOWCASE:M8`.
