@@ -221,6 +221,13 @@
   The failure is retained and a complete gate retry is required before merge. D10.5 remains open for access.
   [Evidence](../../evidence/APPLE-TILE/M10/README.md).
 
+- **2026-11-15 — M10 merged-source qualification retry.** The official merge rebased to `18a7e426`, then
+  failed on eighteen APPLE-PRESENTATION log links to unpublished M3 artifacts. Their descriptions and paths
+  are preserved as code references, and documentation checks pass. A fresh audit finds fourteen changed
+  core files since the qualified build, so the retry runs the full target campaign. The retained driver now
+  keeps merge and proof in one GPU reservation. D10.5 and final qualification remain pending.
+  [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
 - **2026-11-14 — M10 second disk refusal.** After 8.66 GB of verified expired M3 bulk release, the retry
   acquired GPU exclusivity but refused capture below the unchanged 16 GiB floor; observed free space was 15.34 GiB.
   Both qualification jobs exited before check/merge. D10.1–D10.4 retain their passes; D10.5 is unrun despite
