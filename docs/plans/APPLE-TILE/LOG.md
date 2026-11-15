@@ -233,7 +233,7 @@
   Exact-path Computer Use selection returned no state for 900.4 seconds before
   interruption. The observer exited at its 180-second selection timeout.
   D10.1–D10.4 retain their accepted proof. D10.5 needs responsive app access.
-  Cancelled three queued repeat campaigns under the current proof rules.
+  Cancelled three queued repeats under the current rules. `./dev check` and `./dev check-docs` passed.
   [Attempt](../../evidence/APPLE-TILE/M10/window-access-f819b7333/attempt.json) ·
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
