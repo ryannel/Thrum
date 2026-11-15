@@ -15,13 +15,18 @@ milestone. `scripts/` is a covered path, so every landing here needs a verifier 
 - Assumption: files that leave stay recoverable from Git history on this Mac and on the remote, by one command. New large captures go to one folder beside the main checkout, `/Users/ryannel/Workspace/thrum-evidence-store`, shared by every worktree, with no remote copy and no service, so a lost disk loses them.
 - Assumption: a rule counts a kind of violation across the whole repository and that count can only go down. A change that removes one violation and adds another of the same kind passes, because the repository is no worse; that is what lets a file be moved or split without an exception.
 - Assumption: `thrum-render` stays one crate, and its frame runtime and presenter go on naming the scene renderer's types. The review wanted that dependency turned round and the crate split in three. A rename cannot do it and no module plans the interface it needs, so a rule stops the dependency growing and holds the graph and timing clean. Say so and the interface is planned as its own milestone.
+- Assumption: nothing is built now to stop a stalled browser tick from changing one record's identity in a Chrome capture, which is what stopped M1. It is known twice, each costing one more verifier run of about 17 minutes, and no image is wrong. The fix changes a covered path, so landing it alone makes every builder with an open proof run the verifier again. Say so and it becomes an item of `HOST` M2, which rewrites that policy, or a milestone of its own now.
 - Assumption: three of the review's themes get no fix milestone now, because its order of attack does not schedule them: shader source assembled four ways (T7), environment variables read as configuration (T8, beyond a rule that stops new reads in libraries) and mechanisms built several times (T11).
 
 ## M1 A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check`
 
 The rule engine, its fixtures, the ratchet tests and the finishing helper are built on branch `build/repo-rules`
-at `bd1ad61f`, and [the handoff](../../evidence/REPO-RULES/M1-handoff.md) says what each run proved. Its first
-step, waiting for `WATERS`, no longer applies. The eight `#[path]` attributes in
+at `9ac94c46`, and the handoff on that branch, `docs/evidence/REPO-RULES/M1-handoff.md`, says what each run
+proved. M1.1 to M1.5 have their proof there and M1.6 is open: the verifier at `db4a38fc` refused one Chrome
+identity with every image equal. [The module list](../ARCHITECTURE.md#a-fixed-capture-that-stalls) settles that
+as a stalled tick. Nothing is owed by `APPLE-TILE` and no reference moves, so the handoff's wait for an owning
+resolution is over: rebase, run the verifier unchanged, and complete the record that ruling asks for, whose
+failed half is on the branch. The eight `#[path]` attributes in
 `crates/thrum-water-model/tests/` reached main before the rules, so they enter the baseline under
 [main moves before a rule lands](DESIGN.md#mechanisms). Leave them, and every other module's code, as written:
 `TEST-SUPPORT` M2.3 takes them to zero. The branch's own commits hold baselines from before main moved, down to

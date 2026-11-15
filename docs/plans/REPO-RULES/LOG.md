@@ -27,3 +27,9 @@
   groups, 26 contributor self-tests, the whole-tree rule check and `./dev check-docs` at `78fa1f63`.
   [The proof record](../../evidence/REPO-RULES/M1.md) separates the starting inventory and main's additions.
   The retained qualification helper records fresh target proof before setting builder passes and merging.
+- 2026-11-15 M1 was blocked on `APPLE-TILE` for the Chrome identity refusal at `db4a38fc`. The planner's
+  reading: not drift and not a stale key. All 481 digests match, the one identity that differs is the same
+  instant written two ways, and the same content key passed the whole verifier within the hour before. A stall
+  of the page left one due tick for the next callback. [The module list](../ARCHITECTURE.md#a-fixed-capture-that-stalls)
+  gained a ruling that lets such a run be set aside with a record. No milestone was added anywhere and no item
+  changed; M1's note says what to do next. [The reading](../../evidence/REPO-RULES/M1-replan/README.md).

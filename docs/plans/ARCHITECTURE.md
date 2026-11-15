@@ -807,8 +807,8 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
      runs is not variation.
 
   A failure that misses any of the four is rule 1's: the builder stops, writes the proposal in its log and ends
-  `BLOCKED` with every run. That includes an identity field that differs while the images are equal, which
-  `EFFECT-GRAPH` M3 met once on earlier content and which has no known cause.
+  `BLOCKED` with every run. An identity field that differs while the images are equal is judged by
+  [the next ruling](#a-fixed-capture-that-stalls).
 - **What does not change.** The verifier does not retry inside a run, accept a frame from a failed run, search
   for a nearer frame, skip a record or compare within a tolerance, and no reference is refreshed. The gate still
   passes covered content only on a complete pass.
@@ -821,6 +821,61 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
 - **When it ends.** With the landing that puts `CULLING` M3's coverage output on main. On content that holds
   the output, a failure of this kind is evidence that the correction does not hold on that target: the builder
   ends `BLOCKED` with the record, and a planner settles it here.
+
+<a id="a-fixed-capture-that-stalls"></a>
+
+**Ruling on a Chrome record that holds the tick before (with `APPLE-TILE`, `BASELINE-GUARD`, `T2-CAPTURE`, `HOST`
+and `REPO-RULES`), 15 November 2026.** `REPO-RULES` M1's builder stopped under rule 1. At `db4a38fc` the verifier
+passed both native matrices and Chrome day SDR, and refused Chrome day scene-linear at record 98 of 481 on its
+identity: the reference holds tick 218 with alpha 0, and the capture held tick 217 with alpha 1. The builder asked
+for `APPLE-TILE` to resolve it.
+
+- **What it is.** No image moved, and neither the reference nor the content key is stale. All 481 digests of the
+  failed capture equal the retained ones, and tick 217 with alpha 1 is the instant of tick 218 with alpha 0. The
+  same covered content, by its content key and with the same Wasm and native binaries, passed the whole verifier
+  less than an hour before ([`WATERS`' record](../evidence/WATERS/M1-baselines.json)), on the same Chrome. A fixed
+  capture gives the game a synthetic time at each callback, but in the browser the game's world stops committing
+  due ticks once a callback's tick work has taken 2 ms of real time, and commits the rest at the next callback
+  (`with_tick_work_slice` in `examples/v1-game/src/host/world.rs`). Record 98 is one of 140 that two ticks reach.
+  Its callback took 12.9 ms, the longest of the 481, where the median is 1.6 ms
+  ([the planner's reading](../evidence/REPO-RULES/M1-replan/README.md)). So the page stalled inside the first
+  tick, and the second waited for record 99, where the capture is level with the reference again. This is an
+  inference from the callback's time: no tick was timed. `EFFECT-GRAPH` M3 met the same once, on earlier content.
+- **Whose it is.** Nothing is owed by `APPLE-TILE` or `BASELINE-GUARD`: the references, the comparisons, the
+  registry and the verifier are right and stay as they are, no reference is refreshed, and neither module gains
+  a milestone. The defect is that real time reaches a fixed capture through the world's overload policy, which is
+  `HOST`'s ([its design](HOST/DESIGN.md)). Its correction is not planned:
+  [`REPO-RULES`' plan](REPO-RULES/PLAN.md#open-for-the-human) holds that as an assumption for the human. No
+  milestone waits for it.
+- **The rule, until that correction lands.** A failed verifier run stays failed: it writes no proof, and nothing
+  from it counts towards one. The builder may set it aside as a **stalled tick** and run the verifier again, in
+  place of stopping under rule 1, only when all three of these hold:
+  1. *Images.* Every record of the failed Chrome set holds the retained digest. The comparison stops at the
+     first refusal, so the builder reads the capture's manifest against the retained one for all 481
+     (`docs/evidence/REPO-RULES/M1-replan/identity_reading.py` is one way).
+  2. *Identities.* The only identity fields that differ are `tick`, `source_tick` and `alpha`, and in every
+     record where they differ the reference holds a tick with alpha 0 and the capture holds the tick before it
+     with alpha 1. Every other identity field of every record matches.
+  3. *The change passes.* The whole verifier, unchanged, then passes on the same covered content, or on the
+     same branch rebased onto a later main. That run is the proof, and it is complete: every record of every
+     set, in one run. If it fails, it is a failed run of its own, judged by these tests and by the ruling
+     above, and a record that fails in both runs is not a stalled tick.
+
+  A failure that misses any of the three is rule 1's, any other identity difference included: the builder stops,
+  writes the proposal in its log and ends `BLOCKED` with every run.
+- **What does not change.** The comparison is not taught that the two identities are one instant, and its
+  identity fields stay as they are. The verifier does not retry inside a run, accept a record from a failed run
+  or skip one, and no reference is refreshed. The gate still passes covered content only on a complete pass.
+- **The record.** In the module's evidence folder, for each run set aside: the failed run's record with its
+  content key, revision and Wasm hashes; the failed capture's manifest; the records that differ, with both
+  identities; the time of each callback from the capture's `runtime.json`, where the scratch still holds it;
+  and the passing run's record. The module's log gains one line that links it. At the review of a milestone
+  that carries the verifier (rule 3), the reviewer reads each record. A run set aside without one is a Must Fix.
+- **`REPO-RULES` M1.** The failed half of its record is on its branch. Its builder rebases, runs the verifier
+  unchanged and lands as for any covered change. None of its items changes.
+- **When it ends.** With the landing that makes a fixed capture commit every due tick whatever real time its
+  tick work takes. On content that holds it, a failure of this kind is evidence that the correction does not
+  hold: the builder ends `BLOCKED` with the record, and a planner settles it here.
 
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
@@ -2084,6 +2139,13 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   failed run of that kind may be set aside, with a record, when the whole verifier then passes on the same
   content; the rule ends with `CULLING` M3's landing. `EFFECT-GRAPH` M3 gained M3.9. The registry, the
   verifier, the comparisons, every reference and every other module's items are unchanged.
+- 2026-11-15 [Exact baselines](#exact-baselines) gained a ruling on a Chrome record that holds the tick before,
+  after `REPO-RULES` M1's builder stopped on one identity of 481 with every image equal and named `APPLE-TILE`.
+  The planner's reading: no drift and no stale key, since the same content passed within the hour; a stall of
+  the page left one due tick for the next callback of a fixed capture. A failed run of that kind may be set
+  aside, with a record, when the whole verifier then passes. No milestone was added to `APPLE-TILE`; the
+  correction is `HOST`'s to make and is not planned. The registry, the verifier, the comparisons, every
+  reference and every module's items are unchanged.
 - 2026-11-15 `TRANSPORT` M1 waits for `SHOWCASE:M8` again, after its design review of 15 November (`d686fe75`,
   one Must Fix): the brief's decision 1 says "transport stays after V1", and the owner's words of 14 November
   name the 2D engine side. The split, the edge table, the build order, row 21 and owner decision 7 say so.
