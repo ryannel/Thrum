@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 Integration reached a REPO-RULES handoff conflict. The helper
+  incorrectly refreshed baselines after the refused rebase, so its owned
+  verification was stopped. Resolved the conflict using upstream wording and
+  restricted refresh to a normal merge's exact-proof gate refusal. The real-lock
+  contention test, five retry classifications and documentation checks pass at
+  `9a1414c1`. The [handoff](../../evidence/CREATOR/M3-handoff.md) names the new job.
+
 - 2026-11-15 The resumed integration rebased to `66c7147c` and correctly refused
   its stale exact proof. The retained helper now refreshes that proof and retries
   the normal merge under the same resource locks, then runs the real-window
