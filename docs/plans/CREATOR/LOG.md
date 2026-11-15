@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 The official M3 gate at `19081f2a` passes both M3.3 and `./dev check`.
+  Retained its complete compressed streams. Resolved integration's documentation
+  conflicts with the upstream owners' link corrections. Covered source files are
+  unchanged after the rebase at `66e15c61` and the baseline gate accepts the proof.
+  Normal integration and the merged-build window proof remain pending.
+  [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-14 Rebased onto current main at `29a2c6ef` and repeated the native mistake
   journey with identical decoded selected frames. Both native exact matrices and four
   Chrome sets pass in 996.79 seconds. One earlier night frame differed by one channel
