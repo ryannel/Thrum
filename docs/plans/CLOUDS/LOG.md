@@ -1,5 +1,12 @@
 # CLOUDS log
 
+- 2026-11-15 M13 adds surface/datum and fog references, radiative cooling, visibility,
+  Sun paths, medium coefficients and haze to the renderer-free model. All nine CPU
+  and dependency commands passed on `db3d8514` on mac-metal. The saturated-overcast
+  regression and exact shore-margin probes pass. [Evidence](../../evidence/CLOUDS/M13.md)
+  and its receipt separate these results from the queued exact-image gate and
+  canonical integration; no fog visuals or performance are qualified.
+
 - 2026-11-15 The full milestone check passed all 15 automated commands on `e866a1d7`,
   including `./dev check`. M1.13 passed on `7e41bac7`: 38/4 native comparisons and 481
   records in each of four Chrome sets, in 960.25 seconds. Every builder item has target
