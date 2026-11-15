@@ -1,5 +1,5 @@
 {
-  "commit": "aa8dd9cbc8b15495b58b28c2203336d9db606458",
+  "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
   "commands": [
     {
       "command": [
@@ -13,7 +13,7 @@
         "profile_refusal"
       ],
       "exit": 0,
-      "output": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.93s\n     Running tests/profile_refusal.rs (target/debug/deps/profile_refusal-e90a3048ff6c3dac)\n\nrunning 1 test\ntest nested_infinity_and_nan_refuse_atomically_then_a_valid_tick_commits ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n"
+      "output": "\nrunning 1 test\ntest nested_infinity_and_nan_refuse_atomically_then_a_valid_tick_commits ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s\n     Running tests/profile_refusal.rs (target/debug/deps/profile_refusal-e90a3048ff6c3dac)\n"
     },
     {
       "command": [
@@ -27,7 +27,7 @@
         "world_digest"
       ],
       "exit": 0,
-      "output": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.80s\n     Running tests/world_digest.rs (target/debug/deps/world_digest-476116f2cdb11414)\n\nrunning 1 test\ntest independent_epochs_and_rewound_worlds_agree_each_tick ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\n"
+      "output": "\nrunning 1 test\ntest independent_epochs_and_rewound_worlds_agree_each_tick ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running tests/world_digest.rs (target/debug/deps/world_digest-476116f2cdb11414)\n"
     },
     {
       "command": [
@@ -41,7 +41,7 @@
         "digest_tests"
       ],
       "exit": 0,
-      "output": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.08s\n     Running unittests src/lib.rs (target/debug/deps/thrum_core-3bdb7a1e456ecb48)\n\nrunning 2 tests\ntest sim::registered_world::digest_tests::integer_mixer_has_published_fnv1a_vectors ... ok\ntest sim::registered_world::digest_tests::every_covered_metadata_kind_changes_the_digest_independently ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 75 filtered out; finished in 0.04s\n\n"
+      "output": "\nrunning 2 tests\ntest sim::registered_world::digest_tests::integer_mixer_has_published_fnv1a_vectors ... ok\ntest sim::registered_world::digest_tests::every_covered_metadata_kind_changes_the_digest_independently ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 74 filtered out; finished in 0.00s\n\n   Compiling thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-core)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s\n     Running unittests src/lib.rs (target/debug/deps/thrum_core-3bdb7a1e456ecb48)\n"
     },
     {
       "command": [
@@ -55,7 +55,7 @@
         "profile::tests"
       ],
       "exit": 0,
-      "output": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.64s\n     Running unittests src/lib.rs (target/debug/deps/thrum_core-3bdb7a1e456ecb48)\n\nrunning 4 tests\ntest profile::tests::encoding_cannot_observe_nan_sign_or_payload ... ok\ntest profile::tests::philox_matches_random123_published_known_answers ... ok\ntest profile::tests::random_has_no_call_order_or_thread_state ... ok\ntest profile::tests::arithmetic_fixture_matches_retained_words ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 73 filtered out; finished in 0.00s\n\n"
+      "output": "\nrunning 4 tests\ntest profile::tests::encoding_cannot_observe_nan_sign_or_payload ... ok\ntest profile::tests::philox_matches_random123_published_known_answers ... ok\ntest profile::tests::random_has_no_call_order_or_thread_state ... ok\ntest profile::tests::arithmetic_fixture_matches_retained_words ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 72 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running unittests src/lib.rs (target/debug/deps/thrum_core-3bdb7a1e456ecb48)\n"
     },
     {
       "command": [
@@ -69,7 +69,7 @@
         "retained_slice"
       ],
       "exit": 0,
-      "output": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.17s\n     Running tests/retained_slice.rs (target/debug/deps/retained_slice-daabdb54fe5833ac)\n\nrunning 1 test\ntest the_crowd_matches_the_retained_corrected_timeline ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.40s\n\n"
+      "output": "\nrunning 1 test\ntest the_crowd_matches_the_retained_corrected_timeline ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.51s\n\n   Compiling thrum-sim2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-sim2d)\n   Compiling crowd-2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/examples/crowd-2d)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.06s\n     Running tests/retained_slice.rs (target/debug/deps/retained_slice-daabdb54fe5833ac)\n"
     },
     {
       "command": [
@@ -83,7 +83,7 @@
         "input_route"
       ],
       "exit": 0,
-      "output": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n   Compiling thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-core)\n   Compiling thrum-sim2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-sim2d)\n   Compiling thrum-network v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-network)\n   Compiling crowd-2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/examples/crowd-2d)\n   Compiling crowd-2d-run v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/examples/crowd-2d-run)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.66s\n     Running tests/input_route.rs (target/debug/deps/input_route-0ffd6d9fffa22bbd)\n\nrunning 2 tests\ntest every_wire_value_and_both_sides_of_every_rounding_boundary ... ok\ntest local_and_codec_frames_commit_the_retained_slice has been running for over 60 seconds\ntest local_and_codec_frames_commit_the_retained_slice ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 65.06s\n\n"
+      "output": "\nrunning 2 tests\ntest every_wire_value_and_both_sides_of_every_rounding_boundary ... ok\ntest local_and_codec_frames_commit_the_retained_slice ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.00s\n\n   Compiling thrum-core v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-core)\n   Compiling thrum-sim2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-sim2d)\n   Compiling thrum-network v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/crates/thrum-network)\n   Compiling crowd-2d v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/examples/crowd-2d)\n   Compiling crowd-2d-run v0.1.0 (/Users/ryannel/Workspace/thrum/.claude/worktrees/sim-2d/examples/crowd-2d-run)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.80s\n     Running tests/input_route.rs (target/debug/deps/input_route-0ffd6d9fffa22bbd)\n"
     }
   ]
 }

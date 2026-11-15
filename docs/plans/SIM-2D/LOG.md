@@ -1,5 +1,12 @@
 # SIM-2D log
 
+- 2026-11-15 M1 resumed qualification at `371450716`: fresh Mac, Chrome and simulator
+  conformance, the sine control and all six focused test commands passed after the
+  engine-owned publication API adaptation. Refreshed both two-repeat cost records.
+  The first Mac 5,000-body row regressed 44.7%; the second regressed 5.6%, with
+  concurrent target runs and recorded load supporting contention as a likely cause.
+  [Evidence](../../evidence/SIM-2D/M1.md) retains every repeat and the unchanged digests.
+
 - 2026-11-15 M1 clean-checkout recovery: the reported gate failure came from
   APPLE-PRESENTATION M3 links to evidence absent from the merged checkout. Main's
   `b247eda7b` repair identifies those builder-branch paths explicitly. All twelve
