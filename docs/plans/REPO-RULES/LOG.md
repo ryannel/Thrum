@@ -33,3 +33,8 @@
   of the page left one due tick for the next callback. [The module list](../ARCHITECTURE.md#a-fixed-capture-that-stalls)
   gained a ruling that lets such a run be set aside with a record. No milestone was added anywhere and no item
   changed; M1's note says what to do next. [The reading](../../evidence/REPO-RULES/M1-replan/README.md).
+- 2026-11-15 M1's subsequent clean-main gate found newer APPLE-PRESENTATION log links without their evidence.
+  Restored the referenced historical records from `09a34295`, with byte-identical source snapshots for two
+  not-yet-landed renderer files; production source and other modules' plan records are unchanged. Main already
+  corrected the BASELINE-GUARD status-link assumption. The local-link audit passes; integration is rechecked
+  through the normal gate. [Provenance and checks](../../evidence/REPO-RULES/M1-link-repair.json).
