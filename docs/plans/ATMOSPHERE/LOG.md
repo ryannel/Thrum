@@ -528,3 +528,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   proof gate after upstream CPU model/workspace changes. The retained
   [integration runner](../../evidence/ATMOSPHERE/M9-integrate.py) orders fresh
   canonical proofs before retrying that gate, with no check or field changed.
+
+- **2026-11-15 — M9 rebased gate repair.** On `3b4a2377`, exact baselines and both
+  Metal ground referees pass. The new shape gate rejects the fixture's copied device
+  setup and milestone-named recording input; it now shares the unchanged default
+  request with the local atmosphere test support and uses a descriptive input name.
+  Repaired upstream links to unmerged evidence and a copied status-relative link.
+  No production shader, reference, case or allowance changed; full qualification follows.

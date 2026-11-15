@@ -7,6 +7,22 @@ mod multiple_interpolation;
 mod reference;
 mod transmittance;
 
+async fn device() -> (wgpu::Device, wgpu::Queue, wgpu::AdapterInfo) {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions::default())
+        .await
+        .expect("real adapter required for atmosphere tests");
+    let info = adapter.get_info();
+    #[cfg(target_os = "macos")]
+    assert_eq!(info.backend, wgpu::Backend::Metal);
+    let (device, queue) = adapter
+        .request_device(&wgpu::DeviceDescriptor::default())
+        .await
+        .expect("atmosphere test device");
+    (device, queue, info)
+}
+
 fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
     let sample = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("transport-only fixture exposure"),
@@ -20,17 +36,7 @@ fn sky_samples(device: &wgpu::Device) -> [wgpu::Buffer; 2] {
 #[test]
 fn encoded_constant_sky_integrates_in_physical_illuminance_units() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("real adapter required for diffuse units regression");
-        #[cfg(target_os = "macos")]
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("diffuse units device");
+        let (device, queue, _) = device().await;
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("constant sky frame"),

@@ -19,17 +19,9 @@ struct Fixture {
 
 impl Fixture {
     async fn new() -> Self {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("M9 hardware adapter");
-        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-        writeln!(std::io::stdout(), "M9 device {:?}", adapter.get_info()).expect("report device");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("M9 Metal device");
+        let (device, queue, info) = super::device().await;
+        assert_eq!(info.backend, wgpu::Backend::Metal);
+        writeln!(std::io::stdout(), "M9 device {info:?}").expect("report device");
         let directional = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: crate::synthetic::LIGHT_BYTES as u64,
@@ -230,7 +222,7 @@ impl Volume {
 fn above_ground_bytes_record() {
     pollster::block_on(async {
         let fixture = Fixture::new().await;
-        let output = std::env::var_os("THRUM_M9_RECORD_DIR")
+        let output = std::env::var_os("THRUM_AERIAL_GROUND_RECORD_DIR")
             .map_or_else(|| Path::new(ROOT).to_path_buf(), std::path::PathBuf::from);
         std::fs::create_dir_all(&output).expect("M9 fixture directory");
         for h in [3, 245] {
