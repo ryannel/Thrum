@@ -10,7 +10,7 @@
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | Nothing for its M9; APPLE-PRESENTATION M3 for its M6 |
-| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is refused before it reaches main | |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 |
@@ -108,7 +108,7 @@ is the game and starts when the exit is reached. None gates the exit. They are l
 | `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | [Design](APPLE-TILE/DESIGN.md) |
 | `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [brief for M4–M11](#apple-presentation-m4m11-g4) |
 | `ATMOSPHERE` | G3s; track 2 from M7 | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers; the air's optics for a haze the weather sets; the view volume, which integrates air, haze and a provider's medium jointly near the camera, with its history | [Design](ATMOSPHERE/DESIGN.md) |
-| `BASELINE-GUARD` | T2 | The exact-baseline registry, the one-command verifier, its proofs and the proof gate in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
+| `BASELINE-GUARD` | T2 | The exact-baseline registry, the verifier that the main-branch check `exact-images` runs, and the reference guard in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
 | `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
@@ -258,7 +258,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
 | Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
 | **Resolved selections**: each selectable path tells the game what it resolved to on this device (recipe, reconstructor, display mode, governor state, culling mode), so a run can report what it ran and a fallback cannot pass as the feature | `APPLE-TILE`, `APPLE-PRESENTATION`, `CULLING` → `SHOWCASE`'s exit report | C04, [SHOWCASE](SHOWCASE/DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) |
-| **Exact baselines**: retained references, their owner, the one-command verifier, and the proof gate in `./dev check` that `land` runs before it pushes | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, gate) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
+| **Exact baselines**: retained references, their owner, and the verifier that one run on main shares between every landing | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, reference guard) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
 
 **Seam rulings for `APPLE-PRESENTATION` M1–M3.** Its design proposed nine seams to Thrum Core. Under the loop the
 module list settles them. Seams 1–4 are accepted as written there:
@@ -622,6 +622,35 @@ and the change merged. `APPLE-TILE` M2 was then claimed on evidence from a binar
 ([APPLE-TILE M2 review](../evidence/APPLE-TILE/M2-review.md), MF1;
 [APPLE-PRESENTATION M1 review](../evidence/APPLE-PRESENTATION/M1-review-1.md), MF1). Three rules close those holes.
 
+<a id="proofs-run-once-on-main"></a>
+
+**Ruling: proofs run once, on main (15 November 2026).** Rule 2 first asked every builder for a proof of the
+exact content it pushed. Main changed the covered paths about every 20 minutes and a proof took about 16, so
+with more than three covered merges an hour a proof was usually void before it could be used. In one day four
+milestones reached Ready for Review against 419 commits, 163 of 288 background jobs failed, and the one GPU lock
+was busy 92% to 94% of the day, mostly in rebase, re-prove and merge attempts that failed. Of 79 verifier runs,
+one failure was a real pixel change and 21 were flakes or infrastructure
+([the report](../evidence/BASELINE-GUARD/M2-replan/proof-regime.md)). The owner approved its regime: "Ok, let's
+get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the
+lead on Thrum working." and "We want all these fixes in place before I head to bed tonight." In the lead's
+session that day the owner said "Go ahead" to a gate that only warns, an hourly verifier on main, `gpu: 2,
+chrome: 1`, `BASELINE-GUARD` re-planned, the rule and skill text updated, and an unintended image change
+sitting on main for about two hours.
+
+- **What changed.** Rules 2 and 3 are written again below. Rule 1 stands. A proof before the merge is no longer
+  asked of anyone, and `./dev check` no longer refuses for the lack of one.
+- **Earlier text.** Where a module's design, plan note or log says to run the verifier before `land`, to hold
+  the `gpu` lock for it, or to run it again after a rebase, this ruling replaces that. Each module's text is
+  corrected at its next re-plan. An item whose check is the verifier keeps its text and loses its `lock`.
+- **The rulings on [a frame that varies under load](#a-frame-that-varies-under-load) and
+  [a fixed capture that stalls](#a-fixed-capture-that-stalls).** On main, the script's second attempt stands in
+  for the builder's second run: a run that passes on its retry is recorded by the script and needs no record
+  from a module. Their conditions and records now apply to a `verify --full` run made for a planned refresh, and
+  to a module that disputes a failure which held on main.
+- **Not done here, recorded as later work.** A `./dev check` that tests only the crates a merge batch affects,
+  with a full run on main every few hours; and a two-minute tier of the native matrix for routine runs on main,
+  which needs a ruling with `APPLE-TILE`, whose sampling it is.
+
 **1. An exact comparison is its owner's interface.** A builder never changes another module's retained
 references, its comparison, its tolerance or its sampling (accepting the closest of several frames, for example),
 nor an exact test of output another module owns, to make its own change pass. The registry, the verifier and the
@@ -634,64 +663,56 @@ A refresh records the cause and the old and new hashes in both modules' logs. No
 silently. A loop builder pushes a covered-path change only through `land` with its check on, never
 `land --no-check`. Any other thread that pushes one runs `./dev check` on the exact commit it pushes.
 
-**2. Before the push: a proof for exactly the content being pushed.** `land` rebases, runs `./dev check` and
-pushes under one lock, without handing control back in between, so `./dev check` is the only thing between any
-change and main, a fix with no plan included. A full comparison needs a release build, a cook and Chrome, which
-`./dev check` cannot run. So [BASELINE-GUARD](BASELINE-GUARD/DESIGN.md) builds two parts:
+**2. After the merge: one run on main proves every landing.** The main-branch check `exact-images`, declared in
+`ORCHESTRATE.md`, runs the verifier that [BASELINE-GUARD](BASELINE-GUARD/DESIGN.md) M1 built on main's tip:
+`python3 scripts/exact_baselines.py verify --full`, in the script's own clean checkout, holding the `gpu` and
+`chrome` locks. It draws fresh output on the Mac and in Chrome and compares it with every registered baseline,
+byte for byte. One run covers every commit merged since the last one, whoever merged them.
 
-- a **verifier**, one command that draws fresh output on the Mac and in Chrome at a commit and compares it with
-  every registered baseline. On a full pass it writes a **proof** that names a digest of the covered paths at that
-  commit;
-- a **gate** in `./dev check`, which passes a commit that changes no covered path beyond main, and refuses any
-  other commit unless a proof names its exact covered content.
-
-A builder runs the verifier before `land`. If `land`'s rebase brings in another covered-path change, the content
-and its digest change, the gate fails and nothing is pushed; the builder runs the verifier on the rebased commit
-and lands again. So the full matrix, Chrome and night included, has always passed on the content that reaches
-main. Every module's landings are covered from the day the gate exists, with no item added to any plan. Until
-`BASELINE-GUARD` M1 is Done, rule 3 is the only automatic catch, and it acts after the push.
+- **When it runs.** When a milestone's claim asks for it (rule 3), and when the lead's hourly
+  `main-check --due` finds that main has moved. Two runs start at least 30 minutes apart.
+- **When it fails.** The script runs it again once. A failure that holds is traced over main's commits since
+  the last pass to the first that fails, and the result names that commit and its module. That module fixes it
+  as its next task. If no fix has merged an hour after the commit is named, the lead reverts the commit. Every
+  other module keeps merging meanwhile.
+- **What is accepted.** Main can hold an unintended image change for about two hours. Nothing ships from main,
+  and no other builder is stopped by it.
+- **Before the merge.** No proof is needed. `./dev check` still runs the gate, which now only reports: it
+  prints a warning for a commit that changes a covered path with no proof for its content, and never refuses.
+- **What does not change.** Bytes are compared exactly. The verifier does not retry inside a run, accept a
+  nearer frame, skip a record or compare within a tolerance.
+- **A planned refresh** is the one run made before a merge. A milestone that a ruling here allows to move a
+  baseline regenerates the references on its candidate, runs `verify --full` there under the `gpu` lock, and
+  merges the change and the references in one landing, so the next run on main passes with them.
 
 <a id="the-covered-paths-are-derived"></a>
 
-**Unlinked crates leave the covered paths** (15 November 2026, on the lead's task;
-[design](BASELINE-GUARD/DESIGN.md#the-covered-paths)). The gate was built with covered paths listed by hand, and
-they took in every crate, so a change to a crate the game never links lapsed every open proof. `BASELINE-GUARD`
-M2 keeps the listed paths and takes one kind of file out of the key: a file in the folder of a workspace package
-that Cargo links into nothing the verifier builds (`v1-game` and `thrum-cook`). Cargo works that out, through
-`cargo metadata`, each time the gate or the verifier computes the key, and no list of crates is kept. So a
-crate joins the key in the commit that makes the game depend on it, and a file Cargo cannot place in an
-unlinked package stays covered. Such a package's `Cargo.toml` stays covered too. Everything else under the
-listed paths is covered as before, read or not: every file under `scripts/`, `tools/` outside a package,
-`.cargo/`, the workspace manifest, the lockfile, the toolchain file, the registry and the references.
+**Unlinked crates leave the covered paths: withdrawn (15 November 2026).** `BASELINE-GUARD` M2 was to take the
+files of crates the game never links out of the proof's key, so that fewer rebases lapsed a proof. No proof is
+asked before a merge now, so nothing lapses and the narrower key has no use. The work is set aside unmerged, and
+[the design](BASELINE-GUARD/DESIGN.md#later-work) records it. The covered paths are the listed paths in the
+table below, whole, and they now only decide when the gate warns.
 
-After its builds the verifier checks Cargo's dependency records, and writes no proof if a build read a
-repository file the key does not hold. A script, the cooker or the game must not read data from an unlinked
-package's folder unless the registry lists the file: any module may add such a path to the registry's listed
-paths for a file its script or build reads, and says so in its log; removing a listed path needs a ruling
-here. `python3 scripts/exact_baselines.py covered` prints the linked and the unlinked packages of a commit.
-Where a ruling here lets a module change the registry's paths, that includes the package names it holds. No
-baseline, no comparison and no other module's item changes, and a design that calls `crates/` or `scripts/` a
-covered path stays right for every crate the game links and for every script. Until M2 is Done the listed
-paths in the table below apply whole. A key that also leaves out scripts the verifier never runs and sources
-no build reads was designed and withdrawn after three design reviews;
-[the design](BASELINE-GUARD/DESIGN.md#later-work) records it as later work.
-
-**3. At the claim: the verifier again, as a planner-written check.** A builder cannot change an item's `check`,
-and the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that
-edits covered paths, in a module planned from now on, carries an item whose `check` is the verifier. It is the
-backstop for a skipped gate or a forged proof. Every exact or visual proof records the revision, clean-diff hash
-and binary hash it ran on, and that revision is the commit claimed. A reviewer who finds a baseline, the gate or
+**3. At the claim: the shared run, as a planner-written check.** A builder cannot change an item's `check`, and
+the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that
+edits covered paths carries an item whose `check` is `python3 scripts/exact_baselines.py verify`, with no
+`lock`. Without `--full` the command draws nothing. It asks the main-branch check whether a passing run
+contains the commit, waits for the run under way or starts one, and passes once one does. It fails when main
+fails at or before the commit, naming the first failing commit, and on a branch it says the commit is not on
+main yet. So a builder does not run it before merging: it sets the item `pass` with the evidence `main-branch
+check exact-images`, and the loop's run on the merged tip is the proof. A module that draws nothing drops the
+item at its next re-plan. Every exact or visual proof records the revision, clean-diff hash and binary hash it
+ran on, and that revision is the commit claimed. A reviewer who finds a baseline, the registry, the verifier or
 an exact test changed by a module that does not own it, with no ruling here, records a Must Fix.
 
 | Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
-| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. Once `BASELINE-GUARD` M2 is Done, [less the files of crates the verifier's builds do not link](#the-covered-paths-are-derived) |
+| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | Listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files. |
 | Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
 | `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
 | The exit baselines under `docs/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
 
-The verifier, `python3 scripts/exact_baselines.py verify`, runs the first two rows; it exists once
-`BASELINE-GUARD` M1 is Done.
+The verifier, `python3 scripts/exact_baselines.py verify --full`, runs the first two rows.
 
 **Ruling on the Chrome reference (with `APPLE-TILE`).** The complete reference captures, 481 frames each, were
 kept only in the scratch of the builder that made them, so a clean checkout could not run the byte comparison.
@@ -713,9 +734,8 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   ([the planner's reading of the mesh](../evidence/ATMOSPHERE/design-proof/README.md), a prediction and not a
   GPU run). Those pixels gain haze. The sky, the stars, the near ground, the props and the letterbox bars are
   predicted not to move. M9's builder records which sets did move.
-- **Who refreshes them.** The gate passes a covered change only with a proof for its exact content, so the
-  change and the references cannot land apart, and no milestone of `APPLE-TILE`'s could hold them. By this
-  ruling M9's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s own
+- **Who refreshes them.** The change and the references land together, as rule 2's planned refresh, so no
+  milestone of `APPLE-TILE`'s could hold them. By this ruling M9's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s own
   scripts, in the landing that makes the change. The registry, the comparisons, their sampling and every
   script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` M9.5 holds
   the verifier at the starting commit and at the claimed one and the old and new hashes in both modules'
@@ -725,8 +745,8 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   with its baseline and thresholds as they are. If it fails, the builder ends `BLOCKED` and `SHOWCASE`
   settles it. Any other module's exact test that M9 moves is that module's under rule 1, and the builder
   ends `BLOCKED` with it.
-- **Everyone else.** A builder with covered changes in flight reruns the verifier after it rebases onto M9,
-  as after any covered landing. A module whose milestone carries the verifier as an item needs no change.
+- **Everyone else.** Nothing is owed: the run on main after M9's landing compares with the new references,
+  and a module whose milestone carries the verifier as an item needs no change.
 
 **Ruling on `CULLING` M3 (with `APPLE-TILE`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
 the valley drawn Direct is not one image under GPU load, the correction moves `APPLE-TILE`'s references, and no
@@ -745,8 +765,8 @@ and in every exact test of the default.
   unmeasured. Pixels on shared triangle edges of textured or shadowed opaque geometry are expected to move in
   every set that holds such geometry; the sky, the stars and the letterbox bars are not. M3's builder records
   which sets moved.
-- **Who refreshes them.** As for M9, the gate passes a covered change only with a proof for its exact content,
-  so the change and the references cannot land apart, and no milestone of `APPLE-TILE`'s could hold them. By
+- **Who refreshes them.** As for M9, the change and the references land together, as rule 2's planned
+  refresh, so no milestone of `APPLE-TILE`'s could hold them. By
   this ruling M3's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s
   own scripts, in the one landing that adds the output. The registry, the comparisons, their sampling and every
   script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` M3.10 holds
@@ -754,20 +774,20 @@ and in every exact test of the default.
   M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
   triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
   items unchanged. No other change of M3 may move a reference.
-- **Qualified before the push.** (15 November 2026.) The gate needs a committed candidate, not a pushed one. So
-  M3.11's campaign, M3.12's difference images and the verifier all pass on a local candidate before `land`
-  pushes the output and the references together. If one fails, nothing is pushed and the references on main
+- **Qualified before the push.** (15 November 2026.) A planned refresh needs a committed candidate, not a
+  pushed one. So M3.11's campaign, M3.12's difference images and `verify --full` all pass on a local candidate
+  before `land` pushes the output and the references together. If one fails, nothing is pushed and the references on main
   stay as they are. Those two proofs therefore run on the candidate, not on the commit claimed, which rule 3
   otherwise asks; [`CULLING`'s design](CULLING/DESIGN.md#qualified-before-it-lands) says when each stands for
   a later commit and when a rebase repeats it.
 - **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, runs
-  the verifier at its new starting commit and regenerates from there. Each records its own old and new hashes,
+  `verify --full` at its new starting commit and regenerates from there. Each records its own old and new hashes,
   so the two causes stay apart.
 - **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds, which stay as they are.
   Any other module's exact test that the output moves is that module's under rule 1, and the builder ends
   `BLOCKED` with it.
-- **Everyone else.** A builder with covered changes in flight reruns the verifier after it rebases onto the
-  landing, as after any covered landing. Exact tests that compare a run with itself need no change, and stop
+- **Everyone else.** Nothing is owed: the run on main after the landing compares with the new references. Exact
+  tests that compare a run with itself need no change, and stop
   varying under load once they are built on it.
 
 <a id="a-frame-that-varies-under-load"></a>
@@ -2171,3 +2191,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `thrum-cook`; the derived key, the verification root, unread sources and tripwires are withdrawn and recorded
   as later work in that design. The paragraph keeps its anchor. No baseline, comparison or other module's item
   changed.
+- 2026-11-15 [Exact baselines](#exact-baselines) gained the ruling
+  [proofs run once, on main](#proofs-run-once-on-main), on the lead's task with the owner's approval. Rule 2
+  moved from a proof before each push to one run on main after the merge, by the main-branch check
+  `exact-images`; rule 3's item now passes from that shared run and takes no lock; the gate in `./dev check`
+  only warns. "The covered paths are derived" is withdrawn, and `BASELINE-GUARD` M2 is planned again as the
+  reference guard. `ORCHESTRATE.md` declares `gpu: 2` and `chrome: 1` as shared and `simulator` as exclusive.
+  No baseline, comparison or item text of another module changed; only items' `lock` fields did.

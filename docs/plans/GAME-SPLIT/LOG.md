@@ -23,3 +23,7 @@
   is judged in one milestone. Suggestion taken: M4.7 has the verifier hand `THRUM_GAMES` to the commands it
   starts, because it removes every `THRUM_` variable today and the item's check would otherwise pass whether or
   not a child could reach the sibling games repository.
+- 2026-11-15 Planner, with the ruling [proofs run once, on main](../ARCHITECTURE.md#proofs-run-once-on-main):
+  M4.7's check gained `--full`. Plain `verify` now asks the run on main and draws nothing, and M4.7 needs a real
+  run with `THRUM_GAMES` pointing at nothing. Its statement did not change. The other verifier items lost their
+  `lock` and one simulator item moved to the `simulator` lock.

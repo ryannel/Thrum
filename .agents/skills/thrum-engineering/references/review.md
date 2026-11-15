@@ -3,7 +3,8 @@
 What a Thrum reviewer checks, beyond what `/review-milestone` covers. The owner-graded verdicts are in
 `docs/design/GRADED-EXAMPLES.md`. They are the best guide to how strict to be.
 
-Contents: [Design reviews](#design-reviews) · [Code reviews](#code-reviews) · [Visual reviews](#visual-reviews) ·
+Contents: [Design reviews](#design-reviews) · [Code reviews](#code-reviews) ·
+[Checks the script already ran](#checks-the-script-already-ran) · [Visual reviews](#visual-reviews) ·
 [Performance claims](#performance-claims) ·
 [Calibration: failures this engine has already paid for](#calibration-failures-this-engine-has-already-paid-for)
 
@@ -54,6 +55,21 @@ started as one reasonable-looking change.
 Also check that the change doesn't reach across a crate boundary through `#[path]`, `include_str!` or a
 dev-dependency on an example.
 
+## Checks the script already ran
+
+The script ran `./dev check` and every item's check on the merged commit before it asked for this review, and
+saved each check's whole output. For a check that takes the `gpu`, `chrome` or `simulator` lock, read that
+saved output and don't run the check again: a second run takes the device from a builder and tells you what
+the first already did. Run one again only for a doubt you have written down first, such as output that names
+another commit or a result the code can't produce.
+
+Spend the time where reviews here have found defects. Of 21 Must Fix findings in 40 reviews, 14 came from
+reading code or from a reviewer's own CPU probe, one from the exact verifier and one from stills. So read the
+code, write a small CPU test for anything you doubt, and look at the captures.
+
+The exact images are verified on main by the main-branch check `exact-images`. An item whose check is
+`python3 scripts/exact_baselines.py verify` passed from that shared run, so don't start a full run for it.
+
 ## Visual reviews
 
 Look at captured images and sequences yourself. Say whether you watched motion or sampled stills, at native size or
@@ -74,7 +90,10 @@ Challenge:
 - the memory accounting;
 - contention on the shared GPU.
 
-A timing taken while another agent used the GPU is labelled as contended, or it doesn't count.
+A timing taken while another agent used the GPU is labelled as contended, or it doesn't count. Inside a
+milestone that is expected: such a timing is a tripwire, and it fails only on a collapse or a missing
+measurement. Hold a module's last milestone to qualified numbers, taken in one sitting with the other builders
+paused.
 
 ## Calibration: failures this engine has already paid for
 

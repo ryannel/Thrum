@@ -120,6 +120,12 @@ useful benefit. Record why and what would reopen the decision. No endless search
 Functional delivery requires preserved semantics, stability, lifecycle and required visuals. Performance claims need
 evidence, but benchmarks are tripwires during feature construction. Later campaigns use the deeper workflow below.
 
+**Where a timing is taken (15 November 2026).** Builders share one machine, and a lock keeps out only the runs
+that take it, so a timing taken while they work is contended whatever lock it holds. Inside a milestone a
+timing is therefore a tripwire: it records the load on the machine and fails only on a collapse or a missing
+measurement. A module's qualified numbers are taken in its last milestone, in one sitting with the other
+builders paused. [ORCHESTRATE.md](../../ORCHESTRATE.md) carries the rule for builders.
+
 ## What changes in the architecture
 
 The engine already proposes profiles, ownership, traces, replay, cooked products and maturity records. Those are

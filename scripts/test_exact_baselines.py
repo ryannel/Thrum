@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise proof gating through real fetch/rebase/push, and exact Chrome modes."""
+"""Exercise the gate's report through real fetch/rebase/push, the main-check hand-off, and exact Chrome modes."""
 import contextlib
 import gzip
 import hashlib
@@ -58,34 +58,33 @@ class GateTests(unittest.TestCase):
                           'baselines': [b['id'] for b in guard.registry(self.builder)['baselines']]})
 
     def land(self):
-        """Same integration order as land, against only this disposable remote."""
-        before = self.run_git(self.base, '--git-dir', str(self.remote), 'rev-parse', 'main')
+        """Same integration order as land, against only this disposable remote. Returns the gate's report."""
         self.run_git(self.builder, 'fetch', 'origin', 'main')
         self.run_git(self.builder, 'rebase', 'origin/main')
-        with contextlib.redirect_stdout(io.StringIO()):
-            try:
-                guard.gate(self.builder)
-            except ValueError:
-                self.assertEqual(before, self.run_git(self.base, '--git-dir', str(self.remote), 'rev-parse', 'main'))
-                return False
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            status = guard.gate(self.builder)
+        self.assertEqual(output.getvalue().startswith('WARN'), status == 'unproved')
+        # The gate reports and never refuses: the landing goes ahead whatever it said.
         self.run_git(self.builder, 'push', 'origin', 'HEAD:main')
         self.assertEqual(self.run_git(self.builder, 'rev-parse', 'HEAD'),
                          self.run_git(self.base, '--git-dir', str(self.remote), 'rev-parse', 'main'))
-        return True
+        return status
 
     def test_no_covered_change_passes_without_proof(self):
         (self.builder / 'notes.md').write_text('documentation')
         self.commit(self.builder, 'docs')
-        self.assertTrue(self.land())
+        self.assertEqual(self.land(), 'unchanged')
 
-    def test_covered_change_refuses_until_exact_proof(self):
+    def test_covered_change_without_proof_warns_and_lands(self):
         (self.builder / 'crates/one').write_text('changed')
         self.commit(self.builder, 'covered')
-        self.assertFalse(self.land())
+        self.assertEqual(self.land(), 'unproved')
+        (self.builder / 'crates/one').write_text('changed again')
+        self.commit(self.builder, 'covered again')
         self.seed_proof()
-        self.assertTrue(self.land())
+        self.assertEqual(self.land(), 'proved')
 
-    def test_covered_rebase_invalidates_proof(self):
+    def test_covered_rebase_leaves_proof_stale_and_lands(self):
         (self.builder / 'crates/two').write_text('builder')
         self.commit(self.builder, 'builder covered')
         self.seed_proof()
@@ -93,10 +92,8 @@ class GateTests(unittest.TestCase):
         (self.writer / 'crates/one').write_text('upstream')
         self.commit(self.writer, 'upstream covered')
         self.run_git(self.writer, 'push', 'origin', 'main')
-        self.assertFalse(self.land())
+        self.assertEqual(self.land(), 'unproved')
         self.assertNotEqual(key, guard.content_key(self.builder))
-        self.seed_proof()
-        self.assertTrue(self.land())
 
     def test_uncovered_rebase_preserves_proof(self):
         (self.builder / 'crates/two').write_text('builder')
@@ -106,18 +103,45 @@ class GateTests(unittest.TestCase):
         (self.writer / 'notes.md').write_text('upstream docs')
         self.commit(self.writer, 'upstream docs')
         self.run_git(self.writer, 'push', 'origin', 'main')
-        self.assertTrue(self.land())
+        self.assertEqual(self.land(), 'proved')
         self.assertEqual(key, guard.content_key(self.builder))
 
-    def test_missing_base_and_dirty_inputs_fail_closed(self):
+    def test_missing_base_fails_and_dirty_inputs_warn(self):
+        (self.builder / 'crates/one').write_text('dirty')
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(guard.gate(self.builder), 'unproved')
+        self.assertIn('uncommitted', output.getvalue())
+        with self.assertRaisesRegex(ValueError, 'dirty tree'):
+            guard.verify(self.builder)
+        self.run_git(self.builder, 'checkout', '--', 'crates/one')
         self.run_git(self.builder, 'update-ref', '-d', 'refs/remotes/origin/main')
         with self.assertRaises(subprocess.CalledProcessError):
             guard.gate(self.builder)
-        (self.builder / 'crates/one').write_text('dirty')
-        with self.assertRaisesRegex(ValueError, 'uncommitted'):
-            guard.gate(self.builder)
-        with self.assertRaisesRegex(ValueError, 'dirty tree'):
-            guard.verify(self.builder)
+
+
+class MainCheckTests(unittest.TestCase):
+    """`verify` without --full hands the question to the orchestrate script and returns its status."""
+
+    def ask(self, script_body):
+        with tempfile.TemporaryDirectory() as temp:
+            script = Path(temp) / 'agent_loop.py'
+            script.write_text(script_body)
+            with patch.dict(os.environ, {'ORCHESTRATE_SCRIPT': str(script)}):
+                return guard.covered_by_main(Path(temp))
+
+    def test_statuses_pass_through(self):
+        body = ('import sys\n'
+                'assert sys.argv[1:4] == ["main-check", "exact-images", "--worktree"], sys.argv\n'
+                'raise SystemExit({})\n')
+        for status in [0, 1, 75]:
+            self.assertEqual(self.ask(body.format(status)), status)
+
+    def test_without_the_script_it_draws_nothing_and_fails(self):
+        with patch.dict(os.environ), contextlib.redirect_stderr(io.StringIO()) as output:
+            os.environ.pop('ORCHESTRATE_SCRIPT', None)
+            with patch.object(guard, 'verify', side_effect=AssertionError('full run started')):
+                self.assertEqual(guard.covered_by_main(), 2)
+        self.assertIn('verify --full', output.getvalue())
 
 
 class RetentionTests(unittest.TestCase):

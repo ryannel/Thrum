@@ -100,21 +100,27 @@ build trees, transcripts, every rejected asset or bulk captures. [Storage rules]
 cover promotion and closeout. There is no remote or release configuration implied by this scaffold;
 package publication is disabled pending a deliberate distribution and licensing decision.
 
-## Exact image baselines before integration
+## Exact image baselines are verified on main
 
-For a covered-path change, commit the work, then hold the repository's `gpu` lock and run
-`python3 scripts/exact_baselines.py verify` outside the Codex sandbox. It requires a clean checkout,
-this Mac's Metal device, Chrome and at least 16 GiB free. It builds release native and Wasm outputs,
-cooks fresh content, and compares both native matrices and all four Chrome sets exactly. A mismatch
-names the baseline and its owner; only that owner can refresh retained references under
+No exact-image proof is needed before a merge. After merges, the main-branch check `exact-images` runs
+`python3 scripts/exact_baselines.py verify --full` on main's tip, in a clean checkout of its own. It needs
+this Mac's Metal device, Chrome and at least 16 GiB free. It builds release native and Wasm outputs, cooks
+fresh content, and compares both native matrices and all four Chrome sets exactly. One run covers every
+commit merged since the last. A failure that holds on a second attempt is traced to the first failing
+commit, and that commit's module fixes it or the commit is reverted. A mismatch names the baseline and its
+owner; only that owner can refresh retained references under
 [the baseline rules](docs/plans/ARCHITECTURE.md#exact-baselines).
 
-The [registry](.config/exact-baselines.json) lists references and covered paths. A full pass writes
-an untracked proof in `tmp/baseline-guard/proofs/`, keyed to Git objects for those paths. Compact
-records retain revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful
-bulk frames are removed after the owner publishes their comparisons or complete motion verification;
-source manifests and sample identities are archived first. Failed captures remain for diagnosis.
-`./dev check` always runs the CPU-only proof gate. Changes outside covered paths need no proof.
-If integration rebases onto a covered change, the gate refuses the stale proof: verify the rebased
-commit and land again. A rebase that changes only other paths preserves the content key.
-There is no gate bypass option. Never use `land --no-check` or plain push for a covered change.
+`python3 scripts/exact_baselines.py verify`, without `--full`, draws nothing. It asks whether a passing run
+on main contains the current commit, and is the check of a done-when item in most modules. Don't run it
+before merging: on a branch it answers that the commit isn't on main yet.
+
+The [registry](.config/exact-baselines.json) lists references and covered paths. `./dev check` prints a
+warning when a commit changes a covered path, and never refuses for it. A full run keeps compact records
+with revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful bulk frames are
+removed after the owner publishes their comparisons or complete motion verification; source manifests and
+sample identities are archived first. Failed captures remain for diagnosis.
+
+A planned refresh, which a ruling in the baseline rules must allow, is the one full run made before a
+merge: regenerate the references on the candidate, hold the `gpu` lock for `verify --full` there, and merge
+the change and the references in one landing. Never use `land --no-check` or plain push for a covered change.

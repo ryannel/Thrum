@@ -58,7 +58,6 @@
           "id": "M1.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/baselines.json; docs/evidence/REVIEW-ENGINE/M1/checks/items.json",
@@ -128,7 +127,6 @@
           "id": "M2.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -204,7 +202,6 @@
           "id": "M3.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -258,7 +255,6 @@
           "id": "M4.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -313,7 +309,6 @@
           "id": "M5.4",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""

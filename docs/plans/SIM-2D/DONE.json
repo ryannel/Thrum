@@ -116,7 +116,6 @@
           "id": "M1.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/exact-baselines.json",
           "verdict": "",
@@ -254,7 +253,6 @@
           "id": "M2.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -363,7 +361,6 @@
           "id": "M3.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open"

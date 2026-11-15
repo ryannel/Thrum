@@ -412,7 +412,7 @@
           "target": "chrome-webgpu",
           "evidence": "",
           "check": "python3 scripts/run_v1_showcase.py moving",
-          "lock": "gpu",
+          "lock": "chrome",
           "ask": "Use T2 M1 fixed exact comparisons against the retained pre-change Chrome baseline and realtime for host-time motion, accounting for every sample. Read back existing 32/64 all-overlap overflow/tie lists against the existing CPU oracle; record actual CPU versus supported GPU execution counts and complete fallback/admission cost. CPU overflow is the retained intended outcome, not qualification of a larger GPU builder. Trace unchanged 192-byte bindings, supported membership/order, graph timing and present consumers. Coarse-grid parity alone cannot pass.",
           "inspect": "Inspect full-resolution Chrome noon/night fixed checkpoints and realtime 1x cut/mirror/light sequences. Show the one-light, one-mirrored-cube and night-star omission controls each fail exact comparison against the pre-change baseline; record native-size diff crops.",
           "verdict": "",

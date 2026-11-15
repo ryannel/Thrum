@@ -186,3 +186,30 @@
 - 2026-11-15 M2's checks tried by running each command: the five test-class checks and `covered` fail before
   the work and none errors. The loop's `check --items-only` waited seven minutes on the `gpu` lock for M2.7,
   behind queued builders, and was stopped; M2.7's check is M1.1's command, unchanged. `./dev check-docs` passes.
+
+- 2026-11-15 Owner, on the proof regime
+  ([report](../../evidence/BASELINE-GUARD/M2-replan/proof-regime.md)): "Ok, let's get the script and skill
+  changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working."
+  and "We want all these fixes in place before I head to bed tonight." In the lead's session the owner said "Go
+  ahead" to a gate that only warns, an hourly verifier on main, `gpu: 2, chrome: 1`, this module planned again,
+  and an unintended image change sitting on main for about two hours.
+
+- 2026-11-15 Planned again on the lead's task (quoted in the design). Built by the planner with the ruling
+  [proofs run once, on main](../ARCHITECTURE.md#proofs-run-once-on-main): `gate` warns and never refuses;
+  `verify` asks the main-branch check `exact-images` and draws nothing; `verify --full` is the verifier, which
+  that check runs on main. `scripts/test_exact_baselines.py` passes with the gate's tests rewritten and
+  `MainCheckTests` added. The full verifier's code was not changed and was not run by the planner.
+
+- 2026-11-15 M2 replaced. The earlier M2 (a proof key without unlinked crates) is withdrawn: no proof is asked
+  before a merge, so nothing lapses. Its nine commits stay on `build/baseline-guard`, unmerged, and its design
+  is this folder's `DESIGN.md` at `4101a7cf`. The new M2 is the reference guard, the removal of the proof file
+  and gate, and bounded scratch for the run on main. Items M2.1 to M2.6 are all new.
+
+- 2026-11-15 Planner's decisions, each an assumption in the plan: the check may start every 30 minutes, not
+  hourly, so a claim does not end pending; it holds `chrome` as well as `gpu`; `simulator` is exclusive. In
+  other modules only `lock` fields changed: 114 verifier items lost theirs, 72 Chrome items moved to `chrome`
+  and 15 simulator items to `simulator`. `GAME-SPLIT` M4.7's check gained `--full`, since it needs a real run.
+
+- 2026-11-15 Planner's mistake, recorded: running `verify` in the planner's checkout started the main-branch
+  check's runner on main's tip, which does not yet know `--full`. It was stopped after three minutes while
+  still waiting for the `gpu` lock, and no run was recorded.

@@ -1,45 +1,35 @@
 # BASELINE-GUARD plan
 
-A change that alters another module's exact reference images is refused before it reaches main.
-[Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
-[the rules](../ARCHITECTURE.md#exact-baselines)
+A change that alters another module's exact reference images is found on main within about two hours and traced
+to the commit that made it. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria ·
+[log](LOG.md) · [the rules](../ARCHITECTURE.md#exact-baselines)
 
 ## Open for the human
 
-- Assumption: the guard is its own module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items.
-- Assumption: every landing that changes a covered path pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures, about 17 minutes), and pays it again if another covered change lands first. The time is recorded, not budgeted.
-- Assumption: "before landing" means before a push made through the loop's `land`, which reruns `./dev check` on the rebased commit. A thread that pushes with a plain `git push` is bound only by its own `./dev check` run; no Git hook or server-side check is built.
-- Assumption: M2 is worth building for what it saves. Replayed over main since 11 November, M1's key changed at 204 commits and the smaller key changes at 186: it spares 18, all changes to `thrum-sea`, `thrum-cloud-model`, `thrum-water-model` or `thrum-sea-model` alone. On the night of 14 to 15 November it spares 5 of 65. Of the 186, 46 touched nothing covered but `scripts/`. Re-proving is likely to stay a bottleneck, and the fuller key is recorded as later work, not planned.
-- Assumption: "fails closed" includes what the compilers read. After its builds the verifier checks Cargo's own records and writes no proof if a build read a repository file the key does not hold, such as a shader a linked crate includes from an unlinked crate's folder. The task did not ask for this check; without it that file could change an image and keep a proof.
-- Assumption: one read stays unguarded, as the task's subtraction implies. A script, the cooker or the game at run time that reads a file in an unlinked crate's folder as data takes input the key does not hold, unless the registry lists the file. Nothing the verifier runs does so today, beyond hashing those files into records nothing compares. A Cargo build script that reads such a file undeclared is the same case.
-- Assumption: an unlinked crate's `Cargo.toml` stays in the key, since Cargo reads every member's manifest to load the workspace. No commit since 11 November changed one and no other covered path.
-- Assumption: "workspace crates and examples" removes no example today, because M1's key never held an example other than `v1-game`. A crate or example the game comes to link joins the key wherever it lies.
-- Assumption: macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside the key as before, so an update that moves an image shows as untouched main failing the verifier.
-- Assumption: `SIM-2D`'s cost records keep their own source key, which is drawn wider than its inputs (the survey is in `docs/evidence/BASELINE-GUARD/M2-plan/README.md`). Narrowing it is a small change to `SIM-2D`'s script and plan, and is not planned here.
+- Assumption: the key-narrowing work of the earlier M2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record.
+- Assumption: the run on main may start every 30 minutes, not every hour as the lead's task said. The script waits 55 minutes for a claim's check, a run takes 16, and a claim that arrives just after a start waits for the next one. At one hour about a third of claims would fail as pending. The lead's hourly `main-check --due` is still what starts a run when no claim asks.
+- Assumption: the run on main holds `chrome` as well as `gpu` (the task said `gpu`), because it drives Chrome and the settings give Chrome one run at a time. Chrome items can wait up to 16 minutes behind it.
+- Assumption: `simulator` is declared an exclusive resource, and the 15 `ios-sim` items moved to it from `gpu`. The owner approved `gpu: 2, chrome: 1`; with `gpu` shared, two simulator checks could otherwise run on the one simulator at once.
+- Assumption: when the run on main names a first failing commit and no fix has merged an hour later, the lead reverts that commit, as the approved report says.
+- Assumption: a module's qualified timings are taken in its last milestone with the other builders paused, and the builder asks for that sitting by ending `BLOCKED`. No item's text changed for it: every open timing item already says that no figure decides it.
+- Assumption: the guard stays its own module, so it does not sit on `APPLE-TILE`'s critical path.
+- Assumption: macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside what any check pins, so an update that moves an image shows as main failing with no commit to blame.
 
 ## M1 A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main: done
 [review](../../evidence/BASELINE-GUARD/M1-review.md)
 
-## M2 A proof of the exact images survives a rebase that brings in only changes to crates the verified game does not link
+## M2 A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh
 
-The gate, the verifier and the key are in `scripts/exact_baselines.py`, their tests in
-`scripts/test_exact_baselines.py`, and the registry in `.config/exact-baselines.json`, whose `covered_paths` are
-the listed paths. `./dev check` runs the gate and the tests from `tools/xtask/src/main.rs`.
+The verifier, the notice and the answer for a commit are in `scripts/exact_baselines.py`, their tests in
+`scripts/test_exact_baselines.py`, and the registry in `.config/exact-baselines.json`. `./dev check` runs the
+notice (`gate`) and the tests from `tools/xtask/src/main.rs`; the guard takes the notice's place there.
+`verify` without `--full`, `covered_by_main` and `MainCheckTests` were built with the ruling of 15 November and
+stay as they are.
 
-The item checks name test classes: `CoveredPathTests`, `ClosureTests`, `FailClosedTests`, `BuildReadTests` and
-`UnlinkedRebaseTests` are new, and `GateTests` is M1's. M1's tests build a Git repository with no Cargo
-workspace in it, so their fixture has to become one; keep what each asserts.
+The module list has two rulings that allow a refresh today, for `ATMOSPHERE` M9 and for `CULLING` M3. No
+reference file has changed since 11 November, so the first pins record the references as M1 found them, and
+their refresh names the section itself, `exact-baselines`.
 
-[The planner's trial](../../evidence/BASELINE-GUARD/M2-plan/README.md#the-smaller-step) holds what Cargo gave
-on a workspace made for it and on this one. `cargo metadata --no-deps` reads no lockfile and no registry cache
-and gives each member's declared dependencies; the resolved graph with every feature on gives the same nine
-packages today. The verifier's builds leave their records at `target/release/v1-game.d`,
-`target/release/thrum-cook.d` and `target/wasm32-unknown-unknown/release/v1_game.d`. A record names an included
-file by the path the compiler formed, with `..` in it.
-
-M2.6 is made before the landing, on the branch, with the proof from the verifier pass that the landing needs
-anyway. The scratch main it rebases onto is a local bare repository.
-
-Other modules' scripts call the guard; [the design lists what they rely on](DESIGN.md#what-other-modules-use).
-`GAME-SPLIT` changes the verifier's environment and the game's package name later, in its own milestones: prepare
-nothing for it. This landing changes the verifier, which is a covered path, so every open proof lapses once.
+The earlier M2 is on the branch `build/baseline-guard`. Take nothing from it: its tests assume a Cargo workspace
+fixture and a key this plan does not use. The run on main uses the checkout
+`.git/orchestrate/main-checks/exact-images/checkout`, which is where its scratch collects.

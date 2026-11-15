@@ -137,7 +137,6 @@
           "id": "M1.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -237,7 +236,6 @@
           "id": "M2.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -340,7 +338,7 @@
           "id": "M3.9",
           "statement": "In Chrome the yard's puddles draw, two of them merge and part, and the float sits at its puddle's level.",
           "check": "node scripts/check_water_browser.mjs --case rain-puddles",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": ""
@@ -371,7 +369,6 @@
           "id": "M3.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -461,7 +458,7 @@
           "id": "M4.9",
           "statement": "In Chrome rain rings the puddles and the lake and not the water under the roof, and the rings run out after the rain is stopped.",
           "check": "node scripts/check_water_browser.mjs --case rain-rings",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": ""
@@ -482,7 +479,6 @@
           "id": "M4.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -556,7 +552,7 @@
           "id": "M8.6",
           "statement": "In Chrome a footfall's rings cross a puddle and stop at a dry sill.",
           "check": "node scripts/check_water_browser.mjs --case rain-footfall",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "",
@@ -579,7 +575,6 @@
           "id": "M8.8",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -679,7 +674,7 @@
           "id": "M5.8",
           "statement": "In Chrome the yard darkens in a shower, the film gathers on the paving, the floor under the roof stays dry, and it dries again.",
           "check": "node scripts/check_water_browser.mjs --case rain-ground",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": ""
@@ -700,7 +695,6 @@
           "id": "M5.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
@@ -756,7 +750,7 @@
           "id": "M6.4",
           "statement": "In Chrome, with the selection on, the valley darkens in a shower and the patch's puddles fill; with it off the page draws the exit scene as before.",
           "check": "node scripts/check_v1_browser.mjs --case rain",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -779,7 +773,6 @@
           "id": "M6.6",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -878,7 +871,7 @@
           "id": "M7.7",
           "statement": "In Chrome the yard's puddles, rings, film and wet ground and the controls all run together from one command.",
           "check": "node scripts/check_water_browser.mjs --case rain-all",
-          "lock": "gpu",
+          "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": ""
@@ -919,7 +912,6 @@
           "id": "M7.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
-          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""

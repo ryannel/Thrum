@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Verify registered exact images, or enforce their content-key proof without a GPU.
+"""Verify registered exact images on main, and tell a commit whether main's run covers it.
 
-Run verify under agent_loop.py lock gpu. Its compact records and untracked proofs
-live in tmp/baseline-guard; successful bulk captures are discarded after comparison.
+`verify` asks the main-branch check named MAIN_CHECK whether a passing run contains HEAD.
+It draws nothing and takes no lock. `verify --full` draws and compares every registered
+baseline here: the main-branch check runs it on main's tip, and a planned refresh runs it
+on its candidate under the gpu lock. Its compact records and untracked proofs live in
+tmp/baseline-guard; successful bulk captures are discarded after comparison. `gate`
+reports covered changes that no proof names. It warns and never refuses.
 """
 import argparse
 from datetime import datetime, timezone
@@ -20,6 +24,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = '.config/exact-baselines.json'
 SCRATCH = 'tmp/baseline-guard'
+MAIN_CHECK = 'exact-images'  # the `Main-branch check` line in ORCHESTRATE.md
 
 
 def git(*args, root=ROOT):
@@ -41,26 +46,50 @@ def proof_path(root=ROOT):
 
 
 def gate(root=ROOT):
-    """Fail closed when remote main or the exact covered-content proof is absent."""
+    """Report whether a proof names this commit's covered content. Never refuses.
+
+    Returns 'unchanged', 'proved' or 'unproved'. An unproved covered change is verified
+    on main after the merge, by the main-branch check (ARCHITECTURE.md, Exact baselines).
+    """
     paths = registry(root)['covered_paths']
+    after = f'the main-branch check {MAIN_CHECK} verifies it on main after the merge'
     if git('status', '--porcelain', '--untracked-files=all', '--', *paths, root=root):
-        raise ValueError('covered paths have uncommitted changes; commit before verifying')
+        print(f'WARN exact-baseline gate: covered paths have uncommitted changes; {after}')
+        return 'unproved'
     base = git('merge-base', 'HEAD', 'refs/remotes/origin/main', root=root)
     changed = git('diff', '--name-only', base, 'HEAD', '--', *paths, root=root)
     if not changed:
         print('PASS exact-baseline gate: no covered-path change beyond origin/main')
-        return
+        return 'unchanged'
     path = proof_path(root)
     try:
         proof = json.loads(path.read_text())
-    except (OSError, ValueError) as error:
-        raise ValueError('no exact-baseline proof for this content; run under the GPU lock: '
-                         'python3 scripts/exact_baselines.py verify') from error
+    except (OSError, ValueError):
+        proof = {}
     expected = [entry['id'] for entry in registry(root)['baselines']]
     if (proof.get('content_key') != content_key(root) or proof.get('passed') is not True
             or proof.get('baselines') != expected):
-        raise ValueError('invalid exact-baseline proof; run python3 scripts/exact_baselines.py verify')
+        print(f'WARN exact-baseline gate: covered paths changed and no proof names this content; {after}')
+        return 'unproved'
     print(f'PASS exact-baseline gate: proof {path.relative_to(root)}')
+    return 'proved'
+
+
+def covered_by_main(root=ROOT):
+    """Exit status of the shared main-branch run's answer for HEAD: 0 once a pass contains it.
+
+    The orchestrate script sets ORCHESTRATE_SCRIPT for every check it runs. Its statuses pass
+    through unchanged: 1 for a commit not on main yet or a failure that held, 75 while a run
+    is still under way.
+    """
+    script = os.environ.get('ORCHESTRATE_SCRIPT')
+    if not script:
+        print('exact baselines: `verify` reads the main-branch check, which needs the orchestrate script. '
+              f'Run it as an item check, or ask directly: python3 <agent_loop.py> main-check {MAIN_CHECK}. '
+              'To draw and compare here, for a planned refresh, hold the gpu lock and run verify --full.',
+              file=sys.stderr)
+        return 2
+    return subprocess.run([sys.executable, script, 'main-check', MAIN_CHECK, '--worktree', str(root)]).returncode
 
 
 def save(path, value):
@@ -227,10 +256,12 @@ def git_version_command(command, root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['verify', 'gate'])
+    parser.add_argument('--full', action='store_true',
+                        help='with verify: draw and compare every registered baseline at this commit')
     args = parser.parse_args()
     try:
         if args.command == 'verify':
-            return verify()
+            return verify() if args.full else covered_by_main()
         start = time.monotonic()
         gate()
         print(f'Gate seconds: {time.monotonic() - start:.6f}; load: {os.getloadavg()}')

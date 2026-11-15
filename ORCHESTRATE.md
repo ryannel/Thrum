@@ -57,10 +57,30 @@ Rules for proof on these targets:
   panel setup. Native or compositor UI and physical output checks name their own attended reason.
 - Never treat engine pixels or movie PTS as display swaps or photons.
 
+Rules for when a proof runs ([why](docs/plans/ARCHITECTURE.md#proofs-run-once-on-main), 15 November 2026):
+- **The proof of record** is the script's run of `./dev check` and every item's check on the merged tip. Prove a
+  thing on your branch once, merge, and don't prove it again after a rebase: rerun only what the script says
+  failed. A visual milestone takes one capture pass, after its last merge.
+- **Exact images** are verified on main after the merge, by the main-branch check `exact-images`. No proof is
+  needed before a merge. An item whose check is `python3 scripts/exact_baselines.py verify` passes from that
+  shared run: set it `pass` with the evidence `main-branch check exact-images`, and don't run it yourself.
+- **A lock is about capacity.** A command takes one lock, for the device it loads most, around the part that needs
+  it. It never takes a second lock and never runs `merge` inside one. `gpu.alone` is only for a run that needs the
+  whole GPU, such as all its memory. It doesn't make a timing trustworthy, because builds elsewhere take no lock.
+- **Nothing waits for a person under a lock.** Before an attended run, check that the console is unlocked and the
+  panel awake, and only then take the lock. If they aren't, end `BLOCKED needs_access` at once.
+- **Timing inside a milestone is a tripwire.** It is taken while other builders work, records the load, and
+  fails only on a collapse or a missing measurement. A module's qualified numbers are taken in its last
+  milestone, in one sitting with the other builders paused: its builder ends `BLOCKED` asking the lead for that
+  sitting, and the lead keeps the others paused until the milestone is Ready for Review.
+
 Label Mac stand-ins for iPhone `proxy:iphone`. No physical iPhone is available, so don't wait for one.
 
 ## Rules
-- **Exclusive resources:** gpu (device timing and capture runs share one GPU).
+- **Exclusive resources:** simulator (the one booted iPhone simulator; an `ios-sim` check takes it)
+- **Shared resources:** gpu: 2, chrome: 1  *(owner, 15 Nov 2026; a Mac GPU run takes `gpu` and a run that starts Chrome takes `chrome`)*
+- **Lock hold limit:** 30 minutes
+- **Main-branch check exact-images:** `python3 scripts/exact_baselines.py verify --full`; every 30m; lock gpu, chrome; timeout 45m  *(owner, 15 Nov 2026; the lead runs `main-check --due` each hour)*
 - **Human decides:** changing purpose or the V1 exit; spending; publishing, licensing or deploying; irreversible
   actions. Gate order within the V1 exit is the agents' call.
 - **Licences and paths not to touch:** no GPL or share-alike code or data (restrictive-licence code may inform ideas

@@ -30,6 +30,25 @@ the product.
 - **Rebuild before reusing evidence.** When a source or recipe changes, rebuild the affected products and recheck the
   loaded artifact before you carry evidence forward.
 
+## Prove once, on main
+
+After you merge and end with `DONE`, the script runs `./dev check` and every item's check on main's tip, which
+holds your work. That run is the proof of record. The rules are in `ORCHESTRATE.md`, and
+[the ruling](../../../../docs/plans/ARCHITECTURE.md#proofs-run-once-on-main) says why: in one day builders spent
+most of the GPU's time proving again what a rebase had just made stale.
+
+- **Run a check on your branch once, for your own confidence, then merge.** Don't run it again because main
+  moved. If the script's run fails, it tells you which check and why, and that one is what you run again.
+- **Write no script that rebases, proves and merges in one go.** `merge` already rebases and runs `./dev check`.
+  A script of your own that holds a lock across those steps makes every builder wait through all of them, and
+  71 of 84 such runs failed.
+- **The exact images are not yours to prove.** An item whose check is `python3 scripts/exact_baselines.py verify`
+  passes from one shared run on main after your merge. Set it `pass` with the evidence `main-branch check
+  exact-images`. On your branch the command answers that the commit isn't on main yet, which is expected. If
+  it later says main fails at a commit that isn't yours, say so in your report and don't work around it.
+- **One capture pass for a visual milestone, after your last merge.** A capture from before a rebase shows a
+  different build from the one under review.
+
 ## Capture
 
 Engine capture renders the running game's frames through the shipped renderer offscreen, at the shipped simulation
@@ -52,13 +71,22 @@ gates only done-when items about pacing.
 - **Device, frame-time and visual claims** come only from runs on the targets in `ORCHESTRATE.md`: this M3 Max,
   Chrome, and the iPhone simulator. The simulator shows function only, never speed. Label a Mac standing in for an
   iPhone `proxy:iphone`.
-- **The GPU is shared.** Device timing and capture runs hold the `gpu` lock (`LOOP lock gpu -- <command>`), which
-  every worktree of this repository shares. Waiting for that lock, or for your own background job, is progress,
-  not a blocker: wait for it with the script's `wait` and carry on. Several builders stopped as BLOCKED while
-  their verifier was still queued or running, which cost hours each.
-- **A change to a covered path** needs an exact-baseline proof before it lands: `python3 scripts/exact_baselines.py
-  verify`, under the `gpu` lock. `CONTRIBUTING.md` lists the requirements, and `.config/exact-baselines.json` lists
-  the covered paths.
+- **Locks are about capacity.** `LOOP lock gpu -- <command>` shares the Mac's GPU between two runs, `lock chrome`
+  gives Chrome to one run and `lock simulator` gives the iPhone simulator to one. Take the lock of the device the
+  command loads most, around the part that needs it, and take only one: a command that holds one lock never
+  asks for another and never runs `merge`. Start a GPU run with the script's `background`, carry on with CPU
+  work, and collect it with `wait`. Waiting for a lock is progress, not a blocker.
+- **`gpu.alone` is for a run that needs the whole GPU,** such as all its memory. It doesn't give a quiet machine,
+  because other builders' builds and tests take no lock.
+- **Timings inside a milestone are tripwires.** Record them with the load on the machine. They fail only on a
+  collapse or a missing measurement. A module's qualified numbers are taken in its last milestone in one
+  sitting: do every other item, then end `BLOCKED` asking the lead for a quiet machine and naming the items.
+- **Attended runs check first, then lock.** Before a run that needs the console unlocked or the panel awake,
+  check both. If either fails, end `BLOCKED needs_access` at once. Never wait for a person while holding a lock:
+  one check held the GPU for over 30 minutes that way.
+- **A change to a covered path** needs no proof before it merges. `./dev check` prints a warning for it, and the
+  run on main verifies it. `CONTRIBUTING.md` has the details, and `.config/exact-baselines.json` lists the
+  covered paths.
 - **Regressions:** investigate a visible hitch, a regression of about 25% from a comparable baseline, or unexpected
   scaling.
 - **Status** goes in `docs/design/maturity.json`, with implementation, correctness, visuals and device recorded
