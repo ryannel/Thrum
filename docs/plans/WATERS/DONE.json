@@ -154,7 +154,7 @@
     {
       "id": "M12",
       "name": "On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -292,17 +292,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "Still waiting for the GPU lock. No WATERS check has failed.",
-        "work": {
-          "commit": "98f5aa03813b914ce4cfb637502822d2d3ee35db",
-          "branch": "build/waters",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/WATERS/M12-handoff.md"
-      }
+      ]
     },
     {
       "id": "M2",
