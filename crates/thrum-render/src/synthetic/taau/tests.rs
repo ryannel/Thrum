@@ -99,18 +99,8 @@ fn depth_probe_texture(device: &wgpu::Device, format: wgpu::TextureFormat) -> wg
 #[test]
 fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (adapter, device, queue) =
+            tests::support::device(wgpu::Backends::METAL).await;
         let pipeline = depth_probe_pipeline(&device);
         // Independent scene model: reciprocal view depth is the affine plane
         // 0.031*x + 0.019*y + 0.12. Evaluate the requested ray directly.
@@ -270,18 +260,8 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
 #[test]
 fn taau_prepares_and_resets_on_real_metal() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .unwrap();
+        let (_adapter, device, queue) =
+            tests::support::device(wgpu::Backends::METAL).await;
         let mut scene = SyntheticScene::grid(4).unwrap();
         scene.view = scene
             .view

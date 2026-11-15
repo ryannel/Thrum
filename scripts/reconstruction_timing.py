@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Paired portable moving-route timing at M3's 640x360 extent. Run under the GPU lock."""
+"""Paired portable moving-route timing at 640x360. Run under the GPU lock."""
 import argparse
 import hashlib
 import json

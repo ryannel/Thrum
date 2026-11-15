@@ -12,15 +12,8 @@ mod recovery_gpu;
 #[test]
 fn capture_refreshes_the_latest_committed_world_after_an_unsent_view() {
     pollster::block_on(async {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .expect("native GPU adapter");
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .expect("device");
+        let (_adapter, device, queue) =
+            gpu_support::device(wgpu::Backends::all(), |_| wgpu::Features::empty()).await;
         let mut host = super::FrameHost::new(&device, &queue, super::FrameConfig::default())
             .await
             .expect("prepared scene");

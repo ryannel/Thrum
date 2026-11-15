@@ -346,22 +346,12 @@ fn reconstruction_reference_on_submitted_game_frames() {
         let output =
             std::path::PathBuf::from(std::env::var("THRUM_RECONSTRUCTION_OUTPUT").unwrap());
         std::fs::create_dir_all(&output).unwrap();
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::METAL,
-            ..wgpu::InstanceDescriptor::new_without_display_handle()
-        });
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
-            .await
-            .unwrap();
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                required_features: DeviceCapabilities::requested_timing_features(&adapter)
-                    | DeviceCapabilities::requested_content_features(&adapter),
-                ..Default::default()
+        let (adapter, device, queue) =
+            super::gpu_support::device(wgpu::Backends::METAL, |adapter| {
+                DeviceCapabilities::requested_timing_features(adapter)
+                    | DeviceCapabilities::requested_content_features(adapter)
             })
-            .await
-            .unwrap();
+            .await;
         let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
         std::fs::write(
             output.join("build.json"),

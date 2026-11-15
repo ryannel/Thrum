@@ -2798,6 +2798,7 @@ mod tests {
     mod cloud;
 
     mod compute_material;
+    pub(super) mod support;
 
     impl PreparedSynthetic {
         /// Prepare with each slot's mesh row selected: the bucket route.

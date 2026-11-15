@@ -108,16 +108,17 @@ fn attach_selected(
         thrum_asset_gpu::CookedAssets,
     ) -> Result<thrum_asset_gpu::CookedAssets, String>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
-    if std::env::var("THRUM_SCENE").as_deref() == Ok("field") {
+    let scene = std::env::var("THRUM_SCENE");
+    if scene.as_deref() == Ok("field") {
         return Ok(None);
     }
     let Some(store) = std::env::var_os("THRUM_ASSET_STORE") else {
-        if std::env::var_os("THRUM_SCENE").is_some() {
+        if scene != Err(std::env::VarError::NotPresent) {
             return Err("THRUM_SCENE requires THRUM_ASSET_STORE".to_owned());
         }
         return Ok(None);
     };
-    let (camera, assets) = match std::env::var("THRUM_SCENE").as_deref() {
+    let (camera, assets) = match scene.as_deref() {
         Ok("valley") => {
             let (camera, assets) =
                 crate::showcase::prepare_showcase(std::path::PathBuf::from(store).into())?;

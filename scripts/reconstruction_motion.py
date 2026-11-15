@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture M3's five on/off motion pairs. Run under agent_loop.py lock gpu.
+"""Capture reconstruction's five on/off motion pairs. Run under agent_loop.py lock gpu.
 
 Build the native and web products first. Full lossless source archives remain;
 verified PNG derivatives are reduced to selected native-size frames after encoding.
