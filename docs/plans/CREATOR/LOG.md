@@ -1,5 +1,13 @@
 # CREATOR log
 
+- 2026-11-15 The second integration attempt reached an upstream log conflict.
+  The rebase preserves the owner's newer evidence scope and results. At
+  `dd1be98b8`, isolated lock and retry proofs pass. The helper can now retain
+  both leases for an operator repair and a final normal evidence merge.
+  Replacement job `20261115-150730-36237` carries the target checks and the
+  requested Computer Use host. Pinned native/Wasm prebuilds pass. The
+  [handoff](../../evidence/CREATOR/M3-handoff.md) records the continuation.
+
 - 2026-11-15 Resolved the integration handoff conflict while preserving the
   newer upstream handoff and all implementation/proof changes. Corrected
   upstream APPLE-PRESENTATION references to name their worktree scope.
