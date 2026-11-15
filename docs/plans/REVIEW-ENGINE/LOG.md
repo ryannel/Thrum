@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 On `96f26c347`, the refreshed simulator route, M1.1, both rewind cases, 42 unchanged game
+  simulation tests and all 1,966 native/Chrome exact comparisons pass. Verifier time is 947.88 seconds.
+  Target proof is retained at `588c2185e`; all four retained simulator images match the inspected originals,
+  and the baseline gate accepts the current content key. [The evidence](../../evidence/REVIEW-ENGINE/M1/README.md)
+  names source and binary. The full project gate continues before normal merge under the same GPU lease.
+
 - 2026-11-15 The live batch acquires GPU and rebases to `96f26c347`. M1.1, both rewind cases and all 42
   simulation tests pass. The refreshed simulator report passes with ASTC, 29 buffers, pause/resume tick
   1946 and recovery to generation 2. Builder inspection confirms the cooked scene in all four new views.
