@@ -889,7 +889,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map_err(|error| FrameError::Gpu(format!("graph inspection: {error:?}")))
     }
     /// Read-only reconstruction witness of the latest submitted frame, before report retirement.
-    /// This texture is queue ordered after that frame; it is absent when temporal sampling is off.
+    /// This texture is queue ordered after that frame. With reconstruction enabled, select
+    /// [`crate::synthetic::DisplayOverlay::TemporalInputs`] to declare the diagnostic reader.
     #[must_use]
     pub fn submitted_temporal_witness(&self) -> Option<&wgpu::Texture> {
         self.slots

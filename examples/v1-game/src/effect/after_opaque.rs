@@ -6,7 +6,10 @@ use thrum_render::{
     capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     runtime::{FrameConfig, FrameHost, SceneFrame, SceneSource},
-    synthetic::{FrameLighting, Reconstruction, SyntheticLight, SyntheticScene, SyntheticView},
+    synthetic::{
+        DisplayOverlay, FrameLighting, Reconstruction, SyntheticLight, SyntheticScene,
+        SyntheticView,
+    },
 };
 
 /// A failure in the submitted-input diagnostic, including its GPU preparation.
@@ -58,6 +61,11 @@ impl SceneSource<SourceTick> for Scene {
             .map_err(error)?
             .with_temporal_inputs(self.temporal)
             .with_reconstruction(self.reconstruction)
+            .with_display_overlay(if self.temporal {
+                DisplayOverlay::TemporalInputs
+            } else {
+                DisplayOverlay::Off
+            })
             .with_jitter_phase(0, [64, 64])
             .with_history_reset(source.tick == 14),
             lighting: FrameLighting::Diagnostic(SyntheticLight::default()),

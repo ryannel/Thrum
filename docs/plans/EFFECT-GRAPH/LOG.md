@@ -137,3 +137,8 @@
   rustfmt and documentation checks pass. Fresh target proofs remain queued in the existing campaign.
   Release native/Web builds and pinned native/Wasm Clippy pass at `7aea52c74`, with source/build
   hashes and repaired preparation failures in [the record](../../evidence/EFFECT-GRAPH/M3/reconstruction-integration-preparation.json).
+- 2026-11-15 The first combined-source M3.1 target run reached late compute readback and failed
+  because TAAU requires the input diagnostic to be selected explicitly. The fixture now selects
+  `DisplayOverlay::TemporalInputs` when it needs that reader, retaining actual TAAU and ordering checks.
+  Pinned native/Wasm Clippy pass. [The retained failure](../../evidence/EFFECT-GRAPH/M3/reconstruction-witness-failure.md)
+  records the target result. Fresh qualification remains required for M3.1–M3.8.
