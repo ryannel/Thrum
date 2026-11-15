@@ -137,7 +137,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail."
     },
     {
