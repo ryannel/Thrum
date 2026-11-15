@@ -69,3 +69,29 @@
   comparisons and 1,924 Chrome records in 1021.79 seconds. M1.3's nine tests pass, and the full
   repository Check passes after resuming it under one GPU lock. The earlier aggregate timeout and the successful
   component results are retained without rewriting their outcomes. [Requalification](../../evidence/BASELINE-GUARD/M1/disk-repair/requalification.json).
+
+- 2026-11-12 M1 Done: [the review](../../evidence/BASELINE-GUARD/M1-review.md) passed all five items.
+
+- 2026-11-15 The lead's task, approved by the owner that day: "the proof key covers exactly the inputs that can
+  change a registered exact image or the verifier's verdict ... and nothing else. Derive the set rather than
+  hand-list crates ... The gate must still fail closed". M2 added. M1's listed key changed at 33 of main's
+  commits on the night of 14 to 15 November; ten of them changed a file a verified build or comparison reads
+  ([measurements](../../evidence/BASELINE-GUARD/M2-plan/README.md)).
+
+- 2026-11-15 Planner's decisions for M2. Covered paths are derived from Cargo's resolved graph and the scripts'
+  references. A proof also sets aside the Rust files no build read, by Cargo's dependency records, and the gate
+  accepts it for a later commit that differs only in those. Rejected: a naming rule for test files (a list by
+  another name); watching or denying file reads (the owners' scripts hash the whole tree into their records);
+  a key over the resolved graph in place of the manifest and lockfile files (spares one commit of 33).
+
+- 2026-11-15 Survey of other proofs keyed to a source identity, as the task asked
+  ([findings](../../evidence/BASELINE-GUARD/M2-plan/README.md#other-proofs-keyed-to-a-source-identity)).
+  `SIM-2D`'s cost records are drawn wider than their inputs: a hand list of the right five packages, with the
+  whole workspace manifest, the lockfile, test files and untracked files. `CULLING` M3's campaign names M1's
+  listed paths and narrows them by hand, with the same three exclusions M2 derives. Nothing else compares a
+  retained record with the sources. No other module's file was changed.
+
+- 2026-11-15 M1's plan notes moved: its stop rules that still hold are in the design's "Limits on builders".
+  The module list's exact-baseline rule 2 and table now describe the derived key. Tried with the loop's
+  `check --items-only`: M2.1 to M2.4 and M2.7 fail before the work, none errors. M2.6's check, the verifier, was
+  not run: the `gpu` lock had builders queued for over an hour, and the command is M1.1's, unchanged.

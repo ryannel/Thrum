@@ -649,6 +649,24 @@ and lands again. So the full matrix, Chrome and night included, has always passe
 main. Every module's landings are covered from the day the gate exists, with no item added to any plan. Until
 `BASELINE-GUARD` M1 is Done, rule 3 is the only automatic catch, and it acts after the push.
 
+<a id="the-covered-paths-are-derived"></a>
+
+**The covered paths are derived** (15 November 2026, on the owner's approval;
+[design](BASELINE-GUARD/DESIGN.md#the-covered-paths)). The gate was built with covered paths listed by hand, and
+they took in every crate and every script, so a change to a crate the game never links lapsed every open proof.
+`BASELINE-GUARD` M2 derives them: the build configuration, every file of each package Cargo links into what the
+verifier builds, the scripts reached from the verifier, the registry and the references. A proof also holds its
+**unread sources**, the Rust files of those packages that no build of the verifier read, and the gate accepts
+the proof for a later commit that differs from the proved one only in those files. So a rebase that brings in a
+crate the game does not link, a script the verifier never starts, a test file or a document keeps the proof, and
+any change to a file a verified build or comparison reads still lapses it.
+`python3 scripts/exact_baselines.py covered` lists the covered paths of a commit. A proof the gate accepts for a
+later commit names the commit the verifier ran on; rule 3's check at the claim is unchanged. Where a ruling here
+lets a module change the registry's paths, that includes the package and script names it holds. No baseline, no
+comparison and no other module's item changes, and a design that calls `crates/` or `scripts/` a covered path
+stays right for the files in them that the verifier builds or runs. Until M2 is Done the listed paths in the
+table below apply.
+
 **3. At the claim: the verifier again, as a planner-written check.** A builder cannot change an item's `check`,
 and the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that
 edits covered paths, in a module planned from now on, carries an item whose `check` is the verifier. It is the
@@ -658,7 +676,7 @@ an exact test changed by a module that does not own it, with no ruling here, rec
 
 | Baseline | Owner | What it pins | Compared by | Covered paths |
 |---|---|---|---|---|
-| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files |
+| `docs/evidence/render/apple-tile-m0/native-baseline/` | `APPLE-TILE` | On the Mac, for both recipes: submitted SDR and scene-linear bytes at the moving route's checkpoints, Sun and night stills at 1080p, and letterbox bytes in two surface formats | `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, on a release build of the commit and a fresh cook of the showcase valley | [Derived](#the-covered-paths-are-derived) once `BASELINE-GUARD` M2 is Done. Until then, listed: `crates/`, `examples/v1-game/`, `scripts/`, `tools/`, `.cargo/`, `.config/exact-baselines.json`, the workspace manifest, lockfile and toolchain file, and all registered retained files |
 | Four Chrome manifests: `docs/evidence/render/apple-tile-m0/chrome-baseline/prechange-chrome-fixed-manifest.json.gz` (day, submitted SDR), and under `docs/evidence/render/apple-tile-m1/chrome/` the `manifest.json.gz` of `chrome-prechange-linear-3` (day, scene-linear), `chrome-prechange-night-sdr` and `chrome-prechange-night-linear` | `APPLE-TILE` | Chrome's portable output on the moving route: for each of 481 records, the identity fields and the SHA-256 of the frame's decoded bytes | A fresh Wasm build and `fixed` capture of the commit, compared record by record with the retained digests by `scripts/apple_tile_m1_compare_browser.py` | The same |
 | `docs/evidence/v1-workload/g7-showcase-baseline.json` | `SHOWCASE` | The six route stops on both targets, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check` | The same |
 | The exit baselines under `docs/evidence/SHOWCASE/`, created by `SHOWCASE` M5 and extended to one per row in M7 | `SHOWCASE` | The six stops of the exit scene, within thresholds, not exactly. Not in the verifier | `python3 scripts/run_v1_showcase.py check --exit` | The same |
@@ -2066,3 +2084,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   starts its builder only when a builder slot is free. Row 21, the split, the edge table, the build order, its
   entry and owner decision 7 say so, and the brief's decision 1 carries the ruling. `SESSION`'s files are
   unchanged: its M2 onward wait on `TRANSPORT:M1` alone, so its design's "waits for nothing of V1's" holds again.
+- 2026-11-15 [Exact baselines](#exact-baselines) rule 2 gained "The covered paths are derived", on the lead's
+  task with the owner's approval. `BASELINE-GUARD` gained M2: the proof key covers the files a verified build or
+  comparison reads, taken from Cargo's resolved graph, the scripts' references and the compilers' dependency
+  records, in place of a hand list that took in every crate and script. The verifier's command, the registry's
+  baselines, every reference, every comparison and every other module's items are unchanged.

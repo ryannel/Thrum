@@ -4,27 +4,34 @@ A change that alters another module's exact reference images is refused before i
 [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [the rules](../ARCHITECTURE.md#exact-baselines)
 
-## Open for the owner
+## Open for the human
 
-- Assumption: the guard is its own one-milestone module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items. It needs nothing and can be built first.
-- Assumption: every landing that changes the renderer, the game, the scripts or a baseline pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures), and pays it again if another such change lands first. The time is recorded, not budgeted. Landings that touch only other paths pay nothing.
+- Assumption: the guard is its own module, not an item added to `APPLE-TILE` M3, so it does not sit on the critical path or wait behind that milestone's attended items.
+- Assumption: every landing that changes a file a verified build or comparison reads pays one full verifier run on its final content (two builds, a cook, the Mac matrix and four Chrome captures, about 17 minutes), and pays it again if another such change lands first. The time is recorded, not budgeted. Landings that touch only other files pay nothing.
 - Assumption: "before landing" means before a push made through the loop's `land`, which reruns `./dev check` on the rebased commit. A thread that pushes with a plain `git push` is bound only by its own `./dev check` run; no Git hook or server-side check is built.
+- Assumption: "exactly the inputs ... and nothing else" (15 November) is met file by file only for Rust sources, where the compiler's own record says what a build read. Every other file in a linked package stays covered, and so does the whole of a package that has a build script, because nothing records what the cooker, the page build and the scripts read. On the night of 14 to 15 November this key changes at 10 of main's commits, where the listed one changed at 33.
+- Assumption: the workspace `Cargo.toml` and `Cargo.lock` stay covered as whole files, so a landing that adds a workspace member or changes any dependency lapses every open proof. A key over the resolved graph alone would have spared one of those 33 commits, and would trust a second derivation.
+- Assumption: "the scripts and tools it runs" means files in this repository: the cooker, and the scripts reached from the verifier by an import or a quoted file path. A script that reads a file through a path it computes is not seen. macOS, the GPU driver, Chrome, Node and `wasm-bindgen` stay outside the key as before, so an update that moves an image shows as untouched main failing the verifier.
+- Assumption: `SIM-2D`'s cost records keep their own source key, which is drawn wider than its inputs ([what the survey found](../../evidence/BASELINE-GUARD/M2-plan/README.md#other-proofs-keyed-to-a-source-identity)). Narrowing it is a small change to `SIM-2D`'s script and plan, and is not planned here.
 
-## M1 A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main
+## M1 A change that alters a registered exact image, on the Mac or in Chrome, is refused before it reaches main: done
+[review](../../evidence/BASELINE-GUARD/M1-review.md)
 
-Criteria: M1.1–M1.5 in the done-when file.
+## M2 A proof of the exact images survives a rebase that brings in only code the verified game is not built from
 
-- [x] First, run the comparisons on untouched main: the native matrices, and the four Chrome `fixed` captures against the retained digests. If any fails there, end `BLOCKED` with the comparison.
-- [x] Add the registry file and the verifier: both builds, the fresh cook, the owners' native matrices, the Chrome captures and their comparison, the record, and the proof on a full pass.
-- [x] Add the reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`, leaving its byte mode as it is.
-- [x] Add the gate to `./dev check`, with a test that drives fetch, rebase, gate and push against a throwaway remote.
-- [x] Run the three mutants and the stale-proof case through the loop's `land` in a scratch clone with a local bare remote. Keep the patches, the base revision, the commands and the logs.
-- [x] Record the verifier's and the gate's run times from three runs each. Describe the gate and the verifier in CONTRIBUTING and `./dev help`.
+The gate, the verifier and the key are in `scripts/exact_baselines.py`, their tests in
+`scripts/test_exact_baselines.py`, and the registry in `.config/exact-baselines.json`. `./dev check` runs the gate
+and the tests from `tools/xtask/src/main.rs`. [The planner's measurements](../../evidence/BASELINE-GUARD/M2-plan/README.md)
+give the linked packages, what one verifier build's dependency records list and where Cargo wrote them, and the
+scripts reached today; check your derivation against them.
 
-Stop rules:
-- Never refresh, regenerate or edit a file under a registered baseline. If a baseline does not match on untouched main, end `BLOCKED` with the comparison; the refresh is its owner's.
-- No tolerance, nearest-frame search, retry or skip, for any reason.
-- The verifier reads nothing from another task's scratch, such as `tmp/g3t-m0` or `tmp/g3t-m1`.
-- Do not change `scripts/apple_tile_m0.py`, `apple_tile_m1.py` or `apple_tile_m2.py`, nor the byte mode of the Chrome comparator.
-- Mutants and the `land` demonstration never push to the real remote.
-- Chrome needs a browser launch outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.
+The item checks name test classes: `CoveredPathTests`, `UnreadSourceTests`, `FailClosedTests` and
+`GuardInterfaceTests` are new, and `GateTests` is M1's. M1's tests build a Git repository with no Cargo workspace in
+it, so their fixture has to become one; keep what each asserts.
+
+M2.5 is made before the landing, on the branch, with the proof from the verifier pass that the landing needs
+anyway. The scratch main it rebases onto is a local bare repository.
+
+Other modules' scripts call the guard; [the design lists what they rely on](DESIGN.md#what-other-modules-use).
+`GAME-SPLIT` changes the verifier's environment and the game's package name later, in its own milestones: prepare
+nothing for it. This landing changes the verifier, which is a covered path, so every open proof lapses once.
