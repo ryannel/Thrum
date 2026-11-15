@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The continuation at `8a92e3275` confirmed the existing device/publication code inspection and
+  inspected all four retained simulator views. It claims no new target run. The proof-and-merge batch
+  `20261115-144609-30539` remains queued behind active GPU work; the refreshed
+  [handoff](../../evidence/REVIEW-ENGINE/M1-handoff.md) names the live process and next completion checks.
+  Product code, assertions and M1's five passed builder results are unchanged.
+
 - 2026-11-15 The queued merge-only retry is replaced before it starts: APPLE-TILE's merge batch now holds
   GPU and may change main. The replacement keeps rebase, affected proof, full gate and normal merge under
   one lease, so another stale-proof refusal can be handled without releasing the resource. No running
