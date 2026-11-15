@@ -304,3 +304,12 @@
   and preserved the queued retry. D10.5 and the remaining new campaign stages await that reservation.
   [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
 
+- **2026-11-15 — M10 target retry completed and window access blocked.** The surviving job acquired GPU
+  after CREATOR's timeout. Apple-tile realtime completed with zero omissions, queue peak eight and 1.45-second
+  writer I/O. Half validation and simulator background/refusal/resume passed. Selected current proof records,
+  original media and fresh visual inspection replace the earlier campaign in the evidence index.
+  D10.5's observer timed out awaiting app selection. Computer Use remained unanswered for 901 seconds despite
+  bounded code/tool settings. The exact apps and full sources are retained for continuation and review.
+  Verified retained app hashes before and after cleaning the worktree target, removing 97,042 build files.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
