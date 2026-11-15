@@ -213,3 +213,26 @@
 - 2026-11-15 Planner's mistake, recorded: running `verify` in the planner's checkout started the main-branch
   check's runner on main's tip, which does not yet know `--full`. It was stopped after three minutes while
   still waiting for the `gpu` lock, and no run was recorded.
+
+- 2026-11-16 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the reference guard at
+  `f819b733`: changes requested, two Must Fix. MF4: removing a registry entry, or editing its fields, changes no
+  pin, so a comparison could be dropped unseen. MF5: the native byte equality is in
+  `scripts/compare_v1_pixels.py`, which no pin covered.
+- 2026-11-16 Design revised for both. MF4: the pin now covers the entry's definition, and the guard reads the
+  registry at the merge base: a baseline registered there must still be registered or be in the new retired
+  list with a refresh, and a new baseline needs a refresh. New item M2.7 is its acceptance. MF5: each entry
+  lists its comparison files, written out in the design: the verifier for all five, and for the native baseline
+  the wrapper, `apple_tile_m0.py`, `m1`, `m2` and `compare_v1_pixels.py`. M2.1 and M2.2 are written again for
+  it. [The model](../../evidence/BASELINE-GUARD/M2-replan/guard-scope.json) shows each of the review's two
+  edits, a redefinition and a verifier edit now move a pin or fail the set check.
+- 2026-11-16 Planner's decision, an assumption in the plan: `read_png` in `scripts/run_v1_showcase.py`, which
+  decodes the ten 8-bit native references, stays outside the pins. `SHOWCASE`'s file changed in 19 commits since
+  1 November, against 10 for all the listed comparison files together. Moving the decoder is later work.
+- 2026-11-16 S6 taken: the design no longer says the bisect names no commit for a cause outside the repository.
+  It names the first commit after the last recorded pass, so the name is a lead and the lead reads the log. Two
+  assumptions in the plan are reworded to match. M2.5 gained an `ask`, from the review's note that a green run
+  alone does not show M2 moved no retained image. M2.6 now covers adding, redefining and retiring a baseline.
+- 2026-11-16 M2's checks tried by running each command by hand: `guard`, `GuardTests`, `RegisteredSetTests`,
+  `ScratchTests` and the `proof_path` search each fail before the work, and none errors. M2.5's `verify` was
+  not run: its command is unchanged, and it would wait on or start the shared run on main. `./dev check-docs`
+  passes.

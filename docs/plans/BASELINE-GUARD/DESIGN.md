@@ -48,8 +48,8 @@ that are Thrum's own.
 
 **Commissioned (M2):**
 
-4. **The reference guard.** `./dev check` refuses a commit that changes a registered reference or its comparison
-   unless the same commit records the refresh in the registry. It needs no GPU.
+4. **The reference guard.** `./dev check` refuses a commit that changes a registered reference, its comparison
+   or its registration unless the same commit records the refresh in the registry. It needs no GPU.
 5. **One proof.** The run on main is the only proof of the exact images, so the local proof file and the gate
    that read it are removed.
 6. **Scratch that stays bounded** in the checkout the run on main uses.
@@ -70,7 +70,9 @@ refresh them, stay with each baseline's owner module.
   first response. Cheap tests stay before the merge, as in Rust's bors and merge queues.
 - **A pinned file changes only with its recorded digest.** Lockfiles (`Cargo.lock`, `go.sum`) and Bazel's
   `sha256` on a fetched archive make a change to pinned bytes fail until the recorded digest changes in the same
-  commit, which turns a silent change into a reviewed one. The reference guard is that, for the references.
+  commit, which turns a silent change into a reviewed one. `cargo build --locked` also refuses a lockfile that
+  has lost an entry the manifest still needs, so dropping a pin is no way round it. The reference guard is
+  both, for the references and for the set of baselines.
 - **A narrower proof key was designed and is set aside.** [Later work](#later-work) has the record.
 
 ## Mechanism
@@ -78,7 +80,8 @@ refresh them, stay with each baseline's owner module.
 ### The registry
 
 One file, `.config/exact-baselines.json`, lists each registered baseline: its identity, its owner, its retained
-reference files, and how a fresh candidate is produced and compared. The table in
+reference files, how a fresh candidate is produced and compared, and the files that make the comparison. The
+table in
 [the module list](../ARCHITECTURE.md#exact-baselines) is the same registry for people; the two must agree. Its
 `covered_paths` are the paths whose change the notice reports.
 
@@ -112,36 +115,77 @@ for.
 
 ### The reference guard
 
-With the gate only a notice, one hole opens. A builder whose change moves an image can regenerate the reference
-before or after its merge, and the run on main then passes against the new bytes. Rule 1 forbids it, but only a
-reviewer would find it, later. The guard makes that change fail at the merge.
+With the gate only a notice, one hole opens. A builder whose change moves an image can make the run on main pass
+again without fixing it, in three ways: regenerate the reference, loosen the comparison, or take the baseline
+out of the registry. Rule 1 forbids each, but only a reviewer would find it, later. The guard makes each fail at
+the merge.
 
-For each baseline the registry holds a **pin** and the **refresh** that last set it:
+**What is protected.** For each baseline the registry lists its **comparison files**: the files that choose
+which comparisons run, read the reference and decide whether a candidate equals it. Today they are:
 
-- The pin is a SHA-256 over the path and Git object ID of every tracked file of the baseline's reference and of
-  each comparison script the registry names for it, at the commit.
-- The refresh names the ruling in the module list that allowed the bytes to change, by its anchor, and the
-  module and milestone that made it.
+| Baseline | Comparison files |
+|---|---|
+| Every one | `scripts/exact_baselines.py`: the verifier, which reads the registry, runs each comparison and turns the results into the exit status |
+| `apple-tile-native` | `scripts/exact_baselines_native.py`; the matrices `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`; `scripts/apple_tile_m0.py`, which both are built from; and `scripts/compare_v1_pixels.py`, whose `compare` is the byte equality both call |
+| The four Chrome baselines | `scripts/apple_tile_m1_compare_browser.py` |
 
-`python3 scripts/exact_baselines.py guard`, a step of `./dev check`, computes each pin from the commit and fails
-when it differs from the registry's, naming the baseline, its owner, the files that differ from the merge base
-with main, and rule 1. It also fails when a pinned file has an uncommitted change, when a refresh names an
-anchor the module list does not hold, and when a pin changed and its refresh did not. So a reference or a
-comparison merges changed only in a commit that also edits `BASELINE-GUARD`'s registry and names a ruling, which
-is one place for a reviewer to look and an edit rule 1 allows only under that ruling.
+The list is written out in the registry, not traced from imports. A comparison file that gains an import has
+itself changed, so the change arrives with a refresh, and that refresh is where the list gains the new file.
 
-**Check that it can work.**
+A baseline's **protected files** are every tracked file of its reference and every one of its comparison files.
+Its **definition** is every field of its registry entry but the pin and the refresh: its identity, owner,
+reference path, candidate, comparison, record count and list of comparison files.
+
+**The pin and the refresh.** For each baseline the registry holds:
+
+- a **pin**: a SHA-256 over the definition and over the path and Git object ID of every protected file, at the
+  commit;
+- a **refresh**: the ruling in the module list that allowed the last change, by its anchor, and the module and
+  milestone that made it.
+
+A baseline that a ruling ends leaves the list of baselines and enters the registry's **retired** list, as its
+identity, its owner and a refresh.
+
+**What the guard checks.** `python3 scripts/exact_baselines.py guard`, a step of `./dev check`, reads the
+commit's tree, its registry and the registry at the merge base with main. It fails, naming the baseline, its
+owner and rule 1, when:
+
+1. a pin differs from the one computed at the commit. It names each protected file and each definition field
+   that differs from the merge base;
+2. a protected file has an uncommitted change;
+3. a pin differs from the merge base's and its refresh does not;
+4. a baseline is new since the merge base and has no refresh;
+5. a baseline of the merge base is no longer among the baselines and is not retired;
+6. a refresh, a retirement's included, names an anchor the module list does not hold.
+
+So the registered set changes by four recorded routes and no other: a protected file changes, a definition
+changes, a baseline is added, a baseline is retired. Each is a commit that edits `BASELINE-GUARD`'s registry and
+names a ruling, which is one place for a reviewer to look and an edit rule 1 allows only under that ruling.
+`covered_paths` is outside the pins: it selects no comparison, and only keys the verifier's record.
+
+**Check that it can work.** [A model of the pins](../../evidence/BASELINE-GUARD/M2-replan/guard-scope.json) at
+`81138094` has the figures; `guard_scope.py` beside it reproduces them.
 
 - *The culprit that regenerates.* Main fails, and the named module regenerates the reference to pass.
   `./dev check` fails at its merge: the pin differs. To merge it must write a refresh that names a ruling. If
   there is none, it has no anchor to name. Writing one into the module list is a builder changing a planner's
   file, in plain sight of the milestone's reviewer.
+- *The culprit that unregisters.* It removes `chrome-night-scene-linear` and leaves the rest alone. Every
+  remaining pin is still right, so checks 1 to 4 pass. Check 5 fails and names the baseline: the merge base
+  registers it and the commit neither registers nor retires it.
+- *The culprit that redefines.* It lowers a Chrome baseline's record count from 481 to 480, or points a
+  reference at another file. The definition is in the pin, so that baseline's pin differs and check 1 fails.
+- *The culprit that loosens the comparison.* It edits the equality in `scripts/compare_v1_pixels.py`: the native
+  pin differs. It makes the verifier skip an entry: all five pins differ.
 - *A planned refresh* (`ATMOSPHERE` M9, `CULLING` M3). The ruling exists. The builder regenerates, runs
   `verify --full` on the candidate, updates the pin and the refresh, and merges all of it in one landing.
-- *A comparison script edited by its owner* changes the pin, so the owner updates it in the same commit and
-  names the ruling or the rule that makes the script its own. The cost is one line.
-- *What it reads.* Git object IDs from the commit's tree and one registry file: no build, GPU or browser. The
-  same construction is M1's content key, which computes in under a tenth of a second over 738 files.
+- *A comparison file edited by its owner* changes the pin, so the owner updates it in the same commit and names
+  the ruling or the rule that makes the file its own. The verifier is a comparison file of all five baselines,
+  so `BASELINE-GUARD` pays five pins for an edit of its own. The files listed above changed in ten commits in
+  the first two weeks of November, five of them the verifier's.
+- *What it reads.* Git object IDs from the commit's tree and two versions of one registry file: no build, GPU
+  or browser. The tree and all five pins take under a tenth of a second, over 57 protected files for the native
+  baseline and 3 for each Chrome one.
 - *The founding case.* The jitter change edited exact tests in crates, not a registered reference. The guard
   does not see that; the run on main does, because every pixel moved.
 
@@ -161,7 +205,9 @@ kept are the builder's, set from the measured size of a failed run.
   candidate. `GAME-SPLIT` M4 runs it with `THRUM_GAMES` pointing at nothing.
 - A verifier record's `content_key`, `revision` and hashes, which the rulings on a frame that varies under load
   and a fixed capture that stalls compare.
-- The registry's pins and refreshes, which a planned refresh edits for its own baseline under its ruling.
+- The registry's pins and refreshes, which a planned refresh edits for its own baseline under its ruling, and
+  which an owner edits when it changes one of its comparison files. Its retired list, for a baseline a ruling
+  ends.
 - After M2, `gate`, `proof_path` and the proof file are gone. The scripts that called them
   (`docs/evidence/WATERS/finish_m1.py`, `docs/evidence/SEA/qualify_m2_baselines.py` and others like them) are
   retained evidence of a procedure the ruling ended, and nothing runs them.
@@ -172,15 +218,26 @@ kept are the builder's, set from the measured size of a failed run.
   and the run on main still catches the moved image.
 - A builder that writes a refresh naming a ruling that does not allow its change. The guard checks that the
   anchor exists, not what it says.
-- A change outside the repository: macOS, the GPU driver, Chrome, Node or `wasm-bindgen`. Main then fails with
-  no commit to blame, and the bisect names none. The baseline's owner refreshes under rule 1, cause recorded.
+- A helper that a comparison file calls from a file other modules edit daily. Today that is one function:
+  `read_png` in `scripts/run_v1_showcase.py`, which decodes the ten 8-bit native references before
+  `compare_v1_pixels.py` compares them. That file is `SHOWCASE`'s and changed in 19 commits in the first two
+  weeks of November. Pinning it would ask a refresh of each, and a refresh written by reflex guards nothing. A
+  decoder changed to return other pixels is a breach of rule 1 that a reviewer finds.
+- A candidate that is not drawn. The files that only produce a candidate (the game, the cooker, the capture
+  scripts) are what the run on main tests, and no pin covers them. One changed to emit the reference instead of
+  drawing is a reviewer's to find.
+- A change outside the repository: macOS, the GPU driver, Chrome, Node or `wasm-bindgen`. Main then fails for a
+  cause no commit holds, and the script cannot tell. Its bisect trusts the last recorded pass without running it
+  again and halves the commits after it, so when every one of them now fails it names the first commit after
+  that pass. The name is a lead, and the lead reads the failure log before acting on it. When the cause is
+  outside, the baseline's owner refreshes under rule 1, cause recorded.
 - An unintended image change on main for up to about two hours, which the owner accepted.
 
 ## Cost
 
 One verifier run of about 16 minutes on main per interval, shared by every builder, at most one start every
 30 minutes: about 4 to 6 hours of one `gpu` slot and of the `chrome` slot on a busy day. A landing pays the
-guard in `./dev check`, a tree read. The times are recorded, not budgeted.
+guard in `./dev check`, a tree read and two reads of the registry. The times are recorded, not budgeted.
 
 ## Risks
 
@@ -203,6 +260,9 @@ guard in `./dev check`, a tree read. The times are recorded, not budgeted.
   line reduced to `lock gpu`.
 - **A run that skips unchanged content.** The record already holds the content key; a run on a tip whose key
   equals the last pass's could answer at once.
+- **The PNG decoder inside the pins.** Moving `read_png` into the comparison's own file would close the first
+  helper listed under [what it does not stop](#what-it-does-not-stop). It changes `APPLE-TILE`'s comparison and
+  `SHOWCASE`'s script, so it needs a ruling with both.
 - **The narrower key.** M2 as first planned took the files of crates the game does not link out of the proof's
   key, and nine commits of it are on the branch `build/baseline-guard`, unmerged. It spared 18 of 204 lapses.
   With no proof asked before a merge it saves nothing, so it is not merged. It would matter again only for the
@@ -214,9 +274,11 @@ guard in `./dev check`, a tree read. The times are recorded, not budgeted.
 - Never refresh, regenerate or edit a file under a registered baseline, except under a ruling in the module list
   that names your milestone.
 - No tolerance, nearest-frame search, retry inside a run or skipped record, for any reason.
-- Do not change `scripts/apple_tile_m0.py`, `apple_tile_m1.py` or `apple_tile_m2.py`, the byte mode of the
-  Chrome comparator, `scripts/capture_v1_browser.mjs` or `examples/v1-game/web/build.sh`. They belong to other
-  modules.
+- Do not change `scripts/apple_tile_m0.py`, `apple_tile_m1.py` or `apple_tile_m2.py`,
+  `scripts/compare_v1_pixels.py`, the byte mode of the Chrome comparator, `scripts/capture_v1_browser.mjs` or
+  `examples/v1-game/web/build.sh`. They belong to other modules.
+- In the registry, add to the existing baselines only their comparison files, pins and refreshes. Their other
+  fields, and which baselines are registered, stay as they are.
 - Do not change what `verify` without `--full` answers or the item text other modules carry, and do not edit
   `ORCHESTRATE.md`: the settings line is the planner's.
 - Tests of the guard and any demonstration of a merge run against a scratch repository whose remote is a local

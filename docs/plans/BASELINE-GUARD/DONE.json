@@ -75,9 +75,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "The registry holds, for each registered baseline, a pin over the path and Git object ID of every tracked file of its reference and of each comparison script it names, and the refresh that last set the pin: the ruling's anchor in the module list, the module and the milestone. One command computes every pin at the current commit, passes when each equals the registry's, and prints them.",
+          "statement": "The registry lists each registered baseline's comparison files as the design's table names them, the verifier and `scripts/compare_v1_pixels.py` among them. For each baseline it holds a pin over the baseline's definition and the path and Git object ID of every protected file, and the refresh that last set the pin: the ruling's anchor in the module list, the module and the milestone. One command computes every pin at the current commit, passes when each equals the registry's, and prints them.",
           "check": "python3 scripts/exact_baselines.py guard",
-          "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every tracked file of the reference and every comparison script the registry names for that baseline? Does the first refresh of each baseline name an anchor that the module list holds?",
+          "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every field of the entry but the pin and the refresh, every tracked file of the reference and every comparison file? Does each baseline list every comparison file the design's table names for it? Does the first refresh of each baseline name an anchor that the module list holds?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -86,7 +86,7 @@
         },
         {
           "id": "M2.2",
-          "statement": "The guard refuses, naming the baseline, its owner and each file that differs from the merge base with main: a changed byte in a reference file, a reference file added or removed, and a changed comparison script. It refuses a pinned file with an uncommitted change, a pin that changed while its refresh did not, and a refresh whose anchor the module list does not hold. It passes a commit that changes a reference together with its pin and a refresh naming an anchor the module list holds.",
+          "statement": "The guard refuses a change to a protected file, naming the baseline, its owner and each file that differs from the merge base with main: a changed byte in a reference file, a reference file added or removed, and a changed comparison file, with `scripts/compare_v1_pixels.py` and the verifier each tried. It refuses a protected file with an uncommitted change, a pin that changed while its refresh did not, and a refresh whose anchor the module list does not hold. It passes a commit that changes a reference together with its pin and a refresh naming an anchor the module list holds.",
           "check": "python3 scripts/test_exact_baselines.py GuardTests",
           "ask": "Read the tests. Is each case decided by the function `./dev check` calls, in a Git repository made for the test, with the refusal's text asserted to name the baseline, the owner and the file? Is there a flag, an environment variable or a file other than the registry that makes the guard pass?",
           "target": "mac-metal",
@@ -125,12 +125,24 @@
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
-          "review": ""
+          "review": "",
+          "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
         },
         {
           "id": "M2.6",
-          "statement": "`CONTRIBUTING.md`, `./dev help`, the engineering skill's building reference and the module list's exact-baseline rules describe the guard, the pins and how a planned refresh records itself, and none still describes a proof file or a gate.",
-          "ask": "Do the four documents agree with the guard as built, and does a builder making a planned refresh find in them every step it must take: regenerate, run `verify --full`, update the pin and the refresh, merge in one landing?",
+          "statement": "`CONTRIBUTING.md`, `./dev help`, the engineering skill's building reference and the module list's exact-baseline rules describe the guard, the pins, and how a planned refresh, an edited comparison file and an added, redefined or retired baseline each record themselves. None still describes a proof file or a gate.",
+          "ask": "Do the four documents agree with the guard as built? Does a builder making a planned refresh find in them every step it must take (regenerate, run `verify --full`, update the pin and the refresh, merge in one landing), and a planner retiring a baseline the record it must leave?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.7",
+          "statement": "The guard compares the registered set with the registry at the merge base with main. It refuses, naming the baseline and its owner: a baseline registered at the merge base that the commit neither registers nor retires, a changed field of a baseline's definition whose pin and refresh did not change with it, and a new baseline with no refresh. It passes a baseline moved to the retired list with a refresh naming an anchor the module list holds, and a redefined or added baseline whose pin and refresh are right.",
+          "check": "python3 scripts/test_exact_baselines.py RegisteredSetTests",
+          "ask": "Read the tests. Does one remove a single baseline and leave every other entry, pin and refresh untouched, and is the refusal's text asserted to name that baseline? Is each case decided by the function `./dev check` calls, against the merge base's registry read from Git and not from the working tree?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
