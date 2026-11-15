@@ -557,3 +557,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   disposable source worktree and build cache, recovering about 4.3 GiB.
   [Handoff](../../evidence/ATMOSPHERE/M9-handoff.md) identifies the queued durable
   job and closeout procedure. No new target run or successful merge is claimed.
+
+- **2026-11-15 — M9 durable evidence closeout.** The integration runner now
+  collects a completed exact-revision batch, generates its target and paired-cost
+  report, checks documentation and commits that evidence before retrying merge.
+  Collection failures still enter the bounded repair wait; normal gates remain.
+  Earlier cost prose is explicitly historical. Python parsing and documentation
+  checks pass; the queued GPU job has not yet run this continuation's target proofs.
