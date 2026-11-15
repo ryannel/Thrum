@@ -121,3 +121,37 @@
 - 2026-11-15 M2's checks tried by running each command: the five test-class checks, M2.8's included, and
   `covered` fail before the work and none errors. M2.6's check, the verifier, was not run: it needs the `gpu`
   lock and is M1.1's command, unchanged.
+
+- 2026-11-15 [Design review](../../evidence/BASELINE-GUARD/design-review.md) of the verification root: changes
+  requested, MF3 again and nothing else. The root fails a read a script needs, but a script that reads a file
+  only if it is there, or finds it by listing a folder, carries on without it, and a later change to the file
+  keeps the proof. The review has no Suggestions.
+
+- 2026-11-15 The lead's task: "MF3 has now been raised twice. Settle it this time: the reviewer accepts either
+  covering optional and enumerated script inputs in the key, or making any input the key cannot resolve block
+  the proof from being published (fail closed). Pick whichever is simpler to make provably complete, and keep
+  excluding the unrelated crates and scripts."
+
+- 2026-11-15 Planner's decision: cover. Every tracked file is a covered path unless it is in a package Cargo
+  does not link, is a document or is a script nothing reaches, so no rule depends on how a script finds a file.
+  Imports and quoted paths now decide only which scripts are reached. M2.1 is written again for that rule, M2.9
+  is new and holds the review's three cases, and M2.8, M2.7 and M2.3 follow. Refusing was not taken as the main
+  rule because nothing shows the verifier that a step looked for a file: a missing file answers "no", macOS
+  reports lookups only to root, a denied read is swallowed by an ordinary `except OSError`, and access times
+  move on the first read only.
+
+- 2026-11-15 Refusal is kept where it cannot be argued around. A tripwire stands in the root for each withheld
+  script, leaves a mark when a step runs or imports it, and the key holds the script's path. Without it a
+  module imported by a computed name would be the same hole in another file type.
+
+- 2026-11-15 Left open, as assumptions in the plan and an entry in the design's "What it does not stop": a step
+  that takes input, without needing it, from an unlinked package, an unlisted document or an unread source.
+  Closing it means covering those files, which the task excludes for crates and which for `docs/` would lapse
+  every proof. Also considered and not taken: `scripts/` covered whole (28 more lapses in 493 commits against
+  6), a folder rule for a reference's siblings in `docs/`, and the non-Rust files of unlinked packages
+  ([estimate](../../evidence/BASELINE-GUARD/M2-plan/README.md#covering-by-place)).
+
+- 2026-11-15 M2's checks tried by running each command: the six test-class checks, the new `ScriptInputTests`
+  among them, and `covered` fail before the work and none errors. The loop's `check --items-only` waited over
+  ten minutes on the `gpu` lock for M2.6, with builders holding it, and was stopped; M2.6's check is M1.1's
+  command, unchanged. `./dev check-docs` reports only the 18 missing links in `APPLE-PRESENTATION`'s log.

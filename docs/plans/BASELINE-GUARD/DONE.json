@@ -75,9 +75,9 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "The covered paths of a commit are derived with Git and Cargo's resolver, not listed: the build configuration with every workspace package's manifest, every file of each package Cargo links into a build the registry names, the scripts reached from the verifier, the registry with the paths it lists outright, and every registered reference. The key changes when a linked package's source, a shader, a showcase asset, a reached script, a registered reference, the lockfile or the toolchain file changes, and when a package becomes linked. It does not change for the sources of a package that is not linked, a script nothing reaches, or a document outside the linked packages and the listed paths.",
+          "statement": "The covered paths of a commit are derived with Git and Cargo's resolver, not listed: every tracked file except the files of a workspace package Cargo links into no build the registry names (its manifest stays covered), documents, and scripts nothing reaches. A registered reference, a path the registry lists and a file a reached script names are covered wherever they lie. The key changes when a linked package's source, a shader, a showcase asset, a reached script, a registered reference, the lockfile or the toolchain file changes, and when a package becomes linked. It does not change for a change inside a package that is not linked, to the content of a script nothing reaches, or to a document outside the linked packages and the listed paths.",
           "check": "python3 scripts/test_exact_baselines.py CoveredPathTests",
-          "ask": "Read the tests. Is each case decided by the function the gate itself calls, with Cargo resolving a workspace made for the test? Does one case run on this repository's own tree and find a shader, a showcase asset and `scripts/apple_tile_m1.py` covered and a workspace package outside the closure not covered, without the test listing the closure's packages?",
+          "ask": "Read the tests. Is each case decided by the function the gate itself calls, with Cargo resolving a workspace made for the test? Is a tracked file in a folder no rule names covered, without the derivation naming that folder? Does one case run on this repository's own tree and find a shader, a showcase asset, `scripts/apple_tile_m1.py` and `.gitattributes` covered and a workspace package outside the closure not covered, without the test listing the closure's packages?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -97,7 +97,7 @@
         },
         {
           "id": "M2.3",
-          "statement": "The verifier writes no proof, and names the cause, when a dependency record is missing or lists a file outside the root and its build folder, when a linked package's source lies outside the repository, or when the root's tracked content, hashed from disk before the cook and after the last comparison, does not give the content key. The gate refuses when Cargo cannot resolve the workspace or the registry cannot be read. No flag, environment variable or file other than the registry changes what is covered, unread or in the root.",
+          "statement": "The verifier writes no proof, and names the cause, when a dependency record is missing or lists a file outside the root and its build folder, when a linked package's source lies outside the repository, or when the root's tracked content, hashed from disk before the cook and after the last comparison, does not give the content key. The gate refuses when Cargo cannot resolve the workspace or the registry cannot be read. No flag, environment variable or file other than the registry changes what is covered, withheld, unread or in the root.",
           "check": "python3 scripts/test_exact_baselines.py FailClosedTests",
           "ask": "Read the gate. On which paths does it pass? Is each one either no covered difference from main, or a proof whose content key equals the commit's under that proof's own unread sources?",
           "target": "mac-metal",
@@ -141,7 +141,7 @@
         },
         {
           "id": "M2.7",
-          "statement": "One command prints the covered paths of the current commit with the reason each is covered and, when a proof covers the commit, the unread sources. `CONTRIBUTING.md`, `./dev help` and the engineering skill's building reference describe the derived key, say what to do when a verifier step fails for a file the root does not hold, and name the command.",
+          "statement": "One command prints the covered paths of the current commit with the reason each is covered, the withheld scripts and, when a proof covers the commit, the unread sources. `CONTRIBUTING.md`, `./dev help` and the engineering skill's building reference describe the derived key, say where a comparison's data must live to be covered and what to do when a verifier step fails for a file the root does not hold or trips a tripwire, and name the command.",
           "check": "python3 scripts/exact_baselines.py covered",
           "ask": "Do the three documents and the table in the module list agree with the gate as built, and does none still say that `crates/`, `scripts/` or `tools/` is covered whole?",
           "target": "mac-metal",
@@ -152,9 +152,20 @@
         },
         {
           "id": "M2.8",
-          "statement": "The verifier runs every build, the cook, every capture and every comparison in a verification root that holds no tracked file but covered paths, as copies, and from the cook on only the files the content key covers. A build that includes an uncovered tracked file gets no proof, and neither does a comparison script that reads one through a path it computes or reads an unread Rust source as data. Once the registry lists the file the proof is written, and a change to the file changes the key. A script that lists a folder sees only its covered files, and a file added to a folder the registry lists changes the key.",
+          "statement": "The verifier runs every build, the cook, every capture and every comparison in a verification root that holds the covered paths as copies, a tripwire in place of each withheld script and no other tracked file, and from the cook on no unread source. A build that includes a withheld file gets no proof, and neither does a script that needs a document the registry does not list, a file of a package that is not linked, or an unread Rust source. Once the registry lists the file the proof is written, and a change to the file changes the key. A file added to a folder the registry lists changes the key.",
           "check": "python3 scripts/test_exact_baselines.py VerificationRootTests",
           "ask": "Read the verifier and the tests. Which steps of the verifier run outside the root, or from the worktree's copy of a script? Do the tests make their root and run their fixture scripts through the code the verifier itself uses?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.9",
+          "statement": "A comparison script's tracked data file is covered with no registry entry, however the script finds it: through a path it computes, only if the file is there, or by listing a folder. In each case the script reads the file in the root, a change to the file changes the key, and so does a file added to the listed folder. A step that runs or imports a withheld script gets no proof, even when it catches the failure, until the registry lists the script. Adding, removing or renaming a script nothing reaches changes the key; changing its content does not.",
+          "check": "python3 scripts/test_exact_baselines.py ScriptInputTests",
+          "ask": "Read the tests. Do they run the design's three cases (a JSON beside the script that is read always, read only if present, and found by listing a folder) in a root made by the verifier's own code, with the JSON in no registry entry and named in no script? Does a step in Python, in JavaScript and in shell that swallows every error still get no proof after it runs a tripwire?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

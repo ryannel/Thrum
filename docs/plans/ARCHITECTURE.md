@@ -656,21 +656,26 @@ main. Every module's landings are covered from the day the gate exists, with no 
 **The covered paths are derived** (15 November 2026, on the owner's approval;
 [design](BASELINE-GUARD/DESIGN.md#the-covered-paths)). The gate was built with covered paths listed by hand, and
 they took in every crate and every script, so a change to a crate the game never links lapsed every open proof.
-`BASELINE-GUARD` M2 derives them: the build configuration with every workspace package's manifest, every file of
-each package Cargo links into what the verifier builds, the scripts reached from the verifier, the registry with
-the paths it lists outright, and the references. The verifier does its builds, captures and comparisons in a
-scratch tree that holds only those files, its
-[verification root](BASELINE-GUARD/DESIGN.md#the-verification-root), so a script that reads any other tracked
-file fails there and gets no proof. A proof also holds its
+`BASELINE-GUARD` M2 derives them: every tracked file, except the files of a package Cargo does not link into
+what the verifier builds (its manifest stays covered), documents (`docs/`, `.agents/`, `.claude/` and Markdown
+outside the packages) and scripts nothing reaches from the verifier. A registered reference, a path the registry
+lists outright and a file a reached script names are covered wherever they lie. So a data file is covered for
+where it is, however a script finds it. The verifier does its builds, captures and comparisons in a scratch
+tree that holds only those files, its
+[verification root](BASELINE-GUARD/DESIGN.md#the-verification-root), so a script that needs any other tracked
+file fails there and gets no proof, and one that runs a script the key left out trips the tripwire standing in
+its place and gets none either. A proof also holds its
 **unread sources**, the Rust files of those packages that no build of the verifier read, and the gate accepts
 the proof for a later commit that differs from the proved one only in those files. So a rebase that brings in the
-sources of a crate the game does not link, a script the verifier never starts, a test file or a document outside
-those packages keeps the proof, and any change to a file a verified build or comparison reads still lapses it.
+sources of a crate the game does not link, a change to the content of a script the verifier never starts, a test
+file or a document outside those packages keeps the proof, and any change to a file a verified build or
+comparison reads still lapses it. So does adding, removing or renaming a script.
 `python3 scripts/exact_baselines.py covered` lists the covered paths of a commit. A proof the gate accepts for a
 later commit names the commit the verifier ran on; rule 3's check at the claim is unchanged. Where a ruling here
 lets a module change the registry's paths, that includes the package and script names it holds. Any module may
 add a path to the registry's listed paths for a script it owns, when the verifier fails in the root for a file
-that script is meant to read; it says so in its log, and removing one needs a ruling here. No baseline, no
+that script is meant to read or a script it is meant to run; it says so in its log, and removing one needs a
+ruling here. No baseline, no
 comparison and no other module's item changes, and a design that calls `crates/` or `scripts/` a covered path
 stays right for the files in them that the verifier builds or runs. Until M2 is Done the listed paths in the
 table below apply.
@@ -2098,3 +2103,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   comparison reads, taken from Cargo's resolved graph, the scripts' references and the compilers' dependency
   records, in place of a hand list that took in every crate and script. The verifier's command, the registry's
   baselines, every reference, every comparison and every other module's items are unchanged.
+- 2026-11-15 "The covered paths are derived" revised after `BASELINE-GUARD`'s fourth design review (MF3): a
+  file is covered unless a rule withholds it, in place of a set found from the scripts' imports and quoted
+  paths, so a script's optional and listed data files are in the key. A tripwire stands in the verification
+  root for each script the key leaves out. No baseline, comparison or other module's item changed.
