@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 Integration holds both leases on `bb593e23`. The first exact
+  verifier refused a portable route capture with twelve omissions and a full
+  96-frame CPU pool. A matching controlled repeat captures and verifies all
+  963 images with zero omissions, peaking at five pool frames. The saturation
+  trigger remains unconfirmed. [Retained diagnostic](../../evidence/CREATOR/m3/capture-pool-bb593e23/diagnostic.json)
+  supports a complete verifier retry under the existing reservation.
+
 - 2026-11-15 The second integration attempt reached an upstream log conflict.
   The rebase preserves the owner's newer evidence scope and results. At
   `dd1be98b8`, isolated lock and retry proofs pass. The helper can now retain
