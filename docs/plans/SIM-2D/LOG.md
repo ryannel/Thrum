@@ -6,7 +6,7 @@
   M1 builder results and their retained target receipts are unchanged; integration
   imports the repair and reruns the repository and milestone checks.
   At `d1837acac`, documentation, Mac/Chrome/simulator conformance, the sine control
-  and both retained cost-source checks pass. The full GPU checks remain queued.
+  and both cost-source checks pass. All 28 repaired-log links resolve to tracked files.
 
 - 2026-11-14 M1 implementation. Added the binary32 profile number and vector, Philox2x32-10,
   portable state encoding, registered-component finite validation, and the committed world digest.
