@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-15 The console later reported unlocked and Computer Use listed native
+  apps, but selecting Finder stalled for 901 seconds despite a ten-second
+  timeout request. The script interrupted it. Native-app access remains
+  unverified, with the stall's cause unconfirmed. Integration PID 95937 is live
+  and GPU-queued. The [handoff](../../evidence/CREATOR/M3-handoff.md) records this
+  correction and the access needed for M3.4.
+
 - 2026-11-15 The follow-up continuation confirmed the integration worker live
   and still GPU-queued after an official 55-second wait. The separate window
   worker has stopped. The last Computer Use result confirms a locked Mac, so
