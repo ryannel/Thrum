@@ -86,18 +86,16 @@ and the fresh cooked root was `70d2baf823d09d85574f7cdfce7102648754544dd7d68659e
 The source checkout was clean, using Rust 1.99.1 and macOS 26.6.2 (25G83).
 
 Item-check job `20261115-002057-18054` exited zero with all 11 commands passed and zero
-failures, errors or timeouts. Continuation job `20261115-014512-10680` acquired the GPU
-and started the full milestone check before merging. Its result is pending.
+failures, errors or timeouts. Full milestone job `20261115-014512-10680` also passed
+`./dev check`, including the V1 simulation tests, before its merge encountered conflicts.
 
-Upstream now includes changes to `thrum-cloud-model`, so integration will require a fresh
-covered-content proof after rebasing. Follow-up job `20261115-042446-70084` is queued under
-the GPU lock. If the preceding merge fails for a missing exact-baseline proof, it runs the
-verifier on the rebased checkout and retries the merge. It checks the current CPU proof gate
-to identify that failure. A different failure stops that job
-for inspection. Observe both jobs before reporting completion and retain the final proof here.
+The canonical rebase conflicted only in duplicate historical handoff-link repairs. Kept
+the upstream versions of CREATOR's and CULLING's M3 handoffs and the CLOUDS log, preserving
+their newer entries. The rebased source at `37134ad8` contains six upstream cloud-model
+source/test changes. Both retained simulation cost records still pass their measured-source
+identity checks. The simulation sources are byte-identical to the qualified M1 source.
 
-The continuation holds the GPU lock while it checks and merges, and relies on cached item
-checks for the unchanged files outside `docs/plans/`. Keep those files unchanged until it
-exits: invalidating the M1.11 cache would make its nested check wait for its own GPU lock.
-Changes to this log and to the done-when results preserve that cache. Observe the continuation's
-merge result and affected upstream files before reporting completion.
+The selected [exact-baseline receipt](../../evidence/SIM-2D/M1/exact-baselines.json) records
+each proof's actual revision, covered-content key, comparisons and build identities.
+Canonical integration requires the verifier on rebased covered content and `./dev check`
+on the combined tree. The proof-and-merge runner refreshes that receipt before merging.

@@ -118,7 +118,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M1.md",
+          "evidence": "docs/evidence/SIM-2D/M1/exact-baselines.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
