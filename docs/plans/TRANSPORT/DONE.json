@@ -138,7 +138,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "not_started",
       "quality_bar": "As dependable as the link under a shipped co-op game. Valve's GameNetworkingSockets gives a game reliable and unreliable messages on one encrypted connection and keeps both moving through packet loss; Factorio's multiplayer notices a dropped peer and takes it back on a fresh connection. Here a link that stays up delivers every reliable message once and in order, no datagram waits behind a lost packet, and a dropped client returns on a new link, proved by one script on all three targets."
     },
     {

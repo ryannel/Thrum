@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "cd4d0f262d891447525973cec60b26c9be9c39b55859159fdbcf4bfd14525f5d",
+      "definitions": "79c75bc3510214f44c0900fa951178da8c26e64b94f7d54080134c7bc3a5c304",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 1 Must Fix fin",
-        "at": "2026-11-15T00:29:02Z"
+        "task": "The owner ruled on TRANSPORT's timing (15 Nov), in their words: \"it can come before V1 if we have space for it, but it's",
+        "at": "2026-11-15T07:34:43Z"
       }
     },
     "M2": {
@@ -63,11 +63,15 @@
     {
       "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-15T00:29:02Z"
+    },
+    {
+      "task": "The owner ruled on TRANSPORT's timing (15 Nov), in their words: \"it can come before V1 if we have space for it, but it's not urgent\". This overturns the planner's assumption (c7882c36) that the brief's decision 1 keeps transport after V1. Remove TRANSPORT M1's dependency on SHOWCASE:M8 and record the ruling in the TRANSPORT LOG and wherever the brief or module list states transport stays after V1. TRANSPORT is lowest priority: the lead starts its builder only when a builder slot is free. Its builder's earlier work is on build/transport.",
+      "at": "2026-11-15T07:34:43Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T00:29:02Z"
+    "at": "2026-11-15T07:34:43Z"
   },
   "design_history": [
     {
