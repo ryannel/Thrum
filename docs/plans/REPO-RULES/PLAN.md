@@ -10,6 +10,7 @@ milestone. `scripts/` is a covered path, so every landing here needs a verifier 
 ## Open for the human
 
 - Assumption: the rules bind every builder from the day M1 lands, running builders included. A rule only stops new violations, never code that was already there, and its message says what to write instead. The cap on evidence files binds from M2, when a refused file has somewhere to go.
+- Assumption: code that reaches main before the rules do counts as already there. `WATERS` M1 added eight `#[path]` attributes to its tests on 15 November, against the patterns reference and before any check could refuse them; they enter the baseline, and `TEST-SUPPORT` M2 removes them with the rest. The other choice, which M1's builder asked for, holds M1 until `WATERS` removes them, and holds it again for each violation another builder lands first.
 - Assumption: the cap on an evidence file is 2 MiB, the review's figure. About 2.3 GiB of 3.7 GiB leaves the checkout and about 1.4 GiB of smaller files stays. A lower cap removes more; say so and M2's cap changes.
 - Assumption: files that leave stay recoverable from Git history on this Mac and on the remote, by one command. New large captures go to one folder beside the main checkout, `/Users/ryannel/Workspace/thrum-evidence-store`, shared by every worktree, with no remote copy and no service, so a lost disk loses them.
 - Assumption: a rule counts a kind of violation across the whole repository and that count can only go down. A change that removes one violation and adds another of the same kind passes, because the repository is no worse; that is what lets a file be moved or split without an exception.
@@ -18,12 +19,18 @@ milestone. `scripts/` is a covered path, so every landing here needs a verifier 
 
 ## M1 A change that adds a string error, a hidden reach across packages, an environment read in a library or a copied device request is refused by `./dev check`
 
-`scripts/repo_check.py` runs every check with no arguments, and `tools/xtask` calls it for both `check` and
-`check-docs`; its self-test is `scripts/test_repo_check.py`. The patterns reference already names each shape, so a
-rule's message points at its section and the reference gains a line for each rule. Running builders meet these
-rules at their next `./dev check`, so the baseline must hold the true count for every file at the commit you land
-on: rebase, then tighten, then land. `.config/architecture.toml` has no `test_role` yet (`TEST-SUPPORT` M1 adds
-it), so `library-env`'s exemption is proved on a scratch registry.
+The rule engine, its fixtures, the ratchet tests and the finishing helper are built on branch `build/repo-rules`
+at `bd1ad61f`, and [the handoff](../../evidence/REPO-RULES/M1-handoff.md) says what each run proved. Its first
+step, waiting for `WATERS`, no longer applies. The eight `#[path]` attributes in
+`crates/thrum-water-model/tests/` reached main before the rules, so they enter the baseline under
+[main moves before a rule lands](DESIGN.md#mechanisms). Leave them, and every other module's code, as written:
+`TEST-SUPPORT` M2.3 takes them to zero. The branch's own commits hold baselines from before main moved, down to
+33 for `path-attribute`, and the check reads them as accepted history, so the branch can land only once each rule
+is first listed with the counts of the main it lands on. Builders land while you work: measure again whenever
+your base moves, and put each difference in M1.5's record with the commit that made it. M1.2 gained the
+moved-base case and M1.5 the differences; a pass on any item needs proof at the commit you claim.
+`.config/architecture.toml` has no `test_role` yet (`TEST-SUPPORT` M1 adds it), so `library-env`'s exemption is
+proved on a scratch registry.
 
 ## M2 The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves
 

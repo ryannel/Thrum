@@ -24,9 +24,9 @@
         },
         {
           "id": "M1.2",
-          "statement": "A rule's total can only go down. In a scratch Git repository, a change that adds a violation is refused; a change that adds a violation and rewrites the baseline to match is refused before it is committed, after it is committed, and from a second worktree of the same repository; and removing a violation lowers the mark that later changes are held to. A file moved or split with its violations, a newly registered rule and a new version of a rule pass.",
+          "statement": "A registered rule's total can only go down. In a scratch Git repository, a change that adds a violation is refused; a change that adds a violation and rewrites the baseline to match is refused before it is committed, after it is committed, and from a second worktree of the same repository; and removing a violation lowers the mark that later changes are held to. A file moved or split with its violations, a newly registered rule and a new version of a rule pass. A rule built on a branch whose base then gains a violation is refused while the branch's history still holds the lower count, and passes once the branch first lists the rule in a commit that holds the new base's counts.",
           "check": "python3 scripts/test_shape_ratchet.py",
-          "ask": "Read the ratchet cases. Is the accepted total taken from the baseline's Git history and never from the working tree's baseline? Does the committed case run the check at the commit that raised the count, with no remote and no branch name given? After a violation that reached history is removed, does the check pass again with nothing waived?",
+          "ask": "Read the ratchet cases. Is the accepted total taken from the baseline's Git history and never from the working tree's baseline? Does the committed case run the check at the commit that raised the count, with no remote and no branch name given? After a violation that reached history is removed, does the check pass again with nothing waived? In the moved-base case, is the passing branch one whose every commit holds a baseline equal to its own tree?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -57,8 +57,8 @@
         },
         {
           "id": "M1.5",
-          "statement": "The counts the rules found at the starting commit are on record: for each rule marked M1, the violations in each crate and example.",
-          "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why?",
+          "statement": "The counts the rules found are on record for each rule marked M1, in each crate and example, at the commit the build started from. Every difference between that record and the baseline at the claimed commit names the commit on the main branch that made it.",
+          "ask": "Does the record give a count for every rule and package, taken from the rules' own output at a named commit? Where a total differs from what the review reported for string errors, reaches across packages or environment reads, does the record say why? Is every violation the baseline holds beyond the starting record the work of a commit that reached the main branch before the rules did, and none of them this milestone's own?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

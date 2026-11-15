@@ -15,3 +15,10 @@
   for the frame runtime and presenter, whose dependency on the scene renderer no module removes. `history-names`
   covers file names, environment variables, Cargo targets and descriptions (measured: 28, 19, 1 and 2).
   `library-env` exempts the registered test-support package, settled with `TEST-SUPPORT`.
+- 2026-11-15 M1's builder ended Blocked: Needs Dependency ([handoff](../../evidence/REPO-RULES/M1-handoff.md)).
+  `WATERS` M1 (`2ebe8f20`) put eight `#[path]` attributes on main while the rules were still on the build branch,
+  whose own commits held 33 for `path-attribute`, so the history half refused 41. Decided here, not in `WATERS`:
+  a rule is registered when it reaches main, and code that reaches main first is in its baseline. The builder
+  lands a branch that first lists each rule with the counts of the main it lands on. The engine is unchanged.
+  M1.2 gained the moved-base case and M1.5 the record of what main added. `WATERS`' plan is untouched;
+  `TEST-SUPPORT` M2.3 (`path-attribute` at zero under `crates/`) already removes the eight.

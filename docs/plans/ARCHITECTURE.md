@@ -1588,8 +1588,9 @@ belongs to its owner.
 1. **The rules bind everyone from `REPO-RULES` M1.** They are ratchets: a file may not gain a violation and a new
    file starts at zero, so a running builder is refused only for a shape it adds. A rule's total may only go
    down: the accepted total is the lowest the checked-in baseline has held in Git history, so rewriting the
-   baseline does not admit a new violation, and a moved file carries its allowance. Another module adds a rule
-   through the same engine, with fixtures, in the milestone that first needs it.
+   baseline does not admit a new violation, and a moved file carries its allowance. A rule is registered when it
+   reaches main, so a violation that reaches main before the rule does is in its baseline. Another module adds
+   a rule through the same engine, with fixtures, in the milestone that first needs it.
 2. **Bulk evidence** (`REPO-RULES` M2). A file over the cap leaves the tree and stays in Git history, listed in
    `docs/evidence/BULK.json`; the link check accepts a link to a listed path. Evidence folders stay their
    modules'. No review, record or design is edited, and a registered exact-baseline reference never leaves. From

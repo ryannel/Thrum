@@ -1,6 +1,7 @@
 # Repo rules: the shapes held by check, bulk files out of the tree, names and layout
 
-14 November 2026, revised 15 November after [the first design review](../../evidence/REPO-RULES/design-review.md).
+14 November 2026, revised 15 November after [the first design review](../../evidence/REPO-RULES/design-review.md),
+and again that day when M1's first landing was refused ([log](LOG.md)).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-4-the-code-review-and-the-games-separation) ·
 [the code review](../../evidence/code-review-2026-11-14/CODE-REVIEW.md) ·
@@ -60,17 +61,24 @@ line, sorted by path, so two builders who each lower a count merge cleanly. The 
   builder's worktree and in the loop's clean checkout, which share the object store. The refusal names each file
   whose count is above its entry at the low mark.
 
-Three cases are not growth, and the design names them so that no one needs a hand-made exception:
+Four cases are not growth, and the design names them so that no one needs a hand-made exception:
 
-- **A rule is registered.** A rule's history starts at the first commit whose baseline lists it, with whatever
-  counts the code has then. The baseline records each rule's version, which is part of the rule's definition. A
-  change to what a rule matches is a new version, in the commit that changes the matcher, and starts its history
-  again.
+- **A rule is registered.** A rule is registered by the commit that brings it to the main branch. Its history
+  starts there, at the first commit whose baseline lists it, with whatever counts the code on main has then. The
+  baseline records each rule's version, which is part of the rule's definition. A change to what a rule matches
+  is a new version, in the commit that changes the matcher, and starts its history again.
+- **Main moves before a rule lands.** Until a rule is on main nobody else can run it, so a violation that
+  reaches main first is code that was already there: it enters the baseline, and the rule holds it from then
+  on. The check reads only Git history and cannot tell an unmerged branch from main, so the rule's builder lands
+  a branch on which the rule is first listed in a commit that holds the counts of the main it lands on. When
+  main gains or loses a violation while the rule waits, that commit is made again on the new main. Counts the
+  branch held earlier were never on main and are not accepted state; a later commit that raises the baseline is
+  still refused, as any raise is.
 - **A file moves.** The ratchet is on a rule's total, so a move, a rename or a split carries a file's allowance
   to wherever its lines go and grants none. The same holds for a change that removes one violation and adds
   another: the repository is no worse, and it passes.
-- **A violation slipped onto main.** The low mark is unchanged, so every check fails until the violation is
-  removed, and then passes. Nothing has to be waived or rewritten.
+- **A violation slipped onto main past a registered rule.** The low mark is unchanged, so every check fails
+  until the violation is removed, and then passes. Nothing has to be waived or rewritten.
 
 In a tree with no Git history, such as the game gate's detached copy, only the tree half runs, and the check says
 so. So no rule needs the codebase cleaned first, no running builder is stopped by code it did not write, and
@@ -179,7 +187,7 @@ orphan directories go; feature-gated code is compiled by `./dev check`.
 
 ## What it must not do
 
-- Change what a rule matches to make a crate pass, or let a rule's total rise.
+- Change what a rule matches to make a crate pass, or let a registered rule's total rise.
 - Remove a registered baseline file, or any file under `docs/plans/`.
 - Edit another module's `DESIGN.md`, items or record.
 - Rename what an open check names.
@@ -194,7 +202,9 @@ ratchet or nothing here; the review's order of attack does not schedule their fi
 
 Rules are proved by fixtures: a violating file the rule refuses and the corrected file it passes. The ratchet is
 proved in a scratch Git repository, where a commit that adds a violation and rewrites the baseline to match is
-refused before and after it is committed, and a move, a new rule and a new rule version pass. Bulk removal is
+refused before and after it is committed, and a move, a new rule and a new rule version pass. A rule built on a
+branch whose base then gains a violation is refused while the branch still holds the lower count, and passes once
+the rule is first listed with the new base's counts. Bulk removal is
 proved by the manifest check, a restore that reproduces hashes, a file put from one worktree and restored in
 another, the link check and the exact-baseline verifier. The rename is proved by `./dev check`, the verifier,
 `history-names` at zero and a comparison of test names before and after.
