@@ -267,3 +267,11 @@
   official checked merge remain required. D10.5 stays open; no renderer source or qualification changed.
   [Evidence](../../evidence/APPLE-TILE/M10/window-startup-c7827ff4/README.md).
 
+- **2026-11-15 — M10 cross-module resource cycle.** Process rows and the actual CREATOR wrapper establish
+  CLOUDS holding GPU while waiting for merge, and CREATOR holding merge while waiting for GPU. The queued
+  corrected observer and checked merge never started and were stopped before handoff; neither foreign worker
+  was changed. A 02:46 UTC confirmation then found CREATOR gone and CLOUDS checking, clearing the cycle.
+  D10.1–D10.4 retain their passes; D10.5 remains open and fresh target jobs can resume.
+  The observer checkpoint is `f3dab046`; documentation checks and retained-proof hash verification pass.
+  [Evidence](../../evidence/APPLE-TILE/M10/README.md) · [Handoff](../../evidence/APPLE-TILE/M10-handoff.md).
+
