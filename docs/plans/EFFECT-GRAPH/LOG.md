@@ -124,3 +124,9 @@
   verified them on its owner branch and kept their paths inline until that evidence lands.
   Fresh combined-source checks, captures, costs and the normal merge gate remain required.
   Combined-source workspace all-target and V1 Wasm Clippy pass, with the compile revision retained.
+- 2026-11-15 Independently regenerated both failed-frame differences, inspected whole images and densest
+  native-size crops beside failed frames, and revalidated all 481 identities per failure, retained
+  source/control hashes and both complete same-content pass archives. Promoted the denser night crop
+  at (114, 230). M3.9's builder proof passes; [the audit](../../evidence/EFFECT-GRAPH/M3/variation-runs.md)
+  retains both failed records. Documentation checks pass. Fresh integration target checks and merge
+  remain pending while the existing campaign waits for the shared GPU; no target result is inferred.
