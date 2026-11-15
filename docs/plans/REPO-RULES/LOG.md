@@ -53,3 +53,9 @@
   [record](../../evidence/REPO-RULES/M1-identity-observation.md) now links its complete image/identity
   reading, callback times and the landing proof. The full verifier runs unchanged; this record sets
   the failure aside only when that full run passes. No reference or comparison is changed.
+- 2026-11-15 The unchanged retry at `b449a81b` built and cooked successfully but stopped before Chrome:
+  the native variants motion capture omitted 83 samples, reached six staging slots in use and reported
+  incomplete; its writer finished successfully. No pixel/identity comparison refused output in this run.
+  [The record](../../evidence/REPO-RULES/M1-native-capture-failure-record.json) and compressed runtime/manifest
+  retain the diagnosis. CPU/inventory evidence was refreshed independently. Retrying the full verifier
+  unchanged tests whether the capture pressure is transient; no capacity, comparison or reference changes.
