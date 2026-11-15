@@ -96,7 +96,11 @@ impl Map {
                         } else {
                             None
                         },
-                        source: Source::Water,
+                        source: if matches!(b.kind, BodyKind::Basin { .. }) {
+                            Source::Enclosed
+                        } else {
+                            Source::Water
+                        },
                     },
                 )
                 .map(Some)
@@ -113,6 +117,20 @@ impl Map {
     fn shore_bed(&self, id: usize) -> crate::Bed {
         let mut bed = self.bed.clone();
         let body = &self.bodies[id];
+        if matches!(body.kind, BodyKind::Basin { .. }) {
+            // Reuse the map's strict wet topology, including its chart barriers.
+            // A long join must not make unrelated sea coast into basin sources.
+            let wet = self.still_fill(id, body.stage.max);
+            for (i, &owned) in wet.iter().enumerate() {
+                let chart = self
+                    .bodies
+                    .iter()
+                    .any(|b| matches!(&b.kind, BodyKind::Chart(c) if c.footprint[i]));
+                if !owned && !chart && bed.heights[i] < body.level + body.stage.max {
+                    bed.heights[i] = body.level + body.stage.max + self.profile.margin_height + 1.0;
+                }
+            }
+        }
         // A still body's water stops at a chart. Continue its phase only through
         // the part of the chart that can blend toward it, over all declared stages.
         // In particular a basin must not become edge-fed through its outlet.

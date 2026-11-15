@@ -385,7 +385,6 @@ impl Map {
     }
 
     fn flood(&self, id: usize) -> Vec<bool> {
-        let n = self.bed.heights.len();
         let b = &self.bodies[id];
         if let BodyKind::Chart(c) = &b.kind {
             return c
@@ -397,7 +396,13 @@ impl Map {
                 })
                 .collect();
         }
-        let level = b.level + b.stage.value;
+        self.still_fill(id, b.stage.value)
+    }
+
+    pub(crate) fn still_fill(&self, id: usize, stage: f64) -> Vec<bool> {
+        let n = self.bed.heights.len();
+        let b = &self.bodies[id];
+        let level = b.level + stage;
         let blocked = |i| {
             self.bodies
                 .iter()

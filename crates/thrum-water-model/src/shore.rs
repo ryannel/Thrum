@@ -7,6 +7,9 @@ use std::f64::consts::{FRAC_PI_4, TAU};
 pub enum Source {
     /// Edge-fed water, or the upwind shore of an enclosed piece.
     Water,
+    /// A validated basin's own shore, even where a chart's phase continuation
+    /// reaches the array edge. The basin's actual water remains enclosed.
+    Enclosed,
     /// Edge sources alone; enclosed pieces deliberately remain unreachable.
     EdgeOnly,
 }
@@ -367,6 +370,9 @@ impl Region {
                 }
             }
         }
+        if config.source == Source::Enclosed {
+            edge.fill(false);
+        }
         Self { open, edge, level }
     }
 }
@@ -442,7 +448,7 @@ fn solve(
         };
         speed[i] = dispersion(k0, seen) / k0;
         let lake_source = !region.edge[i]
-            && c.source == Source::Water
+            && c.source != Source::EdgeOnly
             && bed.heights[i] < c.level + stage
             && (0..9).all(|s| {
                 ray(
@@ -454,7 +460,7 @@ fn solve(
                 )
                 .0 < bed.spacing
             });
-        if bed.edge(i) || lake_source {
+        if bed.edge(i) && c.source != Source::Enclosed || lake_source {
             phase[i] = dir[0] * p[0] + dir[1] * p[1];
             fixed[i] = true;
         }
