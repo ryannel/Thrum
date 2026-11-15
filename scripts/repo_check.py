@@ -13,6 +13,7 @@ import tomllib
 from urllib.parse import unquote, urlsplit
 
 from design_hashes import check_hashes
+import shape_rules
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
@@ -322,6 +323,7 @@ def markdown_files(root):
 def main():
     files = markdown_files(ROOT)
     errors, links = check_links(ROOT, files)
+    errors += shape_rules.check(ROOT)
     errors += check_skills(ROOT)
     layout_errors, notes = check_rust_layout(ROOT, rust_files(ROOT))
     errors += layout_errors

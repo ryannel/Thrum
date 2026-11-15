@@ -9,8 +9,15 @@ Each section covers one recurring job:
 
 The 14 Nov 2026 code review (`docs/evidence/code-review-2026-11-14/CODE-REVIEW.md`) found each split this file
 describes. Its finding IDs are given so you can see the evidence. `./dev check` holds the mechanical shapes by rule
-(`scripts/shape_rules.py`, once `REPO-RULES` M1 is Done); `docs/plans/ARCHITECTURE.md` says which module fixes each
+(`scripts/shape_rules.py`); `docs/plans/ARCHITECTURE.md` says which module fixes each
 finding.
+
+The rules count spelled-out text, not type aliases or macro expansion. Existing sites are inventoried in
+`.config/shape-baseline.json`; after removing sites, run `python3 scripts/shape_rules.py tighten`. It records
+the current counts but refuses growth above the lowest total already committed for that rule/version.
+Moving a site carries its allowance. Editing the baseline cannot grant new allowance. `check --rule NAME
+--zero PATH...` requires no sites under those paths; for `history-names` it lists names still pinned by an open
+check, xtask or the exact-baseline registry. Without Git history only the tree counts are checked, with a notice.
 
 Contents: [Errors](#errors) · [Data shared with WGSL](#data-shared-with-wgsl) ·
 [Shader source](#shader-source) · [Naming GPU work](#naming-gpu-work) ·
@@ -19,6 +26,8 @@ Contents: [Errors](#errors) · [Data shared with WGSL](#data-shared-with-wgsl) �
 [Platform shells](#platform-shells) · [Names](#names)
 
 ## Errors
+
+Rule: `string-errors` refuses a public `pub fn` returning `Result<_, String>`, including multiline returns.
 
 **Shape.** Each public boundary has one error enum. `crates/thrum-asset/src/error.rs` is the model:
 
@@ -102,6 +111,9 @@ needs (H05, H08). `thrum-sea` binds 17 buffers and 13 passes by position (H17).
 
 ## Device setup
 
+Rule: `device-request` counts adapter/device calls outside HOST's capabilities module and the registered
+test-support package. Use that recipe/gate when available; existing copies retain only their current allowance.
+
 **Shape.** Feature requests come from `DeviceCapabilities::requested_timing_features` in
 `crates/thrum-render/src/capabilities.rs`. Pipelines are created through `DeviceSite::render` / `compute`
 (`runtime/creation.rs`), which records each creation.
@@ -115,6 +127,9 @@ If your work adds or changes a device request, don't add another copy. Propose a
 `thrum-render::capabilities` in the plan log, and use the nearest existing host's request until it lands.
 
 ## Tests
+
+Rules: `path-attribute` refuses `#[path]` (use normal modules); `whole-file-gpu-gate` refuses a file-level
+`#![cfg(...target_os...)]` on a test file (gate the individual GPU tests).
 
 **Shape.**
 - Unit tests go in `#[cfg(test)] mod tests;`, with the body in `foo/tests.rs` once it passes a screen or two.
@@ -144,6 +159,10 @@ device, put one helper in that crate's `tests/support` and use it from every GPU
 
 ## Configuration
 
+Rule: `library-env` refuses `std::env::{var,var_os,vars}` calls in non-test library source. Parse at the process
+edge and pass typed settings. Binaries and build scripts are process edges; only a package registered with
+`test_role = "support"` is exempt as a library. A fixtures role grants no exemption.
+
 **Shape.** A host parses its settings once, at startup, into a typed struct, and passes the values down. A setting
 read from the environment uses a public constant for the variable's name, as `CAPTURE_VARIABLE` does in
 `thrum-app`.
@@ -153,6 +172,10 @@ crates: `thrum-render` reads `THRUM_RECIPE` and `THRUM_MAC_PATTERN` (M08). A set
 be found, typed or tested. A library crate takes its settings as arguments and doesn't read the environment.
 
 ## Crossing crate boundaries
+
+Rule: `package-reach` refuses literal path attributes/includes leaving their own package and every kind of
+engine-to-example manifest dependency, including target-specific and renamed dependencies. Expose a public API
+or use a registered shared fixture package instead.
 
 An engine crate depends only on the crates `.config/architecture.toml` allows. These all create a hidden dependency
 that neither check sees:
@@ -188,6 +211,11 @@ their own. The copies have drifted (H15, M02, M03).
   not in a shell.
 
 ## Names
+
+Rule: `history-names` counts milestone/gate segments in file paths, environment variable names in source,
+Cargo target names and descriptions. Use subject names such as `asset_reload`, not `g5_reload`; `rgba8` and
+`vec3` are ordinary names. Only `--zero` exempts dynamically discovered pinned names; the baseline inventories
+all existing names so an unrelated plan's status change does not change its counts.
 
 Name things for what they do. Many file names, environment variables and some identifiers carry milestone and gate
 codes (`g2s_`, `g2r`, `t2_`, `G3c`, `M3b`, `G5`). A reader without the history can't tell what they mean. Keep codes

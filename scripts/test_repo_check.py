@@ -226,5 +226,15 @@ class RepositoryChecks(unittest.TestCase):
             self.assertEqual(ledger, before)
 
 
+def load_tests(loader, suite, _pattern):
+    """Keep shape fixtures in the ordinary ./dev check self-test gate too."""
+    import test_shape_rules
+    import test_shape_ratchet
+
+    for module in (test_shape_rules, test_shape_ratchet):
+        suite.addTests(loader.loadTestsFromModule(module))
+    return suite
+
+
 if __name__ == "__main__":
     unittest.main()

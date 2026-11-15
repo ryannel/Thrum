@@ -1,0 +1,245 @@
+"""Count recurring code shapes and hold their first-parent historical low marks.
+
+check --rule NAME --zero PATH... ignores allowances within the named paths.
+tighten records current counts; it never grants an increase over Git history.
+inventory emits the same counts without requiring an existing baseline.
+"""
+import argparse
+from collections import Counter
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tomllib
+
+from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, rust_sites
+
+BASELINE = ".config/shape-baseline.json"
+PATTERNS = ".agents/skills/thrum-engineering/references/patterns.md"
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def git(root, *args):
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+
+
+def owns_history(root):
+    result = git(root, "rev-parse", "--show-toplevel")
+    return result.returncode == 0 and Path(result.stdout.strip()).resolve() == root.resolve()
+
+
+def files_in(root):
+    if owns_history(root):
+        result = git(root, "ls-files", "-co", "--exclude-standard", "-z")
+        if result.returncode:
+            raise ValueError(f"cannot inventory Git files: {result.stderr.strip()}")
+        return sorted({p for p in result.stdout.split("\0") if p and (root / p).is_file()})
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*")
+                  if p.is_file() and not {".git", "target", "tmp", "__pycache__"} & set(p.relative_to(root).parts))
+
+
+def pinned_names(root, paths):
+    """Names pinned by executable checks, xtask and the baseline registry only."""
+    sources = []
+    for path in sorted((root / "docs/plans").glob("*/DONE.json")):
+        for milestone in json.loads(path.read_text()).get("milestones", []):
+            if milestone.get("status") == "done":
+                continue
+            for item in milestone.get("items", []):
+                if item.get("check"):
+                    sources.append((f"{path.relative_to(root)}:{item['id']}", item["check"]))
+    for relative in paths:
+        if relative.startswith("tools/xtask/") or relative == ".config/exact-baselines.json":
+            sources.append((relative, (root / relative).read_text()))
+    pins = {}
+    for source, text in sources:
+        # Match full tokens, not a short code occurring by chance in prose.
+        for token in re.findall(r'[A-Za-z0-9_./-]+', text):
+            if CODE.search(token):
+                pins.setdefault(token, set()).add(source)
+                for part in Path(token).parts:
+                    if CODE.search(part):
+                        pins.setdefault(part, set()).add(source)
+    return pins
+
+
+def inventory(root, honor_pins=False):
+    paths = files_in(root)
+    manifests = {Path(p).parent: tomllib.loads((root / p).read_text()) for p in paths
+                 if Path(p).name == "Cargo.toml" and "package" in tomllib.loads((root / p).read_text())}
+    registry_path = root / ".config/architecture.toml"
+    registry = tomllib.loads(registry_path.read_text()) if registry_path.exists() else {}
+    workspace_path = root / "Cargo.toml"
+    workspace = tomllib.loads(workspace_path.read_text()).get("workspace", {}).get("dependencies", {}) if workspace_path.exists() else {}
+    pins = pinned_names(root, paths)
+    sites = {name: [] for name in RULES}
+    for relative in paths:
+        path = Path(relative)
+        if not path.parts or path.parts[0] not in {"crates", "examples", "tools", "scripts"}:
+            continue
+        package = package_for(path, manifests)
+        if path.suffix == ".rs":
+            text = (root / path).read_text()
+            # Matchers resolve relative includes from the repository root.
+            for rule, offset in rust_sites(root, relative, text, package, manifests.get(package), registry):
+                sites[rule].append((relative, text.count("\n", 0, offset) + 1))
+        if any(CODE.search(part) and (not honor_pins or part not in pins) for part in path.parts):
+            sites["history-names"].append((relative, 1))
+        if path.suffix in {".rs", ".py", ".mjs", ".js", ".sh", ".ps1", ".toml", ".html", ".wgsl", ".metal",
+                           ".swift", ".c", ".h", ".cpp", ".mm", ".ts", ".tsx", ".jsx", ".kt"}:
+            text = (root / path).read_text()
+            content = mask(text) if path.suffix == ".rs" else text
+            for match in re.finditer(r'["\x27]([A-Z][A-Z0-9_]*)["\x27]', content):
+                if "_" in match.group(1) and CODE.search(match.group(1)):
+                    sites["history-names"].append((relative, text.count("\n", 0, match.start()) + 1))
+        if path.name == "Cargo.toml":
+            manifest = manifests.get(path.parent, {})
+            text = (root / path).read_text()
+            fields = [(key, manifest.get("package", {}).get(key, "")) for key in ("name", "description")]
+            fields.append(("name", manifest.get("lib", {}).get("name", "")))
+            for kind in ("bin", "test", "bench", "example"):
+                fields.extend(("name", target.get("name", "")) for target in manifest.get(kind, []))
+            for key, value in fields:
+                if isinstance(value, str) and CODE.search(value) and (not honor_pins or value not in pins):
+                    offset = text.find(value)
+                    if offset < 0:
+                        match = re.search(r'(?m)^\s*' + key + r'\s*=', text)
+                        offset = match.start() if match else 0
+                    sites["history-names"].append((relative, text.count("\n", 0, offset) + 1))
+            if path.parts[0] == "crates":
+                for name, dependency in dependency_sites(manifest, path.parent):
+                    if isinstance(dependency, dict) and dependency.get("workspace"):
+                        dependency = workspace.get(name, {})
+                        base = Path(".")
+                    else:
+                        base = path.parent
+                    if isinstance(dependency, dict) and "path" in dependency:
+                        destination = (root / base / dependency["path"]).resolve()
+                        if destination.is_relative_to(root / "examples"):
+                            match = re.search(r'(?m)^\s*' + re.escape(name) + r'\s*=', text)
+                            sites["package-reach"].append((relative, text.count("\n", 0, match.start()) + 1 if match else 1))
+    counts = {rule: {"version": RULES[rule][0], "files": dict(sorted(Counter(p for p, _ in values).items()))}
+              for rule, values in sites.items()}
+    return {"schema": 1, "rules": counts}, sites, pins
+
+
+def history_errors(root, baseline, sites=None):
+    if not owns_history(root):
+        return [], "shape_rules: no Git history; tree counts only"
+    # Reject shallow history rather than silently lose a rule's accepted low mark.
+    if git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == "true":
+        return ["shape_rules: fetch full history before checking the ratchet"], ""
+    revisions = git(root, "log", "--first-parent", "--format=%H", "HEAD", "--", BASELINE)
+    if revisions.returncode:
+        return [], "shape_rules: no committed baseline yet; registering rules"
+    lows = {}
+    for revision in revisions.stdout.splitlines():
+        shown = git(root, "show", f"{revision}:{BASELINE}")
+        if shown.returncode:
+            continue
+        past = json.loads(shown.stdout)
+        for rule, entry in past["rules"].items():
+            key = (rule, entry["version"])
+            total = sum(entry["files"].values())
+            if key not in lows or total <= lows[key][0]:
+                lows[key] = (total, entry["files"], revision)
+    errors = []
+    for rule, entry in baseline["rules"].items():
+        low = lows.get((rule, entry["version"]))
+        total = sum(entry["files"].values())
+        if low and total > low[0]:
+            errors.append(f"{rule}: total {total} exceeds historical low {low[0]} at {low[2]}")
+            for path, count in entry["files"].items():
+                if count > low[1].get(path, 0):
+                    lines = [line for file, line in (sites or {}).get(rule, []) if file == path] or [1]
+                    for line in lines:
+                        errors.append(f"{path}:{line}: {rule}: {count} above historical file count {low[1].get(path, 0)}; {guidance(rule)}")
+    return errors, ""
+
+
+def guidance(rule):
+    _, section, remedy = RULES[rule]
+    return f"{remedy}; read {PATTERNS}#{section}"
+
+
+def save_baseline(path, value):
+    # One file entry per line, sorted by path, for independent builders' edits.
+    lines = ['{', '  "schema": 1,', '  "rules": {']
+    for index, (rule, entry) in enumerate(sorted(value["rules"].items())):
+        lines.extend([f'    "{rule}": {{', f'      "version": {entry["version"]},', '      "files": {'])
+        for number, (name, count) in enumerate(sorted(entry["files"].items())):
+            lines.append(f'        {json.dumps(name)}: {count}' + ("," if number + 1 < len(entry["files"]) else ""))
+        lines.extend(['      }', '    }' + ("," if index + 1 < len(value["rules"]) else "")])
+    lines.extend(['  }', '}'])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n")
+
+
+def check(root, rule=None, zero=None, tighten=False):
+    current, sites, pins = inventory(root, honor_pins=zero is not None)
+    if zero is not None:
+        errors = []
+        for name, sources in sorted(pins.items()):
+            if rule == "history-names":
+                print(f"pinned {name}: {', '.join(sorted(sources))}")
+        for value in zero:
+            path = (root / value).resolve()
+            if not path.exists() or not path.is_relative_to(root):
+                errors.append(f"{value}:1: {rule}: --zero path missing or outside repository")
+                continue
+            for relative, line in sites[rule]:
+                candidate = root / relative
+                if candidate == path or candidate.is_relative_to(path):
+                    errors.append(f"{relative}:{line}: {rule}: {guidance(rule)}")
+        return errors
+    path = root / BASELINE
+    if not path.exists() and not tighten:
+        return [f"{BASELINE}: missing; initialise with shape_rules.py tighten"]
+    errors, note = history_errors(root, current, sites)
+    if note:
+        print(note)
+    if tighten:
+        if not errors:
+            save_baseline(path, current)
+        return errors
+    expected = json.loads(path.read_text())
+    if expected.get("schema") != 1 or expected.get("rules", {}).keys() != RULES.keys():
+        return errors + [f"{BASELINE}: rule registry/schema mismatch; run shape_rules.py tighten"]
+    for name in ([rule] if rule else RULES):
+        entry = expected["rules"][name]
+        actual = current["rules"][name]
+        if entry != actual:
+            errors.append(f"{BASELINE}: {name}: counts/version differ; remove new violations or run shape_rules.py tighten after removing old ones")
+            for relative, line in sites[name]:
+                if actual["files"][relative] != entry["files"].get(relative, 0):
+                    errors.append(f"{relative}:{line}: {name}: {guidance(name)}")
+    # Check the reviewed baseline too, so stale or inflated allowances are refused.
+    extra, _ = history_errors(root, expected, sites)
+    return sorted(set(errors + extra))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["check", "tighten", "inventory"])
+    parser.add_argument("--rule", choices=sorted(RULES))
+    parser.add_argument("--zero", nargs="+")
+    args = parser.parse_args()
+    if args.zero is not None and (not args.rule or args.command != "check"):
+        parser.error("--zero requires check --rule NAME")
+    # Match include paths relative to ROOT, independent of the invoking directory.
+    import os
+    os.chdir(ROOT)
+    if args.command == "inventory":
+        print(json.dumps(inventory(ROOT)[0], indent=2))
+        return 0
+    errors = check(ROOT, args.rule, args.zero, args.command == "tighten")
+    if errors:
+        print("\n".join(errors), file=sys.stderr)
+        return 1
+    print(f"shape_rules: {args.command} passed")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

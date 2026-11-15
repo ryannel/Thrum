@@ -22,3 +22,8 @@
   lands a branch that first lists each rule with the counts of the main it lands on. The engine is unchanged.
   M1.2 gained the moved-base case and M1.5 the record of what main added. `WATERS`' plan is untouched;
   `TEST-SUPPORT` M2.3 (`path-attribute` at zero under `crates/`) already removes the eight.
+- 2026-11-15 M1 continuation implements that ruling by consolidating unpublished registration history onto
+  main with present counts. The new moved-base scratch-Git test passes, as do nine shape groups, five ratchet
+  groups, 26 contributor self-tests, the whole-tree rule check and `./dev check-docs` at `78fa1f63`.
+  [The proof record](../../evidence/REPO-RULES/M1.md) separates the starting inventory and main's additions.
+  The retained qualification helper records fresh target proof before setting builder passes and merging.
