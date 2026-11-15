@@ -19,8 +19,8 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test map",
           "ask": "Read the test. Are the expected answers closed forms worked out without the model: a cone-shaped hollow's shoreline radius at a level, a ridge between two hollows, a tilted chart? Would a model that floods every cell below the level, connected or not, fail it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M1.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M1-review.md"
         },
