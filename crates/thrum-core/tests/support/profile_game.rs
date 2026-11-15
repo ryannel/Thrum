@@ -8,7 +8,7 @@ use thrum_core::{
     },
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) struct Scalar(Number);
 impl StateEncode for Scalar {
     fn encode(&self, digest: &mut Digest) {

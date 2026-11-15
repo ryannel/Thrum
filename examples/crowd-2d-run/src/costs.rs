@@ -44,13 +44,7 @@ pub fn costs(count: u32) -> String {
     let expected = sim.digest();
     let start = Instant::now();
     sim.history
-        .rewind(
-            &mut sim.runtime,
-            &mut sim.game,
-            8,
-            |_, (), _, _, _| None,
-            |_, _, (), _, _, _, _| {},
-        )
+        .rewind(&mut sim.runtime, &mut sim.game, 8)
         .expect("rewind eight");
     let rewind = start.elapsed().as_secs_f64() * 1000.0;
     let start = Instant::now();

@@ -82,13 +82,7 @@ pub fn run_trace(
             let start = tick - 8;
             simulation
                 .history
-                .rewind(
-                    &mut simulation.runtime,
-                    &mut simulation.game,
-                    8,
-                    |_, (), _, _, _| None,
-                    |_, _, (), _, _, _, _| {},
-                )
+                .rewind(&mut simulation.runtime, &mut simulation.game, 8)
                 .expect("eight-tick rewind");
             let mut corrected = frames(start + 1, true);
             result.changed_axes += route(&mut corrected);

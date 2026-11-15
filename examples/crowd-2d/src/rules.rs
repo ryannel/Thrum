@@ -303,7 +303,7 @@ impl Crowd {
     }
 }
 
-impl TickGame<()> for Crowd {
+impl TickGame for Crowd {
     type Error = RegisteredWorldError;
     type Candidate = Candidate;
     type ParallelOutput = ();
@@ -332,7 +332,7 @@ impl TickGame<()> for Crowd {
     }
 }
 
-impl HistoryGame<()> for Crowd {
+impl HistoryGame for Crowd {
     type HistoryState = Resources;
     type HistoryRecord = [InputFrame<()>; 4];
     type TickRequest = [InputFrame<()>; 4];
@@ -353,7 +353,7 @@ impl HistoryGame<()> for Crowd {
     }
     fn prepare_history_tick(
         &mut self,
-        _runtime: &GameRuntime<(), Self>,
+        _runtime: &GameRuntime<Self>,
         tick: u64,
         record: &Self::HistoryRecord,
     ) -> Result<(), Self::Error> {
@@ -376,7 +376,7 @@ impl HistoryGame<()> for Crowd {
 /// Registered runtime, rule resources and rollback retention for one crowd.
 pub struct Simulation {
     /// Engine authority.
-    pub runtime: GameRuntime<(), Crowd>,
+    pub runtime: GameRuntime<Crowd>,
     /// Game rules and resources.
     pub game: Crowd,
     /// Reusable candidate work.
@@ -406,7 +406,7 @@ impl Simulation {
             .register_profile::<Body>(ComponentSchemaId(1))
             .expect("body schema");
         let system = SystemId(1);
-        let mut runtime = GameRuntime::new(
+        let mut runtime = GameRuntime::new_published(
             WorldEpoch(epoch),
             capacity,
             registry,
@@ -428,7 +428,6 @@ impl Simulation {
                 },
                 Crowd::simulate,
             )],
-            || (),
         )
         .expect("crowd runtime");
         let read = runtime.read_permit(system).expect("body read");
