@@ -1,12 +1,7 @@
 //! Closed land, arrival direction and independently traced sector exposure.
-#[expect(
-    dead_code,
-    reason = "independent dispersion helper belongs to Snell test"
-)]
-#[path = "support/shore.rs"]
 mod support;
 use std::f64::consts::{FRAC_PI_4, TAU};
-use support::{bed, config};
+use support::shore::{bed, config};
 use thrum_water_model::ShoreTransform;
 
 fn ground(x: f64, z: f64) -> f64 {

@@ -1,11 +1,7 @@
 //! M1's source and mouth seams, with the complete surf capability enabled.
-#[path = "support/joined.rs"]
-mod fixture;
-#[expect(dead_code, reason = "shared constructors serve map tests")]
-#[path = "support/fixtures.rs"]
 mod support;
-use fixture::declarations;
-use support::{field, profile};
+use support::fixtures::{field, profile};
+use support::joined::declarations;
 use thrum_water_model::{Map, SurfProfile};
 
 #[test]

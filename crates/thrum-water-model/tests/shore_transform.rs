@@ -1,8 +1,7 @@
 //! Hold the first-arrival solve to an independently integrated Snell phase.
-#[path = "support/shore.rs"]
 mod support;
 use std::f64::consts::TAU;
-use support::{bed, config, wave_number};
+use support::shore::{bed, config, wave_number};
 use thrum_water_model::{Lag, ShoreTransform};
 
 #[test]

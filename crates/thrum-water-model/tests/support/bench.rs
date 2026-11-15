@@ -1,7 +1,5 @@
 //! CPU preparation and highest-column costs. No graphics device is requested.
-#[path = "../tests/support/sheets.rs"]
 mod sheets;
-#[path = "../tests/support/surf_map.rs"]
 mod surf_map;
 use std::hint::black_box;
 use thrum_water_model::{

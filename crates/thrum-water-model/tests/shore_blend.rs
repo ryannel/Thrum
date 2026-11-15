@@ -1,11 +1,6 @@
 //! Simultaneous wavelength and stage blends, compared with fresh individual solves.
-#[expect(
-    dead_code,
-    reason = "shared independent dispersion is used by shore_transform"
-)]
-#[path = "support/shore.rs"]
 mod support;
-use support::{bed, config};
+use support::shore::{bed, config};
 use thrum_water_model::{Lag, ShoreTransform};
 
 #[test]

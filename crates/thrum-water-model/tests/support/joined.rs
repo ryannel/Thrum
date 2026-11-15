@@ -1,4 +1,4 @@
-use super::support::{body, grid};
+use super::fixtures::{body, grid};
 use thrum_water_model::{Bed, Body, BodyKind, Chart, End, Stage};
 
 pub(crate) fn declarations(source: f64, tide: f64, depth: f64) -> (Bed, Vec<Body>) {

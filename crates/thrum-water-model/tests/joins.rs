@@ -1,13 +1,9 @@
 //! Joined rows, stages, reach and the complete limited surface at shallow/deep ends.
-#[expect(dead_code, reason = "shared basin constructor is used by map tests")]
-#[path = "support/fixtures.rs"]
 mod support;
-use support::{close, field, grid, profile};
+use support::fixtures::{close, field, grid, profile};
 use thrum_water_model::{BodyKind, Map, MapSample, limit};
 
-#[path = "support/joined.rs"]
-mod fixture;
-use fixture::declarations;
+use support::joined::declarations;
 
 fn joined(source: f64, tide: f64, depth: f64) -> Map {
     let (bed, bodies) = declarations(source, tide, depth);

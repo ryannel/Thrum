@@ -1,9 +1,6 @@
 //! Independently cut a forward sheet eight times finer, without the model's reach.
-#[path = "support/sheets.rs"]
-mod sheets;
-#[path = "support/surf_map.rs"]
-mod surf_map;
-use sheets::Trains;
+mod support;
+use support::{sheets::Trains, surf_map};
 use thrum_water_model::{CutConfig, Sheet, SheetPoint, cut};
 
 #[test]

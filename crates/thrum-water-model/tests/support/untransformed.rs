@@ -22,7 +22,7 @@ impl Sheet for PlainSheet<'_> {
         let row = self.provider.map.row(0, p);
         let bed = self.provider.map.sample(p).and_then(|s| s.bed);
         let depth = bed.map_or(f64::INFINITY, |h| row.level - h);
-        let profile = super::support::profile();
+        let profile = super::fixtures::profile();
         let limited = limit(row, depth, self.provider.field.variances(), profile);
         let mut re = 0.0;
         let mut im = 0.0;

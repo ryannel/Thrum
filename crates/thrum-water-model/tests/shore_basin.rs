@@ -1,12 +1,7 @@
 //! A disconnected, non-flat lake with its own wave sources and fetch growth.
-#[expect(
-    dead_code,
-    reason = "independent dispersion helper belongs to Snell test"
-)]
-#[path = "support/shore.rs"]
 mod support;
 use std::f64::consts::FRAC_PI_4;
-use support::{bed, config};
+use support::shore::{bed, config};
 use thrum_water_model::{
     Body, BodyKind, Lag, Map, Profile, ShoreTransform, Source, SurfProfile, shelter,
 };

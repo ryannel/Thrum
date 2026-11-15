@@ -1,10 +1,7 @@
 //! Original answers remain exact; surf supplies all derivatives and dry support.
-#[expect(dead_code, reason = "shared constructors serve map tests")]
-#[path = "support/fixtures.rs"]
 mod support;
-#[path = "support/untransformed.rs"]
-mod untransformed;
-use support::{body, field, grid, profile};
+use support::fixtures::{body, field, grid, profile};
+use support::untransformed;
 use thrum_water_model::{BodyKind, Map, SurfProfile, compare};
 
 #[test]

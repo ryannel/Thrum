@@ -1,9 +1,7 @@
 //! Linear theory's break depth, independently from group velocity and dispersion.
-#[expect(dead_code, reason = "shared grid helpers serve other shore tests")]
-#[path = "support/shore.rs"]
 mod support;
 use std::f64::consts::TAU;
-use support::wave_number;
+use support::shore::wave_number;
 use thrum_water_model::shoaling;
 
 fn expected_gain(k0: f64, d: f64) -> f64 {
