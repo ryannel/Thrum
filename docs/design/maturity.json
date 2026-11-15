@@ -9,7 +9,11 @@
     "implementation": "feature_complete",
     "functional_validation": "passed",
     "experienced_quality": "not_applicable",
-    "correctness_targets": ["mac-metal", "chrome-webgpu", "ios-sim"],
+    "correctness_targets": [
+      "mac-metal",
+      "chrome-webgpu",
+      "ios-sim"
+    ],
     "platform_cost_baselines": {
       "mac-metal": "Two full-trace release runs, 2k/5k/10k, shared-host load recorded",
       "chrome-webgpu": "Two full-trace release runs, 2k/5k/10k, isolated browser clock and shared-host load recorded",
@@ -49,7 +53,9 @@
       "experienced_quality": "not_qualified_cpu_milestone_no_rendered_cloud_claim",
       "platform_performance": "not_measured_no_gpu_or_display_speed_claim",
       "scope": "Weather ticks and integrated drift, continuous procedural columns with clear top=base, bounded eroded full/coarse density, placed footprint/volume paths, conformance and point/disc optical references. Ground condensate and GPU consumers remain later milestones.",
-      "evidence": ["../evidence/CLOUDS/M1.md"]
+      "evidence": [
+        "../evidence/CLOUDS/M1.md"
+      ]
     },
     "G0_boundary": {
       "implementation": "complete_boundary_and_integrity_cleanup",
@@ -691,15 +697,15 @@
         "scope": "M2 temporal inputs and history are ready for independent review. Reconstruction remains in M3."
       },
       "M3": {
-        "implementation": "Builder implemented the registry-selected portable resolve, shared submitted colour/depth history, existing pre-tone integration, independent 32-phase reference mode and five game motion witnesses.",
-        "functional_validation": "Historical graded-support source e8ff99af passes Metal still/cut checks and 55b8c270 passes moving route and paired timing. All six M3 builder items are reopened for the integrated cubic-history candidate. Native compilation, affected strict Clippy, shader validation and documentation checks pass; integrated target proof, exact baselines and integration gate remain owed.",
-        "experienced_quality": "The full b969d64e production campaign captures all five on/off pairs on Mac and Chrome. Builder and fresh Sol medium readers see no convincing long detached ghost, delayed spawn, held-star dropout or gross scrub lag, but identify residual revealing-edge roughness and softened Chrome pan detail. Cubic retained-colour sampling is a hypothesis for repeated bilinear resampling blur, not an established repair. No direct continuous playback or independent milestone review claim.",
+        "implementation": "Registry-selected portable TAAU with cubic retained-colour interpolation, graded depth-footprint support, shared submitted colour/depth history, pre-tone integration, independent 32-phase reference and five paired game motion witnesses.",
+        "functional_validation": "At source 4c0fd681, the pinned Mac/Chrome moving route, six Metal still checkpoints, history-disabled negative controls, exact cut/reset equality and suppressed-reset control pass. All 1966 exact native/Chrome baseline comparisons pass with references unchanged. Native strict Clippy, official Web compilation and documentation checks pass. Independent milestone review remains owed.",
+        "experienced_quality": "Builder and fresh Sol medium readers inspect all five complete real-time on/off pairs on Mac and Chrome through ordered native crops, whole-sequence star/sky atlases, scene context and original submission timing. No material ghost, delayed spawn, star crawl or brightness lag is found in the inspected coverage. Small edge roughness and Chrome ground softness remain recorded. This uses the authorized ordered-frame method; continuous 1x playback perception, physical display cadence and photons are not established.",
         "platform_performance": {
-          "mac": "Current graded-support source at 55b8c270: paired 640x360 Metal moving-route resolve p50/p95 0.064833/0.067708 ms over 361 equal-input samples per arm; scene p50 3.188582 ms on and 3.009710 ms off. TAAU then off, cooperating GPU jobs serialized and CPU/host load shared. Nine-times pixel heuristic 0.583497 ms triggers the 1080p estimate tripwire; it is not a failure or measured 1080p time. No cadence or speed promotion.",
-          "browser": "Current Chrome 157 moving-route function passes with prepared TAAU and exact repeat checkpoints. Full current real-time motion remains pending; historical paired captures do not qualify the new source. No browser performance claim.",
+          "mac": "At 4c0fd681, paired 640x360 route resolve p50/p95 is 0.095167/0.104292 ms over 361 equal-input samples per arm, TAAU then off; capture at the same checkpoints, GPU serialized and host CPU load shared. The nine-times pixel heuristic is 0.856503 ms, a tripwire against the 0.2-0.5 ms estimate, not measured 1080p cost or an acceptance failure. Mac realtime spawn includes a 41.450375 ms startup submission gap before the spawn event; no cadence or hitch-free claim.",
+          "browser": "All ten 1280x720 real-time arms complete with 270 verified frames each, zero renderer/export omissions and a matching instantiated Wasm identity; paired route function and repeats pass. Ordered-frame visual judgment only; no browser performance or physical cadence qualification.",
           "ios": "not_run"
         },
-        "evidence": "../evidence/APPLE-PRESENTATION/m3/README.md",
+        "evidence": "../evidence/APPLE-PRESENTATION/m3/selected/README.md",
         "scope": "Native-scale portable reconstruction only. No MetalFX, dynamic scale, EDR, governor, cadence qualification or G4 closure."
       }
     }
@@ -4664,8 +4670,8 @@
       "technique": "Portable temporal accumulation with jitter-aware current-source reconstruction",
       "source": "https://alextardif.com/TAA.html",
       "owner": "APPLE-PRESENTATION, thrum-render portable on Metal and Chrome WebGPU",
-      "status": "Bounded M3 candidate with adaptive current-source reconstruction, min/max YCoCg clipping and graded matching depth-footprint support. The same 3x3 source and four history-depth loads remain, with no new allocation or dispatch. Metal stills/cuts/helper correctness and current Mac/Chrome route function pass. Paired 640x360 cost is recorded separately with its estimate tripwire; full motion remains unqualified. Global variance clipping failed four still checkpoints and was removed. No speedup or paper-reproduction claim.",
-      "evidence": "../evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md"
+      "status": "Native-scale portable TAAU with Catmull-Rom retained colour and graded matching depth support is builder-qualified on Mac and Chrome at 4c0fd681. Metal still/cut controls, paired route function and all twenty real-time motion arms pass within recorded inspection limits. The 640x360 paired resolve is 0.095167 ms p50 and 0.104292 ms p95; its pixel-ratio estimate tripwire is recorded separately. Extra history footprint and issued loads are accounted before cache reuse. No speedup, full display-delivery or paper-reproduction claim; independent review remains owed.",
+      "evidence": "../evidence/APPLE-PRESENTATION/m3/selected/README.md"
     },
     {
       "technique": "Flux-normalized catalogue star footprints with a daylight pass selector",
