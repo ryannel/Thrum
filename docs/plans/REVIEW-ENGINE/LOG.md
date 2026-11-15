@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-15 The live batch acquires GPU and rebases to `96f26c347`. M1.1, both rewind cases and all 42
+  simulation tests pass. The refreshed simulator report passes with ASTC, 29 buffers, pause/resume tick
+  1946 and recovery to generation 2. Builder inspection confirms the cooked scene in all four new views.
+  The report and images are in `tmp/review-engine/simulator-batch-1794765248104734000` until the batch retains
+  them. Exact baselines are running under the same lease; no verifier, full-gate or merge pass is claimed yet.
+
 - 2026-11-15 The continuation rebases cleanly onto CREATOR's main at `bcdc75f4a`. The standard iOS build,
   native verifier build and Web build pass on `48f92ecc4`; these prove compilation only. The queued batch
   must refresh simulator and Mac qualification for the changed sky facade. CREATOR and APPLE-TILE release
