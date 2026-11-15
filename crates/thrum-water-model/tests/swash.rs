@@ -73,8 +73,43 @@ fn margin_never_descends_into_a_hollow_beyond_a_ridge() {
     });
     let map = Map::prepare(bed, vec![body("shore", BodyKind::Sea, 0.0)], profile()).unwrap();
     assert!(map.sample([14.0, 2.0]).is_some());
-    assert!(
-        map.sample([20.0, 2.0]).is_none(),
-        "the margin must not run downhill behind its ridge"
-    );
+    for z in [2.0, 2.3] {
+        assert!(map.sample([14.9, z]).is_some());
+        assert!(map.sample([15.0, z]).is_some());
+        for x in [15.1, 15.5, 15.9, 16.0, 20.0] {
+            assert!(
+                map.sample([x, z]).is_none(),
+                "the margin must not run downhill behind its ridge at {x}, {z}"
+            );
+        }
+    }
+}
+
+#[test]
+fn basin_margin_stops_at_the_crest_between_centres_too() {
+    let bed = grid([31, 7], |x, z| {
+        let along = if x < 2.0 {
+            4.0 - 3.0 * x
+        } else if x <= 15.0 {
+            (x - 5.0) * 0.1
+        } else {
+            1.0 - (x - 15.0) * 0.04
+        };
+        along.max(((z - 3.0).abs() - 2.0) * 4.0)
+    });
+    let map = Map::prepare(
+        bed,
+        vec![body("hollow", BodyKind::Basin { seed: [3.0, 3.0] }, 0.0)],
+        profile(),
+    )
+    .unwrap();
+    for z in [3.0, 3.3] {
+        assert!(map.sample([14.9, z]).is_some());
+        for x in [15.1, 15.5, 15.9, 20.0] {
+            assert!(
+                map.sample([x, z]).is_none(),
+                "downhill basin margin {x}, {z}"
+            );
+        }
+    }
 }

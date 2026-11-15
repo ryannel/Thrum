@@ -90,8 +90,8 @@
           "statement": "A bed grid built from triangles holds in each cell the highest ground over the cell's centre. Built from a tilted plane and from a bowl, it matches their closed forms to within the height the ground spans across one cell.",
           "check": "cargo test --locked --offline -p thrum-water-model --test bed",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M1.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M1-review.md"
         },
@@ -122,7 +122,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
+          "builder_result": "open",
           "evidence": "docs/evidence/WATERS/M1.md",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M1-review.md"
@@ -144,8 +144,8 @@
           "check": "cargo test --locked --offline -p thrum-water-model --test swash",
           "ask": "Are the expected heights the closed form, worked out in the test without the model, and would a limit that takes the waves to nothing at the still waterline fail it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M1.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M1-review.md"
         }

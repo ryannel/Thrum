@@ -1,5 +1,14 @@
 # WATERS log
 
+- 2026-11-15 Fixed both verified findings from the first M1 review. Triangle
+  rasterization tracks actual intersections separately from the uncovered-cell
+  fallback. Continuous map lookup now checks monotone reach inside a bilinear
+  cell, so a supported crest cannot lend support downhill. All 26 water-model
+  tests pass, including below-fallback overlap order and subcell sea, basin and
+  chart ridge regressions. The retained [M1 proof](../../evidence/WATERS/M1.md)
+  identifies CPU and exact-baseline source revisions; no water GPU visuals or
+  device performance are claimed.
+
 - 2026-11-15 Resumed the surviving integration job after its shared GPU wait.
   It rebased cleanly onto main as `2c2679be` and refreshed every CPU item check,
   the sea-model tests, strict Clippy and documentation checks; all passed.

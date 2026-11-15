@@ -9,6 +9,20 @@ use support::close;
 use thrum_water_model::Bed;
 
 #[test]
+fn fallback_only_fills_uncovered_centres() {
+    let triangle = |height| [[0.0, height, 0.0], [4.0, height, 0.0], [0.0, height, 4.0]];
+    for triangles in [
+        vec![triangle(-2.0)],
+        vec![triangle(-3.0), triangle(-2.0)],
+        vec![triangle(-2.0), triangle(-3.0)],
+    ] {
+        let bed = Bed::from_triangles([0.0; 2], 1.0, [5, 5], 0.0, &triangles).unwrap();
+        close(bed.height([1.0, 1.0]).unwrap(), -2.0);
+        close(bed.height([4.0, 4.0]).unwrap(), 0.0);
+    }
+}
+
+#[test]
 fn tilted_plane_and_highest_overlap_are_exact_at_centres() {
     let plane = |x, z| [x, 2.0 + 0.3 * x - 0.2 * z, z];
     let [a, b, c, d] = [

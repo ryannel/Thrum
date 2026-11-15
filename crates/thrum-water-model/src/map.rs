@@ -234,19 +234,16 @@ impl Map {
                 BodyKind::Basin { .. } => 1,
                 BodyKind::Chart(_) => 2,
             };
-            let origin = weights.and_then(|w| {
-                w.into_iter()
-                    .filter(|&(_, a)| a > 1e-12)
-                    .filter_map(|(i, _)| self.support[id][i])
-                    .min_by(|&a, &c| {
-                        let pa = self.bed.point(a);
-                        let pc = self.bed.point(c);
-                        (pa[0] - point[0])
-                            .hypot(pa[1] - point[1])
-                            .total_cmp(&(pc[0] - point[0]).hypot(pc[1] - point[1]))
-                    })
+            let supported = weights.is_some_and(|w| {
+                w.iter().any(|&(i, a)| {
+                    a > 1e-12
+                        && self.support[id][i].is_some_and(|origin| {
+                            self.bed
+                                .reaches(i, w, self.row(id, self.bed.point(origin)).level)
+                        })
+                })
             });
-            if origin.is_none() && !(bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
+            if !(supported || bed.is_none() && matches!(b.kind, BodyKind::Sea)) {
                 continue;
             }
             let row = self.supported_row(id, point);

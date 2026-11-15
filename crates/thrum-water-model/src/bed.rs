@@ -59,6 +59,7 @@ impl Bed {
         let mut bed = Self::new(origin, spacing, size, vec![floor; count])?;
         for i in 0..count {
             let [x, z] = bed.point(i);
+            let mut highest: Option<f64> = None;
             for &[a, b, c] in triangles {
                 let det = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
                 if det.abs() < 1e-12 {
@@ -67,9 +68,11 @@ impl Bed {
                 let u = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / det;
                 let v = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / det;
                 if u >= -1e-10 && v >= -1e-10 && u + v <= 1.0 + 1e-10 {
-                    bed.heights[i] = bed.heights[i].max(u * a[1] + v * b[1] + (1.0 - u - v) * c[1]);
+                    let height = u * a[1] + v * b[1] + (1.0 - u - v) * c[1];
+                    highest = Some(highest.map_or(height, |old| old.max(height)));
                 }
             }
+            bed.heights[i] = highest.unwrap_or(floor);
         }
         Ok(bed)
     }
@@ -117,6 +120,42 @@ impl Bed {
             self.origin[1] + (i / self.size[0]) as f64 * self.spacing,
         ]
     }
+
+    /// Can this cell's corner continue water onto the query without descending
+    /// above its level? In the corner/query rectangle the bilinear bed is
+    /// a + b*s + c*t + d*s*t. Its only possible interior critical point is a
+    /// saddle. The endpoint slopes and that saddle decide monotone reach;
+    /// comparing endpoint heights alone would bridge the far side of a crest.
+    pub(crate) fn reaches(&self, corner: usize, weights: [(usize, f64); 4], level: f64) -> bool {
+        let h = weights.map(|(i, _)| self.heights[i]);
+        let u = weights[1].1 + weights[3].1;
+        let v = weights[2].1 + weights[3].1;
+        let k = weights
+            .iter()
+            .position(|&(i, _)| i == corner)
+            .expect("cell corner");
+        let x = if k % 2 == 0 { 0.0 } else { 1.0 };
+        let z = if k < 2 { 0.0 } else { 1.0 };
+        let cross = h[3] - h[2] - h[1] + h[0];
+        let a = h[k];
+        let b = (u - x) * (h[1] - h[0] + cross * z);
+        let c = (v - z) * (h[2] - h[0] + cross * x);
+        let d = cross * (u - x) * (v - z);
+        let end = a + b + c + d;
+        if end.max(level) < a.max(level) || (a > level && b < 0.0 && c < 0.0) {
+            return false;
+        }
+        if b + d < 0.0 && c + d < 0.0 {
+            if end > level {
+                return false;
+            }
+            if b > 0.0 && c > 0.0 && a - b * c / d > level {
+                return false;
+            }
+        }
+        true
+    }
+
     pub(crate) fn neighbours(&self, i: usize) -> impl Iterator<Item = usize> {
         let [w, h] = self.size;
         [

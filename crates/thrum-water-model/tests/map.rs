@@ -83,6 +83,15 @@ fn chart_margin_needs_reachable_wet_ground_and_does_not_descend() {
     .unwrap();
     assert!(map.sample([4.0, 4.0]).unwrap().depth > 0.0);
     assert!(map.sample([6.0, 4.0]).is_some());
+    for z in [4.0, 4.3] {
+        assert!(map.sample([5.9, z]).is_some());
+        for x in [6.1, 6.5, 6.9] {
+            assert!(
+                map.sample([x, z]).is_none(),
+                "downhill chart margin {x}, {z}"
+            );
+        }
+    }
     assert!(map.sample([8.0, 4.0]).is_none());
     let dry = || grid([13, 13], |_, _| 1.0);
     let map = Map::prepare(
