@@ -254,6 +254,16 @@ fn taau_depth_reprojection_rejects_mixed_surfaces_on_metal() {
             1.0_f32.to_bits(),
             "old range fully accepts a mixed footprint"
         );
+        for row in values.iter().skip(1).step_by(2) {
+            assert!(
+                (row[1] - row[2]).abs() < 0.000_002,
+                "analytic quadratic history field"
+            );
+            assert!(
+                (row[3] - row[2]).abs() > 0.1,
+                "bilinear blur control must fail"
+            );
+        }
     });
 }
 

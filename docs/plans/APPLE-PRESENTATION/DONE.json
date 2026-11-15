@@ -182,7 +182,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/current-route/README.md#route-execution",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.2",
@@ -194,7 +194,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md#target-result",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.3",
@@ -226,7 +226,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/depth-reprojection/footprint-support.md#target-result",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "D3.5",
@@ -236,7 +236,7 @@
           "evidence": "docs/evidence/APPLE-PRESENTATION/m3/current-route/README.md#moving-route-timing",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         }
       ],
       "depends_on": [

@@ -325,19 +325,7 @@ impl PreparedSynthetic {
             [width, height],
         )?;
         let (output, display_pass) = self.display.append_graph(&mut graph, &pre_tone)?;
-        let source = match capture_source {
-            CaptureSource::Sdr => &output,
-            CaptureSource::SceneLinear => &scene,
-            CaptureSource::NativeOutput => {
-                &native
-                    .as_ref()
-                    .ok_or(RenderError::GraphPassMismatch)?
-                    .output
-            }
-            CaptureSource::NativeHistory => {
-                &native.as_ref().ok_or(RenderError::GraphPassMismatch)?.next
-            }
-        };
+        let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
             Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
         let generation = self.key.device_generation;
@@ -400,6 +388,20 @@ impl PreparedSynthetic {
                 air_shadow,
                 prepass_depth: camera.prepass_depth,
             },
+        })
+    }
+
+    fn capture_input<'a>(
+        source: CaptureSource,
+        output: &'a ResourceId,
+        scene: &'a ResourceId,
+        native: Option<&'a super::native_witness::graph::Resources>,
+    ) -> Result<&'a ResourceId, RenderError> {
+        Ok(match source {
+            CaptureSource::Sdr => output,
+            CaptureSource::SceneLinear => scene,
+            CaptureSource::NativeOutput => &native.ok_or(RenderError::GraphPassMismatch)?.output,
+            CaptureSource::NativeHistory => &native.ok_or(RenderError::GraphPassMismatch)?.next,
         })
     }
 

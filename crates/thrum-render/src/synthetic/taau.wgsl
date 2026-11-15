@@ -34,11 +34,29 @@ fn reconstruction_filter(distance: f32) -> f32 {
     if x < 2.0 { return (((-7.0/3.0*x+12.0)*x-20.0)*x+32.0/3.0)/6.0; }
     return 0.0;
 }
+fn history_filter(distance: f32) -> f32 {
+    // Interpolating cubic Hermite (Catmull-Rom). Unlike bilinear reprojection,
+    // repeated fractional translations retain resolved spatial detail.
+    let x = abs(distance);
+    if x < 1.0 { return (1.5*x-2.5)*x*x+1.0; }
+    if x < 2.0 { return ((-0.5*x+2.5)*x-4.0)*x+2.0; }
+    return 0.0;
+}
 fn history_at(p: vec2<f32>) -> vec4<f32> {
     let base = vec2<i32>(floor(p));
     let f = fract(p);
-    return mix(mix(textureLoad(history,bounded(base),0),textureLoad(history,bounded(base+vec2(1,0)),0),f.x),
-               mix(textureLoad(history,bounded(base+vec2(0,1)),0),textureLoad(history,bounded(base+vec2(1,1)),0),f.x),f.y);
+    let centre = textureLoad(history,bounded(base),0);
+    var difference = vec4(0.0);
+    for (var y = -1; y <= 2; y++) {
+        let wy = history_filter(f32(y)-f.y);
+        for (var x = -1; x <= 2; x++) {
+            let weight = history_filter(f32(x)-f.x)*wy;
+            difference += (textureLoad(history,bounded(base+vec2(x,y)),0)-centre)*weight;
+        }
+    }
+    // Exact constant preservation also prevents a storage-scale drift. Existing
+    // YCoCg neighbourhood clipping bounds the cubic's negative-lobe overshoot.
+    return centre+difference;
 }
 fn depth_at(p: vec2<f32>, expected: f32) -> vec4<f32> {
     let base = vec2<i32>(floor(p));

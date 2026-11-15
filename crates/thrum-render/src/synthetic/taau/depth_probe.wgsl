@@ -11,5 +11,13 @@ fn probe_depth(@builtin(global_invocation_id) id: vec3<u32>) {
     let old_range_control = (sky && sample.y == 0.0)
         || (!sky && sample.x > 0.0 && row.x >= sample.x-tolerance && row.x <= sample.y+tolerance);
     probe_output[id.x*2u] = vec4(sample.xyz,depth_confidence(sample,row.x,sky));
-    probe_output[id.x*2u+1u] = vec4(select(0.0,1.0,old_range_control),row.x,0.0,0.0);
+    // An independent quadratic field exposes bilinear history blur. Evaluate
+    // the production interpolation weights against its integer-grid samples;
+    // the requested analytic value is x*x, while bilinear gives x.
+    let x = row.y;
+    var quadratic = 0.0;
+    for (var k = -1; k <= 2; k++) {
+        quadratic += f32(k*k)*history_filter(f32(k)-x);
+    }
+    probe_output[id.x*2u+1u] = vec4(select(0.0,1.0,old_range_control),quadratic,x*x,x);
 }
