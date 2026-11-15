@@ -123,3 +123,4 @@
   removed path attributes. Main's historical APPLE-PRESENTATION log links named unmerged artifacts;
   verified them on its owner branch and kept their paths inline until that evidence lands.
   Fresh combined-source checks, captures, costs and the normal merge gate remain required.
+  Combined-source workspace all-target and V1 Wasm Clippy pass, with the compile revision retained.
