@@ -283,6 +283,13 @@ class GateTests(unittest.TestCase):
 
 
 class UnlinkedRebaseTests(GateTests):
+    def test_rename_into_unlinked_package_still_requires_proof(self):
+        self.run_git(self.builder, 'mv', 'crates/one', 'crates/unlinked/moved')
+        with self.assertRaisesRegex(ValueError, 'uncommitted'):
+            guard.gate(self.builder)
+        self.commit(self.builder, 'move linked input into unlinked package')
+        self.assertFalse(self.land())
+
     def test_unlinked_rebase_then_manifest_links_package(self):
         (self.builder / 'crates/two').write_text('builder')
         self.commit(self.builder, 'covered change')

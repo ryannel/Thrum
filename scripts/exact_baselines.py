@@ -42,12 +42,12 @@ def proof_path(root=ROOT):
 def gate(root=ROOT):
     """Fail closed when remote main or the exact covered-content proof is absent."""
     coverage = Coverage(root, registry(root))
-    dirty = subprocess.check_output(['git', 'diff', 'HEAD', '--name-only', '-z'], cwd=root)
+    dirty = subprocess.check_output(['git', 'diff', '--no-renames', 'HEAD', '--name-only', '-z'], cwd=root)
     untracked = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '-z'], cwd=root)
     if any(coverage.includes(p.decode()) for p in (dirty + untracked).split(b'\0') if p):
         raise ValueError('covered paths have uncommitted changes; commit before verifying')
     base = git('merge-base', 'HEAD', 'refs/remotes/origin/main', root=root)
-    changed = subprocess.check_output(['git', 'diff', '--name-only', '-z', base, 'HEAD'], cwd=root)
+    changed = subprocess.check_output(['git', 'diff', '--no-renames', '--name-only', '-z', base, 'HEAD'], cwd=root)
     if not any(coverage.includes(p.decode()) for p in changed.split(b'\0') if p):
         print('PASS exact-baseline gate: no covered-path change beyond origin/main')
         return
