@@ -178,6 +178,33 @@ class FailClosedTests(WorkspaceTests):
 
 
 class BuildReadTests(WorkspaceTests):
+    def test_real_build_symlink_chain_keeps_indirections(self):
+        (self.root / 'crates/linked/data').write_text('first')
+        (self.root / 'crates/linked/other').write_text('second')
+        alias = self.root / 'crates/unlinked/alias'
+        alias.symlink_to('../linked/data')
+        (self.root / 'crates/linked/bridge').symlink_to('../unlinked/alias')
+        (self.root / 'crates/game/src/lib.rs').write_text(
+            'pub const DATA: &str = include_str!("../../linked/bridge");\n')
+        self.commit()
+        subprocess.run(['cargo', 'build', '--offline', '-p', 'game'], cwd=self.root,
+                       check=True, capture_output=True)
+        records = ['target/debug/libgame.d']
+        with self.assertRaisesRegex(ValueError, 'uncovered file crates/unlinked/alias'):
+            check_build_reads(self.root, Coverage(self.root, guard.registry(self.root)), records)
+        config = guard.registry(self.root)
+        config['covered_paths'].append('crates/unlinked/alias')
+        guard.save(self.root / guard.REGISTRY, config)
+        self.commit()
+        result = check_build_reads(self.root, Coverage(self.root, config), records)
+        self.assertTrue({'crates/linked/bridge', 'crates/unlinked/alias', 'crates/linked/data'}
+                        .issubset(result[0]['repository_inputs']))
+        key = guard.content_key(self.root)
+        alias.unlink()
+        alias.symlink_to('../linked/other')
+        self.commit()
+        self.assertNotEqual(key, guard.content_key(self.root))
+
     def test_real_build_uncovered_include_and_registry_cure(self):
         (self.root / 'crates/unlinked/data with spaces.txt').write_text('input')
         (self.root / 'crates/game/src/lib.rs').write_text(

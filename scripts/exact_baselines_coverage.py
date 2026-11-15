@@ -1,9 +1,11 @@
 """Cargo-derived subtraction from the exact-baseline registry's listed paths."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
+from collections import deque
 
 
 def inside(path, folder):
@@ -91,6 +93,32 @@ class Coverage:
                 'covered_paths': len(self.objects())}
 
 
+def dependency_paths(path):
+    """Keep symlink indirections as inputs, resolving `..` in filesystem order."""
+    pending = deque(path.parts[1:])
+    current = Path(path.anchor)
+    links = 0
+    while pending:
+        part = pending.popleft()
+        if part == '..':
+            current = current.parent
+            continue
+        current /= part
+        if current.is_symlink():
+            yield current
+            links += 1
+            if links > 40:
+                raise ValueError(f'cannot resolve build input symlink chain: {path}')
+            target = Path(os.readlink(current))
+            if target.is_absolute():
+                current = Path(target.anchor)
+                pending.extendleft(reversed(target.parts[1:]))
+            else:
+                current = current.parent
+                pending.extendleft(reversed(target.parts))
+    yield current
+
+
 def check_build_reads(root, coverage, records, build_folder=None):
     """Read Cargo's aggregate Make depfiles, normalising includes with ../ segments."""
     root = root.resolve()
@@ -114,12 +142,12 @@ def check_build_reads(root, coverage, records, build_folder=None):
             raise ValueError(f'unreadable build dependency record (no inputs): {record}')
         repository_inputs = []
         for name in inputs:
-            path = (root / name).resolve()
-            if path.is_relative_to(root) and not path.is_relative_to(build_folder):
-                relative = str(path.relative_to(root))
-                if relative not in covered:
-                    raise ValueError(f'build read uncovered file {relative}; record {record}; list it in the registry')
-                repository_inputs.append(relative)
+            for path in dependency_paths(root / name):
+                if path.is_relative_to(root) and not path.is_relative_to(build_folder):
+                    relative = str(path.relative_to(root))
+                    if relative not in covered:
+                        raise ValueError(f'build read uncovered file {relative}; record {record}; list it in the registry')
+                    repository_inputs.append(relative)
         checked.append({'record': str(record.relative_to(root)),
                         'repository_inputs': sorted(set(repository_inputs))})
     return checked
