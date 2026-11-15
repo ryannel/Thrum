@@ -98,12 +98,12 @@
       }
     },
     "M2": {
-      "definitions": "dc755112424f481274802a604c32c3a6d05bf4f06e1dc6f820bc0e5e7faf6734",
+      "definitions": "4b199daf8ea5d9c6b25afa62be2cd0aa3862bcaea25c1d80984793fd41625d8b",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 1 Mu",
-        "at": "2026-11-15T09:13:15Z"
+        "at": "2026-11-15T09:56:01Z"
       }
     }
   },
@@ -123,11 +123,15 @@
     {
       "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-15T09:13:15Z"
+    },
+    {
+      "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nMF3 has now been raised twice. Settle it this time: the reviewer accepts either covering optional and enumerated script inputs in the key, or making any input the key cannot resolve block the proof from being published (fail closed). Pick whichever is simpler to make provably complete, and keep excluding the unrelated crates and scripts.",
+      "at": "2026-11-15T09:56:01Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T09:13:15Z"
+    "at": "2026-11-15T09:56:01Z"
   },
   "design_history": [
     {
