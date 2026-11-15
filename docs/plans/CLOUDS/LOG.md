@@ -300,3 +300,9 @@
   other item, seam or bound changed; `ATMOSPHERE`, `WATERS` and the rest read none of these answers.
 - 2026-11-14 M12 now waits for `APPLE-PRESENTATION:M7` and `M8`, the governor and MetalFX, which have done-when
   entries from today. M12.1 is unchanged. The design is unchanged.
+- 2026-11-15 M13 review fixes on `2ea3a62be` give saturated radiative fog a finite cooling threshold
+  and preserve footprint-only visibility's column sum without changing the older `Field` density calls.
+  The full CPU crate suite passes. Three-day tests cover four moisture levels, and footprint integrals
+  cover erosion 0/0.4/1, three scales, three rotations and partial envelopes. The unchanged reviewer probe
+  now returns 1.5 at erosion 0.4 and exactly zero saturated amounts from 11:00 through afternoon.
+  [Fresh proof and scope](../../evidence/CLOUDS/M13.md) retain the probe output; baseline and merge checks follow.
