@@ -1,10 +1,10 @@
 {
   "module": "TRANSPORT",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": "docs/evidence/TRANSPORT/design-review.md",
-    "commit": "50be8377a702f2cee6da806e1aef1c0fc89052d6",
-    "hash": "e6d2a207e6c8fb6638026da9535a6c0bcccf95c1d5a4fb42b0107bd5ad534a7a",
+    "commit": "4e9956d6dbae7bc5facfd4dca2bbaaa1a6e85a7a",
+    "hash": "d62a824a707b898992b568f5175c7892321136563f20691718976287f51c5b73",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.4.1",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 96708,
-      "cached": 1080704,
-      "output": 8304,
+      "input": 69495,
+      "cached": 717312,
+      "output": 5368,
       "turns": 1
     },
-    "at": "2026-11-13T17:13:19Z"
+    "at": "2026-11-15T00:25:10Z"
   },
   "milestones": {
     "M1": {
@@ -88,6 +88,29 @@
         "turns": 1
       },
       "at": "2026-11-13T16:43:45Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/TRANSPORT/design-review-2.md",
+      "commit": "50be8377a702f2cee6da806e1aef1c0fc89052d6",
+      "hash": "e6d2a207e6c8fb6638026da9535a6c0bcccf95c1d5a4fb42b0107bd5ad534a7a",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.4.1",
+      "path": "headless",
+      "usage": {
+        "input": 96708,
+        "cached": 1080704,
+        "output": 8304,
+        "turns": 1
+      },
+      "at": "2026-11-13T17:13:19Z"
     }
   ]
 }
