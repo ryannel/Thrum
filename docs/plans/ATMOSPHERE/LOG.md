@@ -521,3 +521,6 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
 - On continuation, revalidated the cycle and terminated only the stalled CREATOR
   wrapper (PID 24326), releasing the merge lock to CLOUDS. M9's existing GPU-first
   integration job remains queued; no other worktree's files changed.
+- The queued job subsequently exited on sandbox-denied Git metadata writes.
+  Verified an escalated fetch and relaunched the same merge/check command outside
+  the sandbox as `20261115-044357-75419`; target results and M9 status are unchanged.
