@@ -95,3 +95,6 @@
   stands at or above the lip's bed; a path may travel over a receiver's box beyond the rectangle; RIVER_FORMAT and SOLVER_VERSION are 2.
   The sheet pattern is a caller-supplied trait (`SheetPattern`), so the game owns its texture. Suspected, not tested: landing lag of
   one step and per-check recomputation of landings could oscillate on a path that grazes a sill.
+- 2026-11-16 M2 review fix (M2.5): a path running down dry rock into the pool now meets the water at the shoreline,
+  bisected on the stored chord, not at the first point under water. Verified: a new test over three rock faces and five
+  stages with the real map gives the surface's level exactly and the place within 5.1e-5 m of a scan; it fails on the old code.

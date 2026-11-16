@@ -189,8 +189,8 @@
           "statement": "For a body below at any level in its stage's range, the plunge is where each path meets that level, and it moves as the level moves. Each segment's births follow the fall's power, `rho g q z` for each metre of lip, split between foam and submerged air by the profile's share. Each segment's impulse a tick is the wave share times its momentum flux into the surface times the sheet's pattern arriving there, with its mean over the pattern's loop removed: over that loop its mean is under 1% of its rms, its rms is the design's figure within 5%, and the same tick gives the same impulse on every run. A path that lands on bare ground gives no births and no impulses.",
           "check": "cargo test --locked --offline -p thrum-river-model --test plunge",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#review-fix-the-plunge-at-the-shoreline (plunge, incl. a_path_down_the_rock_meets_the_water_at_the_shoreline_at_every_stage)",
           "verdict": "fail",
           "review": "docs/evidence/RIVERS/M2-review.md"
         },
