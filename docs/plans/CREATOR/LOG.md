@@ -6,6 +6,11 @@
   The window driver now resolves a shared build-folder symlink when identifying its app.
   [Refreshed evidence](../../evidence/CREATOR/M3.md).
 
+- 2026-11-16 The resumed integration gate timed out waiting for GPU capacity after passing
+  the reported tests. Narrowed the Mac Cargo runner's leases to Metal-linked or unknown
+  executables; CPU binaries without Metal now run directly. Checked real CPU/GPU decisions
+  and conservative error paths. No engine source or test arguments changed. [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-16 Restored M3.4's passing builder record after the session restart restored its
   older access-only entry. The retained real-window journey proves the slider and both saves;
   the brief now distinguishes that builder evidence from independent review. Documentation
