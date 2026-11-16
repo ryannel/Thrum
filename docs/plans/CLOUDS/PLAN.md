@@ -37,17 +37,18 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 Weather and Shade are built and merged through `5ec67bed`: `thrum-clouds` on `EFFECT-GRAPH`'s seam, ruling 1 in
 `ATMOSPHERE`'s shade path (`crates/thrum-render/src/atmosphere/cloud.rs`, `cloud.wgsl`), the selection in
 `examples/v1-game` and `scripts/cloud_cost.py`. The handoff is `docs/evidence/CLOUDS/M2-handoff.md`; the
-captures, visual opinion and timing diagnosis are on branch `build/clouds` at `0756d0adce44`, not merged. This
-plan rewrote M2.7 and M2.11 and added a dependency, so every item's proof was reset. Nothing behind the other
-ten items is asked to change, and their evidence on that branch describes source `5ec67bed`.
+captures, visual opinion and timing diagnosis are on branch `build/clouds` at `0756d0adce44`, not merged. Two
+plans rewrote M2.7 and M2.11 and added M2.13 and a dependency, so every item's proof was reset. The other ten
+items ask for no change, and their evidence there describes `5ec67bed`.
 
 What is left is [drift at the display phase](DESIGN.md#time-drift-at-the-displays-time-evolution-on-the-tick).
 `EFFECT-GRAPH` M4 puts the phase in the frame's effect time. `sun_path.rs` forms the mapping's travel from
-`State::display_travel` with the frame's alpha. M2.11's check names a new test; the one it replaces,
+`State::display_travel` in `thrum-cloud-model`, which takes alpha and stops at the committed tick; M2.13 asks
+for what replaces it. M2.11's check names a new test; the one it replaces,
 `examples/v1-game/tests/clouds_display_time_gpu.rs`, takes its expected travel from the frame's own alpha. The
 clock, the frame host and the capture record are `EFFECT-GRAPH`'s: a defect in the phase goes to that module's
-log, and this milestone adds no clock of its own. Even drift does not by itself pass M2.7: not every change
-between 60× frames was traced, so inspect what remains.
+log. Even drift does not by itself pass M2.7: not every change between 60× frames was traced, so inspect what
+remains.
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 

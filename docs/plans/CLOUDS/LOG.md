@@ -340,3 +340,9 @@
   M2 depends on it. Drift is taken at the phase, predicted past the tick from committed state. M2.7's inspection
   reads the time record and M2.11 covers both sides of a tick; M2's proof is reset.
   [The reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md). M1's and M13's notes left the plan.
+- 2026-11-16 Planner: M2's drift revised after the design review's one Must Fix (MF1), with `EFFECT-GRAPH`.
+  One tick's travel carried across a prediction of several ticks stepped 6 m during a wind ramp with nothing
+  changed. Travel past the committed tick is now carried a tick at a time by the step's own arithmetic, exact
+  while the targets stand; a changed target corrects by the change. The phase describes the consumed target.
+  M2.11 rewritten, M2.13 added for the model, M2.7 reads lead status.
+  [Check](../../evidence/CLOUDS/M2-plan/display-travel.txt). S1 to S3 taken; S4 left, since M1 is Done.

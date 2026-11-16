@@ -381,7 +381,7 @@
         {
           "id": "M2.7",
           "statement": "At 1x the shade drifts with the wind, smoothly, with no step at the product's refresh and no swimming. At 60x, patches form and dissolve with no pop, and the drift moves by even steps from frame to frame at the display's refresh.",
-          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence. Beside them, from the 60x capture's time record, tabulate the travel between consecutive frames against the interval between their display targets.",
+          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence. Beside them, from the 60x capture's time record, tabulate the travel between consecutive frames against the interval between their consumed targets, with each frame's lead status.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -423,9 +423,9 @@
         },
         {
           "id": "M2.11",
-          "statement": "Shade is shown at the display's time, between ticks and past the newest one. Across submitted frames of one tick and of the next, with display targets on both sides of the committed tick, the ground field's mapping differs between any two frames by the wind's travel between their display times: equal intervals between targets give equal steps, and the first frame of a tick takes no catch-up step. No texel of the weather map, the Sun-path product or the ground field is written for a frame that shows a tick again. When a wind target changes while a frame is past the committed tick, the next tick's first frame corrects by no more than the design's bound. When the phase is exactly 1, and after a cut, the mapping is the committed tick's.",
+          "statement": "Shade is shown at the display's time, between ticks and past the newest one as far as the phase's bound. Across submitted frames whose consumed targets lie before the committed tick, less than one tick past it and more than one tick past it, the ground field's mapping differs between any two frames by the wind's travel between their display times, in a steady wind and through a wind ramp: equal intervals between consumed targets give equal steps, and a frame that shows a newly committed tick takes no catch-up step. No texel of the weather map, the Sun-path product or the ground field is written for a frame that shows a tick again. When a wind target changes between two commits, the mapping at one display time moves, from a frame before the commit to a frame after it, by the travel the old target would have made less the travel the new one makes, and by no more. When the phase is exactly 1, and after a cut, the mapping is the committed tick's.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_display_phase_gpu",
-          "ask": "Is the expected travel worked out in the test from the wind and the frames' display targets, and not read back from the effect or from the frame's own alpha or phase? Does the run include a frame whose alpha is 1 with its target past the tick, and the first frame of the next tick?",
+          "ask": "Is the expected travel worked out in the test from the wind, its ramp and the frames' observations and leads, and not read back from the effect, from the model's own prediction or from the frame's alpha or phase? Does the run include a frame whose alpha is 1 with its consumed target past the tick, the first frame of the next tick, and a continuing wind ramp with a frame more than one tick past the committed tick, where the test states how far one tick's travel carried across the whole prediction would miss?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -437,6 +437,17 @@
           "id": "M2.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.13",
+          "statement": "`thrum-cloud-model` gives the travel at a display phase from the committed state alone and commits nothing. At phases from 0 to the phase's bound, at 60 Hz and at one other tick rate, in a steady wind and through wind and time-scale ramps, one of which reaches its target inside the prediction, the travel at tick C and phase p equals the travel at tick C + k and phase p - k once the state has really stepped k ticks with its targets unchanged, for every k the phase allows, to the f64 rounding the test states. In a steady wind it is the wind times the weather time elapsed. After a target changes between two commits it differs by the travel the old target would have made less the travel the new one makes. After a cut it is the committed tick's travel.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test display_travel",
+          "ask": "Does the test make the later ticks with the model's own `step` on a copy of the state, and work the steady wind and the changed target out in its own arithmetic? Would the next tick's travel carried across several ticks fail it during a ramp, by an amount the test states?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

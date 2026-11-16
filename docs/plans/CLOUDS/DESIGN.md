@@ -15,7 +15,9 @@ review of that revision: [a stop at every pixel's depth and the air in parts](#t
 of a ground row and the headless query, and
 [ceilings that decide](#numerical-acceptance-for-ground-condensate). Revised 16 November 2026:
 [drift is taken at the display phase](#time-drift-at-the-displays-time-evolution-on-the-tick), which
-`EFFECT-GRAPH` M4 provides.
+`EFFECT-GRAPH` M4 provides. Revised again that day after that revision's review (finding MF1;
+`git show f1076615a:docs/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
+tick at a time by the step's own arithmetic, and the phase describes the target the clock consumes.
 
 ## The request
 
@@ -400,23 +402,51 @@ the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean t
 The weather state steps on the committed tick, and the display shows each 60 Hz tick twice or more. Travel is a
 function of time, so every presented frame takes it **at the display's time** `t = C − 1 + p` in ticks, where `C`
 is the frame's committed tick and `p` its [display phase](../EFFECT-GRAPH/DESIGN.md#the-display-phase-m4), which
-`EFFECT-GRAPH` M4 gives every effect. Formed on the CPU in f64 from the state:
+`EFFECT-GRAPH` M4 gives every effect. That time is the frame's **consumed target** less one tick: the time the
+frame's host observed, plus its lead of at most 50 ms toward the moment the platform expects to show the frame.
+Formed on the CPU in f64 from the state:
 
 - at `p ≤ 1`, between the two committed ticks: `travel(t) = travel(C) − (1 − p) · (travel(C) − travel(C − 1))`;
-- at `p > 1`, past the committed tick: `travel(t) = travel(C) + (p − 1) · Δ`, where `Δ` is the travel the weather
-  step would add next from the committed state and its control targets. `thrum-cloud-model` gives `Δ` from the
-  same arithmetic as its step and commits nothing.
+- at `p > 1`, past the committed tick, `thrum-cloud-model` carries the travel forward a tick at a time. From the
+  committed state it makes the **predicted ticks** `C + 1`, `C + 2` and on, each from the one before by the
+  arithmetic of its own step: the wind and the time scale move toward the targets the committed state holds,
+  over its response time, and the tick's travel is added. With `n` whole ticks and a part `f` in `p − 1`,
+  `travel(t) = travel(C + n) + f · (travel(C + n + 1) − travel(C + n))`. It commits nothing. The phase is at
+  most 50 ms of ticks past 1, so a frame makes at most 3 predicted ticks at 60 Hz, a few scalar operations
+  each.
 
-The interpolation alpha is not that time. It stops at the committed tick, and a display target usually lies
+The next tick's travel carried across the whole of `p − 1` is not this rule. It is right in a steady wind and
+wrong while a wind or a time scale is ramping, because each tick of a ramp travels a different distance. With
+the wind at 10 m/s on its way to 40, a 10 s response and 60×, one display time two and a half ticks past the
+committed tick is 35 m from tick `C` and 41 m from tick `C + 1`: a 6 m step with nothing changed. By predicted
+ticks it is 43 m from both ([the check](../../evidence/CLOUDS/M2-plan/display-travel.txt), part 1).
+
+The interpolation alpha is not that time. It stops at the committed tick, and a consumed target usually lies
 past it for part of every tick: at 60× in a 40 m/s wind M2's first capture drifted 3.2 m and 36.8 m on alternate
 frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, equal
-intervals between display targets are equal steps of travel, across a tick's commit as within a tick.
+intervals between consumed targets are equal steps of travel, across a tick's commit as within a tick. A frame
+whose platform target had expired consumes the time it was observed at, and takes its travel there.
 
-Past the committed tick the travel is a prediction of at most 50 ms of the world's time, which at 60× in a
-40 m/s wind is 120 m. It is exact unless a wind or
-time-scale target changes before the next tick commits; then the next tick's first frame corrects by at most
-`p − 1` of the difference between `Δ` and the step that was committed. Nothing else is predicted: no state is
-stepped and no product is written for it.
+**What the prediction guarantees.** Past the committed tick the travel is a prediction of at most 50 ms of the
+world's time, which at 60× in a 40 m/s wind is 120 m.
+
+- **While the targets stand, it is exact.** A predicted tick is made by the step's arithmetic from the state
+  the step will start from, so while the control targets and the response time the committed state holds stay
+  what they were, it is the tick the step then commits, bit for bit. Two frames that show one display time
+  from two committed ticks therefore take the same travel, to the f64 rounding of the last interpolation: in a
+  steady wind, through a wind or a time-scale ramp, and when a ramp reaches its target inside the prediction
+  (the check's part 2: 33,355 pairs at 30, 60 and 240 Hz, every one exactly equal in rational arithmetic).
+- **When a target changes, the correction is the change.** A game sets a target between two commits. Frames
+  before the commit predicted with the old target and frames after it hold the new one. At one display time
+  the travel then moves by the travel the old targets would have made less the travel the new ones make, over
+  the part of the prediction past tick `C`, and by nothing else. For a wind target, with `w` the weather
+  seconds in a tick and `a = 40 · w / response` the most a tick changes the wind, that is at most
+  `2 · a · w · (1 + 2 + … + n + f · (n + 1))`. At 60× with a 10 s response it is 4 m half a tick past the
+  committed tick, which is as far as a 120 Hz display's lead reaches, 8 m one tick past and 48 m at the bound;
+  at 1× it is 13 mm at the bound. A time scale sent from 60 to 1 in a steady 40 m/s wind moves it 2 m half a
+  tick past and 22 m at the bound (the check's part 4). The game's response time sets these, and a shorter one
+  makes them larger.
+- **Nothing else is predicted.** No state is stepped and no product is written for it.
 
 Travel enters a frame only through the anchors that place the air frame in the world: the trace's, the mapping of
 the ground field and of the ground band that `ATMOSPHERE` reads, the overlay's, and the motion a cloud writes. What
@@ -426,7 +456,7 @@ same tick again moves every cloud and its shade by the wind's travel since the l
 the weather map, the Sun's path and everything that evolves stay at the committed tick, as `EFFECT-GRAPH`'s state
 rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most 0.2% of
 its range in a tick (part F). On a cut, a seek or a new timeline the frame takes `travel(C)`, as it does when the
-phase is exactly 1: a pause, an overload or a capture frame.
+phase is exactly 1 because the clock is not interpolating: a pause, an overload or a capture frame.
 
 ### One density, in m⁻¹
 
@@ -625,9 +655,14 @@ motion for that pixel; a stop that ended in the sky is carried by the cloud's ow
 carried stop only if it was taken on the pixel's own surface: its distance agrees with that surface's distance
 in the frame it was traced, within the profile's **stop tolerance**, a share of the distance. Where no carried
 stop passes, at a disocclusion, at a mover's edge and after a cut, the texel is traced in that frame; a stop
-that ends on a surface is never filled from a neighbour's. A carried stop is then wrong only by the fog the
+that ends on a surface is never filled from a neighbour's. In fog that stands still and is even along the ray,
+a carried stop is then wrong only by the fog the
 camera's own travel has crossed since it was traced, at most one refresh cycle before: 0.27 m at 8 m/s, which is
-0.8% of the stop's transmittance in fog of a 130 m visual range and 2% at 50 m (part VII).
+0.8% of the stop's transmittance in fog of a 130 m visual range and 2% at 50 m (part VII). That figure covers
+the camera's travel alone. A bank that drifts or thins across a surface that does not move changes the stop
+with no change in the surface's distance, so the distance test passes it; a carried stop is then also out by
+what the bank changed in one refresh cycle, which no figure here bounds. M15's motion inspections judge it,
+and tracing every texel every frame is the fallback.
 
 **Frame contract.** Clouds write no depth. Where a cloud holds most of a pixel it writes motion from its front
 point, with wind drift, at unjittered positions; elsewhere the sky's motion stays. It writes reactive coverage
@@ -930,7 +965,7 @@ and the ceiling has that module's form, so the two integrators of one medium are
 | Item | Held to | Wrong substitutes that must fail | Where they do, from part X unless said |
 |---|---|---|---|
 | M13.6, the ground band on the CPU | The model's Sun-path reference, with a node's allowance | A level-layer rule; the band's value counted twice | The level rule at 24 and 54 of 400 probes at a 10° and a 4° Sun, beside the bank on its far side from the Sun. At 30° it is inside, so 30° alone proves nothing. Counted twice: 184 probes at 30° |
-| M13.7, the handover on the CPU | One integration of the whole ray | Both shares taken whole; the far share not dimmed by the near | Transmittance 0.12 out against 0.012. In-scatter 0.39 out against 0.048 under uniform light and 0.12 against 0.037 with a shadow edge in the ramp, where the design's is 0.011 |
+| M13.7, the handover on the CPU | One integration of the whole ray | Both shares taken whole; the far share not dimmed by the near | Transmittance 0.12 out against 0.012. In-scatter 0.39 out against 0.047 under uniform light and 0.12 against 0.036 with a shadow edge in the ramp, where the design's is 0.011 |
 | M14.2, ground condensate on the GPU | The model at world points after a travel, with a node's allowance | A shore mask that the map holds and drifts | The row's whole extinction inland of the margin, where zero is expected (part VIII) |
 | M14.3, the ground band on the GPU | As M13.6 | The cloud band's value added again; a level-layer rule | An upper cloud of optical depth ln 2 gives 0.25 for 0.5 (`ATMOSPHERE`'s part I); the level rule as in M13.6 |
 | M14.4, the medium coefficients | The model's references at the volume's sample points | A kernel without the medium's own optical depth toward the Sun; an extinction without the near weight | In a bank whose Sun path is 1 or more, the first order is 2.7 times out; inside the ramp the extinction is out by the far share |
@@ -990,10 +1025,17 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
   the widened lobe the second review refuted; part G below gives them again.
 - **Drift.** At 60× in a 40 m/s wind a cloud 1,500 m off moves 37 pixels a tick at 1440 rows. Taken at the tick
   it is shown as 0 then 37; at the display's time, as 18 then 18. At 1× the same wind gives 0 then 0.6 against
-  0.3 then 0.3. That holds only if the frame's time passes the committed tick with its display target. Taken by
+  0.3 then 0.3. That holds only if the frame's time passes the committed tick with its consumed target. Taken by
   alpha, M2's capture split each tick's 40 m as 3.2 m then 36.8 m. Recomputed from that capture's rows with
   the display phase, the six frames step 19.0 to 20.8 m against 20 m due, and the spread is the record's
   ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)).
+- **Drift past the committed tick.** From [`display_travel.py`](../../evidence/CLOUDS/M2-plan/display_travel.py),
+  run on 16 November after the review of the display-phase revision, in rational arithmetic with the step of
+  `state.rs`. Its four parts are cited in [time](#time-drift-at-the-displays-time-evolution-on-the-tick): the
+  review's ramp, where one tick's travel carried forward steps 6 m and predicted ticks step nothing; 33,355
+  pairs of frames at one display time from two committed ticks, exactly equal, where one tick's travel carried
+  forward is up to 77 m out; steady wind, exact at every phase to the bound; and the correction when a target
+  changes, inside the limit above in every case tried. It is the model's arithmetic and not a run of a frame.
 - **Directed shapes and capabilities.** Unrun. Both are the placed cell and the profile already reproduced, with
   their inputs from the game; M1 and M8 prove them first.
 
@@ -1015,7 +1057,11 @@ counterexamples and wider cases:
   RMS in transmittance from the volume's own on the ground and 0.004 to 0.08 inside the cloud, which is the
   band the product holds for procedural cloud. Filled from the volume averaged to 80 m it is 0.03 to 0.18 and
   0.02 to 0.17, and from the column form 0.04 to 0.14 and 0.06 to 0.16. The largest single differences, 0.4 at
-  a hard opaque edge, are an edge placed within one column's width.
+  a hard opaque edge, are an edge placed within one column's width. Two things qualify these figures. The
+  script's product takes four density reads for each slice it stores, not one. And its reference is the mean
+  transmittance of seven rays spread over one column's width, not the single ray through the point. So they
+  show a product built with four reads a slice against the shade averaged over a column, and say nothing of a
+  product built with one read a slice or of the error at a point.
 
 From `whole_atmosphere_proof.py`, run for the revision of 14 November for mist, fog and low cloud:
 
@@ -1136,8 +1182,9 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its M7 and M8, and this mo
    and is read at the receiver's own position in place of the cloud band's value, never added to it.
 8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount, which the weather state supplies.
 
-9. **The display phase** (`EFFECT-GRAPH` M4): where a frame's display target lies between the last two committed
-   ticks or past the newest, bounded at 50 ms. This module reads it in M2 and builds none of it.
+9. **The display phase** (`EFFECT-GRAPH` M4): where a frame's consumed target lies between the last two committed
+   ticks or past the newest, bounded at 50 ms, with the frame's observation, lead and lead status on the capture
+   record. This module reads it in M2 and builds none of it.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace
 treats as geometry; the temporal contribution; leases of volumes; typed controls.
@@ -1153,7 +1200,7 @@ there, not here.
 | Phases | Frame, once a ray; the tables at preparation | One table read and three closed forms; a table for each row of the type table, about 4 KiB each at 1,025 entries | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
-| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M samples to fill, about 0.5 M a frame | 0.1–0.2 ms | 2.2 ms shadow |
+| Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
 | Time-lapse | Ages are held in weather time | At 60×, the whole map (262 k texels) and up to the Sun path's whole fill each frame | Unestimated beyond those counts; M2 records 1×, 8× and 60× | |
 | Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples | The largest term; M3 measures it | 268 ms; 33 M density evaluations |

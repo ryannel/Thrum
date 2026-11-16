@@ -17,6 +17,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones.
 - Assumption: M3 does not wait for `CULLING` M3 to stop the game's image varying under GPU load. Until then an exact-image run that fails only along triangle edges is recorded, checked by a reviewer and run again, and M3 lands on a complete pass. The other choice adds `CULLING:M3` to M3's `depends_on`, which holds M3 and the six modules waiting on it until that milestone is Done.
 - Assumption: M4 gives effects the display phase and leaves the sea's waves, 2D sprites and a game's camera and entities on the interpolation alpha. Under a display lead those step unevenly by the same arithmetic, which nobody has captured yet. Each is its owner's to plan, the camera and entities with the game contract in `HOST` M4.
+- Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. M4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no M4 item able to prove it.
 
 ## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
 [review](../../evidence/EFFECT-GRAPH/M1-review.md)
@@ -41,8 +42,12 @@ test hosts implement the trait. `examples/v1-game/src/window/capture.rs` writes 
 app's `ios/capture.rs` writes its own and must still build.
 `examples/v1-game/tests/clouds_display_time_gpu.rs` drives a host at scripted times.
 
-Add to those files and change nothing a reader of alpha gets. `thrum-clouds`, `thrum-sea` and the game's camera
-keep reading alpha here: `CLOUDS` M2 is the first reader, in its own crate. If a frame's tick and its clock
-sample can disagree on a threaded world, so that M4.2 cannot hold as written, or your change fails an exact test
-or baseline another module owns, write what you found in the log and end `BLOCKED`; do not edit the other
-module's test.
+Add to those files. Alpha stays the same function of the clock sample and the consumed target, and one input
+changes: `Offscreen::step_for` in `crates/thrum-app/src/offscreen.rs` reads the clock for the lead and `drive`
+reads it again for the observation, and M4.3 makes that one read. `crates/thrum-app/src/app/render_actor.rs`
+and `examples/v1-game-ios/src/ios/render.rs` read two clocks and are not yours to change here. The capture
+driver in `window/capture.rs` has a `render-stall` case that delays one step, and `Opportunity::target` is the
+platform target. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha: `CLOUDS` M2 is the first
+reader, in its own crate. If a frame's tick and its clock sample can disagree on a threaded world, so that M4.2
+cannot hold as written, or your change fails an exact test or baseline another module owns, write what you
+found in the log and end `BLOCKED`; do not edit the other module's test.
