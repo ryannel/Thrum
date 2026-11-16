@@ -415,8 +415,8 @@
           "ask": "Does any vertex or pixel path invert the wave map, or choose a mip or cache level by the footprint's longest side? Does whatever a layer stops resolving, by level, mip or fade, join the covariance? Does a reflected lobe from a visible facet read the sky's ground side under the horizon?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2-forward.md",
           "verdict": "",
           "review": ""
         }
