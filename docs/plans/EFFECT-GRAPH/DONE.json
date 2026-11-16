@@ -319,8 +319,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Does the test make every poll of its run a delayed one, by waiting until the world has committed a tick due after the observation it then polls with? Would that run fail on a lane that holds only the pair it shows?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -331,8 +331,8 @@
           "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Is its delayed frame observed before a tick that the world has committed by the time the frame polls, so that the newest tick would fail it? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -353,8 +353,8 @@
           "statement": "C02 in `docs/design/CONTRACTS.md` states the display phase: that it describes the consumed target, the frame's observation plus its bounded lead; its bound; that alpha is the phase held to 1; that sampling it never advances authority; that an interpolating frame's tick was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair and holds the refused pair for a later poll; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
           "ask": "Do C02's words say what the design's section on the display phase says, with nothing added that it does not say? Does the ledger row claim only what M4.1 to M4.3 proved?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },

@@ -203,3 +203,10 @@
   No engine or criteria changed; M4.2 stays open. [Reproduction](../../evidence/EFFECT-GRAPH/M4-compatibility.md)
   and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the conflict; no new GPU claim or merge.
   The CPU probe and documentation checks pass; owned probe scratch was removed.
+- 2026-11-16 Implemented the revised pair rule: the lane retains the refused clock/page pair, so repeated
+  delayed polls progress while authority continues and completed ticks are reported once. Updated C02,
+  public effect documentation and the separate implementation/correctness ledger claims.
+  Five core tests and both Mac Metal frame checks pass at `fbb4115cc`, including 12 delayed polls,
+  144 effect frames and 32 realtime frames with no dropped opportunity. The capture includes an expired
+  target and a 45 ms render-owner delay. [Proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains the results.
+  Cost is at most one additional leased page; physical cadence and consumer prediction remain unqualified.

@@ -233,10 +233,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
