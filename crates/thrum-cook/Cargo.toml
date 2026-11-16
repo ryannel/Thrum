@@ -22,7 +22,9 @@ rayon = "=1.12.0"
 thrum-asset = { path = "../thrum-asset" }
 
 [dev-dependencies]
-asset-loop = { path = "../../examples/asset-loop" }
+asset-loop = { path = "../../examples/asset-loop", features = ["test-support"] }
+thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
 
 [[bench]]
 name = "edit_to_visible"

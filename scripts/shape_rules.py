@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tomllib
 
-from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, rust_sites
+from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, rust_sites, test_edge_sites
 
 BASELINE = ".config/shape-baseline.json"
 PATTERNS = ".agents/skills/thrum-engineering/references/patterns.md"
@@ -96,6 +96,9 @@ def inventory(root, honor_pins=False):
         if path.name == "Cargo.toml":
             manifest = manifests.get(path.parent, {})
             text = (root / path).read_text()
+            for alias in test_edge_sites(manifest, workspace, registry):
+                match = re.search(r'(?m)^\s*' + re.escape(alias) + r'\s*=', text)
+                sites["test-crate-edges"].append((relative, text.count("\n", 0, match.start()) + 1 if match else 1))
             fields = [(key, manifest.get("package", {}).get(key, "")) for key in ("name", "description")]
             fields.append(("name", manifest.get("lib", {}).get("name", "")))
             for kind in ("bin", "test", "bench", "example"):

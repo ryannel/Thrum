@@ -9,6 +9,7 @@ import tomllib
 
 
 RULES = {
+    "test-crate-edges": (1, "tests", "use support only in dev-dependencies and fixtures normally only in the proving ground"),
     "string-errors": (4, "errors", "return a boundary error enum implementing Display and Error"),
     "package-reach": (1, "crossing-crate-boundaries", "use a public package API or registered shared fixture package"),
     "path-attribute": (1, "tests", "use the normal module tree (foo.rs and foo/)"),
@@ -188,6 +189,29 @@ def dependency_sites(manifest, package):
         for key, value in table.items():
             if key in {"dependencies", "dev-dependencies", "build-dependencies"}:
                 yield from value.items()
+            elif isinstance(value, dict):
+                yield from visit(value)
+    yield from visit(manifest)
+
+
+def test_edge_sites(manifest, workspace, registry):
+    """Resolve dependency identities across renamed, inherited and target tables."""
+    roles = {name: entry.get("test_role") for name, entry in registry.get("packages", {}).items()}
+    consumer = manifest.get("package", {}).get("name")
+    proving_ground = registry.get("boundaries", {}).get("proving_ground")
+
+    def visit(table):
+        for kind, value in table.items():
+            if kind in {"dependencies", "dev-dependencies", "build-dependencies"}:
+                for alias, dependency in value.items():
+                    if isinstance(dependency, dict) and dependency.get("workspace"):
+                        dependency = workspace.get(alias, {})
+                    name = dependency.get("package", alias) if isinstance(dependency, dict) else alias
+                    role = roles.get(name)
+                    if ((role == "support" and kind != "dev-dependencies")
+                            or (role == "fixtures" and (kind == "build-dependencies"
+                                or (kind == "dependencies" and consumer != proving_ground)))):
+                        yield alias
             elif isinstance(value, dict):
                 yield from visit(value)
     yield from visit(manifest)

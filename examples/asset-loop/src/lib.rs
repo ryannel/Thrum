@@ -178,7 +178,27 @@ impl Viewer {
             ..Default::default()
         }))
         .map_err(|error| ViewerError::Device(error.to_string()))?;
-        let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+        Ok(Self::from_device(config, &adapter, device, queue))
+    }
+
+    /// Construct the viewer around an admitted test device without another GPU request.
+    #[cfg(feature = "test-support")]
+    pub fn with_test_device(
+        config: ViewerConfig,
+        adapter: &wgpu::Adapter,
+        device: wgpu::Device,
+        queue: wgpu::Queue,
+    ) -> Self {
+        Self::from_device(config, adapter, device, queue)
+    }
+
+    fn from_device(
+        config: ViewerConfig,
+        adapter: &wgpu::Adapter,
+        device: wgpu::Device,
+        queue: wgpu::Queue,
+    ) -> Self {
+        let capabilities = DeviceCapabilities::capture(adapter, &device, 1);
         // A product the loader failed to reject must not abort the process: record the error and
         // keep drawing the previous resident set.
         let records = Arc::new(Mutex::new(Records::default()));
@@ -188,13 +208,7 @@ impl Viewer {
                 log.errors.push(format!("GPU validation: {error}"));
             }
         }));
-        Ok(Self::with_device(
-            config,
-            device,
-            queue,
-            capabilities,
-            records,
-        ))
+        Self::with_device(config, device, queue, capabilities, records)
     }
 
     fn with_device(

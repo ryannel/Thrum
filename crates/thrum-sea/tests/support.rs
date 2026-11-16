@@ -27,75 +27,70 @@ pub(super) fn spectrum(wind: f64) -> Spectrum {
 pub(super) const ANCHOR: [f64; 2] = [50000.25, -50000.75];
 
 impl Harness {
-    pub(super) fn new(portable: bool) -> Self {
-        pollster::block_on(async {
-            let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-                backends: wgpu::Backends::METAL,
-                ..wgpu::InstanceDescriptor::new_without_display_handle()
-            });
-            let adapter = instance
-                .request_adapter(&wgpu::RequestAdapterOptions::default())
-                .await
-                .expect("mac-metal adapter is required");
-            assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-            let features = wgpu::Features::TIMESTAMP_QUERY;
-            assert!(
-                adapter.features().contains(features),
-                "Metal pass timings required"
-            );
-            let limits = if portable {
-                wgpu::Limits::default()
-            } else {
-                adapter.limits()
-            };
-            let (device, queue) = adapter
-                .request_device(&wgpu::DeviceDescriptor {
-                    required_features: features,
-                    required_limits: limits,
-                    ..Default::default()
-                })
-                .await
-                .expect("valid Metal qualification fixture");
-            let site = DeviceSite::untracked(device.clone());
-            let sea =
-                Ambient::new(&site, Profile::default()).expect("valid Metal qualification fixture");
-            sea.graph()
-                .validate()
-                .expect("valid Metal qualification fixture");
-            check_graph(&sea.graph());
-            let mut record = format!(
-                "adapter={:?}\nportable={portable}\nlimits={:?}\n",
-                adapter.get_info(),
-                device.limits()
-            );
-            for (command, args) in [
-                ("git", vec!["rev-parse", "HEAD"]),
-                ("uptime", vec![]),
-                ("sysctl", vec!["-n", "hw.model", "hw.memsize", "hw.ncpu"]),
-                ("pmset", vec!["-g", "therm"]),
-            ] {
-                let output = std::process::Command::new(command)
-                    .args(args)
-                    .output()
-                    .expect("machine identity witness");
-                writeln!(
-                    record,
-                    "{command}: {}{}",
-                    String::from_utf8_lossy(&output.stdout),
-                    String::from_utf8_lossy(&output.stderr)
-                )
-                .expect("record");
-            }
-            for (name, bytes) in sea.resource_bytes() {
-                writeln!(record, "resource {name}: {bytes} bytes")
-                    .expect("valid Metal qualification fixture");
-            }
-            Self {
-                device,
-                queue,
-                sea,
+    pub(super) fn new(portable: bool) -> Option<Self> {
+        let thread = std::thread::current();
+        let gpu = thrum_test_support::gpu(
+            thread.name().unwrap_or("sea harness"),
+            Some(wgpu::Backend::Metal),
+        )?;
+        let adapter = &gpu.adapter;
+        assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
+        let features = wgpu::Features::TIMESTAMP_QUERY;
+        assert!(
+            adapter.features().contains(features),
+            "Metal pass timings required"
+        );
+        let profile = if portable {
+            thrum_test_support::Profile::Portable
+        } else {
+            thrum_test_support::Profile::Native
+        };
+        let (device, queue) = gpu.device(
+            profile,
+            &thrum_test_support::Restriction {
+                features: Some(features),
+                ..Default::default()
+            },
+        );
+        let site = DeviceSite::untracked(device.clone());
+        let sea =
+            Ambient::new(&site, Profile::default()).expect("valid Metal qualification fixture");
+        sea.graph()
+            .validate()
+            .expect("valid Metal qualification fixture");
+        check_graph(&sea.graph());
+        let mut record = format!(
+            "adapter={:?}\nportable={portable}\nlimits={:?}\n",
+            adapter.get_info(),
+            device.limits()
+        );
+        for (command, args) in [
+            ("git", vec!["rev-parse", "HEAD"]),
+            ("uptime", vec![]),
+            ("sysctl", vec!["-n", "hw.model", "hw.memsize", "hw.ncpu"]),
+            ("pmset", vec!["-g", "therm"]),
+        ] {
+            let output = std::process::Command::new(command)
+                .args(args)
+                .output()
+                .expect("machine identity witness");
+            writeln!(
                 record,
-            }
+                "{command}: {}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .expect("record");
+        }
+        for (name, bytes) in sea.resource_bytes() {
+            writeln!(record, "resource {name}: {bytes} bytes")
+                .expect("valid Metal qualification fixture");
+        }
+        Some(Self {
+            device,
+            queue,
+            sea,
+            record,
         })
     }
     pub(super) fn frame(
@@ -444,7 +439,9 @@ pub(super) fn check_moments(out: &Output) {
 }
 pub(super) fn ambient(portable: bool, name: &str) {
     frame_script(portable);
-    let mut h = Harness::new(portable);
+    let Some(mut h) = Harness::new(portable) else {
+        return;
+    };
     let s = spectrum(20.0);
     let p = points();
     for time in [19.0 + 0.375 / 60.0, 86400.0 + 0.375 / 60.0] {
@@ -498,7 +495,9 @@ fn naive_seconds_ablation(h: &mut Harness, s: &Spectrum, time: f64) {
 
 fn frame_script(portable: bool) {
     // Also keeps this target's full-grid/moment conformance under the same device limits.
-    let mut h = Harness::new(portable);
+    let Some(mut h) = Harness::new(portable) else {
+        return;
+    };
     let s = spectrum(20.0);
     let p: Vec<_> = points().into_iter().take(16).collect();
     // (tick, alpha, capture, discard, timeline): the source identity cannot affect stateless fields.
@@ -556,7 +555,9 @@ fn frame_script(portable: bool) {
     // A genuinely new Metal device and all generation-owned pipelines/resources.
     h.device.destroy();
     drop(h);
-    let mut h = Harness::new(portable);
+    let Some(mut h) = Harness::new(portable) else {
+        return;
+    };
     let out = h
         .frame(&s, 86400.003, &p, true)
         .expect("valid frame script");

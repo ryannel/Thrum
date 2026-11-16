@@ -9,6 +9,9 @@ description = "G5 shipping-shaped viewer: maps cooked products from a live store
 [lints]
 workspace = true
 
+[features]
+test-support = []
+
 [dependencies]
 bytemuck = "=1.25.2"
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }

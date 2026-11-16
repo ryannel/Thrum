@@ -7,6 +7,9 @@ export PATH="$(dirname -- "$thrum_rustc"):$PATH"
 # Keep machine-wide Cargo wrappers opt-in for this reproducible launcher.
 # An explicitly supplied RUSTC_WRAPPER still takes precedence.
 export RUSTC_WRAPPER="${RUSTC_WRAPPER-}"
+if [[ "${1:-}" == check && "$(uname -s)" == Darwin ]]; then
+  export THRUM_REQUIRE_GPU=1
+fi
 # A creator's new scene package is not in the committed lockfile yet, and the xtask runner below
 # needs a current lockfile. Resolve the scene from Cargo's metadata first, then add it offline
 # (no registry changes) only if it resolves.

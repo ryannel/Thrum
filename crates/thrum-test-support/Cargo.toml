@@ -1,0 +1,17 @@
+[package]
+name = "thrum-test-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Visible GPU test admission and profile-restricted test devices"
+
+[lints]
+workspace = true
+
+[dependencies]
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl", "metal", "vulkan", "dx12"] }
+pollster = "=1.0.1"
+
+[features]
+render = []

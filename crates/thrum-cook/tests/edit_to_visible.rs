@@ -57,6 +57,12 @@ fn save(name: &str, extent: [u32; 2], pixels: &[u8]) {
 
 #[test]
 fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products",
+        None,
+    ) else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!(
         "thrum-g5-visible-{}-{}",
         std::process::id(),
@@ -78,11 +84,26 @@ fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products(
     .expect("open cooker");
     assert!(cooker.cook_all().expect("cook").published.is_some());
 
-    let mut viewer = Viewer::new(ViewerConfig {
-        extent: [320, 180],
-        ..ViewerConfig::demo(root.join("store"))
-    })
-    .expect("GPU device");
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(
+                wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
+            ),
+            ..Default::default()
+        },
+    );
+    let mut viewer = Viewer::with_test_device(
+        ViewerConfig {
+            extent: [320, 180],
+            ..ViewerConfig::demo(root.join("store"))
+        },
+        &gpu.adapter,
+        device,
+        queue,
+    );
     run_until(&mut viewer, 1);
     let before = viewer.capture(0.0);
     save("g5-before.png", viewer.extent(), &before);

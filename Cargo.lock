@@ -1048,6 +1048,7 @@ dependencies = [
  "log",
  "presser",
  "thiserror 2.0.21",
+ "windows",
 ]
 
 [[package]]
@@ -2418,6 +2419,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "range-alloc"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca45419789ae5a7899559e9512e58ca889e41f04f1f2445e9f4b290ceccd1d08"
+
+[[package]]
 name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3110,6 +3117,7 @@ dependencies = [
  "serde_json",
  "thrum-asset",
  "thrum-render",
+ "thrum-test-support",
  "web-time",
  "wgpu",
 ]
@@ -3147,6 +3155,8 @@ dependencies = [
  "notify",
  "rayon",
  "thrum-asset",
+ "thrum-test-support",
+ "wgpu",
 ]
 
 [[package]]
@@ -3214,6 +3224,7 @@ dependencies = [
  "pollster",
  "thrum-render",
  "thrum-sea-model",
+ "thrum-test-support",
  "wgpu",
 ]
 
@@ -3240,6 +3251,14 @@ name = "thrum-stones"
 version = "0.1.0"
 dependencies = [
  "thrum-app",
+]
+
+[[package]]
+name = "thrum-test-support"
+version = "0.1.0"
+dependencies = [
+ "pollster",
+ "wgpu",
 ]
 
 [[package]]
@@ -3816,6 +3835,7 @@ dependencies = [
  "android_system_properties",
  "arrayvec",
  "ash",
+ "bit-set",
  "bitflags 2.13.2",
  "block2 0.6.2",
  "bytemuck",
@@ -3834,11 +3854,13 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "objc2-metal 0.3.2",
  "objc2-quartz-core 0.3.2",
+ "once_cell",
  "ordered-float",
  "parking_lot",
  "portable-atomic",
  "portable-atomic-util",
  "profiling",
+ "range-alloc",
  "raw-window-handle",
  "raw-window-metal",
  "renderdoc-sys",
@@ -3848,6 +3870,7 @@ dependencies = [
  "wgpu-naga-bridge",
  "wgpu-types",
  "windows",
+ "windows-core 0.62.2",
 ]
 
 [[package]]

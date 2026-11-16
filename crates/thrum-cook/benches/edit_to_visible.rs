@@ -86,6 +86,9 @@ const RULES: &[Rule] = &[
 ];
 
 fn main() {
+    let Some(gpu) = thrum_test_support::gpu("edit_to_visible bench", None) else {
+        return;
+    };
     let root = std::env::temp_dir().join(format!("thrum-g5-bench-{}", std::process::id()));
     std::fs::create_dir_all(&root).expect("bench root");
     let mut report = String::new();
@@ -106,7 +109,7 @@ fn main() {
             &mut metrics,
         );
     }
-    edit_loop(&root.join("loop"), &mut report, &mut metrics);
+    edit_loop(&root.join("loop"), &mut report, &mut metrics, &gpu);
     make_writable(&root);
     std::fs::remove_dir_all(&root).ok();
     // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
@@ -181,7 +184,12 @@ struct Publication {
     cook: Duration,
 }
 
-fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) {
+fn edit_loop(
+    root: &Path,
+    report: &mut String,
+    metrics: &mut Metrics,
+    gpu: &thrum_test_support::Gpu,
+) {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
     std::fs::create_dir_all(source.join("textures")).expect("dir");
@@ -225,7 +233,23 @@ fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) {
     }
 
     let start = Instant::now();
-    let mut viewer = Viewer::new(ViewerConfig::demo(root.join("store"))).expect("GPU device");
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction {
+            features: Some(
+                wgpu::Features::TEXTURE_COMPRESSION_BC
+                    | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D
+                    | wgpu::Features::TEXTURE_COMPRESSION_ASTC,
+            ),
+            ..Default::default()
+        },
+    );
+    let mut viewer = Viewer::with_test_device(
+        ViewerConfig::demo(root.join("store")),
+        &gpu.adapter,
+        device,
+        queue,
+    );
     let device_ready = start.elapsed();
     let mut first_resident = None;
     while first_resident.is_none() {

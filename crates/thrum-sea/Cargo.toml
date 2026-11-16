@@ -25,5 +25,6 @@ thrum-render = { path = "../thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [dev-dependencies]
+thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 pollster = "=1.0.1"
 

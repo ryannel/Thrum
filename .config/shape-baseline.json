@@ -10,7 +10,6 @@
         "crates/thrum-app/src/sky/tests.rs": 2,
         "crates/thrum-app/src/web.rs": 1,
         "crates/thrum-app/src/web/recovery.rs": 2,
-        "crates/thrum-asset-gpu/src/draw/tests.rs": 2,
         "crates/thrum-render/benches/camera_culling.rs": 2,
         "crates/thrum-render/benches/camera_culling_encode.rs": 2,
         "crates/thrum-render/benches/clustered.rs": 2,
@@ -63,8 +62,6 @@
         "crates/thrum-render/tests/upload_gpu.rs": 8,
         "crates/thrum-render/tests/visibility.rs": 4,
         "crates/thrum-render/tests/visibility_buckets.rs": 2,
-        "crates/thrum-sea/tests/portable_limits_gpu.rs": 2,
-        "crates/thrum-sea/tests/support.rs": 2,
         "examples/asset-loop/src/lib.rs": 2,
         "examples/v1-game-ios/src/device.rs": 2,
         "examples/v1-game/benches/cooked_edit.rs": 2,
@@ -246,6 +243,11 @@
         "examples/v1-game/src/host/world_thread.rs": 1,
         "examples/v1-game/src/scene.rs": 1,
         "examples/v1-game/src/window.rs": 2
+      }
+    },
+    "test-crate-edges": {
+      "version": 1,
+      "files": {
       }
     },
     "whole-file-gpu-gate": {

@@ -1,0 +1,113 @@
+//! GPU admission for tests. This package is a dev-dependency only.
+use std::io::Write as _;
+
+/// Gate result, containing only wgpu types so renderer unit tests can use it.
+pub struct Gpu {
+    /// Instance owning the selected backend.
+    pub instance: wgpu::Instance,
+    /// Admitted adapter.
+    pub adapter: wgpu::Adapter,
+}
+
+fn absent(test: &str, reason: &str) -> Option<Gpu> {
+    let message = format!("thrum-gpu-skip: {test}: {reason}");
+    assert!(
+        std::env::var_os("THRUM_REQUIRE_GPU").as_deref() != Some(std::ffi::OsStr::new("1")),
+        "{message}"
+    );
+    writeln!(std::io::stderr().lock(), "{message}").expect("write visible GPU skip reason");
+    None
+}
+
+/// Admit a GPU, optionally requiring a particular backend. None means a reported skip.
+///
+/// # Panics
+/// Fails with the skip reason when `THRUM_REQUIRE_GPU=1` and no adapter is available.
+pub fn gpu(test: &str, backend: Option<wgpu::Backend>) -> Option<Gpu> {
+    admit(
+        test,
+        backend.map_or(wgpu::Backends::all(), wgpu::Backends::from),
+    )
+}
+
+fn admit(test: &str, backends: wgpu::Backends) -> Option<Gpu> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) {
+        Ok(adapter) => Some(Gpu { instance, adapter }),
+        Err(error) => absent(test, &format!("{backends:?} adapter unavailable: {error}")),
+    }
+}
+
+/// Test-device profile, to be supplied by HOST's recipe in M2.
+#[cfg(feature = "render")]
+#[derive(Clone, Copy)]
+pub enum Profile {
+    /// WebGPU default limits.
+    Portable,
+    /// Adapter limits.
+    Native,
+}
+
+/// A restriction can only remove capabilities from the selected profile.
+#[cfg(feature = "render")]
+#[derive(Default)]
+pub struct Restriction {
+    /// Cap storage buffers per shader stage.
+    pub storage_buffers: Option<u32>,
+    /// Remove all features outside this mask.
+    pub features: Option<wgpu::Features>,
+}
+
+#[cfg(feature = "render")]
+impl Restriction {
+    fn apply(
+        &self,
+        mut limits: wgpu::Limits,
+        features: wgpu::Features,
+    ) -> (wgpu::Limits, wgpu::Features) {
+        if let Some(cap) = self.storage_buffers {
+            limits.max_storage_buffers_per_shader_stage =
+                limits.max_storage_buffers_per_shader_stage.min(cap);
+        }
+        (
+            limits,
+            self.features.map_or(features, |mask| features & mask),
+        )
+    }
+}
+
+#[cfg(feature = "render")]
+impl Gpu {
+    /// M1 stand-in for HOST's device recipe. Restrictions never add capabilities.
+    /// # Panics
+    /// Fails if the admitted adapter cannot create the requested device.
+    pub fn device(
+        &self,
+        profile: Profile,
+        restriction: &Restriction,
+    ) -> (wgpu::Device, wgpu::Queue) {
+        let limits = match profile {
+            Profile::Portable => wgpu::Limits::default(),
+            Profile::Native => self.adapter.limits(),
+        };
+        let features = self.adapter.features()
+            & (wgpu::Features::TIMESTAMP_QUERY
+                | wgpu::Features::MAPPABLE_PRIMARY_BUFFERS
+                | wgpu::Features::TEXTURE_COMPRESSION_ASTC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC
+                | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D);
+        let (limits, features) = restriction.apply(limits, features);
+        pollster::block_on(self.adapter.request_device(&wgpu::DeviceDescriptor {
+            required_limits: limits,
+            required_features: features,
+            ..Default::default()
+        }))
+        .expect("admitted GPU test device")
+    }
+}
+
+#[cfg(test)]
+mod tests;

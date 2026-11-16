@@ -3,6 +3,12 @@
 [boundaries]
 external_game = "v1-game"
 game_manifest = "examples/v1-game/Cargo.toml"
+proving_ground = "v1-game"
+
+[packages.thrum-test-support]
+manifest = "crates/thrum-test-support/Cargo.toml"
+test_role = "support"
+allowed_workspace_dependencies = []
 
 [packages.thrum-core]
 manifest = "crates/thrum-core/Cargo.toml"
@@ -33,7 +39,7 @@ allowed_workspace_dependencies = []
 
 [packages.thrum-sea]
 manifest = "crates/thrum-sea/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-sea-model", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-sea-model", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-water-model]
 manifest = "crates/thrum-water-model/Cargo.toml"
@@ -78,13 +84,13 @@ allowed_workspace_dependencies = []
 [packages.thrum-asset-gpu]
 manifest = "crates/thrum-asset-gpu/Cargo.toml"
 # Shipping GPU residency for cooked products, drawn through thrum-render's scene-contribution seam.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-cook]
 manifest = "crates/thrum-cook/Cargo.toml"
 # Authoring-only G5 cooker; no shipping package may depend on it.
 # Its only other edge is a dev-dependency on the asset-loop viewer for the edit-to-visible harness.
-allowed_workspace_dependencies = ["thrum-asset", "asset-loop"]
+allowed_workspace_dependencies = ["thrum-asset", "asset-loop", "thrum-test-support"]
 
 [packages.asset-loop]
 manifest = "examples/asset-loop/Cargo.toml"

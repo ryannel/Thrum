@@ -98,6 +98,30 @@ class Fixture(unittest.TestCase):
         self.write("crates/engine/build.rs", bad)
         self.assertEqual(self.sites("library-env"), [])
 
+    def test_test_crate_edges(self):
+        self.write(".config/architecture.toml", '''
+[boundaries]
+proving_ground="ground"
+[packages.support]
+manifest="crates/support/Cargo.toml"
+test_role="support"
+[packages.fixtures]
+manifest="crates/fixtures/Cargo.toml"
+test_role="fixtures"
+''')
+        for consumer in ("engine", "ground", "game"):
+            for kind in ("dependencies", "dev-dependencies", "build-dependencies"):
+                for name in ("support", "fixtures"):
+                    for inherited in (False, True):
+                        for target in (False, True):
+                            with self.subTest(consumer=consumer, kind=kind, name=name, inherited=inherited, target=target):
+                                self.write("Cargo.toml", f'[workspace.dependencies]\nrenamed={{package="{name}",path="crates/{name}"}}\n')
+                                table = f"target.'cfg(unix)'.{kind}" if target else kind
+                                dep = '{workspace=true}' if inherited else f'{{package="{name}",path="../{name}"}}'
+                                self.write("crates/engine/Cargo.toml", f'[package]\nname="{consumer}"\n[{table}]\nrenamed={dep}\n')
+                                allowed = kind == "dev-dependencies" or (name == "fixtures" and kind == "dependencies" and consumer == "ground")
+                                self.assertEqual(bool(self.sites("test-crate-edges")), not allowed)
+
     def test_device_request(self):
         for call in ("request_adapter", "request_device"):
             self.pair("device-request", f'fn device() {{ instance . {call}(&options); }}',

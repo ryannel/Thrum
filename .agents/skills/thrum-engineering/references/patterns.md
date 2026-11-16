@@ -139,18 +139,18 @@ Rules: `path-attribute` refuses `#[path]` (use normal modules); `whole-file-gpu-
 - Production code carries no test-only functions, fields or branches. To inject a fault, pass a trait whose
   production implementation is zero-cost.
 
-**GPU tests.** No gate has been adopted yet, and four coexist (H12):
-- a whole-file `#![cfg(target_os = "macos")]`;
-- per-test `#[cfg]`;
-- ungated tests that panic with no adapter;
-- tests that silently return early.
+**GPU tests.** Ask `thrum_test_support::gpu(test_name, backend)` for admission. Return on `None`:
+the gate writes a visible reason to stderr, and fails instead under `THRUM_REQUIRE_GPU=1`.
+Use only a dev-dependency on this package. `test-crate-edges` enforces that boundary, and permits
+normal dependencies on a registered fixtures package only from the registered proving ground.
 
 The whole-file gate is the harmful one: in `tests/graph_kinds.rs` it hides 13 CPU-only tests from Linux and
 Windows. Gate only the tests that need a GPU, and say in the test what it needs.
 
-**Test devices.** About 130 adapter requests are copied across test files (M09), and there is no shared helper.
-The closest is `device()` in `crates/thrum-render/tests/graph_kinds_support/support.rs`. When a crate's tests need a
-device, put one helper in that crate's `tests/support` and use it from every GPU test you touch.
+**Test devices.** Enable the support package's `render` feature and use the admitted GPU's `device`
+with a portable or native profile and optional restrictions. Restrictions remove features or lower limits.
+TEST-SUPPORT M1 adopts this in the sea and asset GPU tests; its stand-in recipe is replaced by HOST in M2.
+Older local device helpers elsewhere await that migration.
 
 **Older shapes not to copy:**
 - Support shared by `#[path = "..."]` includes, which rely on implicit `super::` names.
