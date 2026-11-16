@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -21,8 +21,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -32,8 +32,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -42,8 +42,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -53,18 +53,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.5",
           "statement": "A solve stops when the level's rate and the imbalance of discharge between sections are under the profile's tolerances, and reports its steps, cell updates, seconds and residual. One that does not get there inside its step budget is refused by name and writes nothing. It works on wet cells and their neighbours: doubling the rectangle round the same valley changes its cell updates by under 5%. Two solves of one input give the same bytes, on one thread and on eight.",
           "check": "cargo test --locked --offline -p thrum-river-model --test report",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.6",
@@ -74,8 +74,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -84,8 +84,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -95,8 +95,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/river-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -106,8 +106,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -116,8 +116,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/PROVENANCE.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -126,8 +126,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "accepts_solve_after_step_budget",
+          "item": "M1.5",
+          "repeat": false
         }
       ]
     },
