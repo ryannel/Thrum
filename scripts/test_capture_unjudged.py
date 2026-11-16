@@ -127,6 +127,8 @@ class MatrixExit(unittest.TestCase):
                             patch.object(verifier, 'archive_completed_runs'):
                         code = run_matrix(owner.__name__, binary, root, root / 'output', root)
                     self.assertEqual(code, 0 if outcome == 'complete' else 75 if outcome == 'incomplete' else 1)
+                    if outcome in ('bytes', 'identity'):
+                        self.assertFalse(options, 'a prior comparison failure must stop before incomplete motion')
                     for selected in options:
                         self.assertEqual(selected.get('admission'), 'wait' if selected['mode'] == 'realtime' else None)
                     report = json.loads((root / 'output/manifest.json').read_text())
@@ -154,6 +156,22 @@ class MatrixExit(unittest.TestCase):
 
 
 class VerifierExit(unittest.TestCase):
+    def test_latest_unjudged_and_latest_failure_keep_their_captures(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name, fields in [('verify-1', {'error': 'old failure'}),
+                                 ('verify-2', {'error': 'latest failure'}),
+                                 ('verify-3', {'error': 'ring', 'could_not_judge': True}),
+                                 ('verify-4', {'passed': True})]:
+                directory = root / verifier.SCRATCH / name
+                (directory / 'capture').mkdir(parents=True)
+                (directory / 'record.json').write_text(json.dumps(dict(seconds=1, **fields)))
+            verifier.prune_scratch(root)
+            self.assertTrue((root / verifier.SCRATCH / 'verify-2/capture').exists())
+            self.assertTrue((root / verifier.SCRATCH / 'verify-3/capture').exists())
+            self.assertFalse((root / verifier.SCRATCH / 'verify-1/capture').exists())
+            self.assertFalse((root / verifier.SCRATCH / 'verify-4/capture').exists())
+
     def test_full_verifier_exit_and_record(self):
         for outcome in ['incomplete', 'bytes', 'identity', 'crash', 'missing', 'timeout', 'unexpected75']:
             with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as temporary:
