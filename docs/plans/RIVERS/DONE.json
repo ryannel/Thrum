@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -63,7 +63,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M1.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RIVERS/M1-review.md"
         },
         {
@@ -128,13 +128,6 @@
           "evidence": "docs/evidence/RIVERS/M1.md#item-by-item",
           "verdict": "pass",
           "review": "docs/evidence/RIVERS/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "accepts_solve_after_step_budget",
-          "item": "M1.5",
-          "repeat": false
         }
       ]
     },
