@@ -4,6 +4,12 @@
 //! state does not move with the step), and each cell's own pseudo-time step. Every step works
 //! on the active spans only: wet cells, the cells beside them and the cells water rises in.
 //! Each step reads the old state only, so the result is the same for any thread count.
+//!
+//! At a brink the water above leaves freely, as at a free overfall: the face passes the flow at
+//! its critical depth where the flow above is slow, and as it arrives where it is fast, and the
+//! cell below sees a wall. What leaves enters again where its path lands, with its horizontal
+//! momentum, one step later.
+use crate::brink::{Brink, Side};
 use crate::{Grid, Manning, RiverError};
 use rayon::prelude::*;
 use std::sync::Arc;
@@ -68,6 +74,18 @@ pub struct StepStats {
 /// and the tangential momentum carried by the mass.
 type Flux = [f64; 4];
 
+/// A face that is no brink.
+const OPEN: u32 = u32::MAX;
+
+/// Where the water leaving one brink face enters the solve again.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Landing {
+    /// The cell, or none where it leaves the solve into a body.
+    pub(crate) cell: Option<usize>,
+    /// Its horizontal velocity as it lands, m/s.
+    pub(crate) velocity: [f64; 2],
+}
+
 /// One row's depth, discharges and level rates.
 type RowSlices<'a> = (
     ((&'a mut [f64], &'a mut [f64]), &'a mut [f64]),
@@ -87,6 +105,17 @@ pub struct Stepper {
     seed: Vec<bool>,
     spans: Option<Vec<[usize; 2]>>,
     used: Vec<[usize; 2]>,
+    /// Each face's brink, by its index in `brinks`, or `OPEN`.
+    x_kind: Vec<u32>,
+    z_kind: Vec<u32>,
+    brinks: Vec<Brink>,
+    /// What the cell below each brink sees at this step: none where the lip is dry and the face
+    /// is an ordinary one, else the rock's wall.
+    lower: Vec<Option<Flux>>,
+    landings: Vec<Landing>,
+    landed: Vec<usize>,
+    inject: Vec<f64>,
+    push: Vec<[f64; 2]>,
     xf: Vec<Flux>,
     zf: Vec<Flux>,
     speed: Vec<f64>,
@@ -137,6 +166,14 @@ impl Stepper {
             seed: vec![false; n],
             spans: None,
             used: Vec::new(),
+            x_kind: vec![OPEN; (nx + 1) * nz],
+            z_kind: vec![OPEN; nx * (nz + 1)],
+            lower: Vec::new(),
+            brinks: Vec::new(),
+            landings: Vec::new(),
+            landed: Vec::new(),
+            inject: vec![0.0; n],
+            push: vec![[0.0; 2]; n],
             xf: vec![[0.0; 4]; (nx + 1) * nz],
             zf: vec![[0.0; 4]; nx * (nz + 1)],
             speed: vec![0.0; n],
@@ -150,6 +187,86 @@ impl Stepper {
         self.source[cell] += discharge / (self.dx * self.dx);
         self.seed[cell] = true;
         self.spans = None;
+    }
+
+    /// Water leaves freely over these brinks where their lips are wet; until a landing is set it
+    /// leaves the solve. A brink whose lip is dry is an ordinary face.
+    /// # Panics
+    /// If there are more brinks than a `u32` counts.
+    pub(crate) fn set_brinks(&mut self, brinks: &[Brink]) {
+        for (k, b) in brinks.iter().enumerate() {
+            let (face, along_x) = self.brink_face(b);
+            let k = u32::try_from(k).expect("brinks fit u32");
+            if along_x {
+                self.x_kind[face] = k;
+            } else {
+                self.z_kind[face] = k;
+            }
+        }
+        self.brinks = brinks.to_vec();
+        self.lower = vec![None; brinks.len()];
+        self.landings = vec![
+            Landing {
+                cell: None,
+                velocity: [0.0; 2],
+            };
+            brinks.len()
+        ];
+    }
+
+    /// The face index of a brink, and whether it is an x-face.
+    fn brink_face(&self, b: &Brink) -> (usize, bool) {
+        let (x, z) = (b.cell % self.nx, b.cell / self.nx);
+        match b.side {
+            Side::PlusX => (z * (self.nx + 1) + x + 1, true),
+            Side::MinusX => (z * (self.nx + 1) + x, true),
+            Side::PlusZ => ((z + 1) * self.nx + x, false),
+            Side::MinusZ => (z * self.nx + x, false),
+        }
+    }
+
+    /// Where the water leaving each brink, in the order set, enters the solve again.
+    pub(crate) fn set_landings(&mut self, landings: &[Landing]) {
+        for l in landings {
+            if let Some(c) = l.cell
+                && !self.seed[c]
+            {
+                self.seed[c] = true;
+                self.spans = None;
+            }
+        }
+        self.landings = landings.to_vec();
+    }
+
+    /// Discharge leaving over a brink at the last step, for each metre of its face, m²/s.
+    pub(crate) fn brink_discharge(&self, b: &Brink) -> f64 {
+        let (face, x) = self.brink_face(b);
+        let m = if x {
+            self.xf[face][0]
+        } else {
+            self.zf[face][0]
+        };
+        if b.side.upper_first() { m } else { -m }
+    }
+
+    /// The landings' depth and momentum rates from the last step's brink discharges.
+    fn land(&mut self) {
+        for c in self.landed.drain(..) {
+            self.inject[c] = 0.0;
+            self.push[c] = [0.0; 2];
+        }
+        let area = self.dx * self.dx;
+        for k in 0..self.brinks.len() {
+            let Some(c) = self.landings[k].cell else {
+                continue;
+            };
+            let q = self.brink_discharge(&self.brinks[k]).max(0.0) * self.dx / area;
+            let v = self.landings[k].velocity;
+            self.inject[c] += q;
+            self.push[c][0] += q * v[0];
+            self.push[c][1] += q * v[1];
+            self.landed.push(c);
+        }
     }
 
     pub(crate) fn hold(&mut self, cell: usize, fixed: Fixed) {
@@ -250,6 +367,10 @@ impl Stepper {
 
     /// One pseudo-time step of every active cell, each at its own step.
     pub fn step(&mut self, state: &mut State) -> StepStats {
+        if !self.brinks.is_empty() {
+            self.land();
+            self.lowers(state);
+        }
         let spans = match self.spans.take() {
             Some(s) => s,
             None => self.full_spans(state),
@@ -422,7 +543,11 @@ impl Stepper {
             let i = if x == 0 { row } else { row + nx - 1 };
             return self.wall(st, i, true, x == 0);
         }
-        self.face_between(st, row + x - 1, row + x, true)
+        let (a, b) = (row + x - 1, row + x);
+        match self.x_kind[z * (nx + 1) + x] {
+            OPEN => self.face_between(st, a, b, true),
+            k => self.brink_flux(st, k, a, b, true),
+        }
     }
 
     fn face_z(&self, st: &State, x: usize, z: usize) -> Flux {
@@ -431,7 +556,11 @@ impl Stepper {
             let i = if z == 0 { x } else { (self.nz - 1) * nx + x };
             return self.wall(st, i, false, z == 0);
         }
-        self.face_between(st, (z - 1) * nx + x, z * nx + x, false)
+        let (a, b) = ((z - 1) * nx + x, z * nx + x);
+        match self.z_kind[z * nx + x] {
+            OPEN => self.face_between(st, a, b, false),
+            k => self.brink_flux(st, k, a, b, false),
+        }
     }
 
     fn wall(&self, st: &State, i: usize, x_normal: bool, ghost_left: bool) -> Flux {
@@ -439,13 +568,84 @@ impl Stepper {
             return [0.0; 4];
         }
         let (h, u, _) = self.side(st, i, i, x_normal);
-        let z = self.bed[i];
-        if ghost_left {
-            let (_, _, r) = face(h, -u, z, h, u, z);
-            [0.0, 0.0, r, 0.0]
+        reflect(h, u, self.bed[i], ghost_left)
+    }
+
+    /// A brink face between cells `a` and `b`: an ordinary face where the lip is dry, else the
+    /// overfall as the lip sees it.
+    fn brink_flux(&self, st: &State, k: u32, a: usize, b: usize, x_normal: bool) -> Flux {
+        let first = self.brinks[k as usize].side.upper_first();
+        let lip = if first { a } else { b };
+        if self.lip_dry(st, lip) {
+            self.face_between(st, a, b, x_normal)
         } else {
-            let (_, l, _) = face(h, u, z, h, -u, z);
-            [0.0, l, 0.0, 0.0]
+            self.overfall(st, lip, x_normal, first)
+        }
+    }
+
+    fn lip_dry(&self, st: &State, lip: usize) -> bool {
+        self.fixed[lip].is_some() || st.depth[lip] <= DRY
+    }
+
+    /// What the cell below each brink sees this step: the rock's wall, as an ordinary face with
+    /// the lip dry would give it, but passing no water; none where the lip is dry.
+    fn lowers(&mut self, st: &State) {
+        let mut lower = std::mem::take(&mut self.lower);
+        for (out, b) in lower.iter_mut().zip(&self.brinks) {
+            let lip = b.cell;
+            *out = if self.lip_dry(st, lip) {
+                None
+            } else {
+                let i = match b.side {
+                    Side::PlusX => lip + 1,
+                    Side::MinusX => lip - 1,
+                    Side::PlusZ => lip + self.nx,
+                    Side::MinusZ => lip - self.nx,
+                };
+                let h = st.depth[i];
+                let x_normal = b.side.along_x();
+                let q = if x_normal { st.qx[i] } else { st.qz[i] };
+                let u = Self::velocity(h, q);
+                let (zl, zi) = (self.bed[lip], self.bed[i]);
+                Some(if h <= DRY {
+                    [0.0; 4]
+                } else if b.side.upper_first() {
+                    let (_, _, r) = face(0.0, 0.0, zl, h, u, zi);
+                    [0.0, 0.0, r, 0.0]
+                } else {
+                    let (_, l, _) = face(h, u, zi, 0.0, 0.0, zl);
+                    [0.0, l, 0.0, 0.0]
+                })
+            };
+        }
+        self.lower = lower;
+    }
+
+    /// The flux through a brink face, as the lip's cell sees it: the water leaves freely, at
+    /// its critical depth where the flow normal to the face is slow, and as it arrives where it
+    /// is fast. `lip_first` says the lip is the face's low-index cell.
+    fn overfall(&self, st: &State, lip: usize, x_normal: bool, lip_first: bool) -> Flux {
+        let h = st.depth[lip];
+        if self.fixed[lip].is_some() || h <= DRY {
+            return [0.0; 4];
+        }
+        let (qn, qt) = if x_normal {
+            (st.qx[lip], st.qz[lip])
+        } else {
+            (st.qz[lip], st.qx[lip])
+        };
+        let sign = if lip_first { 1.0 } else { -1.0 };
+        // In the frame where the water leaves toward +.
+        let u = sign * Self::velocity(h, qn);
+        let v = Self::velocity(h, qt);
+        let (hb, ub) = overfall_state(h, u);
+        let z = self.bed[lip];
+        let (m, l, _) = face(h, u, z, hb, ub, z);
+        // The normal momentum flux is even under the reflection, mass and tangential odd.
+        if lip_first {
+            [m, l, 0.0, m * v]
+        } else {
+            [-m, 0.0, l, -m * v]
         }
     }
 
@@ -482,11 +682,31 @@ impl Stepper {
                 rate[x] = 0.0;
                 continue;
             }
-            let w = self.xf[z * (nx + 1) + x];
-            let e = self.xf[z * (nx + 1) + x + 1];
-            let s = self.zf[z * nx + x];
-            let n = self.zf[(z + 1) * nx + x];
-            let r = self.source[i] - (e[0] - w[0] + n[0] - s[0]) / dx;
+            let mut w = self.xf[z * (nx + 1) + x];
+            let mut e = self.xf[z * (nx + 1) + x + 1];
+            let mut s = self.zf[z * nx + x];
+            let mut n = self.zf[(z + 1) * nx + x];
+            // Below a wet lip the cell sees the rock: the water above leaves over the lip.
+            if !self.brinks.is_empty() {
+                let lower = |k: u32, lip_first: bool| {
+                    (k != OPEN && self.brinks[k as usize].side.upper_first() == lip_first)
+                        .then(|| self.lower[k as usize])
+                        .flatten()
+                };
+                if let Some(f) = lower(self.x_kind[z * (nx + 1) + x], true) {
+                    w = f;
+                }
+                if let Some(f) = lower(self.x_kind[z * (nx + 1) + x + 1], false) {
+                    e = f;
+                }
+                if let Some(f) = lower(self.z_kind[z * nx + x], true) {
+                    s = f;
+                }
+                if let Some(f) = lower(self.z_kind[(z + 1) * nx + x], false) {
+                    n = f;
+                }
+            }
+            let r = self.source[i] + self.inject[i] - (e[0] - w[0] + n[0] - s[0]) / dx;
             rate[x] = r;
             if h[x] <= DRY && r == 0.0 && w[0] == 0.0 && e[0] == 0.0 && s[0] == 0.0 && n[0] == 0.0 {
                 qx[x] = 0.0;
@@ -513,8 +733,8 @@ impl Stepper {
             }
             let dt = self.courant * dx / (2.0 * sp.max(MIN_SPEED));
             let hn = h[x] + dt * r;
-            let qxs = qx[x] - dt / dx * (e[1] - w[2] + n[3] - s[3]);
-            let qzs = qz[x] - dt / dx * (n[1] - s[2] + e[3] - w[3]);
+            let qxs = qx[x] - dt / dx * (e[1] - w[2] + n[3] - s[3]) + dt * self.push[i][0];
+            let qzs = qz[x] - dt / dx * (n[1] - s[2] + e[3] - w[3]) + dt * self.push[i][1];
             if hn <= DRY {
                 h[x] = hn.max(0.0);
                 qx[x] = 0.0;
@@ -533,6 +753,29 @@ impl Stepper {
         }
         (worst, if lo < hi { [lo, hi] } else { [usize::MAX, 0] })
     }
+}
+
+/// A reflecting wall beside a cell of depth `h`, normal velocity `u` and bed `z`, on its
+/// low-index side (`ghost_first`) or its high-index side.
+fn reflect(h: f64, u: f64, z: f64, ghost_first: bool) -> Flux {
+    if ghost_first {
+        let (_, _, r) = face(h, -u, z, h, u, z);
+        [0.0, 0.0, r, 0.0]
+    } else {
+        let (_, l, _) = face(h, u, z, h, -u, z);
+        [0.0, l, 0.0, 0.0]
+    }
+}
+
+/// The state beyond a free overfall for water of depth `h` leaving at `u`: its critical depth,
+/// carrying the same discharge, where the flow is slow, and the flow itself where it is fast.
+pub(crate) fn overfall_state(h: f64, u: f64) -> (f64, f64) {
+    if u >= (G * h).sqrt() {
+        return (h, u);
+    }
+    let q = (h * u).max(0.0);
+    let hc = (q * q / G).cbrt();
+    (hc, if hc > DRY { q / hc } else { 0.0 })
 }
 
 /// HLL flux of mass and momentum between two reconstructed states.

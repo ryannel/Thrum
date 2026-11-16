@@ -3,5 +3,6 @@
     dead_code,
     reason = "shared fixtures are used by different integration test targets"
 )]
+pub(crate) mod fall;
 pub(crate) mod section;
 pub(crate) mod valley;

@@ -278,7 +278,7 @@ impl Surf {
                         + map.bodies[body].stage.value
                 },
             );
-            for end in &chart.ends {
+            for end in chart.ends.iter().filter(|e| !e.is_brink()) {
                 let other_row = map.row(end.body, point);
                 let w = map.join_weight(end, point, own_level, other_row.level);
                 if w <= 0.0 {

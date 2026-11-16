@@ -1,10 +1,10 @@
 //! The river file's key and writer. The reader is `thrum_water_model::RiverFile::read`, so a
 //! game that ships solved rivers does not link the solver.
 use crate::{Declaration, Grid, Manning, Profile};
-use thrum_water_model::{RIVER_FORMAT, RIVER_MAGIC, RiverFile};
+use thrum_water_model::{Below, EndKind, RIVER_FORMAT, RIVER_MAGIC, RiverFile};
 
 /// The solver's version. Any change that can move a solve's output changes it, and so every key.
-pub const SOLVER_VERSION: u32 = 1;
+pub const SOLVER_VERSION: u32 = 2;
 
 /// The key of a solve's inputs: a hash of the bed inside the rectangle, the declaration, the
 /// solve's profile and the solver's version.
@@ -87,6 +87,9 @@ pub fn key_for_version(grid: &Grid, d: &Declaration, p: &Profile, version: u32) 
         p.join_length,
         p.chop,
         p.depth_limit,
+        p.least_fall,
+        p.steepest_slope,
+        p.path_spacing,
     ] {
         f(&mut h, v);
     }
@@ -141,7 +144,42 @@ pub fn write(file: &RiverFile) -> Vec<u8> {
                 f(&mut out, *v);
             }
             f(&mut out, e.length);
-            out.push(u8::from(e.mouth));
+            out.push(match e.kind {
+                EndKind::Source => 0,
+                EndKind::Mouth => 1,
+                EndKind::Brink => 2,
+            });
+        }
+    }
+    count(&mut out, file.falls.len());
+    for fall in &file.falls {
+        name(&mut out, &fall.name);
+        name(&mut out, &fall.above);
+        count(&mut out, fall.segments.len());
+        for s in &fall.segments {
+            out.extend_from_slice(&s.id.to_le_bytes());
+            for v in s.lip.iter().flatten() {
+                f(&mut out, *v);
+            }
+            f(&mut out, s.discharge);
+            f(&mut out, s.launch_depth);
+            f(&mut out, s.launch_speed);
+            match &s.below {
+                Below::Body(b) => {
+                    out.push(0);
+                    name(&mut out, b);
+                }
+                Below::Reach(r) => {
+                    out.push(1);
+                    name(&mut out, r);
+                }
+            }
+            count(&mut out, s.path.len());
+            for p in &s.path {
+                for v in [p.place[0], p.place[1], p.height, p.time, p.distance] {
+                    f(&mut out, v);
+                }
+            }
         }
     }
     out

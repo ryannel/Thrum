@@ -40,3 +40,18 @@ path = "tests/store.rs"
 [[test]]
 name = "valley"
 path = "tests/valley.rs"
+[[test]]
+name = "brinks"
+path = "tests/brinks.rs"
+[[test]]
+name = "falls"
+path = "tests/falls.rs"
+[[test]]
+name = "brink_end"
+path = "tests/brink_end.rs"
+[[test]]
+name = "sheet"
+path = "tests/sheet.rs"
+[[test]]
+name = "plunge"
+path = "tests/plunge.rs"

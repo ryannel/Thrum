@@ -1,11 +1,14 @@
 //! A steady solve: the declaration checked against the ground, pools filled to their sills,
 //! the march to the stopping rule, and what the solve writes: depth, current, the energy account
 //! and the narrow stretches.
-use crate::scheme::{DRY, Fixed, G};
+use crate::brink::{Brink, brinks};
+use crate::fall::{Ends, Ground, launch};
+use crate::scheme::{DRY, Fixed, G, Landing};
 use crate::{Declaration, Grid, Profile, RiverError, State, Stepper};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, VecDeque};
 use std::time::Instant;
+use thrum_water_model::{Bed, Below, Fall, FallSegment};
 
 /// Density of water, kg/m³.
 pub(crate) const RHO: f64 = 1000.0;
@@ -74,6 +77,18 @@ pub struct Solution {
     pub report: Report,
     /// Stretches narrower than the profile's least width.
     pub narrows: Vec<Narrow>,
+    /// The bed's brinks, wet or dry.
+    pub brinks: Vec<Brink>,
+    /// The falls: the brinks the water leaves over, with their paths.
+    pub falls: Vec<Fall>,
+    /// The reach each wet cell belongs to. Reaches are cut at the falls.
+    pub reach_of: Vec<Option<usize>>,
+    /// Each reach's name.
+    pub reach_names: Vec<String>,
+    /// Whether each x-face, as `x_flux` is laid out, is a brink.
+    pub(crate) x_brink: Vec<bool>,
+    /// Whether each z-face, as `z_flux` is laid out, is a brink.
+    pub(crate) z_brink: Vec<bool>,
 }
 
 impl Solution {
@@ -130,6 +145,40 @@ pub fn solve(
     validate(grid, declaration, profile)?;
     let setup = setup(grid, declaration)?;
     let mut stepper = Stepper::new(grid, &declaration.manning, profile.courant, profile.threads)?;
+    // The water leaves freely over every brink whose lip is not a body's, except where a body's
+    // water below stands over the lip, at the low end of its range: that brink is drowned.
+    let all_brinks = brinks(grid, profile);
+    let level = |h: Held| match h {
+        Held::Receiver(k) => declaration.receivers[k].level,
+        Held::Source(k) => declaration.sources[k].range[0],
+    };
+    let falling: Vec<Brink> = all_brinks
+        .iter()
+        .filter(|b| {
+            setup.held[b.cell].is_none()
+                && setup.held[b.below(grid)].is_none_or(|h| level(h) < grid.heights()[b.cell])
+        })
+        .copied()
+        .collect();
+    stepper.set_brinks(&falling);
+    let ground = Ground {
+        grid,
+        bed: Bed::new(
+            grid.origin(),
+            grid.spacing(),
+            grid.size(),
+            grid.heights().to_vec(),
+        )
+        .map_err(|e| RiverError::Invalid {
+            name: e.name,
+            reason: e.reason,
+        })?,
+        held: &setup.held,
+        levels: declaration.receivers.iter().map(|r| r.level).collect(),
+        boxes: declaration.receivers.iter().map(|r| r.extent).collect(),
+        profile,
+        name: &declaration.name,
+    };
     for (i, held) in setup.held.iter().enumerate() {
         match held {
             Some(Held::Receiver(r)) => stepper.hold(
@@ -163,6 +212,13 @@ pub fn solve(
         let mut rate = 0.0_f64;
         // The last batch stops at the budget, so no step is ever taken beyond it.
         let batch = profile.check_every.min(profile.step_budget - steps);
+        if !falling.is_empty() {
+            let landings = falling
+                .iter()
+                .map(|b| landing(&ground, &stepper, &state, b))
+                .collect::<Result<Vec<_>, _>>()?;
+            stepper.set_landings(&landings);
+        }
         for _ in 0..batch {
             let s = stepper.step(&mut state);
             steps += 1;
@@ -200,6 +256,29 @@ pub fn solve(
     let wet: Vec<bool> = (0..state.depth.len())
         .map(|i| setup.held[i].is_none() && state.depth[i] > profile.wet_depth)
         .collect();
+    let mut x_brink = vec![false; (nx + 1) * nz];
+    let mut z_brink = vec![false; nx * (nz + 1)];
+    // A brink cuts the river only where water leaves over it.
+    for b in falling.iter().filter(|b| wet[b.cell]) {
+        let (x, z) = (b.cell % nx, b.cell / nx);
+        match b.side {
+            crate::Side::PlusX => x_brink[z * (nx + 1) + x + 1] = true,
+            crate::Side::MinusX => x_brink[z * (nx + 1) + x] = true,
+            crate::Side::PlusZ => z_brink[(z + 1) * nx + x] = true,
+            crate::Side::MinusZ => z_brink[z * nx + x] = true,
+        }
+    }
+    let (reach_of, reach_names) = reaches(grid, &wet, &x_brink, &z_brink, &declaration.name);
+    let falls = falls(
+        &ground,
+        &stepper,
+        &state,
+        &falling,
+        &wet,
+        &reach_of,
+        &reach_names,
+        declaration,
+    )?;
     let mut solution = Solution {
         grid: grid.clone(),
         declaration: declaration.clone(),
@@ -222,6 +301,12 @@ pub fn solve(
         friction: Vec::new(),
         loss: Vec::new(),
         narrows: Vec::new(),
+        brinks: all_brinks,
+        falls,
+        reach_of,
+        reach_names,
+        x_brink,
+        z_brink,
     };
     account(&mut solution, &stepper);
     solution.narrows = narrows(&solution);
@@ -273,6 +358,9 @@ fn validate(grid: &Grid, d: &Declaration, p: &Profile) -> Result<(), RiverError>
         ));
     }
     let positive = [
+        p.least_fall,
+        p.steepest_slope,
+        p.path_spacing,
         p.level_rate,
         p.imbalance,
         p.wet_depth,
@@ -589,11 +677,14 @@ fn account(s: &mut Solution, stepper: &Stepper) {
         let (x, z) = (i % nx, i / nx);
         let hi = head(i);
         // (neighbour, discharge into this cell)
+        // A brink's water leaves the cell above and does not enter the cell below.
         let faces = [
-            (x > 0).then(|| (i - 1, s.x_flux[z * (nx + 1) + x])),
-            (x + 1 < nx).then(|| (i + 1, -s.x_flux[z * (nx + 1) + x + 1])),
-            (z > 0).then(|| (i - nx, s.z_flux[z * nx + x])),
-            (z + 1 < s.grid.size()[1]).then(|| (i + nx, -s.z_flux[(z + 1) * nx + x])),
+            (x > 0 && !s.x_brink[z * (nx + 1) + x]).then(|| (i - 1, s.x_flux[z * (nx + 1) + x])),
+            (x + 1 < nx && !s.x_brink[z * (nx + 1) + x + 1])
+                .then(|| (i + 1, -s.x_flux[z * (nx + 1) + x + 1])),
+            (z > 0 && !s.z_brink[z * nx + x]).then(|| (i - nx, s.z_flux[z * nx + x])),
+            (z + 1 < s.grid.size()[1] && !s.z_brink[(z + 1) * nx + x])
+                .then(|| (i + nx, -s.z_flux[(z + 1) * nx + x])),
         ];
         let mut p = 0.0;
         for (j, q) in faces.into_iter().flatten() {
@@ -693,4 +784,175 @@ fn narrows(s: &Solution) -> Vec<Narrow> {
         });
     }
     out
+}
+
+/// Where the water leaving a brink lands, from the lip's state now.
+fn landing(
+    ground: &Ground<'_>,
+    stepper: &Stepper,
+    state: &State,
+    brink: &Brink,
+) -> Result<Landing, RiverError> {
+    let none = Landing {
+        cell: None,
+        velocity: [0.0; 2],
+    };
+    let i = brink.cell;
+    let q = stepper.brink_discharge(brink);
+    if state.depth[i] <= DRY || q <= 0.0 {
+        return Ok(none);
+    }
+    let l = launch(brink, state.depth[i], [state.qx[i], state.qz[i]], q);
+    let face = brink.face(ground.grid);
+    let start = [
+        f64::midpoint(face[0][0], face[1][0]),
+        f64::midpoint(face[0][1], face[1][1]),
+    ];
+    let path = ground.trace(start, ground.grid.heights()[i], &l)?;
+    Ok(match path.ends {
+        Ends::Body(_) => none,
+        Ends::Ground(cell, velocity) => Landing {
+            cell: Some(cell),
+            velocity,
+        },
+    })
+}
+
+/// The wet cells' reaches: connected through faces that are not brinks, numbered in cell order.
+fn reaches(
+    grid: &Grid,
+    wet: &[bool],
+    x_brink: &[bool],
+    z_brink: &[bool],
+    name: &str,
+) -> (Vec<Option<usize>>, Vec<String>) {
+    let [nx, _] = grid.size();
+    let mut of = vec![None; wet.len()];
+    let mut count = 0;
+    for start in 0..wet.len() {
+        if !wet[start] || of[start].is_some() {
+            continue;
+        }
+        of[start] = Some(count);
+        let mut q = VecDeque::from([start]);
+        while let Some(i) = q.pop_front() {
+            for j in neighbours(grid, i) {
+                let (x, z) = (i % nx, i / nx);
+                let across = if j + 1 == i {
+                    x_brink[z * (nx + 1) + x]
+                } else if j == i + 1 {
+                    x_brink[z * (nx + 1) + x + 1]
+                } else if j + nx == i {
+                    z_brink[z * nx + x]
+                } else {
+                    z_brink[(z + 1) * nx + x]
+                };
+                if wet[j] && of[j].is_none() && !across {
+                    of[j] = Some(count);
+                    q.push_back(j);
+                }
+            }
+        }
+        count += 1;
+    }
+    let names = if count == 1 {
+        vec![name.to_string()]
+    } else {
+        (1..=count).map(|k| format!("{name} reach {k}")).collect()
+    };
+    (of, names)
+}
+
+/// The falls: runs of brinks, beside one another along their lips, that water leaves.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the solve's parts a fall record is assembled from"
+)]
+fn falls(
+    ground: &Ground<'_>,
+    stepper: &Stepper,
+    state: &State,
+    falling: &[Brink],
+    wet: &[bool],
+    reach_of: &[Option<usize>],
+    names: &[String],
+    d: &Declaration,
+) -> Result<Vec<Fall>, RiverError> {
+    let grid = ground.grid;
+    let active: Vec<&Brink> = falling
+        .iter()
+        .filter(|b| wet[b.cell] && stepper.brink_discharge(b) > 0.0)
+        .collect();
+    // Group by lips that are the same cell or beside one another.
+    let mut group = vec![usize::MAX; active.len()];
+    let mut count = 0;
+    for a in 0..active.len() {
+        if group[a] != usize::MAX {
+            continue;
+        }
+        group[a] = count;
+        let mut q = VecDeque::from([a]);
+        while let Some(k) = q.pop_front() {
+            for b in 0..active.len() {
+                let (i, j) = (active[k].cell, active[b].cell);
+                if group[b] == usize::MAX && (i == j || neighbours(grid, i).any(|n| n == j)) {
+                    group[b] = count;
+                    q.push_back(b);
+                }
+            }
+        }
+        count += 1;
+    }
+    let hash = blake3::hash(d.name.as_bytes());
+    let prefix = u64::from(u32::from_le_bytes(
+        hash.as_bytes()[..4].try_into().expect("four bytes"),
+    )) << 32;
+    let mut out: Vec<Fall> = (0..count)
+        .map(|k| Fall {
+            name: format!("{} fall {}", d.name, k + 1),
+            above: String::new(),
+            segments: Vec::new(),
+        })
+        .collect();
+    for (k, b) in active.iter().enumerate() {
+        let i = b.cell;
+        let q = stepper.brink_discharge(b);
+        let l = launch(b, state.depth[i], [state.qx[i], state.qz[i]], q);
+        let face = b.face(grid);
+        let start = [
+            f64::midpoint(face[0][0], face[1][0]),
+            f64::midpoint(face[0][1], face[1][1]),
+        ];
+        let path = ground.trace(start, grid.heights()[i], &l)?;
+        let below = match path.ends {
+            Ends::Body(r) => Below::Body(d.receivers[r].name.clone()),
+            Ends::Ground(cell, _) => {
+                let reach = reach_of[cell]
+                    .or_else(|| neighbours(grid, cell).find_map(|j| reach_of[j]))
+                    .ok_or_else(|| {
+                        RiverError::invalid(&d.name, "a fall lands where no reach is")
+                    })?;
+                Below::Reach(names[reach].clone())
+            }
+        };
+        let fall = &mut out[group[k]];
+        if let Some(r) = reach_of[i] {
+            fall.above.clone_from(&names[r]);
+        }
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "a face's index is kept to 32 bits under the river's prefix"
+        )]
+        let face_id = (i as u64 * 4 + b.side.index()) as u32;
+        fall.segments.push(FallSegment {
+            id: prefix | u64::from(face_id),
+            lip: face,
+            discharge: q,
+            launch_depth: l.depth,
+            launch_speed: l.speed,
+            below,
+            path: path.points,
+        });
+    }
+    Ok(out)
 }

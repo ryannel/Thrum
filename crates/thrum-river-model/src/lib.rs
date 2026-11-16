@@ -9,15 +9,19 @@
 //! a river file under a key of its inputs. Nothing here needs a graphics device.
 //!
 //! Coordinates are metres in x/z order, as in `thrum-water-model`; heights are metres.
+mod brink;
 mod chart;
 mod declare;
 mod error;
+mod fall;
 mod scheme;
 mod solve;
 mod store;
 
+pub use brink::{Brink, Side, brinks};
 pub use declare::{Declaration, Grid, Manning, Profile, Receiver, Source, Spring};
 pub use error::RiverError;
+pub use fall::LAUNCH_SHARE;
 pub use scheme::{State, Stepper};
 pub use solve::{Narrow, Report, Solution, solve};
 pub use store::{SOLVER_VERSION, key, key_for_version, write};

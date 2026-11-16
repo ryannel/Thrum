@@ -42,10 +42,18 @@ impl Row {
     }
 }
 
-/// A segment on a chart footprint's boundary joining an earlier declaration.
+/// The `body` of a brink end: a stretch of a chart footprint's edge where the ground drops away
+/// and the water leaves as a fall. A brink end joins no body. Preparation does not refuse a
+/// footprint cell on it for lower ground outside the footprint beside it, the chart's row there
+/// is its own with no mix, and the ground below is in no body. Its `length` is not used and its
+/// `mouth` flag is ignored; a chart may have several, beside one source end and one mouth.
+pub const BRINK: usize = usize::MAX;
+
+/// A segment on a chart footprint's boundary joining an earlier declaration, or a brink.
 #[derive(Clone, Debug)]
 pub struct End {
-    /// Joined body's index. Earlier indices make cyclic joins impossible.
+    /// Joined body's index. Earlier indices make cyclic joins impossible. [`BRINK`] declares a
+    /// brink end.
     pub body: usize,
     /// End segment endpoints in world x/z.
     pub segment: [[f64; 2]; 2],
@@ -56,6 +64,11 @@ pub struct End {
 }
 
 impl End {
+    /// Whether this end is a brink, where the water leaves as a fall.
+    pub fn is_brink(&self) -> bool {
+        self.body == BRINK
+    }
+
     pub(crate) fn distance(&self, p: [f64; 2]) -> f64 {
         let [a, b] = self.segment;
         let d = [b[0] - a[0], b[1] - a[1]];
@@ -350,7 +363,7 @@ impl Map {
         let BodyKind::Chart(chart) = &self.bodies[body].kind else {
             return [0.0; 2];
         };
-        for end in &chart.ends {
+        for end in chart.ends.iter().filter(|e| !e.is_brink()) {
             if end.distance(point) <= 1e-8 {
                 return self.level_slope(end.body, point);
             }
@@ -394,7 +407,8 @@ impl Map {
             }
             let own_level = row.level;
             let mut total = 1.0;
-            for end in &c.ends {
+            // A brink end joins no body: the row up to it is the chart's own.
+            for end in c.ends.iter().filter(|e| !e.is_brink()) {
                 let other = self.row(end.body, point);
                 let weight = self.join_weight(end, point, own_level, other.level);
                 if weight >= 1.0 {
@@ -551,8 +565,9 @@ impl Map {
                     return Err(fail("seed outside bed"));
                 }
                 BodyKind::Chart(c) => {
-                    if c.ends.iter().filter(|e| e.mouth).count() > 1
-                        || c.ends.iter().filter(|e| !e.mouth).count() > 1
+                    let joins = || c.ends.iter().filter(|e| !e.is_brink());
+                    if joins().filter(|e| e.mouth).count() > 1
+                        || joins().filter(|e| !e.mouth).count() > 1
                     {
                         return Err(fail("chart has multiple sources or mouths"));
                     }
@@ -572,7 +587,7 @@ impl Map {
                         if e.body < id && matches!(self.bodies[e.body].kind, BodyKind::Hollows(_)) {
                             return Err(fail("chart joins a hollows body"));
                         }
-                        if e.body >= id
+                        if (e.body >= id && !e.is_brink())
                             || !e.length.is_finite()
                             || e.length <= 0.0
                             || e.segment.iter().flatten().any(|v| !v.is_finite())
@@ -692,6 +707,23 @@ impl Map {
                 continue;
             };
             for end in &c.ends {
+                if end.is_brink() {
+                    // A brink lies on the footprint's edge, where the ground drops away.
+                    let on_edge = |i: usize| {
+                        c.footprint[i]
+                            && end.distance(self.bed.point(i)) <= 1e-8
+                            && self.bed.neighbours(i).any(|j| {
+                                !c.footprint[j] && self.bed.heights[j] < self.bed.heights[i]
+                            })
+                    };
+                    if !(0..c.footprint.len()).any(on_edge) {
+                        return Err(WaterError::new(
+                            &self.bodies[id].name,
+                            "brink misses footprint edge",
+                        ));
+                    }
+                    continue;
+                }
                 let joined = &self.bodies[end.body];
                 let mut edge_cells = 0;
                 for (i, &inside) in c.footprint.iter().enumerate() {
@@ -720,7 +752,7 @@ impl Map {
                     // at its highest stage, not just today's mix.
                     let p = self.bed.point(i);
                     let own_min = c.levels[i] + self.bodies[id].stage.min;
-                    if c.ends.iter().any(|other| {
+                    if c.ends.iter().filter(|e| !e.is_brink()).any(|other| {
                         other.body != end.body
                             && (other.distance(p) <= 1e-8
                                 || (other.mouth
@@ -757,24 +789,32 @@ impl Map {
                     // A raised source can lift a bank inside its blend even when
                     // the chart's own prepared level would remain contained.
                     let highest = own.max(self.row(id, p).level);
-                    let joined = c.ends.iter().any(|e| {
-                        let b = &self.bodies[e.body];
-                        let min = b.level + b.stage.min;
-                        let wet = match &b.kind {
-                            BodyKind::Sea => self.bed.heights[j] < min,
-                            BodyKind::Basin { .. } => {
-                                // Max-stage connectivity must also have a wet sill at minimum stage.
-                                minimum_fills[e.body][j] && self.bed.heights[j] < min
-                            }
-                            BodyKind::Chart(other) => {
-                                other.footprint[j]
-                                    && self.bed.heights[j] < other.levels[j] + b.stage.min
-                            }
-                            // Refused in validate_inputs: no water joins a hollows body.
-                            BodyKind::Hollows(_) => false,
-                        };
-                        e.distance(p) <= 1e-8 && wet
+                    // The water leaves over a declared brink: the ground below drops away
+                    // and is in no body.
+                    let brink = c.ends.iter().any(|e| {
+                        e.is_brink()
+                            && e.distance(p) <= 1e-8
+                            && self.bed.heights[j] < self.bed.heights[i]
                     });
+                    let joined = brink
+                        || c.ends.iter().filter(|e| !e.is_brink()).any(|e| {
+                            let b = &self.bodies[e.body];
+                            let min = b.level + b.stage.min;
+                            let wet = match &b.kind {
+                                BodyKind::Sea => self.bed.heights[j] < min,
+                                BodyKind::Basin { .. } => {
+                                    // Max-stage connectivity must also have a wet sill at minimum stage.
+                                    minimum_fills[e.body][j] && self.bed.heights[j] < min
+                                }
+                                BodyKind::Chart(other) => {
+                                    other.footprint[j]
+                                        && self.bed.heights[j] < other.levels[j] + b.stage.min
+                                }
+                                // Refused in validate_inputs: no water joins a hollows body.
+                                BodyKind::Hollows(_) => false,
+                            };
+                            e.distance(p) <= 1e-8 && wet
+                        });
                     if self.bed.heights[j] <= highest && !joined {
                         return Err(WaterError::new(
                             &self.bodies[id].name,

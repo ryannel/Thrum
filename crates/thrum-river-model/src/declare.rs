@@ -194,6 +194,13 @@ pub struct Profile {
     pub depth_limit: f64,
     /// A stretch of channel narrower than this many cells is reported.
     pub least_width: usize,
+    /// The least drop of a brink, metres: a lower drop stays in the chart.
+    pub least_fall: f64,
+    /// The steepest slope a chart holds: ground falling more steeply at a brink is left as a
+    /// fall, and a fall's path lands on ground gentler than this.
+    pub steepest_slope: f64,
+    /// Most path between two stored points of a fall's path, metres.
+    pub path_spacing: f64,
     /// Worker threads; zero takes the machine's parallelism. Never changes a result.
     pub threads: usize,
 }
@@ -214,6 +221,9 @@ impl Default for Profile {
             chop: 2.0,
             depth_limit: 0.6,
             least_width: 4,
+            least_fall: 0.75,
+            steepest_slope: 1.5,
+            path_spacing: 0.1,
             threads: 0,
         }
     }

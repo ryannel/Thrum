@@ -5,14 +5,19 @@
 //! `b"THRUMRIV"`, format `u32`, key `[u8; 32]`, gauge level `f64`, reach count `u32`, then for
 //! each reach: name (`u32` length and UTF-8), origin `2 × f64`, spacing `f64`, size `2 × u32`,
 //! dry margin `f64`, then for each of its cells, row-major x-fastest: level `f64`, current
-//! `2 × f64`, loss `f64` and footprint `u8`; then an end count `u32` and for each end: body name,
-//! segment `4 × f64`, join length `f64` and mouth `u8`. Nothing follows the last reach.
-use crate::{Bed, Chart, End, WaterError};
+//! `2 × f64`, loss `f64` and footprint `u8`; then an end count `u32` and for each end: body name
+//! (empty for a brink), segment `4 × f64`, join length `f64` and kind `u8` (0 source, 1 mouth,
+//! 2 brink). Then a fall count `u32` and for each fall: name, the reach above's name and a segment
+//! count `u32`; for each segment: ID `u64`, lip `4 × f64`, discharge, launch depth and launch speed
+//! `f64`, where it ends (`u8`, 0 a body and 1 a reach, then its name) and a point count `u32`;
+//! for each point: place `2 × f64`, height, time and distance `f64`. Nothing follows the last fall.
+use crate::fall::{Below, Fall, FallSegment, PathPoint};
+use crate::{BRINK, Bed, Chart, End, WaterError};
 
 /// The magic bytes every river file starts with.
 pub const RIVER_MAGIC: [u8; 8] = *b"THRUMRIV";
 /// The layout version this reader accepts.
-pub const RIVER_FORMAT: u32 = 1;
+pub const RIVER_FORMAT: u32 = 2;
 
 /// A solve's stored output and the key of the inputs it was solved from.
 #[derive(Clone, Debug, PartialEq)]
@@ -23,6 +28,8 @@ pub struct RiverFile {
     pub gauge_level: f64,
     /// One chart for each reach.
     pub reaches: Vec<RiverReach>,
+    /// One record for each fall.
+    pub falls: Vec<Fall>,
 }
 
 /// One reach's chart on its solve rectangle, which lies on the map bed's lattice.
@@ -46,21 +53,32 @@ pub struct RiverReach {
     pub loss: Vec<f64>,
     /// Cells that belong to the chart's footprint.
     pub footprint: Vec<bool>,
-    /// Source ends and mouths, by the name of the body each joins.
+    /// Source ends, mouths and brinks, by the name of the body each joins.
     pub ends: Vec<RiverEnd>,
 }
 
-/// A chart end that joins a declared body.
+/// What a chart end is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EndKind {
+    /// Water enters from the joined body.
+    Source,
+    /// Water leaves into the joined body.
+    Mouth,
+    /// Water leaves as a fall, where the ground drops away; it joins no body.
+    Brink,
+}
+
+/// A chart end that joins a declared body, or a brink.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RiverEnd {
-    /// The joined body's declared name.
+    /// The joined body's declared name; empty for a brink.
     pub body: String,
     /// End segment endpoints in world x/z.
     pub segment: [[f64; 2]; 2],
     /// Join length inside the chart, metres.
     pub length: f64,
-    /// Whether the end is a mouth (water leaves) rather than a source end.
-    pub mouth: bool,
+    /// Source end, mouth or brink.
+    pub kind: EndKind,
 }
 
 impl RiverFile {
@@ -86,6 +104,11 @@ impl RiverFile {
         for _ in 0..count {
             reaches.push(r.reach()?);
         }
+        let count = r.u32()? as usize;
+        let mut falls = Vec::with_capacity(count.min(64));
+        for _ in 0..count {
+            falls.push(r.fall()?);
+        }
         if r.at != bytes.len() {
             return Err(fail("trailing bytes"));
         }
@@ -93,6 +116,7 @@ impl RiverFile {
             key,
             gauge_level,
             reaches,
+            falls,
         })
     }
 }
@@ -147,12 +171,17 @@ impl RiverReach {
             }
         }
         for end in &self.ends {
+            let body = if end.kind == EndKind::Brink {
+                BRINK
+            } else {
+                body(&end.body)
+                    .ok_or_else(|| WaterError::new(&self.name, "end names an unknown body"))?
+            };
             chart.ends.push(End {
-                body: body(&end.body)
-                    .ok_or_else(|| WaterError::new(&self.name, "end names an unknown body"))?,
+                body,
                 segment: end.segment,
                 length: end.length,
-                mouth: end.mouth,
+                mouth: end.kind != EndKind::Source,
             });
         }
         Ok(chart)
@@ -179,6 +208,11 @@ impl Reader<'_> {
     fn u32(&mut self) -> Result<u32, WaterError> {
         Ok(u32::from_le_bytes(
             self.take(4)?.try_into().map_err(|_| fail("truncated"))?,
+        ))
+    }
+    fn u64(&mut self) -> Result<u64, WaterError> {
+        Ok(u64::from_le_bytes(
+            self.take(8)?.try_into().map_err(|_| fail("truncated"))?,
         ))
     }
     fn u8(&mut self) -> Result<u8, WaterError> {
@@ -240,9 +274,59 @@ impl Reader<'_> {
                 body: self.name()?,
                 segment: [[self.f64()?, self.f64()?], [self.f64()?, self.f64()?]],
                 length: self.f64()?,
-                mouth: self.flag()?,
+                kind: match self.u8()? {
+                    0 => EndKind::Source,
+                    1 => EndKind::Mouth,
+                    2 => EndKind::Brink,
+                    _ => return Err(fail("invalid end kind")),
+                },
             });
         }
         Ok(reach)
+    }
+    fn fall(&mut self) -> Result<Fall, WaterError> {
+        let name = self.name()?;
+        let above = self.name()?;
+        let count = self.u32()? as usize;
+        let mut segments = Vec::with_capacity(count.min(4096));
+        for _ in 0..count {
+            let id = self.u64()?;
+            let lip = [[self.f64()?, self.f64()?], [self.f64()?, self.f64()?]];
+            let (discharge, launch_depth, launch_speed) = (self.f64()?, self.f64()?, self.f64()?);
+            let below = match self.u8()? {
+                0 => Below::Body(self.name()?),
+                1 => Below::Reach(self.name()?),
+                _ => return Err(fail("invalid fall end")),
+            };
+            let points = self.u32()? as usize;
+            if points > (self.bytes.len() - self.at) / 40 {
+                return Err(fail("truncated"));
+            }
+            let mut path = Vec::with_capacity(points);
+            for _ in 0..points {
+                path.push(PathPoint {
+                    place: [self.f64()?, self.f64()?],
+                    height: self.f64()?,
+                    time: self.f64()?,
+                    distance: self.f64()?,
+                });
+            }
+            let segment = FallSegment {
+                id,
+                lip,
+                discharge,
+                launch_depth,
+                launch_speed,
+                below,
+                path,
+            };
+            segment.validate()?;
+            segments.push(segment);
+        }
+        Ok(Fall {
+            name,
+            above,
+            segments,
+        })
     }
 }
