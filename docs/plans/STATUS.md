@@ -236,7 +236,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - ATMOSPHERE M9 Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome: Blocked: Needs Dependency: Restore reliable cooker edit publication so the full gate and Chrome showcase checks can pass before merging. A planner adds it to the module that owns it
 - CULLING's design: Design Ready for Review · [design](CULLING/DESIGN.md) · [plan](CULLING/PLAN.md)
-- A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac (CONTENT-LOOP M4): Ready for Review · [plan](CONTENT-LOOP/PLAN.md) · [latest review](../evidence/CONTENT-LOOP/M4-review.md)
 - A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged (SCENE-VIEWS M1): Not Started · [plan](SCENE-VIEWS/PLAN.md)
 - Cloud shade crosses the valley in step with the weather, with no cloud drawn (CLOUDS M2): In Progress · [plan](CLOUDS/PLAN.md)
 - On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on (RIVERS M2): Not Started · [plan](RIVERS/PLAN.md)
@@ -249,6 +248,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac (CONTENT-LOOP M4), 16 Nov · [review](../evidence/CONTENT-LOOP/M4-review.md)
 - On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes (RIVERS M1), 16 Nov · [review](../evidence/RIVERS/M1-review.md)
 - A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required (TEST-SUPPORT M1), 16 Nov · [review](../evidence/TEST-SUPPORT/M1-review.md)
 - On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry (PUDDLES M1), 16 Nov · [review](../evidence/PUDDLES/M1-review.md)
@@ -299,7 +299,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Design Ready for Review |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 16 Nov |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M4 of 4 · Ready for Review |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | Waiting: On Dependency, CULLING:M3 |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Waiting: On Dependency, CONTENT-LOOP:M2, CULLING:M3 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | Waiting: On Dependency, ATMOSPHERE:M9 |
