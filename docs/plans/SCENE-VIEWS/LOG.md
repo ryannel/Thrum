@@ -1,5 +1,11 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 integration: the queued CULLING coverage-output patch changed
+  the ordinary shader text and tripped the historical absence oracle. `e74de8df7`
+  accounts for exactly that addition while keeping every original hash and bound.
+  Metal absence and equality targets pass with the two peer shaders replayed;
+  [the proof](../../evidence/SCENE-VIEWS/M1/vertical/README.md) records the source pins.
+
 - 2026-11-16 M1 after the planner's ruling: `8b315f05f` anchors height-map fitting
   to declared positions and refuses off-vertical requests by name before drawing.
   M1.1 matches the ordinary main draw at zero colour/depth steps for the displaced
