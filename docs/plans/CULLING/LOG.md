@@ -300,3 +300,10 @@
   rebase. M3.11's campaign is now taken once on main, after the merge; it adds the cube route and stops after
   sixteen pairs. M3.11 written again; every other item unchanged. One new assumption for the owner. No check
   command changed, and no GPU check was run. [Record](../../evidence/CULLING/M3-replan/loaded-proof-on-main.md).
+
+- 2026-11-16 Resumed from reset main `8bdd01ae0`; selected the coverage, browser-default and benchmark fixes,
+  leaving the old landing pipeline on its preserved branch and removing its scratch twins. Added coverage to
+  main's new opaque secondary-view entries and a bounded, measurement-only campaign for all eight combinations.
+  Documentation checks pass. ATMOSPHERE M9 moved eighteen reference files, so fresh differences are required.
+  The shared exact-image run fails at the pre-existing APPLE-TILE temporal capture stage and is bisecting;
+  no current reference qualification, target pass or merge is claimed. [Evidence](../../evidence/CULLING/M3.md).
