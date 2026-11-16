@@ -240,8 +240,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3): In Progress · [plan](T2-CAPTURE/PLAN.md)
-- Native providers survive replacement and expose truthful timing (APPLE-TILE M11): Not Started · [plan](APPLE-TILE/PLAN.md)
+- A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3): Ready for Review · [plan](T2-CAPTURE/PLAN.md)
+- Native providers survive replacement and expose truthful timing (APPLE-TILE M11): In Progress · [plan](APPLE-TILE/PLAN.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
@@ -250,7 +250,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - SCENE-VIEWS M1 A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged: Blocked: Needs Dependency: APPLE-TILE’s exact-images owner must resolve the shared failures and obtain a covering pass before M1.10 can clear. A planner adds it to the module that owns it
 - CLOUDS M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn: Blocked: Needs Dependency: The planner must settle and assign the shared display-time interface change before M2.7’s uneven 60× shade motion can be completed. A planner adds it to the module that owns it
 - On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale (RIVERS M3): In Progress · [plan](RIVERS/PLAN.md)
-- PUDDLES M2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do: Blocked: Needs Context: a planner needs to rewrite the design's covering and uncovering rule and M2.11 to say what happens when a puddle holds less water than the pores it rises over or the film it must leave. The lead finds the missing fact, or asks you for it
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M2-review.md)
 - REVIEW-ENGINE M3 A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader: Blocked: Needs Dependency: The lead must obtain a complete shared exact-images run covering the final merged M3 commit. A planner adds it to the module that owns it
 - From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1): Not Started · [plan](GAME-SPLIT/PLAN.md)
@@ -305,9 +304,9 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 4 · In Progress |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 4 · Ready for Review |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M11 of 7 · Not Started |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M11 of 7 · In Progress |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
@@ -321,7 +320,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M1 of 3 · Blocked: Needs Dependency |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M2 of 16 · Blocked: Needs Dependency |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M3 of 7 · In Progress |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · Blocked: Needs Context |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · Invalid |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M2 of 3 · In Progress |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
