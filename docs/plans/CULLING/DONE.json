@@ -277,10 +277,10 @@
           "statement": "The coverage output's cost on the valley's moving route is recorded: paired, interleaved rows of the claimed shader and the control without the output, per pass and for the whole frame, p50 and p95, from two runs with their load and workload identities, on both native recipes. Where the rows cross a tripwire in the design's Performance section, the evidence holds an investigation of the cause and its disposition. No figure is a pass mark.",
           "ask": "Do the retained rows pair the claimed shader with a control that differs only by the coverage output, on the moving route on both native recipes, from two runs with the load and workload identities recorded, and does the maturity ledger carry them as a recorded cost, not a budget? If the whole frame's paired p50 crossed the tripwire in the design's Performance section, does the evidence say which passes carry the cost and why, and record one of the design's two dispositions? A crossed tripwire with that record passes this item.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/coverage-cost/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,

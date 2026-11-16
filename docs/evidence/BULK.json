@@ -3507,6 +3507,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/coverage-cost/binaries/candidate",
+      "size": 10161840,
+      "sha256": "3ddbf7e335ab07148e471c6c2f22fc9e5f142b8b44f0acfeba097894dc8c3199",
+      "date": "2026-11-16T16:28:21.917991+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/coverage-cost/binaries/control",
+      "size": 10161840,
+      "sha256": "e88fe392106389d9185109cae599194ad1dabdc55d6847048b22ff15026954d3",
+      "date": "2026-11-16T16:28:22.056590+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/native-differences/b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73.png",
       "size": 2659905,
       "sha256": "b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73",

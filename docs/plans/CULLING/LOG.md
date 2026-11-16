@@ -335,3 +335,17 @@
   proves the replaced references were what main drew. The coverage build's full verifier also passes.
   The coverage output, regenerated references and pins now go through the official merge together;
   their cause and every old/new SHA-256 remain in the linked shared refresh inventory above.
+
+- 2026-11-16 The official merge fails SCENE-VIEWS M1.7's pre-view shader-source witness; nothing lands.
+  It expects 31,434 source bytes and observes 31,903, exactly the coverage-only addition of 469 bytes.
+  This is a source fingerprint, not an image mismatch. The test remains unchanged under this plan's stop rule.
+  Proposal for the lead and SCENE-VIEWS owner: rebase its independent no-view source witness onto the approved
+  coverage output while retaining every absence check. [Failure and diagnosis](../../evidence/CULLING/M3/replan/merge-failure/diagnosis.md).
+  M3.13's paired cost measurement can proceed independently; the main-only campaign and captures cannot.
+
+- 2026-11-16 M3.13 records two paired interleaved capture-off 1080p valley runs per native recipe,
+  with 361 ticks per mode/run and complete per-pass/whole-frame p50/p95, identities, raw rows and load.
+  Frustum paired whole p50 increases are Portable +0.168373/+0.183998 ms and AppleTile +0.149372/+0.149298 ms.
+  All twelve mode/run paired p50 increases are 2.81–5.06%; no 25% tripwire crosses. These are contended costs,
+  not budgets. [Evidence and exact retained inputs](../../evidence/CULLING/M3/replan/coverage-cost/README.md).
+  The ledger records them on branch fbce0768c; main-only campaign and fresh motion remain unqualified.
