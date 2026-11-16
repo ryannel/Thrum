@@ -3386,6 +3386,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/starting-chrome-first/frame-157.rgba.gz",
+      "size": 4381153,
+      "sha256": "18a20bb65cc53bc084a169f2b0fe4e913e7885ba960f60fe7babe18d77fb77a1",
+      "date": "2026-11-16T13:34:57.159676+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/EFFECT-GRAPH/M1-review/apple-tile-sun-sdr.png",
       "size": 2660128,
