@@ -134,7 +134,7 @@
     {
       "id": "M2",
       "name": "On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -191,7 +191,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M2.md#review-fix-the-plunge-at-the-shoreline (plunge, incl. a_path_down_the_rock_meets_the_water_at_the_shoreline_at_every_stage)",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
@@ -214,13 +214,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/RIVERS/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "plunge_skips_shoreline_intersection",
-          "item": "M2.5",
-          "repeat": false
         }
       ]
     },

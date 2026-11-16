@@ -160,7 +160,7 @@
         {
           "verdict": "fail",
           "commit": "7080267f8bffa6fa52c453dc7d4c0c4e139b9a0a",
-          "review": "docs/evidence/RIVERS/M2-review.md",
+          "review": "docs/evidence/RIVERS/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -193,6 +193,36 @@
             "turns": 1
           },
           "at": "2026-11-16T13:03:00Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "ac4a0ca0c4f19b21d42c408cf64c82a63329badc",
+          "review": "docs/evidence/RIVERS/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 126389,
+            "cached": 2397952,
+            "output": 6992,
+            "turns": 1
+          },
+          "at": "2026-11-16T16:57:13Z"
         }
       ],
       "authorised": {
@@ -232,6 +262,13 @@
           "cost_usd": 41.835799,
           "turns": 11
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "ac4a0ca0c4f19b21d42c408cf64c82a63329badc",
+        "review": "docs/evidence/RIVERS/M2-review.md",
+        "checked": "074b2941a7a5cc37ac6dcdfaaffb4078abd87ffe",
+        "at": "2026-11-16T16:57:13Z"
       }
     },
     "M3": {
