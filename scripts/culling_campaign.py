@@ -139,6 +139,7 @@ def main():
         return
     subprocess.run(['git', 'merge-base', '--is-ancestor', args.candidate_commit, 'origin/main'], check=True)
     route = Path('examples/v1-game/routes/moving-v1.json')
+    assert route.read_bytes() == subprocess.check_output(['git', 'show', f'{args.candidate_commit}:{route}']), 'route differs from campaigned build'
     assert store_root(args.store) == json.loads(route.read_text())['cooked_root']
     changed = git('diff', '--name-only', args.candidate_commit, args.control_commit).splitlines()
     assert set(changed) <= {'crates/thrum-render/src/synthetic.wgsl', 'crates/thrum-render/src/synthetic/secondary.wgsl'} and changed
@@ -149,6 +150,12 @@ def main():
         'route_sha256': sha(route), 'cooked_root': store_root(args.store), 'runner_sha256': sha(Path(__file__)),
         'started_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'pairs': [], 'control_differing_routes': 0, 'passed': False}
+    record['embedded_shader'] = {}
+    for arm in ('candidate', 'control'):
+        source = subprocess.check_output(['git', 'show', getattr(args, arm + '_commit') + ':crates/thrum-render/src/synthetic.wgsl'])
+        embedded = source in getattr(args, arm).read_bytes()
+        record['embedded_shader'][arm] = {'sha256': hashlib.sha256(source).hexdigest(), 'exact_source_in_binary': embedded}
+        assert embedded, f'{arm} binary does not contain its committed shader'
     save(args.output / 'report.json', record)
     for turn in range(16):
         folder = args.output / f'pair-{turn:02}'
@@ -159,7 +166,7 @@ def main():
                         '--control-commit', args.control_commit, '--pair', str(turn)])
         result = subprocess.run(command)
         proof = json.loads((folder / 'pair.json').read_text()) if (folder / 'pair.json').exists() else {}
-        record['pairs'].append({'path': str(folder), 'exit': result.returncode, 'proof': proof})
+        record['pairs'].append({'path': str(folder.relative_to(Path.cwd())), 'exit': result.returncode, 'proof': proof})
         save(args.output / 'report.json', record)
         assert result.returncode == 0 and proof['passed'], 'pair failed; preserve all payloads'
         record['control_differing_routes'] += int(proof['runs'][1]['result']['differing_ticks'] > 0)
