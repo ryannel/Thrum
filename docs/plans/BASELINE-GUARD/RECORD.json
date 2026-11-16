@@ -99,7 +99,38 @@
     },
     "M2": {
       "definitions": "ca0b12a3ebfe6b7e7bcdb6978ae8ebfca93cad3cb90a9f81df56df7e77f43249",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "e4660f55dba893c9c0caaa84238ac7dbc5cd0a16",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 81361,
+            "cached": 1058432,
+            "output": 4830,
+            "turns": 1
+          },
+          "at": "2026-11-16T03:48:25Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 2 Mu",
@@ -133,6 +164,13 @@
           "output": 32391,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e4660f55dba893c9c0caaa84238ac7dbc5cd0a16",
+        "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
+        "checked": "160595c5a0996b235043bff5e7624f6b0df6464b",
+        "at": "2026-11-16T03:48:25Z"
       }
     }
   },

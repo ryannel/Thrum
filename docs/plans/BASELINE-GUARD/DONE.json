@@ -68,7 +68,7 @@
     {
       "id": "M2",
       "name": "A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "quality_bar": "A lockfile's checksum, as in Cargo.lock or go.sum: a pinned file changes only in a commit that also changes its recorded digest, and the failure names the file, its owner and the rule.",
@@ -81,8 +81,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -92,8 +92,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -103,8 +103,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -114,8 +114,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -124,8 +124,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md",
           "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
         },
         {
@@ -135,8 +135,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -146,8 +146,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/BASELINE-GUARD/M2-review.md"
         }
       ]
     }
