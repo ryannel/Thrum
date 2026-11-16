@@ -308,9 +308,16 @@ def measure(target):
     runner = Runner(target)
     runs = []
     for repeat in range(2):
-        rows = [runner.invoke("measure_trace", [count, mixed, parallel])
-                for parallel in ([False, True] if target == "mac-metal" else [False])
-                for mixed in [False, True] for count, _ in SIZES]
+        rows = []
+        for parallel in ([False, True] if target == "mac-metal" else [False]):
+            for mixed in [False, True]:
+                for count, _ in SIZES:
+                    load = os.getloadavg()
+                    utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    row = runner.invoke("measure_trace", [count, mixed, parallel])
+                    row.update(load_before=load, load_after=os.getloadavg(), utc=utc, build="release")
+                    rows.append(row)
+                    print(f"measured {target} repeat={repeat + 1} mixed={mixed} parallel={parallel} bodies={count}", file=sys.stderr, flush=True)
         for row in rows:
             expected_ticks = dict(SIZES)[row["bodies"]]
             assert row["ticks"] == expected_ticks and row["samples"] == expected_ticks - 120 and row["neighbours_per_tick"] > 0
@@ -379,8 +386,13 @@ def costs(target):
         assert [(row["bodies"], row["ticks"], row["trace"], row["parallel"]) for row in run["rows"]] == [
             (count, ticks, trace, parallel) for parallel in ([False, True] if target == "mac-metal" else [False])
             for trace in ["crowd", "mixed"] for count, ticks in SIZES]
-        for row in run["rows"]:
+        for row_index, row in enumerate(run["rows"]):
             assert row["samples"] == row["ticks"] - 120 and row["neighbours_per_tick"] > 0
+            assert row["build"] == "release" and row["utc"]
+            assert len(row["load_before"]) == len(row["load_after"]) == 3
+            assert row["tick_ms_per_neighbour"] == row["tick_median_ms"] / row["neighbours_per_tick"]
+            assert row["clock_tripwire"] == (row["tick_median_ms"] > 1000.0 / 60.0)
+            assert row["super_neighbour_scaling_tripwire"] == (row_index % 3 != 0 and row["tick_ms_per_neighbour"] > run["rows"][row_index - 1]["tick_ms_per_neighbour"])
             if row["parallel"]:
                 assert row["parallel_chunks"] > 0
             for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
