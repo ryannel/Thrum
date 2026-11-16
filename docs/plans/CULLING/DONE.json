@@ -206,10 +206,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test culling_temporal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/temporal.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.7",
