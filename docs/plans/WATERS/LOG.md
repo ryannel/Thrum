@@ -347,3 +347,8 @@
   The first paired cost run failed with missing GPU durations and timing faults; its cause is unconfirmed.
   No fourth visual attempt was made under the design's three-look stop rule.
   [Handoff](../../evidence/WATERS/M2-handoff.md) asks the lead/planner for direction and records both issues.
+- 2026-11-16 The owner directed M2 to continue after the three-look stop. Testing the existing profile's
+  larger permitted long-wave choppiness, 0.9 with the same 0.45 contraction budget.
+  Diagnosed the missing cost times as Metal's invalid end timestamps on empty Sun-shadow passes.
+  The paired scene now keeps the same calibration float and sky in both arms at the same world times;
+  only water differs. Empty-caster timing reporting is a renderer follow-up, not a zero-duration claim.

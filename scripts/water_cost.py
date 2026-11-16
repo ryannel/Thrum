@@ -20,7 +20,9 @@ def measure():
     output = ROOT / 'tmp/waters-M2/cost-current'
     output.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, THRUM_WATER_PROOF='cost', THRUM_WATER_OUTPUT=str(output))
-    env.pop('THRUM_ASSET_STORE', None)
+    store = output / 'store'
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', 'examples/water/assets', str(store)])
+    env['THRUM_ASSET_STORE'] = str(store)
     run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene', '--test', 'proof_gpu'], env=env)
     data = json.loads((output / 'cost.json').read_text())
     data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
@@ -28,7 +30,7 @@ def measure():
     data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
     data['build'] = 'release; concurrent machine load, not qualified cadence'
     data['refresh_hz'] = 120
-    data['view'] = 'camera at 2 m, bearing 90 degrees, noon; optional calibration float omitted in both arms'
+    data['view'] = 'camera at 2 m, bearing 90 degrees, noon; identical calibration float and sky in both arms at identical world times'
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'broadsides_surface_ms': 10.5}
     data['summary'] = []
     for arm in data['arms']:
@@ -36,6 +38,8 @@ def measure():
             frames = [f for f in arm['frames'] if f['tick_frame'] == tick]
             if not frames:
                 raise ValueError('missing tick or repeat frames')
+            if any(f['gpu_ms'] is None or f.get('timing_fault', False) for f in frames):
+                raise ValueError('missing GPU timing: inspect cost.json timing_fault; no duration is imputed')
             names = set().union(*(f['passes_ms'] for f in frames))
             passes = {name: statistics.median(f['passes_ms'][name] for f in frames if name in f['passes_ms']) for name in sorted(names)}
             data['summary'].append({'water': arm['water'], 'tick_frame': tick, 'samples': len(frames), 'gpu_ms': statistics.median(f['gpu_ms'] for f in frames), 'cpu_wall_ms': statistics.median(f['cpu_wall_ms'] for f in frames), 'completion_upper_ms': statistics.median(f['completion_upper_ms'] for f in frames), 'passes_ms': passes})
@@ -55,6 +59,7 @@ def validate(data):
     assert data['resources'] and data['load'] and data['commit']
     assert {arm['water'] for arm in data['arms']} == {True, False}
     for arm in data['arms']:
+        assert arm['calibration_float'] is True
         assert arm['frames'] and arm['storage']
         assert {f['tick_frame'] for f in arm['frames']} == {True, False}
         if arm['water']:

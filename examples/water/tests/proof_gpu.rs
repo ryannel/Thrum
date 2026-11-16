@@ -6,10 +6,7 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
-use thrum_render::{
-    contribution::SceneContributions,
-    runtime::{CaptureLimits, FrameSample, SubmittedImage},
-};
+use thrum_render::runtime::{CaptureLimits, FrameSample, SubmittedImage};
 #[test]
 fn proof_driver() {
     if std::env::var_os("THRUM_WATER_PROOF").is_none() {
@@ -43,15 +40,13 @@ fn driver() {
         "cost" => {
             let mut arms = Vec::new();
             for present in [true, false] {
-                if !present {
-                    fixture
-                        .host
-                        .set_scene_contribution(Box::<SceneContributions>::default())
-                        .expect("water absent");
+                let mut fixture = support::Fixture::paired([2560, 1440], present);
+                for index in 0..8 {
+                    fixture.frame(f64::from(index) / 120.0);
                 }
                 let mut frames = Vec::new();
                 for index in 0..32 {
-                    let start = if present { 1.0 } else { 2.0 };
+                    let start = 1.0;
                     let sample = fixture.frame(start + f64::from(index) / 120.0);
                     if index >= 8 {
                         let mut record = sample_json(&sample);
@@ -69,7 +64,7 @@ fn driver() {
                 } else {
                     0
                 };
-                arms.push(json!({"water":present,"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()}));
+                arms.push(json!({"water":present,"calibration_float":true,"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()}));
             }
             result["capture"] = json!(false);
             result["arms"] = json!(arms);

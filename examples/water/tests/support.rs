@@ -64,9 +64,13 @@ impl Fixture {
         map
     }
     pub(crate) fn new(extent: [u32; 2]) -> Self {
+        Self::paired(extent, true)
+    }
+    pub(crate) fn paired(extent: [u32; 2], water: bool) -> Self {
         let (device, queue, caps) = device();
-        let (mut game, report) = water_scene::build_with_report(
+        let (mut game, report) = water_scene::build_paired(
             std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+            water,
         )
         .expect("scene");
         let host = game

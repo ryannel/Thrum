@@ -31,5 +31,5 @@ captures the desktop or proves physical display cadence.
 
 `python3 scripts/water_cost.py record --scene first-frame`, also under the GPU lock, records the
 paired capture-off run. `check` takes a fresh measurement and validates the committed record;
-timings themselves are investigation tripwires rather than pass thresholds. The cost view omits
-the optional calibration float in both arms so only water differs.
+timings themselves are investigation tripwires rather than pass thresholds. The cost tool cooks
+the calibration float and keeps it in both arms at identical world times, so only water differs.

@@ -38,7 +38,7 @@ pub fn profile(spectrum: &Spectrum) -> Profile {
         deep_scatter: [0.001, 0.007, 0.009],
         ..Profile::default()
     };
-    profile.waves.choppiness = (0.45 / steepness).min(0.35);
+    profile.waves.choppiness = (0.45 / steepness).min(0.9);
     profile
 }
 /// The scene's sea declaration. The empty bed is far below any wave.
@@ -83,6 +83,17 @@ pub fn build() -> Result<SkyGame, Box<dyn Error>> {
 /// # Panics
 /// Panics if the scene's map lock is poisoned or its bounded stage control is rejected.
 pub fn build_with_report(draw_float: bool) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
+    build_paired(draw_float, true)
+}
+/// Build one arm of the paired scene: only the water contribution differs.
+/// # Errors
+/// Returns the same authored-data failures as `build`.
+/// # Panics
+/// Panics if the scene's map lock is poisoned or its bounded stage control is rejected.
+pub fn build_paired(
+    draw_float: bool,
+    draw_water: bool,
+) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let mut controls = Controls::new();
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
@@ -130,7 +141,11 @@ pub fn build_with_report(draw_float: bool) -> Result<(SkyGame, SharedReport), Bo
     )
     .with_ground(None)
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
-    let game = game.with_contribution(Box::new(water), || thrum_app::sky::ContentStatus::Drawn(1));
+    let game = if draw_water {
+        game.with_contribution(Box::new(water), || thrum_app::sky::ContentStatus::Drawn(1))
+    } else {
+        game
+    };
     if draw_float {
         Ok((
             game.with_meshes(vec![
