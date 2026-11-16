@@ -70,6 +70,7 @@ For Weather and Shade, `THRUM_CLOUDS=shade` selects the real game contribution.
 `THRUM_CLOUD_WIND` sets initial X wind in m/s and `THRUM_CLOUD_TIME_SCALE` sets
 weather speed (1–60), both validated before world construction. With the cooked
 valley, `THRUM_CAMERA_HEIGHT` selects the camera's absolute height in metres.
+`THRUM_CAMERA_Z` optionally moves that elevated camera along the valley's Z axis.
 `--case clouds-still --mode fixed` retains one held submitted checkpoint;
 `--case clouds-drift --mode realtime` holds the view, runs the ordinary world
 from one to 21 seconds, then pauses for a final hold. Its explicit 4,096-record

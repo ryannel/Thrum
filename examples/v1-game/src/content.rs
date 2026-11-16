@@ -217,6 +217,9 @@ fn attach_selected(
         eye[1] = height
             .parse()
             .map_err(|_| "THRUM_CAMERA_HEIGHT must be metres")?;
+        if let Ok(z) = launch_value("THRUM_CAMERA_Z") {
+            eye[2] = z.parse().map_err(|_| "THRUM_CAMERA_Z must be metres")?;
+        }
         Some(camera.at(eye)?)
     } else {
         camera
