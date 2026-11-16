@@ -360,6 +360,7 @@ fn main() -> TaskResult {
             python(&["scripts/exact_baselines.py", "guard"])?;
             python(&["scripts/test_exact_baselines.py"])?;
             python(&["scripts/repo_check.py"])?;
+            python(&["scripts/test_evidence_store.py"])?;
             python(&[
                 "-m",
                 "unittest",

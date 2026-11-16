@@ -86,6 +86,17 @@ integrated workload and unchanged quality/correctness constraints in [AI perform
 
 ## Review and evidence
 
+Evidence files under `docs/evidence/` have a 2 MiB cap, except registered exact-baseline references. Keep large
+captures in `tmp/<task>/` and commit their reproduction record (command, revision, tool versions, SHA-256)
+with small selected stills. If the reviewer must watch a 60 MB capture, run
+`python3 scripts/evidence_store.py put tmp/<task>/capture.mp4 --path docs/evidence/MODULE/capture.mp4`, then
+commit `docs/evidence/BULK.json` and `docs/evidence/.gitignore` with that record. Link its logical evidence path;
+the reviewer runs `python3 scripts/evidence_store.py restore docs/evidence/MODULE/capture.mp4` from any worktree
+on this Mac. Verify recovery before cleaning your scratch source. The shared local store beside the main
+checkout has no remote backup; a lost disk loses new local captures. Historical entries restore from Git in
+any full clone. [Bulk review evidence](docs/ASSET-LIFECYCLE.md#bulk-review-evidence) explains missing local
+files, overrides and hash verification. The `evidence-size` refusal directs builders to the same workflow.
+
 For unattended submitted-output images and elapsed-time motion on Mac, use the [capture runbook](docs/CAPTURE.md).
 
 Explain the result, rationale, tests actually run and remaining limits. Update the owning specification

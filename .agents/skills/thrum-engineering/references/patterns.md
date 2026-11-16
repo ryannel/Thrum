@@ -210,6 +210,15 @@ their own. The copies have drifted (H15, M02, M03).
 - **Policy that isn't about the platform:** pause and overload decisions belong beside `ClockState` in `thrum-core`,
   not in a shell.
 
+## Evidence
+
+Keep evidence files at most 2 MiB, except registered exact-baseline references. `evidence-size` refuses
+oversized tracked files. Keep captures in `tmp/<task>/` with a committed reproduction record and small stills;
+if a reviewer needs the bytes, use `python3 scripts/evidence_store.py put SOURCE --path docs/evidence/MODULE/FILE`
+and commit the generated manifest and ignore list. The store is shared across worktrees on this Mac, with no
+remote backup. Restore with `python3 scripts/evidence_store.py restore docs/evidence/MODULE/FILE`.
+See [the storage rules](../../../../docs/ASSET-LIFECYCLE.md#bulk-review-evidence).
+
 ## Names
 
 Rule: `history-names` counts milestone/gate segments in file paths, environment variable names in source,

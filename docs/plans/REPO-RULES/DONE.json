@@ -80,7 +80,7 @@
     {
       "id": "M2",
       "name": "The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,

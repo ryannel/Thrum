@@ -14,6 +14,7 @@ from urllib.parse import unquote, urlsplit
 
 from design_hashes import check_hashes
 import shape_rules
+import evidence_store
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]*\]\(([^)\n]+)\)")
@@ -43,6 +44,9 @@ def anchors(text):
 def check_links(root, files):
     errors = []
     count = 0
+    listed = {entry["path"] for entry in evidence_store.load(root)["entries"]}
+    tracked = evidence_store.tracked(root) if shape_rules.owns_history(root) else None
+    directories = {parent.as_posix() for path in (tracked or []) for parent in Path(path).parents}
     for path in files:
         for match in LINK.finditer(prose(path.read_text(encoding="utf-8"))):
             value = match[1].strip()
@@ -56,9 +60,13 @@ def check_links(root, files):
             dest = (path.parent / unquote(url.path)).resolve() if url.path else path
             count += 1
             label = f"{path.relative_to(root)}: {value}"
-            if not dest.is_relative_to(root) or not dest.exists():
+            relative = dest.relative_to(root).as_posix() if dest.is_relative_to(root) else None
+            known = relative in listed or (relative in tracked or relative in directories if tracked is not None else dest.exists())
+            if relative is None or not known:
                 errors.append(f"missing/outside local link: {label}")
-            elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(dest.read_text(encoding="utf-8")):
+            elif url.fragment and dest.suffix == ".md" and unquote(url.fragment) not in anchors(
+                    dest.read_text(encoding="utf-8") if relative not in listed else
+                    evidence_store.content(root, next(e for e in evidence_store.load(root)["entries"] if e["path"] == relative)).decode()):
                 errors.append(f"missing anchor: {label}")
     return errors, count
 

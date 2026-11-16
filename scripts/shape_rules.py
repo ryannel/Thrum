@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import tomllib
+import evidence_store
 
 from shape_matchers import CODE, RULES, dependency_sites, mask, package_for, rust_sites, test_edge_sites
 
@@ -74,6 +75,8 @@ def inventory(root, honor_pins=False):
     workspace = tomllib.loads(workspace_path.read_text()).get("workspace", {}).get("dependencies", {}) if workspace_path.exists() else {}
     pins = pinned_names(root, paths)
     sites = {name: [] for name in RULES}
+    evidence_paths = evidence_store.tracked(root) if owns_history(root) else paths
+    sites["evidence-size"] = [(p, 1) for p in evidence_store.oversized(root, evidence_paths)]
     for relative in paths:
         path = Path(relative)
         if not path.parts or path.parts[0] not in {"crates", "examples", "tools", "scripts"}:

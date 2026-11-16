@@ -29,6 +29,36 @@ Never remove another worker's tree or cache, or the only copy of a selected mast
 root verification precede deletion. Use normal filesystem/Git tools for now; do not pretend the planned
 asset CLI, leases, automatic GC or restore guarantees are implemented.
 
+## Bulk review evidence
+
+Tracked files under `docs/evidence/` must be at most 2 MiB each. Only exact-baseline references registered in
+`.config/exact-baselines.json` are exempt. The `evidence-size` refusal enforces this cap. Keep new captures in
+`tmp/<task>/`, with a small committed reproduction record naming the command, revision, tool versions and
+SHA-256 hashes, plus selected small stills. Do not split a capture into pieces to evade the cap.
+
+When a reviewer needs the actual bytes of a large capture, for example a 60 MB real-time movie, run:
+
+```sh
+python3 scripts/evidence_store.py put tmp/my-task/capture.mp4 --path docs/evidence/MODULE/capture.mp4
+git add docs/evidence/BULK.json docs/evidence/.gitignore
+```
+
+Commit those two generated files with the small record and link the logical evidence path from that record.
+The source stays in scratch until recovery is verified. A reviewer on this Mac, from any worktree, runs
+`python3 scripts/evidence_store.py restore docs/evidence/MODULE/capture.mp4` and gets an ignored copy at that
+path. Restoring verifies size and SHA-256 and refuses to overwrite different local bytes. Use a new logical
+path for changed content. `THRUM_EVIDENCE_STORE` can override the store location for both commands.
+
+The default local store is `thrum-evidence-store` beside the main checkout, located through Git's common
+directory, so builders and reviewers share it. It has **no remote copy, backup or service**: a lost disk loses
+new local evidence. `check` names missing local entries without failing; `restore` fails and says where the
+file was originally put. Arrange a separate authorised transfer if a reviewer uses another machine.
+
+Older bulk evidence removed from HEAD is listed as history entries in [the manifest](evidence/BULK.json).
+The same restore command recovers those bytes from Git's object store in any full clone, with no history
+rewrite. `python3 scripts/evidence_store.py check` verifies all history entries and all available local bytes.
+Do not re-add restored files: their exact paths are ignored, and the manifest keeps existing links valid.
+
 ## Profiling recordings and temporary Python environments
 
 Treat cleanup as part of the run, including success, failure and cancellation. Before profiling or creating a temporary environment, identify its output/cache locations and ownership, including tool-managed files outside the repository. Bound profiling duration and repetitions; sample disk use during long captures and stop your recording before it exhausts available space.
