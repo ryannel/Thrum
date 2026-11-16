@@ -162,6 +162,8 @@ pub struct LaneCounts {
     pub queued_bytes: usize,
     /// Oldest outbound age in milliseconds, absent for an empty queue.
     pub oldest_ms: Option<u64>,
+    /// Arrived bytes waiting for the game to take them.
+    pub inbound_bytes: usize,
 }
 /// Snapshot of bounded queue and delivery accounting.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -197,6 +199,9 @@ pub(crate) struct Message {
 #[derive(Debug)]
 pub(crate) struct State {
     pub clock: Option<std::time::Instant>,
+    /// When a native link's I/O thread last ran. A link whose thread has not run for the idle timeout has sent
+    /// the peer nothing for that long, so the peer has closed it: see `check_alive`.
+    pub beat: Option<std::time::Instant>,
     pub clock_fn: Option<fn() -> u64>,
     pub profile: Profile,
     pub open: bool,
@@ -224,6 +229,18 @@ impl State {
             let message = self.outbound[1].pop_front().expect("front exists");
             self.counts.lanes[1].queued_bytes -= message.bytes.len();
             self.counts.expired += 1;
+        }
+    }
+    /// Close an open link as timed out once its I/O thread has been silent for the idle timeout, as when the
+    /// process was frozen. Packets that queued in the socket meanwhile can't revive it: the peer has heard
+    /// nothing for that long and has already closed its end, so nothing more may be delivered.
+    pub(crate) fn check_alive(&mut self) {
+        if self.open
+            && self.beat.is_some_and(|beat| {
+                beat.elapsed() >= std::time::Duration::from_millis(self.profile.idle_ms)
+            })
+        {
+            self.close(CloseReason::TimedOut);
         }
     }
     pub(crate) fn opened(&mut self) {
@@ -297,6 +314,7 @@ impl Link {
             id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
             state: Arc::new(Mutex::new(State {
                 clock: None,
+                beat: None,
                 clock_fn: None,
                 profile,
                 open: false,
@@ -317,7 +335,9 @@ impl Link {
     /// # Panics
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn is_open(&self) -> bool {
-        self.state.lock().expect("link state poisoned").open
+        let mut state = self.state.lock().expect("link state poisoned");
+        state.check_alive();
+        state.open
     }
     /// Queue a whole message, copying it once. `now` supplies virtual milliseconds for the
     /// in-memory carrier; socket adapters measure queue age on their own monotonic clock.
@@ -327,6 +347,7 @@ impl Link {
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn send(&self, lane: Lane, bytes: &[u8], now: u64) -> Result<(), LinkError> {
         let mut state = self.state.lock().expect("link state poisoned");
+        state.check_alive();
         let now = state.time(now);
         let index = lane.index();
         let refused = if bytes.is_empty() {
@@ -368,6 +389,7 @@ impl Link {
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn receive(&self, lane: Lane) -> Option<Vec<u8>> {
         let mut state = self.state.lock().expect("link state poisoned");
+        state.check_alive();
         let bytes = state.inbound[lane.index()].pop_front()?;
         state.inbound_bytes[lane.index()] -= bytes.len();
         state.counts.lanes[lane.index()].received += 1;
@@ -378,11 +400,9 @@ impl Link {
     /// # Panics
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn event(&self) -> Option<Event> {
-        self.state
-            .lock()
-            .expect("link state poisoned")
-            .events
-            .pop_front()
+        let mut state = self.state.lock().expect("link state poisoned");
+        state.check_alive();
+        state.events.pop_front()
     }
     /// Close immediately. Queued messages are discarded; delivery before close is a prefix.
     /// # Panics
@@ -397,11 +417,13 @@ impl Link {
     /// # Panics
     /// Panics if an internal I/O panic poisoned the link state.
     pub fn counters(&self, now: u64) -> Counters {
-        let state = self.state.lock().expect("link state poisoned");
+        let mut state = self.state.lock().expect("link state poisoned");
+        state.check_alive();
         let now = state.time(now);
         let mut result = state.counts.clone();
         for (index, queue) in state.outbound.iter().enumerate() {
             result.lanes[index].oldest_ms = queue.front().map(|m| now.saturating_sub(m.at));
+            result.lanes[index].inbound_bytes = state.inbound_bytes[index];
         }
         result
     }
@@ -424,29 +446,62 @@ impl fmt::Display for Ticket {
         Ok(())
     }
 }
+/// Longest ticket text accepted, well above the longest an IPv6 address and port can make.
+pub const TICKET_LIMIT: usize = 192;
 impl std::str::FromStr for Ticket {
     type Err = LinkError;
+    /// Parse a ticket's canonical text, exactly as `Display` writes it: `thrum1@`, a socket address in its
+    /// standard form, `@` and 64 lowercase hexadecimal digits. Anything else is refused, so a ticket that parses
+    /// prints back as the same text.
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        if text.len() > 320 {
+        if text.len() > TICKET_LIMIT {
             return Err(LinkError::InvalidTicket);
         }
-        let parts: Vec<_> = text.split('@').collect();
-        if parts.len() != 3
-            || parts[0] != "thrum1"
-            || parts[1].is_empty()
-            || parts[2].len() != 64
-            || !parts[2].is_ascii()
+        let mut parts = text.split('@');
+        let (Some("thrum1"), Some(address), Some(digits), None) =
+            (parts.next(), parts.next(), parts.next(), parts.next())
+        else {
+            return Err(LinkError::InvalidTicket);
+        };
+        let canonical = address
+            .parse::<std::net::SocketAddr>()
+            .is_ok_and(|parsed| parsed.to_string() == address);
+        if !canonical
+            || digits.len() != 64
+            || !digits.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
         {
             return Err(LinkError::InvalidTicket);
         }
         let mut hash = [0; 32];
-        for (index, byte) in hash.iter_mut().enumerate() {
-            *byte = u8::from_str_radix(&parts[2][index * 2..index * 2 + 2], 16)
-                .map_err(|_| LinkError::InvalidTicket)?;
+        for (byte, pair) in hash.iter_mut().zip(digits.as_bytes().as_chunks::<2>().0) {
+            let digit = |b: u8| if b.is_ascii_digit() { b - b'0' } else { b - b'a' + 10 };
+            *byte = digit(pair[0]) << 4 | digit(pair[1]);
         }
         Ok(Self {
-            address: parts[1].into(),
+            address: address.into(),
             hash,
         })
     }
+}
+
+/// What a host did with connections that never became links the game could take. Links the game took report
+/// their own close reasons.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct HostCounters {
+    /// Links opened and offered to the game.
+    pub opened: u64,
+    /// Connections refused because the host held its cap of links and handshakes in progress.
+    pub refused_full: u64,
+    /// Connections refused for another link version: a wrong ALPN or WebTransport path.
+    pub refused_version: u64,
+    /// Connections whose QUIC or TLS handshake failed for another reason.
+    pub handshake_failed: u64,
+    /// Connections that broke the link's rules before opening, such as a first frame that is not the hello.
+    pub broke_rules: u64,
+    /// Connections dropped at the startup timeout: an unfinished handshake or no hello.
+    pub startup_timed_out: u64,
+    /// Connections that ended in startup for any other reason, such as the peer closing.
+    pub startup_failed: u64,
+    /// Connections and handshakes currently counted against the link cap.
+    pub active: u64,
 }

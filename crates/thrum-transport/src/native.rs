@@ -1,6 +1,7 @@
 //! Opt-in Quinn carrier. Public calls only touch bounded application queues.
 use crate::{
-    CloseReason, Controller, HELLO, Lane, Link, LinkError, Profile, RELIABLE_LIMIT, Ticket,
+    CloseReason, Controller, HELLO, HostCounters, Lane, Link, LinkError, Profile, Ticket,
+    wire::{Decoder, Frame, WireError},
 };
 use rustls::{
     DigitallySignedStruct, SignatureScheme,
@@ -21,6 +22,13 @@ use web_transport_quinn::{RecvStream, SendStream, Session};
 
 const ALPN: &[u8] = b"thrum-1";
 const PATH: &str = "/thrum/1";
+/// The most a reliable-stream read takes at once; with the decoder's one partial frame, what a link holds outside
+/// its capped queues.
+const READ_CHUNK: usize = 16_384;
+/// QUIC application code a host closes with when a connection breaks the link's rules before it opens.
+const RULE_BROKEN: u32 = 0x5452;
+/// TLS `no_application_protocol`, as a QUIC crypto error: a client asked for another link version.
+const NO_APPLICATION_PROTOCOL: u8 = 120;
 type IoResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[derive(Debug)]
@@ -28,6 +36,7 @@ struct HostState {
     ticket: Option<Ticket>,
     accepted: VecDeque<Link>,
     failed: bool,
+    counters: HostCounters,
 }
 /// Every link a host's I/O thread created. When that thread ends, whether its host was dropped, its runtime
 /// failed or it panicked, each link not yet closed closes as `Local(0)`, so a retained handle can't stay open
@@ -85,6 +94,7 @@ impl Host {
             ticket: None,
             accepted: VecDeque::new(),
             failed: false,
+            counters: HostCounters::default(),
         }));
         let stop = Arc::new(AtomicBool::new(false));
         let shared = Arc::clone(&state);
@@ -119,6 +129,12 @@ impl Host {
     /// Panics if the host's state was poisoned by an I/O panic.
     pub fn failed(&self) -> bool {
         self.state.lock().expect("host state poisoned").failed
+    }
+    /// What the host did with connections that never became links, and how many count against its cap now.
+    /// # Panics
+    /// Panics if the host's state was poisoned by an I/O panic.
+    pub fn counters(&self) -> HostCounters {
+        self.state.lock().expect("host state poisoned").counters
     }
     /// Take an opened link. The accepted queue counts against the host's link cap.
     /// # Panics
@@ -236,8 +252,13 @@ async fn serve(
         tokio::select! {
             incoming = endpoint.accept() => {
                 let Some(incoming) = incoming else { break; };
-                if active.load(Ordering::Relaxed) >= profile.links { incoming.refuse(); continue; }
-                active.fetch_add(1, Ordering::Relaxed);
+                if active.load(Ordering::Relaxed) >= profile.links {
+                    incoming.refuse();
+                    shared.lock().expect("host state poisoned").counters.refused_full += 1;
+                    continue;
+                }
+                let count = active.fetch_add(1, Ordering::Relaxed) + 1;
+                shared.lock().expect("host state poisoned").counters.active = count as u64;
                 let active = Arc::clone(&active);
                 let shared = Arc::clone(shared);
                 let profile = profile.clone();
@@ -245,31 +266,32 @@ async fn serve(
                 link.state.lock().expect("link state poisoned").clock = Some(Instant::now());
                 links.add(&link);
                 tokio::spawn(async move {
-                    let result = async {
-                        let connection = incoming.await?;
-                        let session = if connection.handshake_data().and_then(|d| d.downcast::<quinn::crypto::rustls::HandshakeData>().ok()).and_then(|d| d.protocol).as_deref() == Some(b"h3") {
-                            let request = web_transport_quinn::Request::accept(connection.clone()).await?;
-                            if request.connect().url.path() != PATH { return Err("wrong WebTransport path".into()); }
-                            request.ok().await?
-                        } else { Session::raw(connection.clone()) };
-                        let (mut send, mut recv) = session.accept_bi().await?;
-                        read_hello(&mut recv).await?;
-                        send.write_all(HELLO).await?;
-                        if session.max_datagram_size() < crate::DATAGRAM_LIMIT { return Err("datagram ceiling too small".into()); }
-                        link.state.lock().expect("link state poisoned").opened();
-                        {
-                            let mut host = shared.lock().expect("host state poisoned");
-                            host.accepted.retain(Link::is_open);
-                            if host.accepted.len() >= profile.links { return Err("accepted link queue full".into()); }
-                            host.accepted.push_back(link.clone());
+                    let started = tokio::time::timeout(
+                        Duration::from_millis(profile.startup_ms),
+                        accept_link(incoming, &link, &shared, &profile),
+                    )
+                    .await
+                    .unwrap_or(Err(Startup::TimedOut));
+                    match started {
+                        Ok((session, connection, send, reader)) => {
+                            drive(link.clone(), session, connection, send, reader).await;
                         }
-                        Ok::<_, Box<dyn std::error::Error + Send + Sync>>((session, connection, send, recv))
-                    };
-                    match tokio::time::timeout(Duration::from_millis(profile.startup_ms), result).await {
-                        Ok(Ok((session, connection, send, recv))) => { drive(link.clone(), session, connection, send, recv).await; }
-                        _ => { link.state.lock().expect("link state poisoned").close(CloseReason::TimedOut); }
+                        Err(failure) => {
+                            link.state.lock().expect("link state poisoned").close(CloseReason::TimedOut);
+                            let mut host = shared.lock().expect("host state poisoned");
+                            let counters = &mut host.counters;
+                            match failure {
+                                Startup::TimedOut => counters.startup_timed_out += 1,
+                                Startup::Version => counters.refused_version += 1,
+                                Startup::Handshake => counters.handshake_failed += 1,
+                                Startup::RuleBroken => counters.broke_rules += 1,
+                                Startup::Full => counters.refused_full += 1,
+                                Startup::Failed => counters.startup_failed += 1,
+                            }
+                        }
                     }
-                    active.fetch_sub(1, Ordering::Relaxed);
+                    let count = active.fetch_sub(1, Ordering::Relaxed) - 1;
+                    shared.lock().expect("host state poisoned").counters.active = count as u64;
                 });
             }
             () = tokio::time::sleep(Duration::from_millis(10)) => { if stop.load(Ordering::Relaxed) { break; } }
@@ -282,6 +304,131 @@ async fn serve(
     let _ = tokio::time::timeout(Duration::from_millis(100), endpoint.wait_idle()).await;
     Ok(())
 }
+/// Why a connection never became a link the game could take.
+enum Startup {
+    TimedOut,
+    Version,
+    Handshake,
+    RuleBroken,
+    Full,
+    Failed,
+}
+/// A host's startup for one connection: the handshake, a browser's WebTransport request, the stream and the
+/// hello. The caller bounds it with the startup timeout. A connection that fails is closed here, so its peer
+/// learns at once rather than at its own timeout.
+async fn accept_link(
+    incoming: quinn::Incoming,
+    link: &Link,
+    shared: &Mutex<HostState>,
+    profile: &Profile,
+) -> Result<(Session, quinn::Connection, SendStream, Reader), Startup> {
+    let connection = incoming.await.map_err(|error| match error {
+        quinn::ConnectionError::TransportError(error)
+            if error.code == quinn::TransportErrorCode::crypto(NO_APPLICATION_PROTOCOL) =>
+        {
+            Startup::Version
+        }
+        quinn::ConnectionError::TimedOut => Startup::TimedOut,
+        _ => Startup::Handshake,
+    })?;
+    let refuse = |code: u32, failure: Startup| {
+        connection.close(code.into(), b"link refused");
+        failure
+    };
+    let browser = connection
+        .handshake_data()
+        .and_then(|d| d.downcast::<quinn::crypto::rustls::HandshakeData>().ok())
+        .and_then(|d| d.protocol)
+        .as_deref()
+        == Some(b"h3");
+    let session = if browser {
+        let request = web_transport_quinn::Request::accept(connection.clone())
+            .await
+            .map_err(|_| refuse(RULE_BROKEN, Startup::Failed))?;
+        if request.connect().url.path() != PATH {
+            drop(
+                request
+                    .reject(web_transport_quinn::http::StatusCode::NOT_FOUND)
+                    .await,
+            );
+            return Err(refuse(RULE_BROKEN, Startup::Version));
+        }
+        request
+            .ok()
+            .await
+            .map_err(|_| refuse(RULE_BROKEN, Startup::Failed))?
+    } else {
+        Session::raw(connection.clone())
+    };
+    let (mut send, recv) = session
+        .accept_bi()
+        .await
+        .map_err(|_| refuse(RULE_BROKEN, Startup::Failed))?;
+    let mut reader = Reader::new(recv);
+    match reader.frame().await {
+        Ok(Frame::Hello) => (),
+        Err(error) if error.downcast_ref::<WireError>().is_some() => {
+            return Err(refuse(RULE_BROKEN, Startup::RuleBroken));
+        }
+        _ => return Err(refuse(RULE_BROKEN, Startup::Failed)),
+    }
+    send.write_all(HELLO)
+        .await
+        .map_err(|_| refuse(RULE_BROKEN, Startup::Failed))?;
+    if session.max_datagram_size() < crate::DATAGRAM_LIMIT {
+        return Err(refuse(RULE_BROKEN, Startup::Failed));
+    }
+    link.state.lock().expect("link state poisoned").opened();
+    let mut host = shared.lock().expect("host state poisoned");
+    host.accepted.retain(Link::is_open);
+    if host.accepted.len() >= profile.links {
+        drop(host);
+        return Err(refuse(RULE_BROKEN, Startup::Full));
+    }
+    host.accepted.push_back(link.clone());
+    host.counters.opened += 1;
+    drop(host);
+    Ok((session, connection, send, reader))
+}
+
+/// The reliable stream's reader: chunks from QUIC through the link's own decoder.
+struct Reader {
+    recv: RecvStream,
+    decoder: Decoder,
+    chunk: Option<(quinn::Chunk, usize)>,
+}
+impl Reader {
+    const fn new(recv: RecvStream) -> Self {
+        Self {
+            recv,
+            decoder: Decoder::new(),
+            chunk: None,
+        }
+    }
+    /// The next whole frame. It reads no further than that frame, so a game that stops draining stops the reads.
+    async fn frame(&mut self) -> IoResult<Frame> {
+        loop {
+            if self.chunk.is_none() {
+                let chunk = self
+                    .recv
+                    .read_chunk(READ_CHUNK, true)
+                    .await?
+                    .ok_or("reliable stream finished")?;
+                self.chunk = Some((chunk, 0));
+            }
+            let (chunk, offset) = self.chunk.as_mut().expect("chunk read");
+            let (used, frame) = self.decoder.decode(&chunk.bytes[*offset..])?;
+            *offset += used;
+            if *offset == chunk.bytes.len() {
+                self.chunk = None;
+            }
+            if let Some(frame) = frame {
+                return Ok(frame);
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Pinned([u8; 32]);
 impl ServerCertVerifier for Pinned {
@@ -354,27 +501,22 @@ async fn client(address: SocketAddr, hash: [u8; 32], profile: Profile, link: Lin
     let setup = async {
         let connection = endpoint.connect(address, "localhost")?.await?;
         let session = Session::raw(connection.clone());
-        let (mut send, mut recv) = session.open_bi().await?;
+        let (mut send, recv) = session.open_bi().await?;
         send.write_all(HELLO).await?;
-        read_hello(&mut recv).await?;
+        let mut reader = Reader::new(recv);
+        if reader.frame().await? != Frame::Hello {
+            return Err("host's first frame was not the hello".into());
+        }
         if session.max_datagram_size() < crate::DATAGRAM_LIMIT {
             return Err("datagram ceiling too small".into());
         }
-        Ok::<_, Box<dyn std::error::Error + Send + Sync>>((connection, session, send, recv))
+        Ok::<_, Box<dyn std::error::Error + Send + Sync>>((connection, session, send, reader))
     };
-    let (connection, session, send, recv) =
+    let (connection, session, send, reader) =
         tokio::time::timeout(Duration::from_millis(profile.startup_ms), setup).await??;
     link.state.lock().expect("link state poisoned").opened();
-    drive(link, session, connection, send, recv).await;
+    drive(link, session, connection, send, reader).await;
     endpoint.wait_idle().await;
-    Ok(())
-}
-async fn read_hello(recv: &mut RecvStream) -> IoResult<()> {
-    let mut hello = [0; 4];
-    recv.read_exact(&mut hello).await?;
-    if &hello != HELLO {
-        return Err("invalid link hello".into());
-    }
     Ok(())
 }
 
@@ -408,7 +550,7 @@ async fn drive(
     session: Session,
     connection: quinn::Connection,
     mut send: SendStream,
-    mut recv: RecvStream,
+    mut stream: Reader,
 ) {
     // Each future owns at most one message outside the capped application queues.
     let empty_stack_space = session.datagram_send_buffer_space();
@@ -421,11 +563,7 @@ async fn drive(
                 .expect("link state poisoned")
                 .pop(Lane::Reliable);
             if let Some(bytes) = bytes {
-                send.write_all(
-                    &u32::try_from(bytes.len())
-                        .expect("bounded message")
-                        .to_le_bytes(),
-                )
+                send.write_all(&crate::wire::encode_prefix(bytes.len()))
                 .await
                 .map_err(|error| transport_reason(&error))?;
                 send.write_all(&bytes)
@@ -440,18 +578,15 @@ async fn drive(
     };
     let reader = async {
         loop {
-            let mut prefix = [0; 4];
-            recv.read_exact(&mut prefix)
-                .await
-                .map_err(|error| transport_reason(&error))?;
-            let length = u32::from_le_bytes(prefix) as usize;
-            if length == 0 || length > RELIABLE_LIMIT {
-                return Err::<(), _>(CloseReason::Protocol);
-            }
-            let mut bytes = vec![0; length];
-            recv.read_exact(&mut bytes)
-                .await
-                .map_err(|error| transport_reason(&error))?;
+            let bytes = match stream.frame().await {
+                Ok(Frame::Message(bytes)) => bytes,
+                Ok(Frame::Hello) => unreachable!("the decoder yields one hello, read in startup"),
+                Err(error) if error.downcast_ref::<WireError>().is_some() => {
+                    return Err::<(), _>(CloseReason::Protocol);
+                }
+                Err(error) => return Err(transport_reason(&*error)),
+            };
+            let length = bytes.len();
             loop {
                 let ready = {
                     let state = link.state.lock().expect("link state poisoned");
@@ -516,6 +651,10 @@ async fn drive(
         loop {
             {
                 let mut state = link.state.lock().expect("link state poisoned");
+                // A beat older than the idle timeout means this thread was frozen: close before anything that
+                // queued in the socket meanwhile is read.
+                state.check_alive();
+                state.beat = Some(Instant::now());
                 let now = u64::try_from(state.clock.expect("native clock").elapsed().as_millis())
                     .unwrap_or(u64::MAX);
                 state.expire(now);

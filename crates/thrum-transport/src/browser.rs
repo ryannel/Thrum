@@ -1,5 +1,8 @@
 //! Browser WebTransport, with mandatory certificate hash pinning and bounded game queues.
-use crate::{CloseReason, HELLO, Lane, Link, LinkError, Profile, RELIABLE_LIMIT, Ticket};
+use crate::{
+    CloseReason, HELLO, Lane, Link, LinkError, Profile, Ticket,
+    wire::{Decoder, Frame},
+};
 use js_sys::{Object, Promise, Reflect, Uint8Array};
 use wasm_bindgen::{JsCast, prelude::*};
 use wasm_bindgen_futures::{JsFuture, spawn_local};
@@ -230,14 +233,14 @@ async fn setup(link: Link, transport: &Transport) -> Result<(), JsValue> {
         .unchecked_into::<Readable>()
         .reader();
     JsFuture::from(writer.write(&Uint8Array::from(HELLO.as_slice()))).await?;
-    let mut buffer = Vec::new();
-    while buffer.len() < HELLO.len() {
-        buffer.extend(read_chunk(&reader).await?);
-    }
-    if &buffer[..4] != HELLO {
+    let mut stream = Stream {
+        decoder: Decoder::new(),
+        chunk: Vec::new(),
+        offset: 0,
+    };
+    if stream.frame(&reader).await.map_err(|_| "invalid hello")? != Frame::Hello {
         return Err("invalid hello".into());
     }
-    buffer.drain(..4);
     link.state.lock().expect("link state poisoned").opened();
     let outbound = link.clone();
     spawn_local(async move {
@@ -247,7 +250,7 @@ async fn setup(link: Link, transport: &Transport) -> Result<(), JsValue> {
     });
     let inbound = link.clone();
     spawn_local(async move {
-        if let Err(reason) = reliable_in(&inbound, &reader, buffer).await {
+        if let Err(reason) = reliable_in(&inbound, &reader, stream).await {
             failed(&inbound, reason).await;
         }
     });
@@ -312,9 +315,8 @@ async fn reliable_out(link: &Link, writer: &Writer) -> Result<(), JsValue> {
             .expect("link state poisoned")
             .pop(Lane::Reliable);
         if let Some(bytes) = bytes {
-            let length = u32::try_from(bytes.len()).expect("bounded message");
-            let mut frame = Vec::with_capacity(4 + bytes.len());
-            frame.extend_from_slice(&length.to_le_bytes());
+            let mut frame = Vec::with_capacity(crate::wire::PREFIX_BYTES + bytes.len());
+            frame.extend_from_slice(&crate::wire::encode_prefix(bytes.len()));
             frame.extend(bytes);
             JsFuture::from(writer.write(&Uint8Array::from(frame.as_slice()))).await?;
         } else {
@@ -323,35 +325,52 @@ async fn reliable_out(link: &Link, writer: &Writer) -> Result<(), JsValue> {
     }
     Ok(())
 }
-async fn reliable_in(link: &Link, reader: &Reader, mut buffer: Vec<u8>) -> Result<(), CloseReason> {
-    while link.is_open() {
-        if buffer.len() >= 4 {
-            let length = u32::from_le_bytes(buffer[..4].try_into().expect("four bytes")) as usize;
-            if length == 0 || length > RELIABLE_LIMIT {
-                return Err(CloseReason::Protocol);
+/// The reliable stream's reader: the page's chunks through the link's own decoder.
+struct Stream {
+    decoder: Decoder,
+    chunk: Vec<u8>,
+    offset: usize,
+}
+impl Stream {
+    /// The next whole frame, reading no further than it.
+    async fn frame(&mut self, reader: &Reader) -> Result<Frame, CloseReason> {
+        loop {
+            if self.offset == self.chunk.len() {
+                self.chunk = read_chunk(reader)
+                    .await
+                    .map_err(|_| CloseReason::Transport)?;
+                self.offset = 0;
             }
-            if buffer.len() >= length + 4 {
-                let room = {
-                    let state = link.state.lock().expect("link state poisoned");
-                    state.inbound_bytes[0] + length <= state.profile.reliable_bytes
-                };
-                if !room {
-                    pause().await;
-                    continue;
-                }
-                link.state
-                    .lock()
-                    .expect("link state poisoned")
-                    .receive(Lane::Reliable, buffer[4..4 + length].to_vec());
-                buffer.drain(..4 + length);
-                continue;
+            let (used, frame) = self
+                .decoder
+                .decode(&self.chunk[self.offset..])
+                .map_err(|_| CloseReason::Protocol)?;
+            self.offset += used;
+            if let Some(frame) = frame {
+                return Ok(frame);
             }
         }
-        buffer.extend(
-            read_chunk(reader)
-                .await
-                .map_err(|_| CloseReason::Transport)?,
-        );
+    }
+}
+async fn reliable_in(link: &Link, reader: &Reader, mut stream: Stream) -> Result<(), CloseReason> {
+    while link.is_open() {
+        let Frame::Message(bytes) = stream.frame(reader).await? else {
+            return Err(CloseReason::Protocol);
+        };
+        loop {
+            let room = {
+                let state = link.state.lock().expect("link state poisoned");
+                state.inbound_bytes[0] + bytes.len() <= state.profile.reliable_bytes
+            };
+            if room {
+                break;
+            }
+            pause().await;
+        }
+        link.state
+            .lock()
+            .expect("link state poisoned")
+            .receive(Lane::Reliable, bytes);
     }
     Ok(())
 }

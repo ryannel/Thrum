@@ -4,6 +4,7 @@
 mod link;
 pub mod memory;
 pub mod proof;
+pub mod wire;
 pub use link::*;
 
 #[cfg(all(feature = "browser", target_arch = "wasm32"))]
