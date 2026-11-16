@@ -317,7 +317,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -327,7 +327,7 @@
           "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/WATERS/M2-opinions.md",
           "verdict": "",
           "review": ""
         },
@@ -337,8 +337,8 @@
           "inspect": "`fixed` stills at noon, low Sun and twilight with the grey float in frame: the float against the water beside it, the Sun's reflection and the horizon.",
           "ask": "Does the surface shader take every light term from the lent environment library, apply the exposure scale once, and bind no sky, Sun or exposure resource of its own?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -350,7 +350,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -359,8 +359,8 @@
           "statement": "At 1x, with the camera panning, the surface moves smoothly between ticks: waves do not step at the tick rate against the camera.",
           "inspect": "A `realtime` sequence with the camera panning across the wind: near crests from frame to frame.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -372,7 +372,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -383,8 +383,8 @@
           "ask": "Is the record paired and taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2-cost.md",
           "verdict": "",
           "review": ""
         },
@@ -394,7 +394,7 @@
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
+          "evidence": "docs/evidence/WATERS/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -403,8 +403,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         },

@@ -2799,10 +2799,10 @@
       "waters_open_sea": {
         "implementation": "partial",
         "functional_validation": "passed",
-        "experienced_quality": "below_bar_three_builder_opinions_report_rounded_crests",
+        "experienced_quality": "below_bar_rounded_crests_and_elevated_horizon_belt",
         "scope": "WATERS M2: one open-sea contribution, shared sky lighting, displaced scene depth, temporal inputs and a ticking example. Shorelines, other bodies, wakes, foam and full optics remain in later milestones.",
         "correctness": "Mac Metal submitted-depth, CPU-oracle motion, rebuild, multi-tick and stage probes; no Chrome or simulator claim.",
-        "visuals": "Continuous horizon, haze and shared lighting are builder-inspected on Metal. Three fresh builder opinions still reject the crest shape; no independent milestone review has run.",
+        "visuals": "Fixed Metal views support shared lighting and haze. Repeated fresh builder opinions still reject crest readability and the smooth elevated horizon belt, including source ef259d1f1. No independent milestone review has run.",
         "device": "Apple M3 Max Metal only. Capture-off paired cost is a concurrent-load tripwire, not physical display cadence or quiet-machine qualification.",
         "evidence": "../evidence/WATERS/M2.md"
       },

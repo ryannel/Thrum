@@ -377,3 +377,8 @@
   local inverse offset and stopped at a 10 micrometre plus relative residual. Compressed native/portable
   probes remain below 0.011 mm height error and 0.000059 slope error, with the old-cap control still failing.
   The scene now orbits one declared inspection area, so both wind bearings face the same wave train.
+- 2026-11-16 Current source `ef259d1f1` passes scene, frame-contract, stage and paired-cost Metal checks.
+  Fixed shared-light inspection and fresh elapsed-motion opinion support M2.3 and M2.5; M2.7 now has valid timings.
+  Stronger swell and delayed cache LOD still fail fresh opinions on crest shape and the elevated horizon belt.
+  M2.2 remains open; proposing planner diagnosis of geometric/cache-to-statistical transition without lowering its bar.
+  [Handoff](../../evidence/WATERS/M2-handoff.md) retains attempts, current proofs and the unmerged checkpoint.
