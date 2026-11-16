@@ -156,7 +156,7 @@
     {
       "id": "M2",
       "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -169,20 +169,20 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.2",
           "statement": "The wetness function gives the pores' fill and the surface water with its cover at a world point, from prepared fields and the rain state alone. It reads the stores by exposure, and is nothing under a roof; a wall takes a quarter of the ground's and an underside none; relief on a slope holds less, down to none at the class's steepest slope; where a class has a pattern, surface water covers its lows first. On the paving and the earth of part 5 of the design proof, ground that 0.4 of the rain reaches differs from that ground stepped by itself by no more than 0.3 of the pores and 0.15 mm of surface water.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test wetness",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m22",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.3",
@@ -190,20 +190,20 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test margins",
           "ask": "Does the shore's case read the wave support from `thrum-water-model`'s own function, so that it is the support `WATERS`' film reads?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m23",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.4",
           "statement": "The wet look's reference darkens a base colour channel by channel by `(1 - R)(1 - p) a / (1 - p a)`, mixed in by the pores' fill times porosity: 0.55 of an albedo of 0.1 and 0.83 of 0.8 at `p` = 0.47, within 0.01; a brown's saturation rises; a metal is unchanged; a material with no porosity of its own takes the rule on roughness and metalness.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test wet_look",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m24",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.5",
@@ -211,10 +211,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test rings",
           "ask": "Does the test integrate the response itself, with its own Bessel function, and take the energy's closed form from its own algebra?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m25",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.6",
@@ -222,10 +222,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test rain_bands && cargo test --locked --offline -p thrum-water-model",
           "ask": "Do the bands hold any state between evaluations other than the committed history, or any power that depends on the wind? Would births read from the present rate fail the stop and the restart, as part 9 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows? Was any existing test of `thrum-water-model` changed?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m26",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.11",
@@ -234,8 +234,8 @@
           "ask": "Does the test work each figure from the cells, the stores and the puddle's water at the tick's start, without the model? Would a model that passed a puddle's rain through the ground's stores fail it, and would one that filled the pores under a puddle at once?",
           "target": "mac-metal",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "verdict": "",
+          "review": "",
           "builder_result": "open"
         },
         {
@@ -245,27 +245,29 @@
           "ask": "Does the test take each donor's water from the state before the entry, and check that the donor lost what the receiver gained? Does the held case show ground kept for more than one tick and then handed over? Does the rain state keep any quantity that stands for water not yet delivered?",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.9",
           "statement": "`WATERS`' conformance harness, run over a hollows body with rain bands, reports nothing for the model against itself, and reports a provider that ignores exposure, by the points and the differences.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m29",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M2.10",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": "docs/evidence/PUDDLES/M2-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [
@@ -274,17 +276,7 @@
           "item": "M2.11",
           "repeat": true
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "a planner needs to rewrite the design's covering and uncovering rule and M2.11 to say what happens when a puddle holds less water than the pores it rises over or the film it must leave.",
-        "work": {
-          "commit": "0edf93802ec46e87d42b22c3e190cdecd5f16940",
-          "branch": "build/puddles",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/PUDDLES/M2-handoff.md"
-      }
+      ]
     },
     {
       "id": "M3",
