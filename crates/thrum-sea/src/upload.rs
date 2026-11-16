@@ -1,14 +1,18 @@
-use crate::{Ambient, MAX_QUERIES, PIXELS};
+use crate::{
+    Ambient, MAX_QUERIES, PIXELS, UploadBytes, records,
+    spec::{BufferKey, MAX_LONG},
+};
+use bytemuck::Zeroable as _;
 use std::f64::consts::{PI, TAU};
 use thrum_sea_model::{LOOP_SECONDS, Spectrum, loop_cycles};
 
 #[expect(
     clippy::cast_possible_truncation,
-    reason = "f64 physical values are explicitly reduced to bounded GPU-relative f32; loop fraction is in u32 range"
+    reason = "physical values reduce to GPU-relative f32; bounded loop/lattice values fit integers"
 )]
 #[expect(
     clippy::cast_sign_loss,
-    reason = "loop time is reduced to nonnegative fraction and lattice indices use rem_euclid"
+    reason = "loop fraction and rem_euclid lattice indices are nonnegative"
 )]
 pub(super) fn frame(
     sea: &mut Ambient,
@@ -19,11 +23,143 @@ pub(super) fn frame(
     anchor: [f64; 2],
     queries: &[[f64; 2]],
 ) -> Result<(), String> {
+    let changed = !sea.modes_initialized
+        || spectrum
+            .cascades
+            .iter()
+            .zip(&sea.cached_cascades)
+            .zip(sea.cached_lengths)
+            .any(|((band, cached), length)| {
+                band.length().to_bits() != length.to_bits() || band.components() != cached
+            });
+    validate(sea, spectrum, time, anchor, queries, changed)?;
+    if changed {
+        sea.modes.fill(records::Bin::zeroed());
+        for (band, cascade) in spectrum.cascades.iter().enumerate() {
+            for c in cascade.components() {
+                let lattice = c
+                    .wave_vector
+                    .map(|k| (k * cascade.length() / TAU).round() as i32);
+                let index = band * PIXELS as usize
+                    + lattice[1].rem_euclid(crate::TRANSFORM_SIZE.cast_signed()) as usize
+                        * crate::TRANSFORM_SIZE as usize
+                    + lattice[0].rem_euclid(crate::TRANSFORM_SIZE.cast_signed()) as usize;
+                sea.modes[index] = records::Bin {
+                    physical: [
+                        c.wave_vector[0] as f32,
+                        c.wave_vector[1] as f32,
+                        c.amplitude as f32,
+                        c.phase as f32,
+                    ],
+                    clock: [loop_cycles(*c), 0, 0, 0],
+                };
+            }
+        }
+    }
+    let mut params = records::Params::zeroed();
+    params.time = [
+        (time.rem_euclid(LOOP_SECONDS) / LOOP_SECONDS * 4_294_967_296.0) as u32,
+        u32::try_from(spectrum.long.len()).expect("validated count"),
+        u32::try_from(queries.len()).expect("validated count"),
+        0,
+    ];
+    params.physical[0] = sea.profile.choppiness as f32;
+    for (length, cascade) in params.lengths.iter_mut().zip(&spectrum.cascades) {
+        *length = cascade.length() as f32;
+    }
+    for (i, level) in sea.levels.iter_mut().enumerate() {
+        level.texel = f64::from(1_u32 << i);
+        level.max_wavenumber = PI / level.texel;
+        level.origin = anchor.map(|v| (v / level.texel).floor() * level.texel - 64.0 * level.texel);
+        params.levels[i] = [
+            level.origin[0] - anchor[0],
+            level.origin[1] - anchor[1],
+            level.texel,
+            level.max_wavenumber,
+        ]
+        .map(|v| v as f32);
+    }
+    let mut long = [records::Long::zeroed(); MAX_LONG];
+    for (record, c) in long.iter_mut().zip(&spectrum.long) {
+        *record = records::Long {
+            physical: [
+                c.wave_vector[0],
+                c.wave_vector[1],
+                c.amplitude,
+                c.anchored_phase(anchor, time),
+            ]
+            .map(|v| v as f32),
+            rate: [c.frequency() as f32, 0.0, 0.0, 0.0],
+        };
+    }
+    sea.upload.clear();
+    sea.upload.extend_from_slice(bytemuck::bytes_of(&params));
+    sea.upload
+        .extend_from_slice(bytemuck::cast_slice(&long[..spectrum.long.len()]));
+    for point in queries {
+        let relative = [(point[0] - anchor[0]) as f32, (point[1] - anchor[1]) as f32];
+        sea.upload.extend_from_slice(bytemuck::bytes_of(&relative));
+    }
+    // Modes have their own immutable-to-compute allocation. Queue writes survive a discarded
+    // encoder, so caching one here cannot lose a needed upload when that frame is dropped.
+    let mode_bytes = if changed {
+        let bytes = bytemuck::cast_slice(&sea.modes);
+        queue.write_buffer(&sea.buffers[&BufferKey::Modes], 0, bytes);
+        for (cached, band) in sea.cached_cascades.iter_mut().zip(&spectrum.cascades) {
+            cached.clear();
+            cached.extend_from_slice(band.components());
+        }
+        sea.cached_lengths = spectrum
+            .cascades
+            .each_ref()
+            .map(thrum_sea_model::Cascade::length);
+        sea.modes_initialized = true;
+        bytes.len() as u64
+    } else {
+        0
+    };
+    let stats = UploadBytes {
+        total: mode_bytes + sea.upload.len() as u64,
+        parameters: size_of::<records::Params>() as u64,
+        modes: mode_bytes,
+        long: (spectrum.long.len() * size_of::<records::Long>()) as u64,
+        queries: (queries.len() * size_of::<[f32; 2]>()) as u64,
+    };
+    queue.write_buffer(&sea.buffers[&BufferKey::UploadStaging], 0, &sea.upload);
+    let mut offset = 0;
+    for (key, bytes) in [
+        (BufferKey::Params, stats.parameters),
+        (BufferKey::Long, stats.long),
+        (BufferKey::Queries, stats.queries),
+    ] {
+        if bytes > 0 {
+            encoder.copy_buffer_to_buffer(
+                &sea.buffers[&BufferKey::UploadStaging],
+                offset,
+                &sea.buffers[&key],
+                0,
+                bytes,
+            );
+        }
+        offset += bytes;
+    }
+    sea.last_upload = stats;
+    Ok(())
+}
+
+fn validate(
+    sea: &Ambient,
+    spectrum: &Spectrum,
+    time: f64,
+    anchor: [f64; 2],
+    queries: &[[f64; 2]],
+    changed: bool,
+) -> Result<(), String> {
     if !time.is_finite()
         || anchor.iter().any(|v| !v.is_finite() || v.abs() > 1e12)
         || queries.len() > MAX_QUERIES as usize
         || queries.iter().flatten().any(|v| !v.is_finite())
-        || spectrum.long.len() > 192
+        || spectrum.long.len() > MAX_LONG
     {
         return Err(
             "sea upload: finite time/anchor, <=192 components and <=4096 queries required".into(),
@@ -37,7 +173,7 @@ pub(super) fn frame(
     if !steepness.is_finite() || steepness >= 0.5 {
         return Err("sea long waves: contraction bound must be below 0.5".into());
     }
-    for band in &spectrum.cascades {
+    for band in spectrum.cascades.iter().filter(|_| changed) {
         if !band.length().is_finite()
             || band.length() <= 0.0
             || band.components().iter().any(|c| {
@@ -48,104 +184,30 @@ pub(super) fn frame(
         {
             return Err("sea cascade: invalid physical input".into());
         }
-    }
-    sea.upload.fill(0);
-    let fraction = (time.rem_euclid(LOOP_SECONDS) / LOOP_SECONDS * 4_294_967_296.0) as u32;
-    let query_count = u32::try_from(queries.len()).map_err(|_| "sea query count")?;
-    let long_count = u32::try_from(spectrum.long.len()).map_err(|_| "sea component count")?;
-    let data = &mut sea.upload;
-    for (i, v) in [fraction, long_count, query_count, 0]
-        .into_iter()
-        .enumerate()
-    {
-        put(data, i * 4, v.to_le_bytes());
-    }
-    put(data, 16, (sea.profile.choppiness as f32).to_le_bytes());
-    for (band, cascade) in spectrum.cascades.iter().enumerate() {
-        put(data, 32 + band * 4, (cascade.length() as f32).to_le_bytes());
-    }
-    for (i, level) in sea.levels.iter_mut().enumerate() {
-        level.texel = f64::from(1_u32 << i);
-        level.max_wavenumber = PI / level.texel;
-        level.origin = anchor.map(|v| (v / level.texel).floor() * level.texel - 64.0 * level.texel);
-        for (j, v) in [
-            level.origin[0] - anchor[0],
-            level.origin[1] - anchor[1],
-            level.texel,
-            level.max_wavenumber,
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            put(data, 48 + i * 16 + j * 4, (v as f32).to_le_bytes());
-        }
-    }
-    let modes_offset = 176;
-    for (band, cascade) in spectrum.cascades.iter().enumerate() {
-        for c in cascade.components() {
-            let lattice = c
-                .wave_vector
-                .map(|k| (k * cascade.length() / TAU).round() as i32);
-            if lattice.iter().any(|v| v.abs() >= 128) || lattice == [0, 0] {
+        for c in band.components() {
+            let lattice = c.wave_vector.map(|k| (k * band.length() / TAU).round());
+            if lattice
+                .iter()
+                .any(|v| v.abs() >= f64::from(crate::TRANSFORM_SIZE / 2))
+                || lattice == [0.0, 0.0]
+            {
                 return Err("sea cascade: transform_size lattice limit".into());
             }
-            let index = band * PIXELS as usize
-                + lattice[1].rem_euclid(256) as usize * 256
-                + lattice[0].rem_euclid(256) as usize;
-            let offset = modes_offset + index * 32;
-            for (j, v) in [c.wave_vector[0], c.wave_vector[1], c.amplitude, c.phase]
-                .into_iter()
-                .enumerate()
-            {
-                put(data, offset + j * 4, (v as f32).to_le_bytes());
-            }
-            put(data, offset + 16, loop_cycles(*c).to_le_bytes());
         }
     }
-    let long_offset = modes_offset + 3 * PIXELS as usize * 32;
-    for (i, c) in spectrum.long.iter().enumerate() {
-        if !c.amplitude.is_finite()
+    if spectrum.long.iter().any(|c| {
+        !c.amplitude.is_finite()
             || c.amplitude < 0.0
             || !c.frequency().is_finite()
             || c.frequency() == 0.0
-        {
-            return Err("sea long waves: invalid component".into());
-        }
-        for (j, v) in [
-            c.wave_vector[0],
-            c.wave_vector[1],
-            c.amplitude,
-            c.anchored_phase(anchor, time),
-            c.frequency(),
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            put(data, long_offset + i * 32 + j * 4, (v as f32).to_le_bytes());
-        }
+    }) {
+        return Err("sea long waves: invalid component".into());
     }
-    let query_offset = long_offset + 192 * 32;
-    for (i, point) in queries.iter().enumerate() {
-        for axis in 0..2 {
-            let relative = point[axis] - anchor[axis];
-            if relative.abs() > 8192.0 {
-                return Err("sea queries: local support exceeds 8192 metres".into());
-            }
-            put(
-                data,
-                query_offset + i * 8 + axis * 4,
-                (relative as f32).to_le_bytes(),
-            );
-        }
-    }
-    queue.write_buffer(&sea.staging, 0, data);
-    let mut offset = 0;
-    for (buffer, size) in sea.buffers[..4].iter().zip(crate::prepare::upload_sizes()) {
-        encoder.copy_buffer_to_buffer(&sea.staging, offset, buffer, 0, size);
-        offset += size;
+    if queries
+        .iter()
+        .any(|p| (p[0] - anchor[0]).abs() > 8192.0 || (p[1] - anchor[1]).abs() > 8192.0)
+    {
+        return Err("sea queries: local support exceeds 8192 metres".into());
     }
     Ok(())
-}
-fn put(data: &mut [u8], offset: usize, value: [u8; 4]) {
-    data[offset..offset + 4].copy_from_slice(&value);
 }

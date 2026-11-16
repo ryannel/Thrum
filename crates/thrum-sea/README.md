@@ -8,6 +8,7 @@ All thirteen passes run every frame, including captures. No ambient history or t
 
 Use `display_seconds(frame.time)` for C02's `(committed tick - 1 + alpha) * tick duration`.
 The caller supplies the CPU model's spectrum at that same time, including any wind transition.
+Use `Transition::at_into` to blend into a retained spectrum without allocating a snapshot.
 Upload phases are reduced in f64 relative to the supplied world anchor. Queries must be within
 8,192 m of it. Cache levels are world-snapped and their addresses are available in `levels`.
 The long-wave inversion is prepared for contraction below 0.5; the default choppiness is 0.1.
@@ -29,9 +30,12 @@ Three bands are consecutive. Resolve a world sample modulo each band's length in
 converting to f32. Cascade bins have integer loop cycles; unsigned multiplication wraps the
 frame's 32-bit loop fraction before conversion to phase. Two shared 256-point transforms
 apply an unnormalized positive-sign inverse to eleven complex channels.
-The uploaded spectrum allocation becomes the final transform output after evolution;
-the next frame uploads fresh CPU-owned modes before reading it. Each transform stage
-therefore has an unambiguous producer on the effect graph.
+Modes live in a separate read-only allocation and upload only when cascade components or
+lengths change, including in-place replacement. Evolution, rows and columns each write
+their own work buffer, so each graph resource has one complete producer.
+Typed resource and pass keys in `src/spec.rs` drive sizes, usages, bindings, dispatches and
+graph access. Each pass binds exactly the buffers it uses, including its mip uniform.
+The shader's bound structs are reflected against whole Rust `Pod` records and member offsets.
 
 Each field texel is three consecutive `vec4<f32>` values:
 
@@ -53,8 +57,11 @@ average raw moments, preserving variance instead of averaging covariance away.
 
 Uploads reuse one CPU byte arena and GPU staging allocation. Record and submit one frame before
 uploading another; the scene owner serializes recording. An encoded and discarded upload never
-publishes its copies. Consumers rebuild `Ambient` when the device generation changes. Each next
-frame overwrites all outputs from the CPU model; capture and discarded frames retain no state.
+publishes its dynamic copies. A changed mode queue write survives discarding the encoder;
+the following frame can safely reuse those modes. No compute pass writes the mode buffer.
+`upload_bytes()` reports parameter, mode, long-wave and query payload bytes from that path.
+Consumers rebuild `Ambient` when the device generation changes. Each next frame overwrites
+all outputs from the CPU model; capture and discarded frames retain no output history.
 
 The Metal tests require the repository's `gpu` lock and never skip an unavailable device. They
 record timestamps and resource bytes in `tmp/sea-m2`; the selected measurement and bounds are

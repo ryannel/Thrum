@@ -2,7 +2,11 @@
 //! A water contribution can embed [`Ambient`], append [`Ambient::graph`], stage an upload,
 //! then forward each named simulate callback to [`Ambient::encode_pass`].
 mod prepare;
+/// Host record reflection metadata for shader tooling.
+pub mod records;
+mod spec;
 mod upload;
+use spec::declaration;
 
 /// Versioned WGSL evaluator shared by field-cache and body-query pipelines.
 /// Declares `sample_long(point: vec2<f32>, max_k: f32) -> Field`. The consumer
@@ -10,7 +14,8 @@ mod upload;
 /// and `p.physical.x` (choppiness), plus the `Long` and `Field` layouts from the
 /// crate README. Phases must be reduced in f64 at the query's own time/anchor.
 pub const LONG_WAVE_EVALUATOR: &str = include_str!("long_waves.wgsl");
-const SHADER: &str = concat!(
+/// Complete ambient shader source, for layout and binding reflection tools.
+pub const SHADER: &str = concat!(
     include_str!("ambient.wgsl"),
     "\n",
     include_str!("long_waves.wgsl")
@@ -86,21 +91,29 @@ mod tests {
     }
 }
 
-use thrum_render::contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
-use thrum_render::graph::{AccessKind, ResourceDescriptor, ResourceScope};
+use std::collections::BTreeMap;
+use thrum_render::contribution::EffectGraph;
 use thrum_sea_model::Spectrum;
 
+/// Width of the supported physical transform.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the model's fixed 256-square grid fits u32"
+)]
+pub const TRANSFORM_SIZE: u32 = thrum_sea_model::GRID_SIZE as u32;
+
 /// Texel count of one physical cascade.
-pub const PIXELS: u32 = 256 * 256;
+pub const PIXELS: u32 = TRANSFORM_SIZE * TRANSFORM_SIZE;
 /// All mip texels of one cascade, including its base.
-pub const MIP_PIXELS: u32 = 87381;
+pub const MIP_PIXELS: u32 = (4 * PIXELS - 1) / 3;
 /// Number of long-wave cache levels.
 pub const LEVELS: u32 = 8;
 /// Width and height of a cache level.
 pub const CACHE_SIZE: u32 = 128;
 /// Maximum query batch size. Queries and cache use the same shader evaluator.
 pub const MAX_QUERIES: u32 = 4096;
-const CHANNELS: u64 = 11;
+// The field carries every transformed scalar plus its derived Jacobian.
+const CHANNELS: u64 = (size_of::<records::Field>() / size_of::<f32>() - 1) as u64;
 
 /// Display seconds under C02: committed tick minus one plus interpolation alpha.
 /// Captures supply their own clock. At tick zero the analytic field can be
@@ -146,18 +159,78 @@ pub struct CacheLevel {
 /// Prepared generation resources. All products are overwritten, including on capture frames.
 pub struct Ambient {
     profile: Profile,
-    buffers: Vec<wgpu::Buffer>,
-    pipelines: Vec<wgpu::ComputePipeline>,
-    groups: Vec<wgpu::BindGroup>,
-    mip_groups: Vec<wgpu::BindGroup>,
-    mip_uniforms: Vec<wgpu::Buffer>,
-    staging: wgpu::Buffer,
+    buffers: BTreeMap<spec::BufferKey, wgpu::Buffer>,
+    passes: BTreeMap<spec::PassKey, prepare::PreparedPass>,
+    specs: Vec<spec::PassSpec>,
     upload: Vec<u8>,
+    modes: Vec<records::Bin>,
+    cached_cascades: [Vec<thrum_sea_model::Component>; spec::CASCADES as usize],
+    cached_lengths: [f64; spec::CASCADES as usize],
+    modes_initialized: bool,
+    last_upload: UploadBytes,
     /// Exact world cache addresses for this frame's oracle and consumers.
     pub levels: [CacheLevel; LEVELS as usize],
 }
 
+/// Bytes handed to the queue by the last successful upload, before encoder submission.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct UploadBytes {
+    /// Sum of payload lengths passed to `Queue::write_buffer`.
+    pub total: u64,
+    /// Complete parameter record.
+    pub parameters: u64,
+    /// Static Fourier modes; zero unless the cascade spectrum changed.
+    pub modes: u64,
+    /// Time/anchor dependent long-wave records.
+    pub long: u64,
+    /// Active relative query points.
+    pub queries: u64,
+}
+
+/// One actual prepared binding, for graph/shader diagnostic tooling.
+#[derive(Debug)]
+pub struct BindingAccess {
+    /// Graph pass name.
+    pub pass: String,
+    /// Shader entry point used by this pass.
+    pub entry: &'static str,
+    /// Shader bind group.
+    pub group: u32,
+    /// Shader binding slot.
+    pub binding: u32,
+    /// Resource ordinal at the public effect-graph boundary.
+    pub resource: usize,
+    /// Access performed by this entry point.
+    pub access: thrum_render::graph::AccessKind,
+}
+
 impl Ambient {
+    /// Byte accounting from the actual queue-write path; rejected uploads leave it unchanged.
+    pub fn upload_bytes(&self) -> UploadBytes {
+        self.last_upload
+    }
+
+    /// Bindings used to create this generation's bind groups and graph declarations.
+    pub fn binding_accesses(&self) -> Vec<BindingAccess> {
+        let resources: BTreeMap<_, _> = spec::resources()
+            .iter()
+            .enumerate()
+            .map(|(i, r)| (r.key, i))
+            .collect();
+        self.specs
+            .iter()
+            .flat_map(|p| {
+                p.bindings.iter().map(|b| BindingAccess {
+                    pass: p.name.clone(),
+                    entry: p.entry,
+                    group: b.group,
+                    binding: b.slot,
+                    resource: resources[&b.buffer],
+                    access: b.access,
+                })
+            })
+            .collect()
+    }
     /// Prepare against the actual device limits. No queue or submission authority is retained.
     /// # Errors
     /// Names the first unsupported profile or resource limit.
@@ -170,79 +243,50 @@ impl Ambient {
 
     /// Every GPU resource and its bytes, including staging and mip uniforms.
     pub fn resource_bytes(&self) -> Vec<(String, u64)> {
-        let mut rows: Vec<_> = self
-            .buffers
-            .iter()
-            .zip(prepare::NAMES)
-            .map(|(b, n)| (n.into(), b.size()))
-            .collect();
-        rows.push(("sea upload staging".into(), self.staging.size()));
-        rows.extend(
-            self.mip_uniforms
-                .iter()
-                .enumerate()
-                .map(|(i, b)| (format!("sea mip {i} parameters"), b.size())),
-        );
-        rows
+        spec::resources()
+            .into_iter()
+            .map(|r| (r.name, self.buffers[&r.key].size()))
+            .collect()
     }
 
     /// Declare actual hazards. All resources are transient in content, even though allocation is reused.
     pub fn graph(&self) -> EffectGraph {
-        declaration(
-            &self
-                .buffers
-                .iter()
-                .map(wgpu::Buffer::size)
-                .collect::<Vec<_>>(),
-        )
+        debug_assert_eq!(
+            prepare::sizes().iter().sum::<u64>(),
+            self.buffers.values().map(wgpu::Buffer::size).sum::<u64>()
+        );
+        declaration(&prepare::sizes())
     }
 
     /// Record one named graph pass, under the host's encoder and timing scope.
     pub fn encode_pass(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
-        let pipeline = if index < 5 { index } else { 5 };
-        pass.set_pipeline(&self.pipelines[pipeline]);
-        let group = match index {
-            3 | 4 => 1,
-            5..=12 => index - 3,
-            _ => 0,
+        // The contribution API supplies a graph ordinal; translate once, then use typed keys.
+        let Some(spec) = self.specs.get(index) else {
+            return;
         };
-        pass.set_bind_group(0, &self.groups[group], &[]);
-        pass.set_bind_group(1, &self.mip_groups[0], &[]);
-        match index {
-            0 => pass.dispatch_workgroups(
-                (MAX_QUERIES + LEVELS * CACHE_SIZE * CACHE_SIZE).div_ceil(64),
-                1,
-                1,
-            ),
-            1 | 4 => pass.dispatch_workgroups((3 * PIXELS).div_ceil(64), 1, 1),
-            2 | 3 => pass.dispatch_workgroups(256, 33, 1),
-            5..=12 => {
-                pass.set_bind_group(1, &self.mip_groups[index - 5], &[]);
-                let width = 128_u32 >> (index - 5);
-                pass.dispatch_workgroups((3 * width * width).div_ceil(64), 1, 1);
-            }
-            _ => {}
+        let prepared = &self.passes[&spec.key];
+        pass.set_pipeline(&prepared.pipeline);
+        for (group, binding) in &prepared.groups {
+            pass.set_bind_group(*group, binding, &[]);
         }
+        let [x, y, z] = spec.dispatch;
+        pass.dispatch_workgroups(x, y, z);
     }
 
     /// Read-only lending of cascade displacement/Jacobian, slopes/differentials and velocity.
     /// Each texel is three vec4<f32>, in that order; see the crate README for channels.
     pub fn cascade_buffer(&self) -> &wgpu::Buffer {
-        &self.buffers[6]
+        &self.buffers[&spec::BufferKey::Cascades]
     }
     /// Raw filtered moments. Covariance and variance are recovered from second moments.
     pub fn moments_buffer(&self, mip: usize) -> Option<&wgpu::Buffer> {
-        if mip == 0 {
-            self.buffers.get(7)
-        } else if mip <= 8 {
-            self.buffers.get(8 + mip)
-        } else {
-            None
-        }
+        u32::try_from(mip)
+            .ok()
+            .and_then(|level| self.buffers.get(&spec::BufferKey::Moments(level)))
     }
     /// Query samples followed by eight row-major 128-square cache levels, three vec4s per sample.
     pub fn long_buffer(&self) -> &wgpu::Buffer {
-        &self.buffers[8]
+        &self.buffers[&spec::BufferKey::LongField]
     }
 
     /// Stage one frame's CPU-owned spectrum at the supplied display time. Copies are encoded in
@@ -259,109 +303,5 @@ impl Ambient {
         queries: &[[f64; 2]],
     ) -> Result<(), String> {
         upload::frame(self, queue, encoder, spectrum, time, anchor, queries)
-    }
-}
-
-fn declaration(sizes: &[u64]) -> EffectGraph {
-    let resources = sizes
-        .iter()
-        .enumerate()
-        .map(|(i, b)| {
-            (
-                ResourceDescriptor::Buffer {
-                    bytes: *b,
-                    usage: prepare::usage(i),
-                },
-                if i < 4 {
-                    ResourceScope::Imported { initialized: true }
-                } else {
-                    ResourceScope::Transient
-                },
-            )
-        })
-        .collect();
-    let specs: &[(&str, &[(usize, AccessKind)])] = &[
-        (
-            "sea long waves",
-            &[
-                (0, AccessKind::UniformRead),
-                (2, AccessKind::StorageRead),
-                (3, AccessKind::StorageRead),
-                (8, AccessKind::StorageWrite),
-            ],
-        ),
-        (
-            "sea cascade evolve",
-            &[
-                (0, AccessKind::UniformRead),
-                (1, AccessKind::StorageRead),
-                (4, AccessKind::StorageWrite),
-            ],
-        ),
-        (
-            "sea cascade rows",
-            &[(4, AccessKind::StorageRead), (5, AccessKind::StorageWrite)],
-        ),
-        (
-            "sea cascade columns",
-            &[(5, AccessKind::StorageRead), (1, AccessKind::StorageWrite)],
-        ),
-        (
-            "sea cascade unpack",
-            &[
-                (1, AccessKind::StorageRead),
-                (6, AccessKind::StorageWrite),
-                (7, AccessKind::StorageWrite),
-            ],
-        ),
-    ];
-    let mut passes: Vec<_> = specs
-        .iter()
-        .map(|(name, accesses)| EffectPass {
-            name: (*name).into(),
-            cadence: EffectCadence::EveryFrame,
-            async_eligible: false,
-            accesses: accesses
-                .iter()
-                .map(|&(resource, kind)| EffectAccess {
-                    resource,
-                    range: 0..sizes[resource],
-                    kind,
-                    view: None,
-                    history: None,
-                })
-                .collect(),
-        })
-        .collect();
-    for level in 1..=8 {
-        let child = 8 + level;
-        let parent = if level == 1 { 7 } else { child - 1 };
-        passes.push(EffectPass {
-            name: format!("sea moments mip {level}"),
-            cadence: EffectCadence::EveryFrame,
-            async_eligible: false,
-            accesses: vec![
-                EffectAccess {
-                    resource: parent,
-                    range: 0..sizes[parent],
-                    kind: AccessKind::StorageRead,
-                    view: None,
-                    history: None,
-                },
-                EffectAccess {
-                    resource: child,
-                    range: 0..sizes[child],
-                    kind: AccessKind::StorageWrite,
-                    view: None,
-                    history: None,
-                },
-            ],
-        });
-    }
-    EffectGraph {
-        resources,
-        passes,
-        opaque_reads: Vec::new(),
-        after_opaque: Vec::new(),
     }
 }

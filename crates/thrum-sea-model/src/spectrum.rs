@@ -292,25 +292,68 @@ impl Transition {
     /// # Errors
     /// Rejects a nonfinite time.
     pub fn at(&self, time: f64) -> Result<Spectrum, SeaError> {
+        let mut value = self.start.clone();
+        self.at_into(time, &mut value)?;
+        Ok(value)
+    }
+
+    /// Blend into an existing spectrum without allocating or cloning a spectrum.
+    /// The output must have the same component identities as this transition.
+    /// # Errors
+    /// Rejects nonfinite time or a different output profile, leaving the output unchanged.
+    pub fn at_into(&self, time: f64, value: &mut Spectrum) -> Result<(), SeaError> {
         if !time.is_finite() {
             return Err(SeaError::InvalidInput);
         }
+        let same = |a: &[Component], b: &[Component]| {
+            a.len() == b.len()
+                && a.iter().zip(b).all(|(a, b)| {
+                    a.wave_vector.map(f64::to_bits) == b.wave_vector.map(f64::to_bits)
+                        && a.phase.to_bits() == b.phase.to_bits()
+                })
+        };
+        if !same(&value.long, &self.start.long)
+            || !value
+                .cascades
+                .iter()
+                .zip(&self.start.cascades)
+                .all(|(a, b)| {
+                    a.length().to_bits() == b.length().to_bits()
+                        && same(a.components(), b.components())
+                })
+        {
+            return Err(SeaError::InvalidInput);
+        }
         let weight = -(-((time - self.start_time).max(0.0)) / self.response_seconds).exp_m1();
-        let mut value = self.start.clone();
-        let blend = |a: &mut Component, b: &Component| {
-            a.amplitude =
+        let blend = |out: &mut Component, a: &Component, b: &Component| {
+            out.amplitude =
                 (a.amplitude.powi(2) * (1.0 - weight) + b.amplitude.powi(2) * weight).sqrt();
         };
-        for (a, b) in value.long.iter_mut().zip(&self.target.long) {
-            blend(a, b);
+        for ((out, a), b) in value
+            .long
+            .iter_mut()
+            .zip(&self.start.long)
+            .zip(&self.target.long)
+        {
+            blend(out, a, b);
         }
-        for (a, b) in value.cascades.iter_mut().zip(&self.target.cascades) {
-            for (a, b) in a.components_mut().iter_mut().zip(b.components()) {
-                blend(a, b);
+        for ((out, a), b) in value
+            .cascades
+            .iter_mut()
+            .zip(&self.start.cascades)
+            .zip(&self.target.cascades)
+        {
+            for ((out, a), b) in out
+                .components_mut()
+                .iter_mut()
+                .zip(a.components())
+                .zip(b.components())
+            {
+                blend(out, a, b);
             }
         }
         value.tail_slope_variance = self.start.tail_slope_variance * (1.0 - weight)
             + self.target.tail_slope_variance * weight;
-        Ok(value)
+        Ok(())
     }
 }

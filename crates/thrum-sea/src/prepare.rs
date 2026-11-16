@@ -1,67 +1,21 @@
-use crate::{Ambient, CACHE_SIZE, CHANNELS, CacheLevel, LEVELS, MAX_QUERIES, PIXELS, Profile};
+use crate::{Ambient, CacheLevel, LEVELS, Profile, records, spec};
+use std::collections::BTreeMap;
 use thrum_render::runtime::DeviceSite;
 
-pub(super) const NAMES: [&str; 17] = [
-    "sea parameters",
-    "sea spectrum / final transform",
-    "sea long components",
-    "sea query points",
-    "sea transform A",
-    "sea transform B",
-    "sea cascades",
-    "sea moments base",
-    "sea long field",
-    "sea moments mip 1",
-    "sea moments mip 2",
-    "sea moments mip 3",
-    "sea moments mip 4",
-    "sea moments mip 5",
-    "sea moments mip 6",
-    "sea moments mip 7",
-    "sea moments mip 8",
-];
-
-pub(super) fn upload_sizes() -> [u64; 4] {
-    [
-        176,
-        3 * u64::from(PIXELS) * 32,
-        192 * 32,
-        u64::from(MAX_QUERIES) * 8,
-    ]
+pub(super) struct PreparedPass {
+    pub pipeline: wgpu::ComputePipeline,
+    pub groups: Vec<(u32, wgpu::BindGroup)>,
 }
 
 pub(super) fn sizes() -> Vec<u64> {
-    let work = 3 * CHANNELS * u64::from(PIXELS) * 8;
-    let mut sizes = vec![
-        176,
-        work,
-        192 * 32,
-        u64::from(MAX_QUERIES) * 8,
-        work,
-        work,
-        3 * u64::from(PIXELS) * 48,
-        3 * u64::from(PIXELS) * 32,
-        u64::from(MAX_QUERIES + LEVELS * CACHE_SIZE * CACHE_SIZE) * 48,
-    ];
-    for level in 1..=8 {
-        sizes.push(3 * u64::from(PIXELS >> (2 * level)) * 32);
-    }
-    sizes
-}
-
-pub(super) fn usage(index: usize) -> wgpu::BufferUsages {
-    if index == 0 {
-        wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
-    } else {
-        wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC
-    }
+    spec::resources().iter().map(|r| r.size).collect()
 }
 
 pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, String> {
-    if profile.transform_size != 256 {
+    if profile.transform_size != crate::TRANSFORM_SIZE {
         return Err("sea transform_size: supported value is 256".into());
     }
-    if profile.cascades != 3 {
+    if profile.cascades != spec::CASCADES {
         return Err("sea cascades: supported value is 3".into());
     }
     if profile.cache_levels != LEVELS {
@@ -71,185 +25,150 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
         return Err("sea choppiness: expected finite 0..=1".into());
     }
     let limits = device.limits();
-    for (size, name) in sizes().into_iter().zip(NAMES) {
-        if size > limits.max_buffer_size {
-            return Err(format!("{name}: max_buffer_size"));
+    let resources = spec::resources();
+    for resource in &resources {
+        if resource.size > limits.max_buffer_size {
+            return Err(format!("{}: max_buffer_size", resource.name));
         }
-        if size > limits.max_storage_buffer_binding_size {
-            return Err(format!("{name}: max_storage_buffer_binding_size"));
+        if resource.usage.contains(wgpu::BufferUsages::STORAGE)
+            && resource.size > limits.max_storage_buffer_binding_size
+        {
+            return Err(format!(
+                "{}: max_storage_buffer_binding_size",
+                resource.name
+            ));
         }
     }
+    // Keep SEA's admitted portable envelope, though each pass now binds only what it uses.
     if limits.max_storage_buffers_per_shader_stage < 8 {
         return Err("sea: max_storage_buffers_per_shader_stage requires 8".into());
     }
     if limits.max_compute_workgroup_storage_size < 2048 {
         return Err("sea FFT: max_compute_workgroup_storage_size requires 2048".into());
     }
-    if limits.max_compute_invocations_per_workgroup < 256
-        || limits.max_compute_workgroup_size_x < 256
+    if limits.max_compute_invocations_per_workgroup < crate::TRANSFORM_SIZE
+        || limits.max_compute_workgroup_size_x < crate::TRANSFORM_SIZE
     {
         return Err("sea FFT: max_compute_invocations_per_workgroup and max_compute_workgroup_size_x require 256".into());
     }
-    let mut entries = Vec::new();
-    for binding in 0..9 {
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty: if binding == 0 {
-                    wgpu::BufferBindingType::Uniform
-                } else {
-                    wgpu::BufferBindingType::Storage {
-                        read_only: binding < 4,
-                    }
-                },
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
+    let mut buffers = BTreeMap::new();
+    for resource in resources {
+        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some(&resource.name),
+            size: resource.size,
+            usage: resource.usage,
+            mapped_at_creation: matches!(resource.key, spec::BufferKey::MipParams(_)),
         });
+        if let spec::BufferKey::MipParams(level) = resource.key {
+            let record = records::Mip {
+                address: [0, 0, crate::TRANSFORM_SIZE >> level, 0],
+            };
+            buffer
+                .slice(..)
+                .get_mapped_range_mut()
+                .map_err(|e| format!("sea mip mapping: {e}"))?
+                .copy_from_slice(bytemuck::bytes_of(&record));
+            buffer.unmap();
+        }
+        buffers.insert(resource.key, buffer);
     }
-    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("sea"),
-        entries: &entries,
-    });
-    let mip_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("sea mip"),
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-    });
-    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("sea"),
-        bind_group_layouts: &[Some(&layout), Some(&mip_layout)],
-        immediate_size: 0,
-    });
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("sea ambient"),
         source: wgpu::ShaderSource::Wgsl(crate::SHADER.into()),
     });
-    let pipelines = [
-        "long_waves",
-        "evolve",
-        "rows",
-        "columns",
-        "unpack",
-        "reduce",
-    ]
-    .into_iter()
-    .map(|entry| {
-        device.compute(&wgpu::ComputePipelineDescriptor {
-            label: Some(entry),
-            layout: Some(&pipeline_layout),
-            module: &shader,
-            entry_point: Some(entry),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
-        })
-    })
-    .collect();
-    let buffers: Vec<_> = sizes()
-        .into_iter()
-        .zip(NAMES)
-        .enumerate()
-        .map(|(i, (size, name))| {
-            device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some(name),
-                size,
-                usage: usage(i),
-                mapped_at_creation: false,
-            })
-        })
-        .collect();
-    let mut groups = Vec::new();
-    // The uploaded mode allocation is reused for the final transform after evolve.
-    // Each moment mip has one producer and its own physical allocation.
-    for variant in 0..10 {
-        let indices: [usize; 9] = if variant == 0 {
-            [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        } else if variant == 1 {
-            [0, 2, 2, 3, 1, 5, 6, 7, 8]
-        } else {
-            let child = variant + 7;
-            let parent = if variant == 2 { 7 } else { child - 1 };
-            [0, 1, 2, 3, 4, parent, 6, child, 8]
-        };
-        let entries: Vec<_> = indices
-            .into_iter()
-            .enumerate()
-            .map(|(binding, index)| wgpu::BindGroupEntry {
-                binding: u32::try_from(binding).expect("nine bindings"),
-                resource: buffers[index].as_entire_binding(),
-            })
-            .collect();
-        groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("sea"),
-            layout: &layout,
-            entries: &entries,
-        }));
-    }
-    let mut mip_uniforms = Vec::new();
-    let mut mip_groups = Vec::new();
-    let mut parent = 0_u32;
-    let mut child = PIXELS;
-    let mut width = 128_u32;
-    for _ in 0..8 {
-        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("sea mip parameters"),
-            size: 16,
-            usage: wgpu::BufferUsages::UNIFORM,
-            mapped_at_creation: true,
+    let specs = spec::passes();
+    let mut passes = BTreeMap::new();
+    let mut pipelines = BTreeMap::<spec::PipelineKey, wgpu::ComputePipeline>::new();
+    for pass in &specs {
+        let mut layouts = Vec::new();
+        let mut groups = Vec::new();
+        let max_group = pass
+            .bindings
+            .iter()
+            .map(|b| b.group)
+            .max()
+            .expect("nonempty pass");
+        for group in 0..=max_group {
+            let bindings: Vec<_> = pass.bindings.iter().filter(|b| b.group == group).collect();
+            let entries: Vec<_> = bindings
+                .iter()
+                .map(|b| wgpu::BindGroupLayoutEntry {
+                    binding: b.slot,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: if b.access == thrum_render::graph::AccessKind::UniformRead {
+                            wgpu::BufferBindingType::Uniform
+                        } else {
+                            // WGSL declares bindings 4..8 read_write, even in entries which only read.
+                            wgpu::BufferBindingType::Storage {
+                                read_only: b.slot < 4,
+                            }
+                        },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                })
+                .collect();
+            let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some(&pass.name),
+                entries: &entries,
+            });
+            let entries: Vec<_> = bindings
+                .iter()
+                .map(|b| wgpu::BindGroupEntry {
+                    binding: b.slot,
+                    resource: buffers[&b.buffer].as_entire_binding(),
+                })
+                .collect();
+            groups.push((
+                group,
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(&pass.name),
+                    layout: &layout,
+                    entries: &entries,
+                }),
+            ));
+            layouts.push(layout);
+        }
+        let layout_refs: Vec<_> = layouts.iter().map(Some).collect();
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some(&pass.name),
+            bind_group_layouts: &layout_refs,
+            immediate_size: 0,
         });
-        let bytes: Vec<_> = [parent, child, width, 0]
-            .into_iter()
-            .flat_map(u32::to_le_bytes)
-            .collect();
-        buffer
-            .slice(..)
-            .get_mapped_range_mut()
-            .map_err(|e| format!("sea mip mapping: {e}"))?
-            .copy_from_slice(&bytes);
-        buffer.unmap();
-        mip_groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("sea mip"),
-            layout: &mip_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: buffer.as_entire_binding(),
-            }],
-        }));
-        mip_uniforms.push(buffer);
-        parent = child;
-        child += width * width;
-        width /= 2;
+        let pipeline = pipelines
+            .entry(pass.pipeline())
+            .or_insert_with(|| {
+                device.compute(&wgpu::ComputePipelineDescriptor {
+                    label: Some(&pass.name),
+                    layout: Some(&layout),
+                    module: &shader,
+                    entry_point: Some(pass.entry),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    cache: None,
+                })
+            })
+            .clone();
+        passes.insert(pass.key, PreparedPass { pipeline, groups });
     }
-    let staging_size = upload_sizes().iter().sum();
-    let staging = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("sea upload staging"),
-        size: staging_size,
-        usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
+    let dynamic_size =
+        usize::try_from(buffers[&spec::BufferKey::UploadStaging].size()).expect("bounded upload");
     Ok(Ambient {
         profile,
         buffers,
-        pipelines,
-        groups,
-        mip_groups,
-        mip_uniforms,
-        staging,
-        upload: vec![0; usize::try_from(staging_size).expect("bounded upload")],
+        passes,
+        specs,
+        upload: Vec::with_capacity(dynamic_size),
+        modes: vec![bytemuck::Zeroable::zeroed(); (spec::CASCADES * crate::PIXELS) as usize],
+        cached_cascades: std::array::from_fn(|_| Vec::new()),
+        cached_lengths: [0.0; spec::CASCADES as usize],
+        modes_initialized: false,
+        last_upload: crate::UploadBytes::default(),
         levels: [CacheLevel {
             origin: [0.0; 2],
             texel: 1.0,
             max_wavenumber: std::f64::consts::PI,
-        }; 8],
+        }; LEVELS as usize],
     })
 }

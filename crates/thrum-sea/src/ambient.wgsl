@@ -108,14 +108,15 @@ fn unpack(@builtin(global_invocation_id) id: vec3<u32>) {
     moments[band*PIXELS+pixel]=Moments(vec4(sx,sz,sx*sx,sx*sz),vec4(sz*sz,jac,jac*jac,0.0));
 }
 // Mips use a separate small uniform at group 1: parent offset, child offset, width.
-@group(1) @binding(0) var<uniform> mip: vec4<u32>;
+struct Mip { address: vec4<u32> }
+@group(1) @binding(0) var<uniform> mip: Mip;
 fn parent_moment(index: u32) -> Moments {
     let i=index*4u;
     return Moments(vec4(b[i],b[i+1u]),vec4(b[i+2u],b[i+3u]));
 }
 @compute @workgroup_size(64)
 fn reduce(@builtin(global_invocation_id) id: vec3<u32>) {
-    let width=mip.z; let count=width*width;
+    let width=mip.address.z; let count=width*width;
     if id.x>=3u*count { return; }
     let band=id.x/count; let pixel=id.x%count;
     let base=band*4u*count+(pixel/width)*4u*width+(pixel%width)*2u;
