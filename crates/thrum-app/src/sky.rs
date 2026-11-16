@@ -1,6 +1,7 @@
 //! A still scene under a physically based sky: the kit behind the starter.
 //!
-//! [`SkyGame`] is a complete [`Game`]: the world never ticks, the renderer draws Earth's
+//! [`SkyGame`] is a complete [`Game`]: the world is still by default (a game may select
+//! [`SkyGame::with_tick_duration`]), and the renderer draws Earth's
 //! atmosphere and Sun with a camera meter for exposure, a lit ground that receives the Sun's
 //! shadows, and cooked meshes ([`SkyGame::with_meshes`]) or another engine contribution in the
 //! same lit scene. Each frame the game's update maps its [`Controls`] onto a [`Sky`]: the Sun's
@@ -37,6 +38,7 @@ mod capture;
 mod live_capture;
 
 use std::{
+    error::Error,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -72,7 +74,7 @@ use crate::Config;
 #[cfg(target_os = "macos")]
 use crate::{Edits, Game, Gpu, KeyResponse, Prepared};
 #[cfg(not(target_arch = "wasm32"))]
-use std::{error::Error, path::PathBuf};
+use std::path::PathBuf;
 #[cfg(target_os = "macos")]
 use thrum_render::{
     capabilities::DeviceCapabilities,
@@ -168,6 +170,10 @@ impl Camera {
 /// What the scene shows this frame; the game's update edits it from controls.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sky {
+    /// Shared camera exposure bias in stops; positive values brighten the entire scene.
+    pub exposure_compensation_ev: f32,
+    /// Produce depth, unjittered motion and reactive inputs for temporal consumers.
+    pub temporal_inputs: bool,
     /// Sun height above the horizon in degrees, -90 to 90; below zero is twilight or night.
     pub sun_elevation_degrees: f32,
     /// Sun bearing in degrees clockwise from north (-Z) through east (+X).
@@ -195,6 +201,9 @@ impl Sky {
     /// Refuse values the renderer cannot draw, naming the field and the fix.
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn check(&self) -> Result<(), String> {
+        if !(-24.0..=24.0).contains(&self.exposure_compensation_ev) {
+            return Err("exposure_compensation_ev must be within -24..=24".into());
+        }
         if !(-90.0..=90.0).contains(&self.sun_elevation_degrees) {
             return Err(format!(
                 "sun_elevation_degrees {} must be within -90..=90",
@@ -231,15 +240,39 @@ pub enum ContentStatus {
     Failed(String),
 }
 
-/// The world of a still scene: one committed endpoint that never ticks.
+/// The kit's world: still by default, optionally advancing a game's fixed clock.
 #[derive(Debug, Default)]
-pub struct StillWorld;
+pub struct StillWorld {
+    tick_duration: Option<Duration>,
+    now: Duration,
+    tick: u64,
+}
+
+/// Invalid fixed clock configuration for a kit scene.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WorldClockError {
+    /// The step must be at least one microsecond.
+    StepTooShort,
+}
+impl std::fmt::Display for WorldClockError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("world tick duration must be at least one microsecond")
+    }
+}
+impl Error for WorldClockError {}
 
 impl FrameWorld for StillWorld {
     type Page = SourceTick;
 
     fn source(&self) -> SourceTick {
-        STILL
+        SourceTick {
+            tick: self.tick,
+            ..STILL
+        }
+    }
+    fn tick_duration(&self) -> Duration {
+        self.tick_duration
+            .unwrap_or(Duration::from_secs_f64(1.0 / 60.0))
     }
     fn has_current_page(&self) -> bool {
         true
@@ -247,11 +280,16 @@ impl FrameWorld for StillWorld {
     fn is_threaded(&self) -> bool {
         false
     }
-    fn advance(&mut self, _now: Duration) -> Result<WorldAdvance, String> {
+    fn advance(&mut self, now: Duration) -> Result<WorldAdvance, String> {
+        let previous = self.tick;
+        if let Some(step) = self.tick_duration {
+            self.now = now.max(self.now);
+            self.tick = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
+        }
         Ok(WorldAdvance {
-            tick: STILL.tick,
+            tick: self.tick,
             overload: None,
-            completed_ticks: 0,
+            completed_ticks: u32::try_from(self.tick.saturating_sub(previous)).unwrap_or(u32::MAX),
             queued_ticks: 0,
             projected_changes: 0,
             projection_lost_ticks: 0,
@@ -264,14 +302,21 @@ impl FrameWorld for StillWorld {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(STILL.epoch),
-                tick: STILL.tick,
+                tick: self.tick,
             },
             timeline: STILL.timeline,
-            page: STILL,
+            page: self.source(),
         })
     }
-    fn presentation_alpha_at(&self, _lead: Duration) -> f32 {
-        1.0
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the interpolation fraction is clamped to zero through one"
+    )]
+    fn presentation_alpha_at(&self, lead: Duration) -> f32 {
+        self.tick_duration.map_or(1.0, |step| {
+            ((self.now + lead).as_secs_f64() / step.as_secs_f64() - self.tick as f64)
+                .clamp(0.0, 1.0) as f32
+        })
     }
     fn display_phase_at(&self, _: Duration) -> f32 {
         1.0
@@ -307,7 +352,11 @@ impl SceneSource<SourceTick> for SkyScene {
         extent: [u32; 2],
         lighting: Option<FrameLighting>,
     ) -> Result<SceneFrame, String> {
-        let view = self.sky.camera.view(extent)?;
+        let view = self
+            .sky
+            .camera
+            .view(extent)?
+            .with_temporal_inputs(self.sky.temporal_inputs);
         let lighting = match lighting {
             Some(published) => published,
             None => self.sky.lighting()?,
@@ -315,7 +364,7 @@ impl SceneSource<SourceTick> for SkyScene {
         let view = match lighting {
             // A flat incident-light meter, darkened below daylight so twilight reads dim.
             FrameLighting::Atmosphere(_) => view
-                .with_incident_exposure(0.0, 0.0, 18.0)
+                .with_incident_exposure(self.sky.exposure_compensation_ev, 0.0, 18.0)
                 .and_then(SyntheticView::with_low_light_adaptation),
             FrameLighting::Diagnostic(_) | FrameLighting::Photometric(_) => {
                 view.with_exposure(FALLBACK_EXPOSURE)
@@ -355,6 +404,7 @@ type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
+    tick_duration: Option<Duration>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -396,12 +446,15 @@ impl SkyGame {
         #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
         drop((controls, camera, update));
         Self {
+            tick_duration: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             controls,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             sky: Sky {
+                exposure_compensation_ev: 0.0,
+                temporal_inputs: false,
                 sun_elevation_degrees: 30.0,
                 sun_azimuth_degrees: 135.0,
                 camera,
@@ -433,6 +486,17 @@ impl SkyGame {
     pub fn with_ground(mut self, colour: Option<[f32; 3]>) -> Self {
         self.ground = colour;
         self
+    }
+
+    /// Advance this game's world at a fixed step. The default kit world stays still.
+    /// # Errors
+    /// Rejects zero or sub-microsecond steps.
+    pub fn with_tick_duration(mut self, step: Duration) -> Result<Self, WorldClockError> {
+        if step < Duration::from_micros(1) {
+            return Err(WorldClockError::StepTooShort);
+        }
+        self.tick_duration = Some(step);
+        Ok(self)
     }
 
     /// Draw cooked meshes from the store named by `THRUM_ASSET_STORE` ([`STORE_VARIABLE`]),
@@ -524,10 +588,27 @@ impl SkyGame {
     pub fn with_contribution(
         mut self,
         contribution: Box<dyn SceneContribution>,
-        status: impl FnMut() -> ContentStatus + 'static,
+        mut status: impl FnMut() -> ContentStatus + 'static,
     ) -> Self {
-        self.contribution = Some(contribution);
-        self.status = Some(Box::new(status));
+        self.contribution = Some(match self.contribution.take() {
+            Some(existing) => Box::new(thrum_render::contribution::SceneContributions::new(vec![
+                existing,
+                contribution,
+            ])),
+            None => contribution,
+        });
+        self.status = Some(match self.status.take() {
+            Some(mut existing) => Box::new(move || match (existing(), status()) {
+                (ContentStatus::Failed(error), _) | (_, ContentStatus::Failed(error)) => {
+                    ContentStatus::Failed(error)
+                }
+                (ContentStatus::Loading, _) | (_, ContentStatus::Loading) => ContentStatus::Loading,
+                (ContentStatus::Drawn(a), ContentStatus::Drawn(b)) => {
+                    ContentStatus::Drawn(a.max(b))
+                }
+            }),
+            None => Box::new(status),
+        });
         self
     }
 
@@ -647,7 +728,10 @@ impl SkyGame {
             capabilities,
             queue,
             config,
-            StillWorld,
+            StillWorld {
+                tick_duration: self.tick_duration,
+                ..StillWorld::default()
+            },
             SkyScene {
                 sky: self.sky,
                 ground: self.ground.is_some(),
@@ -735,8 +819,12 @@ impl Game for SkyGame {
         if let Some(sky) = edits.0
             && host.source().sky != sky
         {
-            host.source_mut().sky = sky;
-            host.invalidate_history();
+            if sky.temporal_inputs {
+                host.continuous_source_mut().sky = sky;
+            } else {
+                host.source_mut().sky = sky;
+                host.invalidate_history();
+            }
         }
         Ok(())
     }

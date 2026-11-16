@@ -3286,6 +3286,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-water"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "thrum-render",
+ "thrum-sea",
+ "thrum-sea-model",
+ "thrum-water-model",
+ "wgpu",
+]
+
+[[package]]
 name = "thrum-water-model"
 version = "0.1.0"
 dependencies = [
@@ -3683,6 +3695,21 @@ name = "wasm-bindgen-test-shared"
 version = "0.2.129"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f692aa943ccd88363733b77063f32cfed5bc6cbea8e6e8b251b302f881606fe"
+
+[[package]]
+name = "water-scene"
+version = "0.1.0"
+dependencies = [
+ "glam",
+ "serde_json",
+ "thrum-app",
+ "thrum-render",
+ "thrum-sea-model",
+ "thrum-test-support",
+ "thrum-water",
+ "thrum-water-model",
+ "wgpu",
+]
 
 [[package]]
 name = "web-sys"

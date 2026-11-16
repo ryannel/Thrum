@@ -53,6 +53,7 @@ impl Slab {
             }))
             .collect(),
             depth: true,
+            write_depth: false,
             refraction: self.refraction,
         }
     }

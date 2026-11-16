@@ -23,6 +23,8 @@ pub struct AfterOpaquePass {
     pub accesses: Vec<super::EffectAccess>,
     /// Sample the current frame's reverse-Z depth at group 1, binding 0.
     pub depth: bool,
+    /// Attach and store scene depth for a displaced surface. Cannot also sample it.
+    pub write_depth: bool,
     /// Sample one shared pre-effect scene-colour copy at group 1, binding 1.
     pub refraction: bool,
 }

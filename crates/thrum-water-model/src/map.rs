@@ -161,6 +161,10 @@ pub struct Map {
 }
 
 impl Map {
+    /// Read a body's authored declaration and current stage without duplicating its authority.
+    pub fn body(&self, index: usize) -> Option<&Body> {
+        self.bodies.get(index)
+    }
     /// Validate declarations over their stage ranges and prepare initial connectivity.
     /// # Errors
     /// Names invalid inputs, overlapping kinds, escaping basins and uncontained charts.

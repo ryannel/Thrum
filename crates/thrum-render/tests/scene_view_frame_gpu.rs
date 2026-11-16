@@ -33,6 +33,7 @@ fn tag_pass() -> AfterOpaquePass {
         cadence: EffectCadence::EveryFrame,
         accesses: Vec::new(),
         depth: false,
+        write_depth: false,
         refraction: false,
     }
 }

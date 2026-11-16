@@ -187,7 +187,7 @@ impl Spectrum {
                         modes.push(Component {
                             wave_vector: [kx, kz],
                             amplitude: (2.0 * power).sqrt(),
-                            phase: phase(zi * 255 + xi),
+                            phase: phase([65_536_u32, 131_072, 196_608][band] + zi * 255 + xi),
                         });
                     }
                 }
@@ -234,7 +234,14 @@ impl Spectrum {
 }
 
 fn phase(id: u32) -> f64 {
-    TAU * (f64::from(id + 1) * 0.618_033_988_749_894_9).fract()
+    // A linear phase in lattice indices only translates a coherent wave packet.
+    // SplitMix64's avalanche makes neighboring modes independent, while retaining
+    // exactly the same phase identities across forcing transitions and recipes.
+    let mut bits = u64::from(id).wrapping_add(0x9e37_79b9_7f4a_7c15);
+    bits = (bits ^ (bits >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    bits = (bits ^ (bits >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    bits ^= bits >> 31;
+    TAU * ((bits >> 11) as f64) * (1.0 / 9_007_199_254_740_992.0)
 }
 
 fn integrate(low: f64, high: f64, count: u32, f: impl Fn(f64) -> f64) -> f64 {

@@ -1,0 +1,18 @@
+[package]
+name = "thrum-water"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Shared water surface on the scene effect graph"
+
+[lints]
+workspace = true
+
+[dependencies]
+bytemuck = { version = "=1.25.2", features = ["derive"] }
+thrum-render = { path = "../thrum-render" }
+thrum-sea = { path = "../thrum-sea" }
+thrum-sea-model = { path = "../thrum-sea-model" }
+thrum-water-model = { path = "../thrum-water-model" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }

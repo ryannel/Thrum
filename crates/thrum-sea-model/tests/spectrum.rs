@@ -19,6 +19,51 @@ fn forcing(speed: f64, swell: bool) -> Forcing {
     }
 }
 
+#[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the reference recovers the admitted integer Fourier indices in minus 127 through 127"
+)]
+fn the_short_wave_energy_is_distributed_over_the_patch() {
+    let spectrum = Spectrum::build(&forcing(8.0, false)).expect("forcing");
+    let cascade = &spectrum.cascades[2];
+    let share = patch_concentration(cascade);
+    assert!(
+        share < 0.20,
+        "one sixteenth of the sea holds {share:.3} of its energy"
+    );
+    // The former linearly increasing phases are a translated coherent packet.
+    // Retain that actual failure so the regression cannot pass both mechanisms.
+    let modes: Vec<_> = cascade
+        .components()
+        .iter()
+        .map(|c| {
+            let x = (c.wave_vector[0] * cascade.length() / TAU).round() as i32;
+            let z = (c.wave_vector[1] * cascade.length() / TAU).round() as i32;
+            let id = (z + 127) * 255 + x + 127;
+            let phase = TAU * (f64::from(id + 1) * 0.618_033_988_749_894_9).fract();
+            (x, z, 0.5 * c.amplitude.powi(2), phase)
+        })
+        .collect();
+    let coherent =
+        thrum_sea_model::Cascade::new(cascade.length(), &modes).expect("historical phases");
+    let old_share = patch_concentration(&coherent);
+    assert!(
+        old_share > 0.20,
+        "the former packet must fail this check: {old_share:.3}"
+    );
+}
+fn patch_concentration(cascade: &thrum_sea_model::Cascade) -> f64 {
+    let field = cascade.inverse_transform(0.0);
+    let mut tiles = [0.0; 16];
+    for (index, sample) in field.iter().enumerate() {
+        let tile = (index / 256 / 64) * 4 + (index % 256 / 64);
+        tiles[tile] += sample.displacement[1].powi(2);
+    }
+    let total: f64 = tiles.iter().sum();
+    tiles.iter().copied().fold(0.0, f64::max) / total
+}
+
 fn midpoint(f: &Forcing, low: f64, high: f64, count: u32) -> f64 {
     let step = (high / low).ln() / f64::from(count);
     (0..count)

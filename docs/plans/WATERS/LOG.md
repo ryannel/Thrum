@@ -336,3 +336,9 @@
   changes its oracle to the forward evaluation, under the same bounds. M2's other items are unchanged, word for word.
   Risk 30 covers devices that admit less anisotropy. Not chosen: moving the long waves into FFT cascades, because
   the analytic layer is not what failed.
+- 2026-11-16 Built M2's open-sea contribution, ticking water example, depth-writing late pass and capture/cost tools.
+  Mac Metal probes verify submitted depth, CPU-model motion on tick/repeat frames, history resets and live stage changes.
+  Corrected coherent Fourier phases, shared Fresnel/exposure composition and world-space cascade normals.
+  Three fresh builder opinions still find rounded crests; the design's three-look stop rule was reached.
+  The profile diagnostic identifies an untried larger permitted choppiness, not a proof that the model cannot work.
+  [Evidence](../../evidence/WATERS/M2.md) separates that visual finding from functional and device proof.

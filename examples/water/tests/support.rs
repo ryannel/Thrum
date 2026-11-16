@@ -1,0 +1,250 @@
+#![allow(
+    dead_code,
+    reason = "shared public-seam fixture supports several focused GPU tests"
+)]
+use std::time::Duration;
+use thrum_app::{
+    Game, Gpu,
+    sky::{SkyGame, SkyScene, StillWorld},
+};
+use thrum_render::{
+    capabilities::DeviceCapabilities,
+    present::SurfaceProfile,
+    runtime::{FrameHost, FrameSample, SurfaceOutput},
+    synthetic::OUTPUT_FORMAT,
+};
+
+pub(crate) type Host = FrameHost<StillWorld, SkyScene>;
+
+pub(crate) fn device() -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
+    let gpu = thrum_test_support::gpu("water surface", Some(wgpu::Backend::Metal))
+        .expect("Mac Metal target");
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Native,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    (device, queue, caps)
+}
+pub(crate) struct Fixture {
+    pub(crate) device: wgpu::Device,
+    pub(crate) queue: wgpu::Queue,
+    pub(crate) caps: DeviceCapabilities,
+    pub(crate) host: Host,
+    pub(crate) game: SkyGame,
+    pub(crate) output: wgpu::Texture,
+    pub(crate) extent: [u32; 2],
+    pub(crate) last_elapsed: Duration,
+    pub(crate) report: std::sync::Arc<std::sync::Mutex<thrum_water::WaterReport>>,
+    witness: Option<wgpu::Texture>,
+}
+impl Fixture {
+    pub(crate) fn signal(
+        &mut self,
+        amplitude: f64,
+    ) -> std::sync::Arc<std::sync::Mutex<thrum_water_model::Map>> {
+        let (_, map) = water_scene::water().expect("map");
+        let spectrum = thrum_sea_model::Spectrum {
+            long: vec![component(amplitude)],
+            cascades: std::array::from_fn(|i| {
+                thrum_sea_model::Cascade::new([160.0, 37.0, 9.0][i], &[]).expect("empty cascade")
+            }),
+            tail_slope_variance: 0.0,
+        };
+        let water = thrum_water::Water::new(
+            std::sync::Arc::clone(&map),
+            0,
+            spectrum,
+            thrum_water::Profile::default(),
+        )
+        .expect("signal");
+        self.host
+            .set_scene_contribution(Box::new(water))
+            .expect("signal surface");
+        map
+    }
+    pub(crate) fn new(extent: [u32; 2]) -> Self {
+        let (device, queue, caps) = device();
+        let (mut game, report) = water_scene::build_with_report(
+            std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
+        )
+        .expect("scene");
+        let host = game
+            .prepare(
+                Gpu {
+                    device: &device,
+                    queue: &queue,
+                    capabilities: &caps,
+                    surface: SurfaceProfile {
+                        format: OUTPUT_FORMAT,
+                        extent,
+                    },
+                },
+                Box::new(|| {}),
+            )
+            .expect("game prepare")
+            .host;
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("water proof output"),
+            size: wgpu::Extent3d {
+                width: extent[0],
+                height: extent[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: OUTPUT_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        Self {
+            device,
+            queue,
+            caps,
+            host,
+            game,
+            output,
+            extent,
+            last_elapsed: Duration::ZERO,
+            report,
+            witness: None,
+        }
+    }
+    pub(crate) fn parameters(&mut self, json: &str) {
+        let report = self.game.controls_mut().apply_file(json).expect("controls");
+        assert!(report.problems.is_empty(), "{report}");
+        let (edits, _) = self.game.take_edits();
+        SkyGame::apply(&mut self.host, edits).expect("apply");
+    }
+    pub(crate) fn frame(&mut self, seconds: f64) -> FrameSample {
+        let begin = std::time::Instant::now();
+        self.host.set_timing_requested(true);
+        let view = self
+            .output
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        self.host
+            .drive(
+                Duration::from_secs_f64(seconds),
+                Some(&SurfaceOutput {
+                    view: &view,
+                    extent: self.extent,
+                }),
+            )
+            .expect("submitted scene");
+        self.witness = self.host.submitted_temporal_witness().cloned();
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        let sample = loop {
+            self.device
+                .poll(wgpu::PollType::wait_indefinitely())
+                .expect("poll");
+            if let Some(sample) = self.host.poll_completed().expect("completed") {
+                break sample;
+            }
+            assert!(std::time::Instant::now() < deadline, "completion timeout");
+            std::thread::yield_now();
+        };
+        assert!(
+            self.host.contribution_error().is_none(),
+            "{:?}",
+            self.host.contribution_error()
+        );
+        self.last_elapsed = begin.elapsed();
+        sample
+    }
+    pub(crate) fn witness(&self) -> Vec<[f32; 4]> {
+        let texture = self.witness.as_ref().expect("temporal input witness");
+        let raw = read_texture(&self.device, &self.queue, texture, 8);
+        raw.as_chunks::<8>()
+            .0
+            .iter()
+            .map(|p| {
+                std::array::from_fn(|i| half_value(u16::from_le_bytes([p[2 * i], p[2 * i + 1]])))
+            })
+            .collect()
+    }
+}
+pub(crate) fn component(amplitude: f64) -> thrum_sea_model::Component {
+    thrum_sea_model::Component {
+        wave_vector: [std::f64::consts::TAU / 64.0, 0.0],
+        amplitude,
+        phase: 0.4,
+    }
+}
+pub(crate) fn matrix(extent: [u32; 2], height: f32) -> glam::Mat4 {
+    let view = thrum_render::synthetic::SyntheticView::perspective(
+        [0.0, height, 0.0],
+        [100.0, height - 8.0, 0.0],
+        [0.0, 1.0, 0.0],
+        55.0_f32.to_radians(),
+        extent[0] as f32 / extent[1] as f32,
+        0.1,
+        30_000.0,
+    )
+    .expect("camera");
+    glam::Mat4::from_cols_array_2d(&view.view_proj_columns())
+}
+pub(crate) fn world_at(
+    matrix: glam::Mat4,
+    extent: [u32; 2],
+    pixel: [u32; 2],
+    depth: f32,
+) -> glam::Vec3 {
+    matrix.inverse().project_point3(glam::vec3(
+        (pixel[0] as f32 + 0.5) * 2.0 / extent[0] as f32 - 1.0,
+        1.0 - (pixel[1] as f32 + 0.5) * 2.0 / extent[1] as f32,
+        depth,
+    ))
+}
+pub(crate) fn read_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
+    pixel_bytes: u32,
+) -> Vec<u8> {
+    let row = texture.width() * pixel_bytes;
+    let pitch = row.div_ceil(256) * 256;
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("proof readback"),
+        size: u64::from(pitch) * u64::from(texture.height()),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_texture_to_buffer(
+        texture.as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(pitch),
+                rows_per_image: None,
+            },
+        },
+        texture.size(),
+    );
+    queue.submit([encoder.finish()]);
+    let (send, receive) = std::sync::mpsc::channel();
+    buffer.slice(..).map_async(wgpu::MapMode::Read, move |r| {
+        send.send(r).expect("readback channel");
+    });
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("readback poll");
+    receive.recv().expect("map reply").expect("map");
+    let mapped = buffer.slice(..).get_mapped_range().expect("mapped range");
+    mapped
+        .chunks(pitch as usize)
+        .flat_map(|r| r[..row as usize].iter().copied())
+        .collect()
+}
+fn half_value(bits: u16) -> f32 {
+    let sign = if bits & 0x8000 == 0 { 1.0 } else { -1.0 };
+    let exponent = i32::from((bits >> 10) & 31);
+    let fraction = f32::from(bits & 1023) / 1024.0;
+    if exponent == 0 {
+        sign * fraction * 2.0_f32.powi(-14)
+    } else {
+        sign * (1.0 + fraction) * 2.0_f32.powi(exponent - 15)
+    }
+}

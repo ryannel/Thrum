@@ -474,6 +474,7 @@ fn late(index: usize, bytes: u64) -> AfterOpaquePass {
             history: None,
         }],
         depth: false,
+        write_depth: false,
         refraction: false,
     }
 }
@@ -741,6 +742,7 @@ fn air_late(index: usize) -> AfterOpaquePass {
         kind: AfterOpaqueKind::Compute,
         cadence: EffectCadence::Skippable,
         depth: false,
+        write_depth: false,
         refraction: true,
         accesses: vec![EffectAccess {
             resource: index,

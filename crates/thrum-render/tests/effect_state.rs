@@ -2,6 +2,41 @@
 use std::time::Duration;
 use thrum_render::contribution::{EffectState, EffectStep, EffectTime, HistoryBinding as H};
 
+#[test]
+fn late_depth_writes_refuse_sampling_and_compute_but_allow_a_surface() {
+    use thrum_render::contribution::{
+        AfterOpaqueKind, AfterOpaquePass, EffectCadence, EffectGraph,
+    };
+    let mut graph = EffectGraph {
+        after_opaque: vec![AfterOpaquePass {
+            name: "displaced surface".into(),
+            kind: AfterOpaqueKind::Render,
+            cadence: EffectCadence::EveryFrame,
+            accesses: vec![],
+            depth: false,
+            write_depth: true,
+            refraction: false,
+        }],
+        ..EffectGraph::default()
+    };
+    graph.validate().expect("a surface may attach depth");
+    graph.after_opaque[0].depth = true;
+    assert!(
+        graph
+            .validate()
+            .expect_err("attachment cannot be sampled")
+            .contains("AfterOpaqueDepthConflict")
+    );
+    graph.after_opaque[0].depth = false;
+    graph.after_opaque[0].kind = AfterOpaqueKind::Compute;
+    assert!(
+        graph
+            .validate()
+            .expect_err("compute cannot attach depth")
+            .contains("AfterOpaqueDepthConflict")
+    );
+}
+
 fn time(tick: u64) -> EffectTime {
     EffectTime {
         epoch: 7,
@@ -281,6 +316,7 @@ fn late_passes_share_history_validation_and_refuse_unrecordable_accesses_at_prep
         cadence: C::Skippable,
         accesses: producer.accesses,
         depth: true,
+        write_depth: false,
         refraction: false,
     };
     graph.after_opaque.push(late.clone());

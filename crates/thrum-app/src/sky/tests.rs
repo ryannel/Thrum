@@ -12,8 +12,50 @@ use thrum_asset_gpu::CookedStats;
 
 const CAMERA: Camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
 
+#[test]
+fn a_game_owns_its_clock_and_the_default_kit_stays_still() {
+    use std::time::Duration;
+    use thrum_render::runtime::FrameWorld;
+    let mut still = super::StillWorld::default();
+    still.advance(Duration::from_secs(10)).expect("still");
+    assert_eq!(still.source().tick, 0);
+    assert_eq!(still.presentation_alpha_at(Duration::ZERO), 1.0);
+    let mut world = super::StillWorld {
+        tick_duration: Some(Duration::from_millis(20)),
+        ..super::StillWorld::default()
+    };
+    assert_eq!(
+        world
+            .advance(Duration::from_millis(50))
+            .expect("tick")
+            .completed_ticks,
+        2
+    );
+    assert_eq!(world.publication().expect("page").page.tick, 2);
+    assert!((world.presentation_alpha_at(Duration::ZERO) - 0.5).abs() < 1e-6);
+    assert!((world.presentation_alpha_at(Duration::from_millis(5)) - 0.75).abs() < 1e-6);
+    assert_eq!(
+        world
+            .advance(Duration::from_millis(50))
+            .expect("repeat")
+            .completed_ticks,
+        0
+    );
+    let mut other = super::StillWorld {
+        tick_duration: Some(Duration::from_millis(20)),
+        ..super::StillWorld::default()
+    };
+    other
+        .advance(Duration::from_millis(20))
+        .expect("independent world");
+    assert_eq!(other.source().tick, 1);
+    assert_eq!(world.source().tick, 2);
+}
+
 fn sky(elevation: f32, azimuth: f32) -> Sky {
     Sky {
+        exposure_compensation_ev: 0.0,
+        temporal_inputs: false,
         sun_elevation_degrees: elevation,
         sun_azimuth_degrees: azimuth,
         camera: CAMERA,

@@ -1,8 +1,8 @@
 //! Late effects share one refraction source and independently request scene depth.
 use super::{PreparedSynthetic, RenderError, SceneContext, TargetResources};
 use crate::graph::{
-    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, Pass, PassScope,
-    PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
+    Access, AccessKind, CompiledPass, FrameGraph, GraphColorAttachment, GraphDepthAttachment, Pass,
+    PassScope, PipelineKey, ResourceDescriptor, ResourceId, ResourceScope,
 };
 use std::collections::BTreeSet;
 
@@ -119,6 +119,9 @@ impl PreparedSynthetic {
             }
             if declaration.depth {
                 accesses.push(Access::new(depth.clone(), 0..1, AccessKind::SampledRead));
+            }
+            if declaration.write_depth {
+                accesses.push(Access::new(depth.clone(), 0..1, AccessKind::AttachmentLoad));
             }
             if declaration.refraction {
                 accesses.push(Access::new(
@@ -265,7 +268,14 @@ impl SceneContext<'_> {
                         clear: wgpu::Color::BLACK,
                     })
                 }),
-                None,
+                self.prepared.effect_graph.after_opaque[index]
+                    .write_depth
+                    .then_some(GraphDepthAttachment {
+                        resource: &self.target.ids.depth,
+                        view: &self.target.depth,
+                        range: 0..1,
+                        clear: 0.0,
+                    }),
                 self.generation,
                 self.timings.as_deref_mut(),
             )?

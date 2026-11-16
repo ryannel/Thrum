@@ -130,6 +130,9 @@ impl EffectGraph {
         }
         let mut names = BTreeSet::new();
         for pass in &self.after_opaque {
+            if pass.write_depth && (pass.depth || pass.kind != super::AfterOpaqueKind::Render) {
+                return Err(format!("AfterOpaqueDepthConflict: {}", pass.name));
+            }
             if pass.kind == super::AfterOpaqueKind::Render
                 && pass.accesses.iter().any(|access| {
                     matches!(

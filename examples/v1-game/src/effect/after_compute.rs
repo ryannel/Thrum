@@ -60,6 +60,7 @@ fn declaration(
         kind,
         cadence,
         depth,
+        write_depth: false,
         refraction: false,
         accesses,
     }

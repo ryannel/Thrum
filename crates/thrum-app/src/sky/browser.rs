@@ -79,12 +79,16 @@ pub async fn create_scene(
     };
     let ground = ground_scene(game.ground).map_err(js)?;
     let contribution = game.contribution.take();
+    let tick_duration = game.tick_duration;
     let shell = web::create(canvas, 1, |gpu| async move {
         let mut host = FrameHost::new(
             &gpu.capabilities,
             &gpu.queue,
             gpu.frame_config,
-            StillWorld,
+            StillWorld {
+                tick_duration,
+                ..StillWorld::default()
+            },
             scene,
             ground,
             FALLBACK_EXPOSURE,

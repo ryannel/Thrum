@@ -279,6 +279,29 @@ impl Ambient {
     pub fn cascade_buffer(&self) -> &wgpu::Buffer {
         &self.buffers[&spec::BufferKey::Cascades]
     }
+    /// Exact graph accesses for a surface sampling the lent fields and selected moment mips.
+    /// Returns `None` for a moment mip outside the prepared ladder.
+    pub fn surface_accesses(
+        &self,
+        mips: &[u32],
+    ) -> Option<Vec<thrum_render::contribution::EffectAccess>> {
+        let mut keys = vec![spec::BufferKey::Cascades, spec::BufferKey::LongField];
+        keys.extend(mips.iter().map(|mip| spec::BufferKey::Moments(*mip)));
+        let resources = spec::resources();
+        keys.into_iter()
+            .map(|key| {
+                let resource = resources.iter().position(|r| r.key == key)?;
+                let buffer = self.buffers.get(&key)?;
+                Some(thrum_render::contribution::EffectAccess {
+                    resource,
+                    range: 0..buffer.size(),
+                    kind: thrum_render::graph::AccessKind::StorageRead,
+                    view: None,
+                    history: None,
+                })
+            })
+            .collect()
+    }
     /// Raw filtered moments. Covariance and variance are recovered from second moments.
     pub fn moments_buffer(&self, mip: usize) -> Option<&wgpu::Buffer> {
         u32::try_from(mip)
