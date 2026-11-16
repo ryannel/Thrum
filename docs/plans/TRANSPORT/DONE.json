@@ -12,10 +12,10 @@
           "check": "cargo test --locked --offline -p thrum-transport --test link_script",
           "ask": "Read the test. Is the link script one piece of code written against the link's interface, which this test and the socket runs both execute? Does the in-memory link take its time from the caller, with no sleep and no wall clock? Under A0's profile does the run report datagrams lost and reordered, each above zero, and reliable messages delayed but never lost? Does the script open a link on which neither game sends and then take the host's reliable message as the first? In its expiry part, does sending stop while the path is still stalled, and is expiry asserted from the sender's counters before the stall ends?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -23,10 +23,10 @@
           "check": "python3 scripts/transport_link.py conformance --target mac-metal",
           "ask": "Read the harness. Do the client and the host reach the network only through thrum-transport's public interface? Are host, relay and client separate processes, and does the record hold the relay's forwarded and dropped counts and a measured round trip that shows the profile? Is any part of the script skipped, or a failure in it tolerated? In the expiry part, does the record show datagrams expired in the sender's queue, above zero in each direction, apart from the packets the relay dropped?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -34,10 +34,10 @@
           "check": "python3 scripts/transport_link.py conformance --target chrome-webgpu",
           "ask": "Is the page's client thrum-transport's browser adapter running the same link script as Wasm, and not an exchange written in JavaScript? Is Chrome started with no flag that touches certificates, QUIC or origins? Does the record hold the browser's version? In the expiry part, does it say whether the page's queue backed up, and mark what Chrome discards itself as absent and not as zero?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -45,10 +45,10 @@
           "check": "python3 scripts/transport_link.py conformance --target ios-sim",
           "ask": "Did the client run inside the booted iPhone 18 Pro simulator, built for the simulator target, with the runtime's version and the target triple in the record?",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -56,10 +56,10 @@
           "check": "python3 scripts/transport_link.py session",
           "ask": "Does the record show each event with its time, the close reason each surviving end reported, and the old and new link identifiers? Is the harness's own note of the kill and the cut kept apart from what the links reported? Did every ended link carry load until its own end reported the close: is the count of reliable messages accepted and never delivered above zero for the cut, and did the host accept messages for the killed client after the kill, so that sends were interrupted and not drained first? Does it name the three kinds of client by platform?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -67,30 +67,30 @@
           "check": "python3 scripts/transport_link.py costs --target mac-metal",
           "ask": "Were both runs release builds of the claimed commit, timed through thrum-transport and not a stand-in, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a figure?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.7",
           "statement": "With a Chrome client, the same rows as the Mac's, without allocations, are on record from two separate runs under A0's profile, each with Cubic and with BBR on the host, and with a 256 KiB transfer from the page to the host beside them. What Chrome cannot report is marked absent. The figures are baselines: none decides the result.",
           "check": "python3 scripts/transport_link.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.8",
           "statement": "No call on a link or a host waits on the network, and the interface names nothing from the libraries beneath it.",
           "ask": "Can any call on the link's or the host's public interface block, sleep or await? Does that interface name a type from Tokio, Quinn, rustls or wasm-bindgen? Is every queue between the game's side and the I/O side bounded by a cap the link profile sets?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.9",
@@ -98,30 +98,30 @@
           "check": "python3 scripts/transport_link.py closure",
           "ask": "Is every licence in the socket adapters' dependency closure permissive, with none GPL or share-alike? Did the lockfile change the version of any crate that was locked before this module?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
           "statement": "`./dev check` lints the browser adapter for Wasm. No test or step this module adds to `cargo test`'s defaults or to `./dev check` opens a socket, starts Chrome or calls the simulator: its socket proofs run only through the proof command.",
           "ask": "Does `./dev check` run Clippy on thrum-transport's browser adapter for `wasm32-unknown-unknown`? Among the tests of `thrum-transport` and `link-proof` that `cargo test --workspace` runs, and the steps this module added to `./dev check`, does any bind or connect a socket, start Chrome or call `simctl`? Tests other modules own, such as the cooker's dev-server tests, are outside this item.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.11",
           "statement": "A host's identity is an ECDSA P-256 key and a self-signed certificate valid for less than 14 days, made when the host starts and never written to disk. Every adapter connects only to a host whose certificate has the ticket's SHA-256, and no adapter can be told to skip that check.",
           "ask": "Read the identity and each adapter's connect path. Is there any option, feature or environment variable that accepts a host without comparing the hash? Is early data (0-RTT) off on both ends? Is the key or certificate ever written to a file or a log?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M1.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.12",
