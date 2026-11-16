@@ -104,6 +104,35 @@
         "by": "plan",
         "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 2 Mu",
         "at": "2026-11-16T00:19:00Z"
+      },
+      "ready_for_review": {
+        "commit": "25fff19a80bb13098915cc0aa36c301e7c967ccc",
+        "checked": "160595c5a0996b235043bff5e7624f6b0df6464b",
+        "at": "2026-11-16T03:16:31Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 192128,
+          "cached": 12025984,
+          "output": 32391,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 192128,
+          "cached": 12025984,
+          "output": 32391,
+          "turns": 2
+        }
       }
     }
   },
