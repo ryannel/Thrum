@@ -371,7 +371,43 @@
     },
     "M12": {
       "definitions": "791f4bb9101f66609520c1592ade85fc3820a19ce2d1bc28285c6d72f9b892d3",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "eec4204bb166862a0efcda2d3b3fc8c0e40d2a84",
+          "review": "docs/evidence/WATERS/M12-review.md",
+          "items": {
+            "M12.1": "pass",
+            "M12.2": "pass",
+            "M12.3": "pass",
+            "M12.11": "pass",
+            "M12.4": "pass",
+            "M12.5": "pass",
+            "M12.6": "pass",
+            "M12.12": "pass",
+            "M12.7": "pass",
+            "M12.8": "pass",
+            "M12.9": "pass",
+            "M12.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 144310,
+            "cached": 2168320,
+            "output": 7584,
+            "turns": 1
+          },
+          "at": "2026-11-16T05:57:16Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
@@ -412,6 +448,13 @@
           "output": 150989,
           "turns": 6
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "eec4204bb166862a0efcda2d3b3fc8c0e40d2a84",
+        "review": "docs/evidence/WATERS/M12-review.md",
+        "checked": "befaf3f758c87061510d8ec24cb20b5c6d1fd975",
+        "at": "2026-11-16T05:57:16Z"
       }
     },
     "M13": {

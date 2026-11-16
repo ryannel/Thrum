@@ -154,7 +154,7 @@
     {
       "id": "M12",
       "name": "On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -169,8 +169,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.2",
@@ -180,8 +180,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.3",
@@ -191,8 +191,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.11",
@@ -202,8 +202,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.4",
@@ -213,8 +213,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.5",
@@ -224,8 +224,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.6",
@@ -235,8 +235,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.12",
@@ -246,8 +246,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.7",
@@ -256,8 +256,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.8",
@@ -267,8 +267,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.9",
@@ -278,8 +278,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M12.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         },
         {
           "id": "M12.10",
@@ -288,8 +288,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/WATERS/M12-review.md"
         }
       ]
     },
