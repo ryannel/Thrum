@@ -9,7 +9,9 @@ mod support;
 fn bound_resources_equal_declared_accesses_for_every_pass() {
     use thrum_render::graph::AccessKind;
     use wgpu::naga::{self, valid::GlobalUse};
-    let h = support::Harness::new(false);
+    let Some(h) = support::Harness::new(false) else {
+        return;
+    };
     let module = naga::front::wgsl::parse_str(thrum_sea::SHADER).expect("valid shader");
     let info = naga::valid::Validator::new(
         naga::valid::ValidationFlags::all(),

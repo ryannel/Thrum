@@ -28,7 +28,9 @@ fn record(h: &mut support::Harness, label: &str, changed: bool, queries: usize) 
 
 #[test]
 fn still_changed_and_transition_upload_only_the_required_bytes() {
-    let mut h = support::Harness::new(false);
+    let Some(mut h) = support::Harness::new(false) else {
+        return;
+    };
     let start = support::spectrum(5.0);
     let points = support::points();
     let first = h

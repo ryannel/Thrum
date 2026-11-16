@@ -8,7 +8,9 @@ mod support;
 #[test]
 fn cpu_upload_cost() {
     use std::fmt::Write as _;
-    let mut h = support::Harness::new(false);
+    let Some(mut h) = support::Harness::new(false) else {
+        return;
+    };
     let spectrum = support::spectrum(5.0);
     let points = support::points();
     let mut samples = Vec::new();

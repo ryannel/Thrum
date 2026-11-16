@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-16 M2 integration resolves the lockfile conflict with TEST-SUPPORT and adapts only the
+  three new GPU tests to its optional harness admission. No assertion or bound changes. Focused
+  `cargo clippy --locked --offline -p thrum-sea --all-targets -- -D warnings` passes on the Mac.
+  The earlier merge failed compilation at `dfd9ffc62`; target proof remains in
+  [M2 evidence](../../evidence/REVIEW-ENGINE/M2/README.md). The normal merge runs the workspace gate.
+
 - 2026-11-16 M2 gives the sea typed resource/pass/group/pipeline keys, whole Pod shader records and
   reflection checks, a persistent mode allocation, and a transition into retained spectrum storage.
   On `977d3b0a2`, all twelve sea tests pass on Metal, including every unchanged SEA test; all twelve
