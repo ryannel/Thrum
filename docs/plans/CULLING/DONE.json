@@ -173,10 +173,10 @@
           "statement": "The valley's default mode is set by the design's rule from paired rows on the moving route, recorded with their load and the reason.",
           "ask": "Do the retained rows support the valley's default mode by the design's rule, and does the game report that mode on the Mac and in Chrome?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md; docs/evidence/CULLING/M3/replan/mode-cost/run.json; docs/evidence/CULLING/M3/replan/default-selection.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.4",
