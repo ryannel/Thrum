@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -19,8 +19,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test tree",
           "ask": "Read the test. Are the expected hollows, sills and paths worked out there from the bed by brute force, without the code under test?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/tree.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -30,8 +30,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test point_test",
           "ask": "Is the flood in the test written apart from the tree's code, and does it start from pits only? Would a point test that read one level for the whole body fail it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/point_test.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -41,8 +41,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test fill",
           "ask": "Does the test take its bound on a level's change from the tick's own volumes and surfaces, and does it cover a merge of two puddles that are each already several hollows? Would a fill that set both levels to their mean at a merge fail it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/fill.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -51,16 +51,16 @@
           "statement": "The water account closes. Over 10,000 ticks with merges and partings, the rain on the body equals the change in the puddles plus what dried, went down into the ground, was withheld by canopy and left over the edge, within 1e-9 of the rain. On ground that takes nothing, a pothole with six times its area draining to it fills in a sixth of the time. A puddle with no other ground draining to it, on ground whose percolation rate is at least the rain's, does not grow.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test account",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/account.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
         },
         {
           "id": "M1.5",
           "statement": "Shelter is content. From shelters the test gives, each a set of triangles with one share of rain it lets through, exposure is 0 under a roof, the crown's share under a tree, 1 under open sky, on the roof's own top and outside the grid, and passes between them over the profile's edge width. Under a crown that stands under a roof it is 0 at the ground and between the two and 1 above the roof; under two crowns it is the product of their shares; a shelter counts once in a column however many of its triangles cross it; and a column three shelters cross is refused by name and place. A hollow under a roof fills only by what drains to it from open ground, and one with no open ground stays dry.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test exposure",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/exposure.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "ask": "Would exposure taken from the lowest canopy alone fail the crown under the roof, as part 10 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows?"
         },
         {
@@ -69,10 +69,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Does the test sum each receiver's cells by brute force from the bed, the levels and the shelters, without the model? Does it check each entry by itself and not only their sum?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "crates/thrum-rain-model/tests/receivers.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -80,8 +80,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test map && cargo test --locked --offline -p thrum-water-model",
           "ask": "Is the change to the map confined to the new kind, so that no body an existing test or the example declares is prepared or answered differently? Was any existing test of `thrum-water-model` changed?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/map.rs and crates/thrum-water-model/tests (unchanged): passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -90,16 +90,16 @@
           "statement": "The rain state is plain data a game keeps in its world. It encodes and decodes to the same bytes, and stepping it from the same state and inputs gives the same bytes on one thread and on eight.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test state",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/state.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
         },
         {
           "id": "M1.8",
           "statement": "`WATERS`' conformance model answers on a hollows body: a point in a puddle gives the body and its depth, a point on dry ground between two puddles gives dry, and the answers either side of a merge differ only by the level's change.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "crates/thrum-rain-model/tests/conformance.rs: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
         },
         {
           "id": "M1.9",
@@ -107,8 +107,8 @@
           "check": "python3 scripts/rain_cost.py check",
           "ask": "Was the record taken on this milestone's code, in a release build, and does it give the bytes a node's curve of level for volume takes?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/rain-cost.json from scripts/rain_cost.py record: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -118,8 +118,8 @@
           "check": "cargo tree --locked --offline -p thrum-rain-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or not t.strip()) else 0)'",
           "ask": "Does any file in the crate or its tests name a place, a preset or a ground class that belongs to a game?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "cargo tree -p thrum-rain-model; .config/architecture.toml: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -128,8 +128,8 @@
           "statement": "Every file in this milestone that is copied or translated from elsewhere is listed in `docs/evidence/PUDDLES/PROVENANCE.md` with its source and licence. None is GPL or share-alike, and none is Barnes's code.",
           "ask": "Does the provenance file exist and say either that nothing was copied or which files were, and does it match the crate?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/PROVENANCE.md: passed on 8d971e52bfbdcdd7581f1e66f3fd95724d92f42d (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
           "verdict": "",
           "review": ""
         },
@@ -138,8 +138,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },
