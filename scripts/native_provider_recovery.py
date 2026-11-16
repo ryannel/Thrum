@@ -95,8 +95,10 @@ def compare(args):
 def campaign(args):
     """One recipe's bounded capture-only GPU campaign; no build or merge inside."""
     args.output = args.output.resolve()
-    args.output.mkdir(parents=True, exist_ok=False)
+    args.output.mkdir(parents=True, exist_ok=bool(args.reuse_fixed_sha256))
     summary = {'passed': False, 'recipe': args.recipe, 'arms': [], 'comparisons': []}
+    if args.reuse_fixed_sha256:
+        summary['reused_fixed_binary_sha256'] = args.reuse_fixed_sha256
     matrix = []
     for source in ['sdr', 'scene-linear']:
         matrix.extend((source, 'off', arm, 'fixed') for arm in ['control', 'faults'])
@@ -110,7 +112,15 @@ def campaign(args):
             name = f'{mode}-{source}-{selection}-{arm}'
             current = SimpleNamespace(**vars(args) | {'source': source, 'selection': selection,
                                       'arm': arm, 'mode': mode, 'output': args.output / name})
-            if capture(current):
+            if args.reuse_fixed_sha256 and mode == 'fixed':
+                proof = json.loads((args.output / f'{name}-proof.json').read_text())
+                if not (proof['passed'] and proof['binary_sha256'] == args.reuse_fixed_sha256
+                        and proof['recipe'] == args.recipe and proof['source'] == source
+                        and proof['selection'] == selection and proof['arm'] == arm
+                        and proof['mode'] == mode
+                        and proof['manifest_sha256'] == digest(current.output / 'manifest.json')):
+                    raise ValueError(f'{name} is not the explicitly pinned verified fixed arm')
+            elif capture(current):
                 raise ValueError(f'{name} failed; its source and failure record are retained')
             summary['arms'].append(name)
             save(args.output / 'campaign.json', summary)
@@ -153,5 +163,7 @@ if __name__ == '__main__':
     suite.add_argument('--store', type=Path, required=True)
     suite.add_argument('--output', type=Path, required=True)
     suite.add_argument('--recipe', choices=['portable', 'apple-tile'], required=True)
+    suite.add_argument('--reuse-fixed-sha256',
+                       help='reuse verified fixed arms of this explicit artifact; realtime arms must be new')
     arguments = parser.parse_args()
     raise SystemExit({'capture': capture, 'compare': compare, 'campaign': campaign}[arguments.command](arguments))

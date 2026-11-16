@@ -304,6 +304,7 @@ fn start_writer(
     scenario: &str,
     encoding: SpoolEncoding,
     limit: Option<u64>,
+    recovery: super::NativeRecovery,
 ) -> Result<ImageWriter, String> {
     let output = std::fs::File::from(
         std::io::stdout()
@@ -324,7 +325,7 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
-        if scenario == "clouds-drift" {
+        if scenario == "clouds-drift" || recovery != super::NativeRecovery::Disabled {
             4096
         } else {
             1024
@@ -464,7 +465,7 @@ async fn record(
         enable_stage_capture(&mut driver, 1, source)?;
     }
     let writer = if capture {
-        Some(start_writer(scenario, encoding, disk_limit)?)
+        Some(start_writer(scenario, encoding, disk_limit, recovery_mode)?)
     } else {
         None
     };

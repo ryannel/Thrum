@@ -283,7 +283,7 @@ def run(args):
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted([*(ROOT / "crates").rglob("*.wgsl"), *(ROOT / "crates").rglob("*.metal")])},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
-        "record_limit": 4096 if args.case == 'clouds-drift' else 1024,
+        "record_limit": 4096 if args.case == 'clouds-drift' or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
