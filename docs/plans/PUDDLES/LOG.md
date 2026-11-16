@@ -78,3 +78,9 @@
   as a puddle rises past a low slab, plus the review's covered floor; both tests fail on the old code. All
   rain-model tests pass, clippy clean; the cost record was taken again (fill step 71 µs on 1 thread). Byte
   counts are now labelled payload. Not done: thread reuse in the fill step (review suggestion).
+- 2026-11-16 M2 built (code 61ffd6b7f). Verified: ground stores per class at three reaches read by RainState with
+  cover and uncover transfers; damp bands on hollows and shores; the wet look; ring tables and two rain bands
+  summed in thrum-water-model; conformance reports ignored exposure. All M2 tests and water-model tests pass,
+  water-model tests unchanged, workspace clippy clean. M2.10 is left to the main-branch check exact-images.
+  Not verified here: `./dev check` hit the 30-minute gpu hold in other crates' GPU tests under load; no failure
+  before that. Suspected: the stores' interpolation between reaches is the largest wetness error (0.23 of the pores).
