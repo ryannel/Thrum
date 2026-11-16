@@ -4813,7 +4813,7 @@
       "technique": "Forward rest-sheet fields with full LEAN moment pyramids and anisotropic footprint filtering",
       "source": "../plans/WATERS/DESIGN.md#the-surface-and-the-frame-contract",
       "owner": "thrum-sea field products and thrum-water surface",
-      "status": "Native and portable Metal readbacks check every cache and mip texel; filterable cache errors stay below 0.932 mm height and 0.000122 slope. Directional covariance retains omitted waves and far fades, and visible facets sample the lent sky above the horizon. Forward cache cost is about 0.354 ms under concurrent load, above the 0.2–0.3 ms estimate. No qualified speedup, browser output or physical cadence claim; near-field highlight polish and independent milestone review remain owed.",
+      "status": "Native and portable Metal readbacks at 8 and 20 m/s check every cache and mip texel; paired half displacement errors stay below 0.0392 mm height and 0.000244 slope without increasing the texture allocation. Directional covariance retains omitted waves and far fades, and visible facets sample the lent sky above the horizon. Forward cache cost remains a concurrent-load tripwire above the 0.2–0.3 ms estimate. No qualified speedup, browser output or physical cadence claim; near-field highlight polish and independent milestone review remain owed.",
       "evidence": "../evidence/WATERS/M2-forward.md"
     },
     {

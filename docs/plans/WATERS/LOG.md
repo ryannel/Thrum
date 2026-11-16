@@ -389,3 +389,9 @@
   rectangular near-field highlights remain a disclosed limitation. The motion proof selects jittered TAAU.
   [Cost](../../evidence/WATERS/M2-cost.md): forward cache about 0.354 ms, above the 0.2–0.3 ms estimate;
   qualified cadence and remaining optimization stay with M11. Integration runs the full project gate.
+- 2026-11-16 Extended M2.10's readback to SEA's 20 m/s envelope: single-half displacement missed the
+  height bound by 6.17 mm. Paired high/residual displacement in the same five texture planes now keeps
+  every texel below 0.0392 mm height and 0.000244 slope on native/portable Metal, at both ages and winds.
+  Full mip averages retain the residual carry; optional float16 arithmetic is unnecessary. The new
+  frame-contract probe passes. Allocation is unchanged; [paired cost](../../evidence/WATERS/M2-cost.md)
+  records the extra vertex read. The queued pre-correction merge was withdrawn before resubmission.
