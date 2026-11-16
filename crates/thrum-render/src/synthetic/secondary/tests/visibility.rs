@@ -1,0 +1,136 @@
+//! A requested view draws an object behind the main camera, and its own
+//! clip/least-size tests compact it without touching main submissions.
+use super::*;
+use crate::synthetic::{CullMode, FrameLighting};
+
+fn count(device: &wgpu::Device, queue: &wgpu::Queue, args: &wgpu::Buffer) -> u32 {
+    let output = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("secondary visibility test arguments"),
+        size: 20,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_buffer_to_buffer(args, 0, &output, 0, 20);
+    encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., |result| {
+        result.expect("mapped");
+    });
+    let submitted = queue.submit([encoder.finish()]);
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(std::time::Duration::from_secs(30)),
+        })
+        .expect("arguments");
+    let bytes = output.slice(..).get_mapped_range().expect("argument bytes");
+    u32::from_le_bytes(bytes[4..8].try_into().expect("count"))
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion() {
+    pollster::block_on(async {
+        let (adapter, device, queue) =
+            crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
+        let capabilities = crate::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
+        let camera = |z| {
+            SyntheticView::perspective(
+                [0.0, 0.0, z],
+                [0.0, 0.0, z + 1.0],
+                [0.0, 1.0, 0.0],
+                1.0,
+                1.0,
+                0.1,
+                20.0,
+            )
+            .expect("camera")
+        };
+        let mut scene = SyntheticScene::grid(1).expect("scene");
+        scene.view = camera(2.0);
+        scene.materials[0].base_rgba = [0.0, 0.0, 0.0, 1.0];
+        scene.materials[0].emissive_cutoff = [1.0, 0.5, 0.25, 0.0];
+        for (bucket, mode) in [false, true]
+            .into_iter()
+            .flat_map(|bucket| [CullMode::Frustum, CullMode::Occlusion].map(|mode| (bucket, mode)))
+        {
+            scene.meshes = bucket.then(|| {
+                Arc::new(crate::synthetic::SyntheticMeshes {
+                    meshes: Vec::new(),
+                    slots: vec![crate::synthetic::SyntheticMeshChoice::Cube],
+                })
+            });
+            scene.camera_culling = mode;
+            let mut prepared = PreparedSynthetic::prepare_with_capabilities(
+                &capabilities,
+                &queue,
+                &scene,
+                FrameLighting::Diagnostic(SyntheticLight::default()),
+                1.0,
+            )
+            .await
+            .expect("scene");
+            assert_eq!(
+                prepared.camera_culling(),
+                mode,
+                "real adapter admits requested mode"
+            );
+            prepared
+                .prepare_secondary_views(
+                    &queue,
+                    &[SecondaryViewSlot::new(1.0).expect("slot")],
+                    [64, 64],
+                    &[],
+                )
+                .expect("views");
+            prepared.set_contribution_passes(ContributionPasses {
+                upload: true,
+                compute: false,
+            });
+            let target = OffscreenTarget::new(&device, &prepared, 64, 64).expect("target");
+            let request = SecondaryViewRequest::new(&camera(-2.0), [64, 64], None, ViewAir::Camera)
+                .expect("request");
+            let mut asker = Asker {
+                slot: prepared.secondary_handles[0].clone(),
+                request: Some(request),
+            };
+            let (pixels, main) = render(&device, &queue, &prepared, &target, &mut asker);
+            assert!(pixels.iter().filter(|p| p[3] > 0.0).count() > 100);
+            let args = prepared.secondary[0]
+                .culling
+                .as_ref()
+                .expect("view culling")
+                .1
+                .args();
+            assert_eq!(count(&device, &queue, args), 1);
+            asker.request = Some(request.with_least_pixels(1000.0).expect("size"));
+            let (pixels, other_main) = render(&device, &queue, &prepared, &target, &mut asker);
+            assert!(pixels.iter().all(|p| p[3] == 0.0));
+            assert_eq!(
+                count(&device, &queue, args),
+                0,
+                "least size changes the GPU list"
+            );
+            assert_eq!(main, other_main);
+            asker.request = Some(
+                SecondaryViewRequest::new(
+                    &camera(-2.0),
+                    [64, 64],
+                    Some(
+                        crate::contribution::ViewClipPlane::new([1.0, 0.0, 0.0, -10.0])
+                            .expect("clip"),
+                    ),
+                    ViewAir::Camera,
+                )
+                .expect("request"),
+            );
+            let (pixels, other_main) = render(&device, &queue, &prepared, &target, &mut asker);
+            assert!(pixels.iter().all(|p| p[3] == 0.0));
+            assert_eq!(
+                count(&device, &queue, args),
+                0,
+                "clip plane changes the GPU list"
+            );
+            assert_eq!(main, other_main);
+        }
+    });
+}

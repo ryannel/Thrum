@@ -3216,6 +3216,7 @@ dependencies = [
  "pollster",
  "serde_json",
  "thrum-core",
+ "thrum-test-support",
  "web-time",
  "wgpu",
 ]

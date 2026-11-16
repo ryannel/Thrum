@@ -34,6 +34,7 @@ const SUN_ANGULAR_RADIUS: f32 = 0.004_654_21;
 // Bound the near-only blocker range by an eight-texel solar penumbra.
 // The last cascade represents more distant blockers and their broader support.
 const LOCAL_PENUMBRA_TEXELS: f32 = 8.0;
+mod secondary;
 
 fn split_depth(near: f32, far: f32) -> f32 {
     near.midpoint(far).midpoint((near * far).sqrt())
@@ -330,7 +331,8 @@ impl ShadowPrepared {
         casters: (&[InstanceRecord], Option<&[CasterBox]>),
         light_direction: Vec3,
     ) -> Result<(), RenderError> {
-        let inputs = FitInputs::new(view, casters, light_direction)?;
+        let mut inputs = FitInputs::new(view, casters, light_direction)?;
+        inputs.profile = self.inputs.profile;
         self.fitted = inputs.fit(None)?;
         self.inputs = inputs;
         Ok(())
@@ -453,6 +455,7 @@ struct FitInputs {
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
     caster_height: Option<(f32, f32)>,
+    profile: Option<(u32, f32)>,
 }
 
 impl FitInputs {
@@ -472,6 +475,7 @@ impl FitInputs {
             rotation,
             caster_depth: caster_depth_bounds(rotation, set),
             caster_height: caster_depth_bounds(light_rotation(Vec3::NEG_Y), set),
+            profile: view.sun_shadow_profile(),
         })
     }
 
@@ -486,7 +490,9 @@ impl FitInputs {
         else {
             return Err(RenderError::InvalidView);
         };
-        let limit = near + RECEIVER_REACH;
+        let limit = self
+            .profile
+            .map_or(near + RECEIVER_REACH, |(_, reach)| reach.max(near * 1.01));
         let receiver_far = if limit > near { far.min(limit) } else { far };
         let split = if receiver_far < far {
             // A long view spends most of its first map on close receivers.
@@ -588,10 +594,20 @@ impl FitInputs {
         }
         samples[128..132].copy_from_slice(&split.to_le_bytes());
         samples[132..136].copy_from_slice(&overlap.to_le_bytes());
+        if self.profile.is_some_and(|(count, _)| count < 2) {
+            // With one map every positive receiver selects the far layer,
+            // which already fits the whole receiver interval. With none,
+            // the reach sentinel below selects the shared height map.
+            samples[128..136].fill(0);
+        }
         if receiver_far < far {
             let fade_start = receiver_far - (receiver_far - near) * 0.1;
             samples[136..140].copy_from_slice(&receiver_far.to_le_bytes());
             samples[140..144].copy_from_slice(&fade_start.to_le_bytes());
+        }
+        if self.profile.is_some_and(|(count, _)| count == 0) {
+            samples[136..140].copy_from_slice(&f32::MIN_POSITIVE.to_le_bytes());
+            samples[140..144].fill(0);
         }
         Ok(FittedShadow {
             matrices,

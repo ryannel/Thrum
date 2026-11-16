@@ -2,6 +2,10 @@
 use super::*;
 use crate::contribution::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurface};
 use crate::synthetic::{OffscreenTarget, SyntheticLight, SyntheticScene};
+mod aerial;
+mod panels;
+mod sun;
+mod visibility;
 
 struct Asker {
     slot: SecondaryView,
@@ -12,8 +16,11 @@ struct Asker {
 fn secondary_fragment_variants_validate_with_the_shared_shading_source() {
     for atmosphere in [false, true] {
         for air_shadow in [false, true] {
-            let source = shader_source(&crate::synthetic::scene_source::compose(
-                atmosphere, air_shadow,
+            let source = shader_source(&crate::synthetic::scene_source::secondary(
+                atmosphere,
+                air_shadow && atmosphere,
+                false,
+                crate::synthetic::scene_source::SunShadows::from(air_shadow && atmosphere),
             ));
             let module = wgpu::naga::front::wgsl::parse_str(&source).expect("secondary WGSL");
             wgpu::naga::valid::Validator::new(
@@ -24,6 +31,18 @@ fn secondary_fragment_variants_validate_with_the_shared_shading_source() {
             .expect("secondary entry validation");
         }
     }
+}
+
+#[test]
+fn main_shadowed_decoder_is_byte_identical_to_the_pre_view_oracle() {
+    assert_eq!(
+        crate::synthetic::air_shadow::aerial_source(true, true),
+        concat!(
+            include_str!("../../synthetic_aerial.wgsl"),
+            "\n",
+            include_str!("../../synthetic_aerial_shadowed.wgsl")
+        )
+    );
 }
 impl SceneContribution for Asker {
     fn passes(&self) -> ContributionPasses {
@@ -157,6 +176,8 @@ fn render(
     asker: &mut Asker,
 ) -> (Vec<[f32; 4]>, Vec<u8>) {
     let asked = asker.request.is_some();
+    let [width, height] = asker.slot.maximum_extent();
+    let stride = (width * 8).div_ceil(256) * 256;
     let mut main = target.readback(device);
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     prepared
@@ -173,7 +194,7 @@ fn render(
         .expect("encode");
     let output = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("secondary test readback"),
-        size: 64 * 64 * 8,
+        size: u64::from(stride) * u64::from(height),
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
@@ -189,13 +210,13 @@ fn render(
                 buffer: &output,
                 layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(64 * 8),
-                    rows_per_image: Some(64),
+                    bytes_per_row: Some(stride),
+                    rows_per_image: Some(height),
                 },
             },
             wgpu::Extent3d {
-                width: 64,
-                height: 64,
+                width,
+                height,
                 depth_or_array_layers: 1,
             },
         );
@@ -216,9 +237,8 @@ fn render(
         .slice(..)
         .get_mapped_range()
         .expect("pixels")
-        .as_chunks::<8>()
-        .0
-        .iter()
+        .chunks(stride as usize)
+        .flat_map(|row| row[..width as usize * 8].as_chunks::<8>().0)
         .map(|pixel| {
             std::array::from_fn(|channel| {
                 half::f16::from_le_bytes([pixel[channel * 2], pixel[channel * 2 + 1]]).to_f32()

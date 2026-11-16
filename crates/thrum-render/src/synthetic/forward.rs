@@ -8,7 +8,7 @@ use super::{
     CompiledPass, GpuTimings, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
     PreparedSynthetic, Projection, RenderError, SceneContribution,
 };
-pub(super) use light::LightBindings;
+pub(super) use light::{AerialBindings, LightBindings};
 
 pub(super) fn view_entries(
     meshes: bool,

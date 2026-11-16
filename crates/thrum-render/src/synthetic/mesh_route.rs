@@ -365,16 +365,22 @@ impl BucketRoute {
         view: &wgpu::BindGroup,
         arena: &MeshArena,
         pipelines: &[wgpu::RenderPipeline; 3],
+        indirect: Option<&wgpu::Buffer>,
     ) -> Result<(), RenderError> {
         let buffers = arena.buffers().ok_or(RenderError::GraphPassMismatch)?;
         pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
-        for (segment, (indices, base)) in self.segments().iter().zip(&self.ranges) {
+        for ((bucket, segment), (indices, base)) in (0_u64..).zip(self.segments()).zip(&self.ranges)
+        {
             if segment.len == 0 {
                 continue;
             }
             pass.set_pipeline(&pipelines[segment.key.class.index()]);
             pass.set_bind_group(0, view, &[0, segment.start * 4]);
-            pass.draw_indexed(indices.clone(), *base, 0..segment.len);
+            if let Some(args) = indirect {
+                pass.draw_indexed_indirect(args, bucket * crate::visibility::ARGS_BYTES);
+            } else {
+                pass.draw_indexed(indices.clone(), *base, 0..segment.len);
+            }
         }
         Ok(())
     }

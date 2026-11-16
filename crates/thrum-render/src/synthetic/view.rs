@@ -54,6 +54,7 @@ pub struct SyntheticView {
     temporal_inputs: bool,
     reconstruction: Reconstruction,
     output_extent: Option<[u32; 2]>,
+    sun_shadow_profile: Option<(u32, f32)>,
 }
 
 impl Default for SyntheticView {
@@ -84,6 +85,7 @@ impl Default for SyntheticView {
             temporal_inputs: false,
             reconstruction: Reconstruction::Off,
             output_extent: None,
+            sun_shadow_profile: None,
         }
     }
 }
@@ -190,7 +192,26 @@ impl SyntheticView {
             temporal_inputs: false,
             reconstruction: Reconstruction::Off,
             output_extent: None,
+            sun_shadow_profile: None,
         })
+    }
+
+    /// Prepare the ordinary scene with a secondary view's Sun profile.
+    /// Zero cascades uses only the scene's distant height map; one uses a
+    /// single full-reach cascade, and two use the ordinary near/far fit.
+    /// The default remains two cascades to the original 512 m reach.
+    /// # Errors
+    /// Refuses more than two cascades or a nonpositive, nonfinite reach.
+    pub fn with_sun_shadow_profile(mut self, count: u32, reach: f32) -> Result<Self, RenderError> {
+        if count > 2 || !reach.is_finite() || reach <= 0.0 {
+            return Err(RenderError::InvalidView);
+        }
+        self.sun_shadow_profile = Some((count, reach));
+        Ok(self)
+    }
+
+    pub(super) fn sun_shadow_profile(&self) -> Option<(u32, f32)> {
+        self.sun_shadow_profile
     }
 
     /// Select one checked scene-to-display exposure for this view. The

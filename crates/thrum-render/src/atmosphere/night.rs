@@ -17,6 +17,30 @@ pub(super) struct NightProfile {
 }
 
 impl NightProfile {
+    /// Reuse the world's immutable emission field with an observer's own enable
+    /// control. Changing observer altitude never changes the world's record.
+    pub(super) fn observer(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        enabled: bool,
+    ) -> Self {
+        let control = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("observer night transport control"),
+            size: CONTROL_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut profile = Self {
+            texture: self.texture.clone(),
+            view: self.view.clone(),
+            control,
+            enabled: !enabled,
+        };
+        profile.select(queue, enabled);
+        profile
+    }
+
     pub(super) fn new(device: &wgpu::Device, queue: &wgpu::Queue, enabled: bool) -> Self {
         let size = wgpu::Extent3d {
             width: WIDTH,

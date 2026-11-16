@@ -28,6 +28,7 @@ impl Lighting {
         prepared: &PreparedSynthetic,
         queue: &wgpu::Queue,
         sources: &[SyntheticPointLight],
+        aerial: Option<crate::synthetic::forward::AerialBindings<'_>>,
     ) -> Result<Self, SecondaryViewError> {
         let device = prepared.capabilities.device();
         let gpu = (1..=crate::synthetic::cluster::GPU_MAX_SOURCES).contains(&sources.len());
@@ -71,7 +72,7 @@ impl Lighting {
             indices: &indices,
             atmosphere: prepared.atmosphere.as_ref(),
             cloud: prepared.cloud.as_ref(),
-            aerial: None,
+            aerial,
         }
         .bind(
             device,

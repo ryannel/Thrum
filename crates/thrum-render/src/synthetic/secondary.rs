@@ -23,21 +23,26 @@ use std::{
 pub(super) const PASS: &str = "secondary view opaque";
 pub(super) const PREFIX: &str = "secondary view ";
 const ROLE_BASE: u32 = 5000;
-const STAGES: u32 = 2;
+const STAGES: u32 = 6;
 const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
+mod sun;
 
 #[derive(Clone, Copy)]
 pub(super) enum Stage {
     Opaque,
     Clusters,
+    Aerial,
+    SunNear,
+    SunFar,
+    Visibility,
 }
 
 impl Stage {
     pub(super) fn kind(self) -> crate::graph::PassKind {
         match self {
-            Self::Opaque => crate::graph::PassKind::Render,
-            Self::Clusters => crate::graph::PassKind::Compute,
+            Self::Opaque | Self::SunNear | Self::SunFar => crate::graph::PassKind::Render,
+            Self::Clusters | Self::Aerial | Self::Visibility => crate::graph::PassKind::Compute,
         }
     }
 }
@@ -65,11 +70,18 @@ pub(super) struct SecondaryPrepared {
     pipelines: [wgpu::RenderPipeline; 3],
     key: PipelineKey,
     lighting: lighting::Lighting,
+    aerial: Option<crate::atmosphere::SecondaryAerial>,
+    sun: Option<sun::Sun>,
+    culling: Option<(
+        crate::visibility::SecondaryVisibility,
+        crate::visibility::VisibilityTarget,
+    )>,
 }
 
 pub(super) struct Resources {
     colour: ResourceId,
     depth: ResourceId,
+    sun: Option<ResourceId>,
 }
 
 impl PreparedSynthetic {
@@ -100,6 +112,12 @@ impl PreparedSynthetic {
         sources: &[super::SyntheticPointLight],
     ) -> Result<(), SecondaryViewError> {
         SecondaryViewSlot::validate(slots, extent, self.capabilities.limits())?;
+        if !slots.is_empty()
+            && self.shadow.is_some()
+            && self.capabilities.limits().max_bindings_per_bind_group < 8
+        {
+            return Err(SecondaryViewError::RecordLimit);
+        }
         let uniforms = 5
             + u32::from(self.shadow.is_some())
             + u32::from(self.atmosphere.is_some())
@@ -139,7 +157,8 @@ impl PreparedSynthetic {
         let mut resources = Vec::with_capacity(self.secondary.len());
         let mut reads = Vec::with_capacity(self.secondary.len() * 3);
         for (index, slot) in self.secondary.iter().enumerate() {
-            let (ids, mut inputs) = slot.append(graph, keys, shared, index)?;
+            let (ids, mut inputs) =
+                slot.append(graph, keys, shared, index, self.visibility.as_ref())?;
             resources.push(ids);
             reads.append(&mut inputs);
         }
@@ -218,6 +237,7 @@ impl SecondaryPrepared {
         };
         let colour = texture(SCENE_FORMAT);
         let depth = texture(DEPTH_FORMAT);
+        let view = buffer("secondary raster view", super::VIEW_BYTES as u64);
         let handle = SecondaryView {
             colour_view: colour.create_view(&wgpu::TextureViewDescriptor::default()),
             depth_view: depth.create_view(&wgpu::TextureViewDescriptor::default()),
@@ -239,6 +259,14 @@ impl SecondaryPrepared {
             RECORD_BYTES,
             wgpu::ShaderStages::FRAGMENT,
         ));
+        if prepared.shadow.is_some() {
+            let mut height = *entries
+                .iter()
+                .find(|entry| entry.binding == 3)
+                .expect("shadow layout includes its map array");
+            height.binding = 7;
+            entries.push(height);
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &entries,
@@ -254,7 +282,12 @@ impl SecondaryPrepared {
             ],
             immediate_size: 0,
         });
-        let source = shader_source(&prepared.surface.shader_source);
+        let source = shader_source(&super::scene_source::secondary(
+            prepared.atmosphere.is_some(),
+            prepared.air_shadow.is_some(),
+            prepared.cloud.is_some(),
+            super::scene_source::SunShadows::from(prepared.shadow.is_some()),
+        ));
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -270,11 +303,13 @@ impl SecondaryPrepared {
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
-                    entry_point: Some(if prepared.bucket_route.is_some() {
-                        "compacted_vertex"
-                    } else {
-                        "vertex"
-                    }),
+                    entry_point: Some(
+                        if prepared.bucket_route.is_some() || prepared.visibility.is_some() {
+                            "compacted_vertex"
+                        } else {
+                            "vertex"
+                        },
+                    ),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
                 },
@@ -305,11 +340,39 @@ impl SecondaryPrepared {
                 cache: None,
             })
         });
-        let lighting = lighting::Lighting::new(prepared, queue, sources)?;
+        let aerial = prepared
+            .atmosphere
+            .as_ref()
+            .map(|world| world.secondary_aerial(device, queue));
+        let lighting = lighting::Lighting::new(
+            prepared,
+            queue,
+            sources,
+            aerial
+                .as_ref()
+                .map(crate::atmosphere::SecondaryAerial::sampled),
+        )?;
+        let culling = prepared.visibility.as_ref().map(|world| {
+            (
+                crate::visibility::SecondaryVisibility::new(world, device, &handle.record),
+                world.member_target(
+                    device,
+                    (
+                        &view,
+                        prepared.instance_upload.buffer(),
+                        prepared.history.serial_buffer(),
+                    ),
+                    prepared
+                        .bucket_route
+                        .as_ref()
+                        .map(super::BucketRoute::member_inputs),
+                ),
+            )
+        });
         Ok(Self {
             handle,
             queue: queue.clone(),
-            view: buffer("secondary raster view", super::VIEW_BYTES as u64),
+            view,
             aux: buffer("secondary raster auxiliary", super::AUX_BYTES as u64),
             layout,
             pipelines,
@@ -318,6 +381,12 @@ impl SecondaryPrepared {
                 ..prepared.key
             },
             lighting,
+            aerial,
+            sun: prepared
+                .shadow
+                .as_ref()
+                .map(|world| sun::Sun::new(world, device)),
+            culling,
         })
     }
 
@@ -328,6 +397,24 @@ impl SecondaryPrepared {
         route: Option<&super::BucketRoute>,
     ) -> wgpu::BindGroup {
         let mut entries = main.to_vec();
+        if let Some(sun) = &self.sun {
+            let mut height = main
+                .iter()
+                .find(|entry| entry.binding == 3)
+                .expect("main Sun maps")
+                .clone();
+            height.binding = 7;
+            entries.push(height);
+            for entry in &mut entries {
+                match entry.binding {
+                    2 => entry.resource = sun.prepared.sample_buffer.as_entire_binding(),
+                    3 => {
+                        entry.resource = wgpu::BindingResource::TextureView(&sun.target.array_view);
+                    }
+                    _ => (),
+                }
+            }
+        }
         for entry in &mut entries {
             match entry.binding {
                 0 => {
@@ -339,7 +426,15 @@ impl SecondaryPrepared {
                 }
                 1 => entry.resource = self.aux.as_entire_binding(),
                 5 => {
-                    if let Some(route) = route {
+                    if let Some((_, target)) = &self.culling {
+                        let size =
+                            route.map(|route| route.shape().expect("admitted route").segment_bytes);
+                        entry.resource = wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: target.visible(),
+                            offset: 0,
+                            size: size.and_then(wgpu::BufferSize::new),
+                        });
+                    } else if let Some(route) = route {
                         *entry = route.members_entry(5);
                     }
                 }
@@ -363,6 +458,7 @@ impl SecondaryPrepared {
         keys: &mut BTreeSet<PipelineKey>,
         shared: &[Access],
         index: usize,
+        visibility: Option<&crate::visibility::VisibilityPrepared>,
     ) -> Result<(Resources, Vec<Access>), RenderError> {
         let imported = ResourceScope::Imported { initialized: true };
         let texture = |graph: &mut FrameGraph, texture: &wgpu::Texture| {
@@ -390,6 +486,34 @@ impl SecondaryPrepared {
             imported,
         )?;
         let mut accesses = shared.to_vec();
+        if self.culling.is_some() {
+            let key = PipelineKey {
+                role: self.key.role + 5,
+                ..self.key
+            };
+            keys.insert(key);
+            let mut reads = shared.to_vec();
+            reads.push(Access::new(
+                record.clone(),
+                0..RECORD_BYTES,
+                AccessKind::UniformRead,
+            ));
+            // The descriptor shape is the same as the main visibility buffers;
+            // the physical outputs and tests belong to this slot.
+            crate::visibility::SecondaryVisibility::append(
+                visibility.ok_or(RenderError::GraphPassMismatch)?,
+                graph,
+                key,
+                index,
+                reads,
+                &mut accesses,
+            )?;
+        }
+        let sun = self
+            .sun
+            .as_ref()
+            .map(|sun| sun.append(graph, keys, self.key, index, shared, &mut accesses))
+            .transpose()?;
         self.lighting.append(
             graph,
             keys,
@@ -401,6 +525,19 @@ impl SecondaryPrepared {
             shared,
             &mut accesses,
         )?;
+        if let Some(aerial) = &self.aerial {
+            aerial.append(
+                graph,
+                keys,
+                PipelineKey {
+                    role: self.key.role + 2,
+                    ..self.key
+                },
+                index,
+                shared,
+                &mut accesses,
+            )?;
+        }
         for bytes in [super::VIEW_BYTES as u64, super::AUX_BYTES as u64] {
             let uniform = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -429,7 +566,7 @@ impl SecondaryPrepared {
             Access::new(depth.clone(), 0..1, AccessKind::SampledRead),
             Access::new(record, 0..RECORD_BYTES, AccessKind::UniformRead),
         ];
-        Ok((Resources { colour, depth }, reads))
+        Ok((Resources { colour, depth, sun }, reads))
     }
 
     fn upload(&self, request: &SecondaryViewRequest, view: &SyntheticView, exposure: f32) {
@@ -473,6 +610,9 @@ impl SecondaryPrepared {
 impl SecondaryPrepared {
     pub(super) fn pass_count(&self) -> u32 {
         1 + u32::from(self.lighting.gpu)
+            + u32::from(self.aerial.is_some())
+            + 2 * u32::from(self.sun.is_some())
+            + u32::from(self.culling.is_some())
     }
 
     fn camera(prepared: &PreparedSynthetic, request: &SecondaryViewRequest) -> SyntheticView {
@@ -500,6 +640,36 @@ impl SceneContext<'_> {
     ) -> Result<(), RenderError> {
         match stage {
             Stage::Opaque => self.secondary(index, compiled),
+            Stage::Visibility => {
+                let prepared = self.prepared;
+                let slot = &prepared.secondary[index];
+                let Some(request) = slot.handle.asked() else {
+                    return Ok(());
+                };
+                let view = SecondaryPrepared::camera(prepared, &request);
+                slot.upload(&request, &view, f32::from_bits(prepared.exposure_bits));
+                let (culling, target) = slot
+                    .culling
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                culling
+                    .encode(
+                        prepared
+                            .visibility
+                            .as_ref()
+                            .ok_or(RenderError::GraphPassMismatch)?,
+                        target,
+                        self.encoder,
+                        self.generation,
+                        compiled,
+                        self.timings.as_deref_mut(),
+                    )?
+                    .then_some(())
+                    .ok_or(RenderError::GraphPassMismatch)
+            }
+            Stage::SunNear | Stage::SunFar => {
+                self.secondary_sun(index, usize::from(matches!(stage, Stage::SunFar)), compiled)
+            }
             Stage::Clusters => {
                 let prepared = self.prepared;
                 let slot = &prepared.secondary[index];
@@ -510,6 +680,40 @@ impl SceneContext<'_> {
                 slot.lighting
                     .update(&slot.queue, &prepared.secondary_sources, &view)?;
                 slot.lighting.encode(
+                    self.encoder,
+                    self.generation,
+                    compiled,
+                    self.timings.as_deref_mut(),
+                )
+            }
+            Stage::Aerial => {
+                let prepared = self.prepared;
+                let slot = &prepared.secondary[index];
+                let Some(request) = slot.handle.asked() else {
+                    return Ok(());
+                };
+                let view = SecondaryPrepared::camera(prepared, &request);
+                let mut observer = view.camera_position()[1];
+                if request.air == ViewAir::Plane
+                    && let Some(plane) = request.clip
+                {
+                    let equation = plane.equation();
+                    let camera = view.camera_position();
+                    let side = equation[0] * camera[0]
+                        + equation[1] * camera[1]
+                        + equation[2] * camera[2]
+                        + equation[3];
+                    if side < 0.0 {
+                        observer = -equation[3] / equation[1];
+                    }
+                }
+                let aerial = slot.aerial.as_ref().ok_or(RenderError::GraphPassMismatch)?;
+                let world = prepared
+                    .atmosphere
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                aerial.update(&slot.queue, world, &view, observer);
+                aerial.encode(
                     self.encoder,
                     self.generation,
                     compiled,
@@ -532,6 +736,17 @@ impl SceneContext<'_> {
         if !slot.lighting.gpu {
             slot.lighting
                 .update(&slot.queue, &prepared.secondary_sources, &view)?;
+        }
+        if let Some(sun) = &slot.sun {
+            sun.prepared.write_secondary(
+                prepared
+                    .shadow
+                    .as_ref()
+                    .ok_or(RenderError::GraphPassMismatch)?,
+                &request.camera,
+                (request.cascades, request.shadow_reach),
+                None,
+            )?;
         }
         slot.upload(&request, &view, f32::from_bits(prepared.exposure_bits));
         let ids = &self.target.ids.secondary[index];
@@ -571,6 +786,7 @@ impl SceneContext<'_> {
                 &self.target.secondary[index],
                 &prepared.mesh_arena,
                 &slot.pipelines,
+                slot.culling.as_ref().map(|(_, target)| target.args()),
             )?;
         } else {
             pass.set_pipeline(
@@ -586,11 +802,15 @@ impl SceneContext<'_> {
                 .buffers()
                 .ok_or(RenderError::GraphPassMismatch)?;
             pass.set_index_buffer(buffers.indices.slice(..), wgpu::IndexFormat::Uint32);
-            pass.draw_indexed(
-                prepared.cube_draw.0.clone(),
-                prepared.cube_draw.1,
-                0..prepared.instance_upload.active_count(),
-            );
+            if let Some((_, target)) = &slot.culling {
+                pass.draw_indexed_indirect(target.args(), 0);
+            } else {
+                pass.draw_indexed(
+                    prepared.cube_draw.0.clone(),
+                    prepared.cube_draw.1,
+                    0..prepared.instance_upload.active_count(),
+                );
+            }
         }
         Ok(())
     }
@@ -601,7 +821,11 @@ pub(super) fn index(key: PipelineKey, count: usize) -> Option<(usize, Stage)> {
     let index = (role / STAGES) as usize;
     let stage = match role % STAGES {
         0 => Stage::Opaque,
-        _ => Stage::Clusters,
+        1 => Stage::Clusters,
+        2 => Stage::Aerial,
+        3 => Stage::SunNear,
+        4 => Stage::SunFar,
+        _ => Stage::Visibility,
     };
     (index < count).then_some((index, stage))
 }

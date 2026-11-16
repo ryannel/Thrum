@@ -18,7 +18,7 @@ mod spectrum;
 pub(crate) use cloud::CloudPrepared;
 pub use cloud::{GpuSunMapping, SunOpticalDepth};
 pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
-pub(crate) use gpu::AtmospherePrepared;
+pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
 pub use products::EnvironmentProducts;
 
 pub(crate) const STAGE_NAMES: [&str; 14] = [

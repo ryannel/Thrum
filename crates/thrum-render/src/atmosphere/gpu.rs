@@ -11,6 +11,10 @@ use super::{
     reflection::ReflectionPrepared,
     spectrum::EARTH,
 };
+mod uniform;
+use uniform::AtmosphereUniform;
+mod aerial_view;
+pub(crate) use aerial_view::SecondaryAerial;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 pub(in crate::atmosphere) mod tests;
@@ -48,6 +52,7 @@ const REFLECTION_VALID: u8 = 32;
 const DFG_VALID: u8 = 64;
 
 pub(crate) struct AtmospherePrepared {
+    frame: AtmosphereFrame,
     environment: super::environment::EnvironmentState,
     pub(super) generation: u64,
     pub(super) epoch: u64,
@@ -92,6 +97,10 @@ impl AtmospherePrepared {
 
     pub(crate) fn transmittance_view(&self) -> &wgpu::TextureView {
         &self.transmittance_view
+    }
+
+    pub(crate) fn aerial_textures(&self) -> [&wgpu::Texture; 2] {
+        self.aerial_textures.each_ref()
     }
 
     pub(crate) fn new(
@@ -199,6 +208,7 @@ impl AtmospherePrepared {
             prepare_aerial(device, &uniform, &views, &aerial_views, &sampler, &night);
         let reflection = ReflectionPrepared::new(device, &uniform, &views[2], &sampler);
         let mut result = Self {
+            frame,
             environment: super::environment::EnvironmentState::new(frame),
             generation,
             epoch: frame.profile_epoch,
@@ -237,6 +247,7 @@ impl AtmospherePrepared {
         view: &SyntheticView,
         extent: [u32; 2],
     ) {
+        self.frame = frame;
         self.environment.update(frame);
         if frame.profile_epoch != self.epoch {
             self.validity &= DFG_VALID;
@@ -285,28 +296,8 @@ impl AtmospherePrepared {
         }
         queue.write_buffer(&self.sky_motion, 0, &motion);
         self.pending_sky = Some((*view, frame.toward_sun));
-        let mut bytes = [0_u8; UNIFORM_LEN];
-        let aux = view.pack_aux(extent[0], extent[1]);
-        bytes[..64].copy_from_slice(&aux[..64]);
-        let packed_view = view.pack_view(view, 1.0);
-        bytes[64..76].copy_from_slice(&packed_view[128..140]);
-        bytes[76..80].copy_from_slice(&frame.camera_altitude_m.to_le_bytes());
-        for (index, value) in frame
-            .toward_sun
-            .into_iter()
-            .chain([frame.solar_illuminance_lux])
-            .chain(frame.solar_colour)
-            .chain([super::super::synthetic::PRE_EXPOSURE])
-            .enumerate()
-        {
-            bytes[80 + index * 4..84 + index * 4].copy_from_slice(&value.to_le_bytes());
-        }
-        for (index, value) in super::model::sky_mapping(frame.camera_altitude_m)
-            .into_iter()
-            .enumerate()
-        {
-            bytes[112 + index * 4..116 + index * 4].copy_from_slice(&value.to_le_bytes());
-        }
+        let record = AtmosphereUniform::new(frame, view, frame.camera_altitude_m);
+        let bytes = bytemuck::bytes_of(&record);
         let mut aerial_dependencies = [0_u8; 80];
         aerial_dependencies[..64].copy_from_slice(&bytes[..64]);
         aerial_dependencies[64..80].copy_from_slice(&bytes[64..80]);
@@ -314,7 +305,7 @@ impl AtmospherePrepared {
             self.validity &= !AERIAL_VALID;
             self.aerial_dependencies = aerial_dependencies;
         }
-        queue.write_buffer(&self.uniform, 0, &bytes);
+        queue.write_buffer(&self.uniform, 0, bytes);
     }
 
     pub(crate) fn commit(&mut self) {

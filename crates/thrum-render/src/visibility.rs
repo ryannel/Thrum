@@ -45,6 +45,8 @@ pub(crate) const PREPASS_LIST_PASS: &str = "camera prepass list";
 /// Graph pass name of the final occlusion cull.
 pub(crate) const FINAL_PASS: &str = "camera final cull";
 pub(crate) use pyramid::PASS as PYRAMID_PASS;
+mod secondary;
+pub(crate) use secondary::SecondaryVisibility;
 
 /// Stable mesh row: index range and local bounds. Rows never move once
 /// assigned, so a bucket's first index and base vertex stay fixed.

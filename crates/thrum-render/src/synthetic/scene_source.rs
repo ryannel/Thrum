@@ -54,7 +54,10 @@ fn compose_with_cloud(
     cloud: bool,
     shadowed: SunShadows,
 ) -> String {
-    let source = compose(atmosphere, air_shadow);
+    apply_providers(compose(atmosphere, air_shadow), cloud, shadowed)
+}
+
+fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String {
     // Resource reflection precedes backend constant folding. A false argument
     // to shade() must not make an unshadowed entry require absent Sun bindings.
     let source = if shadowed == SunShadows::Enabled {
@@ -74,6 +77,13 @@ fn compose_with_cloud(
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
 pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
+    compose_aerial(
+        atmosphere,
+        air_shadow::aerial_source(atmosphere, air_shadow),
+    )
+}
+
+fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
     format!(
         "{}\n{}\n{}",
         concat!(
@@ -85,7 +95,7 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
             "\n",
             include_str!("../synthetic.wgsl")
         ),
-        air_shadow::aerial_source(atmosphere, air_shadow),
+        aerial,
         if atmosphere {
             concat!(
                 include_str!("../atmosphere/geometry.wgsl"),
@@ -98,6 +108,49 @@ pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
             ""
         }
     )
+}
+
+/// A view changes only the decoder's ray origin/distance. The main source is
+/// assembled as before, and no view declarations add text to that source.
+pub(super) fn secondary(
+    atmosphere: bool,
+    shadowed_air: bool,
+    cloud: bool,
+    shadows: SunShadows,
+) -> String {
+    let aerial = match (atmosphere, shadowed_air) {
+        (true, true) => concat!(
+            include_str!("../synthetic_aerial.wgsl"),
+            "\n",
+            include_str!("../synthetic_aerial_visibility.wgsl"),
+            "\n",
+            include_str!("secondary/aerial_ray.wgsl"),
+            "\n",
+            include_str!("secondary/aerial_shadowed.wgsl")
+        ),
+        (true, false) => concat!(
+            include_str!("../synthetic_aerial.wgsl"),
+            "\n",
+            include_str!("secondary/aerial_ray.wgsl"),
+            "\n",
+            include_str!("secondary/aerial_clear.wgsl")
+        ),
+        _ => include_str!("../synthetic_plain.wgsl"),
+    };
+    let source = apply_providers(compose_aerial(atmosphere, aerial), cloud, shadows);
+    if shadows == SunShadows::Enabled {
+        // Cascades are view-local; only the distant top-down height layer is
+        // sampled from the scene's array. Keep the default source untouched.
+        format!(
+            "{}\n@group(0) @binding(7) var scene_height_maps: texture_depth_2d_array;",
+            source.replace(
+                "textureLoad(shadow_maps,texel_index,2,0)",
+                "textureLoad(scene_height_maps,texel_index,2,0)",
+            )
+        )
+    } else {
+        source
+    }
 }
 
 #[cfg(test)]
