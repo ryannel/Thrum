@@ -33,20 +33,24 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         let mut clock =
             OpportunityClock::new(origin, 120, Timebase::Elapsed).expect("120 Hz opportunities");
         let mut records = Vec::new();
+        let mut opportunities = Vec::new();
         let mut counts = [0_usize; 6]; // future, late, invalid, clamped, bound, stopped
         let mut previous: Option<(f64, f64)> = None;
         let mut held_seen = false;
+        let mut preemption_seen = false;
         let callback_interval = Arc::new(Mutex::new(None));
-        for index in 0..32 {
+        for _ in 0..256 {
             let opportunity = clock.next_opportunity();
             let target = opportunity.target.saturating_duration_since(origin);
-            if index == 12 {
+            let held = records.len() >= 12 && !held_seen;
+            let preempt = records.len() >= 8 && !preemption_seen;
+            if held {
                 // Hold this very opportunity until it expires; don't ask for a new one.
                 if let Some(wait) = opportunity.target.checked_duration_since(Instant::now()) {
                     std::thread::sleep(wait + Duration::from_millis(2));
                 }
             }
-            if index == 8 {
+            if preempt {
                 // A real completion callback delays the render owner's poll
                 // after step_for reads its observation, while authority runs.
                 let interval = Arc::clone(&callback_interval);
@@ -57,10 +61,26 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 });
             }
             let report = driver.step_for(&opportunity).expect("ordinary frame");
-            assert!(
-                report.submitted,
-                "serially drained runner submits each opportunity"
-            );
+            let preemption = if preempt {
+                Some(
+                    callback_interval
+                        .lock()
+                        .expect("callback interval")
+                        .take()
+                        .expect("callback ran while driving this opportunity"),
+                )
+            } else {
+                None
+            };
+            opportunities.push(serde_json::json!({"id":opportunity.index,
+                "platform_target_ns":target.as_nanos(),"submitted":report.submitted,
+                "tick":report.tick,"dropped_view":report.dropped_view,"held":held,
+                "render_preemption_ns":preemption.map(|p| p.map(|t| t.as_nanos()))}));
+            // The lane may have no matching optional publication on this poll.
+            // Keep that opportunity on the record; qualify every submitted frame.
+            if !report.submitted {
+                continue;
+            }
             let deadline = Instant::now() + Duration::from_secs(60);
             let image = loop {
                 drop(driver.completed().expect("completion"));
@@ -77,18 +97,11 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
             assert_eq!(sample.presentation_lead, image.presentation_lead);
             let status = sample.lead_status.expect("runner lead status");
             let consumed = sample.observation + sample.presentation_lead;
-            let preemption = if index == 8 {
-                let interval = callback_interval
-                    .lock()
-                    .expect("callback interval")
-                    .take()
-                    .expect("callback ran while driving this frame");
+            if let Some(interval) = preemption {
                 assert!(sample.observation <= interval[0]);
                 assert!(origin + interval[1] <= image.submitted_at);
-                Some(interval.map(|time| time.as_nanos()))
-            } else {
-                None
-            };
+                preemption_seen = true;
+            }
             match status {
                 TargetLeadStatus::Future => {
                     counts[0] += 1;
@@ -107,7 +120,7 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                     counts[3] += 1;
                 }
             }
-            if index == 12 {
+            if held {
                 assert_eq!(status, TargetLeadStatus::Late);
                 held_seen = true;
             }
@@ -131,14 +144,26 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 }
                 previous = Some((display, consumed_seconds));
             }
-            records.push(serde_json::json!({"opportunity":opportunity.index,"held":index==12,
+            records.push(serde_json::json!({"opportunity":opportunity.index,"held":held,
                 "platform_target_ns":target.as_nanos(),"observation_ns":sample.observation.as_nanos(),
                 "presentation_lead_ns":sample.presentation_lead.as_nanos(),"lead_status":format!("{status:?}").to_lowercase(),
                 "tick":sample.tick,"display_phase":sample.display_phase,"alpha":sample.presentation_alpha,
                 "clock_interpolating":sample.clock_interpolating,"submission":sample.submission_order,
-                "pixel_bytes":image.rgba.len(),"render_preemption_ns":preemption}));
+                "pixel_bytes":image.rgba.len(),"render_preemption_ns":preemption.map(|p| p.map(|t| t.as_nanos()))}));
             driver.recycle(image);
+            if records.len() == 32 {
+                break;
+            }
         }
+        assert_eq!(
+            records.len(),
+            32,
+            "bounded run captured 32 actual submitted frames"
+        );
+        assert!(
+            preemption_seen,
+            "one submitted frame included render-owner preemption"
+        );
         assert!(held_seen && counts[0] > 0 && counts[1] > 0);
         assert!(
             records.len() > counts[4] + counts[5],
@@ -151,6 +176,6 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         std::fs::write(output.join("realtime-record.json"), serde_json::to_vec_pretty(&serde_json::json!({
             "mode":"realtime","opportunity_hz":120,"precision_ns":2000,
             "counts":{"future":counts[0],"late":counts[1],"invalid":counts[2],"clamped":counts[3],"bound":counts[4],"stopped":counts[5]},
-            "frames":records})).expect("JSON")).expect("record");
+            "opportunities":opportunities,"frames":records})).expect("JSON")).expect("record");
     });
 }
