@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-16 Refreshed the fresh scene, native mistake states and visible starter journey
+  on merged main `353f0a43e` after incoming shader changes. All target runs pass and
+  selected images were inspected. Fresh Mac/Chrome pixels match the original exercise.
+  The window driver now resolves a shared build-folder symlink when identifying its app.
+  [Refreshed evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-16 Restored M3.4's passing builder record after the session restart restored its
   older access-only entry. The retained real-window journey proves the slider and both saves;
   the brief now distinguishes that builder evidence from independent review. Documentation
