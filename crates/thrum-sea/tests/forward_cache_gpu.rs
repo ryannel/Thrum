@@ -71,6 +71,7 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                         for z in 0..child_width {
                             for x in 0..child_width {
                                 let mut sum = [0.0; 4];
+                                let mut magnitude = [0.0; 4];
                                 for dz in 0..block {
                                     for dx in 0..block {
                                         let offset = (layer * width * width
@@ -80,6 +81,7 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                                             * 4;
                                         for channel in 0..4 {
                                             sum[channel] += base[offset + channel];
+                                            magnitude[channel] += base[offset + channel].abs();
                                         }
                                     }
                                 }
@@ -87,9 +89,16 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                                     (layer * child_width * child_width + z * child_width + x) * 4;
                                 for channel in 0..4 {
                                     let expected = sum[channel] / (block * block) as f64;
+                                    // Half storage can round each parent by one ULP.
+                                    // Bound accumulated error by the mean absolute
+                                    // input, since signed derivatives cancel to zero.
+                                    let rounding =
+                                        (1.0 + 1.0 / 1024.0_f64).powf(f64::from(mip)) - 1.0;
+                                    let budget = rounding * magnitude[channel]
+                                        / (block * block) as f64
+                                        + f64::from(mip) * 0.000_000_1;
                                     assert!(
-                                        (values[offset + channel] - expected).abs()
-                                            <= 0.004 * expected.abs() + 0.000_004,
+                                        (values[offset + channel] - expected).abs() <= budget,
                                         "mip {mip} layer {layer} ({x},{z}) channel {channel}: {} vs {expected}",
                                         values[offset + channel]
                                     );
