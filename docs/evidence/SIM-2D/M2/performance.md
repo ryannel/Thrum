@@ -51,3 +51,30 @@ The raw rows retain rewind and digest timings too, for SESSION's replay planning
 The counting allocator observes zero allocations in warmed build, circle, box, capsule, wide
 circle and nearest-k calls at 10,000 bodies. First-use buffer growth is outside that scope. The
 test and record check completeness, never a zero-allocation threshold.
+
+## Chrome Wasm
+
+[The complete Chrome record](costs-chrome-webgpu.json) retains two full release runs on
+the same source key. All six serial Crowd rows trip the M1 quarter-regression flag:
+
+| Bodies | M1 tick / index, ms | M2 repeat 1 tick / index, ms | M2 repeat 2 tick / index, ms |
+|---|---:|---:|---:|
+| 2,000 | 0.570 / 0.035 | 1.030 / 0.100 | 1.035 / 0.100 |
+| 5,000 | 1.355 / 0.100 | 2.290 / 0.265 | 2.240 / 0.260 |
+| 10,000 | 8.580 / 0.205 | 13.930 / 0.525 | 13.920 / 0.520 |
+
+Accepted Crowd neighbour counts equal M1's exactly. The tick increases are 62–82%,
+while the separate index stage increases by 65–320 microseconds. Index preparation therefore
+does not account for the whole increase. The production hot path also changes from M1's
+circle-only predicate to the shared shape predicate and conservative rounded bounds, as
+the native investigation above records. Chrome's two Crowd repeats agree within 2.2%,
+so this persistent increase cannot be explained solely by one unusually slow repeat.
+The measurements do not isolate each change's causal contribution. Shared-host one-minute
+load brackets range from 4.65 to 27.59; these are not quiet-machine qualifications.
+
+Mixed tick medians are 1.000–1.055, 2.295–2.350 and 14.360–14.545 ms at the three sizes.
+Mixed has no same-neighbour-count M1 comparator. No Chrome row trips the clock flag or
+the chronological repeat-regression flag. Scaling flags occur at 5,000 bodies in both
+Mixed repeats and Crowd's first repeat: the same table-capacity step described above.
+The second Crowd repeat's per-neighbour cost decreases slightly at that step, and it is
+retained with its false flag rather than rounded into a scaling claim.
