@@ -80,6 +80,10 @@ impl Fixture {
         )
         .expect("scene");
         game = game.with_temporal_sampling(temporal_sampling);
+        if temporal_sampling {
+            game =
+                game.with_display_overlay(thrum_render::synthetic::DisplayOverlay::TemporalInputs);
+        }
         let host = game
             .prepare(
                 Gpu {

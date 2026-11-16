@@ -332,6 +332,7 @@ pub struct SkyScene {
     sky: Sky,
     ground: bool,
     temporal_sampling: bool,
+    overlay: DisplayOverlay,
 }
 
 impl SceneSource<SourceTick> for SkyScene {
@@ -357,7 +358,7 @@ impl SceneSource<SourceTick> for SkyScene {
             .sky
             .camera
             .view(extent)?
-            .with_temporal_inputs(self.sky.temporal_inputs);
+            .with_temporal_inputs(self.sky.temporal_inputs || self.temporal_sampling);
         let view = if self.temporal_sampling {
             view.with_reconstruction(true)
                 .with_jitter_sequence(0, extent)
@@ -381,7 +382,7 @@ impl SceneSource<SourceTick> for SkyScene {
         .with_display_overlay(if self.sky.exposure_zones {
             DisplayOverlay::ExposureZones
         } else {
-            DisplayOverlay::Off
+            self.overlay
         });
         Ok(SceneFrame { view, lighting })
     }
@@ -413,6 +414,7 @@ type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 pub struct SkyGame {
     tick_duration: Option<Duration>,
     temporal_sampling: bool,
+    overlay: DisplayOverlay,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -456,6 +458,7 @@ impl SkyGame {
         Self {
             tick_duration: None,
             temporal_sampling: false,
+            overlay: DisplayOverlay::Off,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -502,6 +505,13 @@ impl SkyGame {
     #[must_use]
     pub fn with_temporal_sampling(mut self, enabled: bool) -> Self {
         self.temporal_sampling = enabled;
+        self
+    }
+    /// Prepare a renderer diagnostic overlay, including the read-only temporal
+    /// input witness. Exposure zones selected by the controls take precedence.
+    #[must_use]
+    pub fn with_display_overlay(mut self, overlay: DisplayOverlay) -> Self {
+        self.overlay = overlay;
         self
     }
 
@@ -753,6 +763,7 @@ impl SkyGame {
                 sky: self.sky,
                 ground: self.ground.is_some(),
                 temporal_sampling: self.temporal_sampling,
+                overlay: self.overlay,
             },
             ground_scene(self.ground)?,
             FALLBACK_EXPOSURE,

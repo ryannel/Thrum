@@ -75,6 +75,7 @@ pub async fn create_scene(
     let _ = game.update();
     let scene = SkyScene {
         temporal_sampling: game.temporal_sampling,
+        overlay: game.overlay,
         sky: game.sky,
         ground: game.ground.is_some(),
     };
