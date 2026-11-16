@@ -109,3 +109,8 @@
   threads. Verified: Mac conformance's new `host-drop` case passes at `30a795a13` and fails on the unfixed adapter
   ([evidence](../../evidence/TRANSPORT/M1.md#host-teardown-after-the-first-review-commit-30a795a13)). Not verified
   locally: the other targets' checks after this change; the script's post-merge run covers them.
+- 2026-11-16 Builder: M2 built and merged; items pass, evidence in [M2.md](../../evidence/TRANSPORT/M2.md). Interface
+  additions: `native::Host::counters()` returning `HostCounters`, `LaneCounts::inbound_bytes`, the public `wire`
+  decoder every adapter reads through, `TICKET_LIMIT` and a strict canonical ticket parser. Native links now time out
+  on a resume after a freeze longer than the idle timeout. Verified at `2e3abfd4a`: M2.1 to M2.10 target proofs and
+  `./dev check`. Not verified here: M2.11, which the main-branch check `exact-images` supplies.

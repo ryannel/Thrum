@@ -150,10 +150,10 @@
           "check": "cargo test --locked --offline -p thrum-transport --test untrusted",
           "ask": "Read the test. Does it drive the same decoders the adapters use, with each input kind in the statement generated? Is there a stdin target for each parser, in the style of thrum-network's?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.1, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -161,10 +161,10 @@
           "check": "python3 scripts/transport_link.py hostile",
           "ask": "Does the run include every case the statement lists, one at a time? For each, does the record show what the host reported for the offender and the healthy links' reliable counts? Do the host's queued bytes stay within its caps throughout?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.2, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
@@ -172,96 +172,96 @@
           "check": "python3 scripts/transport_link.py overload",
           "ask": "Does the host in this run make its sends from one thread, as a session's tick would, so that a blocked send to the stalled link would have shown as a stall on the others?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.3, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
           "statement": "A Mac client frozen for longer than the idle timeout: the host reports its link timed out no later than the idle timeout plus one second after the freeze. Resumed, the client reports the link closed, delivers nothing more from it, and opens a new link with the same ticket.",
           "check": "python3 scripts/transport_link.py suspend --target mac-metal",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.4, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
           "statement": "A client in the iPhone simulator frozen for longer than the idle timeout behaves as the Mac's does: timed out at the host, closed on resume, and back on a new link.",
           "check": "python3 scripts/transport_link.py suspend --target ios-sim",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.5, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.6",
           "statement": "A Chrome page closed or reloaded without closing its link is reported closed at the host no later than the idle timeout plus one second, and the page loaded again with the same ticket opens a new link. What the host sees while a page's renderer is frozen for longer than the idle timeout is on record.",
           "check": "python3 scripts/transport_link.py suspend --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.6, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
           "statement": "The networking design says what is built, and a guide linked from it tells a game maker how to start a host, hand out a ticket, open a link, use each lane within its limits, read events and counters, rehearse on the in-memory link, and run the proof command on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it state both size limits, every close reason, that a ticket dies with its host, that a datagram can arrive long after it was sent, and that a close can cut off the last reliable messages? Does the networking design's transport section still describe anything as selected that this module decided not to build, without saying so?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.7, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.8",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's N1 and F1 rows keep implementation, correctness and device results apart? Do they name as not run a second machine, any path that is not loopback, a physical iPhone, Safari, Firefox, a public host and the WebSocket fallback, and claim no speed for the simulator?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.8, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.9",
           "statement": "At the closing commit one host again holds two Mac clients, a Chrome page and an iPhone-simulator client for ten minutes through the relay, with M1's events. Again a link still open at the end has delivered every reliable message it accepted, once and in order, and a link that an event ended delivered an unbroken run from the first message sent and nothing after it on any link.",
           "check": "python3 scripts/transport_link.py session",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.9, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.10",
           "statement": "At the closing commit only a package that asks for the socket adapters has in its dependency closure a crate this module added to the lockfile, the V1 game, the starter and the creator scenes have no part of `thrum-transport` in theirs, and the link's interface and in-memory link still build with no outside crate.",
           "check": "python3 scripts/transport_link.py closure",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.10, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As hard to knock over as the network layer of a public game server. Quinn and Cloudflare's quiche are fuzzed, and a peer's mistake costs that peer its connection and nobody else anything. One hostile, stalled or frozen client costs the host a bounded amount of memory and the other players no reliable message; and, as with Godot's or Unreal's networking, a single-player build carries no socket code."
     }
   ]
