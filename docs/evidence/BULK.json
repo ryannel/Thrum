@@ -4250,6 +4250,14 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-rounded-crests.png",
+      "size": 4474985,
+      "sha256": "b89c05fe10327f9c7ced6e9f5942269ea3519db556d8597954fab81aabc13a0b",
+      "date": "2026-11-16T15:35:30.145932+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

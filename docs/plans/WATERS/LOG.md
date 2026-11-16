@@ -342,3 +342,8 @@
   Three fresh builder opinions still find rounded crests; the design's three-look stop rule was reached.
   The profile diagnostic identifies an untried larger permitted choppiness, not a proof that the model cannot work.
   [Evidence](../../evidence/WATERS/M2.md) separates that visual finding from functional and device proof.
+- 2026-11-16 Resumed M2 at `69a7ba617`; its scene, frame-contract and stage checks pass again on Metal.
+  Preserved the selected rounded-crest failure and verified recovery from the local evidence store.
+  The first paired cost run failed with missing GPU durations and timing faults; its cause is unconfirmed.
+  No fourth visual attempt was made under the design's three-look stop rule.
+  [Handoff](../../evidence/WATERS/M2-handoff.md) asks the lead/planner for direction and records both issues.

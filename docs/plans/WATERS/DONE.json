@@ -316,8 +316,8 @@
           "ask": "Does the scene reach the water only through `thrum-water`'s public interface, and does the scene's game code name no engine-internal type? Are the wave field's passes declared inside the water's one contribution?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
           "verdict": "",
           "review": ""
         },
@@ -349,8 +349,8 @@
           "ask": "Is the motion compared with a displacement computed from the CPU model, with temporal sampling selected, on tick frames and on repeat frames?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
           "verdict": "",
           "review": ""
         },
@@ -371,8 +371,8 @@
           "ask": "Is there a constant sea level anywhere in `thrum-water`'s shaders or its mesh?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
           "verdict": "",
           "review": ""
         },
@@ -393,8 +393,8 @@
           "statement": "The maturity ledger has a row for `E1.water` that keeps implementation, correctness, visuals and device apart.",
           "ask": "Does the row claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2.md#resume-audit-16-november-2026",
           "verdict": "",
           "review": ""
         },
