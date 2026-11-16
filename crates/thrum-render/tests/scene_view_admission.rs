@@ -1,4 +1,5 @@
-//! Public camera admission: malformed requests never reach GPU recording.
+//! Camera admission only. End-to-end contribution ownership and GPU reads
+//! still belong in SCENE-VIEWS M1's separate `scene_view_seam` check.
 
 use thrum_render::{
     contribution::{
