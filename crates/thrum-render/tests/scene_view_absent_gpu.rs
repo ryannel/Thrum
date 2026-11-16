@@ -9,19 +9,21 @@ fn source_fingerprint(text: &str) -> u64 {
 }
 
 fn pre_view_source(text: &str) -> String {
-    // CULLING's independently landed exact-image fix gives both ordinary
+    // CULLING's independent exact-image fix gives both ordinary
     // fragment entries an explicit full sample mask. Undo only that known
     // upstream patch for this module's historical source oracle; all other
     // bytes must still match the pre-view hashes below.
-    const COVERAGE: &str = "// Explicit coverage prevents Metal triangle merging from borrowing a neighbour\n\
-// primitive's interpolants for derivative/helper lanes. All samples stay covered;\n\
-// the ordinary depth test still owns visibility. Volumes keep FragmentOutput.\n\
-struct OpaqueFragmentOutput {\n\
-    @location(0) colour: vec4<f32>,\n\
-    @location(1) motion: vec2<f32>,\n\
-    @location(2) reactive: f32,\n\
-    @builtin(sample_mask) coverage: u32,\n\
-}\n";
+    const COVERAGE: &str = concat!(
+        "// Explicit coverage prevents Metal triangle merging from borrowing a neighbour\n",
+        "// primitive's interpolants for derivative/helper lanes. All samples stay covered;\n",
+        "// the ordinary depth test still owns visibility. Volumes keep FragmentOutput.\n",
+        "struct OpaqueFragmentOutput {\n",
+        "    @location(0) colour: vec4<f32>,\n",
+        "    @location(1) motion: vec2<f32>,\n",
+        "    @location(2) reactive: f32,\n",
+        "    @builtin(sample_mask) coverage: u32,\n",
+        "}\n",
+    );
     if !text.contains("OpaqueFragmentOutput") {
         return text.to_owned();
     }
