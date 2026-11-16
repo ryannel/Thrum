@@ -89,6 +89,10 @@ impl Default for SyntheticView {
 }
 
 impl SyntheticView {
+    pub(crate) fn is_perspective(&self) -> bool {
+        matches!(self.projection, Projection::Perspective { .. })
+    }
+
     /// Select a labelled stateful copy/select diagnostic before preparation.
     /// Requires the FrameHost coordinator; ordinary scene baselines leave it off.
     #[must_use]

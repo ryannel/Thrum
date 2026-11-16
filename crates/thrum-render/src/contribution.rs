@@ -53,12 +53,16 @@ mod graph;
 mod list;
 mod quality;
 mod state;
+mod views;
 pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
 pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
+pub use views::{
+    SecondaryViewError, SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
+};
 
 /// The scene forward shader's material hook point: the fragment's one read of its material
 /// record, inside the scene's `shade(input: VertexOutput, ..)` body before any texture sample.

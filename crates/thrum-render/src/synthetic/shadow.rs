@@ -786,6 +786,7 @@ mod tests {
     mod horizon;
     mod observer;
     mod penumbra;
+    mod scene_view_anchor;
 
     use super::*;
 
