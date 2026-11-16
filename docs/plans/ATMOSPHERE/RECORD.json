@@ -153,7 +153,40 @@
     },
     "M9": {
       "definitions": "b9924c1944b9fdbd9d8b2f03cb847e297f0b4c24411a986a2946083c93f63983",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "cd3a10001a14de222574b412b50574cfb195bcda",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
+          "items": {
+            "M9.1": "pass",
+            "M9.2": "pass",
+            "M9.3": "pass",
+            "M9.4": "pass",
+            "M9.5": "pass",
+            "M9.6": "pass",
+            "M9.7": "pass",
+            "M9.8": "pass",
+            "M9.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 178923,
+            "cached": 4110208,
+            "output": 12795,
+            "turns": 1
+          },
+          "at": "2026-11-16T13:11:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "CULLING M3 needs something no plan provides yet. The builder wrote: A planner must reconcile M3.10\u2019s unchanged-registry ",
@@ -187,6 +220,13 @@
           "output": 111657,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "cd3a10001a14de222574b412b50574cfb195bcda",
+        "review": "docs/evidence/ATMOSPHERE/M9-review.md",
+        "checked": "05ac8f6e0ae1fbedfc3c36f974229fe8d8ec2877",
+        "at": "2026-11-16T13:11:17Z"
       }
     }
   },

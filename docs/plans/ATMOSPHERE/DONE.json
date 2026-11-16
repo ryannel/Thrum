@@ -132,7 +132,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS M2, which waits for it.",
       "items": [
         {
@@ -143,8 +143,8 @@
           "ask": "Is the reference a column stored by the production pass for a camera turned so that a texel's centre lies on the point's line, and is the read an f64 evaluation of the lent operation's blend on the volume read back, so that no expected value comes from the test's own model of the air? Are the cases, the four Suns and the allowance the design's, unchanged? Under the ground, does the pass follow the density law below zero altitude and dim the Sun's light with depth, and not hold the surface's air or its light?",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -155,8 +155,8 @@
           "ask": "Were the retained values stored by the commit before this milestone, before any change to the pass, and does the evidence name that commit? Do the frames include an observer at 3 m and one at 245 m, a level camera and one pitched down, with the night profile on? Past the ground, does the test accept equal stored transmittance in neighbouring layers and refuse a rise, and does it compare the values read back, not a model of the air?",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -167,8 +167,8 @@
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz; docs/evidence/ATMOSPHERE/M9-continuation/all-orders.tsv.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -178,8 +178,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/ATMOSPHERE/M9-checks.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -189,8 +189,8 @@
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images; docs/evidence/ATMOSPHERE/M9-continuation.md; docs/evidence/ATMOSPHERE/M9-baseline-refresh.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -199,8 +199,8 @@
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: differences on distant low terrain only, none in the sky, on the near ground, on a prop or in the bars. Then read the builder's Chrome difference images for the day and night checkpoints the same way, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -210,8 +210,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/showcase-run.json; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -220,8 +220,8 @@
           "ask": "Is the record in `docs/evidence/ATMOSPHERE/M9-cost.md` paired on the two commits in one session, order alternated, with the load on the machine and the Chrome record beside the Mac's, and no budget claimed?",
           "target": "mac-metal",
           "evidence": "docs/evidence/ATMOSPHERE/M9-cost.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         },
         {
@@ -230,8 +230,8 @@
           "ask": "Do the rows claim only what this milestone proved, on the targets it ran on?",
           "target": "mac-metal",
           "evidence": "docs/design/maturity.json; docs/evidence/ATMOSPHERE/M9-numerical.md; docs/evidence/ATMOSPHERE/M9-images.md; docs/evidence/ATMOSPHERE/M9-cost.md; docs/evidence/ATMOSPHERE/M9-continuation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/ATMOSPHERE/M9-review.md",
           "builder_result": "pass"
         }
       ]
