@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-16 The normal merge at `693e3bf54` passed its batch test command and
+  integrated the fresh-scene proof. The current session then reported locked while
+  the old IORegistry predicate reported unlocked. The corrected guard now rejects
+  that session before starting the app. All owned visible hosts and wake assertions
+  stopped. M3.4 requires a person to unlock the Mac. [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-16 M3.4 remains unproved because Computer Use exposes only the scene window and
   the requested native-driver exception has no reply. The queued normal merge was canceled
   before child work started. The [handoff](../../evidence/CREATOR/M3-handoff.md) records terminal
