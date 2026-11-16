@@ -176,11 +176,12 @@ pub(crate) fn component(amplitude: f64) -> thrum_sea_model::Component {
     }
 }
 pub(crate) fn matrix(extent: [u32; 2], height: f32) -> glam::Mat4 {
+    let [x, z] = water_scene::CAMERA_ORIGIN;
     let view = thrum_render::synthetic::SyntheticView::perspective(
-        [0.0, height, 0.0],
-        [100.0, height - 8.0, 0.0],
+        [x, height, z],
+        [x + 100.0, height - water_scene::CAMERA_LOOK_DROP, z],
         [0.0, 1.0, 0.0],
-        55.0_f32.to_radians(),
+        water_scene::CAMERA_FOV_DEGREES.to_radians(),
         extent[0] as f32 / extent[1] as f32,
         0.1,
         30_000.0,

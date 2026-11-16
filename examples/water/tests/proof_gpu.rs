@@ -33,6 +33,7 @@ fn driver() {
     }
     let report = fixture.report.lock().expect("report").clone();
     let mut result = json!({"schema":1,"target":"mac-metal","mode":mode,"extent":fixture.extent,"vertices":report.vertices,"resources":report.resources});
+    result["camera"] = json!({"origin_xz":water_scene::CAMERA_ORIGIN,"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP});
     result["commit"] = json!(
         std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_| "working tree diagnostic".into())
     );

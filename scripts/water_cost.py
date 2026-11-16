@@ -30,7 +30,7 @@ def measure():
     data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
     data['build'] = 'release; concurrent machine load, not qualified cadence'
     data['refresh_hz'] = 120
-    data['view'] = 'camera at 2 m, bearing 90 degrees, noon; identical calibration float and sky in both arms at identical world times'
+    data['view'] = 'camera at 2 m, bearing 90 degrees, noon; camera record gives origin and lens; identical calibration float and sky in both arms at identical world times'
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'broadsides_surface_ms': 10.5}
     data['summary'] = []
     for arm in data['arms']:

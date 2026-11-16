@@ -14,6 +14,13 @@ pub type SharedMap = Arc<Mutex<Map>>;
 /// Preparation-only diagnostics retained after attaching the contribution.
 pub type SharedReport = Arc<Mutex<thrum_water::WaterReport>>;
 
+/// Authored inspection area, with a long swell and wind-crest train in view.
+pub const CAMERA_ORIGIN: [f32; 2] = [60.0, -68.0];
+/// Vertical field of view for the open-sea camera.
+pub const CAMERA_FOV_DEGREES: f32 = 75.0;
+/// Vertical drop over the camera's 100 m forward look vector (about 18 degrees).
+pub const CAMERA_LOOK_DROP: f32 = 32.5;
+
 /// The example's exposed trade wind and longer swell.
 pub fn forcing() -> Forcing {
     Forcing {
@@ -32,7 +39,7 @@ pub fn profile(spectrum: &Spectrum) -> Profile {
     let steepness =
         thrum_sea_model::contraction_bound(&spectrum.long, 1.0).unwrap_or(f64::INFINITY);
     let mut profile = Profile {
-        deep_scatter: [0.001, 0.007, 0.009],
+        deep_scatter: [0.004, 0.035, 0.065],
         ..Profile::default()
     };
     profile.waves.choppiness = (0.85 / steepness).min(4.0);
@@ -117,7 +124,15 @@ pub fn build_paired(
     let report = water.report();
     let game = SkyGame::new(
         controls,
-        Camera::look_at([0.0, 2.0, 0.0], [100.0, 1.0, 0.0], 55.0),
+        Camera::look_at(
+            [CAMERA_ORIGIN[0], 2.0, CAMERA_ORIGIN[1]],
+            [
+                CAMERA_ORIGIN[0] + 100.0,
+                2.0 - CAMERA_LOOK_DROP,
+                CAMERA_ORIGIN[1],
+            ],
+            CAMERA_FOV_DEGREES,
+        ),
         move |c, sky| {
             sky.exposure_compensation_ev = 0.7;
             sky.temporal_inputs = true;
@@ -126,9 +141,13 @@ pub fn build_paired(
             let angle = c.get(bearing).to_radians();
             let h = c.get(height);
             sky.camera = Camera::look_at(
-                [0.0, h, 0.0],
-                [angle.sin() * 100.0, h - 8.0, -angle.cos() * 100.0],
-                55.0,
+                [CAMERA_ORIGIN[0], h, CAMERA_ORIGIN[1]],
+                [
+                    CAMERA_ORIGIN[0] + angle.sin() * 100.0,
+                    h - CAMERA_LOOK_DROP,
+                    CAMERA_ORIGIN[1] - angle.cos() * 100.0,
+                ],
+                CAMERA_FOV_DEGREES,
             );
             map.lock()
                 .expect("scene map")
@@ -147,7 +166,7 @@ pub fn build_paired(
         Ok((
             game.with_meshes(vec![
                 MeshPlacement::new("meshes/float", "textures/white")
-                    .at([12.0, -0.4, 0.0])
+                    .at([CAMERA_ORIGIN[0] + 12.0, -0.4, CAMERA_ORIGIN[1]])
                     .scale(2.0)
                     .material(CookedMaterial {
                         base_colour: [0.18, 0.18, 0.18, 1.0],
