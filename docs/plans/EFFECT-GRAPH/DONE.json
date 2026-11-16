@@ -189,8 +189,8 @@
           "ask": "Does a moving occluder hide the slab in the same frame, proving it reads this frame's depth? Do the compiled graphs for the four cases (no effect with reconstruction off, no effect with reconstruction on, a depth-only effect, a refracting effect) each hold exactly the storage and passes their declared accesses require?",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -201,8 +201,8 @@
           "ask": "Are the motion and reactive values read from submitted frames and compared with the slab's known displacement, with temporal sampling selected?",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -212,8 +212,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -224,8 +224,8 @@
           "ask": "Can a caller that knows nothing about the effect list its knobs and set one, as the governor will? Does the timing record tell a skipped pass from a pass that took no time?",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -236,8 +236,8 @@
           "inspect": "Capture a `fixed` still in Chrome with T2 engine capture, with the slab crossing terrain, a prop and open sky. Judge the whole frame and a native-size crop of each crossing.",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -246,8 +246,8 @@
           "inspect": "Capture `fixed` stills with T2 engine capture at noon and at night, on the portable and Apple tile recipes, with the slab crossing terrain, a prop and open sky. Judge whole frames and native-size crops of each crossing.",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -256,8 +256,8 @@
           "ask": "Could the SEA or CLOUDS planner write their passes from the public documentation and this design alone? Are the copy and pass-break costs recorded as paired rows with the load, and does the ledger keep implementation, correctness and device results apart?",
           "target": "mac-metal",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -266,8 +266,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -277,8 +277,8 @@
           "ask": "Does each record show that every identity field matched, that the matching bytes hash to the retained reference, and that a complete, unchanged verifier run then passed on the same content key as the failed run?",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/EFFECT-GRAPH/M3/variation-runs.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
           "builder_result": "pass"
         }
       ],
@@ -289,7 +289,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here."
     }
   ]

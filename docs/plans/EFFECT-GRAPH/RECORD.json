@@ -177,7 +177,40 @@
     },
     "M3": {
       "definitions": "31a31105f4157d8e96ba715ae3867c4e5f495344f6f7f745d380935caf7bbaf8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "160595c5a0996b235043bff5e7624f6b0df6464b",
+          "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 212346,
+            "cached": 8737152,
+            "output": 18990,
+            "turns": 1
+          },
+          "at": "2026-11-16T03:56:19Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "EFFECT-GRAPH M3 needs something no plan provides yet. The builder wrote: APPLE-TILE must resolve the mismatch before M3 ",
@@ -219,6 +252,13 @@
           "output": 92122,
           "turns": 4
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "160595c5a0996b235043bff5e7624f6b0df6464b",
+        "review": "docs/evidence/EFFECT-GRAPH/M3-review.md",
+        "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
+        "at": "2026-11-16T03:56:19Z"
       }
     }
   },
