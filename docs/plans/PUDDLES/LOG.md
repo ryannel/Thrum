@@ -84,3 +84,9 @@
   water-model tests unchanged, workspace clippy clean. M2.10 is left to the main-branch check exact-images.
   Not verified here: `./dev check` hit the 30-minute gpu hold in other crates' GPU tests under load; no failure
   before that. Suspected: the stores' interpolation between reaches is the largest wetness error (0.23 of the pores).
+- 2026-11-16 M2 review fix (code a0aea615f). Verified: no water is made when a puddle can't pay for ground it
+  covers or leaves; the shortfall is owed by the hollow (`RainState::owed`), paid first from its next water, and
+  owed pores soak nothing. `ground_held` counts the debt; `Account::unpaid` is removed. New tests run the review's
+  dry flat floor (worst residual 3.7e-13 of the rain) and check every entry, donor and receiver per tick. All
+  rain-model tests pass; clippy clean. Suspected: an owed hollow reads its ground as the class's (wetness ignores
+  the debt); a planner may want the design to name the debt.

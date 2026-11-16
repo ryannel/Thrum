@@ -169,8 +169,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md"
         },
@@ -233,10 +233,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.9",
