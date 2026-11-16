@@ -100,3 +100,22 @@
   ("part of the edit was committed"). Verified: v1-game links neither M2 crate; on main f41ebc97b, under the gpu lock,
   the test passed 3/3 alone and the whole file 13/13 three times. Suspected: a load-dependent flake (the assert needs
   one frame to commit upload bytes) while other builders share the GPU; it belongs to that test's owning module.
+- 2026-11-16 M2 failed its third review on M2.11, the finding of the second again: an emptied puddle left no film
+  on ground it uncovered and the model owed it. The builder ended Blocked without changing code
+  ([handoff](../../evidence/PUDDLES/M2-handoff.md)): the design's covering rule did not say what happens when a
+  puddle holds less than the pores it rises over or the film it must leave, and on ground with deep pores that is
+  the ordinary case.
+- 2026-11-16 Re-planned by the lead's task: "Settle a conserving rule (water is never invented or silently owed),
+  rewrite the design section and M2.11 to match, and say which existing tests change." Decided: the pores under a
+  puddle take its water at the class's soak rate, not at once; each hollow keeps a mark, ground changes hands only
+  in its class's state, and ground the puddle cannot pay for is held until it can
+  ([design](DESIGN.md#the-mark-and-ground-that-changes-hands)). Not chosen: a debt named in the design, a named
+  source, ground left uncovered until its pores are paid for, and the old rule limited to shallow pores.
+- 2026-11-16 [Part 11](../../evidence/PUDDLES/design-proof/README.md) runs the rule on one hollow: 3,024 cases close
+  to 4e-13 with nothing below none, and ground is held in 75, on a floor half under a crown and in a dish as
+  shallow as its relief. Not run: the Rust model, and hollows that share a puddle. Read for the soak rate:
+  hydrology course texts on ponded infiltration, as summarised by one search.
+- 2026-11-16 Items: M2.11 rewritten as the receivers and the bed's take, M2.12 added for the mark and held ground,
+  both on a new test file, `tests/marks.rs`; M2.1's last sentence names the pores under the marks. Tests that
+  change: the three M2.11 cases in `tests/receivers.rs` and the four coupled account cases in `tests/stores.rs`
+  are replaced; `tests/state.rs` and `tests/margins.rs` follow the state's fields. M1 shrinks to its review link.

@@ -23,13 +23,14 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (M14, M10 and M16), because a puddle that mirrors only what is on screen is below the bar.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).
 
-## M1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry
-
-This creates `thrum-rain-model`, on `thrum-water-model` from `WATERS` M1, which it changes only as ruling 1 says. `WATERS`' and `RIVERS`' builders edit that crate too; land on top of what is there and leave its tests as they are. Part 1 of `docs/evidence/PUDDLES/design-proof/puddle_proof.py` is a sketch of the tree, the fill and the point test, and keeps every node's sorted bed, which is too large at 640,000 cells; how a node's curve is kept is yours, and M1.9 records its bytes. The ground's stores come in M2, so M1's ground stores nothing. M1.13 judges each receiver's gain by itself; the account's total does not stand in for it.
+## M1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry: done
+[review](../../evidence/PUDDLES/M1-review.md)
 
 ## M2 On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do
 
 Ruling 3 changes the surface model in `thrum-water-model`; `RIVERS` adds its flow bands to the same sum, and whichever lands second integrates. Parts 3 to 5 and 8 to 10 give the bounds. The fine interaction level is M8's, not this milestone's. The ring tables are data the model makes; the surface model in `thrum-water-model` takes them as data and does not depend on `thrum-rain-model`.
+
+M2 is built but for ground a puddle rises over and leaves, which failed three reviews; the design now settles it as [the mark](DESIGN.md#the-mark-and-ground-that-changes-hands), and [the handoff](../../evidence/PUDDLES/M2-handoff.md) says what the code does today. In `thrum-rain-model`'s `src/fill.rs`, `cover_changes` and `lose` hold the old rule, `cover` is the mark, and `owed`, with the scaling of an owing hollow's ground sinks, is a debt the design no longer has. Tests of the old rule are replaced, not kept: the three M2.11 cases in `tests/receivers.rs`, which keeps M1.13's two, and the account cases in `tests/stores.rs` that subtract `owed`. [Part 11](../../evidence/PUDDLES/design-proof/README.md) has two cases that hold ground.
 
 ## M3 On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one
 

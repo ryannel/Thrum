@@ -165,7 +165,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "The ground's two stores step with the tick for each ground class, in the open and where a half and a quarter of the rain reaches. Through a shower on paving the pores fill at the soak rate, then surface water stands up to what the relief holds and the rest is runoff; after it the surface water goes at the drying rate and the pores' fill falls only once it has gone. On earth with 3 mm of pores, a soak rate of 15 mm/h, 0.5 mm of relief and a percolation rate of 5 mm/h, under 10 mm/h with drying off: no surface water stands for the 1,080 s the pores take to fill, a film stands from then, and the relief is full and runoff starts at 1,440 s, each within two ticks. Ground whose percolation rate is at least the rain's takes no surface water through two hours of it. With the stores and the covering and uncovering transfers in it, M1.4's account still closes within 1e-9.",
+          "statement": "The ground's two stores step with the tick for each ground class, in the open and where a half and a quarter of the rain reaches. Through a shower on paving the pores fill at the soak rate, then surface water stands up to what the relief holds and the rest is runoff; after it the surface water goes at the drying rate and the pores' fill falls only once it has gone. On earth with 3 mm of pores, a soak rate of 15 mm/h, 0.5 mm of relief and a percolation rate of 5 mm/h, under 10 mm/h with drying off: no surface water stands for the 1,080 s the pores take to fill, a film stands from then, and the relief is full and runoff starts at 1,440 s, each within two ticks. Ground whose percolation rate is at least the rain's takes no surface water through two hours of it. With the stores, the marks' transfers and the pores under the marks in it, M1.4's account still closes within 1e-9, with rain its only source.",
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
@@ -229,14 +229,23 @@
         },
         {
           "id": "M2.11",
-          "statement": "With the stores in, rain that falls on a puddle is the puddle's and not the ground's. On ground that takes all the rain it is given, a puddle that covers half its hollow rises by the rain on its own surface, and the uncovered ground's stores are those of open ground stepped by itself. As the level rises over ground, the surface water on it joins the puddle and the puddle fills its pores; as it falls, the ground it leaves takes its class's state, the puddle leaves that surface water behind, and what the full pores held beyond the class's fill is counted as soaked. Each of those entries is the test's own figure within 1e-9, apart from the total M2.1 closes.",
-          "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
-          "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
+          "statement": "With the stores in, each tick's rain still goes to one receiver: rain on ground under a hollow's mark is its puddle's, and the open ground's stores are those of open ground stepped by itself. Where the pores under a puddle have room, its bed takes water at the class's soak rate over the water's surface and the pores under the mark gain what they have room for; over full pores it takes the percolation rate; and a puddle that holds less than a tick's drying and take gives each its share of what it holds. From dry, on a level floor with 3 mm of pores that soak 1 mm/h and 0.1 mm of relief, under 60 mm/h, the puddle that stands gains each tick the rain on it and the runoff to it, less 1 mm/h over its surface. Each entry, and the change in the puddle and in the pores under the mark, is the test's own figure within 1e-9, apart from the total M2.1 closes.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
+          "ask": "Does the test work each figure from the cells, the stores and the puddle's water at the tick's start, without the model? Would a model that passed a puddle's rain through the ground's stores fail it, and would one that filled the pores under a puddle at once?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md",
           "builder_result": "open"
+        },
+        {
+          "id": "M2.12",
+          "statement": "A hollow's mark moves by the design's rule, and no water is made or owed. Where the level rises over ground, that ground's surface water joins the puddle and its pore water joins the pores under the mark. Where it falls, the ground it leaves takes its class's state: its pore water comes from its share of the pores under the mark, what the share holds beyond the class's fill is counted as soaked, and what it lacks comes from the puddle with the class's surface water. A hollow whose puddle holds less than that keeps the ground: nothing moves, its rain stays the puddle's, the wetness function gives it the fill of the pores under the mark with the margin's band and no surface water, and all of it is handed over on the first tick the puddle can pay. On a level floor of 8 by 8 cells in a 4 cm rim with 3 mm of pores, at soak rates of 1 and 30 mm/h, relief of 0.1 and 3 mm and showers of 50, 150 and 500 s at 60 mm/h, each with three hours of drying at 20 mm/h; on a hollow that holds ground for more than one tick; and on two hollows that share a puddle through a merge and a parting: each entry is the test's own figure within 1e-9, no entry is more than its donor held before it, and the account closes on rain alone.",
+          "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
+          "ask": "Does the test take each donor's water from the state before the entry, and check that the donor lost what the receiver gained? Does the held case show ground kept for more than one tick and then handed over? Does the rain state keep any quantity that stands for water not yet delivered?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
         },
         {
           "id": "M2.9",
