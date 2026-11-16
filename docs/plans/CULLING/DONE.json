@@ -184,10 +184,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/native-meshes/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",
