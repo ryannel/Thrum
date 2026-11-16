@@ -25,12 +25,12 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "6baf4235cb96d984a00b9a64059655d8f685993eac9a47b7dc2efd5d9f7ccc09",
+      "definitions": "b930cc53458fe592312ad986c8cabcee3a14747e4ca6f957946ddb65b188c1bd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of SCENE-VIEWS at docs/evidence/SCENE-VIEWS/design-review.md asked for changes. Resolve its 1 Must Fix",
-        "at": "2026-11-16T13:14:05Z"
+        "task": "The SCENE-VIEWS design review's Must Fix shared-height-map-camera-support came back after your last fix (docs/evidence/S",
+        "at": "2026-11-16T14:54:04Z"
       }
     },
     "M2": {
@@ -79,11 +79,15 @@
     {
       "task": "The design review of SCENE-VIEWS at docs/evidence/SCENE-VIEWS/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-16T13:14:05Z"
+    },
+    {
+      "task": "The SCENE-VIEWS design review's Must Fix shared-height-map-camera-support came back after your last fix (docs/evidence/SCENE-VIEWS/design-review.md on origin/main). The design now admits every camera on the main camera's vertical but exempts some of them through a rounding exception, while M1.1, M2.1 and M1's quality bar still promise equality with the main view. Make the acceptance contract and the mechanism say the same thing: either remove the exception so every admitted camera really gets identical shadow products, or narrow the admitted range and the equality claims to exactly where they hold, and state the limit everywhere it applies (V1, V3, M1.1, M1.13, M2.1). Prefer the option that keeps water reflections correct at the least cost. Its Suggestions are yours to take or leave.",
+      "at": "2026-11-16T14:54:04Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T13:14:05Z"
+    "at": "2026-11-16T14:54:04Z"
   },
   "design_history": [
     {
