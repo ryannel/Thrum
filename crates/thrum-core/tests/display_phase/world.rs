@@ -104,11 +104,24 @@ fn delayed_observation_retains_a_causal_pair_and_later_poll_reports_all_progress
     assert_eq!(lane.presentation_alpha_at(Duration::from_millis(50)), 1.0);
     assert!(controls.check_health().expect("owner was never stopped") >= 2);
 
-    let fresh_observation = origin.elapsed();
-    let latest = lane.poll(fresh_observation).expect("fresh observation");
-    assert!(latest.tick >= 2);
-    assert_eq!(u64::from(latest.completed_ticks), latest.tick);
+    let mut completed = 0_u64;
+    let (fresh_observation, latest) = loop {
+        let observation = origin.elapsed();
+        let report = lane.poll(observation).expect("fresh observation");
+        completed += u64::from(report.completed_ticks);
+        if report.tick >= 2 {
+            break (observation, report);
+        }
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(1));
+    };
+    assert_eq!(completed, latest.tick);
     assert_eq!(lane.current_page(), Some(latest.tick));
     let repeated = lane.poll(fresh_observation).expect("retained pair");
-    assert_eq!(repeated.completed_ticks, 0);
+    // The owner may commit more already-due work between these observations;
+    // count it once, even when both polls sample the same target.
+    assert_eq!(
+        u64::from(repeated.completed_ticks),
+        repeated.tick - latest.tick
+    );
 }
