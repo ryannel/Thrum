@@ -47,25 +47,41 @@ def build_settings(manifest, lock, packages):
         manifest["profile"] = {name: value for name, value in manifest["profile"].items() if value}
         if not manifest["profile"]:
             del manifest["profile"]
-    selected = [entry for entry in lock["package"]
+    selected = [{key: value for key, value in entry.items() if key != "dependencies"} for entry in lock["package"]
                 if (entry["name"], entry["version"], entry.get("source")) in packages]
     return {"manifest": manifest, "lock_version": lock["version"], "packages": selected}
 
 
-def source_key():
-    """Identity of the runner's normal/build dependency closure, on all targets."""
+def runner_graph(tree, packages):
+    """Read Cargo's package-scoped tree, preserving active features and edges."""
+    selected, nodes, edges, parents = set(), set(), set(), []
+    for line in tree.splitlines():
+        depth, package, features = line.split("|", 2)
+        depth = int(depth)
+        name, version = package.split()[:2]
+        matches = [p for p in packages.values() if p["name"] == name and p["version"] == version.removeprefix("v")]
+        if len(matches) != 1:
+            raise ValueError(f"ambiguous Cargo tree package: {package}")
+        package = matches[0]
+        selected.add(package["id"])
+        node = json.dumps({"name": name, "version": package["version"], "source": package["source"],
+                           "features": sorted(filter(None, features.split(",")))}, sort_keys=True)
+        nodes.add(node)
+        if depth:
+            edges.add((parents[depth - 1], node))
+        parents[depth:] = [node]
+    if not selected:
+        raise ValueError("Cargo returned no runner dependencies")
+    return selected, {"nodes": sorted(nodes), "edges": sorted(edges)}
+
+
+def source_inputs():
+    """Portable, inspectable inputs of the package-scoped runner build."""
     metadata = json.loads(command(["rustup", "run", "1.99.1", "cargo", "metadata", "--locked", "--offline", "--format-version", "1"]))
     packages = {p["id"]: p for p in metadata["packages"]}
-    nodes = {n["id"]: n for n in metadata["resolve"]["nodes"]}
-    selected = set()
-    pending = [p["id"] for p in packages.values() if p["name"] == "crowd-2d-run"]
-    while pending:
-        package = pending.pop()
-        if package in selected:
-            continue
-        selected.add(package)
-        pending.extend(dep["pkg"] for dep in nodes[package]["deps"]
-                       if any(kind["kind"] in [None, "build"] for kind in dep["dep_kinds"]))
+    tree = command(["rustup", "run", "1.99.1", "cargo", "tree", "--locked", "--offline", "-p", "crowd-2d-run",
+                    "--target", "all", "--edges", "normal,build", "--prefix", "depth", "--no-dedupe", "--format", "|{p}|{f}"])
+    selected, graph = runner_graph(tree, packages)
     identities = {(packages[p]["name"], packages[p]["version"], packages[p]["source"]) for p in selected}
     settings = build_settings(tomllib.loads((ROOT / "Cargo.toml").read_text()),
                               tomllib.loads((ROOT / "Cargo.lock").read_text()), identities)
@@ -74,12 +90,14 @@ def source_key():
                                        for p in selected if packages[p]["source"] is None]
     for directory in directories:
         files.extend(path for path in directory.rglob("*") if path.is_file())
-    digest = hashlib.sha256()
-    digest.update(json.dumps(settings, sort_keys=True).encode())
-    for path in sorted(files):
-        digest.update(str(path.relative_to(ROOT)).encode())
-        digest.update(hashlib.sha256(path.read_bytes()).digest())
-    return digest.hexdigest()
+    return {"graph": graph, "settings": settings,
+            "files": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+                      for path in sorted(files)}}
+
+
+def source_key(inputs=None):
+    """Identity of the runner's normal/build dependency closure, on all targets."""
+    return hashlib.sha256(json.dumps(source_inputs() if inputs is None else inputs, sort_keys=True).encode()).hexdigest()
 
 
 def build(target, debug=False):
@@ -230,7 +248,8 @@ def control(target):
 
 
 def measure(target):
-    measured_source = source_key()
+    measured_inputs = source_inputs()
+    measured_source = source_key(measured_inputs)
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
     previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
@@ -257,7 +276,7 @@ def measure(target):
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
-    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
+    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
 
 
 def last_comparable(row, record, origin):
@@ -279,7 +298,10 @@ def costs(target):
     path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
     record = json.loads(path.read_text())
     assert record["target"] == target and record["dirty"] is False
-    assert record["source_sha256"] == source_key(), "cost record belongs to different simulation sources"
+    current = source_inputs()
+    assert source_key(record["source_inputs"]) == record["source_sha256"], "cost input manifest hash differs"
+    changes = [key for key in current if current[key] != record["source_inputs"].get(key)]
+    assert record["source_sha256"] == source_key(current), f"cost record belongs to different simulation sources: {changes}"
     assert record["rustc"] == identity()["rustc"], "cost record belongs to another compiler"
     assert len(record["runs"]) == 2
     previous = None

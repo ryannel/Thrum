@@ -3,10 +3,28 @@ import unittest
 from copy import deepcopy
 from unittest.mock import patch
 
-from sim2d_conformance import build_settings, last_comparable, measure
+from sim2d_conformance import build_settings, last_comparable, measure, runner_graph
 
 
 class BuildIdentity(unittest.TestCase):
+    def test_workspace_lock_feature_union_and_version_qualification_are_ignored(self):
+        manifest = {"workspace": {"members": ["runner"], "resolver": "3"}}
+        lock = {"version": 4, "package": [{"name": "futures-util", "version": "1", "checksum": "same",
+                                           "dependencies": ["syn"]}]}
+        selected = {("futures-util", "1", None)}
+        before = build_settings(manifest, lock, selected)
+        lock["package"][0]["dependencies"] = ["syn 3.0.9", "futures-io", "futures-channel"]
+        self.assertEqual(before, build_settings(manifest, lock, selected))
+
+    def test_runner_features_and_active_edges_are_covered(self):
+        packages = {name: {"id": name, "name": name, "version": "1", "source": None}
+                    for name in ["runner", "a", "b", "unrelated"]}
+        tree = '0|runner v1|\n1|a v1|std\n1|b v1|\n'
+        selected, graph = runner_graph(tree, packages)
+        self.assertEqual(selected, {"runner", "a", "b"})
+        self.assertNotEqual(graph, runner_graph(tree.replace('|std', '|std,io'), packages)[1])
+        self.assertNotEqual(graph, runner_graph(tree.replace('1|b', '2|b'), packages)[1])
+
     def test_unlinked_workspace_addition_preserves_identity(self):
         manifest = {"workspace": {"members": ["runner"], "resolver": "3"}}
         lock = {"version": 4, "package": [{"name": "runner", "version": "1"}]}
@@ -53,6 +71,7 @@ class CostComparisons(unittest.TestCase):
 
         with patch("sim2d_conformance.Runner") as runner, \
                 patch("sim2d_conformance.source_key", return_value="source"), \
+                patch("sim2d_conformance.source_inputs", return_value={"fixture": "source"}), \
                 patch("sim2d_conformance.command", return_value="current"), \
                 patch("sim2d_conformance.json.loads", return_value=previous):
             runner.return_value.invoke.side_effect = timing
