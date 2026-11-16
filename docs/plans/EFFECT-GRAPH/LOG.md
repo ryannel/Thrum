@@ -174,10 +174,10 @@
   left as they are. A prediction is carried a tick at a time. M4.1 to M4.4 rewritten; the record gains the
   observation, the lead's status, the platform target and whether the clock interpolated.
   [Check](../../evidence/EFFECT-GRAPH/M4-plan/consumed-target.txt). S5 taken; S4 left, since M2 is Done.
-- 2026-11-16 Built M4's consumed-target phase through the clock, worlds, effects and submitted samples;
-  the offscreen runner now uses one observation for its lead and world call. C02 and public docs agree.
-  M4.1–M4.3 pass on Mac Metal: literal clock states, 144 inline/threaded effect frames, unchanged GPU state,
-  real recovery and 32 realtime capture records, including one deliberately expired opportunity.
-  Zero/capped threaded leads and recorded-input assertions pass at `116be75f9`; native/Wasm Clippy,
-  documentation checks and pinned iOS-simulator compilation pass. [Proof](../../evidence/EFFECT-GRAPH/M4-proof.md).
-  Exact images use the shared main-branch check. No consumer prediction quality or display cadence is claimed.
+- 2026-11-16 Implemented the phase and one-read offscreen observation; normal Mac target scripts pass,
+  including 144 effect frames and 32 realtime records. Native/Wasm Clippy and iOS compilation pass.
+  A new submitted-frame counterexample at `5a8f26002` fails M4.2: after render preemption the world
+  supplies tick 2 for observation 42.417 us, with alpha/phase zero and interpolation true, a 33.291 ms error.
+  Proposal: the planner must settle observation-coherent endpoint selection or a revised consumption policy;
+  either changes more existing frame behavior than the current design permits. No merge was attempted.
+  [Handoff and reproduction](../../evidence/EFFECT-GRAPH/M4-handoff.md) separate passing scope from the failure.
