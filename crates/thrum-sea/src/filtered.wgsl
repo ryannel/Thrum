@@ -1,6 +1,5 @@
 // Five linear planes per wave layer: displacement/J, derivatives, velocity,
 // slope second moments/dZdz, and J squared. Mips average all planes unchanged.
-struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32> }
 @group(0) @binding(0) var<storage,read> cascades:array<Field>;
 @group(0) @binding(1) var<storage,read> long_field:array<Field>;
 @group(0) @binding(2) var cascade_out:texture_storage_2d_array<rgba16float,write>;

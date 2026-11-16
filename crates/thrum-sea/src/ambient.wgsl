@@ -8,7 +8,6 @@ struct Params {
 struct Bin { physical: vec4<f32>, clock: vec4<u32> }
 struct Long { physical: vec4<f32>, rate: vec4<f32> }
 struct Query { point: vec2<f32> }
-struct Field { displacement: vec4<f32>, slope: vec4<f32>, velocity: vec4<f32> }
 struct Moments { slope: vec4<f32>, extra: vec4<f32> }
 @group(0) @binding(0) var<uniform> p: Params;
 @group(0) @binding(1) var<storage, read> modes: array<Bin>;

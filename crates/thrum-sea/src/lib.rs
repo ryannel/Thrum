@@ -23,6 +23,8 @@ pub const FILTERED_SHADER: &str = filtered::SHADER;
 pub const LONG_WAVE_CONTRACTION_LIMIT: f64 = 0.9;
 /// Complete ambient shader source, for layout and binding reflection tools.
 pub const SHADER: &str = concat!(
+    include_str!("field.wgsl"),
+    "\n",
     include_str!("ambient.wgsl"),
     "\n",
     include_str!("long_waves.wgsl")
@@ -242,7 +244,7 @@ impl Ambient {
             })
             .collect();
         for pass in self.graph().passes.iter().skip(self.specs.len()) {
-            let pack = pass.name == "sea filtered pack";
+            let pack = pass.name == filtered::PACK_PASS;
             let slots = if pack { &[0, 1, 2, 3][..] } else { &[4, 5][..] };
             for (access, &slot) in pass.accesses.iter().zip(slots) {
                 bindings.push(BindingAccess {

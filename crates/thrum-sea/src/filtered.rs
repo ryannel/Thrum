@@ -5,7 +5,12 @@ use thrum_render::{
     runtime::DeviceSite,
 };
 
-pub(super) const SHADER: &str = include_str!("filtered.wgsl");
+pub(super) const SHADER: &str = concat!(
+    include_str!("field.wgsl"),
+    "\n",
+    include_str!("filtered.wgsl")
+);
+pub(super) const PACK_PASS: &str = "sea filtered pack";
 const PLANES: u32 = 5;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const USAGE: wgpu::TextureUsages = wgpu::TextureUsages::STORAGE_BINDING
@@ -227,9 +232,7 @@ impl Filtered {
             async_eligible: false,
             accesses,
         };
-        graph
-            .passes
-            .push(pass("sea filtered pack".into(), accesses));
+        graph.passes.push(pass(PACK_PASS.into(), accesses));
         for (i, texture) in self.textures.iter().enumerate() {
             for mip in 1..texture.mip_level_count() {
                 graph.passes.push(pass(
