@@ -100,7 +100,7 @@ build trees, transcripts, every rejected asset or bulk captures. [Storage rules]
 cover promotion and closeout. There is no remote or release configuration implied by this scaffold;
 package publication is disabled pending a deliberate distribution and licensing decision.
 
-## Exact image baselines are verified on main
+## Exact image baselines and the reference guard
 
 No exact-image proof is needed before a merge. After merges, the main-branch check `exact-images` runs
 `python3 scripts/exact_baselines.py verify --full` on main's tip, in a clean checkout of its own. It needs
@@ -115,12 +115,24 @@ owner; only that owner can refresh retained references under
 on main contains the current commit, and is the check of a done-when item in most modules. Don't run it
 before merging: on a branch it answers that the commit isn't on main yet.
 
-The [registry](.config/exact-baselines.json) lists references and covered paths. `./dev check` prints a
-warning when a commit changes a covered path, and never refuses for it. A full run keeps compact records
+The [registry](.config/exact-baselines.json) lists references, comparison files and covered paths.
+`./dev check` runs the CPU-only `python3 scripts/exact_baselines.py guard`. It refuses changed references,
+comparison files or baseline definitions unless their pins and refreshes are updated. Each pin hashes the
+definition and the paths and Git object IDs of all protected files in HEAD. The guard prints the computed
+pins; copy them into the registry after committing the protected changes. A refresh records `anchor` (an
+existing anchor in `docs/plans/ARCHITECTURE.md`), `module` and `milestone`. A changed pin needs a changed
+refresh. Commit the registry update before checking; uncommitted protected changes fail.
+A full run keeps compact records
 with revision, binary/Wasm hashes, cooked root, comparisons and elapsed time; successful bulk frames are
 removed after the owner publishes their comparisons or complete motion verification; source manifests and
 sample identities are archived first. Failed captures remain for diagnosis.
 
-A planned refresh, which a ruling in the baseline rules must allow, is the one full run made before a
-merge: regenerate the references on the candidate, hold the `gpu` lock for `verify --full` there, and merge
-the change and the references in one landing. Never use `land --no-check` or plain push for a covered change.
+A planned refresh needs a ruling in the baseline rules: regenerate and commit the references on the candidate,
+hold the `gpu` lock for `verify --full`, update the pin and refresh, commit, and merge everything in one
+landing with `agent_loop.py merge`. An owner editing a comparison file also updates each affected pin and
+refresh, naming its ruling or the rule assigning ownership. Adding or redefining a baseline needs a correct
+pin and refresh. To retire one, a planner moves its identity and owner to the registry's `retired` list with
+a refresh naming the ruling that ends it. Removing an entry without retirement fails against the registry
+at the merge base with main. Covered paths key the run's record; they impose no pre-merge image run.
+The verifier keeps 48 completed runs' compact records and the latest failed run's captures in its own
+`tmp/baseline-guard/`, pruning older completed runs at startup; incomplete runs are preserved for diagnosis.

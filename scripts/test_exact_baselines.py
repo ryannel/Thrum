@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the gate's report through real fetch/rebase/push, the main-check hand-off, and exact Chrome modes."""
+"""Exercise the reference guard in Git repositories, retention and exact Chrome modes."""
 import contextlib
 import gzip
 import hashlib
@@ -19,104 +19,223 @@ from exact_baselines_native import run_matrix
 from apple_tile_m1_compare_browser import IDENTITY, compare, compare_digest
 
 
-class GateTests(unittest.TestCase):
+class RepositoryCase(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
-        self.remote = self.base / 'remote.git'
-        self.run_git(self.base, 'init', '--bare', str(self.remote))
-        self.writer = self.base / 'writer'
-        self.run_git(self.base, 'clone', str(self.remote), str(self.writer))
-        self.run_git(self.writer, 'checkout', '-b', 'main')
-        (self.writer / '.config').mkdir()
-        shutil.copyfile(guard.ROOT / guard.REGISTRY, self.writer / guard.REGISTRY)
-        (self.writer / 'crates').mkdir()
-        (self.writer / 'crates/one').write_text('one')
-        (self.writer / '.gitignore').write_text('/tmp/\n')
-        self.commit(self.writer, 'initial')
-        self.run_git(self.writer, 'push', '-u', 'origin', 'main')
-        self.builder = self.base / 'builder'
-        self.run_git(self.base, 'clone', '-b', 'main', str(self.remote), str(self.builder))
-        self.run_git(self.builder, 'checkout', '-b', 'build/test')
+        self.root = Path(self.temp.name)
+        self.git('init', '-b', 'main')
+        for path, data in {'.gitignore': '/tmp/\n', 'refs/image': 'pixels',
+                           'scripts/compare_v1_pixels.py': 'equal',
+                           'scripts/exact_baselines.py': 'verifier',
+                           'docs/plans/ARCHITECTURE.md': '# Exact baselines\n## Refresh allowed\n'}.items():
+            target = self.root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(data)
+        (self.root / '.config').mkdir()
+        self.entry = {'id': 'fixture', 'owner': 'OWNER', 'reference': 'refs/',
+                      'candidate': 'fresh', 'comparison_files': ['scripts/compare_v1_pixels.py',
+                                                                'scripts/exact_baselines.py'],
+                      'refresh': {'anchor': 'exact-baselines', 'module': 'OWNER', 'milestone': 'M1'}}
+        self.data = {'baselines': [self.entry], 'retired': [], 'covered_paths': ['scripts/']}
+        self.write_registry()
+        self.commit('seed')
+        self.repin()
+        self.commit('initial pin')
+        remote = self.root / 'tmp/remote.git'
+        remote.parent.mkdir()
+        self.git('init', '--bare', str(remote))
+        self.git('remote', 'add', 'origin', str(remote))
+        self.git('push', '-u', 'origin', 'main')
+        self.base = self.git('rev-parse', 'HEAD')
 
-    def run_git(self, root, *args):
+    def git(self, *args):
         env = dict(os.environ, GIT_AUTHOR_NAME='Guard Test', GIT_AUTHOR_EMAIL='test@example.invalid',
                    GIT_COMMITTER_NAME='Guard Test', GIT_COMMITTER_EMAIL='test@example.invalid',
                    GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull)
-        return subprocess.check_output(['git', *args], cwd=root, stderr=subprocess.STDOUT, env=env).decode().strip()
+        return subprocess.check_output(['git', *args], cwd=self.root, stderr=subprocess.STDOUT,
+                                       env=env).decode().strip()
 
-    def commit(self, root, name):
-        self.run_git(root, 'add', '.')
-        self.run_git(root, 'commit', '-m', name)
+    def commit(self, message):
+        self.git('add', '.')
+        self.git('commit', '--allow-empty', '-m', message)
 
-    def seed_proof(self):
-        # Fixture for a completed verifier; real device proof is the M1 verifier run.
-        path = guard.proof_path(self.builder)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        guard.save(path, {'passed': True, 'content_key': guard.content_key(self.builder),
-                          'baselines': [b['id'] for b in guard.registry(self.builder)['baselines']]})
+    def write_registry(self):
+        guard.save(self.root / guard.REGISTRY, self.data)
 
-    def land(self):
-        """Same integration order as land, against only this disposable remote. Returns the gate's report."""
-        self.run_git(self.builder, 'fetch', 'origin', 'main')
-        self.run_git(self.builder, 'rebase', 'origin/main')
-        with contextlib.redirect_stdout(io.StringIO()) as output:
-            status = guard.gate(self.builder)
-        self.assertEqual(output.getvalue().startswith('WARN'), status == 'unproved')
-        # The gate reports and never refuses: the landing goes ahead whatever it said.
-        self.run_git(self.builder, 'push', 'origin', 'HEAD:main')
-        self.assertEqual(self.run_git(self.builder, 'rev-parse', 'HEAD'),
-                         self.run_git(self.base, '--git-dir', str(self.remote), 'rev-parse', 'main'))
-        return status
+    def repin(self):
+        for entry in self.data['baselines']:
+            entry['pin'] = guard.pin(entry, guard.tree(self.root, 'HEAD'))
+        self.write_registry()
 
-    def test_no_covered_change_passes_without_proof(self):
-        (self.builder / 'notes.md').write_text('documentation')
-        self.commit(self.builder, 'docs')
-        self.assertEqual(self.land(), 'unchanged')
+    def refresh(self):
+        for entry in self.data['baselines']:
+            entry['refresh'] = {'anchor': 'refresh-allowed', 'module': 'OWNER', 'milestone': 'M2'}
+        self.repin()
+        self.commit('record refresh')
 
-    def test_covered_change_without_proof_warns_and_lands(self):
-        (self.builder / 'crates/one').write_text('changed')
-        self.commit(self.builder, 'covered')
-        self.assertEqual(self.land(), 'unproved')
-        (self.builder / 'crates/one').write_text('changed again')
-        self.commit(self.builder, 'covered again')
-        self.seed_proof()
-        self.assertEqual(self.land(), 'proved')
+    def refuses(self, *details):
+        with self.assertRaises(ValueError) as caught, contextlib.redirect_stdout(io.StringIO()):
+            guard.guard(self.root)
+        for detail in ('OWNER', 'rule 1', *details):
+            self.assertIn(detail, str(caught.exception))
+        self.assertEqual(self.git('rev-parse', 'refs/remotes/origin/main'), self.base)
 
-    def test_covered_rebase_leaves_proof_stale_and_lands(self):
-        (self.builder / 'crates/two').write_text('builder')
-        self.commit(self.builder, 'builder covered')
-        self.seed_proof()
-        key = guard.content_key(self.builder)
-        (self.writer / 'crates/one').write_text('upstream')
-        self.commit(self.writer, 'upstream covered')
-        self.run_git(self.writer, 'push', 'origin', 'main')
-        self.assertEqual(self.land(), 'unproved')
-        self.assertNotEqual(key, guard.content_key(self.builder))
+    def passes(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            guard.guard(self.root)
 
-    def test_uncovered_rebase_preserves_proof(self):
-        (self.builder / 'crates/two').write_text('builder')
-        self.commit(self.builder, 'builder covered')
-        self.seed_proof()
-        key = guard.content_key(self.builder)
-        (self.writer / 'notes.md').write_text('upstream docs')
-        self.commit(self.writer, 'upstream docs')
-        self.run_git(self.writer, 'push', 'origin', 'main')
-        self.assertEqual(self.land(), 'proved')
-        self.assertEqual(key, guard.content_key(self.builder))
 
-    def test_missing_base_fails_and_dirty_inputs_warn(self):
-        (self.builder / 'crates/one').write_text('dirty')
-        with contextlib.redirect_stdout(io.StringIO()) as output:
-            self.assertEqual(guard.gate(self.builder), 'unproved')
-        self.assertIn('uncommitted', output.getvalue())
-        with self.assertRaisesRegex(ValueError, 'dirty tree'):
-            guard.verify(self.builder)
-        self.run_git(self.builder, 'checkout', '--', 'crates/one')
-        self.run_git(self.builder, 'update-ref', '-d', 'refs/remotes/origin/main')
+class GuardTests(RepositoryCase):
+    def test_initial_and_unrelated_change_pass(self):
+        self.passes()
+        (self.root / 'unrelated').write_text('allowed')
+        self.commit('unrelated')
+        self.passes()
+
+    def test_changed_added_removed_and_comparison_files_refused(self):
+        for path, operation in [('refs/image', 'change'), ('refs/new', 'add'),
+                                ('refs/image', 'remove'), ('scripts/compare_v1_pixels.py', 'change'),
+                                ('scripts/exact_baselines.py', 'change')]:
+            with self.subTest(path=path, operation=operation):
+                self.git('reset', '--hard', self.base)
+                target = self.root / path
+                if operation == 'remove':
+                    target.unlink()
+                    # Keep a second reference so a missing whole reference is not the only failure.
+                    (self.root / 'refs/other').write_text('other')
+                else:
+                    target.write_text('changed')
+                self.commit('mutant')
+                self.refuses(path)
+
+    def test_uncommitted_and_staged_protected_changes_refused(self):
+        for path in ['refs/image', 'scripts/exact_baselines.py', guard.REGISTRY]:
+            (self.root / path).write_text('dirty')
+            self.refuses(path, 'uncommitted')
+            self.git('add', path)
+            self.refuses(path, 'uncommitted')
+            self.git('reset', '--hard', self.base)
+
+    def test_changed_pin_requires_changed_refresh(self):
+        (self.root / 'refs/image').write_text('new pixels')
+        self.commit('changed reference')
+        self.repin()
+        self.commit('pin only')
+        self.refuses('refresh')
+        self.refresh()
+        self.passes()
+
+    def test_missing_anchor_refused(self):
+        self.entry['refresh']['anchor'] = 'not-a-ruling'
+        self.write_registry()
+        self.commit('invalid ruling')
+        self.refuses('anchor')
+
+    def test_missing_main_fails_closed(self):
+        self.git('update-ref', '-d', 'refs/remotes/origin/main')
         with self.assertRaises(subprocess.CalledProcessError):
-            guard.gate(self.builder)
+            guard.guard(self.root)
+
+
+class RegisteredSetTests(RepositoryCase):
+    def test_removal_without_retirement_refused(self):
+        other = dict(self.entry, id='other')
+        self.data['baselines'].append(other)
+        self.commit('before addition')
+        self.repin()
+        self.write_registry()
+        self.commit('two registered')
+        self.git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+        self.base = self.git('rev-parse', 'HEAD')
+        self.data['baselines'].remove(self.entry)
+        self.write_registry()
+        self.commit('remove only fixture')
+        self.refuses('fixture', 'neither registered nor retired')
+
+    def test_definition_change_requires_pin_and_refresh(self):
+        self.entry['candidate'] = 'different'
+        self.write_registry()
+        self.commit('redefined')
+        self.refuses('definition.candidate')
+        self.refresh()
+        self.passes()
+
+    def test_new_baseline_requires_refresh(self):
+        self.entry['id'] = 'new-baseline'
+        self.data['retired'] = [dict(id='fixture', owner='OWNER', refresh=self.entry['refresh'])]
+        del self.entry['refresh']
+        self.commit('before addition')
+        self.repin()
+        self.commit('new without refresh')
+        self.refuses('new-baseline', 'refresh')
+        self.refresh()
+        self.passes()
+
+    def test_retirement_requires_existing_anchor(self):
+        self.data['baselines'] = []
+        retired = {'id': 'fixture', 'owner': 'OWNER',
+                   'refresh': {'anchor': 'missing', 'module': 'OWNER', 'milestone': 'M2'}}
+        self.data['retired'] = [retired]
+        self.write_registry()
+        self.commit('invalid retirement')
+        self.refuses('anchor')
+        retired['refresh']['anchor'] = 'refresh-allowed'
+        self.write_registry()
+        self.commit('valid retirement')
+        self.passes()
+
+    def test_working_registry_cannot_hide_committed_removal(self):
+        self.data['baselines'] = []
+        self.write_registry()
+        self.commit('remove')
+        self.data['baselines'] = [self.entry]
+        self.write_registry()
+        self.refuses('neither registered nor retired')
+
+
+class ScratchTests(unittest.TestCase):
+    def test_bounds_and_preserves_latest_failure_and_in_progress(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            scratch = root / guard.SCRATCH
+            for i in range(60):
+                run = scratch / f'verify-{i:03}'
+                run.mkdir(parents=True)
+                guard.save(run / 'record.json', {'passed': i % 2 == 0, 'seconds': 1, 'error': 'failed'})
+                (run / 'capture').mkdir()
+                (run / 'capture/pixels').write_text('pixels')
+            active = scratch / 'verify-999'
+            active.mkdir()
+            guard.save(active / 'record.json', {'passed': False})
+            outside = root / 'outside'
+            outside.mkdir()
+            (outside / 'keep').write_text('keep')
+            (scratch / 'verify-998').symlink_to(outside, target_is_directory=True)
+            guard.prune_scratch(root)
+            self.assertTrue((active / 'record.json').exists())
+            self.assertTrue((scratch / 'verify-059/capture/pixels').exists())
+            self.assertFalse((scratch / 'verify-057/capture').exists())
+            self.assertFalse((scratch / 'verify-000').exists())
+            self.assertEqual(len([p for p in scratch.glob('verify-*') if not p.is_symlink()]), 49)
+            self.assertTrue((outside / 'keep').exists())
+            guard.prune_scratch(root)  # idempotent
+
+    def test_old_latest_failure_survives_record_limit_and_symlink_root_refused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            scratch = root / guard.SCRATCH
+            for i in range(52):
+                run = scratch / f'verify-{i:03}'
+                run.mkdir(parents=True)
+                guard.save(run / 'record.json', {'passed': i != 0, 'seconds': 1, 'error': 'failed'})
+            guard.prune_scratch(root)
+            self.assertTrue((scratch / 'verify-000/record.json').exists())
+            self.assertEqual(len(list(scratch.iterdir())), 49)
+            shutil.rmtree(scratch)
+            scratch.symlink_to(root, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, 'inside this checkout'):
+                guard.prune_scratch(root)
 
 
 class MainCheckTests(unittest.TestCase):

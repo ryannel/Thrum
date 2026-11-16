@@ -84,9 +84,13 @@ gates only done-when items about pacing.
 - **Attended runs check first, then lock.** Before a run that needs the console unlocked or the panel awake,
   check both. If either fails, end `BLOCKED needs_access` at once. Never wait for a person while holding a lock:
   one check held the GPU for over 30 minutes that way.
-- **A change to a covered path** needs no proof before it merges. `./dev check` prints a warning for it, and the
-  run on main verifies it. `CONTRIBUTING.md` has the details, and `.config/exact-baselines.json` lists the
-  covered paths.
+- **Exact references and comparisons** have registry pins checked by the CPU-only reference guard in
+  `./dev check`. A planned refresh regenerates and commits references, runs `verify --full` under `gpu`,
+  then commits updated pins and refreshes before merging everything in one landing. The guard prints pins
+  computed from HEAD; a refresh names a module-list anchor, module and milestone. Comparison edits and
+  added or redefined baselines also update pins and refreshes. A planner retiring a baseline moves its
+  identity and owner into `retired` with a refresh naming the ruling. See `CONTRIBUTING.md` for the procedure.
+  Other covered changes are verified by the run on main and need no image run before merging.
 - **Regressions:** investigate a visible hitch, a regression of about 25% from a comparable baseline, or unexpected
   scaling.
 - **Status** goes in `docs/design/maturity.json`, with implementation, correctness, visuals and device recorded

@@ -654,7 +654,7 @@ sitting on main for about two hours.
 **1. An exact comparison is its owner's interface.** A builder never changes another module's retained
 references, its comparison, its tolerance or its sampling (accepting the closest of several frames, for example),
 nor an exact test of output another module owns, to make its own change pass. The registry, the verifier and the
-gate of rule 2 are `BASELINE-GUARD`'s in the same way. When its change fails one, it stops, writes the proposal in
+reference guard of rule 2 are `BASELINE-GUARD`'s in the same way. When its change fails one, it stops, writes the proposal in
 its log and ends `BLOCKED`; a planner settles it here with the owner, as for any interface. A change that needs
 different output is built behind a selection whose default leaves every registered image exact, which is how MF1
 was fixed: jitter is gated on explicit temporal sampling. When a milestone is meant to change the default output,
@@ -677,13 +677,21 @@ byte for byte. One run covers every commit merged since the last one, whoever me
   other module keeps merging meanwhile.
 - **What is accepted.** Main can hold an unintended image change for about two hours. Nothing ships from main,
   and no other builder is stopped by it.
-- **Before the merge.** No proof is needed. `./dev check` still runs the gate, which now only reports: it
-  prints a warning for a commit that changes a covered path with no proof for its content, and never refuses.
+- **Before the merge.** No image run is needed. `./dev check` runs the CPU-only reference guard. Each registry
+  entry pins its definition (all fields except `pin` and `refresh`) and the paths and Git object IDs of its
+  retained files and `comparison_files`. A changed pin requires a changed refresh naming an existing anchor
+  here, a module and a milestone. The guard prints pins computed from HEAD and rejects uncommitted protected
+  changes. Commit protected changes, copy the computed pins into the registry, record the refresh and commit
+  before checking. An owner editing a comparison file follows the same procedure, naming its ruling or the
+  ownership rule. An added or redefined baseline needs a pin and refresh; a planner retiring one moves its
+  identity and owner to `retired` with a refresh naming the ruling. The registered set is checked against
+  the registry at the merge base with main, so deleting an entry alone fails.
 - **What does not change.** Bytes are compared exactly. The verifier does not retry inside a run, accept a
   nearer frame, skip a record or compare within a tolerance.
 - **A planned refresh** is the one run made before a merge. A milestone that a ruling here allows to move a
   baseline regenerates the references on its candidate, runs `verify --full` there under the `gpu` lock, and
-  merges the change and the references in one landing, so the next run on main passes with them.
+  updates and commits the pin and refresh, and merges the change, references and registry in one landing,
+  so the next run on main passes with them.
 
 <a id="the-covered-paths-are-derived"></a>
 
@@ -691,7 +699,7 @@ byte for byte. One run covers every commit merged since the last one, whoever me
 files of crates the game never links out of the proof's key, so that fewer rebases lapsed a proof. No proof is
 asked before a merge now, so nothing lapses and the narrower key has no use. The work is set aside unmerged, and
 [the design](BASELINE-GUARD/DESIGN.md#later-work) records it. The covered paths are the listed paths in the
-table below, whole, and they now only decide when the gate warns.
+table below, whole, and they key the verifier's record.
 
 **3. At the claim: the shared run, as a planner-written check.** A builder cannot change an item's `check`, and
 the loop reruns every `check` on a clean copy of main before it records a milestone. So each milestone that

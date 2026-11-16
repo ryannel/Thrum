@@ -4,9 +4,9 @@
 `verify` asks the main-branch check named MAIN_CHECK whether a passing run contains HEAD.
 It draws nothing and takes no lock. `verify --full` draws and compares every registered
 baseline here: the main-branch check runs it on main's tip, and a planned refresh runs it
-on its candidate under the gpu lock. Its compact records and untracked proofs live in
-tmp/baseline-guard; successful bulk captures are discarded after comparison. `gate`
-reports covered changes that no proof names. It warns and never refuses.
+on its candidate under the gpu lock. Its compact records live in tmp/baseline-guard;
+successful bulk captures are discarded after comparison. `guard` checks registered
+references, definitions and comparison files against their recorded pins.
 """
 import argparse
 from datetime import datetime, timezone
@@ -41,38 +41,132 @@ def content_key(root=ROOT):
     return hashlib.sha256(json.dumps(paths).encode() + b'\0' + objects).hexdigest()
 
 
-def proof_path(root=ROOT):
-    return root / SCRATCH / 'proofs' / (content_key(root) + '.json')
+def tree(root, revision):
+    rows = subprocess.check_output(['git', 'ls-tree', '-r', '-z', revision], cwd=root)
+    return {path.decode(): meta.decode().split()[2]
+            for row in rows.split(b'\0') if row for meta, path in [row.split(b'\t', 1)]}
 
 
-def gate(root=ROOT):
-    """Report whether a proof names this commit's covered content. Never refuses.
+def definition(entry):
+    return {key: value for key, value in entry.items() if key not in ('pin', 'refresh')}
 
-    Returns 'unchanged', 'proved' or 'unproved'. An unproved covered change is verified
-    on main after the merge, by the main-branch check (ARCHITECTURE.md, Exact baselines).
-    """
-    paths = registry(root)['covered_paths']
-    after = f'the main-branch check {MAIN_CHECK} verifies it on main after the merge'
-    if git('status', '--porcelain', '--untracked-files=all', '--', *paths, root=root):
-        print(f'WARN exact-baseline gate: covered paths have uncommitted changes; {after}')
-        return 'unproved'
+
+def protected(entry, objects):
+    reference = entry['reference']
+    files = {path: oid for path, oid in objects.items()
+             if path == reference or path.startswith(reference.rstrip('/') + '/')}
+    if not files:
+        raise ValueError(f"missing reference {reference}")
+    for path in entry['comparison_files']:
+        if path not in objects:
+            raise ValueError(f'missing comparison file {path}')
+        files[path] = objects[path]
+    return files
+
+
+def pin(entry, objects):
+    payload = {'definition': definition(entry), 'files': protected(entry, objects)}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def guard(root=ROOT):
+    """CPU-only check of HEAD and its merge base; no bypass or local state."""
+    from repo_check import anchors
     base = git('merge-base', 'HEAD', 'refs/remotes/origin/main', root=root)
-    changed = git('diff', '--name-only', base, 'HEAD', '--', *paths, root=root)
-    if not changed:
-        print('PASS exact-baseline gate: no covered-path change beyond origin/main')
-        return 'unchanged'
-    path = proof_path(root)
-    try:
-        proof = json.loads(path.read_text())
-    except (OSError, ValueError):
-        proof = {}
-    expected = [entry['id'] for entry in registry(root)['baselines']]
-    if (proof.get('content_key') != content_key(root) or proof.get('passed') is not True
-            or proof.get('baselines') != expected):
-        print(f'WARN exact-baseline gate: covered paths changed and no proof names this content; {after}')
-        return 'unproved'
-    print(f'PASS exact-baseline gate: proof {path.relative_to(root)}')
-    return 'proved'
+    current = json.loads(git('show', f'HEAD:{REGISTRY}', root=root))
+    previous = json.loads(git('show', f'{base}:{REGISTRY}', root=root))
+    objects, old_objects = tree(root, 'HEAD'), tree(root, base)
+    rulings = anchors(git('show', 'HEAD:docs/plans/ARCHITECTURE.md', root=root))
+    old = {entry['id']: entry for entry in previous['baselines']}
+    active, retired = current['baselines'], current.get('retired', [])
+    errors = []
+
+    def fail(entry, message):
+        errors.append(f"baseline {entry['id']} owner {entry['owner']}: rule 1: {message}")
+
+    def refresh_valid(entry):
+        refresh = entry.get('refresh', {})
+        if (not isinstance(refresh, dict) or refresh.get('anchor') not in rulings
+                or not refresh.get('module') or not refresh.get('milestone')):
+            fail(entry, 'refresh must name an existing module-list anchor, module and milestone')
+
+    identities = [entry['id'] for entry in active + retired]
+    if len(identities) != len(set(identities)):
+        raise ValueError('rule 1: duplicate registered or retired baseline identity')
+    for entry in old.values():
+        if entry['id'] not in identities:
+            fail(entry, 'registered at merge base but neither registered nor retired')
+    for entry in retired:
+        refresh_valid(entry)
+        if entry['id'] in old and entry['owner'] != old[entry['id']]['owner']:
+            fail(entry, 'retirement changes the owner')
+    for entry in active:
+        refresh_valid(entry)
+        before = old.get(entry['id'])
+        try:
+            computed = pin(entry, objects)
+            print(f"{entry['id']} owner {entry['owner']} pin {computed}")
+            if entry.get('pin') != computed:
+                changes = []
+                if before:
+                    prior_files = protected(before, old_objects) if before.get('comparison_files') else {
+                        path: oid for path, oid in old_objects.items()
+                        if path == before['reference'] or path.startswith(before['reference'].rstrip('/') + '/')}
+                    now_files = protected(entry, objects)
+                    changes.extend(path for path in sorted(prior_files.keys() | now_files.keys())
+                                   if prior_files.get(path) != now_files.get(path))
+                    changes.extend('definition.' + key for key in sorted(definition(before).keys() | definition(entry).keys())
+                                   if definition(before).get(key) != definition(entry).get(key))
+                fail(entry, 'pin mismatch; ' + ', '.join(changes or ['protected content differs from pin']))
+            if before and entry.get('pin') != before.get('pin') and entry.get('refresh') == before.get('refresh'):
+                fail(entry, 'pin changed without a changed refresh')
+            paths = [REGISTRY, entry['reference'], *entry['comparison_files']]
+            dirty = git('status', '--porcelain', '--untracked-files=all', '--', *paths, root=root)
+            if dirty:
+                fail(entry, 'uncommitted protected changes: ' + dirty)
+        except (KeyError, ValueError) as error:
+            paths = [entry.get('reference', ''), *entry.get('comparison_files', [])]
+            if before:
+                paths.extend([before['reference'], *before.get('comparison_files', [])])
+            changed = git('diff', '--name-only', base, 'HEAD', '--', *paths, root=root)
+            fail(entry, f'{error}; {changed}')
+    if errors:
+        raise ValueError('\n'.join(errors))
+    print('PASS exact-baseline reference guard')
+
+
+# Measured failure: 1.31 GiB; compact success: <9 MiB. One day (48 records)
+# plus one failed set is about 1.73 GiB, against the 16 GiB free-space preflight.
+KEEP_RECORDS = 48
+
+
+def prune_scratch(root=ROOT):
+    """Only prune completed, verifier-owned directories; never follow symlinks."""
+    scratch = root / SCRATCH
+    if not scratch.exists():
+        return
+    if scratch.is_symlink() or scratch.resolve() != root.resolve() / SCRATCH:
+        raise ValueError('scratch must be inside this checkout')
+    completed = []
+    for directory in sorted(scratch.glob('verify-*'), reverse=True):
+        if not directory.is_dir() or directory.is_symlink():
+            continue
+        try:
+            record = json.loads((directory / 'record.json').read_text())
+        except (OSError, ValueError):
+            continue
+        if 'seconds' in record and (record.get('passed') is True or 'error' in record):
+            completed.append((directory, record))
+    latest_failure = next((directory for directory, record in completed if not record.get('passed')), None)
+    for index, (directory, _) in enumerate(completed):
+        if directory == latest_failure:
+            continue
+        if index >= KEEP_RECORDS:
+            shutil.rmtree(directory)
+        else:
+            for child in directory.iterdir():
+                if child.is_dir() and not child.is_symlink():
+                    shutil.rmtree(child)
 
 
 def covered_by_main(root=ROOT):
@@ -143,9 +237,7 @@ def verify(root=ROOT):
     if git('status', '--porcelain', '--untracked-files=all', root=root):
         raise ValueError('dirty tree: verifier requires a clean checkout (including untracked sources)')
     key = content_key(root)
-    proof = proof_path(root)
-    # A failed attempt must not leave a previous proof for the attempted content.
-    proof.unlink(missing_ok=True)
+    prune_scratch(root)
     if shutil.disk_usage(root).free < 16 * 1024**3:
         raise ValueError('LOW_DISK_SPACE: verifier requires 16 GiB free')
     output = root / SCRATCH / ('verify-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ'))
@@ -231,16 +323,11 @@ def verify(root=ROOT):
             report['comparisons'][name] = {'passed': True, 'records': entry['records']}
             archive_manifest(directory, output / (name + '-manifest.json.gz'))
         if git('status', '--porcelain', '--untracked-files=all', root=root) or key != content_key(root):
-            raise ValueError('checkout changed while verifier ran; no proof written')
+            raise ValueError('checkout changed while verifier ran; run cannot pass')
         report.update(passed=True, baselines=[entry['id'] for entry in entries])
         report['seconds'] = time.monotonic() - started
         save(output / 'record.json', report)
-        proof.parent.mkdir(parents=True, exist_ok=True)
-        # Atomic publication only after all native and Chrome comparisons passed.
-        pending = proof.with_suffix('.pending')
-        save(pending, dict(report, record=str((output / 'record.json').relative_to(root))))
-        pending.replace(proof)
-        print(f'PASS exact baselines; proof {proof.relative_to(root)}; {report["seconds"]:.2f}s')
+        print(f'PASS exact baselines; record {output.relative_to(root)}/record.json; {report["seconds"]:.2f}s')
     except Exception as error:
         report.update(error=str(error), seconds=time.monotonic() - started)
         save(output / 'record.json', report)
@@ -255,7 +342,7 @@ def git_version_command(command, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['verify', 'gate'])
+    parser.add_argument('command', choices=['verify', 'guard'])
     parser.add_argument('--full', action='store_true',
                         help='with verify: draw and compare every registered baseline at this commit')
     args = parser.parse_args()
@@ -263,8 +350,8 @@ def main():
         if args.command == 'verify':
             return verify() if args.full else covered_by_main()
         start = time.monotonic()
-        gate()
-        print(f'Gate seconds: {time.monotonic() - start:.6f}; load: {os.getloadavg()}')
+        guard()
+        print(f'Guard seconds: {time.monotonic() - start:.6f}; load: {os.getloadavg()}')
         return 0
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         print(f'FAIL exact baselines: {error}', file=sys.stderr)
