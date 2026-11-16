@@ -120,6 +120,17 @@ fn hand_worked_closed_geometry() {
         radius: N::ZERO,
         ..circle
     };
+    let just_outside = Vector {
+        x: N::ONE + N::ONE / N::from_i32(1024),
+        y: N::ZERO,
+    };
+    assert!(
+        !Shape::Box {
+            minimum: just_outside,
+            maximum: v(2, 1)
+        }
+        .intersects(&circle)
+    );
     assert!(
         Shape::Circle {
             centre: v(0, 0),

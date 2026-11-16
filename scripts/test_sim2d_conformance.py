@@ -91,6 +91,7 @@ class CostComparisons(unittest.TestCase):
                                      "rewind_eight_ms", "replay_eight_ms"], 1.5)}
 
         with patch("sim2d_conformance.Runner") as runner, \
+                patch("sim2d_conformance.allocation_counts", return_value={}), \
                 patch("sim2d_conformance.source_key", return_value="source"), \
                 patch("sim2d_conformance.source_inputs", return_value={"fixture": "source"}), \
                 patch("sim2d_conformance.command", return_value="current"), \

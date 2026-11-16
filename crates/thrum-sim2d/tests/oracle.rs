@@ -130,4 +130,26 @@ fn generated_sequences_match_full_enumeration() {
         compare(&dense[..1], size, &shapes);
         compare(&dense, size, &shapes);
     }
+    for seed in 0..24_i32 {
+        let fractional: Vec<_> = (0..37_u32)
+            .map(|slot| {
+                let i = i32::try_from(slot).expect("small scene");
+                let centre = v(
+                    (i * 71 + seed * 29) % 113 - 56,
+                    (i * 17 + seed * 43) % 127 - 63,
+                );
+                Circle {
+                    slot,
+                    centre: Vector {
+                        x: centre.x / N::from_i32(7),
+                        y: centre.y / N::from_i32(11),
+                    },
+                    radius: N::from_i32((i + seed) % 13) / N::from_i32(9),
+                }
+            })
+            .collect();
+        for size in [N::ONE / N::from_i32(16), N::ONE, N::from_i32(4)] {
+            compare(&fractional, size, &shapes);
+        }
+    }
 }

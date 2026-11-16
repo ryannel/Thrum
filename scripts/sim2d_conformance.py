@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 import tomllib
@@ -284,6 +285,17 @@ def control(target):
     return {"mac_fold": a["fold"], "chrome_fold": b["fold"], "first_differing_tick": first, "user_agent": chrome.user_agent}
 
 
+def allocation_counts():
+    """Count optimized warmed calls; no count is a pass/fail threshold."""
+    args = ["rustup", "run", "1.99.1", "cargo", "test", "--locked", "--offline", "--release",
+            "-p", "thrum-sim2d", "--test", "allocations", "--", "--nocapture"]
+    output = command(args)
+    counts = {name: int(count) for name, count in re.findall(r"^(.+): (\d+) allocations per warmed call$", output, re.MULTILINE)}
+    assert set(counts) == {"build", "circle", "box", "capsule", "wide circle", "nearest-k"}, "missing allocation observation"
+    return {"bodies": 10000, "counts": counts, "command": args,
+            "remaining_sources": "None in these warmed calls; first-use Vec growth is outside the warmed scope."}
+
+
 def measure(target):
     measured_inputs = source_inputs()
     measured_source = source_key(measured_inputs)
@@ -292,6 +304,7 @@ def measure(target):
     previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
     previous = load_cost_record(previous_path) if previous_path.exists() else None
     previous_hash = hashlib.sha256(previous_path.read_bytes()).hexdigest() if previous else None
+    allocations = allocation_counts() if target == "mac-metal" else None
     runner = Runner(target)
     runs = []
     for repeat in range(2):
@@ -314,7 +327,7 @@ def measure(target):
             row["super_neighbour_scaling_tripwire"] = index % 3 != 0 and row["tick_ms_per_neighbour"] > rows[index - 1]["tick_ms_per_neighbour"]
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
-    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
+    return {"runs": runs, "allocations": allocations, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
 
 
 def last_comparable(row, record, origin):
@@ -352,6 +365,10 @@ def costs(target):
     assert record["source_sha256"] == source_key(current), f"cost record belongs to different simulation sources: {changes}"
     assert record["rustc"] == identity()["rustc"], "cost record belongs to another compiler"
     assert len(record["runs"]) == 2
+    if target == "mac-metal":
+        assert record["allocations"]["bodies"] == 10000
+        assert set(record["allocations"]["counts"]) == {"build", "circle", "box", "capsule", "wide circle", "nearest-k"}
+        assert all(isinstance(count, int) and count >= 0 for count in record["allocations"]["counts"].values())
     previous = None
     if record["previous_record_commit"]:
         retained = command(["git", "show", f"{record['previous_record_commit']}:docs/evidence/SIM-2D/M1/costs-{target}.json"])
