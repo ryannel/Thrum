@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1.10 follow-up: the shared exact-images run passed on the merged
+  `d24658b33`, then failed on `f41ebc97b` with the same native binary, Wasm,
+  cooked root and baseline content key. The intervening changes are plans and
+  evidence. The failed capture and Chrome baseline belong to APPLE-TILE; the
+  shared bisect is running. The cause remains unresolved. The lead needs that
+  owner's fix and a covering shared pass before the milestone checks can clear.
+  [The handoff](../../evidence/SCENE-VIEWS/M1-handoff.md) retains the exact records.
+
 - 2026-11-16 M1 integration: the queued CULLING coverage-output patch changed
   the ordinary shader text and tripped the historical absence oracle. `e74de8df7`
   accounts for exactly that addition while keeping every original hash and bound.
