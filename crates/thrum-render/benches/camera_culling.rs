@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 
 use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::synthetic::{
-    CullMode, OffscreenTarget, PreparedSynthetic, SyntheticScene, SyntheticView,
+    CullMode, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
+    SyntheticView,
 };
 use thrum_render::timing::GpuTimings;
 
@@ -68,7 +69,9 @@ fn sample(
         passes
             .iter()
             .find(|pass| pass.name.as_ref() == name)
-            .map_or(0.0, |pass| pass.nanoseconds / 1_000_000.0)
+            .expect("measured pass must execute")
+            .nanoseconds
+            / 1_000_000.0
     };
     Sample {
         gpu_ms: passes
@@ -77,7 +80,11 @@ fn sample(
             .map(|pass| pass.nanoseconds / 1_000_000.0)
             .sum(),
         forward_ms: named("synthetic forward opaque"),
-        visibility_ms: named("camera visibility"),
+        visibility_ms: if prepared.camera_culling() == CullMode::Frustum {
+            named("camera visibility")
+        } else {
+            0.0
+        },
         cpu_us,
     }
 }
@@ -167,11 +174,21 @@ fn main() {
                 let share = in_view(&scenes[0]);
                 let mut prepared = Vec::new();
                 for scene in &mut scenes {
-                    prepared.push(
-                        PreparedSynthetic::prepare(&device, &queue, GENERATION, scene)
-                            .await
-                            .expect("prepare"),
+                    let renderer = PreparedSynthetic::prepare_with_capabilities(
+                        &capabilities,
+                        &queue,
+                        scene,
+                        FrameLighting::Diagnostic(SyntheticLight::default()),
+                        1.0,
+                    )
+                    .await
+                    .expect("prepare");
+                    assert_eq!(renderer.camera_culling(), scene.camera_culling);
+                    println!(
+                        "count={count} view={label} selection={:?}",
+                        renderer.culling_selection()
                     );
+                    prepared.push(renderer);
                 }
                 let targets: Vec<_> = prepared
                     .iter()

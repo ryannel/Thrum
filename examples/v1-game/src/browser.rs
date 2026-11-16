@@ -103,6 +103,7 @@ pub struct BrowserGame {
 
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
 /// `valley_stars` selects the star catalogue before attaching the cooked valley.
+/// `cooked_valley` selects the measured valley default independently of its stars.
 /// `diagnostic_clouds` opts into the labelled analytic cloud-shade stand-in.
 ///
 /// # Errors
@@ -116,6 +117,7 @@ pub async fn create_browser_game(
     culling: Option<String>,
     meshes: Option<bool>,
     reconstruction: Option<bool>,
+    cooked_valley: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
     create_game(
         canvas,
@@ -133,7 +135,7 @@ pub async fn create_browser_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
-            camera_culling: valley_culling(culling.as_deref(), valley_stars.unwrap_or(false))?,
+            camera_culling: valley_culling(culling.as_deref(), cooked_valley.unwrap_or(false))?,
             ..crate::GameSetup::default()
         },
     )

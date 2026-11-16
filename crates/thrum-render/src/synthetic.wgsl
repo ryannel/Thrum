@@ -568,6 +568,15 @@ struct FragmentOutput {
     @location(1) motion: vec2<f32>,
     @location(2) reactive: f32,
 }
+// Explicit coverage prevents Metal triangle merging from borrowing a neighbour
+// primitive's interpolants for derivative/helper lanes. All samples stay covered;
+// the ordinary depth test still owns visibility. Volumes keep FragmentOutput.
+struct OpaqueFragmentOutput {
+    @location(0) colour: vec4<f32>,
+    @location(1) motion: vec2<f32>,
+    @location(2) reactive: f32,
+    @builtin(sample_mask) coverage: u32,
+}
 fn motion_vector(input: VertexOutput) -> vec2<f32> {
     let current = input.current_clip;
     let delta = input.clip_delta;
@@ -580,12 +589,12 @@ fn motion_vector(input: VertexOutput) -> vec2<f32> {
     return clamp(difference * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy,
         vec2(-65504.0), vec2(65504.0));
 }
-@fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
+@fragment fn fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->OpaqueFragmentOutput {
     let receiver = ShadowReceiver(input.world_position,vec3(0.0),vec3(0.0),input.normal);
-    return FragmentOutput(shade(input,receiver,front_facing,false), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
+    return OpaqueFragmentOutput(shade(input,receiver,front_facing,false), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u), 0xffffffffu);
 }
-@fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->FragmentOutput {
+@fragment fn shadowed_fragment(input:VertexOutput, @builtin(front_facing) front_facing: bool)->OpaqueFragmentOutput {
     let receiver = ShadowReceiver(input.world_position,dpdx(input.world_position),
         dpdy(input.world_position),normalize(input.normal));
-    return FragmentOutput(shade(input,receiver,front_facing,true), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u));
+    return OpaqueFragmentOutput(shade(input,receiver,front_facing,true), motion_vector(input), select(0.0, 1.0, input.history_valid == 0u), 0xffffffffu);
 }

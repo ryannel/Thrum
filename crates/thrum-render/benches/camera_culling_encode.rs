@@ -3,8 +3,10 @@
 //! is in `camera_culling`.
 #![cfg(not(target_arch = "wasm32"))]
 
+use thrum_render::capabilities::DeviceCapabilities;
 use thrum_render::synthetic::{
-    CullMode, OffscreenTarget, PreparedSynthetic, SyntheticScene, SyntheticView,
+    CullMode, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
+    SyntheticView,
 };
 
 #[global_allocator]
@@ -16,6 +18,10 @@ fn main() {
     divan::main();
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "the benchmark reports actual mode selection before measuring"
+)]
 fn encode(bencher: divan::Bencher<'_, '_>, count: u32, culling: CullMode) {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
@@ -40,9 +46,18 @@ fn encode(bencher: divan::Bencher<'_, '_>, count: u32, culling: CullMode) {
         .expect("view");
         scene.sun_shadows = true;
         scene.camera_culling = culling;
-        let prepared = PreparedSynthetic::prepare(&device, &queue, GENERATION, &scene)
-            .await
-            .expect("prepare");
+        let capabilities = DeviceCapabilities::capture(&adapter, &device, GENERATION);
+        let prepared = PreparedSynthetic::prepare_with_capabilities(
+            &capabilities,
+            &queue,
+            &scene,
+            FrameLighting::Diagnostic(SyntheticLight::default()),
+            1.0,
+        )
+        .await
+        .expect("prepare");
+        assert_eq!(prepared.camera_culling(), culling);
+        println!("count={count} selection={:?}", prepared.culling_selection());
         let target = OffscreenTarget::new(&device, &prepared, 1280, 720).expect("target");
         bencher
             .with_inputs(|| {

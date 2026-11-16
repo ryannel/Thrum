@@ -8,7 +8,7 @@ try {
   await module.default();
   const canvas = document.querySelector('canvas');
   canvas.width=1920; canvas.height=1080;
-  const game = await module.create_browser_game(canvas, false);
+  const game = await module.create_browser_game(canvas, false, undefined, undefined, 'direct', undefined, true);
   window.cookedGame = game;
   game.set_visible(true, 0);
   game.set_paused(true, 0);

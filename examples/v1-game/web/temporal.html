@@ -7,7 +7,7 @@ const record={done:false,rows:{},frames:[]}; window.thrumTemporal=record;
 try {
   await init();
   const fixture=await (await fetch('temporal-witness.json')).json();
-  const game=await create_browser_game(document.querySelector('canvas'),true,false,true);
+  const game=await create_browser_game(document.querySelector('canvas'),true,false,true,undefined,undefined,true,true);
   window.temporalGame=game;
   game.set_visible(true,0); game.set_paused(true,0);
   game.begin_submitted_capture(1);

@@ -8,6 +8,9 @@ use thrum_render::{
 };
 use v1_game::{CameraRoute, FrameConfig, FrameHost, FrameSample, SurfaceOutput};
 
+mod timing_interleave;
+use timing_interleave::TimingInterleave;
+
 fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     loop {
         if let Some(sample) = host.poll_completed().expect("poll") {
@@ -68,6 +71,71 @@ fn recapture_failure(
     }
 }
 
+fn record_sample(
+    log: &mut std::fs::File,
+    tick: u64,
+    mode: &str,
+    capture: Option<&serde_json::Value>,
+    sample: &FrameSample,
+    timing_pair: Option<&serde_json::Value>,
+) {
+    let pass_ns = sample.gpu_pass_ns.as_ref().map(|timings| {
+        let mut totals = std::collections::BTreeMap::<String, f64>::new();
+        for pass in timings.passes() {
+            *totals.entry(pass.name.to_string()).or_default() += pass.nanoseconds;
+        }
+        totals
+    });
+    let unmeasured = sample.gpu_pass_ns.as_ref().map(|timings| {
+        timings
+            .values()
+            .into_iter()
+            .filter(|(_, time)| time.is_none())
+            .map(|(name, _)| name.to_owned())
+            .collect::<Vec<_>>()
+    });
+    writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":mode,"capture":capture,"timing_pair":timing_pair,"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"pass_gpu_ns":pass_ns,"unmeasured_gpu_passes":unmeasured,"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
+}
+
+fn record_campaign_comparison(
+    images: &[Vec<u8>],
+    source: CaptureSource,
+    modes: &[CullMode],
+    output: &std::path::Path,
+    tick: u64,
+    log: &mut std::fs::File,
+) -> bool {
+    let bytes_per_pixel = usize::try_from(source.bytes_per_pixel()).expect("pixel size");
+    let differences: Vec<_> = images[1..]
+        .iter()
+        .map(|image| {
+            assert_eq!(images[0].len(), image.len(), "complete image");
+            images[0]
+                .chunks_exact(bytes_per_pixel)
+                .zip(image.chunks_exact(bytes_per_pixel))
+                .filter(|(left, right)| left != right)
+                .count()
+        })
+        .collect();
+    let differs = differences.iter().any(|&count| count != 0);
+    writeln!(
+        log,
+        "{}",
+        serde_json::json!({"comparison_tick":tick,"different_pixels":differences,"equal":!differs})
+    )
+    .expect("comparison row");
+    if differs {
+        for (index, image) in images.iter().enumerate() {
+            std::fs::write(
+                output.join(format!("failure-{tick}-{index}-{:?}.raw", modes[index])),
+                image,
+            )
+            .expect("complete campaign failure image");
+        }
+    }
+    differs
+}
+
 async fn metal() -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
     let adapter = instance
@@ -86,19 +154,8 @@ async fn metal() -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
     (adapter, device, queue)
 }
 
-async fn prove() {
-    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
-        .expect("route file");
-    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
-    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
-    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
-        CaptureSource::SceneLinear
-    } else {
-        CaptureSource::Sdr
-    };
-    let (adapter, device, queue) = metal().await;
-    let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
+fn surface_texture(device: &wgpu::Device, extent: [u32; 2]) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
         label: Some("valley oracle surface"),
         size: wgpu::Extent3d {
             width: extent[0],
@@ -111,7 +168,44 @@ async fn prove() {
         format: wgpu::TextureFormat::Bgra8Unorm,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
         view_formats: &[],
-    });
+    })
+}
+
+fn load_valley(host: &mut FrameHost) {
+    let stats = v1_game::attach_cooked_scene(host)
+        .expect("attach")
+        .expect("cooked valley");
+    host.pause().expect("pause");
+    let deadline = std::time::Instant::now() + Duration::from_secs(60);
+    loop {
+        drop(host.capture_pixels().expect("residency frame"));
+        let stats = stats.lock().expect("stats");
+        assert!(stats.errors.is_empty(), "{:?}", stats.errors);
+        if stats.drawn == Some(1) {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "valley residency deadline"
+        );
+    }
+    host.resume(Duration::ZERO).expect("resume");
+}
+
+async fn prove() {
+    let text = std::fs::read_to_string(std::env::var("THRUM_CAPTURE_ROUTE").expect("route"))
+        .expect("route file");
+    let (extent, overlay) = CameraRoute::declared(&text).expect("route declaration");
+    let timing = std::env::var_os("THRUM_CULLING_TIMING").is_some();
+    let campaign = std::env::var_os("THRUM_CULLING_CAMPAIGN").is_some();
+    let capture_source = if std::env::var("THRUM_CULLING_SOURCE").as_deref() == Ok("scene-linear") {
+        CaptureSource::SceneLinear
+    } else {
+        CaptureSource::Sdr
+    };
+    let (adapter, device, queue) = metal().await;
+    let caps = DeviceCapabilities::capture(&adapter, &device, FrameHost::DEVICE_GENERATION);
+    let texture = surface_texture(&device, extent);
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
     let surface = SurfaceOutput {
         view: &view,
@@ -147,24 +241,7 @@ async fn prove() {
         .await
         .expect("host");
         assert_eq!(host.camera_culling(), mode, "resolved mode must match");
-        let stats = v1_game::attach_cooked_scene(&mut host)
-            .expect("attach")
-            .expect("cooked valley");
-        host.pause().expect("pause");
-        let deadline = std::time::Instant::now() + Duration::from_secs(60);
-        loop {
-            drop(host.capture_pixels().expect("residency frame"));
-            let stats = stats.lock().expect("stats");
-            assert!(stats.errors.is_empty(), "{:?}", stats.errors);
-            if stats.drawn == Some(1) {
-                break;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "valley residency deadline"
-            );
-        }
-        host.resume(Duration::ZERO).expect("resume");
+        load_valley(&mut host);
         hosts.push(host);
     }
     let route = CameraRoute::parse(&text, hosts[0].scene_camera().expect("valley camera"), 60)
@@ -175,7 +252,9 @@ async fn prove() {
     let mut log = std::fs::File::create(output.join("rows.jsonl")).expect("rows");
     writeln!(log, "{}", serde_json::json!({"adapter":adapter.get_info().name,"recipe":format!("{:?}",caps.recipe()),"extent":extent,"contended":true,"mode":"fixed","capture_source":format!("{capture_source:?}"),"timing_only":timing,"default":format!("{:?}",v1_game::GameSetup::valley_default_culling()),"load":std::process::Command::new("sysctl").args(["-n","vm.loadavg"]).output().ok().map(|o|String::from_utf8_lossy(&o.stdout).into_owned())})).expect("header");
     let mut hidden = [0_u64; 2];
+    let mut differing_ticks = 0_u64;
     let mut last_times = vec![Duration::ZERO; modes.len()];
+    let mut interleave = timing.then(TimingInterleave::from_env).flatten();
     for tick in 1..=last {
         if tick == route.origin_tick {
             for host in &mut hosts {
@@ -189,6 +268,7 @@ async fn prove() {
         let mut images: Vec<Vec<u8>> = (0..modes.len()).map(|_| Vec::new()).collect();
         let count = modes.len();
         for index in (0..count).map(|step| (step + usize::try_from(tick).expect("small")) % count) {
+            let timing_pair = interleave.as_mut().map(TimingInterleave::begin);
             let host = &mut hosts[index];
             let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
             last_times[index] = now;
@@ -196,6 +276,9 @@ async fn prove() {
             assert_eq!(frame.tick, tick);
             assert!(frame.surface_presented && !frame.dropped_view && frame.completed_ticks == 1);
             let sample = complete(host, &device);
+            if let Some(pair) = &mut interleave {
+                pair.completed();
+            }
             if tick < route.origin_tick {
                 continue;
             }
@@ -240,7 +323,19 @@ async fn prove() {
                     hidden[index - 1] += u64::from(counts.drawn < counts.active);
                 }
             }
-            writeln!(log, "{}", serde_json::json!({"tick":tick,"mode":if index==3 {"DirectControl".to_owned()}else{format!("{:?}",modes[index])},"capture":capture_identity,"whole_gpu_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::sum),"counts":sample.camera_culling.map(|c|serde_json::json!({"active":c.active,"drawn":c.drawn,"prepass":c.prepass}))})).expect("row");
+            let mode = if index == 3 {
+                "DirectControl".to_owned()
+            } else {
+                format!("{:?}", modes[index])
+            };
+            record_sample(
+                &mut log,
+                tick,
+                &mode,
+                capture_identity.as_ref(),
+                &sample,
+                timing_pair.as_ref(),
+            );
         }
         if tick >= route.origin_tick && !timing {
             assert_eq!(
@@ -248,6 +343,17 @@ async fn prove() {
                 (extent[0] * extent[1]) as usize
                     * usize::try_from(capture_source.bytes_per_pixel()).expect("pixel size")
             );
+            if campaign {
+                differing_ticks += u64::from(record_campaign_comparison(
+                    &images,
+                    capture_source,
+                    &modes,
+                    &output,
+                    tick,
+                    &mut log,
+                ));
+                continue;
+            }
             for index in 1..count {
                 if images[0] != images[index] {
                     for (i, image) in images.iter().enumerate() {
@@ -278,7 +384,8 @@ async fn prove() {
     writeln!(
         log,
         "{}",
-        serde_json::json!({"compared":if timing {0} else {last-route.origin_tick+1},"timed":timing,"hidden_ticks":hidden,"equal":!timing})
+        serde_json::json!({"compared":if timing {0} else {last-route.origin_tick+1},"timed":timing,"hidden_ticks":hidden,"hosts":modes.len(),"differing_ticks":differing_ticks,"equal":!timing && differing_ticks==0})
     )
     .expect("result");
+    assert_eq!(differing_ticks, 0, "campaign routes must be exact");
 }
