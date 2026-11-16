@@ -303,7 +303,7 @@ tests would prove a configuration nobody ships.
 
 **What moves.** The default output of every scene with textured or shadowed opaque geometry, at pixels whose
 2×2 quad spans more than one triangle. `APPLE-TILE`'s registered references therefore move, and
-[the module list's ruling on M3](../ARCHITECTURE.md#exact-baselines) says who refreshes them. Once refreshed,
+[the module list's ruling on M3](../ARCHITECTURE.md#ruling-on-culling-m3) says who refreshes them. Once refreshed,
 they hold the mechanism in place: a build that lost the coverage output draws the old bytes and fails the
 verifier.
 
@@ -320,10 +320,11 @@ shader differs once, the mechanism is wrong or incomplete: keep both payloads an
 
 <a id="qualified-before-it-lands"></a>
 
-**Qualified before it lands.** The shader and the refreshed references reach main in one push, and only after
-both are qualified on a local commit. That is possible because the verifier and its gate need a clean,
-committed tree and do not need the commit pushed. It is necessary because the verifier cannot stand in for the
-qualification: once references are regenerated, a wrong image that repeats passes it. The order is:
+**Qualified before it lands.** The shader, the refreshed references and their pins reach main in one push,
+and only after the shader and the references are qualified on a local commit. That is possible because
+`verify --full` needs a clean, committed tree and does not need the commit pushed. It is necessary because the
+verifier cannot stand in for the qualification: once references are regenerated, a wrong image that repeats
+passes it. The order is:
 
 1. **Start.** The verifier passes on main at the commit the candidate is built on, the **starting commit**, and
    its record is kept.
@@ -332,20 +333,33 @@ qualification: once references are regenerated, a wrong image that repeats passe
 3. **Qualification, on the candidate.** M3.11's campaign passes with its claimed binary built from the
    candidate. M3.12's difference images, between the starting commit's references and captures and the
    candidate's, show only what that item allows; the builder judges them by the item's own list, and the
-   reviewer judges them again at review. The verifier passes on the candidate.
-4. **Promotion.** `land` pushes the candidate, with those records. If a rebase has changed it, what is pushed
-   is a commit the campaign [stands for](#what-a-campaign-stands-for), or the campaign is run again first.
+   reviewer judges them again at review. `verify --full` passes on the candidate: this is the one image run
+   [the module list](../ARCHITECTURE.md#proofs-run-once-on-main) asks for before a merge, for a planned refresh.
+4. **Pins.** The [reference guard](../BASELINE-GUARD/DESIGN.md#the-reference-guard) in `./dev check` refuses a
+   moved reference until the registry records it. So a commit on top of the candidate changes, in
+   `.config/exact-baselines.json`, the `pin` and the `refresh` of each baseline whose reference moved, and
+   nothing else. `python3 scripts/exact_baselines.py guard` prints each pin from the committed files. The
+   refresh names the anchor `ruling-on-culling-m3`, the module `CULLING` and the milestone `M3`. Only the guard
+   reads those two fields, so this commit changes nothing that was qualified: the campaign, the difference
+   images and the verifier's pass stand across it, and none is made again for it.
+5. **Promotion.** The merge pushes the candidate and its pins, with those records. If a rebase has changed the
+   candidate, what is pushed is a commit the campaign [stands for](#what-a-campaign-stands-for), or the
+   campaign is run again first.
 
 If the campaign fails, or a reference moved where M3.12 allows none, nothing is pushed: main keeps its shader
 and its references, the candidate and its payloads stay on the branch, and the builder ends `BLOCKED`.
 
-`land` rebases first, and other builders land covered changes, so the design says what a rebase repeats.
+The merge rebases first, and other builders land covered changes, so the design says what a rebase repeats.
 
-**The references and M3.12's images.** The gate already refuses changed covered content without a new verifier
-pass. If the verifier passes on the rebased candidate with its references untouched, the references pushed are
-the ones qualified and M3.12's images stand. If it fails, an incoming change moved an image: the builder takes
-main's new tip as the starting commit, runs the verifier there, regenerates, and makes M3.12's images again, as
-[the module list](../ARCHITECTURE.md#exact-baselines) orders for `ATMOSPHERE` M9.
+**The references, the pins and M3.12's images.** No gate asks for a verifier pass after a rebase now
+([proofs run once on main](../ARCHITECTURE.md#proofs-run-once-on-main)), and the candidate's pass is not made
+again for one. While a rebase leaves the regenerated reference files as they were qualified, the references
+pushed are the ones qualified and M3.12's images stand. The run on main after the landing is then the proof of
+record that main draws them, and M3.10's check reads it. If a rebase changes a pin and no reference, because
+main changed a comparison file, the builder makes step 4's commit again. If a rebase changes or conflicts with
+a registered reference, another landing moved an image: the builder takes main's new tip as the starting
+commit, runs `verify --full` there, regenerates, qualifies again from step 2 and makes M3.12's images again,
+as [the module list](../ARCHITECTURE.md#ruling-on-culling-m3) orders for the second of two refreshes.
 
 <a id="what-a-campaign-stands-for"></a>
 
@@ -359,7 +373,8 @@ its claimed binary was built from, and the experiment's inputs at that commit:
 
 - **The build.** The code and build paths the exact-baseline registry covers: `crates/`, `examples/v1-game/`,
   `scripts/`, `tools/`, `.cargo/`, the workspace manifest, the lockfile and the toolchain file, with the
-  binary's profile and features. The registered references are not inputs.
+  binary's profile and features. The registered references are not inputs, and neither are the registry's
+  `pin` and `refresh` fields, which only the reference guard reads.
 - **The workload.** The campaign's runner and its control patch, the route, the cooked valley, and the recipes,
   sources, hosts and workers it ran.
 
@@ -424,22 +439,21 @@ only when a scene is prepared.
 is caught. For this module:
 
 - It must not move `APPLE-TILE`'s registered baselines, on the Mac or in Chrome, with one exception that the
-  module list rules: M3's [coverage output](#m3-one-image-under-load). Once `BASELINE-GUARD` M1 is Done, the
-  proof gate in `./dev check` refuses any landing whose exact content has not passed the verifier, and M2 and M3
-  wait for it and carry the verifier as their claim-time check.
-- M1 may be built before the gate exists. It carries the native matrix as an automated check, and its builder
-  reruns that check after every rebase and before `land`. Chrome's baseline is first rechecked when
-  `BASELINE-GUARD`'s builder runs the verifier on main; M1 is meant to change no default output on either
-  target.
+  module list rules: M3's [coverage output](#m3-one-image-under-load). The main-branch check `exact-images`
+  runs the verifier on main after each merge, and M2 and M3 carry `verify` as their claim-time check, which
+  passes from that run. No image run is asked before a merge, except M3's one run for its planned refresh.
+- M1 was built before the verifier existed and carried the native matrix as an automated check.
 - Its own exact comparisons are relative (each mode against its oracle in the same run), so they hold no retained
   bytes. Another module's builder must not loosen them.
 - M3 changes the valley's default mode. That is allowed only because the culled image is byte-equal to Direct,
   which M3.1 and M3.2 prove.
 - M3's coverage output is the one change of this module that moves retained images. Under the ruling, its
   builder regenerates each reference that moved, with `APPLE-TILE`'s own scripts, in the landing that adds the
-  output, and that landing is pushed only once it is [qualified](#qualified-before-it-lands). The registry, the
-  comparisons, their sampling and every script stay as they are, and the references stay `APPLE-TILE`'s. M3.10
-  holds the refresh and M3.12 has a reviewer see what moved. No other change of M3 may move a reference.
+  output, and that landing is pushed only once it is [qualified](#qualified-before-it-lands). In the registry,
+  which is `BASELINE-GUARD`'s, the landing changes the `pin` and the `refresh` of each baseline whose reference
+  moved. Every other field of the registry, the comparisons, their sampling and every script stay as they are,
+  and the references stay `APPLE-TILE`'s. M3.10 holds the refresh and M3.12 has a reviewer see what moved. No
+  other change of M3 may move a reference.
 
 ## Risks
 
@@ -484,7 +498,7 @@ a control that leaves the output out, per pass and for the whole frame, on both 
   no indirect execution, so it proves the fallback, never a culled mode.
 - **Capture.** Equality is proved in-process by reading back each mode's target in one run. The one inspected item
   (M3) uses T2 engine capture and names its mode: `fixed` for stills, `realtime` for the pan.
-- **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
+- **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
   `docs/evidence/CULLING/`.
 - **Maturity.** The `G3c_gpu_culling` row of [the ledger](../../design/maturity.json) is updated at each milestone,
   with implementation, correctness, visuals and device results kept apart.

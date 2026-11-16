@@ -692,6 +692,16 @@ byte for byte. One run covers every commit merged since the last one, whoever me
   baseline regenerates the references on its candidate, runs `verify --full` there under the `gpu` lock, and
   updates and commits the pin and refresh, and merges the change, references and registry in one landing,
   so the next run on main passes with them.
+- **What a planned refresh changes in the registry** (16 November 2026) is two fields of each baseline whose
+  reference moved, and nothing else: the `pin`, to the value the guard prints for the committed references,
+  and the `refresh`, to the anchor of the ruling that allows it with the refreshing module and milestone. A
+  baseline whose reference did not move keeps both. Every definition, `covered_paths` and the retired list
+  stay as they are, and so does every comparison file. Where a ruling or an item written before the guard
+  says the registry stays as it is, it means this. Only the guard reads the two fields: the verifier, the
+  comparisons and the game do not. So a commit whose whole diff is those fields changes nothing that was
+  drawn or compared, and no image proof made before it is made again for it. A rebase that changes a pin,
+  because main changed a comparison file, is settled the same way: the builder copies the pins the guard
+  prints and keeps its own refresh.
 
 <a id="the-covered-paths-are-derived"></a>
 
@@ -730,6 +740,8 @@ adds this reference-by-digest mode to `scripts/apple_tile_m1_compare_browser.py`
 retained files and `APPLE-TILE`'s items do not change. If a set does not match on untouched main, the builder
 ends `BLOCKED` and `APPLE-TILE` refreshes it under rule 1.
 
+<a id="ruling-on-atmosphere-m9"></a>
+
 **Ruling on `ATMOSPHERE` M9 (with `APPLE-TILE` and `SHOWCASE`), 14 November 2026.** M9 is meant to change
 the default output of every scene: the aerial pass no longer stops a line of sight at the model's ground
 ([its design](ATMOSPHERE/DESIGN.md#the-air-at-the-ground)). It is not built behind a selection, because the
@@ -744,8 +756,10 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   predicted not to move. M9's builder records which sets did move.
 - **Who refreshes them.** The change and the references land together, as rule 2's planned refresh, so no
   milestone of `APPLE-TILE`'s could hold them. By this ruling M9's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s own
-  scripts, in the landing that makes the change. The registry, the comparisons, their sampling and every
-  script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` M9.5 holds
+  scripts, in the landing that makes the change. In the registry it changes the `pin` and the `refresh` of
+  each baseline whose reference moved, as rule 2's planned refresh says, and the refresh names
+  `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`. Every other field of the registry, the comparisons, their
+  sampling and every script stay as they are. The refresh is `APPLE-TILE`'s in every other respect: `ATMOSPHERE` M9.5 holds
   the verifier at the starting commit and at the claimed one and the old and new hashes in both modules'
   logs, M9.6 has a reviewer see that only distant low terrain moved, and `APPLE-TILE` M12 reruns its exact
   matrices on the refreshed references with its items unchanged.
@@ -756,7 +770,9 @@ stop is a defect of the one aerial product and a selection would keep it in ever
 - **Everyone else.** Nothing is owed: the run on main after M9's landing compares with the new references,
   and a module whose milestone carries the verifier as an item needs no change.
 
-**Ruling on `CULLING` M3 (with `APPLE-TILE`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
+<a id="ruling-on-culling-m3"></a>
+
+**Ruling on `CULLING` M3 (with `APPLE-TILE` and `BASELINE-GUARD`), 14 November 2026.** M3's builder stopped under rule 1: on Metal
 the valley drawn Direct is not one image under GPU load, the correction moves `APPLE-TILE`'s references, and no
 plan said who owned either ([its design](CULLING/DESIGN.md#m3-one-image-under-load) has the defect, the
 mechanism and the evidence). The correction is an all-ones coverage output on the forward shader's opaque
@@ -776,16 +792,18 @@ and in every exact test of the default.
 - **Who refreshes them.** As for M9, the change and the references land together, as rule 2's planned
   refresh, so no milestone of `APPLE-TILE`'s could hold them. By
   this ruling M3's builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s
-  own scripts, in the one landing that adds the output. The registry, the comparisons, their sampling and every
-  script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` M3.10 holds
+  own scripts, in the one landing that adds the output. In the registry it changes the `pin` and the `refresh`
+  of each baseline whose reference moved, as rule 2's planned refresh says, and the refresh names
+  `ruling-on-culling-m3`, `CULLING` and `M3`. Every other field of the registry, the comparisons, their
+  sampling and every script stay as they are. The references stay `APPLE-TILE`'s in every other respect: `CULLING` M3.10 holds
   the verifier at the starting commit and at the claimed one and the old and new hashes in both modules' logs,
   M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
   triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
   items unchanged. No other change of M3 may move a reference.
 - **Qualified before the push.** (15 November 2026.) A planned refresh needs a committed candidate, not a
   pushed one. So M3.11's campaign, M3.12's difference images and `verify --full` all pass on a local candidate
-  before `land` pushes the output and the references together. If one fails, nothing is pushed and the references on main
-  stay as they are. Those two proofs therefore run on the candidate, not on the commit claimed, which rule 3
+  before the merge pushes the output, the references and their pins together. If one fails, nothing is pushed
+  and the references on main stay as they are. Those two proofs therefore run on the candidate, not on the commit claimed, which rule 3
   otherwise asks; [`CULLING`'s design](CULLING/DESIGN.md#qualified-before-it-lands) says when each stands for
   a later commit and when a rebase repeats it.
 - **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, runs
@@ -2211,3 +2229,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   only warns. "The covered paths are derived" is withdrawn, and `BASELINE-GUARD` M2 is planned again as the
   reference guard. `ORCHESTRATE.md` declares `gpu: 2` and `chrome: 1` as shared and `simulator` as exclusive.
   No baseline, comparison or item text of another module changed; only items' `lock` fields did.
+- 2026-11-16 `CULLING` M3's builder stopped before its landing: M3.10 and the ruling on M3 said the registry
+  stays as it is, and the reference guard, which landed after both were written, refuses moved references
+  without a new pin and refresh. Rule 2 now says what a planned refresh changes in the registry: the `pin` and
+  `refresh` of each baseline whose reference moved, and nothing else, in a commit that repeats no image proof.
+  The rulings on `CULLING` M3 and `ATMOSPHERE` M9 say the same and gained anchors for a refresh to name,
+  `ruling-on-culling-m3` and `ruling-on-atmosphere-m9`. `CULLING` M3.10 and `ATMOSPHERE` M9.5 are written
+  again for it. Nothing of `BASELINE-GUARD` or `APPLE-TILE` changed.

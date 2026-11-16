@@ -271,3 +271,18 @@
   [The module list's ruling](../ARCHITECTURE.md#a-frame-that-varies-under-load) lets a failed verifier run of
   that kind be set aside until M3's coverage output lands; after that such a failure ends `BLOCKED`. The design
   and M3's items are unchanged.
+
+- 2026-11-16 Planner, from M3's stop (`build/culling` at `de69d9da`, unmerged): "A planner must reconcile
+  M3.10's unchanged-registry requirement with BASELINE-GUARD M2's mandatory pin/refresh edits before landing."
+  The builder's proposal is taken. M3.10 and the ruling on M3 predate the reference guard, which refuses a
+  moved reference until the registry holds its new pin and refresh. M3.10 is written again: the landing changes
+  the `pin` and `refresh` of each baseline whose reference moved, naming the new anchor
+  [`ruling-on-culling-m3`](../ARCHITECTURE.md#ruling-on-culling-m3), and nothing else in the registry. M3.1 to
+  M3.9 and M3.11 to M3.13 are unchanged, so M3.12's pass on the branch is kept. `ATMOSPHERE` M9.5 had the same
+  words and is written again with it.
+
+- 2026-11-16 Design, same revision. [The order](DESIGN.md#qualified-before-it-lands) gains a step for the pins,
+  in a commit that repeats no proof: only the guard reads the two fields (read in `scripts/exact_baselines.py`
+  and the campaign's helpers at `de69d9da`). The design and the plan's stop rules are corrected for the ruling
+  of 15 November: no verifier run after a rebase, one `verify --full` for the planned refresh, `merge` for
+  `land`. No GPU check was run for this revision; no item's `check` changed.

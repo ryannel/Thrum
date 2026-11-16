@@ -401,3 +401,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   never re-read them. M9 gets no `depends_on` entry for it, because the script clears a milestone's passed
   items when its definitions change, and M9.1, M9.2, M9.4 and M9.5 are proved. The lead runs `unblock` for M9
   once `CONTENT-LOOP` M4 is Done. No item, design text or assumption of this module changed.
+- 2026-11-16 Planner, from `CULLING` M3's stop on the same words: M9.5 said the registry stays as it was, and
+  the reference guard, which landed after it was written, refuses a moved reference without a new pin and
+  refresh. [The module list](../ARCHITECTURE.md#ruling-on-atmosphere-m9) now says a planned refresh changes
+  the `pin` and `refresh` of each baseline whose reference moved and nothing else, and M9.5 is written again to
+  ask for that, the refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`. M9's builder commits the
+  pins the guard prints on top of its references before merging, and marks M9.5 again. No other item, and no
+  design text, changed.
