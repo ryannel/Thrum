@@ -250,7 +250,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale (RIVERS M3): Not Started · [plan](RIVERS/PLAN.md)
 - On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do (PUDDLES M2): In Progress · [plan](PUDDLES/PLAN.md) · [latest review](../evidence/PUDDLES/M2-review.md)
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M2-review.md)
-- A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code (TRANSPORT M2): In Progress · [plan](TRANSPORT/PLAN.md)
+- A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code (TRANSPORT M2): Ready for Review · [plan](TRANSPORT/PLAN.md)
 - REVIEW-ENGINE M3 A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader: Blocked: Needs Dependency: The lead must obtain a complete shared exact-images run covering the final merged M3 commit. A planner adds it to the module that owns it
 - From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1): Not Started · [plan](GAME-SPLIT/PLAN.md)
 
@@ -321,7 +321,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M3 of 7 · Not Started |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · In Progress |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M2 of 3 · In Progress |
-| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M2 of 2 · In Progress |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M2 of 2 · Ready for Review |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Waiting: On Dependency, SIM-2D:M3 |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
