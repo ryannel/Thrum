@@ -22,7 +22,7 @@ pub use crate::capture_writer as writer;
 /// A prepared game on the calling render-owner thread, with its ordinary
 /// autonomous world lane and an engine texture replacing the OS surface.
 pub struct Offscreen<G: Game> {
-    device: wgpu::Device,
+    device: thrum_render::runtime::DeviceSite,
     game: G,
     host: FrameHost<G::World, G::Scene>,
     output: wgpu::Texture,
@@ -38,7 +38,7 @@ pub enum NativeFault {
     Control,
     /// Reject optional native work and select the prepared twin.
     Reject,
-    /// Rebind the engine presenter, then restore its source/destination extent.
+    /// Replace the engine presenter consumer after an extent refit/restore.
     Surface,
     /// Inject the raw command-buffer error observation after real native writes.
     CommandError,
@@ -61,16 +61,27 @@ impl<G: Game> Offscreen<G> {
                 "native fault needs a drained diagnostic",
             ));
         }
+        if matches!(fault, NativeFault::CommandError) && self.host.native_witness_report().is_none()
+        {
+            return Err(FrameError::InvalidState(
+                "command-error injection needs a native diagnostic",
+            ));
+        }
         self.host.disable_submitted_capture();
         match fault {
-            NativeFault::Control => {}
+            NativeFault::Control => self.host.invalidate_history(),
             NativeFault::Reject => {
                 self.host.reject_native_provider();
             }
             NativeFault::Surface => {
+                let _transition = self.device.transition("headless surface replacement");
                 self.host
                     .resize_surface([self.extent[0] - 16, self.extent[1]])?;
                 self.host.resize_surface(self.extent)?;
+                self.output = presenter_output(&self.device, self.extent);
+                self.view = self
+                    .output
+                    .create_view(&wgpu::TextureViewDescriptor::default());
             }
             NativeFault::DeviceLoss => {
                 let device = self.device.clone();
@@ -103,7 +114,6 @@ impl<G: Game> Offscreen<G> {
                 }
             }
         }
-        self.host.invalidate_history();
         Ok(())
     }
 
@@ -129,26 +139,11 @@ impl<G: Game> Offscreen<G> {
             )
             .await?;
         self.host.publish_device(&mut candidate)?;
-        self.output = capabilities
-            .site()
-            .create_texture(&wgpu::TextureDescriptor {
-                label: Some("recovered headless presenter output"),
-                size: wgpu::Extent3d {
-                    width: self.extent[0],
-                    height: self.extent[1],
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: OUTPUT_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            });
+        self.output = presenter_output(capabilities.site(), self.extent);
         self.view = self
             .output
             .create_view(&wgpu::TextureViewDescriptor::default());
-        self.device = wgpu::Device::clone(capabilities.site());
+        self.device = capabilities.site().clone();
         Ok(())
     }
 
@@ -178,23 +173,10 @@ impl<G: Game> Offscreen<G> {
             },
             Box::new(|| {}),
         )?;
-        let output = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("headless ordinary presenter output"),
-            size: wgpu::Extent3d {
-                width: extent[0],
-                height: extent[1],
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: OUTPUT_FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
+        let output = presenter_output(capabilities.site(), extent);
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         Ok(Self {
-            device: device.clone(),
+            device: capabilities.site().clone(),
             game,
             host: prepared.host,
             output,
@@ -392,4 +374,25 @@ impl<G: Game> Offscreen<G> {
     pub fn output(&self) -> &wgpu::Texture {
         &self.output
     }
+}
+
+fn presenter_output(
+    device: &thrum_render::runtime::DeviceSite,
+    [width, height]: [u32; 2],
+) -> wgpu::Texture {
+    let _transition = device.transition("headless presenter output");
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("headless ordinary presenter output"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: OUTPUT_FORMAT,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
 }

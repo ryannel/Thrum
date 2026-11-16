@@ -1103,6 +1103,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Refuses an invalid extent or a host without a surface presenter.
     pub fn resize_surface(&mut self, extent: [u32; 2]) -> Result<(), FrameError> {
+        self.check_native_completion()?;
         let _region = self
             .creations
             .region(CreationPhase::Transition, "resize-surface");
@@ -1113,6 +1114,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map_err(|error| FrameError::Gpu(format!("surface resize: {error:?}")))?;
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.presenter_generation += 1;
+        if self.native_witness_report().is_some() {
+            self.invalidate_history();
+        }
         Ok(())
     }
 

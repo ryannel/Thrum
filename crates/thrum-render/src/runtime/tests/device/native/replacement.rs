@@ -3,6 +3,90 @@ use crate::runtime::SlotState;
 use crate::synthetic::NativeOutcome;
 
 #[test]
+fn metal_native_surface_and_rejection_reset_without_fixture_cuts() {
+    pollster::block_on(async {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let (capabilities, queue) = gpu(&instance, 7).await;
+        let mut host = host(
+            &capabilities,
+            &queue,
+            Policy {
+                native: NativeWitness::Metal,
+                ..Policy::default()
+            },
+        )
+        .await;
+        host.enable_submitted_capture_from(
+            1,
+            CaptureLimits::default(),
+            CaptureSource::NativeOutput,
+        )
+        .unwrap();
+        let pipelines = host.pipeline_creation_count();
+        let view = output(capabilities.device(), [64, 64]);
+        host.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&SurfaceOutput {
+                view: &view,
+                extent: [64, 64],
+            }))
+            .unwrap();
+        let first = image(&mut host);
+        assert_eq!(&first[..8], &[0, 60, 0, 60, 0, 60, 0, 60]);
+        assert_eq!(host.native_witness_report().unwrap().resets, 1);
+        host.resize_surface([96, 48]).unwrap();
+        host.resize_surface([64, 64]).unwrap();
+        let replacement_view = output(capabilities.device(), [64, 64]);
+        host.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&SurfaceOutput {
+                view: &replacement_view,
+                extent: [64, 64],
+            }))
+            .unwrap();
+        let replaced = image(&mut host);
+        assert_eq!(
+            &replaced[..8],
+            &[0, 60, 0, 60, 0, 60, 0, 60],
+            "surface incarnation must reset native state without a fixture cut"
+        );
+        assert!(
+            replaced == first,
+            "surface replacement preserves exact full native output after its own reset"
+        );
+        assert_eq!(host.native_witness_report().unwrap().resets, 2);
+        assert!(host.reject_native_provider());
+        host.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&SurfaceOutput {
+                view: &replacement_view,
+                extent: [64, 64],
+            }))
+            .unwrap();
+        let rejected = image(&mut host);
+        assert!(
+            rejected == first,
+            "runtime rejection selects the ready twin and resets without a fixture cut"
+        );
+        assert_eq!(
+            host.native_witness_report().unwrap().selection,
+            NativeWitness::Wgsl
+        );
+        assert_eq!(host.native_witness_report().unwrap().resets, 3);
+        assert_eq!(host.pipeline_creation_count(), pipelines);
+        println!(
+            "M11 natural resets: real replacement consumer, exact full output and binary tile 1 after surface and rejection; reset counts 1/2/3; pipeline count unchanged; no fixture invalidate_history call"
+        );
+    });
+}
+
+#[test]
 fn metal_native_detached_extent_preparation_admission_and_overlap() {
     pollster::block_on(async {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());

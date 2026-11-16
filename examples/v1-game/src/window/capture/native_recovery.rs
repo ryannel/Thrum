@@ -57,7 +57,7 @@ impl Recovery {
         .get(self.next) else {
             return Ok(());
         };
-        if scenario_time.as_secs_f64() < threshold {
+        if scenario_time < Duration::from_secs_f64(threshold) {
             return Ok(());
         }
         super::drain_fixed(driver, trace, writer, origin)?;
@@ -94,13 +94,18 @@ impl Recovery {
             // the tap. World/controls are retained; the host-time gap is logged.
             super::warmup(driver)?;
         }
-        driver.invalidate_history();
+        if needs_device {
+            // The new provider already reset while rebuilding. Start capture
+            // at a known phase after the uncaptured content warmup; surface
+            // and rejection arms must rely on their actual engine resets.
+            driver.invalidate_history();
+        }
         super::enable_stage_capture(driver, self.next as u64 + 2, source)?;
         trace.stalls.push(json!({"kind":"native-provider-checkpoint", "fault":format!("{fault:?}"), "applied":format!("{applied:?}"),
             "control":control,"scenario_ns":scenario_time.as_nanos(), "requested_ns":requested.as_nanos(),
             "returned_ns":origin.elapsed().as_nanos(),"new_generation":self.generation,
             "before":format!("{before:?}"),"after":format!("{:?}",driver.native_witness_report()),
-            "raw_error_injection":"CommandError forces observation after actual native writes; not a physical GPU fault"}));
+            "raw_error_injection":"CommandError injects a completion observation after actual provider writes; not a physical GPU fault"}));
         self.next += 1;
         Ok(())
     }
