@@ -6,6 +6,8 @@
   four recovery test groups passed, including clean-clone hashes and three original review links. The initial
   full gate timed out after 600 seconds in GPU tests without an assertion failure; merge uses its longer budget.
   Exact images cite the shared main check. [Measured results and retained logs](../../evidence/REPO-RULES/M2.md).
+  Rebased onto `63c0d04cd`, preserving TEST-SUPPORT's `test-crate-edges` beside `evidence-size` in the registry.
+  At `072082aef`, 15 shape/ratchet tests and the whole-tree shape check passed after that conflict resolution.
 
 - 2026-11-16 Refreshed M1.5 at `6fec2d24b`, after main `81138094a` landed EFFECT-GRAPH and WATERS:
   four path attributes were removed and two existing device requests moved. Every baseline entry equals its
