@@ -286,7 +286,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "in_progress",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
       "findings": [
         {
@@ -298,17 +298,7 @@
           "name": "Legacy culling cost benchmarks silently measure Direct twice",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "A planner must reconcile M3.10\u2019s unchanged-registry requirement with BASELINE-GUARD M2\u2019s mandatory pin/refresh edits before landing.",
-        "work": {
-          "commit": "de69d9da18210860cafb4ce3bd33c520573dc3e1",
-          "branch": "build/culling",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/CULLING/M3-handoff.md"
-      }
+      ]
     }
   ]
 }
