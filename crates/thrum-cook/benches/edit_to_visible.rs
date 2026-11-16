@@ -86,9 +86,6 @@ const RULES: &[Rule] = &[
 ];
 
 fn main() {
-    let Some(gpu) = thrum_test_support::gpu("edit_to_visible bench", None) else {
-        return;
-    };
     let root = std::env::temp_dir().join(format!("thrum-g5-bench-{}", std::process::id()));
     std::fs::create_dir_all(&root).expect("bench root");
     let mut report = String::new();
@@ -109,9 +106,12 @@ fn main() {
             &mut metrics,
         );
     }
-    edit_loop(&root.join("loop"), &mut report, &mut metrics, &gpu);
+    let ran = edit_loop(&root.join("loop"), &mut report, &mut metrics);
     make_writable(&root);
     std::fs::remove_dir_all(&root).ok();
+    if !ran {
+        return;
+    }
     // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
     let history = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../docs/evidence/integration/tripwires/g5-edit-to-visible.tsv");
@@ -184,12 +184,7 @@ struct Publication {
     cook: Duration,
 }
 
-fn edit_loop(
-    root: &Path,
-    report: &mut String,
-    metrics: &mut Metrics,
-    gpu: &thrum_test_support::Gpu,
-) {
+fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
     let source = root.join("source");
     std::fs::create_dir_all(source.join("meshes")).expect("dir");
     std::fs::create_dir_all(source.join("textures")).expect("dir");
@@ -233,6 +228,11 @@ fn edit_loop(
     }
 
     let start = Instant::now();
+    let Some(gpu) = thrum_test_support::gpu("edit_to_visible bench", None) else {
+        stop.store(true, Ordering::Relaxed);
+        watcher.join().expect("watcher");
+        return false;
+    };
     let (device, queue) = gpu.device(
         thrum_test_support::Profile::Portable,
         &thrum_test_support::Restriction {
@@ -389,6 +389,7 @@ fn edit_loop(
         metrics.push(("write_visible_max_ms".into(), ms(totals[totals.len() - 1])));
     }
     hitch(report, &records, &swap_frames, run_start, metrics);
+    true
 }
 
 /// Hitch tripwire: render-thread CPU and GPU completion cadence on swap frames vs all others.
