@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 after the planner's ruling: `8b315f05f` anchors height-map fitting
+  to declared positions and refuses off-vertical requests by name before drawing.
+  M1.1 matches the ordinary main draw at zero colour/depth steps for the displaced
+  and edge-mirror cases. M1.13 and M1.14 prove exact admission and stable edge fits.
+  All twelve public-seam targets pass on Metal's portable and Apple-tile recipes;
+  [the proof](../../evidence/SCENE-VIEWS/M1/vertical/README.md) records the measurements
+  and unchanged references. Main-frame absence and affected consumer checks pass too.
+
 - 2026-11-16 M1 replacement session fetched main at `66dc2da2f` and confirmed the
   design and M1.1 are unchanged. The shared finite height map still contradicts
   unrestricted-camera equality; the retained Metal counterexample remains relevant.
