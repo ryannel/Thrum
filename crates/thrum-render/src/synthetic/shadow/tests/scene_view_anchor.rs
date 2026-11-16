@@ -111,7 +111,7 @@ fn a_shared_main_height_map_cannot_cover_an_unrestricted_view_camera() {
         let mut max_steps = 0.0_f32;
         let mut example = None;
         for (index, (expected, actual)) in reference.iter().zip(&shared).enumerate() {
-            if expected[0] <= 0.0 || actual[0] <= 0.0 {
+            if expected[0] == actual[0] {
                 continue;
             }
             let stored = half::f16::from_f32(expected[0]);
