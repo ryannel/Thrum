@@ -291,6 +291,71 @@
       "diagnoses": 0,
       "status": "done",
       "quality_bar": "A translucent pass that composes as water does in Sea of Thieves or glass in a shipped engine: hidden by nearer geometry in the same frame, refracting what is behind it, dimming sky and stars once, with no seam where it meets opaque surfaces. Its motion, reactive coverage and reset reach reconstruction's inputs exactly. How a reconstructed effect looks in motion is judged in SEA and CLOUDS, not here."
+    },
+    {
+      "id": "M4",
+      "name": "A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one",
+      "depends_on": [],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 0,
+      "status": "not_started",
+      "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame, no short step followed by a long one, and no step when a tick commits. Nothing that reads the interpolation alpha today sees any difference.",
+      "items": [
+        {
+          "id": "M4.1",
+          "statement": "The world's clock gives a display target's phase: the fraction of the next tick elapsed at the last observed time plus the lead in ticks, with no stop at 1. It is never below 0, never more than 50 ms of ticks above 1, and exactly 1 while the clock is paused, overloaded, holding or has ticks queued. The interpolation alpha for the same target is unchanged bit for bit and is the phase held to 1. Sampling admits no tick and changes no clock. A world lane and a clocked world give their clock's phase.",
+          "check": "cargo test --locked --offline -p thrum-core --test display_phase",
+          "ask": "Are the expected phases written in the test from its scripted times, tick rate and leads, and not computed with the clock's own phase function? Do they include a target past the next tick's due time, a target at the bound and beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.2",
+          "statement": "Each submitted frame gives every effect the display phase beside alpha, and the frame's completed sample reports it. In the V1 game with 60 Hz ticks, drawn for display targets 1/120 s apart and again 1/60 s apart, with leads from zero to one tick, every frame's display time (its tick, less one, plus its phase) is its target less one tick, to the precision the phase carries. So consecutive frames differ by the interval between their targets, across a tick's commit and on frames whose alpha is 1. This holds for the inline world at scripted times and for the world on its own thread. In every frame alpha is the phase held to 1, and the diagnostic effect's state follows the state table as it did. A capture frame and a paused world give exactly 1.",
+          "check": "cargo test --locked --offline -p v1-game --test effect_display_phase_gpu",
+          "ask": "Does the test work each frame's expected display time out from its own targets, state the precision it holds them to, and read the phase from the effect time a contribution received? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.3",
+          "statement": "A submitted capture's time record carries each frame's display phase and display target beside its alpha and lead, and `docs/CAPTURE.md` says what the two are. In a short `realtime` capture of the V1 game on the Mac at 120 targets a second, every frame under the phase's bound has a display time equal to its target less one tick. Frames at the bound, and frames whose target had expired, are counted in the record and stay in it.",
+          "check": "cargo test --locked --offline -p v1-game --test capture_display_phase_gpu",
+          "ask": "Does the test read the record a capture wrote, through the offscreen runner's own target policy, and pass on a busy machine by counting late frames instead of failing on them?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.4",
+          "statement": "C02 in `docs/design/CONTRACTS.md` states the display phase: what it is, its bound, that alpha is the phase held to 1, that sampling it never advances authority, and that a quantity shown past the committed tick is a presentation-only prediction from committed state. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart.",
+          "ask": "Do C02's words say what the design's section on the display phase says, with nothing added that it does not say? Does the ledger row claim only what M4.1 to M4.3 proved?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M4.5",
+          "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }

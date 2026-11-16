@@ -303,7 +303,8 @@
       "diagnoses": 0,
       "depends_on": [
         "EFFECT-GRAPH:M2",
-        "ATMOSPHERE:M5"
+        "ATMOSPHERE:M5",
+        "EFFECT-GRAPH:M4"
       ],
       "quality_bar": "Cloud shade as in Red Dead Redemption 2: soft-edged patches of sunlight and shade drifting over the land, shaded ground still lit by the sky and never black, and every lit thing under one patch in agreement.",
       "items": [
@@ -380,7 +381,7 @@
         {
           "id": "M2.7",
           "statement": "At 1x the shade drifts with the wind, smoothly, with no step at the product's refresh and no swimming. At 60x, patches form and dissolve with no pop, and the drift moves by even steps from frame to frame at the display's refresh.",
-          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence.",
+          "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence. Beside them, from the 60x capture's time record, tabulate the travel between consecutive frames against the interval between their display targets.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -422,9 +423,9 @@
         },
         {
           "id": "M2.11",
-          "statement": "Shade is shown at the display's time. In two submitted frames of one tick with different interpolation alpha, the ground field's mapping differs by the wind's travel between the two display times, and no texel of the weather map, the Sun-path product or the ground field is written for the second. After a cut the mapping is the committed tick's.",
-          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_display_time_gpu",
-          "ask": "Is the expected travel worked out in the test from the wind and the two display times, and not read back from the effect?",
+          "statement": "Shade is shown at the display's time, between ticks and past the newest one. Across submitted frames of one tick and of the next, with display targets on both sides of the committed tick, the ground field's mapping differs between any two frames by the wind's travel between their display times: equal intervals between targets give equal steps, and the first frame of a tick takes no catch-up step. No texel of the weather map, the Sun-path product or the ground field is written for a frame that shows a tick again. When a wind target changes while a frame is past the committed tick, the next tick's first frame corrects by no more than the design's bound. When the phase is exactly 1, and after a cut, the mapping is the committed tick's.",
+          "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_display_phase_gpu",
+          "ask": "Is the expected travel worked out in the test from the wind and the frames' display targets, and not read back from the effect or from the frame's own alpha or phase? Does the run include a frame whose alpha is 1 with its target past the tick, and the first frame of the next tick?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",

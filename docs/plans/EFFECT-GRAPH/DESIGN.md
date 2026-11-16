@@ -3,7 +3,8 @@
 11 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the brief](../BRIEF.md). C02, C04, C06, C07 and C12 in [CONTRACTS](../../design/CONTRACTS.md), the
 [graph decision](../../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) and
-[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern.
+[the port decision](../../design/decisions/SEA-AND-CLOUD-PORT.md) govern. Revised 16 November 2026: a fourth
+milestone gives effects [the display phase](#the-display-phase-m4).
 
 ## The request
 
@@ -23,6 +24,18 @@ names the graph condition this module meets: 3D and cube resources, cadence, and
 declared seam. The module list's brief adds the rest: mipped storage arrays, persistent state advanced by
 tick-derived time, ping-pong and world-anchored wrapping histories, compute before the fragment passes that read
 it, and module passes after opaque geometry that read scene depth and a refraction source.
+
+The lead's planning task of 16 November 2026, after `CLOUDS` M2's builder ended `BLOCKED needs_dependency`:
+
+> CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
+> display-time interface change before M2.7's uneven 60× shade motion can be completed.
+
+The builder's diagnosis (`docs/evidence/CLOUDS/M2-temporal-blocker.md` on branch `build/clouds` at
+`0756d0adce44`) asked that the change go to
+"HOST/EFFECT-GRAPH, with their clock/platform consumers", that it "preserve enough target information and
+endpoint history, or explicitly define a bounded prediction coordinate for presentation-only advection", and that
+authoritative weather stay unchanged. The time a frame gives an effect is this module's interface, so the change
+is [M4](#the-display-phase-m4) here. `HOST` waits on seven milestones and changes none of this.
 
 This design reconciles the code on main; it is not a blind study. Read for it: `graph.rs`, `graph_record.rs`,
 `contribution.rs`, `synthetic/{scene_graph,contributed}.rs`, `atmosphere/graph.rs`, the [SEA](../SEA/BRIEF.md) and
@@ -62,6 +75,7 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | **N5 Feed reconstruction's inputs** | Motion, reactive coverage and reset on cuts, replacement and effect reset | Zero motion on a moving effect. Rejected by reading motion from submitted frames against the known displacement |
 | **N6 Survive resize and device replacement** | Mid-run, with state in flight | Reusing an old generation's texture. Rejected by generation checks and exact state after re-seed |
 | **N7 Cost nothing when absent** | Every existing scene and variant | A seam that adds an empty pass or a copy. Rejected by identical compiled pass lists and the exact baselines |
+| **N8 Show motion that is a function of time at the display's time** (M4) | Display targets up to 50 ms ahead of the observed time; a display faster or slower than the tick; a tick whose commit lands late; pause, overload and capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted targets, across a tick's commit and on frames whose alpha is 1 |
 
 This is internal work: its outcomes are properties measured through the diagnostic effect, with inspected items
 where a picture is the evidence.
@@ -177,6 +191,88 @@ persistent writes are safe for the same reason, and because submitted frames exe
 a new epoch for the effect. A `rebuild` on the same generation (a resize, a republished visual) keeps the epoch
 and the state, unless one of the effect's own descriptors changed, which also starts a new epoch. A GPU error
 found at completion takes the device-loss path, as the temporal history does.
+
+### The display phase (M4)
+
+**What was wrong.** Rule 1 gives an effect the frame's interpolation alpha as its place between two ticks, and
+`SEA` and `CLOUDS` read `C − 1 + α` ticks as "the display's time", where `C` is the frame's committed tick. Alpha
+cannot carry that time. A frame is drawn for a **display target** `T`: the observed time plus a lead of at most
+50 ms toward the moment the platform expects to show it (`display_target_lead`). Only observed time commits
+ticks (C02), so the newest committed tick was due at `t_C`, at or before the observed time, and the frame shows
+the world one tick behind its target. In ticks of duration `d` that display time is
+
+`C − 1 + p`, with `p = (T − t_C) / d`.
+
+Alpha is `p` held to [0, 1]. Whenever the lead carries the target past the next tick's due time, `p` is above 1,
+alpha stops at 1, and the display time it stands for stops with it; the first frame of the next tick then makes
+up the difference. With 60 Hz ticks and a 120 Hz display that can be every second frame, and in `CLOUDS` M2's
+60× capture it was: alpha alternated 0.92 and 1.0, so wind travel alternated 3.2 m and 36.8 m where 20 m was
+due ([the planner's reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md) of the builder's record). Every
+quantity shown by alpha under a lead steps this way, not only clouds.
+
+**Decision.** Each frame gives every effect its **display phase** `p` beside alpha, in the frame's effect time
+(`EffectTime` in `contribution/state.rs`).
+
+- **What it is.** The fraction of the next tick that had elapsed at the observed time, plus the frame's lead in
+  ticks, with no stop at 1. It is never below 0.
+- **Its bound.** It is never more than 50 ms of ticks above 1, the same 50 ms that caps a lead: 3 ticks at
+  60 Hz. A target farther past the committed tick holds there.
+- **Alpha does not change.** Alpha is what it is today in every frame, bit for bit, and equals `min(p, 1)`. No
+  one who reads alpha sees a difference, so no image moves.
+- **When it is exactly 1.** While the world's clock does not interpolate (paused, overloaded, holding, or with
+  ticks queued), and in a capture frame, alpha is 1 today and `p` is 1 with it.
+- **What an effect can rely on.** While the clock interpolates and `p` is under its bound, `(C − 1 + p) · d` is
+  the display target less one tick, on the world's clock, for every frame: whichever tick the frame shows, on
+  an inline world or a world on its own thread, and however late that tick's commit landed. Equal intervals
+  between targets are therefore equal steps of display time.
+- **What an effect may do with it.** Evaluate presentation-only motion at `C − 1 + p`. At or below 1 this is
+  what alpha gave. Above 1 the effect takes its quantity up to `p − 1` ticks past the committed endpoint, from
+  committed state alone: a function of time is evaluated there, and a quantity integrated at a rate continues at
+  the rate its next tick would use. This is a prediction of at most 50 ms. If an input changes before the next
+  tick commits, the next tick's first frame corrects by at most `p − 1` of the difference between the predicted
+  and the committed step. A quantity known only at its endpoints keeps alpha.
+- **Authority is untouched.** Sampling the phase admits no tick and changes no clock. Rule 1's table reads the
+  frame's tick only, so what an effect's state does in a frame is the same with any phase.
+- **No silent stand-in.** Every source of world time states its phase from its clock: the lane and the clocked
+  world in `thrum-core`, the frame host's world observer in `thrum-render`, `thrum-app`'s sky world, and the
+  V1 game's inline and threaded worlds, which the iPhone app also runs. None forms it from an alpha already
+  held at 1, and there is no default that does.
+- **It is on the record.** The frame's completed sample and a submitted capture's stamp carry the phase beside
+  alpha and the lead, and the V1 game's capture time record writes it with the frame's display target, so a
+  capture shows the display time each frame was drawn for.
+
+**Where a lead comes from.** The Mac's render actor, the iPhone's render owner and the offscreen runner's
+`realtime` mode pass a lead. The browser shell passes none, and neither does a `fixed` or `still` capture. With
+no lead the phase passes 1 only when a tick's commit lands late, which an inline world's never does. `SESSION`
+M7's [driven world](../SESSION/DESIGN.md#12-a-driven-world) states its presentation as a position with a rate,
+which gives a phase the same way.
+
+**Why a prediction, and not something else.**
+
+| Choice | Verdict |
+|---|---|
+| Hold at the committed tick (today's alpha) | Uneven whenever there is a lead; the defect |
+| Take alpha from the observed time and ignore the target | Never passes the endpoint, but motion is then only as even as the callbacks, which is the jitter a display target exists to remove; it also shows everything a lead later |
+| Show everything a further tick behind, from three endpoints | Exact for any lead up to a tick. Every interpolating consumer and the tick page would keep a third endpoint, and the camera and input would gain a tick of delay. Too much to change for effects whose motion is known ahead |
+| Commit ticks up to the display target | Breaks C02: observed time alone advances authority, a world on its own thread does not know the target, and a driven world commits what its session names |
+| **Give the unclamped phase and let each quantity choose** | Selected. C02 already says interpolation is defined per quantity. Motion with a known rate is exact past the endpoint. Unity offers the same choice per body: interpolation "has a time lag of one physics update", and extrapolation predicts ahead of the last update and suits motion whose rate holds ([Rigidbody interpolation](https://docs.unity3d.com/2022.2/Documentation/Manual/rigidbody-interpolation.html), read 16 November) |
+
+**Limits.** On the frame a pause, an overload or a hold begins, display time moves to the committed tick:
+forward, as alpha does today, or back by at most the bound when the phase was past 1. A hold lasts until the
+first tick after it completes, so display time is continuous when the world resumes. After a stall longer than
+the bound the phase stays at the bound until the world commits or stops.
+
+**Not built here.** `CLOUDS` M2 is the first reader. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and
+a game's camera and entities stay on alpha: under a lead they step unevenly by the same arithmetic, which has
+not been captured. Each is its owner's to plan, and the game-facing half belongs with the contract `HOST` M4
+writes. `HOST` M2 to M5 and `SESSION` M7 rework the files this milestone touches and keep its tests passing.
+
+**Check that it can work.** In [the planner's reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md), the
+targets of the 60× rows (submission time plus consumed lead) put the six frames at `p` = 0.92, 1.40, 0.92,
+1.40, 0.92, 1.40 on ticks 927, 927, 928, 928, 929, 929. Display time `C − 1 + p` then advances 0.48, 0.52,
+0.48, 0.52, 0.48 ticks, which is 19.0 to 20.8 m of travel a frame against the capture's 3.2 and 36.8 m. The spread left over is the record's: it holds the submission time, not the
+target, which is why M4 writes the target. The arithmetic was run on the rows while planning and is not a
+capture of the fix.
 
 ### Ping-pong histories (M2)
 
@@ -299,6 +395,7 @@ queue on Metal or WebGPU. The flag exists so a later recipe can use it without c
 |---|---|
 | Descriptor kinds, validation, allocation, pass order, load and store | `thrum-render::graph` (`APPLE-TILE` owns the split and the storage derivation; this module extends the descriptor) |
 | The contribution list, stages, the tentative-commit protocol, the anchor, knobs | This module (`contribution.rs`, `synthetic/{contributed,scene_graph}.rs`, the frame host's list) |
+| The frame's effect time: tick, timeline, tick duration, alpha and the display phase | This module states it; the world's clock in `thrum-core` and the frame host produce it |
 | An effect's resources, epoch, state tick and shaders | The effect's module (`SEA`, `CLOUDS`) |
 | The view record, motion and reactive targets, history acceptance | `APPLE-PRESENTATION` |
 | The pre-tone input and pass-name timing | `APPLE-TILE:M3` |
@@ -326,6 +423,11 @@ input, pass-name timing), `APPLE-PRESENTATION` M2 (the third forward target, his
 `CREATOR` M2 (the timing-demand switch). M1 stays inside the graph's descriptor, validation and allocation. M2 and
 M3 integrate sequentially with whatever has landed and rerun the affected witnesses of each. Once the
 timing-demand switch exists, effect timing is not gathered while it is off.
+
+M4 also edits `thrum-core`'s clock, world lane and clocked world, the frame host's world observer and sample,
+`thrum-app`'s sky world and offscreen runner, the V1 game's world wrappers, and the V1 game's capture time
+record, under [the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4).
+It adds to each and changes no value any of them gives today.
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
 is caught. This module must move none, on the Mac or in Chrome: with no effect attached, every existing scene
@@ -378,6 +480,9 @@ on the valley route with no effect attached.
   which exist today, in its own test or bench. It does not change the host's frame-sample fields, which
   `APPLE-TILE:M3` moves to pass names. M3 here needs that milestone and reports a skipped pass through its
   schema.
+- **M4.** `mac-metal` only: Chrome gives no display target, so nothing there can differ, and the exact
+  baselines cover it. Its tests script the observed times and the targets, so they do not depend on how busy
+  the machine is; the one `realtime` run excludes and counts frames at the bound instead of failing on them.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<milestone>/`; selected evidence
   in `docs/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at M3, with implementation, correctness and device results kept
@@ -390,3 +495,4 @@ on the valley route with no effect attached.
 | Which storage formats, counts and view dimensions does Chrome's record allow? | M1 records them |
 | Do these cadence rules serve the first sea and cloud frames? | Their designs' cost accounts; a failure reopens [cadence](#cadence) here |
 | Is one shared refraction copy the right source on Apple tile? | M3 records its cost; `SEA` decides |
+| Do the camera, entities, waves and sprites move evenly under a display lead? | Not by M4. Their owners plan it; see [the display phase](#the-display-phase-m4) |

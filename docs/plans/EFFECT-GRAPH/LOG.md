@@ -163,3 +163,8 @@
   check passes all 127 fixed frames; its selected slab frame matches the retained image exactly.
   [The failed and passing records](../../evidence/EFFECT-GRAPH/M3/upload-recovery/README.md) retain source identities;
   the socket reset's origin is unestablished. Normal checked integration follows this correction.
+- 2026-11-16 Planner: M4 added for the display phase, on the lead's task after `CLOUDS` M2 ended
+  `BLOCKED needs_dependency` ("settle and assign the shared display-time interface change"). Alpha stops at the
+  committed tick, so under a display lead `C − 1 + α` is not the display's time. Each frame now gives effects the
+  unclamped phase; alpha and authority do not change. `HOST` was the builder's other candidate and waits on seven
+  milestones. [Design](DESIGN.md#the-display-phase-m4). M3's builder note and stop rules left the plan with M3 Done.

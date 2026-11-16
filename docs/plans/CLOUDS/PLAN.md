@@ -26,28 +26,28 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX milestones. Fog waits for `ATMOSPHERE` M8, and the sea for `WATERS` M8.
 
-## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly
+## M1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
+[review](../../evidence/CLOUDS/M1-review.md)
 
-This creates `thrum-cloud-model`, with no dependency on the renderer, and registers it in
-`.config/architecture.toml`. `docs/evidence/CLOUDS/design-proof/` holds working sketches; their constants are a first profile and
-their shapes are not the look. Broadsides' `scatter.rs` holds the point-Sun phase and its fit; its Sun-disc
-`spread` loses energy and is not the design's. The optics oracle is `scripts/reference/cloud/`, which needs
-NumPy. Ground condensate is M13's: build nothing for it here.
-
-## M13 Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see
-
-This extends M1's crate and changes none of its answers where no surface field or fog table is given.
-The design-proof folder's `whole_atmosphere_proof.py` and `ground_revision_proof.py` sketch it. Tests make their own relief.
+## M13 Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see: done
+[review](../../evidence/CLOUDS/M13-review.md)
 
 ## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn
 
-This creates `thrum-clouds` as an effect on `EFFECT-GRAPH`'s seam (`crates/thrum-render/src/contribution.rs`;
-`examples/v1-game/src/effect` is a working effect). The shade path is `ATMOSPHERE`'s:
-`crates/thrum-render/src/atmosphere/cloud.rs`, `cloud.wgsl` and the diagnostic provider in
-`examples/v1-game/src/host/scene_source/cloud.rs`. Ruling 1 extends it there; integrate on top of what
-`ATMOSPHERE` has landed. In `SHOWCASE`'s `examples/v1-game` add the selection only. `scripts/cloud_cost.py` is
-created here. If the seam cannot declare the Sun-path product's time-sliced levels as built, or cannot give a
-frame that shows a tick again its interpolation alpha, write the proposal in the log and end `BLOCKED`.
+Weather and Shade are built and merged through `5ec67bed`: `thrum-clouds` on `EFFECT-GRAPH`'s seam, ruling 1 in
+`ATMOSPHERE`'s shade path (`crates/thrum-render/src/atmosphere/cloud.rs`, `cloud.wgsl`), the selection in
+`examples/v1-game` and `scripts/cloud_cost.py`. The handoff is `docs/evidence/CLOUDS/M2-handoff.md`; the
+captures, visual opinion and timing diagnosis are on branch `build/clouds` at `0756d0adce44`, not merged. This
+plan rewrote M2.7 and M2.11 and added a dependency, so every item's proof was reset. Nothing behind the other
+ten items is asked to change, and their evidence on that branch describes source `5ec67bed`.
+
+What is left is [drift at the display phase](DESIGN.md#time-drift-at-the-displays-time-evolution-on-the-tick).
+`EFFECT-GRAPH` M4 puts the phase in the frame's effect time. `sun_path.rs` forms the mapping's travel from
+`State::display_travel` with the frame's alpha. M2.11's check names a new test; the one it replaces,
+`examples/v1-game/tests/clouds_display_time_gpu.rs`, takes its expected travel from the frame's own alpha. The
+clock, the frame host and the capture record are `EFFECT-GRAPH`'s: a defect in the phase goes to that module's
+log, and this milestone adds no clock of its own. Even drift does not by itself pass M2.7: not every change
+between 60× frames was traced, so inspect what remains.
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 

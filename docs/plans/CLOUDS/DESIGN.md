@@ -13,7 +13,9 @@ restated where they bind. Revised again on 14 November for the atmosphere as a w
 [what that replaces](#judged-again-for-the-whole-atmosphere) is listed. Revised once more that day after the
 review of that revision: [a stop at every pixel's depth and the air in parts](#the-visible-layer), the frames
 of a ground row and the headless query, and
-[ceilings that decide](#numerical-acceptance-for-ground-condensate).
+[ceilings that decide](#numerical-acceptance-for-ground-condensate). Revised 16 November 2026:
+[drift is taken at the display phase](#time-drift-at-the-displays-time-evolution-on-the-tick), which
+`EFFECT-GRAPH` M4 provides.
 
 ## The request
 
@@ -52,6 +54,11 @@ a whole: sky, clouds, haze, and mist and fog (ground fog, valley mist, fog banks
 can enter), lit consistently and changing with the weather and time of day. Settle from first principles which
 module owns what across CLOUDS, ATMOSPHERE and any other affected module, keep one authority for each kind of
 state".
+
+The lead's planning task of 16 November 2026, after M2's builder ended `BLOCKED needs_dependency`:
+
+> CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared
+> display-time interface change before M2.7's uneven 60× shade motion can be completed.
 
 The lead's reading, recorded as [assumptions](PLAN.md#open-for-the-human): the owner's last words govern; the
 design of 13 November, [the brief](BRIEF.md) of 10 November and the port decision describe the Broadsides
@@ -244,7 +251,7 @@ against the users and cues above. "Keep" means it would be chosen again with Bro
 | 2D fields with a vertical profile and noise, not a voxel sky | **Keep** | Every commissioned camera is below the cloud base, which is where the method shipped. Nubis³ measured a dense voxel sky at over 30 ms and built voxels for flying through cloud. A shape gives a true volume where one is wanted |
 | Light from one summed Sun-path product and a few local samples | **Keep** | Already a departure from Broadsides, whose cone taps and ambient rays were 86% of its work. One product also gives ground shade and long-distance shadow |
 | The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 60 times too dim inside the aureole, and two to three times too dim looking away from the Sun (parts E and G). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
-| Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time, as `WATERS` does its waves. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
+| Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
 | A placed volume stands for one cell of the field | **Keep** | It is why the query, the picture and the shade agree on a shape's outline at any distance, and why a shape forms, drifts and thins like any cloud. It does not rest on the library existing |
 | Shapes are placed only by the field's hash | **Change** | A demo composes its sky: a tower beside the Sun at sunset. A profile places shapes by the hash or by the game's own list of [directed shapes](#placed-volumes), which are cells whose place, shape and life the game sets |
 | Shadow-only as the one reduced profile | **Change** | Shade, the visible sky, the world's light and shapes are each a capability, and a scene declares only those it uses. A sunset demo needs no library; a top-down game needs only shade, and holds a library only if it wants the shade of shapes |
@@ -391,9 +398,25 @@ the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean t
 ### Time: drift at the display's time, evolution on the tick
 
 The weather state steps on the committed tick, and the display shows each 60 Hz tick twice or more. Travel is a
-function of time, so every presented frame takes it **at the display's time** `t = C − 1 + α` in ticks, where `C`
-is the frame's committed tick and `α` its interpolation alpha (C02):
-`travel(t) = travel(C) − (1 − α) · (travel(C) − travel(C − 1))`, formed on the CPU in f64 from the state.
+function of time, so every presented frame takes it **at the display's time** `t = C − 1 + p` in ticks, where `C`
+is the frame's committed tick and `p` its [display phase](../EFFECT-GRAPH/DESIGN.md#the-display-phase-m4), which
+`EFFECT-GRAPH` M4 gives every effect. Formed on the CPU in f64 from the state:
+
+- at `p ≤ 1`, between the two committed ticks: `travel(t) = travel(C) − (1 − p) · (travel(C) − travel(C − 1))`;
+- at `p > 1`, past the committed tick: `travel(t) = travel(C) + (p − 1) · Δ`, where `Δ` is the travel the weather
+  step would add next from the committed state and its control targets. `thrum-cloud-model` gives `Δ` from the
+  same arithmetic as its step and commits nothing.
+
+The interpolation alpha is not that time. It stops at the committed tick, and a display target usually lies
+past it for part of every tick: at 60× in a 40 m/s wind M2's first capture drifted 3.2 m and 36.8 m on alternate
+frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, equal
+intervals between display targets are equal steps of travel, across a tick's commit as within a tick.
+
+Past the committed tick the travel is a prediction of at most 50 ms of the world's time, which at 60× in a
+40 m/s wind is 120 m. It is exact unless a wind or
+time-scale target changes before the next tick commits; then the next tick's first frame corrects by at most
+`p − 1` of the difference between `Δ` and the step that was committed. Nothing else is predicted: no state is
+stepped and no product is written for it.
 
 Travel enters a frame only through the anchors that place the air frame in the world: the trace's, the mapping of
 the ground field and of the ground band that `ATMOSPHERE` reads, the overlay's, and the motion a cloud writes. What
@@ -402,7 +425,8 @@ texture is anchored to the world. So a frame that shows the
 same tick again moves every cloud and its shade by the wind's travel since the last frame, and rewrites no texel:
 the weather map, the Sun's path and everything that evolves stay at the committed tick, as `EFFECT-GRAPH`'s state
 rule requires. Evolution can stay there because it is slow: at 60× a cell changes its envelope by at most 0.2% of
-its range in a tick (part F). On a cut, a seek or a new timeline the frame takes `travel(C)`.
+its range in a tick (part F). On a cut, a seek or a new timeline the frame takes `travel(C)`, as it does when the
+phase is exactly 1: a pause, an overload or a capture frame.
 
 ### One density, in m⁻¹
 
@@ -966,7 +990,10 @@ From `first_principles_proof.py`, run for the judgement of 14 November:
   the widened lobe the second review refuted; part G below gives them again.
 - **Drift.** At 60× in a 40 m/s wind a cloud 1,500 m off moves 37 pixels a tick at 1440 rows. Taken at the tick
   it is shown as 0 then 37; at the display's time, as 18 then 18. At 1× the same wind gives 0 then 0.6 against
-  0.3 then 0.3.
+  0.3 then 0.3. That holds only if the frame's time passes the committed tick with its display target. Taken by
+  alpha, M2's capture split each tick's 40 m as 3.2 m then 36.8 m. Recomputed from that capture's rows with
+  the display phase, the six frames step 19.0 to 20.8 m against 20 m due, and the spread is the record's
+  ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)).
 - **Directed shapes and capabilities.** Unrun. Both are the placed cell and the profile already reproduced, with
   their inputs from the game; M1 and M8 prove them first.
 
@@ -1059,7 +1086,7 @@ From `ground_revision_proof.py`, run on 14 November after
 | The residency of volume products | `CONTENT-LOOP` |
 | The shell, typed controls, parameter files | `CREATOR` |
 
-**A frame, in order.** `upload` takes the page's weather state and forms the travel at the display's time.
+**A frame, in order.** `upload` takes the page's weather state and forms the travel at the display's time, from the frame's display phase.
 `simulate`, on a new tick only: the due part of the weather map; the
 due tiles of the Sun's path in both bands and the ground field; the due part of the overlay. Each frame the
 effect writes the medium coefficients at the view volume's sample points, and `ATMOSPHERE` integrates the view
@@ -1108,6 +1135,9 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its M7 and M8, and this mo
 7. **The Sun-path optical depth has a ground band** (`ATMOSPHERE` M8), which holds the whole path to the Sun
    and is read at the receiver's own position in place of the cloud band's value, never added to it.
 8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount, which the weather state supplies.
+
+9. **The display phase** (`EFFECT-GRAPH` M4): where a frame's display target lies between the last two committed
+   ticks or past the newest, bounded at 50 ms. This module reads it in M2 and builds none of it.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace
 treats as geometry; the temporal contribution; leases of volumes; typed controls.

@@ -334,3 +334,9 @@
   The workspace command passes; canonical integration proves its exact rebased source.
   [Cost](../../evidence/CLOUDS/M2-cost.json) records refresh and memory excess with investigations;
   [valley inspection](../../evidence/CLOUDS/M2.md) follows on the merged build.
+- 2026-11-16 Planner: M2's block answered, on the lead's task ("settle and assign the shared display-time
+  interface change before M2.7's uneven 60× shade motion can be completed"). The interpolation alpha stops at the
+  committed tick, so it is not the display's time under a lead. `EFFECT-GRAPH` gains M4, the display phase, and
+  M2 depends on it. Drift is taken at the phase, predicted past the tick from committed state. M2.7's inspection
+  reads the time record and M2.11 covers both sides of a tick; M2's proof is reset.
+  [The reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md). M1's and M13's notes left the plan.

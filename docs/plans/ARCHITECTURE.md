@@ -18,7 +18,7 @@
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 |
-| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
+| 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | |
@@ -228,6 +228,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | Capability registry, recipes, quality values | `APPLE-TILE` (selection), `APPLE-PRESENTATION` (governor) → all GPU modules | C04, [hardware-native decision](../design/decisions/HARDWARE-NATIVE-ENGINE.md) |
 | Graph declaration, GPU lifetime, device generations | `APPLE-TILE` → all GPU modules | C06, [graph decision](../design/decisions/G3-EXECUTING-RENDER-GRAPH.md) |
 | **Effect passes and resources**: a contribution declares its own compute and render passes at five named frame stages, with 3D, cube and mipped storage-array textures, persistent, ping-pong and world-anchored wrapping state stepped by the tick and committed only with a submitted frame, a runtime cadence, and quality knobs. A scene holds an ordered list of contributions | `EFFECT-GRAPH` → `SEA`, `WATERS`, `CLOUDS`, `ATMOSPHERE`; `RENDER-2D` later | [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#mechanisms) |
+| **Display phase**: with the tick, the tick duration and the interpolation alpha, each frame gives every effect where its display target lies in ticks after the previous committed tick, with no stop at the committed one and at most 50 ms past it. A frame's display time is its tick less one plus the phase. Alpha is the phase held to 1 and is unchanged; sampling never advances authority; a quantity shown past the committed tick is a presentation-only prediction from committed state | The world's clock in core and the frame host, built in `EFFECT-GRAPH:M4` → `CLOUDS` from its M2; `SEA`, `WATERS`, `RENDER-2D` and games when their owners plan it | C02, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-display-phase-m4), [the ruling below](#seam-ruling-for-effect-graph-m4) |
 | **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs, switching in the frame the content publication names | `CULLING` (the route and its culling), `CONTENT-LOOP:M2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-m2) |
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:M3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` M1–M2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
@@ -309,6 +310,24 @@ write done, and switches the row only in the frame residency's
 [publication](CONTENT-LOOP/DESIGN.md#one-publication-one-switch-m1-m2) names; `thrum-render` gains no dependency
 on `thrum-asset-gpu`. `CULLING`'s items and its exact comparisons do not change. Once built, row replacement
 belongs to the route: later work there keeps its tests passing.
+
+<a id="seam-ruling-for-effect-graph-m4"></a>
+**Seam ruling for `EFFECT-GRAPH` M4.** `CLOUDS` M2 found that the interpolation alpha is not the display's time:
+it stops at the committed tick, and under a display lead the target is past that tick for part of every tick, so
+drift taken by alpha takes a short step and a long one in turn. No interface offered the target's place. The
+display phase is built by the `EFFECT-GRAPH` M4 builder in `thrum-core`'s clock, world lane and clocked world,
+the frame host's world observer, effect time and frame sample in `thrum-render`, `thrum-app`'s sky world and
+offscreen runner, the V1 game's world wrappers and its capture time record, with the behaviour
+[EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-display-phase-m4) defines. It adds to each and changes no value any of
+them gives today: alpha, the lead policy, the clock's authority and every exact baseline stay as they are, and no
+item of `CREATOR`, the platform modules, `T2-CAPTURE` or `SHOWCASE` changes. Once built, the phase belongs with
+the clock and the frame host: `HOST` M2 to M5, `SESSION` M7 and later work there keep its tests passing, and a
+[driven world](SESSION/DESIGN.md#12-a-driven-world) states its phase from its driver's position as a clocked
+world does from its clock. `HOST` was the other candidate and is not the owner: what a frame tells an effect
+about time is `EFFECT-GRAPH`'s interface, and `HOST` waits on seven milestones. Readers are separate. `CLOUDS`
+M2 takes its drift at the phase. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and a game's camera and
+entities still read alpha and are uneven under a lead by the same arithmetic; each is for its owner's next plan,
+the camera and entities with `HOST` M4's contract.
 
 <a id="seam-rulings-for-sea"></a>
 
@@ -2250,3 +2269,7 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   through the references. `CULLING` M3.10 and M3.11 are written again. The second of two refreshes may take
   the main-branch check's pass as its starting record. No reference, comparison, registry rule or other
   module's item changed.
+- 2026-11-16 The display phase added as an interface, with a seam ruling for `EFFECT-GRAPH` M4, on the lead's
+  task after `CLOUDS` M2 ended `BLOCKED needs_dependency`. `CLOUDS` M2 now needs `EFFECT-GRAPH:M4`. No other
+  module's item or file changed. `SEA`, `WATERS`, `RENDER-2D`, `HOST` and `SESSION` are named in the ruling:
+  their planners read it there.
