@@ -349,3 +349,9 @@
   All twelve mode/run paired p50 increases are 2.81–5.06%; no 25% tripwire crosses. These are contended costs,
   not budgets. [Evidence and exact retained inputs](../../evidence/CULLING/M3/replan/coverage-cost/README.md).
   The ledger records them on branch fbce0768c; main-only campaign and fresh motion remain unqualified.
+
+- 2026-11-16 Resumed after SCENE-VIEWS fixed its independent source witness on main in `8bc658ebe`
+  and `b1aeff26a`. The branch is rebased and includes both; the original source hashes still apply after
+  removing only the exact approved coverage addition. All 34 registered reference files are unchanged.
+  The official merge is retried alone. Existing target proofs, reference inspection, full verifier records
+  and coverage-cost rows stand; no main-branch campaign or final motion inspection is claimed yet.
