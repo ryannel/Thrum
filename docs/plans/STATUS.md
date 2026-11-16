@@ -8,7 +8,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Needs you now
 
-- Nothing.
+- CREATOR M3 A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes: Blocked: Needs Access, M3.4: In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press. (Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session.). You approve it at the machine, in a visible run the lead starts
 
 ### Choices made for you
 
@@ -242,7 +242,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3): In Progress · [plan](T2-CAPTURE/PLAN.md)
 - A stateful native segment composes inside one submission (APPLE-TILE M10): Ready for Review · [plan](APPLE-TILE/PLAN.md)
-- A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
 - WATERS M2 An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh: Blocked: Needs Context: M2.2 needs a revised geometry/cache-to-shading approach that passes the existing visual bar. The lead finds the missing fact, or asks you for it
@@ -295,7 +294,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The starter scene runs in Chrome from one command, with its controls and live asset edits (CREATOR M1), 11 Nov · [review](../evidence/CREATOR/M1-review.md)
 - A repeatable offscreen valley proves the comparison path (APPLE-TILE M0), 11 Nov · [review](../evidence/APPLE-TILE/M0-review.md)
 - iOS simulator engine motion without desktop capture (T2-CAPTURE M2), 10 Nov · [review](../evidence/T2-CAPTURE/M2-review.md)
-- Cooked scene draws on adapters without indirect execution, selected from the capability record (COOKED-DRAW M1), 9 Nov · [review](../evidence/COOKED-DRAW/M1-review.md)
 - The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
@@ -307,7 +305,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 4 · In Progress |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Ready for Review |
-| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
+| 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · Blocked: Needs Access |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
