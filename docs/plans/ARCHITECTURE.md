@@ -826,13 +826,25 @@ and in every exact test of the default.
   before the merge that [proofs run once, on main](#proofs-run-once-on-main) removed: a job audit of 16
   November traced about 30% of all failed background jobs and five failed GPU holds to it. M3 now lands as
   rule 2's planned refresh, like any other. The branch regenerates the references, runs `verify --full` once
-  and commits the pins, and `merge` lands the output, the references and the pins together. The campaign runs
-  once on the branch and is tied to main through the references: the verifier passed on the campaign's build
-  against the files main registers, a build that lost the output's effect draws the old bytes and fails every
-  run, and the main-branch check shows what main draws. No proof is made again for a rebase unless the rebase
-  changes a registered reference. If the refresh proves wrong after it lands, rule 2's course applies: the
-  module fixes it or the lead reverts the merge. [`CULLING`'s design](CULLING/DESIGN.md#how-it-lands) has the
-  order, and forbids the builder a landing pipeline of its own.
+  and commits the pins, and `merge` lands the output, the references and the pins together. No proof is made
+  again for a rebase unless the rebase changes a registered reference. If the refresh proves wrong after it
+  lands, rule 2's course applies: the module fixes it or the lead reverts the merge.
+  [`CULLING`'s design](CULLING/DESIGN.md#how-it-lands) has the order, and forbids the builder a landing
+  pipeline of its own.
+- **The loaded proof is made on main.** (16 November 2026, later that day; replaces "tied to main through the
+  references".) The registered references are drawn Direct. A build that lost the output's effect on Direct's
+  pipelines draws the old bytes and fails the main-branch check on every run, but Frustum, Occlusion and the
+  bucket route prepare pipelines of their own, which no reference draws. A campaign made on the branch
+  therefore says nothing sure about a culled or bucket pipeline that the rebase changed. So M3.11's campaign,
+  the build with the output taking turns with a control without it under counted load, is taken once after
+  the merge, on a build of a commit of main that holds the landing, over the cube route and the bucket route.
+  It is taken again only if M3 itself merges another change to what the game is built from, never because
+  main moved. It is one job of the builder's, with nothing chained to it. If the build with the output
+  differs there, the builder ends `BLOCKED` and a planner settles here what main keeps. After M3 no standing
+  loaded proof guards those pipelines: the ruling on
+  [a frame that varies under load](#a-frame-that-varies-under-load) stops any module whose exact comparison
+  varies on content that holds the output. [The design](CULLING/DESIGN.md#what-a-campaign-stands-for) says
+  what the campaign stands for.
 - **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, holds a
   verifier pass at its new starting commit (the main-branch check's, or one `verify --full` of its own) and
   regenerates from there. Each records its own old and new hashes, so the two causes stay apart.
@@ -893,7 +905,9 @@ identity field equal. The builder asked for `APPLE-TILE` to resolve it; no plan 
   or a difference image that shows anything but those lines, is a Must Fix.
 - **When it ends.** With the landing that puts `CULLING` M3's coverage output on main. On content that holds
   the output, a failure of this kind is evidence that the correction does not hold on that target: the builder
-  ends `BLOCKED` with the record, and a planner settles it here.
+  ends `BLOCKED` with the record, and a planner settles it here. The same goes for a module's own exact
+  comparison of two draws of the same content, when it differs only along such edges (16 November 2026): the
+  verifier draws Direct, so a loss on a culled or bucket pipeline can show nowhere else.
 
 <a id="a-fixed-capture-that-stalls"></a>
 
@@ -2273,3 +2287,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   task after `CLOUDS` M2 ended `BLOCKED needs_dependency`. `CLOUDS` M2 now needs `EFFECT-GRAPH:M4`. No other
   module's item or file changed. `SEA`, `WATERS`, `RENDER-2D`, `HOST` and `SESSION` are named in the ruling:
   their planners read it there.
+- 2026-11-16 The ruling on `CULLING` M3 gained "The loaded proof is made on main", after a design review
+  found that the registered references are drawn Direct and so cannot tie a campaign made on the branch to
+  the culled and bucket pipelines of the merged build. M3.11's campaign is taken once on main after the
+  merge. `CULLING` M3.11 is written again. The ruling on a frame that varies under load now also stops a
+  module whose own exact comparison varies along triangle edges on content that holds the output. No
+  reference, comparison, registry rule or other module's item changed.

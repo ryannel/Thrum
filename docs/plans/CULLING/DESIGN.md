@@ -304,44 +304,68 @@ tests would prove a configuration nobody ships.
 **What moves.** The default output of every scene with textured or shadowed opaque geometry, at pixels whose
 2×2 quad spans more than one triangle. `APPLE-TILE`'s registered references therefore move, and
 [the module list's ruling on M3](../ARCHITECTURE.md#ruling-on-culling-m3) says who refreshes them. Once refreshed,
-they hold the mechanism in place: a build that lost the coverage output draws the old bytes and fails the
-verifier.
+they guard the pipelines they are drawn with, which are Direct's: a build whose Direct pipelines lost the
+output's effect draws the old bytes there and fails the verifier. They are never drawn Frustum, Occlusion or
+with meshes selected, so they say nothing about those pipelines.
 
 **Proof that it is one image.** A passing route proves little, because builds with no repair in them have
-passed 8, 16 and 24 complete routes in a row. Three proofs carry the claim. Each is one bounded run, and none
-waits on another.
+passed 8, 16 and 24 complete routes in a row. So the claim rests on a controlled experiment, and the experiment
+has to be made on the build it speaks for. Direct and the culled modes prepare different pipelines: the vertex
+entry differs, and the bucket route adds a pipeline for each class. A rebase can change one of them through a
+pipeline descriptor, a dependency or the toolchain while the shader text and every image drawn Direct stay as
+they were. Three proofs carry the claim. Each is one bounded run, and none waits on another.
 
-1. **The campaign, once, on the branch.** On the Mac, the build that holds the coverage output and a control
-   that differs from it only by leaving the output out take turns, one complete route each, with the same
-   recipe and source, four hosts, two counted render workers and the full exact comparison at every tick, over
-   both recipes and both sources (SDR and scene-linear). The campaign ends when the control has differed in
-   five routes. The build with the output must have run at least as many routes as the control and differed in
-   none. If the output did nothing, five differences would all fall to the control with a chance of 1 in 32;
-   five is the planner's choice of how strong the proof is, and the campaign's length follows the control's
-   measured rate. A campaign in which the control does not differ proves nothing, and is reported, not
-   shortened. Its record names the commit both binaries were built from, their hashes, the control's source
-   difference, the toolchain, the route, the cooked valley and the load.
-2. **The references, on main.** The campaign's build drew the references main registers: rule 2's
-   `verify --full` passed on that build against those files. A build in which the output has stopped working
-   draws merged derivatives, the image the old references hold. At `portable-sdr-approach` alone the two
-   images are 8,303 pixels apart, and on the branch all thirty native files and all four Chrome manifests
-   moved. So such a build fails the verifier on every run, at any load, and the main-branch check
-   `exact-images` passing at the claimed commit shows main draws the campaigned image wherever a baseline
-   looks. That is M3.10's check.
+1. **The campaign, once, on main.** After the merge, on the Mac, a build of a commit of main that holds the
+   coverage output and a control that differs from it only by leaving the output out take turns, one complete
+   route each, with the same recipe, source and entity route, four hosts (Direct, Frustum, Occlusion and a
+   second Direct), two counted render workers and the full exact comparison at every tick. The turns go round
+   the eight combinations of the two recipes, the two sources (SDR and scene-linear) and the two entity
+   routes: cubes, as M3.1 draws the valley, and selected meshes, as M3.4 does. Those are the forward pipelines
+   this milestone qualifies. The campaign ends when the control has differed in five routes and both builds
+   have run every combination. The build with the output must have run at least as many routes as the control
+   and differed in none. If the output did nothing, five differences would all fall to the control with a
+   chance of 1 in 32; five is the planner's choice of how strong the proof is. A campaign whose control has
+   not differed five times after sixteen pairs is stopped. It proves nothing, and is reported, not shortened.
+   Sixteen is the planner's choice too: twice round the combinations, about an hour and a half at the 2.75
+   minutes a route took on the branch. The builder takes such a campaign once more at another hour, and after
+   a second ends `BLOCKED` with both records. The record names the commit both binaries were built from,
+   their hashes, the control's source difference, the toolchain, the route, the cooked valley, the load and
+   each route's result with its combination, so a reader sees where the control showed the load at work.
+2. **The references, on main.** Rule 2's `verify --full` passed on the branch against the regenerated
+   references, and the main-branch check `exact-images` draws them again on main. Where the output stops
+   working, a build draws merged derivatives, the image the old references hold. At `portable-sdr-approach`
+   alone the two images are 8,303 pixels apart, and on the branch all thirty native files and all four Chrome
+   manifests moved. So a loss on Direct's pipelines fails that check on every run, at any load. That is
+   M3.10's check. It draws Direct only, so it does not stand in for the campaign.
 3. **This module's comparisons, on the merged tip.** M3.1 and M3.4 compare separately prepared hosts at every
    tick of the route on both recipes, and M3.4's check is where this module first met the variation. The
-   script runs both on main's tip while other builders load the GPU.
+   script runs both on main's tip while other builders load the GPU. One passing run of each is weak evidence
+   that the image is one, by this section's first sentence. They are there to catch a mode that differs from
+   its oracle.
 
-The campaign is not made again for a rebase, and no record relates it path by path to the commit claimed. A
-rebase can break the output's effect through a pipeline descriptor, a dependency or the toolchain while the
-shader text stays the same. Proofs 2 and 3 run on the merged tip, where a lost effect fails proof 2 every
-time, so that fault is caught by the run [the module list](../ARCHITECTURE.md#proofs-run-once-on-main) makes
-the proof of record. Equal shader sources are still never offered as proof of anything.
+<a id="what-a-campaign-stands-for"></a>
 
-The campaign is a measurement and nothing else: one job under the `gpu` lock that does not fetch, rebase,
-verify or merge. A campaign too long for the lock hold limit is taken as whole pairs in separate holds, and
-the record adds them up; a hold that is stopped loses only its unfinished pair. If the build with the output
-differs once, the mechanism is wrong or incomplete: keep both payloads, merge nothing and end `BLOCKED`.
+**What the campaign stands for.** The commit it names, which is a commit of main that holds the landing and
+every change this milestone has merged to what the game is built from: `crates/`, `examples/v1-game/`,
+`.cargo/` and the workspace manifest, lockfile and toolchain file. So it is taken after the merge and never
+before it, and the rebase inside `merge` cannot come between the experiment and the build. If the milestone
+later merges another such change, a fix after a review for example, the campaign is taken once more after it.
+It is not taken again because main moved, and no record relates it path by path to a later commit. What other
+modules merge afterwards is theirs, and for it there is a standing stop, not a standing loaded proof:
+[the ruling on a frame that varies under load](../ARCHITECTURE.md#a-frame-that-varies-under-load) ends
+`BLOCKED` any module whose exact comparison, the verifier's or its own, varies along triangle edges on
+content that holds the output.
+Equal shader sources are never offered as proof of anything.
+
+A campaign passed on the branch at `cfecd0c7`: meshes selected, six pairs, the control differing in five
+routes and the build with the output in none. It is why this mechanism lands. It ran before the rebase and
+without the cube route, so it is not M3.11's proof.
+
+The campaign is a measurement and nothing else: one job that does not fetch, rebase, verify or merge, which
+the builder starts itself once it has read `merge`'s result. It holds the `gpu` lock around whole pairs. A
+campaign too long for the lock hold limit is taken as whole pairs in separate holds, and the record adds them
+up; a hold that is stopped loses only its unfinished pair. If the build with the output differs once, the
+correction does not hold on the merged build: keep both payloads and end `BLOCKED` with the record.
 
 <a id="qualified-before-it-lands"></a>
 <a id="how-it-lands"></a>
@@ -356,11 +380,9 @@ On the branch, once each:
   `APPLE-TILE`'s scripts, and committed. The references they replace must be what main drew: a passing
   verifier record at the **starting commit**, the commit of main the branch regenerated on top of, says so.
   The main-branch check's pass at that commit is such a record and costs no run.
-- **The campaign** passes on a build that holds the output (proof 1).
 - **M3.12's difference images**, between the references replaced and the new ones, show only what that item
   allows. The builder judges them by the item's own list, and the reviewer judges them again at review.
-- **Rule 2's one `verify --full`** passes on the campaign's build against the regenerated references, which
-  is what ties the campaign to them (proof 2).
+- **Rule 2's one `verify --full`** passes on the branch's build against the regenerated references (proof 2).
 - **Pins.** The [reference guard](../BASELINE-GUARD/DESIGN.md#the-reference-guard) in `./dev check` refuses a
   moved reference until the registry records it. A commit changes, in `.config/exact-baselines.json`, the
   `pin` and the `refresh` of each baseline whose reference moved, and nothing else.
@@ -370,30 +392,29 @@ On the branch, once each:
 
 Then the builder runs `merge`, by itself. It rebases, runs `./dev check` with the reference guard, and pushes.
 The script's run on the merged tip is the proof of record, and M3.10's check passes from the main-branch
-check's run there.
+check's run there. On main, once: the campaign (proof 1), on a build of
+[the commit it stands for](#what-a-campaign-stands-for).
 
 **What a rebase repeats.** `APPLE-TILE` M10 and `ATMOSPHERE` M9 also land covered changes, so the builder
 integrates on top of what has landed.
 
-- If the registered reference files are as they were, nothing is repeated: not the campaign, not the
-  verifier, not M3.12's images.
+- If the registered reference files are as they were, nothing is repeated: not the verifier, not M3.12's
+  images. The campaign follows the merge in any case.
 - If only a pin changes, because main changed a comparison file, the builder copies the pins the guard prints
   and keeps its refresh.
 - If a registered reference changes or conflicts, another landing moved an image. Main's new tip becomes the
   starting commit. The builder regenerates each moved reference from the rebased build, makes M3.12's images
-  again, and runs `verify --full` and the campaign once each on that build, because proof 2 needs the
-  campaign's build to have drawn the references main will hold. Each of the two refreshes records its own
-  old and new hashes, as [the module list](../ARCHITECTURE.md#ruling-on-culling-m3) orders.
+  again, and runs `verify --full` once on that build. Each of the two refreshes records its own old and new
+  hashes, as [the module list](../ARCHITECTURE.md#ruling-on-culling-m3) orders.
 
-**When it fails.** Before the merge: if the campaign fails, or a reference moved where M3.12 allows none,
-nothing is merged, and the builder ends `BLOCKED` with the payloads. After the merge: if the main-branch check
-fails at this module's commit, rule 2's course applies. The builder fixes it as its next task, or the lead
-reverts the merge, which restores the shader, the references and the pins together. A failure whose every
-difference lies along shared triangle edges means the correction does not hold on that target: the builder
-ends `BLOCKED` with the record, as [the ruling on a frame that varies under
-load](../ARCHITECTURE.md#a-frame-that-varies-under-load) says.
+**When it fails.** Before the merge: if a reference moved where M3.12 allows none, nothing is merged, and
+the builder ends `BLOCKED` with the payloads. After the merge: if the main-branch check fails at this module's
+commit, rule 2's course applies. The builder fixes it as its next task, or the lead reverts the merge, which
+restores the shader, the references and the pins together. If the build with the output differs in the
+campaign, or a failure's every difference lies along shared triangle edges, the correction does not hold on
+that target: the builder ends `BLOCKED` with the record, and a planner settles what main keeps, as
+[the ruling on a frame that varies under load](../ARCHITECTURE.md#a-frame-that-varies-under-load) says.
 
-<a id="what-a-campaign-stands-for"></a>
 <a id="no-landing-pipeline"></a>
 
 **No landing pipeline.** The builder writes no job that waits for, asserts or follows another job, a merge or
@@ -417,9 +438,9 @@ cross a tripwire, the builder investigates within M3: which passes carry the cos
 what in the output causes it. The finding is recorded with a disposition, one of two: the cause is corrected in
 M3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
 for a planner. Building continues either way. A cheaper form of the output moves the references again, so it
-lands [as above](#how-it-lands), with a campaign of its own. Correctness and the milestone's quality bar remain
-requirements: the realtime captures of M3.7 and M3.8 are judged against "smooth at the display's full
-refresh", whatever the rows say.
+lands [as above](#how-it-lands), and the campaign is taken again on main after it. Correctness and the
+milestone's quality bar remain requirements: the realtime captures of M3.7 and M3.8 are judged against
+"smooth at the display's full refresh", whatever the rows say.
 
 **Chrome.** The campaign runs on the Mac only. Chrome's image varies too, by
 [the module list's reading](../ARCHITECTURE.md#a-frame-that-varies-under-load) of two Chrome records, which is
@@ -487,9 +508,11 @@ is caught. For this module:
    with a bench-only comparison.
 7. **The coverage output is not the whole cause, or stops working.** The evidence for it is bounded: four quads
    and eight loaded routes. A later compiler, dependency or pipeline change could also fold the output away.
-   Early sign: the build with the output differs in M3.11's campaign, or the main-branch check draws the old
-   bytes. Outcome: before the merge the builder ends `BLOCKED` with the payloads and merges nothing; after it,
-   [rule 2's course](#how-it-lands), with a revert that restores the references.
+   Early sign: the build with the output differs in M3.11's campaign on main, or the main-branch check draws
+   the old bytes, which shows a loss on Direct's pipelines only. Outcome: the builder ends `BLOCKED` with the
+   payloads, or [rule 2's course](#how-it-lands) applies, with a revert that restores the references. After
+   M3, a loss confined to a culled or bucket pipeline has no standing loaded proof: it shows as an exact
+   comparison that varies under load, which stops the module that meets it.
 8. **The coverage output costs more than expected.** Early sign: M3.13's paired rows cross a tripwire. Outcome:
    the cause is investigated and given a disposition within M3, as the Cost paragraph of
    [the mechanism](#m3-one-image-under-load) says. The figure alone never stops the milestone.
@@ -518,6 +541,7 @@ a control that leaves the output out, per pass and for the whole frame, on both 
   `docs/evidence/CULLING/`.
 - **Once, then `merge`.** Each proof is one run on the branch; the script's run on the merged tip is the proof
   of record, and [no job of the builder's](#no-landing-pipeline) chains proofs, guards the merge or follows it.
+  M3.11's campaign is the one proof the builder takes on main, [after the merge](#what-a-campaign-stands-for).
 - **Maturity.** The `G3c_gpu_culling` row of [the ledger](../../design/maturity.json) is updated at each milestone,
   with implementation, correctness, visuals and device results kept apart.
 

@@ -294,3 +294,9 @@
   the campaign runs once on the branch and is tied to main by the references, and M3 lands as rule 2's planned
   refresh. M3.10 and M3.11 written again; M3.1 to M3.9, M3.12 and M3.13 unchanged; the pass on `cfecd0c7`
   stands. [Design](DESIGN.md#how-it-lands). No check command changed, and no GPU check was run.
+
+- 2026-11-16 Planner, from the design review of `a409bc13` (one Must Fix, MF4 reopened): the references are
+  drawn Direct, so they cannot tie a campaign made on the branch to the culled and bucket pipelines after a
+  rebase. M3.11's campaign is now taken once on main, after the merge; it adds the cube route and stops after
+  sixteen pairs. M3.11 written again; every other item unchanged. One new assumption for the owner. No check
+  command changed, and no GPU check was run. [Record](../../evidence/CULLING/M3-replan/loaded-proof-on-main.md).
