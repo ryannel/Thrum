@@ -572,3 +572,11 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   on an edited cooked publication in Chrome. M9.3 and M9.7 remain open; no merge
   is claimed. [Results](../../evidence/ATMOSPHERE/M9-continuation.md) and
   [handoff](../../evidence/ATMOSPHERE/M9-handoff.md) separate facts from the host-event hypothesis.
+
+- **2026-11-16 — M9 resumed target checks.** The unchanged Metal referees and
+  hardware Chrome handoff pass. On `5dbc93403`, the full gate and all six showcase
+  stops pass; the earlier watcher failure did not recur. Repaired the omitted
+  M9 registry pins and refreshes, and moved two oversized inspection PNGs to the
+  shared evidence store with verified recovery. [Results and complete outputs](../../evidence/ATMOSPHERE/M9-resume.md)
+  distinguish the repaired storage failure from passing target runs. Independent
+  solar accuracy and the sea-level look remain unqualified.

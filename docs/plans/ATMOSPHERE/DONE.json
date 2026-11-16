@@ -166,10 +166,10 @@
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-continuation.md",
+      "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz; docs/evidence/ATMOSPHERE/M9-continuation/all-orders.tsv.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+      "builder_result": "pass"
         },
         {
           "id": "M9.4",
@@ -209,10 +209,10 @@
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/ATMOSPHERE/M9-continuation.md",
+      "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/showcase-run.json; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+      "builder_result": "pass"
         },
         {
           "id": "M9.8",
