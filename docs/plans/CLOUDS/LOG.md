@@ -325,3 +325,12 @@
   workspace gate times out during GPU tests without a reported test failure;
   canonical integration runs the gate with its merge timeout. [CPU evidence](../../evidence/CLOUDS/M13.md)
   includes the latest Sun-path and medium regressions; no visual claim is added.
+
+- 2026-11-16 M2 resumes Weather/Shade with publication-owned weather, integer map axes and
+  GPU-written atmosphere shade; CPU diagnostic and absent providers retain their paths.
+  Mac Metal item probes, default-limit conformance, submitted display-time mapping and
+  prescribed GPU-shade integration pass. [Bounds](../../evidence/CLOUDS/M2-conformance.md)
+  retain the large coarse-grid/low-Sun errors and age's zero-contribution discontinuity.
+  The workspace command passes; canonical integration proves its exact rebased source.
+  [Cost](../../evidence/CLOUDS/M2-cost.json) records refresh and memory excess with investigations;
+  [valley inspection](../../evidence/CLOUDS/M2.md) follows on the merged build.
