@@ -223,7 +223,7 @@ impl Ambient {
                 p.bindings.iter().map(|b| BindingAccess {
                     pass: p.name.clone(),
                     entry: p.entry,
-                    group: b.group,
+                    group: b.group.slot(),
                     binding: b.slot,
                     resource: resources[&b.buffer],
                     access: b.access,
@@ -267,7 +267,7 @@ impl Ambient {
         let prepared = &self.passes[&spec.key];
         pass.set_pipeline(&prepared.pipeline);
         for (group, binding) in &prepared.groups {
-            pass.set_bind_group(*group, binding, &[]);
+            pass.set_bind_group(group.slot(), binding, &[]);
         }
         let [x, y, z] = spec.dispatch;
         pass.dispatch_workgroups(x, y, z);

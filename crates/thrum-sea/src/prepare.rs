@@ -4,7 +4,7 @@ use thrum_render::runtime::DeviceSite;
 
 pub(super) struct PreparedPass {
     pub pipeline: wgpu::ComputePipeline,
-    pub groups: Vec<(u32, wgpu::BindGroup)>,
+    pub groups: BTreeMap<spec::GroupKey, wgpu::BindGroup>,
 }
 
 pub(super) fn sizes() -> Vec<u64> {
@@ -81,14 +81,11 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
     let mut pipelines = BTreeMap::<spec::PipelineKey, wgpu::ComputePipeline>::new();
     for pass in &specs {
         let mut layouts = Vec::new();
-        let mut groups = Vec::new();
-        let max_group = pass
-            .bindings
-            .iter()
-            .map(|b| b.group)
-            .max()
-            .expect("nonempty pass");
-        for group in 0..=max_group {
+        let mut groups = BTreeMap::new();
+        for group in spec::GroupKey::ALL
+            .into_iter()
+            .filter(|group| pass.bindings.iter().any(|b| b.group == *group))
+        {
             let bindings: Vec<_> = pass.bindings.iter().filter(|b| b.group == group).collect();
             let entries: Vec<_> = bindings
                 .iter()
@@ -121,14 +118,14 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
                     resource: buffers[&b.buffer].as_entire_binding(),
                 })
                 .collect();
-            groups.push((
+            groups.insert(
                 group,
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some(&pass.name),
                     layout: &layout,
                     entries: &entries,
                 }),
-            ));
+            );
             layouts.push(layout);
         }
         let layout_refs: Vec<_> = layouts.iter().map(Some).collect();

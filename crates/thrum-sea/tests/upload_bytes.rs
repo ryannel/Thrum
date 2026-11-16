@@ -52,7 +52,10 @@ fn still_changed_and_transition_upload_only_the_required_bytes() {
         .frame(&removed, 10.0, &points, true)
         .expect("in-place replacement");
     record(&mut h, "in-place band removal", true, points.len());
-    for texel in removed_output.cascades[..thrum_sea::PIXELS as usize * 12].as_chunks::<12>().0 {
+    for texel in removed_output.cascades[..thrum_sea::PIXELS as usize * 12]
+        .as_chunks::<12>()
+        .0
+    {
         assert_eq!(&texel[..3], &[0.0; 3]);
         assert_eq!(texel[3], 1.0);
         assert_eq!(&texel[4..], &[0.0; 8]);

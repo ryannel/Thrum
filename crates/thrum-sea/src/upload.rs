@@ -97,7 +97,9 @@ pub(super) fn frame(
     sea.upload
         .extend_from_slice(bytemuck::cast_slice(&long[..spectrum.long.len()]));
     for point in queries {
-        let relative = [(point[0] - anchor[0]) as f32, (point[1] - anchor[1]) as f32];
+        let relative = records::Query {
+            point: [(point[0] - anchor[0]) as f32, (point[1] - anchor[1]) as f32],
+        };
         sea.upload.extend_from_slice(bytemuck::bytes_of(&relative));
     }
     // Modes have their own immutable-to-compute allocation. Queue writes survive a discarded
@@ -123,7 +125,7 @@ pub(super) fn frame(
         parameters: size_of::<records::Params>() as u64,
         modes: mode_bytes,
         long: (spectrum.long.len() * size_of::<records::Long>()) as u64,
-        queries: (queries.len() * size_of::<[f32; 2]>()) as u64,
+        queries: (queries.len() * size_of::<records::Query>()) as u64,
     };
     queue.write_buffer(&sea.buffers[&BufferKey::UploadStaging], 0, &sea.upload);
     let mut offset = 0;

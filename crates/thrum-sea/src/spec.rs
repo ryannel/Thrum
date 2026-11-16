@@ -53,7 +53,7 @@ pub(super) fn resources() -> Vec<Resource> {
         (
             B::Queries,
             "sea query points".into(),
-            u64::from(MAX_QUERIES) * 8,
+            u64::from(MAX_QUERIES) * size_of::<records::Query>() as u64,
         ),
         (B::TransformA, "sea transform A".into(), work),
         (B::TransformB, "sea transform B".into(), work),
@@ -143,10 +143,26 @@ pub(super) enum PipelineKey {
 }
 
 pub(super) struct Binding {
-    pub group: u32,
+    pub group: GroupKey,
     pub slot: u32,
     pub buffer: BufferKey,
     pub access: AccessKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) enum GroupKey {
+    Fields,
+    Mip,
+}
+
+impl GroupKey {
+    pub(super) const ALL: [Self; 2] = [Self::Fields, Self::Mip];
+    pub(super) const fn slot(self) -> u32 {
+        match self {
+            Self::Fields => 0,
+            Self::Mip => 1,
+        }
+    }
 }
 
 pub(super) struct PassSpec {
@@ -182,7 +198,7 @@ impl PassSpec {
             bindings: bindings
                 .iter()
                 .map(|&(slot, buffer, access)| Binding {
-                    group: 0,
+                    group: GroupKey::Fields,
                     slot,
                     buffer,
                     access,
@@ -265,7 +281,7 @@ pub(super) fn passes() -> Vec<PassSpec> {
             [(CASCADES * width * width).div_ceil(64), 1, 1],
         );
         pass.bindings.push(Binding {
-            group: 1,
+            group: GroupKey::Mip,
             slot: 0,
             buffer: B::MipParams(level),
             access: U,

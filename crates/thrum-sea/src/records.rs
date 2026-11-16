@@ -26,6 +26,12 @@ pub(crate) struct Long {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub(crate) struct Query {
+    pub point: [f32; 2],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub(crate) struct Field {
     pub displacement: [f32; 4],
     pub slope: [f32; 4],
@@ -71,6 +77,7 @@ pub fn layouts() -> Vec<RecordLayout> {
         record!(Params, time, physical, lengths, levels),
         record!(Bin, physical, clock),
         record!(Long, physical, rate),
+        record!(Query, point),
         record!(Field, displacement, slope, velocity),
         record!(Moments, slope, extra),
         record!(Mip, address),

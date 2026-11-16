@@ -7,12 +7,13 @@ struct Params {
 }
 struct Bin { physical: vec4<f32>, clock: vec4<u32> }
 struct Long { physical: vec4<f32>, rate: vec4<f32> }
+struct Query { point: vec2<f32> }
 struct Field { displacement: vec4<f32>, slope: vec4<f32>, velocity: vec4<f32> }
 struct Moments { slope: vec4<f32>, extra: vec4<f32> }
 @group(0) @binding(0) var<uniform> p: Params;
 @group(0) @binding(1) var<storage, read> modes: array<Bin>;
 @group(0) @binding(2) var<storage, read> components: array<Long>;
-@group(0) @binding(3) var<storage, read> queries: array<vec2<f32>>;
+@group(0) @binding(3) var<storage, read> queries: array<Query>;
 @group(0) @binding(4) var<storage, read_write> a: array<vec2<f32>>;
 @group(0) @binding(5) var<storage, read_write> b: array<vec2<f32>>;
 @group(0) @binding(6) var<storage, read_write> field: array<Field>;
@@ -129,7 +130,7 @@ fn reduce(@builtin(global_invocation_id) id: vec3<u32>) {
 fn long_waves(@builtin(global_invocation_id) id: vec3<u32>) {
     let i=id.x;
     if i<4096u {
-        if i<p.time.z { long_field[i]=sample_long(queries[i],1e20); }
+        if i<p.time.z { long_field[i]=sample_long(queries[i].point,1e20); }
         else { long_field[i]=Field(vec4(0.0),vec4(0.0),vec4(0.0)); }
         return;
     }
