@@ -2,6 +2,7 @@
 """Regenerate this scene's grey calibration float and white material texel."""
 import base64
 import json
+import math
 from pathlib import Path
 import struct
 import zlib
@@ -11,19 +12,27 @@ ROOT = Path(__file__).resolve().parent / 'assets'
 
 def main():
     positions, normals, uvs, indices = [], [], [], []
-    for normal, corners in [
-        ((1, 0, 0), [(1,-1,-1),(1,1,-1),(1,1,1),(1,-1,1)]),
-        ((-1, 0, 0), [(-1,-1,1),(-1,1,1),(-1,1,-1),(-1,-1,-1)]),
-        ((0, 1, 0), [(-1,1,-1),(-1,1,1),(1,1,1),(1,1,-1)]),
-        ((0, -1, 0), [(-1,-1,1),(-1,-1,-1),(1,-1,-1),(1,-1,1)]),
-        ((0, 0, 1), [(-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1)]),
-        ((0, 0, -1), [(1,-1,-1),(-1,-1,-1),(-1,1,-1),(1,1,-1)]),
-    ]:
-        start = len(positions)
-        positions.extend([[x * .5 for x in p] for p in corners])
-        normals.extend([normal] * 4)
-        uvs.extend([(0,0),(0,1),(1,1),(1,0)])
-        indices.extend(start + x for x in [0,1,2,0,2,3])
+    # A grey sphere exposes the sky's angular illumination continuously, rather
+    # than hiding it in three constant faces. It is a stationary calibration
+    # float; water-driven body motion is a later milestone.
+    rings, sectors = 32, 64
+    for ring in range(rings + 1):
+        latitude = math.pi * ring / rings
+        for sector in range(sectors + 1):
+            longitude = 2 * math.pi * sector / sectors
+            normal = (math.sin(latitude) * math.cos(longitude), math.cos(latitude),
+                      math.sin(latitude) * math.sin(longitude))
+            positions.append([0.5 * v for v in normal])
+            normals.append(normal)
+            uvs.append((sector / sectors, ring / rings))
+    for ring in range(rings):
+        for sector in range(sectors):
+            a = ring * (sectors + 1) + sector
+            b = a + sectors + 1
+            if ring > 0:
+                indices.extend([a, a + 1, b])
+            if ring < rings - 1:
+                indices.extend([a + 1, b + 1, b])
     data = bytearray()
     views, accessors = [], []
     for values, fmt, kind, component in [(positions,'3f','VEC3',5126),(normals,'3f','VEC3',5126),(uvs,'2f','VEC2',5126),([(i,) for i in indices],'H','SCALAR',5123)]:

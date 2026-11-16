@@ -197,7 +197,7 @@ impl Spectrum {
                 let angle = TAU * (f64::from(direction) + 0.5) / f64::from(DIRECTIONS);
                 let offset = 0.25 + 0.5 * (f64::from(id + 1) * 2.0_f64.sqrt()).fract();
                 let k = low * (width * offset).exp();
-                let at = usize::try_from(direction).expect("eight directions");
+                let at = usize::try_from(direction).map_err(|_| SeaError::InvalidInput)?;
                 let power = integrate(low, high, 512, |v| {
                     let b = 0.95 / (1.0 + v / SPLIT);
                     let wind = forcing.wind_log_density(v)

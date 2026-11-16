@@ -150,7 +150,7 @@ pub fn build_paired(
         Ok((
             game.with_meshes(vec![
                 MeshPlacement::new("meshes/float", "textures/white")
-                    .at([12.0, -0.2, 0.0])
+                    .at([12.0, -0.4, 0.0])
                     .scale(2.0)
                     .material(CookedMaterial {
                         base_colour: [0.18, 0.18, 0.18, 1.0],
