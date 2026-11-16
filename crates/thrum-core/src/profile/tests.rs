@@ -40,6 +40,23 @@ fn arithmetic_fixture_matches_retained_words() {
 }
 
 #[test]
+fn fixture_includes_every_wire_value_and_rounding_boundary() {
+    let vectors = conformance_vectors();
+    let arithmetic_words = 3790;
+    let wire_values = 65535;
+    let boundary_values = 65534 * 3;
+    assert_eq!(
+        vectors.len(),
+        arithmetic_words + wire_values + boundary_values + 10
+    );
+    for (index, value) in (-32767_i32..=32767).enumerate() {
+        let decoded = value as f32 / 32767.0;
+        // Both encodings of zero canonicalize to positive zero on the wire.
+        assert_eq!(vectors[arithmetic_words + index], decoded.to_bits());
+    }
+}
+
+#[test]
 fn random_has_no_call_order_or_thread_state() {
     let expected: Vec<_> = (0..256)
         .map(|tick| random(123, tick, u128::from(tick), 7).0.to_bits())

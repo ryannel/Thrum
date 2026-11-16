@@ -213,7 +213,7 @@ pub fn platform_sine_control(value: Number) -> Number {
     Number(value.0.sin())
 }
 
-/// Fixed arithmetic conformance fixture. Values are returned as canonical words
+/// Fixed arithmetic and input-conversion conformance fixture. Values are returned as canonical words
 /// solely for these fixed operands. NaNs are normalized because their payload
 /// and sign are outside the profile's observables.
 pub fn conformance_vectors() -> Vec<u32> {
@@ -283,6 +283,24 @@ pub fn conformance_vectors() -> Vec<u32> {
         (u64::MAX, u64::MAX, u128::MAX, u32::MAX),
     ] {
         output.push(word(random(seed, tick, entity, stream)));
+    }
+    // Every decoded wire value and both binary32 neighbours of every rounding
+    // boundary run on every target, not only in the host codec comparison test.
+    for value in -32767_i32..=32767 {
+        output.push(word(Number::from_axis(value as f32 / 32767.0)));
+    }
+    for value in -32767_i32..32767 {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "probe binary32 neighbours of the exact wire rounding boundary"
+        )]
+        let boundary = ((f64::from(value) + 0.5) / 32767.0) as f32;
+        for axis in [boundary.next_down(), boundary, boundary.next_up()] {
+            output.push(word(Number::from_axis(axis)));
+        }
+    }
+    for axis in [-1.0, 1.0, -0.0, 0.0, 0.1, 0.5, -0.5, 0.3, -0.7, -0.9] {
+        output.push(word(Number::from_axis(axis)));
     }
     output
 }

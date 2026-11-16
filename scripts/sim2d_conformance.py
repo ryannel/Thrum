@@ -192,6 +192,9 @@ def measure(target):
     measured_source = source_key()
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
+    previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
+    previous = json.loads(previous_path.read_text()) if previous_path.exists() else None
+    previous_hash = hashlib.sha256(previous_path.read_bytes()).hexdigest() if previous else None
     runner = Runner(target)
     runs = []
     for repeat in range(2):
@@ -201,14 +204,33 @@ def measure(target):
             assert row["ticks"] == expected_ticks and row["samples"] == expected_ticks - 120 and row["neighbours_per_tick"] > 0
             for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
                 assert isinstance(row[key], (float, int)) and row[key] >= 0, f"missing timing {key}"
-            prior = next((old for run in runs for old in run["rows"] if old["bodies"] == row["bodies"]), None)
-            row["quarter_slower_tripwire"] = bool(prior and row["tick_median_ms"] > 1.25 * prior["tick_median_ms"] and abs(row["neighbours_per_tick"] / prior["neighbours_per_tick"] - 1) < 0.01)
+            comparisons = []
+            for origin, record in [("previous_record", previous), ("current_record", {"commit": command(["git", "rev-parse", "HEAD"]).strip(), "runs": runs})]:
+                comparison = last_comparable(row, record, origin)
+                if comparison:
+                    comparisons.append(comparison)
+            row["quarter_slower_comparisons"] = comparisons
+            row["quarter_slower_tripwire"] = any(entry["tripped"] for entry in comparisons)
         for previous, row in zip(rows, rows[1:]):
             row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > previous["tick_ms_per_neighbour"]
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
-    return {"runs": runs, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
+    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "rev-parse", "HEAD"]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
+
+
+def last_comparable(row, record, origin):
+    """Name the latest same-size row within 1% of this row's neighbour count."""
+    if not record:
+        return None
+    for run in reversed(record["runs"]):
+        for prior in reversed(run["rows"]):
+            if prior["bodies"] == row["bodies"] and abs(row["neighbours_per_tick"] / prior["neighbours_per_tick"] - 1) < 0.01:
+                ratio = row["tick_median_ms"] / prior["tick_median_ms"]
+                return {"origin": origin, "commit": record["commit"], "repeat": run["repeat"],
+                        "bodies": prior["bodies"], "neighbours_per_tick": prior["neighbours_per_tick"],
+                        "tick_median_ms": prior["tick_median_ms"], "ratio": ratio, "tripped": ratio > 1.25}
+    return None
 
 
 def costs(target):
@@ -219,7 +241,12 @@ def costs(target):
     assert record["source_sha256"] == source_key(), "cost record belongs to different simulation sources"
     assert record["rustc"] == identity()["rustc"], "cost record belongs to another compiler"
     assert len(record["runs"]) == 2
-    for run in record["runs"]:
+    previous = None
+    if record["previous_record_commit"]:
+        retained = command(["git", "show", f"{record['previous_record_commit']}:{path.relative_to(ROOT)}"])
+        assert hashlib.sha256(retained.encode()).hexdigest() == record["previous_record_sha256"]
+        previous = json.loads(retained)
+    for index, run in enumerate(record["runs"]):
         assert run["build"] == "release" and len(run["load"]) == 3
         assert [(row["bodies"], row["ticks"]) for row in run["rows"]] == SIZES
         for row in run["rows"]:
@@ -228,6 +255,19 @@ def costs(target):
                 assert isinstance(row[key], (float, int)) and row[key] >= 0
             for key in ["clock_tripwire", "quarter_slower_tripwire", "super_neighbour_scaling_tripwire"]:
                 assert isinstance(row[key], bool)
+            comparisons = row["quarter_slower_comparisons"]
+            expected = [entry for entry in [
+                last_comparable(row, previous, "previous_record"),
+                last_comparable(row, {"commit": record["commit"], "runs": record["runs"][:index]}, "current_record"),
+            ] if entry]
+            assert comparisons == expected, "missing or incorrect chronological cost comparator"
+            for entry in comparisons:
+                assert entry["origin"] in ["previous_record", "current_record"] and entry["commit"]
+                assert entry["bodies"] == row["bodies"] and entry["repeat"] in [1, 2]
+                assert abs(row["neighbours_per_tick"] / entry["neighbours_per_tick"] - 1) < 0.01
+                assert entry["ratio"] == row["tick_median_ms"] / entry["tick_median_ms"]
+                assert entry["tripped"] == (entry["ratio"] > 1.25)
+            assert row["quarter_slower_tripwire"] == any(entry["tripped"] for entry in comparisons)
     return {"record": str(path.relative_to(ROOT)), "source_sha256": record["source_sha256"], "measured_commit": record["commit"], "timings_are_baselines": True}
 
 
