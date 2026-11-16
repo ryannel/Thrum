@@ -315,3 +315,10 @@
   chrome-night-scene-linear; none stayed unchanged. [Every old/new SHA-256](../../evidence/CULLING/M3/replan/reference-refresh.json).
   Native and all 36 selected Chrome difference pairs pass the builder's inspection; the initial old-main
   day-linear variation and full unchanged retry are retained. The refreshed-build verifier and merge remain.
+
+- 2026-11-16 The refreshed-build verifier completes native 38 + 4 and all four 481-record Chrome sets,
+  then rejects its checkout invariant because the builder edited the campaign counter during the run.
+  [All successful component results and the rejected overall record](../../evidence/CULLING/M3/replan/verifier-checkout-change/record.json)
+  are retained; no overall pass is claimed. The counter now counts completed GPU rows rather than metadata,
+  with a passing CPU regression test. The failed verification is retried on a frozen checkout, with all
+  references, comparisons and sampling unchanged. No merge or main-branch campaign is claimed.
