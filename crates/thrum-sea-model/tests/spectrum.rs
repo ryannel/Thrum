@@ -20,6 +20,33 @@ fn forcing(speed: f64, swell: bool) -> Forcing {
 }
 
 #[test]
+fn a_narrow_swell_keeps_its_height_when_it_turns() {
+    for direction in [0.0, 0.2, 0.5, 1.0, 2.5] {
+        let mut input = forcing(0.0, true);
+        input.swells[0].direction = direction;
+        let sea = Spectrum::build(&input).expect("swell");
+        let mut total = 0.0;
+        let mut outside = 0.0;
+        for c in &sea.long {
+            let angle = c.wave_vector[1].atan2(c.wave_vector[0]) - direction;
+            let energy = c.amplitude.powi(2) * 0.5;
+            total += energy;
+            if angle.cos() < (PI / 4.0).cos() {
+                outside += energy;
+            }
+        }
+        // The earlier cos^4(theta/2) puts about 30% outside this cone.
+        // A narrow swell must not turn into several comparable crossing trains.
+        assert!(
+            outside / total < 0.05,
+            "direction {direction}: {}",
+            outside / total
+        );
+        assert!((sea.significant_height() - 1.7).abs() < 0.0001);
+    }
+}
+
+#[test]
 #[expect(
     clippy::cast_possible_truncation,
     reason = "the reference recovers the admitted integer Fourier indices in minus 127 through 127"

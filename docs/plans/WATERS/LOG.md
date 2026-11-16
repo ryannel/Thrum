@@ -352,3 +352,8 @@
   Diagnosed the missing cost times as Metal's invalid end timestamps on empty Sun-shadow passes.
   The paired scene now keeps the same calibration float and sky in both arms at the same world times;
   only water differs. Empty-caster timing reporting is a renderer follow-up, not a zero-duration claim.
+- 2026-11-16 The larger choppiness and a developing-wind fetch each failed fresh opinions on crest shape.
+  Diagnosed the spectrum's broad swell weighting: it spread its energy into crossing directions.
+  Corrected directional weights inside the existing spectrum model, conserving each band's variance and
+  swell height on rotation; the wind, swell, component count, phase identities and GPU evaluator remain shared.
+  The angular regression and spectrum's independent energy checks pass; the next submitted look judges quality.

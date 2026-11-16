@@ -105,22 +105,48 @@ impl Forcing {
     }
 
     fn directional_density(&self, k: f64, angle: f64) -> f64 {
-        // Normalized finite Fourier spreading: (1+b*cos(theta))/(2*pi).
-        // b decreases at high frequency. Swell uses the narrower (1+cos)^2.
+        // The wind loses directionality toward the short-wave tail. The peak
+        // and swell use normalized cosine-power spreading (s=10 and s=25),
+        // rather than treating a swell as eight broadly crossing trains.
         let b = 0.95 / (1.0 + k / SPLIT);
-        let mut value =
-            self.wind_log_density(k) * (1.0 + b * (angle - self.wind_direction).cos()) / TAU;
+        let mut value = self.wind_log_density(k)
+            * ((1.0 - b) / TAU + b * spreading(angle - self.wind_direction, 10));
         for swell in &self.swells {
-            let u = (k / (TAU / swell.wavelength)).ln() / 0.08;
-            if u.abs() > 8.0 {
-                continue;
-            }
-            let radial = (swell.significant_height / 4.0).powi(2) * (-0.5 * u * u).exp()
-                / (0.08 * TAU.sqrt());
-            value += radial * (1.0 + (angle - swell.direction).cos()).powi(2) / (3.0 * PI);
+            value += swell_density(*swell, k) * spreading(angle - swell.direction, 25);
         }
         value
     }
+}
+
+fn swell_density(swell: Swell, k: f64) -> f64 {
+    let u = (k / (TAU / swell.wavelength)).ln() / 0.08;
+    if u.abs() > 8.0 {
+        return 0.0;
+    }
+    (swell.significant_height / 4.0).powi(2) * (-0.5 * u * u).exp() / (0.08 * TAU.sqrt())
+}
+
+fn spreading(angle: f64, exponent: i32) -> f64 {
+    // Integral cos^(2s)(theta/2) dtheta = 2pi * C(2s,s) / 4^s.
+    let normalization = match exponent {
+        10 => 1_048_576.0 / (TAU * 184_756.0),
+        25 => 1_125_899_906_842_624.0 / (TAU * 126_410_606_437_752.0),
+        _ => unreachable!("the physical profile uses two fixed spreads"),
+    };
+    normalization * (angle * 0.5).cos().powi(2 * exponent)
+}
+
+fn long_weights(direction: f64, exponent: i32) -> [f64; 8] {
+    let mut weights = std::array::from_fn(|i| {
+        let angle = TAU * (f64::from(u32::try_from(i).expect("eight directions")) + 0.5)
+            / f64::from(DIRECTIONS);
+        spreading(angle - direction, exponent)
+    });
+    let total: f64 = weights.iter().sum();
+    for weight in &mut weights {
+        *weight /= total;
+    }
+    weights
 }
 
 /// One finite physical profile, with immutable sample identities across forcing changes.
@@ -152,6 +178,15 @@ impl Spectrum {
             PI * 256.0 / lengths[2],
         ];
         let mut long = Vec::with_capacity(192);
+        // The eight-direction quadrature cannot integrate a narrow lobe by
+        // midpoint alone. Normalize its sampled weights once, so turning a
+        // swell never changes its energy or its declared significant height.
+        let wind_weights = long_weights(forcing.wind_direction, 10);
+        let swell_weights: Vec<_> = forcing
+            .swells
+            .iter()
+            .map(|swell| long_weights(swell.direction, 25))
+            .collect();
         let width = (SPLIT / MIN_K).ln() / f64::from(LONG_RADIAL);
         for radial in 0..LONG_RADIAL {
             let low = MIN_K * (f64::from(radial) * width).exp();
@@ -162,9 +197,18 @@ impl Spectrum {
                 let angle = TAU * (f64::from(direction) + 0.5) / f64::from(DIRECTIONS);
                 let offset = 0.25 + 0.5 * (f64::from(id + 1) * 2.0_f64.sqrt()).fract();
                 let k = low * (width * offset).exp();
-                let power = integrate(low, high, 512, |v| forcing.directional_density(v, angle))
-                    * TAU
-                    / f64::from(DIRECTIONS);
+                let at = usize::try_from(direction).expect("eight directions");
+                let power = integrate(low, high, 512, |v| {
+                    let b = 0.95 / (1.0 + v / SPLIT);
+                    let wind = forcing.wind_log_density(v)
+                        * ((1.0 - b) / f64::from(DIRECTIONS) + b * wind_weights[at]);
+                    wind + forcing
+                        .swells
+                        .iter()
+                        .zip(&swell_weights)
+                        .map(|(swell, weights)| swell_density(*swell, v) * weights[at])
+                        .sum::<f64>()
+                });
                 long.push(Component {
                     wave_vector: [k * angle.cos(), k * angle.sin()],
                     amplitude: (2.0 * power).sqrt(),

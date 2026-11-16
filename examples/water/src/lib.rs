@@ -19,7 +19,7 @@ pub fn forcing() -> Forcing {
     Forcing {
         wind_speed: 8.0,
         wind_direction: 0.0,
-        fetch: 10_000.0,
+        fetch: 100_000.0,
         swells: vec![Swell {
             significant_height: 1.2,
             wavelength: 90.0,
