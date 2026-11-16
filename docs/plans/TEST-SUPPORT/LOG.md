@@ -1,5 +1,12 @@
 # TEST-SUPPORT log
 
+- 2026-11-16 Built M1's wgpu-only GPU gate, restricted test devices and test-crate-edges rule.
+  Migrated sea and asset tests and the cooker's viewer-backed test and bench; the viewer accepts an
+  injected device behind its test-support feature. Preserved assertions, limits and bench timing scope.
+  Verified all 72 prior passing outcomes again with a required Metal GPU, with no GPU skip line;
+  rule and child-process gate checks pass. [Proof](../../evidence/TEST-SUPPORT/M1/README.md).
+  Exact images use the shared main-branch check; no retained image changed. HOST replaces the stand-in in M2.
+
 - 2026-11-14 Planned from the owner's request to plan and drive the code review's fixes; theme T6. Decided: the
   gate deals in wgpu types only, because a crate that depends on `thrum-render` cannot hand its unit tests a value
   typed by it; the device comes from `HOST`'s recipe. Test files are not all moved to one layout.
