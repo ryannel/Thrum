@@ -74,10 +74,10 @@ class RepositoryCase(unittest.TestCase):
         self.repin()
         self.commit('record refresh')
 
-    def refuses(self, *details):
+    def refuses(self, *details, identity='fixture'):
         with self.assertRaises(ValueError) as caught, contextlib.redirect_stdout(io.StringIO()):
             guard.guard(self.root)
-        for detail in ('OWNER', 'rule 1', *details):
+        for detail in (identity, 'OWNER', 'rule 1', *details):
             self.assertIn(detail, str(caught.exception))
         self.assertEqual(self.git('rev-parse', 'refs/remotes/origin/main'), self.base)
 
@@ -168,7 +168,7 @@ class RegisteredSetTests(RepositoryCase):
         self.commit('before addition')
         self.repin()
         self.commit('new without refresh')
-        self.refuses('new-baseline', 'refresh')
+        self.refuses('refresh', identity='new-baseline')
         self.refresh()
         self.passes()
 
