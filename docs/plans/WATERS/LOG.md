@@ -362,3 +362,8 @@
   Expanded the existing profile to q≤4 and contraction below 0.9, with a 256-iteration cap and the same early exit.
   Native and portable Metal probes at contraction 0.89 match the independent oracle; the old cap fails a
   near-crest slope control. The example selects a 0.85 bound. No wave mechanism or CPU oracle was replaced.
+- 2026-11-16 Tightened that numerical account: the shared CPU model now owns the largest eigenvalue of
+  sum(q*a/k · k*kᵀ), a uniform bound on every phase's symmetric displacement differential.
+  This retains contractivity while avoiding the trace's false rejection of orthogonal trains.
+  A separable crossing-wave closed form passes on the CPU; native/portable GPU probes include that case.
+  Water's admission and the example's profile use that same authority, without an allocation in frame validation.

@@ -95,13 +95,9 @@ impl Water {
         }
         thrum_sea_model::LongWaves::new(spectrum.long.clone(), profile.waves.choppiness)
             .map_err(|e| WaterError::InvalidSpectrum(format!("long waves: {e:?}")))?;
-        let contraction: f64 = spectrum
-            .long
-            .iter()
-            .map(|c| {
-                profile.waves.choppiness * c.amplitude * c.wave_vector[0].hypot(c.wave_vector[1])
-            })
-            .sum();
+        let contraction =
+            thrum_sea_model::contraction_bound(&spectrum.long, profile.waves.choppiness)
+                .map_err(|e| WaterError::InvalidSpectrum(format!("long waves: {e:?}")))?;
         if contraction >= thrum_sea::LONG_WAVE_CONTRACTION_LIMIT {
             return Err(WaterError::InvalidSpectrum(
                 "ambient long-wave contraction must be below 0.9".into(),

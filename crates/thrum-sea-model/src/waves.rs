@@ -9,6 +9,17 @@ pub enum SeaError {
     /// Horizontal displacement is not contractive, or iteration did not converge.
     NonConvergent,
 }
+impl std::fmt::Display for SeaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::InvalidInput => "sea input is nonfinite or outside its supported range",
+            Self::NonConvergent => {
+                "sea displacement is not contractive or its inverse did not converge"
+            }
+        })
+    }
+}
+impl std::error::Error for SeaError {}
 
 /// One travelling deep-water Gerstner component, with fixed vector and phase.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -60,9 +71,38 @@ pub struct LongWaves {
     choppiness: f64,
 }
 
+/// Uniform spectral-norm bound on the horizontal displacement's differential.
+/// For M = sum(q*a/k * k*k^T), every phase has -M <= dD <= M. The largest
+/// eigenvalue of this positive-semidefinite matrix is therefore a Lipschitz
+/// bound. Unlike its trace, it does not add orthogonal directions as if aligned.
+/// # Errors
+/// Rejects nonfinite or negative amplitude/choppiness and zero/nonfinite vectors.
+pub fn contraction_bound(components: &[Component], choppiness: f64) -> Result<f64, SeaError> {
+    if !choppiness.is_finite() || choppiness < 0.0 {
+        return Err(SeaError::InvalidInput);
+    }
+    let mut matrix = [0.0; 3];
+    for c in components {
+        let [x, z] = c.wave_vector;
+        let k = x.hypot(z);
+        if !c.amplitude.is_finite() || c.amplitude < 0.0 || !k.is_finite() || k == 0.0 {
+            return Err(SeaError::InvalidInput);
+        }
+        let scale = choppiness * c.amplitude / k;
+        matrix[0] += scale * x * x;
+        matrix[1] += scale * x * z;
+        matrix[2] += scale * z * z;
+    }
+    let bound = matrix[0].midpoint(matrix[2]) + matrix[0].midpoint(-matrix[2]).hypot(matrix[1]);
+    if !bound.is_finite() {
+        return Err(SeaError::InvalidInput);
+    }
+    Ok(bound)
+}
+
 impl LongWaves {
-    /// Construct a sum. Choppiness is nonnegative; `sum(q*a*k) < 1` is
-    /// required so inversion above a world point has a unique solution.
+    /// Construct a sum. Choppiness is nonnegative; [`contraction_bound`] must
+    /// be below one so inversion above a world point has a unique solution.
     ///
     /// # Errors
     /// Rejects nonfinite/negative input, zero vectors, or a noncontractive sum.
@@ -79,10 +119,7 @@ impl LongWaves {
         {
             return Err(SeaError::InvalidInput);
         }
-        let steepness: f64 = components
-            .iter()
-            .map(|c| choppiness * c.amplitude * c.wavenumber())
-            .sum();
+        let steepness = contraction_bound(&components, choppiness)?;
         if steepness >= 1.0 {
             return Err(SeaError::NonConvergent);
         }

@@ -29,11 +29,8 @@ pub fn forcing() -> Forcing {
 }
 /// This example's seawater and bounded long-wave deformation settings.
 pub fn profile(spectrum: &Spectrum) -> Profile {
-    let steepness: f64 = spectrum
-        .long
-        .iter()
-        .map(|c| c.amplitude * c.wave_vector[0].hypot(c.wave_vector[1]))
-        .sum();
+    let steepness =
+        thrum_sea_model::contraction_bound(&spectrum.long, 1.0).unwrap_or(f64::INFINITY);
     let mut profile = Profile {
         deep_scatter: [0.001, 0.007, 0.009],
         ..Profile::default()

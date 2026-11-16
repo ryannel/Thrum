@@ -42,9 +42,27 @@ fn compressed_crests_converge_on_native_and_portable_profiles() {
             let out = h.frame(&s, time, &points, true).expect("submitted");
             support::check_long(&mut h, &out, &s, time, &points, false);
         }
+        let mut crossing = s.clone();
+        crossing.long = vec![
+            Component {
+                amplitude: 0.6,
+                ..c
+            },
+            Component {
+                wave_vector: [0.0, 0.25],
+                amplitude: 0.6,
+                phase: -0.25 * support::ANCHOR[1],
+            },
+        ];
+        let out = h
+            .frame(&crossing, 0.0, &points, true)
+            .expect("crossing waves");
+        support::check_long(&mut h, &out, &crossing, 0.0, &points, false);
         let mut refused = s.clone();
         refused.long[0].amplitude = 0.9;
-        let mut encoder = h.device.create_command_encoder(&Default::default());
+        let mut encoder = h
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         assert!(
             h.sea
                 .upload(

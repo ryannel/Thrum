@@ -2,6 +2,43 @@
 use thrum_sea_model::{Component, GRAVITY, LongWaves, SeaError};
 
 #[test]
+fn the_uniform_contraction_bound_retains_orthogonal_directions() {
+    let components = vec![
+        Component {
+            wave_vector: [0.25, 0.0],
+            amplitude: 0.6,
+            phase: 0.0,
+        },
+        Component {
+            wave_vector: [0.0, 0.25],
+            amplitude: 0.6,
+            phase: 0.0,
+        },
+    ];
+    // Each independent axis contracts by .6. Adding their steepnesses into
+    // 1.2 would reject this uniquely invertible surface.
+    let bound = thrum_sea_model::contraction_bound(&components, 4.0).unwrap();
+    assert!((bound - 0.6).abs() < 1e-14);
+    let waves = LongWaves::new(components, 4.0).unwrap();
+    let label = [0.3_f64, -0.7_f64];
+    let point = label.map(|u| u - 2.4 * (0.25 * u).sin());
+    let sample = waves.evaluate(point, 0.0).unwrap();
+    let height = label.iter().map(|u| 0.6 * (0.25 * u).cos()).sum::<f64>();
+    assert!((sample.height - height).abs() < 1e-12);
+    for (i, u) in label.into_iter().enumerate() {
+        let expected = -0.15 * (0.25 * u).sin() / (1.0 - 0.6 * (0.25 * u).cos());
+        // The oracle stops at a 1e-11 m fixed-point residual. At contraction
+        // .6, residual/(1-.6) bounds label error; the slope's derivative is
+        // bounded by a*k^2/(1-.6)^3, giving less than 1.5e-11 here.
+        assert!(
+            (sample.slope[i] - expected).abs() < 2e-11,
+            "{} vs {expected}",
+            sample.slope[i]
+        );
+    }
+}
+
+#[test]
 fn one_component_matches_closed_form_at_a_displaced_label() {
     // Label u=3, k=.2, a=2, q=.9, phase chosen so theta=pi/3.
     // World x = u-q*a*sin(theta), h=a*cos(theta).

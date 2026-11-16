@@ -167,11 +167,8 @@ fn validate(
             "sea upload: finite time/anchor, <=192 components and <=4096 queries required".into(),
         );
     }
-    let steepness: f64 = spectrum
-        .long
-        .iter()
-        .map(|c| sea.profile.choppiness * c.amplitude * c.wave_vector[0].hypot(c.wave_vector[1]))
-        .sum();
+    let steepness = thrum_sea_model::contraction_bound(&spectrum.long, sea.profile.choppiness)
+        .map_err(|error| format!("sea long waves: {error:?}"))?;
     if !steepness.is_finite() || steepness >= crate::LONG_WAVE_CONTRACTION_LIMIT {
         return Err("sea long waves: contraction bound must be below 0.9".into());
     }
