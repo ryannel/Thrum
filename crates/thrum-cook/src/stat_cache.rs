@@ -212,7 +212,7 @@ impl StatCache {
                     if self
                         .entries
                         .get(&path)
-                        .is_none_or(|old| old.hash != entry.hash)
+                        .is_none_or(|old| old.stamp != entry.stamp || old.hash != entry.hash)
                     {
                         self.revision += 1;
                     }

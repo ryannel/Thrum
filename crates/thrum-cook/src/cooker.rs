@@ -200,7 +200,7 @@ impl Cooker {
     }
 
     // Only a watch sweep waits for recent writes. Startup and explicit cooks remain immediate.
-    // Hash changes, rather than racy rehashes, decide whether the store needs any work.
+    // Stamp/content changes, rather than racy rehashes, decide whether the store needs work.
     pub(crate) fn sweep(&mut self, now: SystemTime) -> Result<Option<CookReport>, CookError> {
         let start = Instant::now();
         let before = self.stat.revision();
@@ -669,6 +669,46 @@ fn newest_manifest_generation(store: &thrum_asset::AssetStore) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_restored_source_retries_an_interrupted_plan_without_another_notice() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tmp/content-loop-m4")
+            .join(format!("restored-plan-{}", std::process::id()));
+        let source = root.join("source");
+        std::fs::create_dir_all(&source).expect("source");
+        crate::demo::write_grid_gltf(&source, "a", 2, 0.1).expect("mesh");
+        let path = source.join("a.gltf");
+        let original = std::fs::read(&path).expect("original source");
+        let mut cooker = Cooker::open(CookConfig {
+            source: source.clone(),
+            store: root.join("store"),
+            profiles: vec![Profile::Portable],
+            quality: Quality::Fast,
+            durability: Durability::Process,
+        })
+        .expect("open");
+        let scan = cooker.stat.scan_all(&source).expect("scan valid bytes");
+        // The writer interrupts planning after the scan, then finishes with exactly the
+        // original bytes. Hash equality alone cannot mean the failed plan is now published.
+        std::fs::write(&path, b"{").expect("interrupted save");
+        let failed = cooker
+            .cycle(scan, Duration::ZERO)
+            .expect("failed plan report");
+        assert_eq!(failed.failed.len(), 1);
+        assert!(failed.published.is_none());
+        std::fs::write(&path, original).expect("finished save");
+        let now = SystemTime::now() + Duration::from_secs(2);
+        let repaired = cooker
+            .sweep(now)
+            .expect("sweep")
+            .expect("restoration is a change");
+        assert!(repaired.failed.is_empty(), "{repaired:?}");
+        assert!(repaired.published.is_some());
+        assert!(cooker.sweep(now).expect("unchanged sweep").is_none());
+        drop(cooker);
+        std::fs::remove_dir_all(root).expect("cleanup");
+    }
 
     #[test]
     fn a_source_edited_during_its_cook_is_not_cached_under_the_old_key() {
