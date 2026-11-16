@@ -842,6 +842,14 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M10/window-3d823c638/sources.tar.gz",
+      "size": 1482262457,
+      "sha256": "3aa8a6d65d9da0d3845ccce4e587cce050b3ad5f530721d9b4860e1a4b8ee40d",
+      "date": "2026-11-16T17:04:12.644089+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/APPLE-TILE/M10/window-partial-a9ac2a2b/portable/before.png",
       "size": 2471541,

@@ -1,5 +1,13 @@
 # APPLE-TILE log
 
+- 2026-11-16 M10 attended window proof completed on clean merged source `3d823c638`.
+  Both recipes retain matched Sun/night/noon OS/T2 stills, ordinary E/Q response,
+  window zoom/restoration and OS-video generation replacement recovery.
+  Lease generations advance 2 to 3; subsequent accepted yaw reaches 36 degrees.
+  [Evidence](../../evidence/APPLE-TILE/M10/window-3d823c638/README.md) records full sources,
+  CUA actions, measured geometry and the fixed-canvas movie limitation.
+  D10.1–D10.4 retain their target proofs. No cadence or performance qualification is claimed.
+
 - 2026-11-14 M3 integration closeout confirms official merge `8bf0515a` after the repository gate passed.
   Refreshed both-recipe native and Chrome route/cut/night/stall/resize captures and all 15 focused tests pass.
   The integrated artifacts match SEA M1's actual-target exact oracle run, with reuse explicitly attributed.
