@@ -242,7 +242,7 @@
           "statement": "At the closing commit only a package that asks for the socket adapters has in its dependency closure a crate this module added to the lockfile, the V1 game, the starter and the creator scenes have no part of `thrum-transport` in theirs, and the link's interface and in-memory link still build with no outside crate.",
           "check": "python3 scripts/transport_link.py closure",
           "target": "mac-metal",
-          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.10, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
+          "evidence": "docs/evidence/TRANSPORT/M2.md (M2.10, commit 137ba77ca; records docs/evidence/TRANSPORT/M2-records.json.gz)",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
