@@ -161,6 +161,11 @@ pub enum FrameError {
     Scene(String),
     /// GPU preparation, recording, polling or readback failure.
     Gpu(String),
+    /// A dedicated native command buffer failed in this platform generation.
+    NativeCommandBuffer {
+        /// Platform generation whose queue must no longer be used.
+        generation: u64,
+    },
     /// The requested operation cannot use the current prepared state.
     InvalidState(&'static str),
 }
@@ -170,6 +175,10 @@ impl std::fmt::Display for FrameError {
             Self::World(message) => write!(f, "frame world: {message}"),
             Self::Scene(message) => write!(f, "frame scene: {message}"),
             Self::Gpu(message) => write!(f, "frame GPU: {message}"),
+            Self::NativeCommandBuffer { generation } => write!(
+                f,
+                "native command buffer failed in device generation {generation}"
+            ),
             Self::InvalidState(message) => f.write_str(message),
         }
     }
@@ -240,6 +249,8 @@ pub struct FrameSample {
     /// Actual GPU durations keyed by executed graph pass name. `None` means
     /// unsupported or unusable counters; optional absent passes have no entry.
     pub gpu_pass_ns: Option<crate::timing::SceneGpuTimings>,
+    /// Dedicated Metal segment times, separate from wgpu query clock counters.
+    pub native_segment: Option<crate::synthetic::NativeSegment>,
     /// GPU time for the optional surface blit, when it was submitted and timed.
     pub gpu_present_ns: Option<f64>,
     /// GPU time for a scene contribution's compute pass alone (already in forward), when one is
@@ -414,6 +425,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     completed: VecDeque<FrameSample>,
     next_submission_order: u64,
     timing_requested: bool,
+    native_failed_generation: Option<u64>,
     dropped_views: u64,
     dropped_stale_views: u64,
     dropped_reports: u64,
@@ -767,6 +779,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             completed: VecDeque::with_capacity(IN_FLIGHT),
             next_submission_order: 0,
             timing_requested: true,
+            native_failed_generation: None,
             dropped_views: 0,
             dropped_stale_views: 0,
             dropped_reports: 0,
@@ -846,10 +859,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "visual candidate already published",
         ))?;
-        scene.bind_presenter(self.presenter.as_ref())?;
+        if candidate.extent.is_none() {
+            scene.bind_presenter(self.presenter.as_ref())?;
+        }
         let queue = self.queue.clone();
-        let view =
-            self.refresh_replacement(scene, &queue, Some(candidate.lighting), self.render_extent)?;
+        let extent = candidate
+            .extent
+            .as_ref()
+            .map_or(self.render_extent, |(extent, _)| *extent);
+        let view = self.refresh_replacement(scene, &queue, Some(candidate.lighting), extent)?;
         let scene = candidate.scene.take().ok_or(FrameError::InvalidState(
             "visual candidate already published",
         ))?;
@@ -858,6 +876,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.scene.view = view;
         self.visual_lighting = Some(candidate.lighting);
         self.visual_revision = candidate.revision;
+        if let Some((extent, presenter)) = candidate.extent.take() {
+            self.render_extent = extent;
+            self.presenter = Some(presenter);
+            self.presenter_generation += 1;
+        }
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());
         self.rebuild_contribution();
@@ -995,6 +1018,35 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots
             .first()
             .and_then(|slot| slot.target.native_witness_report())
+    }
+
+    /// Reject the optional provider at a free frame boundary. Its prepared twin
+    /// reuses initialized output/history resources and resets before next use.
+    /// Busy providers defer; rejection alone is never a device-loss signal.
+    pub fn reject_native_provider(&mut self) -> bool {
+        if self.pending_frames() != 0 {
+            return false;
+        }
+        for slot in &self.slots {
+            if let Some(binding) = &slot.target.native {
+                binding.reject();
+            }
+        }
+        true
+    }
+
+    /// Labelled fault injection for the native-boundary diagnostic. The next
+    /// encoded native segment performs its real writes, then completion reports
+    /// an error through the same generation recovery path as a raw Metal error.
+    /// Ordinary rendering has no native binding and is unaffected.
+    pub fn inject_native_completion_error(&self) {
+        if let Some(binding) = self
+            .slots
+            .first()
+            .and_then(|slot| slot.target.native.as_ref())
+        {
+            binding.inject_completion_error();
+        }
     }
 
     /// Pipeline creation events in this generation, when creation instrumentation is enabled.
@@ -1427,6 +1479,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 gpu_contribution_ns: None,
                 surface_presented: false,
                 timing_fault: false,
+                native_segment: None,
                 timing_requested: self.timing_requested,
                 culling_mode: self.prepared.camera_culling(),
                 culling_selection: self.prepared.culling_selection(),
@@ -1524,7 +1577,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 tap.abandon(index);
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
-            self.queue.submit([]);
+            self.flush_staged_uploads()?;
             discarded.map_err(|timing| format!("render timing discard: {timing:?}"))?;
             return Err(FrameError::Gpu(format!("render encode: {error:?}")));
         }
@@ -1575,8 +1628,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             view_history_epoch,
         } = prepared;
         let finish_start = Instant::now();
+        let admission = self.check_native_completion().and_then(|()| admit());
         let slot = &mut self.slots[slot_index];
-        if let Err(error) = admit() {
+        if let Err(error) = admission {
             drop(encoder);
             if let Some(index) = capture_slot
                 && let Some(tap) = self.submitted_capture.as_mut()
@@ -1622,7 +1676,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             slot.timings
                 .discard_unsubmitted(self.generation)
                 .map_err(|error| format!("native presentation discard: {error:?}"))?;
-            self.queue.submit([]);
+            self.flush_staged_uploads()?;
             report.wall = wall_start.elapsed();
             return Ok(());
         }
@@ -1638,7 +1692,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 tap.abandon(index);
             }
             let discarded = slot.timings.discard_unsubmitted(self.generation);
-            self.queue.submit([]);
+            self.flush_staged_uploads()?;
             discarded
                 .map_err(|timing| format!("failed timing discard after {error:?}: {timing:?}"))?;
             return Err(FrameError::Gpu(format!("finish timestamps: {error:?}")));
@@ -1654,7 +1708,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .into_iter()
                 .chain(std::iter::once(encoder.finish())),
         );
-        let native = native.map(crate::synthetic::NativeFrame::submitted);
+        let native = native.map(|native| {
+            let (completion, segment) = native.submitted(
+                self.generation,
+                self.next_submission_order,
+                sample.timing_requested,
+            );
+            sample.native_segment = Some(segment);
+            completion
+        });
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(true);
         }
@@ -1914,10 +1976,40 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         Ok(())
     }
 
+    fn check_native_completion(&mut self) -> Result<(), FrameError> {
+        if self.native_failed_generation.is_none() {
+            self.native_failed_generation = self.slots.iter().find_map(|slot| {
+                let sample = match &slot.state {
+                    SlotState::Rendering(sample) | SlotState::Resolving(sample) => sample,
+                    SlotState::Free => return None,
+                };
+                sample.native_segment.as_ref().and_then(|segment| {
+                    (segment.outcome() == crate::synthetic::NativeOutcome::Failed)
+                        .then_some(segment.generation)
+                })
+            });
+        }
+        if let Some(generation) = self.native_failed_generation {
+            self.history_reset_pending = true;
+            return Err(FrameError::NativeCommandBuffer { generation });
+        }
+        Ok(())
+    }
+
+    fn flush_staged_uploads(&mut self) -> Result<(), FrameError> {
+        self.check_native_completion()?;
+        tokens::staging_flush::flush(&self.queue);
+        Ok(())
+    }
+
     fn poll_gpu(&mut self) -> Result<(), FrameError> {
+        self.check_native_completion()?;
         self.device
             .poll(wgpu::PollType::Poll)
             .map_err(|error| format!("GPU poll: {error:?}"))?;
+        // Inspect every completed native segment before resolving any slot's
+        // queries: a later failed slot must also forbid earlier readback work.
+        self.check_native_completion()?;
         let max_passes = self.prepared.scene_pass_count() + u32::from(self.presenter.is_some());
         for slot in &mut self.slots {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);

@@ -1,4 +1,5 @@
 use super::*;
+mod replacement;
 use crate::{
     runtime::{CaptureLimits, SurfaceOutput},
     synthetic::{CaptureSource, NativeWitness},
@@ -132,7 +133,14 @@ async fn sequence(
         frames.push(image(&mut host));
     }
     let report = host.native_witness_report().expect("native outcomes");
-    assert_eq!(report.selection, selection);
+    assert_eq!(
+        report.selection,
+        if selection == NativeWitness::Rejected {
+            NativeWitness::Wgsl
+        } else {
+            selection
+        }
+    );
     assert_eq!(report.submitted, 8);
     assert_eq!(report.discarded, 3);
     assert_eq!(report.completed, 8);

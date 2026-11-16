@@ -2,8 +2,9 @@
 use objc2::{rc::Retained, runtime::ProtocolObject};
 use objc2_foundation::NSString;
 use objc2_metal::{
-    MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLComputeCommandEncoder,
-    MTLComputePipelineState, MTLDevice, MTLLibrary, MTLOrigin, MTLSize, MTLTexture,
+    MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandBufferStatus, MTLCommandEncoder,
+    MTLComputeCommandEncoder, MTLComputePipelineState, MTLDevice, MTLLibrary, MTLOrigin, MTLSize,
+    MTLTexture,
 };
 
 #[derive(Clone)]
@@ -36,6 +37,33 @@ impl std::ops::Deref for Texture {
 }
 #[derive(Clone)]
 pub(crate) struct Pipeline(Retained<ProtocolObject<dyn MTLComputePipelineState>>);
+
+/// A read-only retain of the dedicated segment, inspected after queue completion.
+pub(crate) struct Receipt(Retained<ProtocolObject<dyn MTLCommandBuffer>>);
+
+#[expect(
+    unsafe_code,
+    reason = "The coordinator transfers this read-only retain to its queue-completion callback; no recording or submission API is exposed"
+)]
+// SAFETY: Metal command buffers permit completion observation from another
+// thread. This wrapper only reads status/times after wgpu queue completion.
+unsafe impl Send for Receipt {}
+
+impl Receipt {
+    pub(crate) fn completed(&self) -> Result<Option<[f64; 2]>, ()> {
+        if self.0.status() == MTLCommandBufferStatus::Error {
+            return Err(());
+        }
+        if self.0.status() != MTLCommandBufferStatus::Completed {
+            return Ok(None);
+        }
+        let times = [self.0.GPUStartTime(), self.0.GPUEndTime()];
+        Ok(
+            (times[0].is_finite() && times[1].is_finite() && times[0] > 0.0 && times[1] > times[0])
+                .then_some(times),
+        )
+    }
+}
 
 #[expect(
     unsafe_code,
@@ -89,14 +117,14 @@ impl Pipeline {
         unsafe_code,
         reason = "Dedicated whole raw encoder; initialized retained textures with checked identical extents and no surface or queue access"
     )]
-    pub(crate) fn encode(&self, encoder: &mut wgpu::CommandEncoder, frame: &Frame<'_>) {
+    pub(crate) fn encode(&self, encoder: &mut wgpu::CommandEncoder, frame: &Frame<'_>) -> Receipt {
         let record = |raw: Option<&mut wgpu::hal::metal::CommandEncoder>| {
             let buffer = raw
                 .expect("registry admitted Metal")
                 .raw_command_buffer()
                 .expect("wgpu opened raw buffer");
             if frame.no_commands {
-                return;
+                return Receipt(buffer.into());
             }
             let blit = buffer.blitCommandEncoder().expect("Metal blit encoder");
             let [width, height] = frame.extent.map(|v| v as usize);
@@ -124,7 +152,7 @@ impl Pipeline {
             }
             blit.endEncoding();
             if frame.no_tile {
-                return;
+                return Receipt(buffer.into());
             }
             let compute = buffer
                 .computeCommandEncoder()
@@ -147,11 +175,10 @@ impl Pipeline {
             };
             compute.dispatchThreads_threadsPerThreadgroup(one, one);
             compute.endEncoding();
+            Receipt(buffer.into())
         };
         // SAFETY: this encoder has no wgpu recording. The callback ends only its
         // native encoders; wgpu alone ends/submits the command buffer.
-        unsafe {
-            encoder.as_hal_mut::<wgpu::hal::api::Metal, _, _>(record);
-        }
+        unsafe { encoder.as_hal_mut::<wgpu::hal::api::Metal, _, _>(record) }
     }
 }

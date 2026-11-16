@@ -278,6 +278,7 @@ fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
         match std::env::var("THRUM_NATIVE_WITNESS").as_deref() {
             Ok("metal") => NativeWitness::Metal,
             Ok("wgsl") => NativeWitness::Wgsl,
+            Ok("rejected") => NativeWitness::Rejected,
             Ok("no-commands") => NativeWitness::NoCommands,
             Ok("no-tile") => NativeWitness::NoTile,
             Ok("no-reset") => NativeWitness::NoReset,

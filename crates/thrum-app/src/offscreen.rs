@@ -22,6 +22,7 @@ pub use crate::capture_writer as writer;
 /// A prepared game on the calling render-owner thread, with its ordinary
 /// autonomous world lane and an engine texture replacing the OS surface.
 pub struct Offscreen<G: Game> {
+    device: wgpu::Device,
     game: G,
     host: FrameHost<G::World, G::Scene>,
     output: wgpu::Texture,
@@ -30,7 +31,127 @@ pub struct Offscreen<G: Game> {
     origin: Instant,
 }
 
+/// Explicit boundary diagnostic, never enabled by the ordinary game loop.
+#[derive(Clone, Copy, Debug)]
+pub enum NativeFault {
+    /// Uninterrupted control with the same history reset checkpoint.
+    Control,
+    /// Reject optional native work and select the prepared twin.
+    Reject,
+    /// Rebind the engine presenter, then restore its source/destination extent.
+    Surface,
+    /// Inject the raw command-buffer error observation after real native writes.
+    CommandError,
+    /// Destroy the old wgpu device after encoding; abandon without a flush.
+    DeviceLoss,
+}
+
 impl<G: Game> Offscreen<G> {
+    /// Exercise a labelled failure at a drained capture boundary. Capture is
+    /// disabled before injected work; the caller restarts it after recovery.
+    /// # Errors
+    /// Refuses pending frames, missing diagnostic or unexpected error ordering.
+    pub fn native_fault(
+        &mut self,
+        fault: NativeFault,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        use thrum_render::runtime::FrameError;
+        if self.host.pending_frames() != 0 {
+            return Err(FrameError::InvalidState(
+                "native fault needs a drained diagnostic",
+            ));
+        }
+        self.host.disable_submitted_capture();
+        match fault {
+            NativeFault::Control => {}
+            NativeFault::Reject => {
+                self.host.reject_native_provider();
+            }
+            NativeFault::Surface => {
+                self.host
+                    .resize_surface([self.extent[0] - 16, self.extent[1]])?;
+                self.host.resize_surface(self.extent)?;
+            }
+            NativeFault::DeviceLoss => {
+                let device = self.device.clone();
+                let encoded = self.host.advance(self.origin.elapsed())?.encode_scene()?;
+                device.destroy();
+                encoded.abandon_lost_device();
+            }
+            NativeFault::CommandError => {
+                self.host.inject_native_completion_error();
+                self.host
+                    .advance(self.origin.elapsed())?
+                    .encode_scene()?
+                    .submit(Some(&SurfaceOutput {
+                        view: &self.view,
+                        extent: self.extent,
+                    }))?;
+                self.device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .map_err(|error| FrameError::Gpu(format!("native fault wait: {error:?}")))?;
+                if !matches!(
+                    self.host.poll_completed(),
+                    Err(FrameError::NativeCommandBuffer { .. })
+                ) {
+                    return Err(FrameError::InvalidState(
+                        "native error failed to reach generation owner",
+                    ));
+                }
+            }
+        }
+        self.host.invalidate_history();
+        Ok(())
+    }
+
+    /// Rebuild GPU resources from the retained game/world after a native error
+    /// or explicit device loss. The platform supplies the newer generation.
+    /// # Errors
+    /// Refuses stale generation or failed detached preparation before publishing.
+    pub async fn recover_device(
+        &mut self,
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        let mut candidate = self
+            .host
+            .device_prepare_inputs()?
+            .prepare(
+                capabilities,
+                queue,
+                Some(SurfaceProfile {
+                    format: OUTPUT_FORMAT,
+                    extent: self.extent,
+                }),
+            )
+            .await?;
+        self.host.publish_device(&mut candidate)?;
+        self.output = capabilities
+            .site()
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("recovered headless presenter output"),
+                size: wgpu::Extent3d {
+                    width: self.extent[0],
+                    height: self.extent[1],
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: OUTPUT_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+        self.view = self
+            .output
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        self.device = wgpu::Device::clone(capabilities.site());
+        Ok(())
+    }
+
     /// Prepare through `Game::prepare`, including its resident world lane.
     /// Call and drive this on the render-owner thread, without AppKit.
     /// # Errors
@@ -73,6 +194,7 @@ impl<G: Game> Offscreen<G> {
         });
         let view = output.create_view(&wgpu::TextureViewDescriptor::default());
         Ok(Self {
+            device: device.clone(),
             game,
             host: prepared.host,
             output,

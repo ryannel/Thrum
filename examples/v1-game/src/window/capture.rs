@@ -1,6 +1,7 @@
 //! Authored V1 scenarios on the shared unattended engine driver.
 
 mod admission;
+mod native_recovery;
 
 use serde_json::{Value, json};
 use std::io::Write;
@@ -29,6 +30,7 @@ pub(super) fn run(
     scenario: &str,
     wait: bool,
     hold_full: Duration,
+    recovery: super::NativeRecovery,
 ) -> Result<(), String> {
     if !matches!(
         scenario,
@@ -52,7 +54,7 @@ pub(super) fn run(
     let scenario = scenario.to_owned();
     std::thread::Builder::new()
         .name("thrum-headless-render".to_owned())
-        .spawn(move || pollster::block_on(record(&output, &scenario, wait, hold_full)))
+        .spawn(move || pollster::block_on(record(&output, &scenario, wait, hold_full, recovery)))
         .map_err(|e| e.to_string())?
         .join()
         .map_err(|_| "capture render owner panicked".to_owned())?
@@ -234,6 +236,7 @@ impl Trace {
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
                 "gpu_effect_boundary_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::effect_boundary_nanoseconds),
                 "gpu_not_run":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::not_run_passes),
+                "native_segment":sample.native_segment.as_ref().map(|segment| json!({"pass":segment.pass_name(),"generation":segment.generation,"submission":segment.submission,"clock":"Metal host seconds; uncorrelated with wgpu queries","outcome":format!("{:?}",segment.outcome())})),
                 "encode_cpu_ns":sample.encode_cpu.as_nanos(),"upload_cpu_ns":sample.upload_cpu.as_nanos(),"extract_cpu_ns":sample.extract_cpu.as_nanos(),"gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),"render_cpu_ns":sample.render_cpu.as_nanos(),"wall_ns":sample.wall.as_nanos(),"tick_cpu_ns":sample.tick_cpu.as_nanos(),"gpu_present_ns":sample.gpu_present_ns}),
             );
         }
@@ -438,13 +441,15 @@ async fn record(
     scenario: &str,
     wait: bool,
     hold_full: Duration,
+    recovery_mode: super::NativeRecovery,
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
     let source = capture_source()?;
     let (qos, encoding, disk_limit) = capture_settings()?;
     let active_pacing = active_pacing()?;
-    let (adapter, device, queue, capabilities) = metal_device().await?;
+    let instance = metal_instance();
+    let (adapter, device, queue, capabilities) = metal_device(&instance, 1).await?;
     let mut driver = Offscreen::new(
         super::capture_game()?,
         &device,
@@ -453,22 +458,10 @@ async fn record(
         [1920, 1080],
     )?;
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
-    if driver.native_witness_report().is_some() {
-        // Warmup duration is host-time, so its submission count is variable.
-        // Begin the labelled diagnostic at a reset, submission-relative phase.
-        driver.invalidate_history();
-    }
+    reset_native_capture(&mut driver);
     let capture = scenario != "off";
     if capture {
-        driver.enable_capture_from(
-            1,
-            thrum_render::runtime::CaptureLimits {
-                staging_slots: 6,
-                cpu_buffers: if source == CaptureSource::Sdr { 96 } else { 32 },
-                byte_allowance: 1024 * 1024 * 1024,
-            },
-            source,
-        )?;
+        enable_stage_capture(&mut driver, 1, source)?;
     }
     let writer = if capture {
         Some(start_writer(scenario, encoding, disk_limit)?)
@@ -487,9 +480,10 @@ async fn record(
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
+    let mut recovery = native_recovery::Recovery::new(recovery_mode);
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
-    let (hard_end, soft_end, world_end) = scenario_bounds(scenario);
+    let (hard_end, soft_end, world_end) = scenario_bounds(scenario, recovery_mode);
     loop {
         if mode == "still" || scenario == "clouds-still" {
             break;
@@ -536,7 +530,18 @@ async fn record(
             &mut trace,
             origin,
         )?;
-        let yaw = ((t - 1.0) / 2.0).clamp(0.0, 1.0) * 36.0;
+        recovery
+            .checkpoint(
+                &instance,
+                &mut driver,
+                &mut trace,
+                writer.as_ref(),
+                origin,
+                opportunity.scenario_time,
+                source,
+            )
+            .await?;
+        let yaw = native_recovery::yaw(t, recovery_mode);
         let control_dispatched = (!active_world || scenario == "reconstruction-pan")
             && !matches!(scenario, "reconstruction-stars" | "reconstruction-scrub")
             && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
@@ -648,11 +653,34 @@ fn relative_ns(origin: Instant, stamp: Instant) -> i128 {
     }
 }
 
-async fn metal_device()
--> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
-    let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-    descriptor.backends = wgpu::Backends::METAL;
-    let instance = wgpu::Instance::new(descriptor);
+fn enable_stage_capture<G: Game>(
+    driver: &mut Offscreen<G>,
+    session: u64,
+    source: CaptureSource,
+) -> Result<(), String> {
+    driver.enable_capture_from(
+        session,
+        thrum_render::runtime::CaptureLimits {
+            staging_slots: 6,
+            cpu_buffers: if source == CaptureSource::Sdr { 96 } else { 32 },
+            byte_allowance: 1024 * 1024 * 1024,
+        },
+        source,
+    )
+}
+
+fn reset_native_capture<G: Game>(driver: &mut Offscreen<G>) {
+    // Warmup has a variable submission count. Begin the labelled diagnostic at
+    // a reset-relative phase without changing the ordinary scene capture path.
+    if driver.native_witness_report().is_some() {
+        driver.invalidate_history();
+    }
+}
+
+async fn metal_device(
+    instance: &wgpu::Instance,
+    generation: u64,
+) -> Result<(wgpu::Adapter, wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions::default())
         .await
@@ -665,8 +693,14 @@ async fn metal_device()
         })
         .await
         .map_err(|e| e.to_string())?;
-    let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
+    let capabilities = DeviceCapabilities::capture(&adapter, &device, generation);
     Ok((adapter, device, queue, capabilities))
+}
+
+fn metal_instance() -> wgpu::Instance {
+    let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
+    descriptor.backends = wgpu::Backends::METAL;
+    wgpu::Instance::new(descriptor)
 }
 
 fn lighting_edits<G: Game>(
@@ -716,7 +750,10 @@ fn drain_fixed<G: Game>(
     Ok(())
 }
 
-fn scenario_bounds(scenario: &str) -> (f64, f64, f64) {
+fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64, f64) {
+    if recovery != super::NativeRecovery::Disabled {
+        return (24.0, 20.0, 3.0);
+    }
     match scenario {
         "clouds-drift" => (22.5, 22.0, 21.0),
         "route" => (8.4, 8.0, f64::INFINITY),

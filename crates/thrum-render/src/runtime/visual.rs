@@ -33,6 +33,7 @@ pub struct PreparedVisual {
     pub(super) revision: Option<[u8; 32]>,
     pub(super) scene: Option<PreparedScene>,
     pub(super) owner: Arc<()>,
+    pub(super) extent: Option<([u32; 2], crate::present::SurfacePresenter)>,
 }
 
 impl VisualPrepareInputs {
@@ -66,6 +67,41 @@ impl VisualPrepareInputs {
             revision,
             scene: Some(scene),
             owner: self.owner,
+            extent: None,
         })
+    }
+
+    /// Prepare a bounded scene/provider extent replacement on a worker, including
+    /// its presenter and portable twin. The active host remains usable throughout.
+    /// # Errors
+    /// Refuses invalid extents or GPU preparation without changing the live view.
+    pub async fn prepare_extent(
+        mut self,
+        extent: [u32; 2],
+        mut profile: crate::present::SurfaceProfile,
+        lighting: FrameLighting,
+        exposure: f32,
+    ) -> Result<PreparedVisual, FrameError> {
+        if extent.contains(&0) {
+            return Err(FrameError::InvalidState("extent must be nonzero"));
+        }
+        self.render_extent = extent;
+        profile.extent = extent;
+        let capabilities = self.capabilities.clone();
+        let region = self
+            .creations
+            .region(CreationPhase::Transition, "prepare-extent");
+        let presenter = crate::present::SurfacePresenter::prepare(&capabilities, extent, profile)
+            .await
+            .map_err(|error| FrameError::Gpu(format!("extent presenter: {error:?}")))?;
+        let mut candidate = self.prepare(lighting, exposure, None).await?;
+        candidate
+            .scene
+            .as_mut()
+            .ok_or(FrameError::InvalidState("extent candidate was consumed"))?
+            .bind_presenter(Some(&presenter))?;
+        candidate.extent = Some((extent, presenter));
+        drop(region);
+        Ok(candidate)
     }
 }

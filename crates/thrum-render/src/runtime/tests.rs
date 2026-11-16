@@ -23,6 +23,7 @@ use thrum_core::{
 
 fn sample(tick: u64) -> FrameSample {
     FrameSample {
+        native_segment: None,
         tick,
         presentation_alpha: 1.0,
         display_phase: 1.0,

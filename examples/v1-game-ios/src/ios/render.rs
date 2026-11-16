@@ -553,6 +553,13 @@ impl Owner {
         }
         let lost = gpu.watch.destroyed || gpu.watch.is_lost();
         match result {
+            Err(FrameError::NativeCommandBuffer { generation })
+                if generation == gpu.watch.generation =>
+            {
+                gpu.watch.lost.store(true, Ordering::Release);
+                (self.lost_wake)(generation);
+                Ok(unrun(generation, SurfaceStatus::DeviceLost))
+            }
             Ok(reply) if !lost => match gpu.watch.take_error() {
                 Some(error) => Err(format!("iOS wgpu error: {error}")),
                 None => Ok(reply),

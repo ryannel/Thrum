@@ -399,3 +399,10 @@
   The opaque coverage output moves triangle-join derivatives; all five sets moved, none stayed unchanged.
   [Every moved reference's old/new SHA-256 and cause](../../evidence/CULLING/M3/replan/reference-refresh.json)
   are the shared refresh record. Coverage, references and pins enter the official merge together.
+
+- 2026-11-16 M11 adds detached provider extent preparation, prepared rejection fallback,
+  generation-tagged native error recovery and completion-gated Metal segment timing.
+  [Six focused Metal tests](../../evidence/APPLE-TILE/M11/README.md) pass, including exact twin
+  output/history, retained generation resources, stale refusal and explicit clock domains.
+  Scoped Clippy, Wasm checks and the pinned iOS simulator build pass. Final game capture
+  and the merged repository gate are still owed; no speed or physical-device claim follows.

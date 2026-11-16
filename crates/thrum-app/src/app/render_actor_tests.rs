@@ -3,6 +3,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 #[test]
 fn only_gpu_failures_with_a_device_loss_signal_become_recovery() {
+    assert!(matches!(
+        frame_failure(FrameError::NativeCommandBuffer { generation: 7 }, false),
+        RenderOutcome::DeviceLost
+    ));
     for error in [
         FrameError::World("authority failure".into()),
         FrameError::Scene("scene failure".into()),

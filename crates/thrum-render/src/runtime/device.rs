@@ -221,6 +221,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.device = wgpu::Device::clone(candidate.capabilities.device());
         self.queue = candidate.queue.clone();
         self.generation = candidate.capabilities.generation();
+        self.native_failed_generation = None;
         self.render_extent = candidate.render_extent;
         self.prepared = scene.prepared;
         self.slots = scene.slots;

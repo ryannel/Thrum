@@ -54,7 +54,7 @@ mod temporal;
 mod upload;
 mod view;
 pub(crate) use native_witness::NativeFrame;
-pub use native_witness::{NativeWitness, NativeWitnessReport};
+pub use native_witness::{NativeOutcome, NativeSegment, NativeWitness, NativeWitnessReport};
 pub use readback::{CaptureSource, PixelReadback};
 pub use view::Reconstruction;
 
@@ -1668,7 +1668,7 @@ impl PreparedSynthetic {
                     capabilities,
                     queue,
                     scene.view.native_witness(),
-                )?)
+                ))
             },
             temporal_inputs: scene.view.temporal_inputs(),
             temporal,

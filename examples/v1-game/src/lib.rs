@@ -47,4 +47,6 @@ pub use projection::{GameProjection, ProjectionGap};
 pub use scene::simulation_with_count;
 pub use scene::{GameContent, RouteOverlay};
 #[cfg(target_os = "macos")]
-pub use window::{capture_game, run_runtime_capture, run_window};
+pub use window::{
+    NATIVE_RECOVERY_VARIABLE, NativeRecovery, capture_game, run_runtime_capture, run_window,
+};

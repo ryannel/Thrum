@@ -23,6 +23,8 @@ pub enum NativeWitness {
     Metal,
     /// Prepared public-wgpu copy/select oracle.
     Wgsl,
+    /// Forced optional-provider rejection; uses the already prepared WGSL twin.
+    Rejected,
     /// Omission control: the native encoder records nothing.
     NoCommands,
     /// Omission control: native blits remain but the storage kernel is omitted.
@@ -52,6 +54,45 @@ pub struct NativeWitnessReport {
     pub completed: u64,
     /// Unique full-size output/history and optional stale-control bytes.
     pub resident_bytes: u64,
+}
+
+/// Native command-buffer observation in Metal's host-seconds clock domain.
+/// No absolute correlation with wgpu timestamp-query counters is implied.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NativeOutcome {
+    /// Queue completion has not delivered this segment yet.
+    Pending,
+    /// Executed without usable timing (including disabled timing and WGSL twin).
+    Unmeasured,
+    /// Dedicated native command-buffer GPU start/end, in host seconds.
+    Timed([f64; 2]),
+    /// Raw command-buffer error; the platform must rebuild this generation.
+    Failed,
+}
+
+/// One graph segment's completion mailbox, tied to exactly one submission.
+#[derive(Clone, Debug)]
+pub struct NativeSegment {
+    pass: &'static str,
+    /// Platform device generation that recorded the work.
+    pub generation: u64,
+    /// Coordinator submission order, never a world tick or query-buffer ordinal.
+    pub submission: u64,
+    outcome: Arc<Mutex<NativeOutcome>>,
+}
+
+impl NativeSegment {
+    /// Graph pass identity shared by the executor and diagnostic twin.
+    pub fn pass_name(&self) -> &'static str {
+        self.pass
+    }
+
+    /// A pending or missing observation never becomes a fabricated zero duration.
+    pub fn outcome(&self) -> NativeOutcome {
+        self.outcome
+            .lock()
+            .map_or(NativeOutcome::Failed, |value| *value)
+    }
 }
 
 pub(super) struct Factory {
@@ -84,6 +125,8 @@ pub(super) struct Provider {
     discarded: AtomicU64,
     resets: AtomicU64,
     completed: Arc<AtomicU64>,
+    rejected: AtomicBool,
+    fail_next: AtomicBool,
 }
 
 struct Pipelines {
@@ -101,6 +144,10 @@ pub(crate) struct Binding {
 }
 
 /// Exclusive candidate. Every early return/drop invalidates provider history.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "Exclusive candidate records independent history, backend selection, acceptance and diagnostic fault decisions"
+)]
 pub(crate) struct NativeFrame {
     binding: Arc<Binding>,
     side: usize,
@@ -108,6 +155,10 @@ pub(crate) struct NativeFrame {
     select_history: bool,
     phase: u64,
     committed: bool,
+    use_twin: bool,
+    fail_completion: bool,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    receipt: Mutex<Option<crate::apple_tile::Receipt>>,
 }
 
 impl Factory {
@@ -122,15 +173,15 @@ impl Factory {
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         selection: NativeWitness,
-    ) -> Result<Arc<Self>, RenderError> {
+    ) -> Arc<Self> {
         let device = capabilities.site();
-        if selection != NativeWitness::Wgsl
+        let selection = if selection != NativeWitness::Wgsl
             && capabilities.adapter().backend != wgpu::Backend::Metal
         {
-            return Err(RenderError::Validation(
-                "native witness requires registry Metal backend".into(),
-            ));
-        }
+            NativeWitness::Rejected
+        } else {
+            selection
+        };
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(include_str!("native_witness.wgsl").into()),
@@ -144,16 +195,19 @@ impl Factory {
             cache: None,
         });
         #[cfg(any(target_os = "macos", target_os = "ios"))]
-        let metal = if selection == NativeWitness::Wgsl {
-            None
-        } else {
-            Some(crate::apple_tile::Pipeline::prepare(device).map_err(RenderError::Validation)?)
-        };
+        let (metal, selection) =
+            if matches!(selection, NativeWitness::Wgsl | NativeWitness::Rejected) {
+                (None, selection)
+            } else if let Ok(pipeline) = crate::apple_tile::Pipeline::prepare(device) {
+                (Some(pipeline), selection)
+            } else {
+                (None, NativeWitness::Rejected)
+            };
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         if metal.is_some() {
             device.native_prepared();
         }
-        Ok(Arc::new(Self {
+        Arc::new(Self {
             device: device.clone(),
             queue: queue.clone(),
             selection,
@@ -161,7 +215,7 @@ impl Factory {
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             metal,
             extents: Mutex::new(BTreeMap::new()),
-        }))
+        })
     }
 
     #[cfg_attr(
@@ -288,12 +342,18 @@ impl Provider {
             discarded: AtomicU64::new(0),
             resets: AtomicU64::new(0),
             completed: Arc::new(AtomicU64::new(0)),
+            rejected: AtomicBool::new(factory.selection == NativeWitness::Rejected),
+            fail_next: AtomicBool::new(false),
         })
     }
 
     pub(super) fn report(&self) -> NativeWitnessReport {
         NativeWitnessReport {
-            selection: self.factory.selection,
+            selection: if self.rejected.load(Ordering::Acquire) {
+                NativeWitness::Wgsl
+            } else {
+                self.factory.selection
+            },
             encoded: self.encoded.load(Ordering::Relaxed),
             submitted: self.submitted.load(Ordering::Relaxed),
             discarded: self.discarded.load(Ordering::Relaxed),
@@ -309,6 +369,14 @@ impl Provider {
 }
 
 impl Binding {
+    pub(crate) fn inject_completion_error(&self) {
+        self.provider.fail_next.store(true, Ordering::Release);
+    }
+    pub(crate) fn reject(&self) {
+        self.provider.rejected.store(true, Ordering::Release);
+        self.provider.valid.store(false, Ordering::Release);
+    }
+
     pub(super) fn reserve(self: &Arc<Self>, cut: bool) -> Result<NativeFrame, RenderError> {
         let provider = &self.provider;
         provider
@@ -329,6 +397,11 @@ impl Binding {
             select_history: !reset && phase % 2 == 1,
             phase,
             committed: false,
+            use_twin: provider.factory.selection == NativeWitness::Wgsl
+                || provider.rejected.load(Ordering::Acquire),
+            fail_completion: provider.fail_next.swap(false, Ordering::AcqRel),
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            receipt: Mutex::new(None),
         })
     }
 }
@@ -357,7 +430,7 @@ impl NativeFrame {
         segments: &mut Vec<wgpu::CommandBuffer>,
     ) {
         let provider = &self.binding.provider;
-        if provider.factory.selection == NativeWitness::Wgsl {
+        if self.use_twin {
             for destination in [&provider.output, &provider.histories[1 - self.side]] {
                 encoder.copy_texture_to_texture(
                     self.binding.source.as_image_copy(),
@@ -411,7 +484,7 @@ impl NativeFrame {
                 segments.push(preceding.finish());
                 let mut raw = device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some(PASS) });
-                provider
+                let receipt = provider
                     .factory
                     .metal
                     .as_ref()
@@ -429,12 +502,18 @@ impl NativeFrame {
                             no_tile: provider.factory.selection == NativeWitness::NoTile,
                         },
                     );
+                *self.receipt.lock().expect("exclusive native receipt") = Some(receipt);
                 segments.push(raw.finish());
             }
         }
     }
 
-    pub(crate) fn submitted(mut self) -> NativeCompletion {
+    pub(crate) fn submitted(
+        mut self,
+        generation: u64,
+        submission: u64,
+        timing: bool,
+    ) -> (NativeCompletion, NativeSegment) {
         let provider = &self.binding.provider;
         if provider.factory.selection != NativeWitness::StaleHistory {
             provider.side.store(1 - self.side, Ordering::Relaxed);
@@ -444,11 +523,29 @@ impl NativeFrame {
         provider.valid.store(true, Ordering::Release);
         provider.reserved.store(false, Ordering::Release);
         self.committed = true;
-        NativeCompletion {
-            completed: Arc::clone(&provider.completed),
-            #[cfg(not(target_arch = "wasm32"))]
-            _binding: Arc::clone(&self.binding),
-        }
+        let segment = NativeSegment {
+            pass: PASS,
+            generation,
+            submission,
+            outcome: Arc::new(Mutex::new(NativeOutcome::Pending)),
+        };
+        (
+            NativeCompletion {
+                completed: Arc::clone(&provider.completed),
+                segment: segment.clone(),
+                timing,
+                fail_completion: self.fail_completion,
+                #[cfg(any(target_os = "macos", target_os = "ios"))]
+                receipt: self
+                    .receipt
+                    .lock()
+                    .expect("exclusive native receipt")
+                    .take(),
+                #[cfg(not(target_arch = "wasm32"))]
+                binding: Arc::clone(&self.binding),
+            },
+            segment,
+        )
     }
 
     pub(super) fn history(&self) -> &wgpu::Texture {
@@ -458,14 +555,45 @@ impl NativeFrame {
 
 pub(crate) struct NativeCompletion {
     completed: Arc<AtomicU64>,
+    segment: NativeSegment,
+    timing: bool,
+    fail_completion: bool,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    receipt: Option<crate::apple_tile::Receipt>,
     // Native handles are retained until delivery. WebGPU owns its resource
     // lifetimes and only the thread-safe counter enters its Send callback.
     #[cfg(not(target_arch = "wasm32"))]
-    _binding: Arc<Binding>,
+    binding: Arc<Binding>,
 }
 impl NativeCompletion {
     pub(crate) fn completed(self) {
+        let outcome = self.observe();
+        if outcome == NativeOutcome::Failed {
+            #[cfg(not(target_arch = "wasm32"))]
+            self.binding.provider.valid.store(false, Ordering::Release);
+        }
+        *self
+            .segment
+            .outcome
+            .lock()
+            .expect("native completion mailbox") = outcome;
         self.completed.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn observe(&self) -> NativeOutcome {
+        if self.fail_completion {
+            return NativeOutcome::Failed;
+        }
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        if let Some(receipt) = &self.receipt {
+            return match receipt.completed() {
+                Err(()) => NativeOutcome::Failed,
+                Ok(Some(times)) if self.timing => NativeOutcome::Timed(times),
+                Ok(_) => NativeOutcome::Unmeasured,
+            };
+        }
+        let _ = self.timing;
+        NativeOutcome::Unmeasured
     }
 }
 

@@ -473,6 +473,12 @@ impl<G: Game> Actor<G> {
                     continue;
                 }
                 Ok(None) => {}
+                Err(FrameError::NativeCommandBuffer { .. }) => {
+                    return Ok(Finished {
+                        samples,
+                        lost_device: true,
+                    });
+                }
                 Err(FrameError::Gpu(_)) if self.gpu.watch.is_lost() => {
                     return Ok(Finished {
                         samples,
@@ -542,6 +548,7 @@ fn ensure_running(stopped: &AtomicBool) -> Result<(), FrameError> {
 }
 fn frame_failure(error: FrameError, lost: bool) -> RenderOutcome {
     match error {
+        FrameError::NativeCommandBuffer { .. } => RenderOutcome::DeviceLost,
         FrameError::Gpu(_) if lost => RenderOutcome::DeviceLost,
         other => RenderOutcome::Frame(Err(other.to_string())),
     }

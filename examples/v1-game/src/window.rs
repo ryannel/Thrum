@@ -16,6 +16,20 @@ use crate::{
 
 mod capture;
 
+/// Process-edge selection for the labelled native recovery capture fixture.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeRecovery {
+    /// Ordinary capture, with no failure injection.
+    Disabled,
+    /// Uninterrupted control with matched reset checkpoints.
+    Control,
+    /// Presenter replacement, command error, device loss and rejection.
+    Faults,
+}
+
+/// Environment setting parsed by the binary before starting the capture adapter.
+pub const NATIVE_RECOVERY_VARIABLE: &str = "THRUM_CAPTURE_NATIVE_RECOVERY";
+
 /// Run a declared unattended capture scenario through the ordinary game.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
@@ -24,8 +38,9 @@ pub fn run_runtime_capture(
     scenario: &str,
     wait: bool,
     hold_full: std::time::Duration,
+    recovery: NativeRecovery,
 ) -> Result<(), String> {
-    capture::run(output, scenario, wait, hold_full)
+    capture::run(output, scenario, wait, hold_full, recovery)
 }
 
 const KEY_A: u8 = 1;

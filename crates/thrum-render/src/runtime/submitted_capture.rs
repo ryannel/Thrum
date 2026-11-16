@@ -304,11 +304,32 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Refuses old-device sessions and mapping failure. The interval must then
     /// be reported incomplete; lost devices are never polled here.
     pub fn try_submitted_image(&mut self) -> Result<Option<SubmittedImage>, FrameError> {
+        // The tap may be drained before normal frame reports. Its timestamp
+        // resolution is queue work too, and must respect native failure admission.
+        self.check_native_completion()?;
         let Some(tap) = self.submitted_capture.as_mut() else {
             return Err(FrameError::InvalidState("no capture session"));
         };
         if tap.generation != self.generation || tap.extent != self.render_extent {
             return Err(FrameError::InvalidState("retired capture generation"));
+        }
+        if let Some(segment) = tap
+            .slots
+            .iter()
+            .filter_map(|slot| slot.sample.as_ref())
+            .min_by_key(|stamp| stamp.sample.submission_order)
+            .and_then(|stamp| stamp.sample.native_segment.as_ref())
+        {
+            match segment.outcome() {
+                crate::synthetic::NativeOutcome::Pending => return Ok(None),
+                crate::synthetic::NativeOutcome::Failed => {
+                    return Err(FrameError::NativeCommandBuffer {
+                        generation: segment.generation,
+                    });
+                }
+                crate::synthetic::NativeOutcome::Timed(_)
+                | crate::synthetic::NativeOutcome::Unmeasured => {}
+            }
         }
         // Resolve only after completion, in later render-coordinator work.
         if tap

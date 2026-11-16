@@ -8,11 +8,15 @@ mod capture;
 fn main() {
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
         let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
-        let (wait, hold) =
+        let (wait, hold, recovery) =
             capture_admission().unwrap_or_else(|error| report_capture_failure(&error));
-        if let Err(error) =
-            v1_game::run_runtime_capture(std::path::Path::new(&output), &scenario, wait, hold)
-        {
+        if let Err(error) = v1_game::run_runtime_capture(
+            std::path::Path::new(&output),
+            &scenario,
+            wait,
+            hold,
+            recovery,
+        ) {
             report_capture_failure(&error);
         }
         return;
@@ -27,7 +31,7 @@ fn main() {
 }
 
 #[cfg(target_os = "macos")]
-fn capture_admission() -> Result<(bool, std::time::Duration), String> {
+fn capture_admission() -> Result<(bool, std::time::Duration, v1_game::NativeRecovery), String> {
     let wait = match std::env::var("THRUM_CAPTURE_ADMISSION").as_deref() {
         Ok("omit") | Err(_) => false,
         Ok("wait") => true,
@@ -39,7 +43,13 @@ fn capture_admission() -> Result<(bool, std::time::Duration), String> {
         .transpose()
         .map_err(|e| e.to_string())?
         .unwrap_or(0);
-    Ok((wait, std::time::Duration::from_millis(hold)))
+    let recovery = match std::env::var(v1_game::NATIVE_RECOVERY_VARIABLE).as_deref() {
+        Err(_) => v1_game::NativeRecovery::Disabled,
+        Ok("control") => v1_game::NativeRecovery::Control,
+        Ok("faults") => v1_game::NativeRecovery::Faults,
+        _ => return Err("native recovery must be control or faults".into()),
+    };
+    Ok((wait, std::time::Duration::from_millis(hold), recovery))
 }
 
 #[cfg(target_os = "macos")]

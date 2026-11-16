@@ -83,7 +83,7 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
             Ok(Some(prepared)) => Some(host.encode_scene_only(slot_index, prepared)?),
             Ok(None) => None,
             Err(error) => {
-                host.queue.submit([]);
+                host.flush_staged_uploads()?;
                 return Err(error);
             }
         };
@@ -238,14 +238,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for EncodedFrame<'_, W, V> {
         if let Some(host) = self.discard_recording() {
             // Queue::write_buffer stages bytes until submit. Release that staging
             // even when this encoder is discarded without a scene submission.
-            staging_flush::flush(&host.queue);
+            // Drop cannot return an error. A native failure stays latched for
+            // the platform's next report/tap poll, without flushing its queue.
+            drop(host.flush_staged_uploads());
         }
     }
 }
 
 #[cfg(not(test))]
-mod staging_flush {
-    pub(super) fn flush(queue: &wgpu::Queue) {
+pub(super) mod staging_flush {
+    pub(in crate::runtime) fn flush(queue: &wgpu::Queue) {
         queue.submit([]);
     }
 }
@@ -262,7 +264,7 @@ pub(super) mod staging_flush {
         ATTEMPTS.get()
     }
 
-    pub(super) fn flush(queue: &wgpu::Queue) {
+    pub(in crate::runtime) fn flush(queue: &wgpu::Queue) {
         // Count the attempt before wgpu can silently discard a lost-device submit.
         ATTEMPTS.set(ATTEMPTS.get() + 1);
         queue.submit([]);
