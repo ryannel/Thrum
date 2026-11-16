@@ -132,7 +132,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS M2, which waits for it.",
       "items": [
         {
@@ -166,10 +166,10 @@
           "lock": "gpu",
           "ask": "Did any reference, case, bound or test of the numerical acceptance table change in this milestone? None may. Does P10 still compare storage with a float32 run of the production integrator, on its fixture as it was?",
           "target": "mac-metal",
-      "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz; docs/evidence/ATMOSPHERE/M9-continuation/all-orders.tsv.gz",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz; docs/evidence/ATMOSPHERE/M9-continuation/all-orders.tsv.gz",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "M9.4",
@@ -188,10 +188,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-      "evidence": "main-branch check exact-images; docs/evidence/ATMOSPHERE/M9-continuation.md; docs/evidence/ATMOSPHERE/M9-baseline-refresh.json",
+          "evidence": "main-branch check exact-images; docs/evidence/ATMOSPHERE/M9-continuation.md; docs/evidence/ATMOSPHERE/M9-baseline-refresh.json",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "M9.6",
@@ -209,10 +209,10 @@
           "check": "python3 scripts/run_v1_showcase.py check",
           "lock": "gpu",
           "target": "mac-metal",
-      "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/showcase-run.json; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz",
+          "evidence": "docs/evidence/ATMOSPHERE/M9-resume.md; docs/evidence/ATMOSPHERE/M9-resume/showcase-run.json; docs/evidence/ATMOSPHERE/M9-resume/checks.json.gz",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "M9.8",

@@ -158,6 +158,35 @@
         "by": "plan",
         "task": "CULLING M3 needs something no plan provides yet. The builder wrote: A planner must reconcile M3.10\u2019s unchanged-registry ",
         "at": "2026-11-16T04:16:37Z"
+      },
+      "ready_for_review": {
+        "commit": "1329808a329f56d7fe57c1ae653c8b5a4fed93d0",
+        "checked": "05ac8f6e0ae1fbedfc3c36f974229fe8d8ec2877",
+        "at": "2026-11-16T13:03:11Z",
+        "reused": [
+          "M9.3"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 584176,
+          "cached": 92066176,
+          "output": 111657,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 584176,
+          "cached": 92066176,
+          "output": 111657,
+          "turns": 3
+        }
       }
     }
   },
