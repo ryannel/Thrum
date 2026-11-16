@@ -97,6 +97,35 @@
         "by": "plan",
         "task": "The shared exact-images main-branch check fails at random under GPU load in the apple-tile-native motion capture: apple_",
         "at": "2026-11-16T15:36:07Z"
+      },
+      "ready_for_review": {
+        "commit": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "at": "2026-11-16T23:02:19Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 436398,
+          "cached": 68975232,
+          "output": 198354,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 436398,
+          "cached": 68975232,
+          "output": 198354,
+          "turns": 3
+        }
       }
     }
   },

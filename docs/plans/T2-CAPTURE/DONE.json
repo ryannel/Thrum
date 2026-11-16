@@ -186,7 +186,7 @@
     {
       "id": "M3",
       "name": "A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "quality_bar": "Evidence as honest as T2 M0's, with the separation a build farm such as Chromium's LUCI keeps between an infrastructure failure and a test failure: every image the renderer submitted is retained with its real submission time, every opportunity the capture cost is counted with its reason, and a run that could not judge says so and is read as neither a pass nor a failure of the commit.",
