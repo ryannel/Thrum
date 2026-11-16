@@ -15,7 +15,7 @@ pub type SharedMap = Arc<Mutex<Map>>;
 pub type SharedReport = Arc<Mutex<thrum_water::WaterReport>>;
 
 /// Authored inspection focus, on the actual long swell and wind-crest train.
-pub const CAMERA_FOCUS: [f32; 2] = [92.0, -68.0];
+pub const CAMERA_FOCUS: [f32; 2] = [132.0, 32.0];
 /// Vertical field of view for the open-sea camera.
 pub const CAMERA_FOV_DEGREES: f32 = 75.0;
 /// Vertical drop over the camera's 100 m forward look vector (about 18 degrees).
@@ -178,7 +178,7 @@ pub fn build_paired(
         Ok((
             game.with_meshes(vec![
                 MeshPlacement::new("meshes/float", "textures/white")
-                    .at([80.0, -0.4, CAMERA_FOCUS[1]])
+                    .at([CAMERA_FOCUS[0] - 12.0, -0.4, CAMERA_FOCUS[1]])
                     .scale(3.0)
                     .material(CookedMaterial {
                         base_colour: [0.18, 0.18, 0.18, 1.0],
