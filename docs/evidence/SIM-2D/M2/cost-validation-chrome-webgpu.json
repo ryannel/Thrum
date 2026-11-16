@@ -1,0 +1,18 @@
+{
+  "action": "costs",
+  "target": "chrome-webgpu",
+  "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+  "dirty": true,
+  "utc": "2026-11-16T18:22:14.505245+00:00",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": [
+    9.759765625,
+    13.73486328125,
+    19.61474609375
+  ],
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "record": "docs/evidence/SIM-2D/M2/costs-chrome-webgpu.json",
+  "source_sha256": "bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44",
+  "measured_commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+  "timings_are_baselines": true
+}

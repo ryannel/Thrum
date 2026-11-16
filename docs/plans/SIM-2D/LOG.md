@@ -1,5 +1,12 @@
 # SIM-2D log
 
+- 2026-11-16 M2 review repair: fresh two-run Mac and Chrome costs at `d24658b33`.
+  Both source/completeness validators pass with the integrated clock/presentation sources.
+  Original records and profiles retain their historical provenance; no measurements were relabeled.
+  Current rows retain load, serial/parallel outcomes, M1/repeat comparators and every tripwire.
+  Native warmed calls allocate zero; timing figures remain shared-host baselines.
+  [Fresh evidence, regressions and limits](../../evidence/SIM-2D/M2.md).
+
 - 2026-11-16 M2 added ordered circle, box, capsule and nearest queries with bounded wide scans.
   The oracle, hand geometry, domain refusal and live swept-hit checks pass on the Mac.
   Final Mac serial/parallel, Chrome and simulator runs reproduce Crowd and Mixed, including wire routes.

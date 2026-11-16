@@ -234,20 +234,20 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Do the rows support the explanation given for each slower one? Is forced-parallel reported as measured, whichever way it came out?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
           "verdict": "fail",
           "review": "docs/evidence/SIM-2D/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.10",
           "statement": "In Chrome, for both traces at the three sizes, tick, index build and time per neighbour visited are on record from two separate runs with build and load. Any row about a quarter slower than M1's at the same neighbour count is explained.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
           "verdict": "fail",
           "review": "docs/evidence/SIM-2D/M2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.11",

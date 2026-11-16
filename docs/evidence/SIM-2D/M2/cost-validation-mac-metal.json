@@ -1,0 +1,18 @@
+{
+  "action": "costs",
+  "target": "mac-metal",
+  "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+  "dirty": true,
+  "utc": "2026-11-16T18:11:50.276977+00:00",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": [
+    41.24462890625,
+    36.4599609375,
+    29.4482421875
+  ],
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "record": "docs/evidence/SIM-2D/M2/costs-mac-metal.json",
+  "source_sha256": "bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44",
+  "measured_commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+  "timings_are_baselines": true
+}
