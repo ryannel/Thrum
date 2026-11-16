@@ -138,3 +138,12 @@ Mac, Chrome and simulator conformance reproduce the unchanged folds and expanded
 Two release cost runs per target at `6ce949c39` pass source and completeness checks, with named prior comparators.
 Clock and quarter-regression flags are false; the 5,000-body scaling flags remain explained by grid growth.
 The six focused Rust checks pass. [Evidence and measured limits](../../evidence/SIM-2D/M1.md).
+
+## M1 cost identity after merge, 16 November 2026
+
+An unlinked rain-model addition changed the whole-workspace hash and invalidated both cost records.
+The key now follows the runner's normal/build dependencies on all targets and their build settings.
+Five focused tests and the historical merge regression pass; runtime changes still invalidate the key.
+Fresh two-run release records at `42fe7d0fd` pass both cost validators and retain identical artifact hashes.
+Clock and quarter-regression flags are false. The evidence records the scaling flags and replay outlier.
+[Evidence, regression receipt and measured limits](../../evidence/SIM-2D/M1.md).

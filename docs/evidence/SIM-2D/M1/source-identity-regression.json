@@ -1,0 +1,8 @@
+{
+  "commit": "42fe7d0fd2bf3f4538934fb6a579db119f059d8c",
+  "source_sha256": "4c4da82946cf0195d756f99a9b3f846c18629623c1214b766c9b9eae5f2d15ea",
+  "workspace_before_merge_commit": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
+  "historical_rain_workspace_addition_preserves_key": true,
+  "runtime_source_change_invalidates_key": true,
+  "unit_tests": 5
+}
