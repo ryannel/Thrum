@@ -84,7 +84,7 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
             mipmap_filter: wgpu::MipmapFilterMode::Linear,
             anisotropy_clamp: if surface
                 .downlevel
-                .is_none_or(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
+                .is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
             {
                 16
             } else {
