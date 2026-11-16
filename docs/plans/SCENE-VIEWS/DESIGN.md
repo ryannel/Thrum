@@ -29,7 +29,7 @@ is. It is never presented, and it has no history.
 | `WATERS` M14, for a lake, a pond and the sea under an island | The far shore, hills, trees and the craft as a camera at the mirror image of the main one would see them, with the light the main view gives them, up to two a frame | The same shading, with what belongs to a view made again for the view; a cut at a plane; air that starts at the water's level plane, so each stretch of a reflected path has one owner |
 | `PUDDLES`, `RIVERS`, through `WATERS` | The same, with no work of their own | Nothing beyond the interface |
 | A game that has no such water | Nothing | A scene that declares no view is what it was, bit for bit |
-| A later consumer: a probe, a portal, a monitor in the world | A view from any camera | The request is a camera, and nothing in it says "mirror" |
+| A later consumer: a monitor in the world, a portal, a probe that stands elsewhere | A view from a camera somewhere else | [Not built](#the-camera-stands-on-the-main-cameras-vertical). The request is a camera and nothing in it says "mirror", so serving one adds to a slot and changes no request |
 
 **Commissioned:** secondary views on `mac-metal`, on both recipes, and `chrome-webgpu`, of everything a scene
 draws as opaque geometry: its entities, on both of `CULLING`'s routes, and its cooked placements.
@@ -45,6 +45,13 @@ draws as opaque geometry: its entities, on both of `CULLING`'s routes, and its c
   ([part F](../../evidence/SCENE-VIEWS/design-proof/README.md)). A blend of neighbouring columns would then
   be no one observer's, and nothing `ATMOSPHERE` makes could be its reference. Every water plane is level.
   A view may still be cut at a tilted plane, with its air from its camera.
+- A camera off the main camera's vertical: a monitor in the world, a portal, a probe that stands elsewhere,
+  a mirror in a tilted plane. Beyond a view's cascades the Sun's shadows come from the frame's caster height
+  map, which is laid out round the main camera's horizontal position, and a camera anywhere else would need
+  that map and the air's shadow heights made again round itself: every caster within 16 km drawn once more,
+  each frame. No consumer asks for it, and every water mirror stands under the main camera. Such a request
+  is [refused by name](#the-camera-stands-on-the-main-cameras-vertical). Serving one later is a slot
+  declared with terrain shadows of its own, which adds to what is built here and changes none of it.
 - A history for a view, so motion vectors, reactive coverage and reconstruction of a view. A view is read
   inside the main view's shading, and the main view's reconstruction is the only one.
 - Occlusion culling in a view. It would need a depth pyramid and visible-last bits for each view.
@@ -69,9 +76,9 @@ one: the same world, lit the same, from the other side. In words, on both target
 
 | Cue | Range it must hold over | Plausible wrong substitute, and what rejects it |
 |---|---|---|
-| **V1** The same scene in the same light: a thing in a view looks as the main view would show it from there, Sun-lit and shaded sides, shadows, lamps, the haze of its own distance | Any rigid camera and field of view; an extent of a sixteenth of the main view's pixels to all of them; dawn to night; entities and cooked placements; every culling mode | A capture lit by ambient light alone, or one that reuses the main view's cluster table, aerial volume or cascades. Rejected by the view against the main view drawn from the same camera, and by a lamp and a hill that stand outside the main frustum |
+| **V1** The same scene in the same light: a thing in a view looks as the main view would show it from there, Sun-lit and shaded sides, shadows, lamps, the haze of its own distance | Any rigid camera on the main camera's vertical, at any height, facing any way, with any field of view; an extent of a sixteenth of the main view's pixels to all of them; dawn to night; entities and cooked placements; every culling mode | A capture lit by ambient light alone, or one that reuses the main view's cluster table, aerial volume or cascades. Rejected by the view against the main view drawn from the same camera, and by a lamp and a hill that stand outside the main frustum |
 | **V2** What the main camera cannot see is there | Things behind the camera, above the frame and behind a nearer hill; 1 to 100,513 instances | The main view's visible list drawn again. Rejected by a view that faces the other way |
-| **V3** A view does not depend on where the main camera looks | The request held while the main camera turns, tilts and moves | Cascades, clusters or visibility fitted to the main frustum. Rejected by the view's bytes with the main camera turned through 180° |
+| **V3** A view does not depend on where the main camera looks | The request held while the main camera turns, tilts, and rises or sinks where it stands | Cascades, clusters or visibility fitted to the main frustum. Rejected by the view's bytes with the main camera turned through 180° |
 | **V4** A clean cut at a plane | A plane at any height; things that cross it; a camera 5 cm to 40 m from it | A clip the consumer makes afterwards from depth, which leaves the ground between the camera and the plane in front of everything. Rejected by a post standing through the plane and a view camera under the ground |
 | **V5** Absent means absent | A scene that declares no view; a declared view nobody asks for in a frame | Targets that are filled and not read. Rejected by identical shader text, passes, pipelines, resources and frames, and by pass names missing from the frame's timing |
 | **V6** Steady, and of this frame | Pan, tilt, a time scrub, a mover crossing; with and without temporal sampling | A view drawn a frame late, or one with its own jitter and history. Rejected by a reflection that must meet its source in every frame, and by an edge's place under the frame's jitter |
@@ -99,7 +106,9 @@ one: the same world, lit the same, from the other side. In words, on both target
   specification text.
 - **Not read:** Unreal's source, a frame study of Red Dead Redemption 2, and Kooima's generalised projection
   beyond its result. A search for how shipped engines jitter a reflection capture found nothing, so
-  [part A](../../evidence/SCENE-VIEWS/design-proof/README.md) measures it.
+  [part A](../../evidence/SCENE-VIEWS/design-proof/README.md) measures it. A search for which far-shadow
+  products a shipped engine gives a reflection capture found only forum reports of shadows missing from
+  Unreal 4's planar reflections, so that choice below rests on this renderer's own code and measurement.
 
 | Question | Candidate | Verdict |
 |---|---|---|
@@ -114,6 +123,9 @@ one: the same world, lit the same, from the other side. In words, on both target
 | The Sun's shadows in a view | The main view's cascades | Fails V3. The shader picks a cascade by the fragment's depth in its own view, and the cascades are fitted to the main frustum, so a bank's shadows would appear in the water as the bank came on screen |
 | | Cascades fitted round the camera for every view | Not selected: it coarsens the main view's shadows in every scene that declares a view |
 | | **Cascades of the view's own, fitted to its frustum, with the scene's height map beyond them** | **Selected** |
+| The Sun's shadows beyond a view's cascades | A caster height map and air shadow heights of the view's own, laid out round its camera | Not selected. Right for any camera, but it is every caster within 16 km drawn top-down and reduced once more, each frame for each view, and for a mirror's camera it draws the bytes the frame already holds. It is the route for [a camera elsewhere](#purpose-and-scope), when a consumer has one |
+| | The frame's map, for any camera that stands inside it | Fails V1. The march toward the Sun ends where it leaves the map, so off the map's centre a receiver loses hills that the main view from that camera has. With the map centred 40 km away, 283 pixels of a 128×128 frame differ by up to 2,904 stored steps ([the builder's Metal run](../../evidence/SCENE-VIEWS/M1/9be4a4887-portable.log), `shadow/tests/scene_view_anchor.rs`). Two maps that overlap are not two equal reads |
+| | **The frame's map, for a camera on the main camera's vertical** | **Selected.** The scene's fit lays the map out by the camera's horizontal position alone, so there the frame's map [is the view's own](#what-a-view-owns-and-what-it-shares) |
 | The cut at the plane | An oblique near plane in the projection | Not selected. It needs no shader change and [part C](../../evidence/SCENE-VIEWS/design-proof/README.md) finds its depth still usable, but the scene's shader turns stored depth into view depth by the standard projection's formula, to pick a cascade and a cluster slice. An oblique matrix would need that rewritten for every drawer, which moves every exact baseline |
 | | A hardware clip distance | A candidate for a recipe later: it is an optional feature in WebGPU, and it needs a vertex variant in every drawer |
 | | **A test of each fragment against the plane, in the view's own fragment entry** | **Selected.** A view's pipelines are separate from the main view's in any case, because a view has one colour target where the main view has three |
@@ -148,6 +160,16 @@ A mirror is not a special case. The consumer builds a proper camera at the mirro
 reflection matrix would turn every triangle's winding; a rigid camera does not, and the image the consumer
 reads is addressed by projecting world points through the view's own matrix, so it needs no flip.
 
+#### The camera stands on the main camera's vertical
+
+A request's camera has the two horizontal coordinates of the frame's main camera, bit for bit, as the two
+positions are declared. Its height, its direction and its field are free. The engine compares the declared
+positions and never one it recovers from a matrix, and the frame's camera facts give a contribution the main
+camera's position, so a consumer copies the two coordinates and the comparison cannot fail by rounding. A
+mirror in a level plane is such a camera: only its height changes. A request from anywhere else is refused
+by name when it is asked for, never taken and drawn with shadows that are not its own, and the slot is idle
+in that frame. [The terrain shadows](#what-a-view-owns-and-what-it-shares) are the reason.
+
 ### What a view owns and what it shares
 
 The forward shader is shared text. What it reads splits by whether the quantity depends on the view.
@@ -156,7 +178,7 @@ The forward shader is shared text. What it reads splits by whether the quantity 
 |---|---|
 | The view record and its auxiliary record | Instances and their history, the mesh arena, materials |
 | The visible lists and indirect records, from a compaction against the view's frustum and clip plane | The Sun, the sky's diffuse and reflection products, the cloud factor and any other Sun-path provider |
-| The Sun cascades and their uniform, fitted to the view's frustum by the scene's own fit | The caster height map and the air's shadow heights, which are laid out round the main camera in world space |
+| The Sun cascades and their uniform, fitted to the view's frustum by the scene's own fit | The Sun's terrain shadows: the caster height map and the air's shadow heights, one of each for the frame, laid out round the main camera's horizontal position |
 | The cluster table of local lights | The local-light list |
 | The aerial volume | The frame's exposure sample and storage scale |
 | Colour with coverage, and depth | |
@@ -167,9 +189,26 @@ The forward shader is shared text. What it reads splits by whether the quantity 
   Direct mode draws every instance in a view too. Occlusion is never used in a view, whatever the scene's mode.
 - **Shadows.** A view's fragments pick a cascade by their depth in the view, so the view has cascades of its
   own: the scene's fit applied to the view's frustum out to the view's shadow reach, drawn with the casters
-  culled for each. Beyond the reach the scene's height map answers, as it does for the main view. The first
-  profile gives a view one cascade to 128 m; the count, from none to two, and the reach are knobs. With none,
-  the view has hill-scale shadows only.
+  culled for each. The first profile gives a view one cascade to 128 m; the count, from none to two, and the
+  reach are knobs. With none, the view has hill-scale shadows only.
+- **Terrain shadows.** Beyond the reach the caster height map answers, marched toward the Sun, as it does
+  for the main view, and the shadowed air reads the air's shadow heights, which are reduced from that map.
+  The frame has one of each and a view reads them. On the main camera's vertical they are the view's own,
+  exactly. The scene's fit lays the map out as a square 32 km on a side round the camera's horizontal
+  position, snapped to the map's 32 m texel, over the height range of the scene's casters, and nothing else
+  of the camera enters it (`height_matrix` in `synthetic/shadow.rs`). Which casters are drawn into it
+  depends on the camera through that square alone, and the air's heights are a function of the map and the
+  Sun. So two cameras
+  on one vertical have one map, one address record and one set of air heights, whatever their heights and
+  directions. Off the vertical they do not, and overlap is not enough: the march ends where it leaves the
+  map, at a different distance from a receiver in each. That is why
+  [a request off the vertical is refused](#the-camera-stands-on-the-main-cameras-vertical).
+  - *One rounding.* The fit snaps a position it recovers from a camera's view matrix, and two cameras on one
+    vertical can recover horizontal coordinates that differ in their last bits. They snap to different
+    texels only while the main camera stands within that rounding of a texel's edge. There the view still
+    reads the frame's map, the one the main view reads in that frame, so a hill's shadow in a reflection
+    lies where it lies on the hill; the map a main view at the view's camera would fit lies one texel aside.
+    Equality with that main view is promised wherever the two snap alike, which M1.1's cameras do.
 - **Lights.** A cluster table is built for the view's own frustum by the pass that builds the main view's.
 - **Air.** The aerial volume is computed again along the view's own lines of sight, from the view's camera.
   A mirror's camera stands under its plane, where there is no air: light reaches the main camera from a body
@@ -267,13 +306,19 @@ mirror through water's knobs.
 ### Check that it can work
 
 - **V1.** A view runs the main view's shader with the main view's inputs, and each input that depends on the
-  view is produced by the code that produces the main view's, from the view's camera. So a view of camera X
-  must equal the main view drawn from X, where both cover, up to the sky the view leaves out, when the two
-  are drawn under one shadow profile. A view's own profile is smaller than the main view's (one cascade, no
-  fog), so that is the comparison M1.1 makes, to one step of each stored format. Unrun.
+  view is produced by the code that produces the main view's, from the view's camera. The terrain shadows
+  are the frame's, which on the main camera's vertical are the ones the scene's fit gives the view's camera.
+  The frame's lighting (the Sun, the sky's products, exposure) is the host's, and no camera derives it. So a
+  view of camera X on that vertical must equal the main view drawn from X in the same lighting, where both
+  cover, up to the sky the view leaves out, when the two are drawn under one shadow profile. A view's own
+  profile is smaller than the main view's (one cascade, no fog), so that is the comparison M1.1 makes, to
+  one step of each stored format: with X at the main camera's position, and with X 80 m along the vertical
+  from it, where a hill's shadow reaches the receivers through the height map alone. At one position the
+  builder's Metal run has it at zero steps with none, one and two cascades
+  ([proof](../../evidence/SCENE-VIEWS/M1/9be4a4887-proof.md)). The displaced case is unrun.
 - **V2, V3.** Nothing a view reads is fitted to the main frustum: its lists, cascades, clusters and aerial
-  volume are its own, and the height map and the air's shadow heights are laid out round the main camera's
-  position and not its direction. Moving the main camera does move those two; M1.4 turns it only.
+  volume are its own, and the terrain shadows are laid out by the horizontal position the two cameras share,
+  not by the main camera's direction or height. M1.3 turns the main camera where it stands.
 - **V4.** The plane test is per fragment and exact to a pixel. The depth it leaves is the standard reversed
   depth, which resolves 0.33 mm at 3 km (part C), so `WATERS`' lookup loses nothing to the cut.
 - **V6.** Part A, above. That reconstruction then holds a reflection steady is `WATERS` M14.6's to judge.
@@ -403,6 +448,7 @@ builder who cannot close one ends `BLOCKED` with the measurement.
 | Slots, requests, a view's record, its pass and fragment entry, its targets, the opt-in for contributions | This module, in `thrum-render` |
 | The compaction a view culls with | Built here in `CULLING`'s files, [by ruling](#what-scene-views-asks-of-other-modules) |
 | A view's cascades, cluster table and aerial volume | Built here in the forward pass's and `ATMOSPHERE`'s files, by ruling |
+| The caster height map and the air's shadow heights | The forward pass's, as before: one of each for the frame, read by the main view and by every view |
 | Cooked placements in a view | Built here in `thrum-asset-gpu`, by ruling |
 | Which views a frame has, and what is read from them | The asking contribution: `WATERS` |
 | The mirror example, `examples/mirror` (package `mirror-scene`) | This module |
@@ -424,7 +470,8 @@ the row of the volume under the horizon then meets `ATMOSPHERE`'s ground 6.9 km 
 effect can be left out of a frame, which is how M2.3's references are drawn. It is a fixture and a
 demonstration, and no engine crate holds it.
 
-**Creator journey.** An effect author declares slots with their extents, asks in upload with a camera, reads
+**Creator journey.** An effect author declares slots with their extents, asks in upload with a camera on
+the main camera's vertical, reads
 colour, depth and the record in the effect's own pass, and registers the knobs. Changing a request, its
 extent included, needs no rebuild. Changing the count of slots or a slot's largest extent is a new preparation.
 
@@ -439,8 +486,8 @@ the same bytes.
    drawing in views, and read its own slots in its own passes.
 2. **A camera-drawn compaction against another volume** (`CULLING`'s files, M1), as Sun casters have.
 3. **Per-view lighting products** (the forward pass's shadow and cluster files, `ATMOSPHERE`'s aerial pass and
-   the aerial decoders, M1): cascades, a cluster table and an aerial volume for a second view, and air from
-   a level plane: the pass run for an observer at the plane's height, and the decoder a view's pipelines
+   the aerial decoders, M1): cascades, a cluster table and an aerial volume for a second view, which reads
+   the frame's caster height map and air shadow heights unchanged; and air from a level plane: the pass run for an observer at the plane's height, and the decoder a view's pipelines
    compose.
 4. **The view record for a view that is not presented** (`APPLE-PRESENTATION`'s, M1). C07 now names a
    secondary view: it publishes no frame contract and has no history key.
@@ -457,6 +504,7 @@ Estimates, unmeasured. A view is the scene's opaque draw again at its extent, le
 | Compaction | Frame, each asked view | The scene's instances once more | As the main view's Frustum compaction |
 | Cluster table and aerial volume | Frame, each asked view | 32×18×16 cells; 32×32×32 texels, from the plane where asked | Small beside a draw |
 | Cascades | Frame, each asked view | One 1024² depth layer in the first profile | A Sun pass with fewer casters |
+| Terrain shadows | Frame | The frame's one height map and one reduction, whatever the count of views | Nothing added by a view |
 | The view's pass | Frame, each asked view | A quarter of the main view's pixels at half each side; one colour and one depth target stored | The largest term. On a tile GPU each view is a render pass with two stores |
 | Memory | | Colour and depth at 1280×720 for a 2560×1440 frame: about 11 MiB a slot; a cascade layer 4 MiB | |
 
@@ -486,6 +534,9 @@ figure decides whether an item passes.**
    product [as it stands](#what-a-views-air-is-held-to), and the main view has it too. Early sign: M2.5's
    hill, if the example is moved down to sea level, and `WATERS` M14 on the sea. The wrong fix is a rule of
    the view's own for the lines below its horizon.
+8. **A consumer needs a camera off the main camera's vertical.** Early sign: the refusal, by name. The
+   designed remedy is a slot with terrain shadows of its own, planned when that consumer is. The wrong fix
+   is taking the request onto the frame's map, which misses V1 by thousands of stored steps.
 
 ## Proof and builder handoff
 
@@ -497,7 +548,8 @@ figure decides whether an item passes.**
   ([rules](../ARCHITECTURE.md#exact-baselines)). No retained image moves.
 - **Engine tests hold no game content.** The tests of `thrum-render` and `thrum-asset-gpu` make their own
   scenes. The pool, the tower and the lamp are the example's.
-- **Bounds.** An equality item compares like with like: the same camera, extent and shadow profile. Its
+- **Bounds.** An equality item compares like with like: the same camera, extent, shadow profile and frame
+  lighting. Its
   allowance is one step of each stored format, because two pipelines may round the last bit differently;
   for M1.6's rebuilt point it is a few steps of the stored depth and of a 32-bit float at the point's
   coordinates, which the test works out. A view's air (M1.5, M1.12, M2.3) is compared with `ATMOSPHERE`'s
@@ -514,7 +566,8 @@ figure decides whether an item passes.**
 
 | Question | Settled by |
 |---|---|
-| Does a view equal the main view from its camera to the last bit? | M1.1: to one step of each stored format; more is a defect |
+| Does a view equal the main view from its camera to the last bit? | M1.1, for a camera on the main camera's vertical: to one step of each stored format; more is a defect |
+| Does anything need a view from a camera off that vertical? | No consumer today. M1.13 refuses it by name; [risk 8](#risks) has the remedy |
 | Can the cooked indirect path hold a second set of culling buffers inside Chrome's limits? | M2.1; the direct path is the fallback for a view |
 | What does a view cost, and what does each knob buy? | M3.4 |
 | Is one cascade to 128 m enough for a reflection? | M2.5; [risk 5](#risks) |

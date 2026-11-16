@@ -132,3 +132,33 @@
   on both routes, which M1 completed, and nothing of the valley's default mode. M1 may be built beside
   `CULLING` M3 in that module's files; the design's sixth risk already covers another builder there. No
   design text or item changed.
+- 2026-11-16 Fifth design review asked for changes: one Must Fix,
+  [`shared-height-map-camera-support`](../../evidence/SCENE-VIEWS/design-review.md). A request was any
+  rigid camera, a view read the main camera's finite caster height map, and M1.1 promised equality with the
+  main view from the view's camera. The builder's proposal above and its counterexample (283 pixels, up to
+  2,904 stored steps, map centred 40 km away) are the same finding.
+- 2026-11-16 Ruled: a view's camera stands on the main camera's vertical, and any other is refused by name
+  when asked. The scene's fit lays the height map out by the camera's horizontal position alone, snapped to
+  a 32 m texel, so on one vertical the map, its address record and the air's shadow heights reduced from it
+  are the same product; the frame keeps one of each and a view reads them as its own. Positions are compared
+  as declared, never recovered from a matrix, so a mirror that copies two coordinates is never refused by
+  rounding. Read for it: `height_matrix` and `FitInputs::fit` in `synthetic/shadow.rs`, `shadow/secondary.rs`,
+  `horizon_visibility`, `air_shadow.wgsl` and `air_sun_visibility`.
+- 2026-11-16 Named and not hidden: the fit snaps a position recovered from each view matrix, so two cameras
+  on one vertical can snap apart while the main camera is within that rounding of a texel's edge. A view then
+  reads the frame's map, as the main view does; equality with a main view at its camera is promised where
+  the two snap alike. The size of that rounding was not measured.
+- 2026-11-16 Not chosen. Height products of a view's own for every slot: every caster within 16 km drawn
+  and reduced again each frame for each view, to make bytes a mirror's frame already has. The frame's map
+  for any camera inside it, or for cameras in one texel: overlap is not equality, since the march ends where
+  it leaves the map, and a texel rule would refuse a nearby camera whenever an edge fell between the two.
+  Own products for a slot that declares them stay the route for a camera elsewhere, when a consumer has one.
+- 2026-11-16 Items. M1.1 is written again: a camera on the vertical, at the main camera's position and 80 m
+  along it, with a hill whose shadow reaches the receivers through the height map alone; one stored step
+  kept. New M1.13: a request off the vertical, by one float step or by 40 km, is refused and leaves the frame
+  as if nothing was asked. M2.1 names the vertical; M3.1 inherits both. V1 and V3's ranges, the selection
+  table, ruling 3, the interface row and one assumption follow. `WATERS`, `PUDDLES` and `RIVERS` ask only
+  for mirrors in level planes, so nothing of theirs changed.
+- 2026-11-16 The review made no suggestion. Not run by the planner: any GPU check, so the displaced case of
+  M1.1 is unrun; equality at one shared position is the builder's Metal result, zero steps. A search for
+  which far-shadow products shipped engines give a reflection capture found forum reports only.

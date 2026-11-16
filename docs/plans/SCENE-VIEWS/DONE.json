@@ -17,13 +17,25 @@
       "items": [
         {
           "id": "M1.1",
-          "statement": "A secondary view of a camera holds what the main view draws from that camera under the same shadow profile. For a scene of entities on meshes with the Sun, the sky and local lights, at the main view's extent and at a quarter of it each side, with temporal sampling off, the reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. The view's colour and depth at every covered pixel equal the reference's to one step of each stored format. A larger difference is a defect whose cause is found; the bound is not widened to it.",
+          "statement": "A secondary view of a camera on the main camera's vertical holds what the main view draws from that camera under the same shadow profile and frame lighting. The scene has entities on meshes, the Sun, the sky, local lights, and a hill whose shadow reaches receivers beyond the view's cascade reach, so that the caster height map alone decides their Sun visibility. At the main view's extent and at a quarter of it each side, with temporal sampling off, from a view camera at the main camera's position and from one 80 m from it along the vertical with another pitch, the reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. The view's colour and depth at every covered pixel equal the reference's to one step of each stored format. A larger difference is a defect whose cause is found; the bound is not widened to it.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_equal_gpu",
-          "ask": "Is the reference a main view drawn from the view's camera by the scene's ordinary path, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? Is the allowance one step of the stored format and no more?",
+          "ask": "Is the reference a main view drawn by the scene's ordinary path, in a scene whose own camera is the view's, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? From the displaced camera, are there covered pixels whose colour the hill's height-map shadow changes by more than the allowance, so that a view with no terrain shadow would fail? Is the allowance one step of the stored format and no more?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "docs/evidence/SCENE-VIEWS/M1/9be4a4887-proof.md",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.13",
+          "statement": "A request is taken only from a camera on the main camera's vertical. One whose declared position differs from the frame's main camera's in either horizontal coordinate, by one step of a 32-bit float or by 40 km, is refused by name when it is asked for: the slot is idle in that frame, records no pass and creates nothing, and the frame's bytes are those of a frame that asked for nothing. A camera on the vertical is taken above and below the main camera, facing any way.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_vertical_gpu",
+          "ask": "Is the refusal decided from the two positions as they are declared, with no tolerance and no position recovered from a matrix? Does the seam's documentation tell an effect author to copy the main camera's two horizontal coordinates, and where the frame gives them?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
@@ -177,7 +189,7 @@
       "items": [
         {
           "id": "M2.1",
-          "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera holds what the main view draws of the cooked scene from that camera at the view's extent under the view's shadow profile, to one step of each stored format, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
+          "statement": "Cooked placements are in a view. On both the direct and the indirect cooked path, a view of a camera on the main camera's vertical holds what the main view draws of the cooked scene from that camera at the view's extent under the view's shadow profile, to one step of each stored format, with meshlets culled for the view's own frustum, clip plane and least size on the indirect path. A cooked scene that declares no view builds the pipelines and buffers it built before and submits the same bytes.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --features thrum-render/creation-counters --test cooked_view_gpu",
           "ask": "Is the reference the main view from the view's camera, on the same cooked path and shadow profile? If the indirect path could not hold a second set of culling buffers, does the view resolve to the direct path and report that it did?",
           "lock": "gpu",
