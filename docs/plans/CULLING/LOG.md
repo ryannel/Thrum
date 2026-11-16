@@ -361,3 +361,10 @@
   All baseline definitions are retained, combined pins recomputed and CULLING M3 refreshes preserved.
   The CPU reference guard passes. [Pin reconciliation](../../evidence/CULLING/M3/replan/pin-rebase.json).
   The official merge is retried alone, with no repeated image proof or coverage-cost measurement.
+
+- 2026-11-16 The official merge returned MERGED at `534ba5021`, together with RIVERS M3.
+  Coverage, all thirty native references, four Chrome manifests and pins landed together.
+  The registry diff changes only the five sets' pins and CULLING M3 refreshes; registered comparisons are unchanged.
+  [Landing and registry audit](../../evidence/CULLING/M3/replan/landing/registry-audit.json) and
+  [fresh default-release build identities](../../evidence/CULLING/M3/replan/main-builds.json) retain the proof.
+  The main-build loaded campaign and final target motion capture pass are now running separately.

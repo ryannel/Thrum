@@ -247,10 +247,10 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Read the diff that merge made to `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-culling-m3`, `CULLING` and `M3`? Did the coverage output, the moved references and those pins reach main in that one merge, with the comparison scripts and their sampling as they were, and has no other merge of this module changed a registered reference? Does the evidence hold a passing verifier record, the builder's or the main-branch check's, at the commit of main the references were regenerated on top of? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets moved? The order in which the builder made its proofs before the merge is not part of this item.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images; docs/evidence/CULLING/M3/replan/landing/merge.json; docs/evidence/CULLING/M3/replan/landing/registry-audit.json; docs/evidence/CULLING/M3/replan/reference-refresh.json; docs/evidence/CULLING/M3/replan/starting-main-pass/record.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.11",
