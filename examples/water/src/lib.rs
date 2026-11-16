@@ -14,12 +14,23 @@ pub type SharedMap = Arc<Mutex<Map>>;
 /// Preparation-only diagnostics retained after attaching the contribution.
 pub type SharedReport = Arc<Mutex<thrum_water::WaterReport>>;
 
-/// Authored inspection area, with a long swell and wind-crest train in view.
-pub const CAMERA_ORIGIN: [f32; 2] = [60.0, -68.0];
+/// Authored inspection focus, on the actual long swell and wind-crest train.
+pub const CAMERA_FOCUS: [f32; 2] = [92.0, -68.0];
 /// Vertical field of view for the open-sea camera.
 pub const CAMERA_FOV_DEGREES: f32 = 75.0;
 /// Vertical drop over the camera's 100 m forward look vector (about 18 degrees).
 pub const CAMERA_LOOK_DROP: f32 = 32.5;
+
+/// Position the orbiting inspection camera at its height and compass bearing.
+pub fn camera_position(height: f32, bearing_degrees: f32) -> [f32; 3] {
+    let bearing = bearing_degrees.to_radians();
+    let radius = 24.0 + (height - 2.0) * (16.0 / 38.0);
+    [
+        CAMERA_FOCUS[0] - bearing.sin() * radius,
+        height,
+        CAMERA_FOCUS[1] + bearing.cos() * radius,
+    ]
+}
 
 /// The example's exposed trade wind and longer swell.
 pub fn forcing() -> Forcing {
@@ -125,11 +136,11 @@ pub fn build_paired(
     let game = SkyGame::new(
         controls,
         Camera::look_at(
-            [CAMERA_ORIGIN[0], 2.0, CAMERA_ORIGIN[1]],
+            camera_position(2.0, 90.0),
             [
-                CAMERA_ORIGIN[0] + 100.0,
+                camera_position(2.0, 90.0)[0] + 100.0,
                 2.0 - CAMERA_LOOK_DROP,
-                CAMERA_ORIGIN[1],
+                CAMERA_FOCUS[1],
             ],
             CAMERA_FOV_DEGREES,
         ),
@@ -140,12 +151,13 @@ pub fn build_paired(
             sky.sun_azimuth_degrees = c.get(azimuth);
             let angle = c.get(bearing).to_radians();
             let h = c.get(height);
+            let eye = camera_position(h, c.get(bearing));
             sky.camera = Camera::look_at(
-                [CAMERA_ORIGIN[0], h, CAMERA_ORIGIN[1]],
+                eye,
                 [
-                    CAMERA_ORIGIN[0] + angle.sin() * 100.0,
+                    eye[0] + angle.sin() * 100.0,
                     h - CAMERA_LOOK_DROP,
-                    CAMERA_ORIGIN[1] - angle.cos() * 100.0,
+                    eye[2] - angle.cos() * 100.0,
                 ],
                 CAMERA_FOV_DEGREES,
             );
@@ -166,7 +178,7 @@ pub fn build_paired(
         Ok((
             game.with_meshes(vec![
                 MeshPlacement::new("meshes/float", "textures/white")
-                    .at([CAMERA_ORIGIN[0] + 12.0, -0.4, CAMERA_ORIGIN[1]])
+                    .at([80.0, -0.4, CAMERA_FOCUS[1]])
                     .scale(3.0)
                     .material(CookedMaterial {
                         base_colour: [0.18, 0.18, 0.18, 1.0],

@@ -372,3 +372,8 @@
   The full short-wave covariance is transported through the horizontal map before that average.
   A Metal probe agrees with independent Box-Muller integration and rejects the flat-mirror negative control;
   the zero-variance limit and lent record layouts pass. The same lent sky, Sun and exposure remain the only light.
+- 2026-11-16 The paired diagnostic exposed 34–43 ms long-wave passes: fixed-point iterations were stalling
+  at binary32's phase/coordinate precision after the cap increased. Reduced the base phase before adding the
+  local inverse offset and stopped at a 10 micrometre plus relative residual. Compressed native/portable
+  probes remain below 0.011 mm height error and 0.000059 slope error, with the old-cap control still failing.
+  The scene now orbits one declared inspection area, so both wind bearings face the same wave train.

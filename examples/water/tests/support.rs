@@ -176,7 +176,7 @@ pub(crate) fn component(amplitude: f64) -> thrum_sea_model::Component {
     }
 }
 pub(crate) fn matrix(extent: [u32; 2], height: f32) -> glam::Mat4 {
-    let [x, z] = water_scene::CAMERA_ORIGIN;
+    let [x, _, z] = water_scene::camera_position(height, 90.0);
     let view = thrum_render::synthetic::SyntheticView::perspective(
         [x, height, z],
         [x + 100.0, height - water_scene::CAMERA_LOOK_DROP, z],
