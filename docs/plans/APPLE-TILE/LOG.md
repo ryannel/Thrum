@@ -392,3 +392,10 @@
   are the shared refresh record. Owner scripts generated the captures; comparisons and sampling are unchanged.
   The complete starting day-linear retry matches every registered digest after one first-run variation;
   its source and web artifact hashes are identical. Refreshed-build verification and the merge remain pending.
+
+- 2026-11-16 CULLING M3's coverage refresh passes the complete verifier on clean `f3e96ad1c`;
+  the untouched starting main `8bdd01ae0` also passes native 38 + 4 and all four 481-record Chrome sets.
+  [Both verifier records](../../evidence/CULLING/M3.md) retain source, artifacts, workload and toolchain.
+  The opaque coverage output moves triangle-join derivatives; all five sets moved, none stayed unchanged.
+  [Every moved reference's old/new SHA-256 and cause](../../evidence/CULLING/M3/replan/reference-refresh.json)
+  are the shared refresh record. Coverage, references and pins enter the official merge together.

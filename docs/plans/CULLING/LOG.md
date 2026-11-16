@@ -329,3 +329,9 @@
   artifacts, workload and toolchain. The preceding incomplete temporal observer is retained separately.
   The untouched starting-main verifier runs next; no reference or comparison was changed between attempts.
   Main has advanced without moving the 34 references, so the reviewed plan requires no regeneration.
+
+- 2026-11-16 The clean starting main `8bdd01ae0` passes its full verifier: native 38 + 4 and all
+  four 481-record Chrome sets. [Starting-main record](../../evidence/CULLING/M3/replan/starting-main-pass/record.json)
+  proves the replaced references were what main drew. The coverage build's full verifier also passes.
+  The coverage output, regenerated references and pins now go through the official merge together;
+  their cause and every old/new SHA-256 remain in the linked shared refresh inventory above.
