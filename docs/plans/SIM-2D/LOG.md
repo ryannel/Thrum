@@ -147,3 +147,12 @@ Five focused tests and the historical merge regression pass; runtime changes sti
 Fresh two-run release records at `42fe7d0fd` pass both cost validators and retain identical artifact hashes.
 Clock and quarter-regression flags are false. The evidence records the scaling flags and replay outlier.
 [Evidence, regression receipt and measured limits](../../evidence/SIM-2D/M1.md).
+
+## M1 package feature graph, 16 November 2026
+
+Workspace-wide metadata and lockfile dependency unions still included transport's unused futures features.
+The key now hashes the package-scoped Cargo tree's active features/edges and selected package checksums.
+Records retain input manifests. Seven tests and the actual clean-checkout comparison pass.
+Both historical workspace/lockfile changes preserve the key; runtime source changes invalidate it.
+Fresh two-run records at `8d59950fc` pass both cost validators, with unchanged native/Wasm hashes.
+[Evidence and current measurements](../../evidence/SIM-2D/M1.md) retain the known scaling flags.
