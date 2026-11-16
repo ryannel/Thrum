@@ -150,6 +150,11 @@ pub struct Ktx2 {
 }
 
 impl Ktx2 {
+    /// Whether this product retains a read-only file mapping rather than owned bytes.
+    pub fn is_mapped(&self) -> bool {
+        self.bytes.is_mapped()
+    }
+
     /// Validate a KTX2 product.
     ///
     /// # Errors

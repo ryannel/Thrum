@@ -231,6 +231,9 @@ impl CookedConfig {
 /// One publication that became visible.
 #[derive(Clone, Debug)]
 pub struct SwapRecord {
+    /// Every resident mesh, texture, volume and lease originated in a file mapping.
+    /// Reused products retain the provenance observed when they were first staged.
+    pub mapped: bool,
     /// Published generation.
     pub generation: u64,
     /// When the loader saw its `HEAD`.
@@ -983,6 +986,12 @@ impl SceneContribution for CookedAssets {
                 stats.drawn = Some(set.generation);
                 stats.drawn_device_generation = Some(live.generation);
                 stats.swaps.push(SwapRecord {
+                    mapped: set
+                        .meshes
+                        .iter()
+                        .all(|(mesh, texture)| mesh.mapped && texture.mapped)
+                        && set.volume.as_ref().is_none_or(|volume| volume.mapped)
+                        && set.leased.iter().all(|(_, _, _, texture)| texture.mapped),
                     generation: set.generation,
                     head_seen: pending.set.head_seen,
                     staged: pending.set.staged,

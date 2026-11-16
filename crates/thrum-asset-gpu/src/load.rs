@@ -68,6 +68,7 @@ fn store_manifest(store: &AssetStore, head: &Head) -> Result<Manifest, String> {
 
 /// A mesh resident on the GPU, with one indexed draw per meshlet.
 pub(crate) struct GpuMesh {
+    pub(crate) mapped: bool,
     pub(crate) positions: wgpu::Buffer,
     pub(crate) attributes: wgpu::Buffer,
     /// Meshlet triangles expanded to global vertex indices, meshlet after meshlet.
@@ -91,6 +92,7 @@ pub(crate) const REST_VERTEX_LIMIT: usize = 65_536;
 
 /// A sampled 2D texture or 3D volume.
 pub(crate) struct GpuTexture {
+    pub(crate) mapped: bool,
     pub(crate) texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
 }
@@ -579,6 +581,7 @@ impl Loader {
             part(Part::Bounds),
         );
         let gpu = GpuMesh {
+            mapped: mesh.is_mapped(),
             positions: self.buffer(
                 "cooked positions",
                 positions.bytes().len(),
@@ -645,9 +648,14 @@ impl Loader {
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
+        let mapped = product.is_mapped();
         plan.texture(product, texture.clone());
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        GpuTexture { texture, view }
+        GpuTexture {
+            mapped,
+            texture,
+            view,
+        }
     }
 }
 

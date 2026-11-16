@@ -39,6 +39,7 @@ pub(crate) struct FrameRecord {
 }
 #[derive(Debug)]
 pub(crate) struct SwapRecord {
+    pub(crate) mapped: bool,
     pub(crate) texture_profile: Profile,
     pub(crate) volume_profile: Profile,
     pub(crate) generation: u64,
@@ -231,6 +232,7 @@ impl Viewer {
         records
             .swaps
             .extend(stats.swaps[seen..].iter().map(|s| SwapRecord {
+                mapped: s.mapped,
                 generation: s.generation,
                 head_seen: s.head_seen,
                 prepared: s.staged,

@@ -39,6 +39,11 @@ impl MeshProduct {
         &self.bytes
     }
 
+    /// Whether this product retains a read-only file mapping rather than owned bytes.
+    pub fn is_mapped(&self) -> bool {
+        self.bytes.is_mapped()
+    }
+
     /// Vertex positions.
     pub fn positions(&self) -> &[[f32; 3]] {
         self.view().positions

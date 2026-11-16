@@ -151,6 +151,10 @@ fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products(
     assert!(records.errors.is_empty(), "{:?}", records.errors);
     let swaps: Vec<u64> = records.swaps.iter().map(|swap| swap.generation).collect();
     assert_eq!(swaps, [1, 2, 3]);
+    assert!(
+        records.swaps.iter().all(|swap| swap.mapped),
+        "products are memory-mapped"
+    );
     // Every profile is cooked, so the device's first preference is the one drawn.
     let preferred = (viewer_profiles.0[0], viewer_profiles.1[0]);
     assert!(
