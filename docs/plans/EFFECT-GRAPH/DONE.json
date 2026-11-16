@@ -300,7 +300,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "blocked",
-      "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, and no step when a tick commits. Alpha stays the same function of the clock and the consumed target, and no frame without a lead changes.",
+      "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
           "id": "M4.1",
@@ -314,10 +314,21 @@
           "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
+          "id": "M4.6",
+          "statement": "A world on its own thread shows each poll a pair, a clock sample with the page committed with it: the newest whose clock is not interpolating or whose tick was due at or before the poll's observation, out of the pair the world has just published, the refused pair and the pair already shown. A published pair it cannot show becomes the refused pair. A delayed poll, one made after the world committed a tick due later than its observation, therefore shows an earlier tick than the world's newest, with a lead or without, and its phase and alpha are that pair's. No poll shows an earlier pair than one already shown. In a run of delayed polls, each observed on the running clock after the poll before it, every poll after the first shows a tick at least as new as the newest the poll before it saw. Each completed tick is counted once across the polls' reports, and the world's thread keeps committing throughout.",
+          "check": "cargo test --locked --offline -p thrum-core --test display_phase",
+          "ask": "Does the test make every poll of its run a delayed one, by waiting until the world has committed a tick due after the observation it then polls with? Would that run fail on a lane that holds only the pair it shows?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
           "id": "M4.2",
-          "statement": "Each submitted frame gives every effect the display phase beside alpha, and the frame's completed sample reports it with the frame's observation, its lead and whether the clock was interpolating. In the V1 game with 60 Hz ticks, driven at scripted observations with leads from zero to 50 ms, at consumed targets 1/120 s apart and again 1/60 s apart, every interpolating frame's display time (its tick, less one, plus its phase) is its consumed target less one tick, to the precision the test states. So consecutive frames differ by the interval between their consumed targets: across a tick's commit, on frames whose alpha is 1, and more than one tick past the committed tick. This holds for the inline world at scripted times and for the world on its own thread. In every frame alpha is the phase held to 1, and the diagnostic effect's state follows the state table as it did. A capture frame and a paused world give exactly 1 and report a clock that was not interpolating.",
+          "statement": "Each submitted frame gives every effect the display phase beside alpha, and the frame's completed sample reports it with the frame's tick, its observation, its lead and whether the clock was interpolating. In the V1 game with 60 Hz ticks, every interpolating frame's display time (its tick, less one, plus its phase) is its consumed target less one tick, to the precision the test states. That holds with leads from zero to 50 ms, at consumed targets 1/120 s apart and again 1/60 s apart, across a tick's commit, on frames whose alpha is 1 and more than one tick past the committed tick; for the inline world at scripted observations and for the world on its own thread; and for a delayed frame there with no lead, which shows an earlier tick than the world's newest, the one the effect and the completed sample both carry. In every frame alpha is the phase held to 1, and the diagnostic effect's state follows the state table as it did. A capture frame and a paused world give exactly 1 and report a clock that was not interpolating.",
           "check": "cargo test --locked --offline -p v1-game --test effect_display_phase_gpu",
-          "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
+          "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Is its delayed frame observed before a tick that the world has committed by the time the frame polls, so that the newest tick would fail it? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -339,7 +350,7 @@
         },
         {
           "id": "M4.4",
-          "statement": "C02 in `docs/design/CONTRACTS.md` states the display phase: that it describes the consumed target, the frame's observation plus its bounded lead; its bound; that alpha is the phase held to 1; that sampling it never advances authority; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
+          "statement": "C02 in `docs/design/CONTRACTS.md` states the display phase: that it describes the consumed target, the frame's observation plus its bounded lead; its bound; that alpha is the phase held to 1; that sampling it never advances authority; that an interpolating frame's tick was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair and holds the refused pair for a later poll; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
           "ask": "Do C02's words say what the design's section on the display phase says, with nothing added that it does not say? Does the ledger row claim only what M4.1 to M4.3 proved?",
           "target": "mac-metal",
           "builder_result": "pass",

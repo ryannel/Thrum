@@ -188,3 +188,10 @@
   completion-callback stall inside the offscreen driver. All 32 captured frames satisfy the target identity.
   [Updated proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains source identities and the historical failure.
   Exact images use the shared main-branch run; visual prediction quality and physical cadence remain unclaimed.
+- 2026-11-16 Planner: M4 re-planned on the lead's task after its first review failed M4.2 and the builder ended
+  `BLOCKED needs_context` ("Decide the policy, update the design and done-when file so they agree, and name
+  the affected consumers"). "No frame without a lead changes" could not hold beside M4.1 and M4.2. Policy: a
+  frame shows a tick due by its observation, and the bar says which frames change. The built lane's one held
+  pair stalls in a run of delayed frames, so it also holds the refused pair. Bar, M4.2 and M4.4 rewritten;
+  M4.6 added. [Design](DESIGN.md#the-frames-pair), with who meets a delayed frame ·
+  [probe and the choice not taken](../../evidence/EFFECT-GRAPH/M4-replan/README.md).

@@ -17,6 +17,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: this foundation proves that an effect's motion, reactive coverage and reset reach reconstruction's inputs, and does not wait for TAAU. How an effect looks after reconstruction is judged in `SEA`'s and `CLOUDS`' own milestones.
 - Assumption: M3 does not wait for `CULLING` M3 to stop the game's image varying under GPU load. Until then an exact-image run that fails only along triangle edges is recorded, checked by a reviewer and run again, and M3 lands on a complete pass. The other choice adds `CULLING:M3` to M3's `depends_on`, which holds M3 and the six modules waiting on it until that milestone is Done.
 - Assumption: M4 gives effects the display phase and leaves the sea's waves, 2D sprites and a game's camera and entities on the interpolation alpha. Under a display lead those step unevenly by the same arithmetic, which nobody has captured yet. Each is its owner's to plan, the camera and entities with the game contract in `HOST` M4.
+- Assumption: a frame on a world with its own thread shows a tick that was due by the frame's observation. So a delayed frame in the Mac window, a Mac capture or the iPhone app shows an earlier tick than it did before M4, with a lead or without, where M4's first plan said no frame without a lead would change. The other choice keeps every frame's tick and leaves those frames' display time wrong by up to the delay.
 - Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. M4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no M4 item able to prove it.
 
 ## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
@@ -33,21 +34,25 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 [The display phase](DESIGN.md#the-display-phase-m4) is the design, and
 [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4) says whose files it is built in.
 
-Today `ClockSample::alpha_at` in `crates/thrum-core/src/clock.rs` holds the fraction to one tick. The world lane
-and the clocked world pass it on, and the frame host asks `FrameWorld::presentation_alpha_at` in
-`crates/thrum-render/src/runtime.rs` with the lead `set_presentation_lead` stored. `EffectTime` is in
-`contribution/state.rs`; the frame sample and the capture stamp in `runtime/submitted_capture.rs` carry alpha
-and the lead. `examples/v1-game/src/host/world.rs` and `world_thread.rs`, `crates/thrum-app/src/sky.rs` and the
-test hosts implement the trait. `examples/v1-game/src/window/capture.rs` writes the time record, and the iPhone
-app's `ios/capture.rs` writes its own and must still build.
-`examples/v1-game/tests/clouds_display_time_gpu.rs` drives a host at scripted times.
+M4's first build is on main: the phase in `crates/thrum-core/src/clock.rs`, the world lane and the clocked
+world; `FrameWorld`, `EffectTime`, the frame sample and the capture stamp in `thrum-render`; one clock read in
+`Offscreen::step_for`; the capture time record; C02's paragraph and the ledger row.
+[Its review](../../evidence/EFFECT-GRAPH/M4-review.md) passed all of it except the frame a delayed poll
+changes, and [the frame's pair](DESIGN.md#the-frames-pair) now settles that frame. The items changed, so every
+one is proved again.
 
-Add to those files. Alpha stays the same function of the clock sample and the consumed target, and one input
-changes: `Offscreen::step_for` in `crates/thrum-app/src/offscreen.rs` reads the clock for the lead and `drive`
-reads it again for the observation, and M4.3 makes that one read. `crates/thrum-app/src/app/render_actor.rs`
-and `examples/v1-game-ios/src/ios/render.rs` read two clocks and are not yours to change here. The capture
-driver in `window/capture.rs` has a `render-stall` case that delays one step, and `Opportunity::target` is the
-platform target. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha: `CLOUDS` M2 is the first
-reader, in its own crate. If a frame's tick and its clock sample can disagree on a threaded world, so that M4.2
-cannot hold as written, or your change fails an exact test or baseline another module owns, write what you
-found in the log and end `BLOCKED`; do not edit the other module's test.
+What is missing is the refused pair. `WorldLane::poll` in `crates/thrum-core/src/sim/world_lane.rs` holds one
+pair: when `ClockSample::accepts_observation` refuses the newest it keeps the pair it has and forgets the one
+it refused, so a run of delayed polls stays on one tick
+([the planner's probe](../../evidence/EFFECT-GRAPH/M4-replan/README.md)).
+`delayed_observation_retains_a_causal_pair_and_later_poll_reports_all_progress` in
+`crates/thrum-core/tests/display_phase/world.rs` and `delayed_observation_still_describes_the_consumed_target`
+in `examples/v1-game/tests/effect_display_phase_gpu.rs` each cover one delayed poll. C02 says a fresh
+observation consumes the accumulated progress, which is not true of a run.
+
+`crates/thrum-app/src/app/render_actor.rs` and `examples/v1-game-ios/src/ios/render.rs` are not yours to
+change. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha. The snapshot ring in
+`crates/thrum-core/src/sim/snapshot_ring.rs` has four pages, and the design's cost account says when a second
+held pair costs a publication: if your runs skip publications at 60 or 120 frames a second, write what you
+found in the log. If your change fails an exact test or baseline another module owns, write what you found in
+the log and end `BLOCKED`; do not edit the other module's test.
