@@ -134,8 +134,8 @@
     {
       "id": "M2",
       "name": "On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -147,7 +147,9 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test brinks",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (brinks)"
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (brinks)",
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -157,8 +159,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M2.md#measured (falls)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -168,8 +170,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M2.md#measured (brink_end, thrum-water-model tests)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -179,16 +181,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M2.md#measured (sheet)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.5",
           "statement": "For a body below at any level in its stage's range, the plunge is where each path meets that level, and it moves as the level moves. Each segment's births follow the fall's power, `rho g q z` for each metre of lip, split between foam and submerged air by the profile's share. Each segment's impulse a tick is the wave share times its momentum flux into the surface times the sheet's pattern arriving there, with its mean over the pattern's loop removed: over that loop its mean is under 1% of its rms, its rms is the design's figure within 5%, and the same tick gives the same impulse on every run. A path that lands on bare ground gives no births and no impulses.",
           "check": "cargo test --locked --offline -p thrum-river-model --test plunge",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M2.md#measured (plunge)"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -198,8 +202,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M2.md#measured (cargo tree)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
         },
         {
           "id": "M2.7",
@@ -207,7 +211,16 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M2-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "plunge_skips_shoreline_intersection",
+          "item": "M2.5",
+          "repeat": false
         }
       ]
     },

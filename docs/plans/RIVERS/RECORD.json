@@ -156,7 +156,45 @@
     },
     "M2": {
       "definitions": "d8a54e5d18706ea5c2e5b0ba1bf0be68af086595cf6bfa397b279722a7186662",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7080267f8bffa6fa52c453dc7d4c0c4e139b9a0a",
+          "review": "docs/evidence/RIVERS/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "fail",
+            "M2.6": "pass",
+            "M2.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "plunge_skips_shoreline_intersection",
+              "item": "M2.5",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 152669,
+            "cached": 2927104,
+            "output": 9614,
+            "turns": 1
+          },
+          "at": "2026-11-16T13:03:00Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
