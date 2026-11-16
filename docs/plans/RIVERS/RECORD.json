@@ -285,7 +285,38 @@
           "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
           "at": "2026-11-15T22:19:38Z"
         }
-      ]
+      ],
+      "ready_for_review": {
+        "commit": "8671ca2b6a9b7c1e26962c220ce0e295246b58ad",
+        "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "at": "2026-11-16T23:14:23Z",
+        "reused": [
+          "Test command",
+          "M3.7"
+        ],
+        "host": "claude",
+        "model": "claude-fable-5-2",
+        "effort": "medium",
+        "observed": {
+          "model": "claude-fable-5-2"
+        },
+        "cli": "2.1.319 (Claude Code)",
+        "path": "headless",
+        "usage": {
+          "input": 41389,
+          "cached": 652218,
+          "output": 4726,
+          "cost_usd": 1.883267,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 41389,
+          "cached": 652218,
+          "output": 4726,
+          "cost_usd": 1.883267,
+          "turns": 2
+        }
+      }
     },
     "M4": {
       "definitions": "90929fdc5f867ce45f8e6c41697b936aa25ef5ec0df848fdcf1a7ee11440e479",
