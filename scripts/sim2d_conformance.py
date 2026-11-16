@@ -171,12 +171,13 @@ class Runner:
         invoke = prefix + [self.program] + arguments
         return json.loads(device_command("simulator", invoke) if self.device else command(invoke))
 
-    def invoke_many(self, requests):
+    def invoke_many(self, requests, omit_timeline=False):
         """Keep a Chrome conformance run in one queue turn, after compilation."""
         if self.target != "chrome-webgpu":
             return [self.invoke(method, args) for method, args in requests]
         packet = json.loads(device_command("chrome", ["node", "scripts/sim2d_browser.mjs", self.program,
-                            json.dumps([{"method": method, "args": args} for method, args in requests])]))
+                            json.dumps([{"method": method, "args": args, "omitTimeline": omit_timeline}
+                                        for method, args in requests])]))
         self.user_agent = packet["userAgent"]
         self.isolated = packet["crossOriginIsolated"]
         if len(packet["result"]) != len(requests):
@@ -258,7 +259,7 @@ def run(target, parallel=False):
     for mixed in [False, True]:
         requests.extend(("trace", [count, ticks, False, False, False, mixed, parallel]) for count, ticks in SIZES)
         requests.append(("trace", [2000, 3600, False, True, False, mixed, parallel]))
-    results = iter(runner.invoke_many(requests))
+    results = iter(runner.invoke_many(requests, omit_timeline=True))
     assert next(results) == json.loads(VECTORS.read_text()), "profile vectors differ"
     rows = []
     for mixed in [False, True]:
@@ -271,11 +272,11 @@ def run(target, parallel=False):
                 assert row["swept_only_hits"] > 0
             if parallel:
                 assert row["parallel_chunks"] > 0, "steering did not dispatch native chunks"
-            row.pop("timeline")
+            row.pop("timeline", None)
             rows.append(row)
         wire = next(results)
         compare(wire, retained)
-        wire.pop("timeline")
+        wire.pop("timeline", None)
         rows.append(wire)
     if target == "mac-metal":
         debug = Runner(target, debug=True)

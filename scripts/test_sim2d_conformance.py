@@ -31,7 +31,8 @@ class BrowserBatch(unittest.TestCase):
         resource, command = device.call_args.args
         self.assertEqual(resource, "chrome")
         requests = json.loads(command[-1])
-        self.assertEqual(requests[0], {"method": "vectors", "args": []})
+        self.assertEqual(requests[0], {"method": "vectors", "args": [], "omitTimeline": True})
+        self.assertTrue(all(request["omitTimeline"] for request in requests))
         expected = []
         for mixed in [False, True]:
             expected.extend([count, ticks, False, False, False, mixed, False] for count, ticks in SIZES)

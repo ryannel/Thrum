@@ -41,6 +41,12 @@ try {
   await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
   let sequence = 0;
   const pending = new Map();
+  const failPending = error => {
+    for (const entry of pending.values()) entry.reject(error);
+    pending.clear();
+  };
+  socket.onerror = () => failPending(new Error('Chrome debugger connection failed'));
+  socket.onclose = event => failPending(new Error(`Chrome debugger connection closed (${event.code}): ${event.reason}`));
   let loaded;
   const pageLoaded = new Promise(resolve => { loaded = resolve; });
   socket.onmessage = event => {
@@ -65,7 +71,11 @@ try {
     const module = await import(${JSON.stringify(url)});
     await module.default();
     const request = ${JSON.stringify(request)};
-    const invoke = item => JSON.parse(module[item.method](...item.args));
+    const invoke = item => {
+      const result = JSON.parse(module[item.method](...item.args));
+      if (item.omitTimeline) delete result.timeline;
+      return result;
+    };
     const result = Array.isArray(request) ? request.map(invoke) : invoke(request);
     return { result, userAgent: navigator.userAgent, crossOriginIsolated };
   })()`;
