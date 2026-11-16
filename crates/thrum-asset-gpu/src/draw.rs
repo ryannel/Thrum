@@ -10,8 +10,8 @@ use crate::load::ResidentSet;
 use crate::material::{self, Target};
 use crate::{CookedDrawPath, CookedMaterial, MeshPlacement, VolumePlacement};
 
-const CULL_BYTES: usize = 160;
-const VOLUME_BYTES: usize = 144;
+const CULL_BYTES: usize = size_of::<crate::records::Cull>();
+const VOLUME_BYTES: usize = size_of::<crate::records::CookedVolume>();
 const DRAW_ARGS_BYTES: u64 = 20;
 
 /// Pipelines and fixed resources for one scene surface.
@@ -209,34 +209,21 @@ fn default_texel(device: &wgpu::Device, queue: &wgpu::Queue, texel: [u8; 4]) -> 
 }
 
 /// Model matrix and history flag of one placement.
-pub(crate) const INSTANCE_BYTES: u64 = 80;
+pub(crate) const INSTANCE_BYTES: u64 = size_of::<crate::records::Instance>() as u64;
 
 /// The ABI revision 2 material record (80 bytes) of one placement: its base factor times the
 /// cooked base-colour texture, its roughness and metalness, no emission, full occlusion.
-fn material_record(material: &CookedMaterial) -> [u8; thrum_render::abi::MATERIAL_BYTES] {
-    let [r, g, b, a] = material.base_colour;
-    let floats: [f32; 12] = [
-        r,
-        g,
-        b,
-        a,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        material.roughness,
-        material.metalness,
-        1.0,
-    ];
-    let mut bytes = [0; thrum_render::abi::MATERIAL_BYTES];
-    bytes[..48].copy_from_slice(bytemuck::cast_slice(&floats));
-    bytes
+fn material_record(material: &CookedMaterial) -> crate::records::Material {
+    crate::records::Material {
+        base_rgba: material.base_colour,
+        emissive_cutoff: [0.0; 4],
+        surface: [1.0, material.roughness, material.metalness, 1.0],
+        flags: [0; 4],
+        textures: [0; 4],
+    }
 }
-
 impl Pipelines {
-    /// Pipelines for `surface`, drawing the built-in material. An accepted material hook is
-    /// restored by [`crate::MaterialReload`] once it validates against the surface.
+    /// Pipelines for the scene surface and its cooked contribution.
     pub(crate) fn new(surface: &SceneSurface<'_>, target: &Target) -> Self {
         let device = surface.device;
         let cooked = cooked_source(surface.sun_optical_depth);
@@ -444,8 +431,11 @@ impl Pipelines {
                     thrum_render::abi::MATERIAL_BYTES as u64,
                     wgpu::BufferUsages::STORAGE,
                 );
-                self.queue
-                    .write_buffer(&material_buffer, 0, &material_record(&placement.material));
+                self.queue.write_buffer(
+                    &material_buffer,
+                    0,
+                    bytemuck::bytes_of(&material_record(&placement.material)),
+                );
                 let material = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("cooked material"),
                     layout: &self.material_layout,
@@ -483,8 +473,14 @@ impl Pipelines {
                     wgpu::BufferUsages::VERTEX,
                 );
                 // History flag (byte 64) starts at zero: the first submitted frame has no history.
-                self.queue
-                    .write_buffer(&instance, 0, bytemuck::cast_slice(&model.to_cols_array()));
+                self.queue.write_buffer(
+                    &instance,
+                    0,
+                    bytemuck::bytes_of(&crate::records::Instance {
+                        model: model.to_cols_array_2d(),
+                        history: [0; 4],
+                    }),
+                );
                 let indirect =
                     self.cull
                         .as_ref()
@@ -570,46 +566,11 @@ impl Pipelines {
                 }
             })
             .collect();
-        let volume = set.volume.as_ref().zip(volume).map(|(texture, placement)| {
-            let view = texture
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
-            let uniform = self.buffer(
-                "cooked volume",
-                VOLUME_BYTES as u64,
-                wgpu::BufferUsages::UNIFORM,
-            );
-            let model = glam::Mat4::from_cols_array_2d(&placement.transform);
-            let mut bytes = Vec::with_capacity(VOLUME_BYTES);
-            bytes.extend_from_slice(bytemuck::cast_slice(&model.to_cols_array()));
-            bytes.extend_from_slice(bytemuck::cast_slice(&model.inverse().to_cols_array()));
-            bytes.extend_from_slice(bytemuck::cast_slice(&[
-                placement.extinction,
-                placement.steps as f32,
-                placement.light_steps as f32,
-                0.0,
-            ]));
-            self.queue.write_buffer(&uniform, 0, &bytes);
-            let group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("cooked volume"),
-                layout: &self.volume_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 8,
-                        resource: wgpu::BindingResource::TextureView(&view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 9,
-                        resource: wgpu::BindingResource::Sampler(&self.volume_sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 10,
-                        resource: uniform.as_entire_binding(),
-                    },
-                ],
-            });
-            (group, uniform)
-        });
+        let volume = set
+            .volume
+            .as_ref()
+            .zip(volume)
+            .map(|(texture, placement)| self.bind_volume(texture, placement));
         Bound {
             meshes,
             shadow_bounds,
@@ -619,14 +580,67 @@ impl Pipelines {
         }
     }
 
+    fn bind_volume(
+        &self,
+        texture: &crate::load::GpuTexture,
+        placement: &VolumePlacement,
+    ) -> (wgpu::BindGroup, wgpu::Buffer) {
+        let view = texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let uniform = self.buffer(
+            "cooked volume",
+            VOLUME_BYTES as u64,
+            wgpu::BufferUsages::UNIFORM,
+        );
+        let model = glam::Mat4::from_cols_array_2d(&placement.transform);
+        let record = crate::records::CookedVolume {
+            model: model.to_cols_array_2d(),
+            inverse_model: model.inverse().to_cols_array_2d(),
+            params: [
+                placement.extinction,
+                placement.steps as f32,
+                placement.light_steps as f32,
+                0.0,
+            ],
+        };
+        self.queue
+            .write_buffer(&uniform, 0, bytemuck::bytes_of(&record));
+        let group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("cooked volume"),
+            layout: &self.volume_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::Sampler(&self.volume_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 10,
+                    resource: uniform.as_entire_binding(),
+                },
+            ],
+        });
+        (group, uniform)
+    }
+
     /// History derives only from committed state, on both draw paths. Queue writes from a
     /// discarded recording are overwritten from that state by the next recording.
     pub(crate) fn history(&self, bound: &Bound, frame: &ContributionFrame) -> bool {
         let continued = bound.continued.get() && !frame.history_reset;
         for mesh in &bound.meshes {
             if mesh.history.get() != continued {
-                self.queue
-                    .write_buffer(&mesh.instance, 64, &u32::from(continued).to_le_bytes());
+                self.queue.write_buffer(
+                    &mesh.instance,
+                    0,
+                    bytemuck::bytes_of(&crate::records::Instance {
+                        model: mesh.model.to_cols_array_2d(),
+                        history: [u32::from(continued), 0, 0, 0],
+                    }),
+                );
                 mesh.history.set(continued);
             }
         }
@@ -648,19 +662,19 @@ impl Pipelines {
             let Some(indirect) = &mesh.indirect else {
                 continue;
             };
-            let mut bytes = [0u8; CULL_BYTES];
-            let view_proj = glam::Mat4::from_cols_array_2d(&frame.view_proj);
-            bytes[..64].copy_from_slice(bytemuck::cast_slice(&view_proj.to_cols_array()));
-            bytes[64..128].copy_from_slice(bytemuck::cast_slice(&mesh.model.to_cols_array()));
-            let camera = [
-                frame.camera[0],
-                frame.camera[1],
-                frame.camera[2],
-                mesh.max_scale,
-            ];
-            bytes[128..144].copy_from_slice(bytemuck::cast_slice(&camera));
-            bytes[144..148].copy_from_slice(&mesh.meshlets.to_le_bytes());
-            self.queue.write_buffer(&indirect.cull_uniform, 0, &bytes);
+            let record = crate::records::Cull {
+                view_proj: frame.view_proj,
+                model: mesh.model.to_cols_array_2d(),
+                camera_scale: [
+                    frame.camera[0],
+                    frame.camera[1],
+                    frame.camera[2],
+                    mesh.max_scale,
+                ],
+                counts: [mesh.meshlets, 0, 0, 0],
+            };
+            self.queue
+                .write_buffer(&indirect.cull_uniform, 0, bytemuck::bytes_of(&record));
             pass.set_bind_group(0, &indirect.cull, &[]);
             pass.dispatch_workgroups(mesh.meshlets.div_ceil(64), 1, 1);
         }

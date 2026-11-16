@@ -39,6 +39,7 @@ mod load;
 mod material;
 pub mod mesh_upload;
 mod placement;
+pub mod records;
 mod staging;
 
 use std::path::PathBuf;
@@ -338,27 +339,21 @@ pub fn wgpu_format(format: Ktx2Format) -> wgpu::TextureFormat {
 
 /// Texture profiles in preference order: ASTC on Apple GPUs, BC7 elsewhere, portable last.
 pub fn texture_profiles(features: wgpu::Features) -> Vec<Profile> {
-    let mut order = Vec::new();
-    if features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC) {
-        order.push(Profile::AppleAstc);
-    }
-    if features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC) {
-        order.push(Profile::DesktopBc);
-    }
-    order.push(Profile::Portable);
-    order
+    product_profiles(thrum_asset::ProductKind::Texture, features)
 }
 
 /// Volume profiles: BC4 where sliced-3D BC is supported, else R8.
 pub fn volume_profiles(features: wgpu::Features) -> Vec<Profile> {
-    let mut order = Vec::new();
-    if features.contains(
-        wgpu::Features::TEXTURE_COMPRESSION_BC | wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D,
-    ) {
-        order.push(Profile::DesktopBc);
-    }
-    order.push(Profile::Portable);
-    order
+    product_profiles(thrum_asset::ProductKind::Volume, features)
+}
+
+fn product_profiles(kind: thrum_asset::ProductKind, features: wgpu::Features) -> Vec<Profile> {
+    thrum_asset::preferred_profiles(
+        kind,
+        features.contains(wgpu::Features::TEXTURE_COMPRESSION_ASTC),
+        features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC),
+        features.contains(wgpu::Features::TEXTURE_COMPRESSION_BC_SLICED_3D),
+    )
 }
 
 /// Loader thread and channels for one device generation.

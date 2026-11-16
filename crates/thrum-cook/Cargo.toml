@@ -1,6 +1,7 @@
 [package]
 name = "thrum-cook"
 autobenches = false
+autotests = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -24,10 +25,29 @@ thrum-asset = { path = "../thrum-asset" }
 
 [dev-dependencies]
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
-asset-loop = { path = "../../examples/asset-loop", features = ["test-support"] }
+thrum-core = { path = "../thrum-core" }
+thrum-render = { path = "../thrum-render" }
+pollster = "=1.0.1"
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
 
 [[bench]]
 name = "edit_to_visible"
+path = "tests/edit_bench.rs"
 harness = false
+
+[[test]]
+name = "edit_to_visible"
+path = "tests/edit_to_visible.rs"
+
+[[test]]
+name = "cook_loop"
+path = "tests/cook_loop.rs"
+
+[[test]]
+name = "serve_and_watch"
+path = "tests/serve_and_watch.rs"
+
+[[test]]
+name = "hostile_products"
+path = "tests/hostile_products.rs"

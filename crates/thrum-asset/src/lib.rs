@@ -37,7 +37,7 @@ pub use head::Head;
 pub use ktx2::{Ktx2, Ktx2Format, Ktx2Level};
 pub use manifest::{Manifest, ManifestEntry};
 pub use mesh::MeshProduct;
-pub use profile::{ProductKind, Profile};
+pub use profile::{ProductKind, Profile, preferred_profiles};
 #[cfg(target_arch = "wasm32")]
 pub use remote::BrowserFetch;
 pub use remote::{DevClient, Fetch, FetchReply, RemoteGeneration};

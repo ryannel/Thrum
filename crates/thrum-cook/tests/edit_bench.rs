@@ -12,10 +12,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use asset_loop::{Viewer, ViewerConfig};
+#[expect(
+    dead_code,
+    reason = "the bench and correctness test use different parts of this shared host"
+)]
+mod viewer;
 use thrum_asset::Profile;
 use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, StatCache, demo, watch};
+use viewer::{Viewer, ViewerConfig};
 
 mod mesh_load;
 
@@ -117,7 +122,7 @@ fn main() {
     }
     // Checked against earlier runs at the same load; THRUM_TRIPWIRES_RECORD=1 appends a passing run.
     let history = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/evidence/integration/tripwires/g5-edit-to-visible.tsv");
+        .join("../../docs/evidence/integration/tripwires/cooked-loader-edit-to-visible.tsv");
     let record = std::env::var_os("THRUM_TRIPWIRES_RECORD").is_some();
     let verdict = tripwire::gate(&history, &tripwire::this_run(metrics), RULES, record);
     report.push_str(verdict.as_ref().map_or_else(|error| error, |ok| ok));
@@ -398,7 +403,7 @@ fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
 /// Hitch tripwire: render-thread CPU and GPU completion cadence on swap frames vs all others.
 fn hitch(
     report: &mut String,
-    records: &asset_loop::Records,
+    records: &viewer::Records,
     swap_frames: &[u64],
     run_start: Instant,
     metrics: &mut Metrics,

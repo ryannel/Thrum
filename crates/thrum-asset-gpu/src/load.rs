@@ -416,7 +416,6 @@ impl Loader {
                 None
             } else {
                 let product = MeshProduct::open(source.map(&mesh)?)?;
-                product.validate_references()?;
                 Some(product)
             };
             let texture_product = self.open_texture(source, confirmed, &texture.product, false)?;
@@ -495,7 +494,10 @@ impl Loader {
         };
         for (mesh_hash, mesh, texture_hash, texture) in opened.meshes {
             let gpu_mesh = match mesh {
-                Some(mesh) => Arc::new(self.stage_mesh(&mut plan, &Arc::new(mesh))),
+                Some(mesh) => Arc::new(
+                    self.stage_mesh(&mut plan, &Arc::new(mesh))
+                        .map_err(|error| error.to_string())?,
+                ),
                 None => Arc::clone(confirmed.meshes.get(&mesh_hash).ok_or("lost mesh")?),
             };
             let gpu_texture = match texture {
@@ -556,8 +558,12 @@ impl Loader {
         })
     }
 
-    fn stage_mesh(&self, plan: &mut StagingPlan, mesh: &Arc<MeshProduct>) -> GpuMesh {
-        let tables = Arc::new(MeshUpload::new(Arc::clone(mesh)));
+    fn stage_mesh(
+        &self,
+        plan: &mut StagingPlan,
+        mesh: &Arc<MeshProduct>,
+    ) -> Result<GpuMesh, AssetError> {
+        let tables = Arc::new(MeshUpload::new(Arc::clone(mesh))?);
         let part = |part| -> Arc<dyn Bytes> {
             Arc::new(MeshPart {
                 mesh: Arc::clone(mesh),
@@ -616,7 +622,7 @@ impl Loader {
         if let Some(buffer) = &gpu.bounds {
             plan.buffer(bounds, buffer.clone());
         }
-        gpu
+        Ok(gpu)
     }
 
     fn stage_texture(&self, plan: &mut StagingPlan, product: Arc<Ktx2>) -> GpuTexture {

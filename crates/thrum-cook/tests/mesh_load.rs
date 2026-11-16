@@ -20,7 +20,7 @@ pub(super) fn measure(report: &mut String) {
             let start = Instant::now();
             let mesh =
                 Arc::new(MeshProduct::open(store.map(&entry.product).expect("map")).expect("mesh"));
-            let upload = MeshUpload::new(mesh);
+            let upload = MeshUpload::new(mesh).expect("meshlet coverage");
             row = (
                 upload.indices().len(),
                 upload.ranges().len(),

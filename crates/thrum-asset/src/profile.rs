@@ -74,3 +74,23 @@ impl Profile {
         Self::ALL.into_iter().find(|profile| profile.name() == name)
     }
 }
+
+/// Product preferences from enabled device compression capabilities, portable last.
+/// ASTC applies to 2D textures; compressed volumes require both BC and sliced-3D BC.
+/// Mesh bytes are profile independent.
+pub fn preferred_profiles(
+    kind: ProductKind,
+    astc: bool,
+    bc: bool,
+    sliced_bc: bool,
+) -> Vec<Profile> {
+    let mut order = Vec::new();
+    if kind == ProductKind::Texture && astc {
+        order.push(Profile::AppleAstc);
+    }
+    if bc && (kind == ProductKind::Texture || kind == ProductKind::Volume && sliced_bc) {
+        order.push(Profile::DesktopBc);
+    }
+    order.push(Profile::Portable);
+    order
+}

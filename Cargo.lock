@@ -118,18 +118,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "asset-loop"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "glam",
- "pollster",
- "thrum-asset",
- "thrum-render",
- "wgpu",
-]
-
-[[package]]
 name = "astcenc-rs"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3155,7 +3143,6 @@ dependencies = [
 name = "thrum-cook"
 version = "0.1.0"
 dependencies = [
- "asset-loop",
  "astcenc-rs",
  "blake3",
  "bytemuck",
@@ -3164,9 +3151,12 @@ dependencies = [
  "intel_tex_2",
  "meshopt",
  "notify",
+ "pollster",
  "rayon",
  "thrum-asset",
  "thrum-asset-gpu",
+ "thrum-core",
+ "thrum-render",
  "thrum-test-support",
  "wgpu",
 ]

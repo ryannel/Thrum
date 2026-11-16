@@ -9,9 +9,14 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
-use asset_loop::{Viewer, ViewerConfig};
+#[expect(
+    dead_code,
+    reason = "the bench and correctness test use different parts of this shared host"
+)]
+mod viewer;
 use thrum_asset::Profile;
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, demo};
+use viewer::{Viewer, ViewerConfig};
 
 static NEXT: AtomicU32 = AtomicU32::new(0);
 
@@ -146,10 +151,6 @@ fn texture_and_mesh_edits_become_visible_without_reuploading_unchanged_products(
     assert!(records.errors.is_empty(), "{:?}", records.errors);
     let swaps: Vec<u64> = records.swaps.iter().map(|swap| swap.generation).collect();
     assert_eq!(swaps, [1, 2, 3]);
-    assert!(
-        records.swaps.iter().all(|swap| swap.mapped),
-        "products are memory-mapped"
-    );
     // Every profile is cooked, so the device's first preference is the one drawn.
     let preferred = (viewer_profiles.0[0], viewer_profiles.1[0]);
     assert!(

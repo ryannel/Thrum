@@ -2,7 +2,7 @@
 """G5 proof that shipping-shaped binaries do not link authoring code.
 
 Checks the normal (non-dev, non-build) dependency graph of each shipping package, then builds the
-release asset-loop viewer and scans its symbol table for authoring crates. Run from the repository
+release starter and scans its symbol table for authoring crates. Run from the repository
 root: `python3 scripts/g5_shipping_links.py`.
 """
 
@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 AUTHORING = ["thrum-cook", "meshopt", "intel_tex_2", "astcenc-rs", "gltf", "image", "notify"]
-SHIPPING = ["asset-loop", "v1-game", "thrum-asset"]
+SHIPPING = ["thrum-starter", "v1-game", "thrum-asset", "thrum-asset-gpu"]
 # Rust v0 symbols name crates as `Cs<disambiguator>_<len><name>`; C libraries by their entry points.
 SYMBOL = re.compile(
     r"Cs[0-9A-Za-z]*_(10thrum_cook|7meshopt|11intel_tex_2|10astcenc_rs|4gltf|6notify|5image)"
@@ -30,10 +30,10 @@ def main():
         linked = sorted(names & set(AUTHORING))
         print(f"{package}: {len(names)} packages in normal graph; authoring packages: {linked or 'none'}")
         failures += [f"{package} -> {name}" for name in linked]
-    subprocess.run(["cargo", "build", "-q", "--release", "-p", "asset-loop"], check=True)
-    symbols = subprocess.run(["nm", "-a", "target/release/asset-loop"], check=True, capture_output=True, text=True).stdout
+    subprocess.run(["cargo", "build", "-q", "--release", "-p", "thrum-starter"], check=True)
+    symbols = subprocess.run(["nm", "-a", "target/release/thrum-starter"], check=True, capture_output=True, text=True).stdout
     hits = sorted({line.split()[-1] for line in symbols.splitlines() if SYMBOL.search(line)})
-    print(f"asset-loop release binary: {len(symbols.splitlines())} symbols; authoring matches: {len(hits)}")
+    print(f"starter release binary: {len(symbols.splitlines())} symbols; authoring matches: {len(hits)}")
     failures += [f"symbol {name}" for name in hits[:20]]
     # Positive control: the same scan must find the authoring code in the cooker binary.
     subprocess.run(["cargo", "build", "-q", "--release", "-p", "thrum-cook", "--bin", "thrum-cook"], check=True)
