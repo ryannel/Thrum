@@ -3378,6 +3378,14 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/native-differences/b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73.png",
+      "size": 2659905,
+      "sha256": "b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73",
+      "date": "2026-11-16T13:15:20.494149+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/EFFECT-GRAPH/M1-review/apple-tile-sun-sdr.png",
       "size": 2660128,

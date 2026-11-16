@@ -163,10 +163,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/chrome-cubes/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.3",
@@ -195,10 +195,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/chrome-meshes/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.6",
