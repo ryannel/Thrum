@@ -186,7 +186,7 @@
     {
       "id": "M3",
       "name": "A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "quality_bar": "Evidence as honest as T2 M0's, with the separation a build farm such as Chromium's LUCI keeps between an infrastructure failure and a test failure: every image the renderer submitted is retained with its real submission time, every opportunity the capture cost is counted with its reason, and a run that could not judge says so and is read as neither a pass nor a failure of the commit.",
@@ -198,7 +198,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/T2-CAPTURE/M3/loaded-report.json and README.md: actual Metal mixed-load control loses 163 images with all six slots reserved; all eight wait arms independently hash-verify 2245/2245 submitted images with no ring or writer omissions. Eight Metal load witnesses retained."
+          "evidence": "docs/evidence/T2-CAPTURE/M3/loaded-report.json and README.md: actual Metal mixed-load control loses 163 images with all six slots reserved; all eight wait arms independently hash-verify 2245/2245 submitted images with no ring or writer omissions. Eight Metal load witnesses retained.",
+          "verdict": "pass",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -207,7 +209,9 @@
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "pass",
-          "evidence": "docs/evidence/T2-CAPTURE/M3/ring-report.json and README.md: SDR and scene-linear declared 350 ms full-ring controls; default omit exits 75 with counted omissions, wait completes and records 42 admission-skipped opportunities per stage with exact host submission-time joins."
+          "evidence": "docs/evidence/T2-CAPTURE/M3/ring-report.json and README.md: SDR and scene-linear declared 350 ms full-ring controls; default omit exits 75 with counted omissions, wait completes and records 42 admission-skipped opportunities per stage with exact host submission-time joins.",
+          "verdict": "pass",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -217,8 +221,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/T2-CAPTURE/M3/exit-tests.log and README.md: seven tests exercise real capture/finalize, native matrix/adapter and verifier exit paths using child stand-ins, failure precedence, integrity refusals, process/wait errors and unjudged retention; registered in ./dev check. Real writer-deadline exit-75 record retained.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -227,8 +231,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/T2-CAPTURE/M3/scope-audit.json and README.md: builder inspection against 8a72a0c0 confirms identical references, registry definitions, routes, equality code and completeness predicate; only realtime matrix motion arms select wait. Pins/refreshes follow the T2 M3 ruling.",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -236,7 +240,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md"
         }
       ]
     }

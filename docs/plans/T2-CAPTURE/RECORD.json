@@ -92,7 +92,36 @@
     },
     "M3": {
       "definitions": "de2f7f0e3b7446c88e5e5e7c0ea52235504d2f6f3a698f7b19888431cccfea86",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
+          "review": "docs/evidence/T2-CAPTURE/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 109510,
+            "cached": 2504960,
+            "output": 7612,
+            "turns": 1
+          },
+          "at": "2026-11-16T23:46:32Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The shared exact-images main-branch check fails at random under GPU load in the apple-tile-native motion capture: apple_",
@@ -126,6 +155,13 @@
           "output": 198354,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "4b1b818419c066320515be5c08453d50c34b11c5",
+        "review": "docs/evidence/T2-CAPTURE/M3-review.md",
+        "checked": "82352848cbd3a1b89acf2ec0e164768055d29c15",
+        "at": "2026-11-16T23:46:32Z"
       }
     }
   },
