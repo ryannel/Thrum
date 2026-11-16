@@ -313,3 +313,9 @@
   cover erosion 0/0.4/1, three scales, three rotations and partial envelopes. The unchanged reviewer probe
   now returns 1.5 at erosion 0.4 and exactly zero saturated amounts from 11:00 through afternoon.
   [Fresh proof and scope](../../evidence/CLOUDS/M13.md) retain the probe output; baseline and merge checks follow.
+- 2026-11-16 M13's second-review fix on `0df0b5f26` confines footprint-sum preservation to visibility
+  queries. Sun paths, physical density and both medium entry points retain column-form erosion.
+  M13.1–9 CPU/dependency checks pass on mac-metal; new regressions cover eroded footprint-only and
+  supplied-volume Sun rays at four elevations, partial envelopes, ground overlap and medium agreement.
+  [The receipt](../../evidence/CLOUDS/M13-sun-path-fix.json) records source and output; existing visibility
+  integral regressions still pass. No GPU speed, rendered fog or display qualification is claimed.

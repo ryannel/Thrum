@@ -49,13 +49,14 @@
   "v1_slices": {
     "CLOUDS_M13": {
       "implementation": "renderer_free_surface_fog_day_visibility_sun_path_medium_and_haze_references",
-      "functional_validation": "M13.1 through M13.9 builder CPU and dependency checks passed on mac-metal at db3d8514, including saturated overcast and strict shore-margin regressions.",
+      "functional_validation": "M13.1 through M13.9 builder CPU and dependency checks passed on mac-metal at 0df0b5f26, including radiative-day, shore-margin, footprint-integral and eroded column-form Sun-path/medium regressions.",
       "experienced_quality": "not_qualified_no_rendered_fog_claim",
       "platform_performance": "not_measured_gpu_and_display_not_qualified",
-      "scope": "Game-supplied surface and fog data, world/air frame factors, cooling and clear-air range in State, exact/footprint query fidelity and f64 optical and medium references. Exact-image verification and integration pending; GPU consumers remain later milestones.",
+      "scope": "Game-supplied surface and fog data, world/air frame factors, cooling and clear-air range in State, exact/footprint query fidelity and f64 optical and medium references. Visibility queries preserve footprint sums; Sun paths and medium coefficients retain column erosion. GPU consumers remain later milestones; exact images use the shared main-branch check.",
       "evidence": [
         "../evidence/CLOUDS/M13.md",
-        "../evidence/CLOUDS/M13-verification.json"
+        "../evidence/CLOUDS/M13-verification.json",
+        "../evidence/CLOUDS/M13-sun-path-fix.json"
       ]
     },
     "CLOUDS_M1": {
