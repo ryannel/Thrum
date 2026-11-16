@@ -6,7 +6,8 @@
   [The proof](../../evidence/SCENE-VIEWS/M1/9be4a4887-proof.md) records exact comparisons, shadow/air
   negative controls and the remaining M1.1 defect: shared main-centred height support still
   misses 283 pixels by up to 2,904 steps. Its builder result stays open pending the planner's
-  ownership or admission ruling. Repository gate and merge results follow in the handoff.
+  ownership or admission ruling. `./dev check` passed and the work merged at `82a636e10`.
+  [The handoff](../../evidence/SCENE-VIEWS/M1-handoff.md) names the remaining ruling and proofs.
 
 - 2026-11-16 M1 builder continued: source `64e691e8d` prepares own clusters, aerial products,
   Sun cascades and visibility, and exposes opt-in opaque contribution surfaces and callbacks.
