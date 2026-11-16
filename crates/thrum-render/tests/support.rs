@@ -395,7 +395,7 @@ pub(crate) async fn host_with_config(
             })
             .collect(),
     };
-    FrameHost::new(
+    Box::pin(FrameHost::new(
         &selected_capabilities(capabilities),
         queue,
         config,
@@ -403,7 +403,7 @@ pub(crate) async fn host_with_config(
         source,
         scene,
         1.0,
-    )
+    ))
     .await
     .expect("public host")
 }

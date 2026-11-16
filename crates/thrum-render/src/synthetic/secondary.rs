@@ -305,12 +305,18 @@ impl SecondaryPrepared {
             ],
             immediate_size: 0,
         });
-        let source = shader_source(&super::scene_source::secondary(
-            prepared.atmosphere.is_some(),
-            prepared.air_shadow.is_some(),
-            prepared.cloud.is_some(),
-            super::scene_source::SunShadows::from(prepared.shadow.is_some()),
-        ));
+        let source = super::scene_source::cloud_variant(
+            shader_source(&super::scene_source::secondary(
+                prepared.atmosphere.is_some(),
+                prepared.air_shadow.is_some(),
+                prepared.cloud.is_some(),
+                super::scene_source::SunShadows::from(prepared.shadow.is_some()),
+            )),
+            prepared
+                .cloud
+                .as_ref()
+                .is_some_and(|cloud| cloud.gpu_target().is_some()),
+        );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.as_str().into()),

@@ -29,6 +29,12 @@ fn light(height: f32, sun: Vec3) -> FrameLighting {
         AtmosphereFrame::new(sun.to_array(), 100_000.0, [1.0; 3], height, 1).expect("air"),
     )
 }
+fn pixel_direction(view: &SyntheticView, uv: [f32; 2]) -> Vec3 {
+    let eye = Vec3::from_array(view.camera_position());
+    let inverse = Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
+    let far = inverse * Vec4::new(uv[0] * 2.0 - 1.0, 1.0 - uv[1] * 2.0, 0.0, 1.0);
+    (far.truncate() - eye * far.w).normalize()
+}
 fn instance(slot: u32, center: Vec3, half: Vec3) -> InstanceRecord {
     let mut value = InstanceRecord::identity(slot, 0);
     for axis in 0..3 {
@@ -176,6 +182,37 @@ fn check_casters(results: &[([f32; 4], [f32; 4])], allowance: [f32; 3]) {
         );
     }
 }
+#[expect(
+    clippy::print_stderr,
+    reason = "retained negative controls print their difference and allowance"
+)]
+fn check_wrong_stretch(
+    actual: [f32; 4],
+    wrong: [f32; 4],
+    before: Option<[f32; 4]>,
+    limit: [f32; 3],
+) {
+    for (c, bound) in limit.into_iter().enumerate() {
+        let difference = (actual[c] - wrong[c]).abs();
+        eprintln!(
+            "wrong whole-camera stretch channel={c}: difference={difference} allowance={bound}"
+        );
+        assert!(
+            difference > bound,
+            "whole-camera air must miss: channel {c}"
+        );
+        if let Some(shaded) = before {
+            let change = (wrong[c] - shaded[c]).abs();
+            eprintln!(
+                "before-only caster darkens the whole-camera reference by {change}; crossing allowance={bound}"
+            );
+            assert!(
+                change > bound,
+                "the before-only caster must shade the stretch omitted by the view"
+            );
+        }
+    }
+}
 #[test]
 fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches() {
     let Some(gpu) = thrum_test_support::gpu("plane shaded air", Some(wgpu::Backend::Metal)) else {
@@ -203,9 +240,7 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
             let eye = Vec3::new(0.0, 50.0 - below, 0.0);
             let pitch = if horizon { 0.0 } else { 10.0_f32.to_radians() };
             let view = camera(eye, pitch, extent);
-            let inverse = Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
-            let far = inverse * Vec4::new(uv[0] * 2.0 - 1.0, 1.0 - uv[1] * 2.0, 0.0, 1.0);
-            let direction = (far.truncate() - eye * far.w).normalize();
+            let direction = pixel_direction(&view, uv);
             let crossing = eye + direction * (below / direction.y);
             let plane = ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane");
             let request = SecondaryViewRequest::new(&view, extent, Some(plane), ViewAir::Plane)
@@ -251,6 +286,7 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
                     let stretch = distance - 0.01 / direction.z.abs();
                     let limit = allowance(expected, &raw, stretch, uv, radiance, 4);
                     let mut results = Vec::new();
+                    let mut before_camera = None;
                     // The shadowed cases use a substantial stretch so a caster
                     // and its 64 m shadow-height cells can lie wholly on one side.
                     let casters = if below > 39.0 && distance > 2999.0 {
@@ -265,12 +301,12 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
                             let midpoint = if caster == 1 {
                                 crossing + direction * 1500.0
                             } else {
-                                eye + direction * 80.0
+                                eye + direction * 126.0
                             };
                             let half = if caster == 1 {
                                 Vec3::new(128.0, 80.0, 200.0)
                             } else {
-                                Vec3::new(64.0, 20.0, 25.0)
+                                Vec3::new(64.0, 16.0, 40.0)
                             };
                             variant
                                 .instances
@@ -299,6 +335,20 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
                         )
                         .0;
                         assert_eq!(actual[3], 1.0, "covered panel");
+                        if caster == 2 && radiance == 0.0 {
+                            before_camera = Some(
+                                main_pixel(
+                                    &device,
+                                    &cap,
+                                    &queue,
+                                    variant.clone(),
+                                    sun,
+                                    extent,
+                                    (xy[1] * extent[0] + xy[0]) as usize,
+                                )
+                                .await,
+                            );
+                        }
                         variant.view = reference_scene.view;
                         let reference = if caster == 0 {
                             expected
@@ -349,17 +399,7 @@ fn plane_panels_match_the_main_camera_at_the_crossing_and_reject_wrong_stretches
                             (xy[1] * extent[0] + xy[0]) as usize,
                         )
                         .await;
-                        for c in 0..3 {
-                            eprintln!(
-                                "wrong whole-camera stretch channel={c}: difference={} allowance={}",
-                                (results[0].0[c] - wrong[c]).abs(),
-                                limit[c]
-                            );
-                            assert!(
-                                (results[0].0[c] - wrong[c]).abs() > limit[c],
-                                "whole-camera air must miss: channel {c}"
-                            );
-                        }
+                        check_wrong_stretch(results[0].0, wrong, before_camera, limit);
                     }
                     if horizon && radiance == 0.0 {
                         let (empty, _) = sample(&raw, 0, stretch, uv, true);

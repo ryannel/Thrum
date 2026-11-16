@@ -28,14 +28,10 @@ pub(super) fn prepare(
     shadowed: SunShadows,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let source = compose_with_cloud(atmosphere, air_shadow, cloud.is_some(), shadowed);
-    let source = if cloud.is_some_and(crate::atmosphere::SunOpticalDepth::gpu_written) {
-        source.replace(
-            include_str!("../atmosphere/cloud.wgsl"),
-            include_str!("../atmosphere/cloud_gpu.wgsl"),
-        )
-    } else {
-        source
-    };
+    let source = cloud_variant(
+        source,
+        cloud.is_some_and(crate::atmosphere::SunOpticalDepth::gpu_written),
+    );
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("prepared synthetic shader ABI2"),
         source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
@@ -46,6 +42,18 @@ pub(super) fn prepare(
         "fragment"
     };
     (source, module, entry)
+}
+
+/// Both main and secondary views consume the provider's selected mapping layout.
+pub(super) fn cloud_variant(source: String, gpu_written: bool) -> String {
+    if gpu_written {
+        source.replace(
+            include_str!("../atmosphere/cloud.wgsl"),
+            include_str!("../atmosphere/cloud_gpu.wgsl"),
+        )
+    } else {
+        source
+    }
 }
 
 fn compose_with_cloud(
