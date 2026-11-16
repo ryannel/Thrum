@@ -15,6 +15,9 @@ pub struct EffectTime {
     pub tick_duration: Duration,
     /// Presentation interpolation; never advances simulation.
     pub alpha: f32,
+    /// Consumed-target phase, bounded to one interval plus 50 ms of ticks.
+    /// Presentation-only prediction may use this past the committed endpoint.
+    pub display_phase: f32,
     /// Read-only capture; cannot advance or reset state.
     pub capture: bool,
 }

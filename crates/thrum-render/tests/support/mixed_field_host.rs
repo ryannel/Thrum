@@ -86,6 +86,12 @@ impl FrameWorld for World {
     fn presentation_alpha_at(&self, _lead: Duration) -> f32 {
         1.0
     }
+    fn display_phase_at(&self, _: Duration) -> f32 {
+        1.0
+    }
+    fn is_interpolating(&self) -> bool {
+        false
+    }
 }
 struct FieldSource;
 impl SceneSource<Page> for FieldSource {

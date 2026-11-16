@@ -41,7 +41,17 @@ owns scheduling and supplies an engine texture through ordinary presenter/`Surfa
 World work remains on its resident lane; rendering runs on the dedicated render-owner thread.
 The engine opportunity clock targets the next 120 Hz opportunity. `Offscreen::step_for` consumes that target
 with the native actor's shared `display_target_lead` policy (expired target: zero, maximum: 50 ms).
-The host stamps the actual consumed lead on each submitted image; untargeted prime/warmup steps declare zero.
+The offscreen runner reads the world clock once: that observation both measures the lead and advances/observes
+the world. The host stamps `observation_ns`, `presentation_lead_ns`, `display_phase`, `alpha` and
+`clock_interpolating` on each submitted image's sample. The V1 time record also writes `platform_target_ns`
+(the runner's scheduled opportunity target in the world origin) and `lead_status`: `future`, `late`,
+`invalid` or `clamped`. Untargeted prime/warmup steps declare zero lead and no platform target/status.
+The consumed target is observation plus lead: a future frame consumes the platform target, a late or invalid
+frame consumes its observation, and a clamped frame consumes observation plus 50 ms. The display phase is
+the fraction since the committed tick at that consumed target, capped at one plus 50 ms in ticks; alpha is
+the phase held to one. When the clock is paused, overloaded, holding or queued, `clock_interpolating` is false
+and both are one; those frames do not describe a consumed target. Endpoint oracle captures likewise give one.
+Counts of lead statuses, bound phases and stopped clocks retain those frames rather than silently dropping them.
 This is an offscreen target policy, not a measured display target or a claim that its alpha equals a window's.
 
 Additional cases use the same binary:

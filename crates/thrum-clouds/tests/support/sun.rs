@@ -59,6 +59,7 @@ pub(super) fn run(
             tick,
             tick_duration: Duration::from_secs_f64(1.0 / 60.0),
             alpha: 1.0,
+            display_phase: 1.0,
             capture: false,
         };
         let angle = elevation.to_radians();
@@ -227,6 +228,7 @@ fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun:
         tick: 1,
         tick_duration: Duration::from_secs_f64(1.0 / 60.0),
         alpha: 1.0,
+        display_phase: 1.0,
         capture: false,
     };
     weather.rebuild(50, 1);

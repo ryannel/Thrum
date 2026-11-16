@@ -28,7 +28,8 @@ pub struct Opportunity {
     pub requested: Duration,
     /// Scheduled indices skipped while the driver was busy or overslept.
     pub skipped_before: u32,
-    pub(super) target: Instant,
+    /// Platform target requested by the runner, on its monotonic clock.
+    pub target: Instant,
 }
 
 impl OpportunityClock {

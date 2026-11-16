@@ -14,7 +14,13 @@ Late-only outputs do not become forward inputs. Resource indices and retained ow
 local to the contribution; the ordered list remaps them. Prepared graph accesses describe physical usage.
 The renderer validates dimensions, ranges, storage capabilities and cadence before accepting the attachment.
 
-`encode_upload` receives the frame's source epoch, timeline, tick, tick duration and interpolation alpha.
+`encode_upload` receives the frame's source epoch, timeline, tick, tick duration, interpolation alpha and
+display phase. The phase comes directly from the world's clock at its consumed target (observation plus lead).
+While interpolating, presentation time in ticks is `tick - 1 + display_phase`; the phase extends past one up
+to `1 + 50 ms / tick_duration`. Alpha remains the phase held to one. Endpoint-only states and captures give
+one. Sampling never admits a tick. Predict presentation-only quantities from committed state a tick at a time
+by their own step; quantities known only at endpoints keep alpha. See
+[C02](design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world).
 Use `EffectState::begin` against the committed state: equal ticks keep contents, forward ticks advance up to
 the declared bound, backwards ticks or another timeline reset. Captures run no state producer. First-epoch
 and reset recordings write every texel, including time-sliced resources. `effect_runs` skips work without

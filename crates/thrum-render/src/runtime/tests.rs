@@ -25,6 +25,12 @@ fn sample(tick: u64) -> FrameSample {
     FrameSample {
         tick,
         presentation_alpha: 1.0,
+        display_phase: 1.0,
+        observation: Duration::ZERO,
+        presentation_lead: Duration::ZERO,
+        clock_interpolating: false,
+        platform_target: None,
+        lead_status: None,
         history_identity: [0; 2],
         submission_order: tick,
         completed_ticks: 1,
@@ -152,6 +158,12 @@ impl FrameWorld for StaticWorld {
     }
     fn presentation_alpha_at(&self, _lead: Duration) -> f32 {
         1.0
+    }
+    fn display_phase_at(&self, _: Duration) -> f32 {
+        1.0
+    }
+    fn is_interpolating(&self) -> bool {
+        false
     }
 }
 

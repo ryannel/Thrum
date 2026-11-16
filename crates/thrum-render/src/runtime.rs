@@ -112,6 +112,10 @@ pub trait FrameWorld {
     fn publication(&mut self) -> Result<WorldPublication<Self::Page>, String>;
     /// Sample a display target without advancing authority.
     fn presentation_alpha_at(&self, lead: Duration) -> f32;
+    /// Phase at the same consumed target, taken directly from the world's clock.
+    fn display_phase_at(&self, lead: Duration) -> f32;
+    /// Whether this world's retained clock sample consumes a target.
+    fn is_interpolating(&self) -> bool;
 }
 
 /// Game-owned mapping from committed schema to the prepared renderer.
@@ -186,6 +190,10 @@ impl From<&'static str> for FrameError {
 /// adapter lacks timestamp queries or a timing readback fails. Callback time
 /// excludes deferred GPU completion and must not be added to GPU pass times.
 #[derive(Clone, Debug)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "completed telemetry records independent clock, presentation and timing outcomes rather than a mutable state machine"
+)]
 pub struct FrameSample {
     /// Last complete world tick used by the draw.
     pub tick: u64,
@@ -205,6 +213,18 @@ pub struct FrameSample {
     pub visual_age_ticks: u32,
     /// Fraction between the previous and current committed world ticks.
     pub presentation_alpha: f32,
+    /// Presentation phase at observation plus lead; may exceed one.
+    pub display_phase: f32,
+    /// World-clock timestamp supplied to this drive.
+    pub observation: Duration,
+    /// Lead consumed by this frame's clock sample.
+    pub presentation_lead: Duration,
+    /// False for endpoint-only clock states.
+    pub clock_interpolating: bool,
+    /// Runner's requested target in the world-clock origin, when supplied.
+    pub platform_target: Option<Duration>,
+    /// Status measured by the host from the same observation as the lead.
+    pub lead_status: Option<crate::frame::TargetLeadStatus>,
     /// CPU time for scene mapping, ABI packing and queue writes.
     pub upload_cpu: Duration,
     /// Nanoseconds within upload for live camera, local lights and cascade refit.
@@ -339,6 +359,8 @@ struct SubmitFrame {
     queued_ticks: u32,
     source: SourceTick,
     presentation_alpha: f32,
+    display_phase: f32,
+    clock_interpolating: bool,
 }
 
 struct PreparedSample {
@@ -369,6 +391,9 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     capture_owner: Arc<()>,
     submitted_capture: Option<submitted_capture::Tap>,
     presentation_lead: Duration,
+    observation: Duration,
+    platform_target: Option<Duration>,
+    lead_status: Option<crate::frame::TargetLeadStatus>,
     presenter_generation: u64,
     generation: u64,
     source: V,
@@ -628,6 +653,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// advances only to the callback's observed monotonic time.
     pub fn set_presentation_lead(&mut self, lead: Duration) {
         self.presentation_lead = lead;
+        self.platform_target = None;
+        self.lead_status = None;
+    }
+
+    /// Record a runner's platform target and the status of its consumed lead.
+    /// Use after setting the lead; timestamps share the world's monotonic origin.
+    pub fn set_presentation_target(
+        &mut self,
+        target: Duration,
+        status: crate::frame::TargetLeadStatus,
+    ) {
+        self.platform_target = Some(target);
+        self.lead_status = Some(status);
     }
 
     fn presentation_alpha(&self) -> f32 {
@@ -706,6 +744,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capture_owner: Arc::new(()),
             submitted_capture: None,
             presentation_lead: Duration::ZERO,
+            observation: Duration::ZERO,
+            platform_target: None,
+            lead_status: None,
             presenter_generation: u64::from(presenter.is_some()),
             generation: capabilities.generation(),
             source,
@@ -1090,6 +1131,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a clock or simulation fault without an incomplete world update.
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_, W, V>, FrameError> {
+        self.observation = now;
         let wall_start = Instant::now();
         self.poll_gpu()?;
         let (report, advanced) = self.admit_world(now)?;
@@ -1241,6 +1283,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             queued_ticks,
             source,
             presentation_alpha: self.presentation_alpha(),
+            display_phase: self.world.display_phase_at(self.presentation_lead),
+            clock_interpolating: self.world.is_interpolating(),
         })
     }
 
@@ -1352,12 +1396,19 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 tick: frame.source.tick,
                 tick_duration: self.world.tick_duration(),
                 alpha: frame.presentation_alpha,
+                display_phase: frame.display_phase,
                 capture: false,
             });
         Ok(Some(PreparedSample {
             sample: FrameSample {
                 tick: frame.source.tick,
                 presentation_alpha: frame.presentation_alpha,
+                display_phase: frame.display_phase,
+                observation: self.observation,
+                presentation_lead: self.presentation_lead,
+                clock_interpolating: frame.clock_interpolating,
+                platform_target: self.platform_target,
+                lead_status: self.lead_status,
                 submission_order: 0,
                 history_identity: self.prepared.history_identity(),
                 completed_ticks: frame.completed_ticks,
@@ -1790,6 +1841,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 tick: source.tick,
                 tick_duration: self.world.tick_duration(),
                 alpha: capture_alpha,
+                display_phase: 1.0,
                 capture: true,
             });
         let mut pixels = target.readback(&self.device);

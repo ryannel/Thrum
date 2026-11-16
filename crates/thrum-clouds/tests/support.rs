@@ -103,6 +103,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                 tick,
                 tick_duration: Duration::from_secs_f64(1.0 / 60.0),
                 alpha: 0.5,
+                display_phase: 1.0,
                 capture: false,
             };
             let mut encoder =
@@ -247,6 +248,7 @@ fn filled(
             tick: state.tick(),
             tick_duration: Duration::from_secs_f64(1.0 / 60.0),
             alpha: 0.5,
+            display_phase: 1.0,
             capture: false,
         },
         state,

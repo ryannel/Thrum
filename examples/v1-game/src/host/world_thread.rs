@@ -95,6 +95,12 @@ impl WorldClient {
     pub(super) fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         self.0.presentation_alpha_at(lead)
     }
+    pub(super) fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.0.display_phase_at(lead)
+    }
+    pub(super) fn is_interpolating(&self) -> bool {
+        self.0.is_interpolating()
+    }
 
     pub(super) fn set_controls(&self, axes: [f32; 3]) -> Result<(), String> {
         self.0.set_controls(axes).map_err(|error| error.to_string())

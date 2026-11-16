@@ -500,6 +500,16 @@ impl<T: WorldTask> WorldLane<T> {
             .clock
             .alpha_at(self.sample_now.saturating_add(lead))
     }
+    /// Phase from the same retained clock and endpoint as the last poll.
+    pub fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.snapshot
+            .clock
+            .display_phase_at(self.sample_now.saturating_add(lead))
+    }
+    /// Whether the retained clock consumes a presentation target.
+    pub fn is_interpolating(&self) -> bool {
+        self.snapshot.clock.is_interpolating()
+    }
     /// Replace validated continuous controls.
     /// # Errors
     /// Refuses invalid input or a stopped owner.

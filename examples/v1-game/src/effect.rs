@@ -54,6 +54,8 @@ impl Default for EffectControls {
 
 /// Submitted state and physical resources, lent read-only to qualification code.
 pub struct EffectWitness {
+    /// Exact effect time delivered to the latest recording, including captures.
+    pub time: Option<thrum_render::contribution::EffectTime>,
     /// Reset flag delivered to the effect in the latest recording.
     pub history_reset: bool,
     /// Runtime controls for the next frame.
@@ -122,6 +124,7 @@ impl DiagnosticEffect {
     )]
     pub fn new() -> (Self, EffectHandle) {
         let witness = Arc::new(Mutex::new(EffectWitness {
+            time: None,
             history_reset: false,
             controls: EffectControls::default(),
             state: EffectState::new(2),
@@ -577,6 +580,7 @@ impl SceneContribution for DiagnosticEffect {
     fn encode_upload(&mut self, _encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         let mut witness = self.witness.lock().expect("diagnostic witness");
         witness.history_reset = frame.history_reset;
+        witness.time = Some(frame.time);
         if self.scripted {
             witness.controls.source = frame.time.tick < 270;
             witness.controls.cadence = if frame.time.tick < 300 { 2 } else { 4 };

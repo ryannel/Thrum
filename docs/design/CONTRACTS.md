@@ -64,6 +64,15 @@ This is an engineering cadence, not a measured cost. Local play, server, replica
 roles and epochs; replicas publish admitted server state, while prediction runs only its declared capture/replay closure.
 
 Presentation reads immutable committed state, optionally interpolating adjacent snapshots with alpha in [0,1].
+The display phase describes the consumed target: the frame's world-clock observation plus its bounded lead.
+While the clock interpolates, it is the fraction of the next tick elapsed at that target, without stopping at
+one, bounded to [0, 1 + 50 ms / tick duration]. Alpha is that phase held to one, with its existing arithmetic.
+Paused, overloaded, holding or queued clocks, and capture frames, show exactly one and report no interpolation.
+Sampling changes no clock and admits no authoritative tick. Where one clock supplies both times, a host measures
+the lead from the same observation it hands the world. The window hosts' two clock reads do not establish that
+their consumed target equals the platform target. Past the committed endpoint, a quantity is a presentation-only
+prediction from committed state, carried a tick at a time by its own step with the inputs that state holds, then
+read between predicted endpoints. Quantities known only at their endpoints keep alpha.
 Interpolation is defined per quantity: positions/rotations may interpolate; events, destruction and inventory changes
 do not blend. Render interpolation adds latency that must be accounted for in control/camera policy. Replay records
 inputs, ordering and required nondeterministic results; fixed dt alone does not promise cross-platform bit identity.

@@ -93,17 +93,27 @@ pub struct ClockSample {
 }
 
 impl ClockSample {
-    /// Fraction between the last two committed endpoints at an absolute
-    /// monotonic target in the same time origin as the authoritative clock.
+    /// Whether this sample consumes a target rather than showing an endpoint.
+    pub fn is_interpolating(self) -> bool {
+        self.interpolate
+    }
+
+    /// Unclamped presentation phase at the consumed target, bounded to one
+    /// interval plus 50 ms of ticks. Sampling never advances authority.
     #[expect(
         clippy::cast_precision_loss,
-        reason = "the clamped numerator is below one billion and f32 precision is enough for display interpolation"
+        reason = "bounded presentation numerator needs only f32 precision"
     )]
-    pub fn alpha_at(self, target: Duration) -> f32 {
+    pub fn display_phase_at(self, target: Duration) -> f32 {
         if !self.interpolate {
             return 1.0;
         }
-        let fraction = if target >= self.last_time {
+        let bound = NANOS_PER_SECOND + 50_000_000 * u128::from(self.tick_hz);
+        self.fraction_at(target).min(bound) as f32 / NANOS_PER_SECOND as f32
+    }
+
+    fn fraction_at(self, target: Duration) -> u128 {
+        if target >= self.last_time {
             self.fractional_tick.saturating_add(
                 target
                     .saturating_sub(self.last_time)
@@ -117,7 +127,19 @@ impl ClockSample {
                     .as_nanos()
                     .saturating_mul(u128::from(self.tick_hz)),
             )
-        };
+        }
+    }
+    /// Fraction between the last two committed endpoints at an absolute
+    /// monotonic target in the same time origin as the authoritative clock.
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the clamped numerator is below one billion and f32 precision is enough for display interpolation"
+    )]
+    pub fn alpha_at(self, target: Duration) -> f32 {
+        if !self.interpolate {
+            return 1.0;
+        }
+        let fraction = self.fraction_at(target);
         fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
     }
 }
@@ -166,6 +188,12 @@ impl TickClock {
     pub fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         self.presentation_sample()
             .alpha_at(self.last_time.saturating_add(lead))
+    }
+
+    /// Presentation phase of the last observation plus its lead.
+    pub fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.presentation_sample()
+            .display_phase_at(self.last_time.saturating_add(lead))
     }
 
     /// Transfer the current phase to a renderer without transferring tick

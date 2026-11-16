@@ -178,7 +178,7 @@ impl<G: Game> Offscreen<G> {
     /// Returns the ordinary world/render failure; no capture admission bypass.
     pub fn step(&mut self) -> Result<DriveReport, String> {
         self.host.set_presentation_lead(Duration::ZERO);
-        self.drive()
+        self.drive(self.origin.elapsed())
     }
 
     /// Consume a clock target using the native render actor's lead policy.
@@ -186,22 +186,27 @@ impl<G: Game> Offscreen<G> {
     /// # Errors
     /// Returns the ordinary world/render failure.
     pub fn step_for(&mut self, opportunity: &clock::Opportunity) -> Result<DriveReport, String> {
+        let observation = self.origin.elapsed();
         let lead = thrum_render::frame::display_target_lead(
             opportunity
                 .target
                 .saturating_duration_since(self.origin)
                 .as_secs_f64(),
-            self.origin.elapsed().as_secs_f64(),
+            observation.as_secs_f64(),
         );
         self.host.set_presentation_lead(lead.duration);
-        self.drive()
+        self.host.set_presentation_target(
+            opportunity.target.saturating_duration_since(self.origin),
+            lead.status,
+        );
+        self.drive(observation)
     }
 
-    fn drive(&mut self) -> Result<DriveReport, String> {
+    fn drive(&mut self, observation: Duration) -> Result<DriveReport, String> {
         let report = self
             .host
             .drive(
-                self.origin.elapsed(),
+                observation,
                 Some(&SurfaceOutput {
                     view: &self.view,
                     extent: self.extent,

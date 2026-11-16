@@ -31,6 +31,7 @@ mod tests {
             tick: 0,
             tick_duration: std::time::Duration::from_millis(20),
             alpha: 1.0,
+            display_phase: 1.0,
             capture: false,
         };
         assert_eq!(super::display_seconds(time), 0.0);

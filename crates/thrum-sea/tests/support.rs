@@ -526,6 +526,7 @@ fn frame_script(portable: bool) {
             tick,
             tick_duration: Duration::from_secs_f64(1.0 / 60.0),
             alpha,
+            display_phase: alpha,
             capture,
         };
         let time = thrum_sea::display_seconds(clock);

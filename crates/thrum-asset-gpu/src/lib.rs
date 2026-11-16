@@ -840,6 +840,7 @@ impl SceneContribution for CookedAssets {
                         tick: 0,
                         tick_duration: Duration::from_secs_f64(1.0 / 60.0),
                         alpha: 1.0,
+                        display_phase: 1.0,
                         capture: false,
                     },
                     history_reset: frame.history_reset || tentative.material,

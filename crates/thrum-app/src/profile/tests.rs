@@ -4,6 +4,12 @@ use crate::profile::declare;
 fn sample(order: u64) -> FrameSample {
     use thrum_render::synthetic::{CullMode, CullingReason, CullingSelection};
     FrameSample {
+        display_phase: 1.0,
+        observation: Duration::ZERO,
+        presentation_lead: Duration::ZERO,
+        clock_interpolating: false,
+        platform_target: None,
+        lead_status: None,
         tick: order,
         submission_order: order,
         history_identity: [0; 2],

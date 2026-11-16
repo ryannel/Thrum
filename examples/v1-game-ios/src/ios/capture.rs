@@ -252,6 +252,8 @@ impl Recorder {
                     "device_generation":image.device_generation,"presenter_generation":image.presenter_generation,
                     "surface_epoch":s.epoch,"surface_presented":image.sample.surface_presented,"extent":image.extent,"row_stride":image.extent[0]*4,
                     "visual_revision":image.sample.visual_revision,"presentation_lead_ns":image.presentation_lead.as_nanos(),
+                    "observation_ns":image.sample.observation.as_nanos(),"display_phase":image.sample.display_phase,
+                    "clock_interpolating":image.sample.clock_interpolating,
                     "submit_ns":image.submitted_at.saturating_duration_since(s.started).as_nanos(),
                     "tap_elapsed_ns":image.submitted_elapsed.as_nanos(),"map_ns":s.started.elapsed().as_nanos()});
                 if let Some(image) = s.writer.submit(image) {

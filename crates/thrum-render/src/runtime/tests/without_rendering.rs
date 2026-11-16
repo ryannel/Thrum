@@ -118,6 +118,12 @@ impl FrameWorld for World {
     fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         self.clock.presentation_alpha_at(lead)
     }
+    fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.clock.display_phase_at(lead)
+    }
+    fn is_interpolating(&self) -> bool {
+        self.clock.presentation_sample().is_interpolating()
+    }
 }
 
 async fn host(cap: u32) -> FrameHost<World, StaticScene> {

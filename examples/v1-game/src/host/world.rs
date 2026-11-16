@@ -134,6 +134,24 @@ impl WorldPort {
         }
     }
 
+    pub(super) fn display_phase_at(&self, lead: Duration) -> f32 {
+        match self {
+            Self::Inline(driver) => driver.display_phase_at(lead),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.display_phase_at(lead),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
+    pub(super) fn is_interpolating(&self) -> bool {
+        match self {
+            Self::Inline(driver) => driver.is_interpolating(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Threaded(client) => client.is_interpolating(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Self::Starting => unreachable!("world owner is starting"),
+        }
+    }
     pub(super) fn next_due_in(&self) -> Option<Duration> {
         match self {
             Self::Inline(driver) => driver.next_due_in(),
@@ -248,6 +266,12 @@ impl thrum_render::runtime::FrameWorld for WorldPort {
     fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         Self::presentation_alpha_at(self, lead)
     }
+    fn display_phase_at(&self, lead: Duration) -> f32 {
+        Self::display_phase_at(self, lead)
+    }
+    fn is_interpolating(&self) -> bool {
+        Self::is_interpolating(self)
+    }
 }
 
 /// The game body stays here; scheduling and the fixed clock belong to core.
@@ -312,6 +336,12 @@ impl WorldDriver {
 
     pub(super) fn presentation_alpha_at(&self, lead: Duration) -> f32 {
         self.world.presentation_alpha_at(lead)
+    }
+    pub(super) fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.world.display_phase_at(lead)
+    }
+    pub(super) fn is_interpolating(&self) -> bool {
+        self.world.presentation_sample().is_interpolating()
     }
 
     #[cfg(not(target_arch = "wasm32"))]

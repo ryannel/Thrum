@@ -210,6 +210,11 @@ impl<G: WorldGame> ClockedWorld<G> {
         self.clock.presentation_alpha_at(lead)
     }
 
+    /// Read-only phase of the consumed presentation target.
+    pub fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.clock.display_phase_at(lead)
+    }
+
     /// Time until another authoritative update is due.
     pub fn next_due_in(&self) -> Option<Duration> {
         self.clock.next_due_in()

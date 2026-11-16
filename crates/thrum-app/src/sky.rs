@@ -273,6 +273,12 @@ impl FrameWorld for StillWorld {
     fn presentation_alpha_at(&self, _lead: Duration) -> f32 {
         1.0
     }
+    fn display_phase_at(&self, _: Duration) -> f32 {
+        1.0
+    }
+    fn is_interpolating(&self) -> bool {
+        false
+    }
 }
 
 /// Sky, Sun, exposure and camera policy of a still scene, sampled by the renderer.
