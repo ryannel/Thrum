@@ -22,9 +22,7 @@ fn the_account_closes_over_ten_thousand_ticks() {
     let tree = Tree::prepare(&bed, &canopy, &Profile::default()).expect("valid test case");
     let mut state = RainState::new(&tree);
     let mut report = TickReport::default();
-    let class = GroundClass {
-        percolation: mm_h(1.0),
-    };
+    let class = GroundClass::bare(mm_h(1.0));
     let (mut merges, mut partings, mut worst) = (0, 0, 0.0_f64);
     for t in 0..10_000 {
         // Two showers, each followed by drying; the second lighter and longer.
@@ -88,14 +86,7 @@ fn fill_time(width: usize, depth: usize) -> (usize, usize) {
             drying: 0.0,
         };
         state
-            .step(
-                &tree,
-                rain,
-                GroundClass { percolation: 0.0 },
-                1.0,
-                1,
-                &mut report,
-            )
+            .step(&tree, rain, GroundClass::bare(0.0), 1.0, 1, &mut report)
             .expect("valid test case");
         if report.edge_spill > 0.0 {
             return (t, catchment);
@@ -130,7 +121,7 @@ fn a_puddle_on_ground_that_passes_the_rain_down_does_not_grow() {
         drying: 0.0,
     };
     for percolation in [mm_h(36.0), mm_h(50.0)] {
-        let class = GroundClass { percolation };
+        let class = GroundClass::bare(percolation);
         // Dry, it stays dry.
         let mut state = RainState::new(&tree);
         support::run(&tree, &mut state, rain, class, 1.0, 1000);
@@ -153,13 +144,6 @@ fn a_puddle_on_ground_that_passes_the_rain_down_does_not_grow() {
     }
     // With no percolation the same puddle does grow, so the case can fail.
     let mut state = RainState::new(&tree);
-    support::run(
-        &tree,
-        &mut state,
-        rain,
-        GroundClass { percolation: 0.0 },
-        1.0,
-        10,
-    );
+    support::run(&tree, &mut state, rain, GroundClass::bare(0.0), 1.0, 10);
     assert!(state.held() > 0.0);
 }

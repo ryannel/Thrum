@@ -125,7 +125,9 @@ impl Map {
         if let Some(surf) = &self.surf
             && map.bed.is_some()
         {
-            return surf.surface(self, field, point, time, map);
+            let mut out = surf.surface(self, field, point, time, map)?;
+            self.add_rain(field, point, time, map, &mut out.sample);
+            return Ok(out);
         }
         self.plain_surface_on_row(field, point, time, map)
     }
@@ -158,6 +160,7 @@ impl Map {
                 *a += b;
             }
         }
+        self.add_rain(field, point, time, map, &mut sample);
         Ok(Surface {
             body: Some(map.body),
             sample,

@@ -8,7 +8,7 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use thrum_water_model::NO_HOLLOW;
 
-mod catchment;
+pub(crate) mod catchment;
 mod encode;
 
 pub(crate) use catchment::Catchment;

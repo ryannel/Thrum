@@ -140,6 +140,7 @@ pub struct Map {
     /// Number of hollows level tables held at the last table because they stood two
     /// levels in wet cells that touch.
     pub held_level_tables: u64,
+    pub(crate) rain: Option<crate::RainBands>,
 }
 
 impl Map {
@@ -177,6 +178,7 @@ impl Map {
             generations: Vec::new(),
             hollows_profile,
             held_level_tables: 0,
+            rain: None,
         };
         map.generations = vec![0; map.bodies.len()];
         map.validate_inputs()?;

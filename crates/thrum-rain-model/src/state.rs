@@ -2,13 +2,13 @@
 //! against its tree when read back.
 use crate::{Account, RainError, RainState, Tree};
 
-const MAGIC: &[u8; 8] = b"THRRAIN1";
+const MAGIC: &[u8; 8] = b"THRRAIN2";
 
 impl RainState {
     /// The state's bytes. Decoding them gives the same state, and encoding that the same
     /// bytes.
     pub fn encode(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(32 + self.volume.len() * 9 + 56);
+        let mut out = Vec::with_capacity(41 + self.volume.len() * 9 + 80 + self.cover.len() * 16);
         out.extend_from_slice(MAGIC);
         out.extend_from_slice(&self.tick.to_le_bytes());
         out.extend_from_slice(&(self.volume.len() as u64).to_le_bytes());
@@ -25,8 +25,22 @@ impl RainState {
             a.dried,
             a.edge,
             a.initial,
-        ] {
+            a.ground_dried,
+            a.soaked,
+            a.unpaid,
+        ]
+        .into_iter()
+        .chain(self.cover.iter().copied())
+        .chain(self.band.iter().copied())
+        {
             out.extend_from_slice(&v.to_le_bytes());
+        }
+        match self.ground_tick {
+            Some(t) => {
+                out.push(1);
+                out.extend_from_slice(&t.to_le_bytes());
+            }
+            None => out.push(0),
         }
         out
     }
@@ -68,6 +82,30 @@ impl RainState {
             dried: f()?,
             edge: f()?,
             initial: f()?,
+            ground_dried: f()?,
+            soaked: f()?,
+            unpaid: f()?,
+        };
+        let h = tree.hollow_count();
+        let mut cover = Vec::with_capacity(h);
+        let mut band = Vec::with_capacity(h);
+        for _ in 0..h {
+            cover.push(r.f64()?);
+        }
+        for _ in 0..h {
+            let m = r.f64()?;
+            if !m.is_finite() || m < 0.0 {
+                return Err(RainError::State("invalid damp band"));
+            }
+            band.push(m);
+        }
+        if cover.iter().any(|v| !v.is_finite()) {
+            return Err(RainError::State("invalid cover level"));
+        }
+        let ground_tick = match r.take(1)?[0] {
+            0 => None,
+            1 => Some(r.u64()?),
+            _ => return Err(RainError::State("invalid ground tick flag")),
         };
         if r.at != bytes.len() {
             return Err(RainError::State("trailing bytes"));
@@ -89,6 +127,9 @@ impl RainState {
             volume,
             active,
             account,
+            cover,
+            band,
+            ground_tick,
         })
     }
 }

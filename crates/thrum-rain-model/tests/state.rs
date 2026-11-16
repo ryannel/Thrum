@@ -34,9 +34,7 @@ fn steps(
             .step(
                 tree,
                 rain,
-                GroundClass {
-                    percolation: mm_h(2.0),
-                },
+                GroundClass::bare(mm_h(2.0)),
                 1.0,
                 threads,
                 &mut report,

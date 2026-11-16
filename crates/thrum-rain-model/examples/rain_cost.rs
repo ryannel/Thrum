@@ -59,9 +59,7 @@ fn main() {
         flux: 10.0 / 3600.0,
         drying: 0.0,
     };
-    let class = GroundClass {
-        percolation: 1.0 / 3600.0,
-    };
+    let class = GroundClass::bare(1.0 / 3600.0);
     let mut report = TickReport::default();
     let mut timing = |threads: usize| {
         let mut s = state.clone();

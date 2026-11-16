@@ -6,6 +6,7 @@ mod cut;
 mod hollows;
 mod map;
 mod pyramid;
+mod rain;
 mod river;
 mod section;
 mod shore;
@@ -18,6 +19,10 @@ pub use cut::{Column, CutConfig, Sheet, SheetPoint, cut};
 pub use hollows::{Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
 pub use pyramid::BedPyramid;
+pub use rain::{
+    Drop, Exposure, OpenSky, RainBands, RainBandsProfile, RateHistory, RingClass, RingTable,
+    Support,
+};
 pub use river::{RIVER_FORMAT, RIVER_MAGIC, RiverEnd, RiverFile, RiverReach};
 pub use section::{BreakerSection, SectionPoint};
 pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};

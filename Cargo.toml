@@ -8,6 +8,10 @@ resolver = "3"
 [profile.test.package.thrum-water-model]
 opt-level = 2
 
+# The rain model's ring tables sum thousands of wavenumbers over every radius and age.
+[profile.test.package.thrum-rain-model]
+opt-level = 2
+
 # The river solve marches millions of cell updates; its tests run it optimised.
 [profile.dev.package.thrum-river-model]
 opt-level = 3

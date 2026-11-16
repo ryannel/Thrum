@@ -128,14 +128,7 @@ fn a_hollow_under_a_roof_fills_only_from_open_ground() {
     };
     for _ in 0..300 {
         state
-            .step(
-                &tree,
-                rain,
-                GroundClass { percolation: 0.0 },
-                1.0,
-                1,
-                &mut report,
-            )
+            .step(&tree, rain, GroundClass::bare(0.0), 1.0, 1, &mut report)
             .expect("valid test case");
         let (l, r) = (
             report.hollows[left as usize],

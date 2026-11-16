@@ -1,6 +1,7 @@
 //! Rain on the CPU, in f64, with no graphics device: the tree of hollows a bed is cut into,
-//! the fill step that fills, spills, merges and parts puddles with its water account, and
-//! exposure under the shelters a game gives. Coordinates are metres, x/z on the ground and
+//! the fill step that fills, spills, merges and parts puddles with its water account,
+//! exposure under the shelters a game gives, the ground's stores and the wetness function,
+//! the wet look's reference, and a raindrop's rings and the tables the rain bands read. Coordinates are metres, x/z on the ground and
 //! y up; rain and drying are kilograms of water a square metre a second.
 //!
 //! The rain state is plain data a game keeps in its world and steps with the tick. The map
@@ -8,12 +9,21 @@
 mod canopy;
 mod error;
 mod fill;
+mod ground;
+mod look;
+mod rings;
 mod state;
 mod tree;
 
 pub use canopy::{Canopy, Shelter};
 pub use error::RainError;
-pub use fill::{Account, GroundClass, LeafGain, Rain, RainState, TickReport};
+pub use fill::{Account, LeafGain, Rain, RainState, TickReport};
+pub use ground::{
+    Flow, GroundClass, GroundStores, MAX_CLASSES, REACHES, Store, WetPoint, Wetness, band_fill,
+    band_step, reach_weights, relief_share, shore_fill, sky_share, wetness, wetness_at,
+};
+pub use look::{FILM_REFLECTANCE, Material, porosity, wet_albedo, wet_look};
+pub use rings::{Raindrop, Ring, RingProfile, Water, Wavenumbers, drops_over, marshall_palmer};
 pub use tree::{Ground, Node, SmallHollow, Tree};
 
 /// The physical profile of rain on a hollows body. Never a quality setting.

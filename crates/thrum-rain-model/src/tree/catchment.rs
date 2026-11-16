@@ -4,6 +4,7 @@
 //! are kept as one more catchment after the hollows'.
 use super::Tree;
 use crate::Canopy;
+use crate::ground::reach_weights;
 use thrum_water_model::NO_HOLLOW;
 
 #[derive(Clone, Debug, Default)]
@@ -31,6 +32,8 @@ pub(crate) struct Gathered {
     pub(crate) water: f64,
     pub(crate) runoff: f64,
     pub(crate) ground: f64,
+    /// Uncovered cells' summed weights on the stored reaches, times the cell's area.
+    pub(crate) weights: [f64; 3],
 }
 
 impl Catchment {
@@ -91,17 +94,20 @@ impl Catchment {
             + size_of_val(self.steps.as_slice())
     }
 
-    /// One catchment's rain over a tick: `rain` and `soak` are metres of water falling and
-    /// going down into bare ground over the tick; cells below `level` are under water, and
-    /// rain on them is first stopped by what is above the water's surface, not the ground.
+    /// One catchment's rain over a tick: `rain` is metres of water falling over the tick;
+    /// cells below `level` are under water, and rain on them is first stopped by what is
+    /// above the water's surface, not the ground. Where `bare` gives the metres a stateless
+    /// ground passes down over the tick, each uncovered cell's take and runoff are its own;
+    /// either way the uncovered cells' weights on the stored reaches are summed.
     pub(crate) fn gather(
         &self,
         slot: usize,
         level: f64,
         rain: f64,
-        soak: f64,
+        bare: Option<f64>,
         area: f64,
     ) -> Gathered {
+        let soak = bare.unwrap_or(0.0);
         let (s, e) = (self.start[slot] as usize, self.start[slot + 1] as usize);
         let open_total = if e == s { 0 } else { self.open[e - 1] };
         let k = self.z[s..e].partition_point(|&z| z < level);
@@ -111,6 +117,7 @@ impl Catchment {
         let mut water = f64::from(open_covered);
         let mut ground = open_bare * rain.min(soak);
         let mut runoff = open_bare * (rain - soak).max(0.0);
+        let mut weights = [open_bare, 0.0, 0.0];
         let (a, b) = (
             self.shaded_start[slot] as usize,
             self.shaded_start[slot + 1] as usize,
@@ -126,13 +133,47 @@ impl Catchment {
             withheld += 1.0 - x;
             ground += (x * rain).min(soak);
             runoff += (x * rain - soak).max(0.0);
+            let w = reach_weights(x);
+            for r in 0..3 {
+                weights[r] += w[r];
+            }
         }
         Gathered {
             canopy: rain * area * withheld,
             water: rain * area * water,
-            runoff: runoff * area,
-            ground: ground * area,
+            runoff: if bare.is_some() { runoff * area } else { 0.0 },
+            ground: if bare.is_some() { ground * area } else { 0.0 },
+            weights: weights.map(|w| w * area),
         }
+    }
+
+    /// The cells of a catchment with ground at or above `lo` and below `hi`: their count
+    /// and their summed weights on the stored reaches, by their exposure at the ground.
+    pub(crate) fn band(&self, slot: usize, lo: f64, hi: f64) -> (usize, [f64; 3]) {
+        let (s, e) = (self.start[slot] as usize, self.start[slot + 1] as usize);
+        let z = &self.z[s..e];
+        let (i, j) = (
+            z.partition_point(|&v| v < lo),
+            z.partition_point(|&v| v < hi),
+        );
+        if j <= i {
+            return (0, [0.0; 3]);
+        }
+        let open = |m: usize| if m == 0 { 0 } else { self.open[s + m - 1] };
+        let mut weights = [f64::from(open(j) - open(i)), 0.0, 0.0];
+        let (a, b) = (
+            self.shaded_start[slot] as usize,
+            self.shaded_start[slot + 1] as usize,
+        );
+        let from = a + self.shaded[a..b].partition_point(|&(pos, _)| (pos as usize) < i);
+        let to = a + self.shaded[a..b].partition_point(|&(pos, _)| (pos as usize) < j);
+        for c in from..to {
+            let w = reach_weights(self.steps[self.shaded[c].1 as usize].1);
+            for r in 0..3 {
+                weights[r] += w[r];
+            }
+        }
+        (j - i, weights)
     }
 }
 

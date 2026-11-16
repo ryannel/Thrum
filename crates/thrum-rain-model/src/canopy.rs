@@ -290,3 +290,9 @@ fn lowest(triangles: &[[[f64; 3]; 3]], [x, z]: [f64; 2]) -> Option<f64> {
         })
         .reduce(f64::min)
 }
+
+impl thrum_water_model::Exposure for Canopy {
+    fn exposure(&self, point: [f64; 3]) -> f64 {
+        Self::exposure(self, point)
+    }
+}

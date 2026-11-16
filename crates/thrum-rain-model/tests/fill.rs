@@ -153,7 +153,7 @@ fn puddles_fill_spill_merge_and_part() {
 
     let mut state = RainState::new(&tree);
     let mut report = TickReport::default();
-    let class = GroundClass { percolation: 0.0 };
+    let class = GroundClass::bare(0.0);
     let rain = Rain {
         flux: mm_h(60.0),
         drying: 0.0,
@@ -273,14 +273,7 @@ fn a_fill_that_meets_at_the_mean_level_fails_the_bound() {
     loop {
         let before = state.clone();
         state
-            .step(
-                &tree,
-                rain,
-                GroundClass { percolation: 0.0 },
-                1.0,
-                1,
-                &mut report,
-            )
+            .step(&tree, rain, GroundClass::bare(0.0), 1.0, 1, &mut report)
             .expect("valid test case");
         if state
             .puddles()

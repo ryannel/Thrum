@@ -27,9 +27,7 @@ fn the_point_test_matches_a_flood_from_the_pits() {
             flux: 0.0,
             drying: mm_h(20.0 + r.uniform() * 200.0),
         };
-        let class = GroundClass {
-            percolation: mm_h(r.uniform() * 5.0),
-        };
+        let class = GroundClass::bare(mm_h(r.uniform() * 5.0));
         for t in 0..wet_ticks + dry_ticks {
             let input = if t < wet_ticks { rain } else { drying };
             state
@@ -87,7 +85,7 @@ fn one_level_for_the_whole_body_fails_the_flood() {
                 flux: mm_h(30.0),
                 drying: 0.0,
             },
-            GroundClass { percolation: 0.0 },
+            GroundClass::bare(0.0),
             1.0,
             300,
         );
