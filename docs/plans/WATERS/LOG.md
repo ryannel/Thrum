@@ -314,3 +314,7 @@
   reconciliation to recover delayed or absent notifications, retaining the original debounce and test deadline.
   [Recovery proof](../../evidence/WATERS/M12-watch-recovery.md) records the native trace, no-notification
   edit/add/remove/idle regression, cooker regressions and strict Clippy. The water model is unchanged.
+- 2026-11-16 Reconciled M12's retained watcher regression with creator's landed shared fixture and adaptive
+  sweep API after the merge gate found duplicate helper types. The original ten-second watchdog remains.
+  [Integration proof](../../evidence/WATERS/M12-watch-recovery.md#integration-with-the-creators-sweep)
+  records eight watcher tests, four server/watch tests and strict cooker Clippy passing on the Mac.
