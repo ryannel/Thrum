@@ -245,8 +245,8 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_sun_path",
           "ask": "Is the ceiling the design's, unchanged, with no bound taken from this milestone's own measurement? Do the probe points include the ground beside the bank on its far side from the Sun at 10\u00b0 and at 4\u00b0, where a level-layer rule gives no shade, and does the test show each wrong substitute fail there?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
           "verdict": "fail",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
