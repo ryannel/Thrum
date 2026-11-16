@@ -234,7 +234,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As dependable as a sync tool that must converge, such as Mutagen: no save is ever left uncooked, whatever the machine reports. On a healthy machine an edit shows as fast as it did before, and a watching cooker with nothing to do costs next to nothing."
     },
     {

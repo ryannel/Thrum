@@ -186,6 +186,35 @@
         "by": "plan",
         "task": "Main is broken for every merge: the Test command `./dev check` fails in the script's clean checkouts on thrum-cook's `th",
         "at": "2026-11-16T01:12:33Z"
+      },
+      "ready_for_review": {
+        "commit": "befaf3f758c87061510d8ec24cb20b5c6d1fd975",
+        "checked": "203503177fa4839e069227d65c577212dbb45780",
+        "at": "2026-11-16T04:45:29Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 474069,
+          "cached": 25773696,
+          "output": 106252,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 474069,
+          "cached": 25773696,
+          "output": 106252,
+          "turns": 1
+        }
       }
     }
   },
