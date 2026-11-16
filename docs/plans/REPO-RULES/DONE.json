@@ -80,7 +80,7 @@
     {
       "id": "M2",
       "name": "The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -94,8 +94,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -105,8 +105,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -116,8 +116,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/audit.json; docs/evidence/REPO-RULES/M2/store-tests.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -126,8 +126,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REPO-RULES/M2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -136,8 +136,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/size.json; docs/evidence/REPO-RULES/M2/audit.json; scripts/evidence_inventory.py",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         },
         {
           "id": "M2.6",
@@ -146,8 +146,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REPO-RULES/M2-review.md"
         }
       ]
     },
