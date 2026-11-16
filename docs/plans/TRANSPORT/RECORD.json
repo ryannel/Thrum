@@ -30,7 +30,7 @@
         {
           "verdict": "fail",
           "commit": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
-          "review": "docs/evidence/TRANSPORT/M1-review.md",
+          "review": "docs/evidence/TRANSPORT/M1-review-1.md",
           "items": {
             "M1.1": "pass",
             "M1.2": "pass",
@@ -67,6 +67,41 @@
             "turns": 1
           },
           "at": "2026-11-16T06:28:17Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "5b68d69480590089b8920389c214e202897d2c47",
+          "review": "docs/evidence/TRANSPORT/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 155072,
+            "cached": 2906368,
+            "output": 7846,
+            "turns": 1
+          },
+          "at": "2026-11-16T11:22:17Z"
         }
       ],
       "authorised": {
@@ -108,6 +143,13 @@
           "turns": 6,
           "cost_usd": 3.115014
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "5b68d69480590089b8920389c214e202897d2c47",
+        "review": "docs/evidence/TRANSPORT/M1-review.md",
+        "checked": "b99cd3d9e875eb37b05d0635ef843c582f4b80c9",
+        "at": "2026-11-16T11:22:17Z"
       }
     },
     "M2": {
