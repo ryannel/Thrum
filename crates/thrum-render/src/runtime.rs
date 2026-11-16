@@ -457,14 +457,33 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let _region = self
             .creations
             .region(CreationPhase::Transition, "contribution");
-        contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
-        let passes = contribution.passes();
+        let previous_views = self.prepared.take_secondary();
+        let declarations = contribution.secondary_view_slots();
+        if let Err(error) = self.prepared.prepare_secondary_views(
+            &self.queue,
+            &declarations,
+            self.render_extent,
+            &self.scene.local_lights,
+        ) {
+            self.prepared.restore_secondary(previous_views);
+            return Err(error.to_string());
+        }
+        if let Err(error) = contribution.rebuild(&self.prepared.scene_surface(&self.queue)) {
+            self.prepared.restore_secondary(previous_views);
+            return Err(error);
+        }
+        let mut passes = contribution.passes();
+        passes.upload |= !declarations.is_empty();
         let graph = contribution.effect_graph();
-        graph.validate()?;
+        if let Err(error) = graph.validate() {
+            self.prepared.restore_secondary(previous_views);
+            return Err(error);
+        }
         let previous_graph = self.prepared.effect_graph().clone();
         self.prepared.set_effect_graph(graph);
         if let Err(error) = self.declare_contribution_passes(passes) {
             self.prepared.set_effect_graph(previous_graph);
+            self.prepared.restore_secondary(previous_views);
             return Err(format!("contribution passes: {error}"));
         }
         self.contribution = Some(contribution);
@@ -480,18 +499,33 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Rebuild members before accepting their new generation's declarations. Optional
     /// content can refuse reconstruction; the base scene remains usable when detached.
     fn rebuild_contribution(&mut self) {
+        let had_views = self.prepared.secondary_view_count() != 0;
+        let previous_views = self.prepared.take_secondary();
         let rebuilt = self.contribution.as_mut().map(|contribution| {
+            self.prepared
+                .prepare_secondary_views(
+                    &self.queue,
+                    &contribution.secondary_view_slots(),
+                    self.render_extent,
+                    &self.scene.local_lights,
+                )
+                .map_err(|error| error.to_string())?;
             contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
             let graph = contribution.effect_graph();
             graph.validate()?;
-            Ok::<_, String>((graph, contribution.passes()))
+            let mut passes = contribution.passes();
+            passes.upload |= self.prepared.secondary_view_count() != 0;
+            Ok::<_, String>((graph, passes))
         });
         let Some(rebuilt) = rebuilt else {
+            self.prepared.restore_secondary(previous_views);
             return;
         };
         let result = rebuilt.and_then(|(graph, passes)| {
             if graph == *self.prepared.effect_graph()
                 && passes == self.prepared.contribution_passes()
+                && !had_views
+                && self.prepared.secondary_view_count() == 0
             {
                 return Ok(());
             }
@@ -503,6 +537,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             })
         });
         if let Err(error) = result {
+            self.prepared.restore_secondary(previous_views);
             self.contribution = None;
             self.contribution_error = Some(error);
         }

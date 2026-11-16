@@ -314,8 +314,8 @@ target_cost = "Runtime: one hash per HEAD/manifest name check and optional produ
 [external_dependencies.bytemuck]
 requirement = "=1.25.2"
 license = "Zlib OR Apache-2.0 OR MIT"
-purpose = "Checked zero-copy casts between mapped G5 product bytes and repr(C) section element types; whole Pod host/WGSL records in the GPU sea"
-target_cost = "Already transitive in the locked closure; derive macro at build time, no runtime cost beyond alignment/length checks once per product open or zero-copy byte views for sea uploads"
+purpose = "Checked zero-copy casts between mapped G5 product bytes and repr(C) section element types; whole Pod host/WGSL records in the GPU sea and typed render uniform records"
+target_cost = "Already transitive in the locked closure; derive macro at build time, no runtime cost beyond alignment/length checks once per product open or zero-copy byte views for sea and render uploads"
 
 [external_dependencies.memmap2]
 requirement = "=0.9.12"

@@ -61,7 +61,8 @@ pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
 pub use views::{
-    SecondaryViewError, SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
+    SecondaryView, SecondaryViewError, SecondaryViewRecord, SecondaryViewRequest,
+    SecondaryViewSlot, ViewAir, ViewClipPlane,
 };
 
 /// The scene forward shader's material hook point: the fragment's one read of its material
@@ -115,7 +116,12 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 }
 
 /// Read-only description of a prepared scene's forward pass.
+#[derive(Clone)]
 pub struct SceneSurface<'a> {
+    /// Only this contribution's declared slots, in declaration order. Clone a handle
+    /// in `rebuild`, ask it in `encode_upload`, and bind its textures and record in
+    /// the same frame's own passes. A handle from a replaced surface is obsolete.
+    pub secondary_views: &'a [SecondaryView],
     /// The prepared light group and shader include the shared `cloud_factor`
     /// operation. Volume contributions apply it once per lit march sample.
     pub sun_optical_depth: bool,
@@ -177,6 +183,7 @@ impl SceneSurface<'_> {
 }
 
 /// Pipeline inputs for the scene's depth-only Sun cascades.
+#[derive(Clone, Copy)]
 pub struct SceneShadowSurface<'a> {
     /// Group 0 contains the cascade's column-major world-to-clip matrix at binding 0.
     pub view_layout: &'a wgpu::BindGroupLayout,
@@ -257,6 +264,12 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Fixed slot declarations for this contribution. These are admitted and
+    /// prepared before `rebuild`; their handles are on `SceneSurface`.
+    /// Returning no slots retains the original shaders, resources and graph.
+    fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+        Vec::new()
+    }
     /// Whether a declared late compute pass runs, asked after upload. Render composition
     /// always runs because it loads the scene attachments.
     fn after_opaque_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {

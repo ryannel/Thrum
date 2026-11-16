@@ -44,6 +44,7 @@ mod readback;
 mod scene_apply;
 mod scene_graph;
 mod scene_source;
+mod secondary;
 mod shadow;
 pub(crate) mod stars;
 mod taau;
@@ -630,6 +631,9 @@ pub struct PreparedSynthetic {
     /// Camera culling pipelines; `None` is the Direct oracle with no extra resources.
     visibility: Option<VisibilityPrepared>,
     stars: Option<StarPrepared>,
+    secondary: Vec<secondary::SecondaryPrepared>,
+    secondary_handles: Vec<crate::contribution::SecondaryView>,
+    secondary_sources: Vec<SyntheticPointLight>,
 }
 
 struct SceneFamily;
@@ -1133,50 +1137,12 @@ impl PreparedSynthetic {
             0,
             &scene.view.pack_view(&scene.view, exposure),
         );
-        let mut view_entries = vec![
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX
-                    | wgpu::ShaderStages::FRAGMENT
-                    | wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: true,
-                    min_binding_size: wgpu::BufferSize::new(VIEW_BYTES as u64),
-                },
-                count: None,
-            },
-            uniform_layout(
-                1,
-                AUX_BYTES as u64,
-                wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
-            ),
-        ];
-        if meshes.is_some() {
-            view_entries.push(BucketRoute::view_layout_entry(
-                camera_culling::VISIBLE_BINDING,
-            ));
-        } else {
-            view_entries.extend(camera_culling::view_layout_entry(camera_mode));
-        }
-        if shadow_enabled {
-            view_entries.extend([
-                uniform_layout(2, shadow::SAMPLE_BYTES as u64, wgpu::ShaderStages::FRAGMENT),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Depth,
-                        view_dimension: wgpu::TextureViewDimension::D2Array,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ]);
-            if matches!(lighting, FrameLighting::Atmosphere(_)) {
-                view_entries.push(air_shadow::VIEW_ENTRY);
-            }
-        }
+        let view_entries = forward::view_entries(
+            meshes.is_some(),
+            camera_mode,
+            shadow_enabled,
+            matches!(lighting, FrameLighting::Atmosphere(_)),
+        );
         let view_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic view and target aux"),
             entries: &view_entries,
@@ -1308,87 +1274,16 @@ impl PreparedSynthetic {
             );
             ClusterCompute::new(device, bounds, &cluster_heads, &cluster_indices)
         });
-        let mut light_bindings = vec![
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: directional.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: local_lights.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: cluster_heads.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: cluster_indices.as_entire_binding(),
-            },
-        ];
-        if let Some(atmosphere) = &atmosphere {
-            let (views, sampler, uniform) = atmosphere.aerial_sampled();
-            let (reflection, dfg, reflection_sampler) = atmosphere.reflection_sampled();
-            light_bindings.extend([
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::TextureView(views[0]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 5,
-                    resource: wgpu::BindingResource::TextureView(views[1]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 6,
-                    resource: wgpu::BindingResource::Sampler(sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 7,
-                    resource: uniform.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 8,
-                    resource: wgpu::BindingResource::TextureView(reflection),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 9,
-                    resource: wgpu::BindingResource::TextureView(dfg),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 10,
-                    resource: wgpu::BindingResource::Sampler(reflection_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 11,
-                    resource: wgpu::BindingResource::TextureView(atmosphere.transmittance_view()),
-                },
-            ]);
+        let light = forward::LightBindings {
+            directional: &directional,
+            local: &local_lights,
+            heads: &cluster_heads,
+            indices: &cluster_indices,
+            atmosphere: atmosphere.as_ref(),
+            cloud: cloud.as_ref(),
+            aerial: None,
         }
-        if let Some(cloud) = &cloud {
-            light_bindings.extend([
-                wgpu::BindGroupEntry {
-                    binding: 13,
-                    resource: wgpu::BindingResource::TextureView(&cloud.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 14,
-                    resource: cloud.uniform.as_entire_binding(),
-                },
-            ]);
-        }
-        let light = std::array::from_fn(|side| {
-            light_bindings.push(wgpu::BindGroupEntry {
-                binding: 12,
-                resource: exposure_samples[side].as_entire_binding(),
-            });
-            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("synthetic clustered light lists"),
-                layout: &light_layout,
-                entries: &light_bindings,
-            });
-            light_bindings.pop();
-            group
-        });
+        .bind(device, &light_layout, &exposure_samples);
         let mut entries = vec![storage_layout(
             0,
             wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
@@ -1804,6 +1699,9 @@ impl PreparedSynthetic {
             history,
             visibility,
             stars,
+            secondary: Vec::new(),
+            secondary_handles: Vec::new(),
+            secondary_sources: Vec::new(),
             exposure: exposure_resolve,
             history_source: None,
             instance_upload,
@@ -1874,6 +1772,11 @@ impl PreparedSynthetic {
             + u32::from(self.contribution_passes.compute)
             + u32::try_from(self.effect_graph.passes.len()).unwrap_or(u32::MAX)
             + u32::try_from(self.effect_graph.after_opaque.len()).unwrap_or(u32::MAX)
+            + self
+                .secondary
+                .iter()
+                .map(secondary::SecondaryPrepared::pass_count)
+                .sum::<u32>()
             + self
                 .atmosphere
                 .as_ref()
@@ -2053,6 +1956,9 @@ impl PreparedSynthetic {
                 self.atmosphere.is_some(),
             ),
         );
+        if !self.secondary.is_empty() {
+            self.secondary_sources.clone_from(&scene.local_lights);
+        }
         self.pending_view = Some(view);
         self.frame_revision = next_revision;
         target.frame_revision = self.frame_revision;
@@ -2332,6 +2238,9 @@ impl PreparedSynthetic {
         if generation != self.key.device_generation {
             return Err(RenderError::StaleTarget);
         }
+        for view in &self.secondary_handles {
+            view.begin();
+        }
         let graph = target.graph(readback.is_some());
         if graph.plan().device_generation != generation {
             return Err(RenderError::StaleTarget);
@@ -2425,6 +2334,7 @@ fn storage_buffer(
 const REACTIVE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 
 struct TargetResources {
+    secondary: Vec<secondary::Resources>,
     native: Option<native_witness::graph::Resources>,
     refraction: Option<ResourceId>,
     pre_tone: PreToneInput,
@@ -2449,6 +2359,7 @@ struct SceneGraphs<G> {
 /// Generation-bound offscreen target. Retain while encoded/submitted work uses
 /// it; actual old/new allocation retirement belongs to the executor's fences.
 pub struct OffscreenTarget {
+    secondary: Vec<wgpu::BindGroup>,
     pub(crate) native: Option<Arc<native_witness::Binding>>,
     effects: after_opaque::TargetEffects,
     capture_source: CaptureSource,
@@ -2647,6 +2558,11 @@ impl OffscreenTarget {
             ]);
         }
         view_entries.extend(air_shadow.as_ref().map(AirShadowTarget::view_entry));
+        let secondary = prepared
+            .secondary
+            .iter()
+            .map(|slot| slot.target(device, &view_entries, prepared.bucket_route.as_ref()))
+            .collect();
         let view_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("synthetic view and target aux"),
             layout: &prepared.view_layout,
@@ -2662,6 +2578,7 @@ impl OffscreenTarget {
         let day_graphs = day.bind(prepared)?;
         let night_graphs = night.map(|graphs| graphs.bind(prepared)).transpose()?;
         Ok(Self {
+            secondary,
             native,
             capture_source,
             effects,

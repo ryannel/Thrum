@@ -137,7 +137,7 @@ pub(crate) fn pass_durations(
         ) {
             continue;
         }
-        if pass.name.starts_with("effect ") {
+        if pass.name.starts_with("effect ") || pass.name.starts_with(super::secondary::PREFIX) {
             // These are prepared contribution passes. Keep their original names in
             // SceneGpuTimings below; they do not belong to the fixed scene sequence.
         } else if pass.name.as_ref() == super::AIR_SHADOW_PASS {

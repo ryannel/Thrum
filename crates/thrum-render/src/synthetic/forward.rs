@@ -3,10 +3,69 @@
 //! prepass shares with it.
 
 use super::mesh_arena::MeshId;
+mod light;
 use super::{
     CompiledPass, GpuTimings, GraphColorAttachment, GraphDepthAttachment, OffscreenTarget,
     PreparedSynthetic, Projection, RenderError, SceneContribution,
 };
+pub(super) use light::LightBindings;
+
+pub(super) fn view_entries(
+    meshes: bool,
+    camera_mode: super::CullMode,
+    shadowed: bool,
+    atmosphere: bool,
+) -> Vec<wgpu::BindGroupLayoutEntry> {
+    let mut entries = vec![
+        wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX
+                | wgpu::ShaderStages::FRAGMENT
+                | wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: true,
+                min_binding_size: wgpu::BufferSize::new(super::VIEW_BYTES as u64),
+            },
+            count: None,
+        },
+        super::uniform_layout(
+            1,
+            super::AUX_BYTES as u64,
+            wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE,
+        ),
+    ];
+    if meshes {
+        entries.push(super::BucketRoute::view_layout_entry(
+            super::camera_culling::VISIBLE_BINDING,
+        ));
+    } else {
+        entries.extend(super::camera_culling::view_layout_entry(camera_mode));
+    }
+    if shadowed {
+        entries.extend([
+            super::uniform_layout(
+                2,
+                super::shadow::SAMPLE_BYTES as u64,
+                wgpu::ShaderStages::FRAGMENT,
+            ),
+            wgpu::BindGroupLayoutEntry {
+                binding: 3,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Depth,
+                    view_dimension: wgpu::TextureViewDimension::D2Array,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ]);
+        if atmosphere {
+            entries.push(super::air_shadow::VIEW_ENTRY);
+        }
+    }
+    entries
+}
 
 impl PreparedSynthetic {
     pub(super) fn encode_opaque(

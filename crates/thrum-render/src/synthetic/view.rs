@@ -454,6 +454,10 @@ impl SyntheticView {
         (self.raster_jitter || self.reconstruction()) && self.jitter_enabled()
     }
 
+    pub(super) fn raster_phase(&self) -> u32 {
+        self.jitter_sample.map_or(0, |(phase, _)| phase)
+    }
+
     pub(super) fn raster_projection(&self) -> Mat4 {
         if self.raster_jitter_enabled() {
             self.jittered_projection()

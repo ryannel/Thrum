@@ -21,6 +21,33 @@ pub(super) struct CompiledScene {
 }
 
 impl SceneGraphs<CompiledGraph> {
+    fn compile_night(
+        graph: &mut FrameGraph,
+        stars: Option<usize>,
+        readback: Pass,
+        capabilities: &crate::capabilities::DeviceCapabilities,
+        keys: &BTreeSet<PipelineKey>,
+        capture: CaptureSource,
+        surface: Option<&(ResourceId, Pass)>,
+        consumers: [Option<usize>; 4],
+    ) -> Result<Option<Self>, RenderError> {
+        let Some(stars) = stars else {
+            return Ok(None);
+        };
+        for consumer in consumers.into_iter().flatten() {
+            graph.dependency(stars, consumer)?;
+        }
+        graph.validate_capabilities(capabilities)?;
+        Ok(Some(Self::compile(
+            graph,
+            readback,
+            capabilities.generation(),
+            keys,
+            (capture == CaptureSource::SceneLinear).then_some(stars),
+            surface,
+        )?))
+    }
+
     fn compile(
         graph: &mut FrameGraph,
         readback: Pass,
@@ -273,7 +300,7 @@ impl PreparedSynthetic {
         );
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
         let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
-        let late_uniforms = accesses
+        let mut late_uniforms = accesses
             .iter()
             .filter(|access| access.kind == AccessKind::UniformRead)
             .cloned()
@@ -301,6 +328,7 @@ impl PreparedSynthetic {
         )?;
         self.append_cluster_reads(&mut graph, &mut accesses, &mut prepared_keys)?;
         self.append_material_textures(&mut graph, &mut accesses)?;
+        let secondary_shared = self.secondary_inputs(&accesses, &route);
         let [depth, scene, motion, reactive] =
             self.forward_attachments(&mut graph, &mut accesses, [width, height], capture_source)?;
         let camera = self.append_camera_visibility(
@@ -317,6 +345,14 @@ impl PreparedSynthetic {
             0..exposure::SAMPLE_BYTES,
             AccessKind::UniformRead,
         ));
+        let secondary = self.append_secondary_consumers(
+            &mut graph,
+            &mut prepared_keys,
+            secondary_shared,
+            &exposure_sample,
+            &mut accesses,
+            &mut late_uniforms,
+        )?;
         let forward = graph.pass(Pass {
             name: "synthetic forward opaque".into(),
             scope: PassScope::View(1),
@@ -416,34 +452,26 @@ impl PreparedSynthetic {
                 (&depth, &scene, &motion, &reactive, &exposure_sample),
             )?
         };
-        let night = if let Some(stars) = stars {
-            if let Some(native) = &native {
-                graph.dependency(stars, native.pass)?;
-            }
-            // Display reads the composite, even though its declaration precedes it.
-            graph.dependency(stars, display_pass)?;
-            if let Some(pass) = temporal.witness_pass {
-                graph.dependency(stars, pass)?;
-            }
-            if let Some(taau) = &taau {
-                graph.dependency(stars, taau.pass)?;
-            }
-            graph.validate_capabilities(&self.capabilities)?;
-            Some(SceneGraphs::compile(
-                &mut graph,
-                readback,
-                generation,
-                &prepared_keys,
-                (capture_source == CaptureSource::SceneLinear).then_some(stars),
-                surface.as_ref(),
-            )?)
-        } else {
-            None
-        };
+        let night = SceneGraphs::compile_night(
+            &mut graph,
+            stars,
+            readback,
+            &self.capabilities,
+            &prepared_keys,
+            capture_source,
+            surface.as_ref(),
+            [
+                native.as_ref().map(|native| native.pass),
+                Some(display_pass),
+                temporal.witness_pass,
+                taau.as_ref().map(|taau| taau.pass),
+            ],
+        )?;
         Ok(CompiledScene {
             day,
             night,
             ids: TargetResources {
+                secondary,
                 native,
                 refraction: late.copy,
                 pre_tone,
@@ -1044,6 +1072,13 @@ impl PreparedSynthetic {
         let mut bindings = Vec::with_capacity(graph.pass_order.len());
         for (id, pass) in graph.pass_bindings() {
             let binding = match pass.pipeline {
+                Some(key) if super::secondary::index(key, self.secondary.len()).is_some() => {
+                    let (index, stage) = super::secondary::index(key, self.secondary.len())
+                        .ok_or(RenderError::GraphPassMismatch)?;
+                    RecordBinding::<SceneFamily>::new(id, stage.kind(), move |frame, pass| {
+                        frame.secondary_stage(index, stage, pass)
+                    })
+                }
                 Some(key)
                     if key.role >= 3000
                         && key.role

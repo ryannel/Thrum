@@ -2,6 +2,100 @@
 
 use crate::synthetic::SyntheticView;
 use glam::Vec3;
+use std::sync::{Arc, Mutex};
+
+mod record;
+pub use record::SecondaryViewRecord;
+
+/// A declared slot lent only to its owning contribution. Physical attachments
+/// are allocated at preparation; asking changes no pipeline or resource.
+#[derive(Clone)]
+pub struct SecondaryView {
+    pub(crate) colour: wgpu::Texture,
+    pub(crate) depth: wgpu::Texture,
+    pub(crate) colour_view: wgpu::TextureView,
+    pub(crate) depth_view: wgpu::TextureView,
+    pub(crate) record: wgpu::Buffer,
+    pub(crate) request: Arc<Mutex<Option<SecondaryViewRequest>>>,
+    pub(crate) maximum_extent: [u32; 2],
+    pub(crate) generation: u64,
+}
+
+impl SecondaryView {
+    /// Ask for this slot in the contribution's upload callback. The request
+    /// lasts for that recording alone, including a discarded recording or capture.
+    /// Each upload starts idle. A second ask in that upload replaces the first.
+    /// # Errors
+    /// Refuses a viewport larger than the prepared slot, leaving the old ask intact.
+    pub fn request(&self, request: &SecondaryViewRequest) -> Result<(), SecondaryViewError> {
+        if request
+            .extent
+            .iter()
+            .zip(self.maximum_extent)
+            .any(|(&side, maximum)| side > maximum)
+        {
+            return Err(SecondaryViewError::InvalidExtent);
+        }
+        *self
+            .request
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(*request);
+        Ok(())
+    }
+
+    /// Scene-encoded RGBA16Float opaque colour. Coverage is alpha; uncovered
+    /// colour is zero. Read only in a frame where this slot was asked for.
+    #[must_use]
+    pub fn colour(&self) -> &wgpu::TextureView {
+        &self.colour_view
+    }
+
+    /// Standard reverse-Z Depth32Float, cleared to zero. Its world reconstruction
+    /// uses the inverse jittered matrix in this slot's record.
+    #[must_use]
+    pub fn depth(&self) -> &wgpu::TextureView {
+        &self.depth_view
+    }
+
+    /// Uniform containing [`SecondaryViewRecord`], updated before this view draws.
+    /// Bind using [`Self::record_wgsl`] in the consumer's shader.
+    #[must_use]
+    pub fn record(&self) -> &wgpu::Buffer {
+        &self.record
+    }
+
+    /// WGSL declaration of the record. The consumer chooses its group and binding.
+    #[must_use]
+    pub fn record_wgsl() -> &'static str {
+        include_str!("views/record.wgsl")
+    }
+
+    /// Largest viewport and physical attachment extent.
+    #[must_use]
+    pub fn maximum_extent(&self) -> [u32; 2] {
+        self.maximum_extent
+    }
+
+    /// Device generation which owns all resources of this handle.
+    #[must_use]
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+
+    pub(crate) fn asked(&self) -> Option<SecondaryViewRequest> {
+        *self
+            .request
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    pub(crate) fn begin(&self) {
+        *self
+            .request
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+    }
+}
 
 /// Where the aerial transport of a secondary view starts.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -99,6 +193,12 @@ impl SecondaryViewSlot {
         if slots.len() > 4 {
             return Err(SecondaryViewError::SlotLimit);
         }
+        if !slots.is_empty()
+            && (limits.max_bindings_per_bind_group < 7
+                || limits.max_uniform_buffer_binding_size < size_of::<SecondaryViewRecord>() as u64)
+        {
+            return Err(SecondaryViewError::RecordLimit);
+        }
         if render_extent.contains(&0)
             || slots.iter().any(|slot| {
                 slot.extent(render_extent)
@@ -194,6 +294,10 @@ impl SecondaryViewRequest {
 pub enum SecondaryViewError {
     /// The profile permits at most four slots for the whole scene.
     SlotLimit,
+    /// The device cannot bind the reconstruction record alongside view inputs.
+    RecordLimit,
+    /// The per-view local-light table cannot be prepared within the device profile.
+    LightingLimit,
     /// A scale, viewport or device texture extent is invalid.
     InvalidExtent,
     /// A request must use a checked rigid perspective camera.
@@ -212,6 +316,8 @@ impl std::fmt::Display for SecondaryViewError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Self::SlotLimit => "secondary view slot limit (four) exceeded",
+            Self::RecordLimit => "secondary view record exceeds device binding limits",
+            Self::LightingLimit => "secondary view local-light table exceeds its profile",
             Self::InvalidExtent => "invalid secondary view extent",
             Self::InvalidCamera => "secondary view camera must be rigid and perspective",
             Self::InvalidClipPlane => "invalid secondary view clip plane",

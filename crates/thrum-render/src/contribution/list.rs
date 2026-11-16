@@ -22,6 +22,12 @@ impl SceneContributions {
 }
 
 impl SceneContribution for SceneContributions {
+    fn secondary_view_slots(&self) -> Vec<super::SecondaryViewSlot> {
+        self.entries
+            .iter()
+            .flat_map(|entry| entry.secondary_view_slots())
+            .collect()
+    }
     fn quality_knobs(&self) -> Vec<super::QualityKnob> {
         self.entries
             .iter()
@@ -170,8 +176,16 @@ impl SceneContribution for SceneContributions {
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
         self.pass_counts.clear();
         self.after_counts.clear();
+        let mut first = 0;
         for entry in &mut self.entries {
-            entry.rebuild(surface)?;
+            let end = first + entry.secondary_view_slots().len();
+            let mut member = surface.clone();
+            member.secondary_views = surface
+                .secondary_views
+                .get(first..end)
+                .ok_or_else(|| "secondary view declaration changed during rebuild".to_owned())?;
+            entry.rebuild(&member)?;
+            first = end;
             self.pass_counts.push(entry.effect_graph().passes.len());
             self.after_counts
                 .push(entry.effect_graph().after_opaque.len());
