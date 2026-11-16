@@ -38,7 +38,8 @@
         "anchor": "exact-baselines",
         "module": "BASELINE-GUARD",
         "milestone": "M2"
-      }
+      },
+      "pin": "fdf0559503e9392b8ff39007bfb3ef434d263aadceaeb24ff4d5351faa1806a6"
     },
     {
       "id": "chrome-day-sdr",
@@ -57,7 +58,8 @@
         "anchor": "exact-baselines",
         "module": "BASELINE-GUARD",
         "milestone": "M2"
-      }
+      },
+      "pin": "5f1423a1c6fb118e20f230f1f68f0e38dc31bfb67ef250c637fdebbf1fccac3d"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -76,7 +78,8 @@
         "anchor": "exact-baselines",
         "module": "BASELINE-GUARD",
         "milestone": "M2"
-      }
+      },
+      "pin": "bfb3826fe15d0b95a08bf24cd36a444d05167f93310c530629980ababac2a20b"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,7 +98,8 @@
         "anchor": "exact-baselines",
         "module": "BASELINE-GUARD",
         "milestone": "M2"
-      }
+      },
+      "pin": "93177f804c2575211302d88f3b66331786d617fb646538b78d0656dbe173f207"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -114,7 +118,8 @@
         "anchor": "exact-baselines",
         "module": "BASELINE-GUARD",
         "milestone": "M2"
-      }
+      },
+      "pin": "912b80eff538091e6eea9e2168dca1d84b674558c89372a2707011861ce57a6e"
     }
   ],
   "retired": []
