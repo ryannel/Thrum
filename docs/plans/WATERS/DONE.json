@@ -327,7 +327,7 @@
           "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "docs/evidence/WATERS/M2-opinions.md",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
