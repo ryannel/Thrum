@@ -227,6 +227,10 @@ rustup run 1.99.1 cargo install wasm-bindgen-cli --version 0.2.129 --locked
 ```
 
 Keep the scene command running while the page is open; Ctrl-C stops both servers and the watcher.
+Stop a scene's Mac command before starting its web command, or stop the web command before
+starting the Mac command. Both watch the same cooked store; a second watcher refuses it as
+locked by another cooker. The direct offscreen recipe above can read an already cooked store
+while its web watcher runs.
 The Sun controls come from the same model as the Mac panel. Save a mesh or texture to see it
 re-cooked without reloading the page. A refused edit keeps the last drawn generation and reports
 the asset to fix. Append `?params=starter.params.json` to apply a parameter file. Each refused
