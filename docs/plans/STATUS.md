@@ -8,7 +8,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Needs you now
 
-- APPLE-TILE M10 A stateful native segment composes inside one submission: Blocked: Needs Access, D10.5: ATTENDED SETUP: the APPLE-TILE M3 surface path (moved here from M3 D3.5 by the owner, 14 Nov 2026) functions in a real Mac game window under both native recipes, including moving input, resize and replacement. This is required functional proof, separate from Mac M2 cadence. (Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants.). You approve it at the machine, in a visible run the lead starts
+- Nothing.
 
 ### Choices made for you
 
@@ -239,6 +239,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
+- T2-CAPTURE's design: Design Ready for Review · [design](T2-CAPTURE/DESIGN.md) · [plan](T2-CAPTURE/PLAN.md)
+- A stateful native segment composes inside one submission (APPLE-TILE M10): In Progress · [plan](APPLE-TILE/PLAN.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3): In Progress · [plan](CULLING/PLAN.md) · [latest review](../evidence/CULLING/M3-review.md)
@@ -246,7 +248,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh (WATERS M2): Not Started · [plan](WATERS/PLAN.md)
 - A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged (SCENE-VIEWS M1): In Progress · [plan](SCENE-VIEWS/PLAN.md)
 - CLOUDS M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn: Blocked: Needs Dependency: The planner must settle and assign the shared display-time interface change before M2.7’s uneven 60× shade motion can be completed. A planner adds it to the module that owns it
-- On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on (RIVERS M2): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../evidence/RIVERS/M2-review.md)
+- On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on (RIVERS M2): Ready for Review · [plan](RIVERS/PLAN.md) · [latest review](../evidence/RIVERS/M2-review.md)
 - On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do (PUDDLES M2): In Progress · [plan](PUDDLES/PLAN.md) · [latest review](../evidence/PUDDLES/M2-review.md)
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2): In Progress · [plan](SIM-2D/PLAN.md)
 - A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code (TRANSPORT M2): In Progress · [plan](TRANSPORT/PLAN.md)
@@ -293,7 +295,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A repeatable offscreen valley proves the comparison path (APPLE-TILE M0), 11 Nov · [review](../evidence/APPLE-TILE/M0-review.md)
 - iOS simulator engine motion without desktop capture (T2-CAPTURE M2), 10 Nov · [review](../evidence/T2-CAPTURE/M2-review.md)
 - Cooked scene draws on adapters without indirect execution, selected from the capability record (COOKED-DRAW M1), 9 Nov · [review](../evidence/COOKED-DRAW/M1-review.md)
-- Scene and internal render size follow the oriented iOS surface (PLATFORM-RUNTIME-IOS M7), 9 Nov · [review](../evidence/PLATFORM-RUNTIME-IOS/M7-review.md)
 - The latest build report: [2026-11-13](../evidence/build-reports/2026-11-13.md)
 
 ## All modules
@@ -302,9 +303,9 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 4 · Invalid |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Design Ready for Review |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
-| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · Blocked: Needs Access |
+| 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M10 of 7 · In Progress |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
@@ -317,7 +318,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M2 of 16 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M1 of 3 · In Progress |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M2 of 16 · Blocked: Needs Dependency |
-| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M2 of 7 · In Progress |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M2 of 7 · Ready for Review |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · In Progress |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M2 of 3 · In Progress |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M2 of 2 · In Progress |
