@@ -37,6 +37,7 @@ pub(super) fn run(output: &Path, scenario: &str) -> Result<(), String> {
             | "reconstruction-stars"
             | "reconstruction-scrub"
             | "clouds-drift"
+            | "clouds-still"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -445,7 +446,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     let mut last_sample_time = Duration::ZERO;
     let (hard_end, soft_end, world_end) = scenario_bounds(scenario);
     loop {
-        if mode == "still" {
+        if mode == "still" || scenario == "clouds-still" {
             break;
         }
         let opportunity = if active_pacing {

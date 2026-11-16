@@ -535,7 +535,7 @@ impl FrameHost {
         };
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
-        source.cloud_input = cloud_input.clone();
+        source.cloud_input.clone_from(&cloud_input);
         let inner = Runtime::new(
             capabilities,
             queue,
