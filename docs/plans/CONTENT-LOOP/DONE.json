@@ -182,7 +182,7 @@
           "ask": "Compare `crates/thrum-cook/tests/serve_and_watch.rs` with commit `a7390265`. Is `the_watcher_publishes_an_edited_source` the same test, with no wait lengthened, no retry added and no assertion removed or loosened?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/review-repair.log.gz",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
@@ -234,15 +234,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As dependable as a sync tool that must converge, such as Mutagen: no save is ever left uncooked, whatever the machine reports. On a healthy machine an edit shows as fast as it did before, and a watching cooker with nothing to do costs next to nothing.",
-      "findings": [
-        {
-          "name": "unchanged_watcher_test_contains_added_logging",
-          "item": "M4.3",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As dependable as a sync tool that must converge, such as Mutagen: no save is ever left uncooked, whatever the machine reports. On a healthy machine an edit shows as fast as it did before, and a watching cooker with nothing to do costs next to nothing."
     },
     {
       "id": "M2",
