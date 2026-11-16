@@ -80,3 +80,35 @@ fn world_and_lane_sample_their_clock_without_advancing_it() {
         std::thread::sleep(Duration::from_millis(5));
     }
 }
+
+#[test]
+fn delayed_observation_retains_a_causal_pair_and_later_poll_reports_all_progress() {
+    let origin = Instant::now();
+    let world = ClockedWorld::new(Game(0), ClockConfig::default(), Duration::ZERO).expect("world");
+    let (mut lane, controls) = WorldLane::start(world, (), origin, || {}).expect("world lane");
+    let observation = Duration::ZERO;
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while controls.check_health().expect("authority remains active") < 2 {
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    let delayed = lane.poll(observation).expect("old observation");
+    assert_eq!(delayed.tick, 0);
+    assert_eq!(delayed.completed_ticks, 0);
+    assert_eq!(lane.current_page(), Some(0));
+    assert!(lane.is_interpolating());
+    assert_eq!(lane.display_phase_at(Duration::ZERO), 0.0);
+    // A future lead is presentation only; it still cannot select a future
+    // authority endpoint for the observation that admitted this frame.
+    assert_eq!(lane.display_phase_at(Duration::from_millis(50)), 3.0);
+    assert_eq!(lane.presentation_alpha_at(Duration::from_millis(50)), 1.0);
+    assert!(controls.check_health().expect("owner was never stopped") >= 2);
+
+    let fresh_observation = origin.elapsed();
+    let latest = lane.poll(fresh_observation).expect("fresh observation");
+    assert!(latest.tick >= 2);
+    assert_eq!(u64::from(latest.completed_ticks), latest.tick);
+    assert_eq!(lane.current_page(), Some(latest.tick));
+    let repeated = lane.poll(fresh_observation).expect("retained pair");
+    assert_eq!(repeated.completed_ticks, 0);
+}

@@ -5,6 +5,9 @@ use std::{num::NonZeroU32, time::Duration};
 
 const NANOS_PER_SECOND: u128 = 1_000_000_000;
 
+#[cfg(test)]
+mod tests;
+
 /// Fixed-step rate and finite work limits for one authoritative world.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ClockConfig {
@@ -93,6 +96,19 @@ pub struct ClockSample {
 }
 
 impl ClockSample {
+    /// An interpolating sample must not lend an endpoint from after the frame's
+    /// observation. Stopped samples consume no target and show their endpoint.
+    pub(crate) fn accepts_observation(self, observation: Duration) -> bool {
+        !self.interpolate
+            || observation >= self.last_time
+            || self.fractional_tick
+                >= self
+                    .last_time
+                    .saturating_sub(observation)
+                    .as_nanos()
+                    .saturating_mul(u128::from(self.tick_hz))
+    }
+
     /// Whether this sample consumes a target rather than showing an endpoint.
     pub fn is_interpolating(self) -> bool {
         self.interpolate

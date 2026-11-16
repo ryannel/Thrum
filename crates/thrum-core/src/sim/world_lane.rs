@@ -404,7 +404,11 @@ impl<T: WorldTask> WorldLane<T> {
         Ok((lane, controls))
     }
 
-    /// Poll metadata and the matching latest page without waiting for the owner.
+    /// Poll metadata and its matching page without waiting for the owner.
+    /// An interpolating endpoint newer than `now` leaves the previous pair in
+    /// place: render-owner preemption must not make its observation sample a
+    /// future tick. Authority continues independently; a later poll sees progress.
+    /// `now` uses the owner's origin and advances monotonically.
     /// # Errors
     /// Returns a retained authority or synchronization fault.
     pub fn poll(&mut self, now: Duration) -> Result<WorldAdvance, WorldLaneFault> {
@@ -414,14 +418,16 @@ impl<T: WorldTask> WorldLane<T> {
                 if let Some(error) = &state.fault {
                     return Err(error.clone());
                 }
-                if state.snapshot.page_sequence != self.snapshot.page_sequence {
-                    self.page = state.page.as_ref().map(|page| WorldPublication {
-                        id: page.id,
-                        timeline: page.timeline,
-                        page: page.page.clone(),
-                    });
+                if state.snapshot.clock.accepts_observation(now) {
+                    if state.snapshot.page_sequence != self.snapshot.page_sequence {
+                        self.page = state.page.as_ref().map(|page| WorldPublication {
+                            id: page.id,
+                            timeline: page.timeline,
+                            page: page.page.clone(),
+                        });
+                    }
+                    self.snapshot = state.snapshot;
                 }
-                self.snapshot = state.snapshot;
             }
             Err(TryLockError::WouldBlock) => {}
             Err(TryLockError::Poisoned(_)) => return Err(WorldLaneFault::Poisoned),
@@ -465,15 +471,15 @@ impl<T: WorldTask> WorldLane<T> {
         })
     }
 
-    /// Latest authority tick.
+    /// Authority tick retained by the last observation.
     pub fn tick(&self) -> u64 {
         self.snapshot.tick
     }
-    /// Latest authority epoch.
+    /// Authority epoch retained by the last observation.
     pub fn epoch(&self) -> WorldEpoch {
         self.snapshot.epoch
     }
-    /// Latest replay branch.
+    /// Replay branch retained by the last observation.
     pub fn timeline(&self) -> u64 {
         self.snapshot.timeline
     }

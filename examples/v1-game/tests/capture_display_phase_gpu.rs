@@ -8,6 +8,7 @@ use thrum_render::frame::TargetLeadStatus;
 #[test]
 #[cfg(target_os = "macos")]
 fn realtime_records_consumed_targets_including_expired_opportunity() {
+    use std::sync::{Arc, Mutex};
     use thrum_app::offscreen::{
         Offscreen,
         clock::{OpportunityClock, Timebase},
@@ -35,6 +36,7 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
         let mut counts = [0_usize; 6]; // future, late, invalid, clamped, bound, stopped
         let mut previous: Option<(f64, f64)> = None;
         let mut held_seen = false;
+        let callback_interval = Arc::new(Mutex::new(None));
         for index in 0..32 {
             let opportunity = clock.next_opportunity();
             let target = opportunity.target.saturating_duration_since(origin);
@@ -43,6 +45,16 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 if let Some(wait) = opportunity.target.checked_duration_since(Instant::now()) {
                     std::thread::sleep(wait + Duration::from_millis(2));
                 }
+            }
+            if index == 8 {
+                // A real completion callback delays the render owner's poll
+                // after step_for reads its observation, while authority runs.
+                let interval = Arc::clone(&callback_interval);
+                queue.on_submitted_work_done(move || {
+                    let start = origin.elapsed();
+                    std::thread::sleep(Duration::from_millis(40));
+                    *interval.lock().expect("callback interval") = Some([start, origin.elapsed()]);
+                });
             }
             let report = driver.step_for(&opportunity).expect("ordinary frame");
             assert!(
@@ -65,6 +77,18 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
             assert_eq!(sample.presentation_lead, image.presentation_lead);
             let status = sample.lead_status.expect("runner lead status");
             let consumed = sample.observation + sample.presentation_lead;
+            let preemption = if index == 8 {
+                let interval = callback_interval
+                    .lock()
+                    .expect("callback interval")
+                    .take()
+                    .expect("callback ran while driving this frame");
+                assert!(sample.observation <= interval[0]);
+                assert!(origin + interval[1] <= image.submitted_at);
+                Some(interval.map(|time| time.as_nanos()))
+            } else {
+                None
+            };
             match status {
                 TargetLeadStatus::Future => {
                     counts[0] += 1;
@@ -112,7 +136,7 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 "presentation_lead_ns":sample.presentation_lead.as_nanos(),"lead_status":format!("{status:?}").to_lowercase(),
                 "tick":sample.tick,"display_phase":sample.display_phase,"alpha":sample.presentation_alpha,
                 "clock_interpolating":sample.clock_interpolating,"submission":sample.submission_order,
-                "pixel_bytes":image.rgba.len()}));
+                "pixel_bytes":image.rgba.len(),"render_preemption_ns":preemption}));
             driver.recycle(image);
         }
         assert!(held_seen && counts[0] > 0 && counts[1] > 0);
