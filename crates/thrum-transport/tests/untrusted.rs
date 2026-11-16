@@ -90,7 +90,10 @@ fn feed(stream: &[u8], cuts: impl IntoIterator<Item = usize>) -> Outcome {
         held: 0,
     };
     let mut start = 0;
-    let mut ends: Vec<usize> = cuts.into_iter().filter(|&c| c > 0 && c < stream.len()).collect();
+    let mut ends: Vec<usize> = cuts
+        .into_iter()
+        .filter(|&c| c > 0 && c < stream.len())
+        .collect();
     ends.sort_unstable();
     ends.push(stream.len());
     for end in ends {
@@ -103,7 +106,10 @@ fn feed(stream: &[u8], cuts: impl IntoIterator<Item = usize>) -> Outcome {
                     chunk = &chunk[used..];
                     match frame {
                         Some(Frame::Hello) => {
-                            assert!(!outcome.hello && outcome.messages.is_empty(), "second hello");
+                            assert!(
+                                !outcome.hello && outcome.messages.is_empty(),
+                                "second hello"
+                            );
                             outcome.hello = true;
                         }
                         Some(Frame::Message(bytes)) => {
@@ -115,7 +121,11 @@ fn feed(stream: &[u8], cuts: impl IntoIterator<Item = usize>) -> Outcome {
                 }
                 Err(error) => {
                     outcome.error = Some(error);
-                    assert_eq!(decoder.decode(&[0]), Err(error), "a refused stream must stay refused");
+                    assert_eq!(
+                        decoder.decode(&[0]),
+                        Err(error),
+                        "a refused stream must stay refused"
+                    );
                     outcome.held = decoder.held();
                     return outcome;
                 }
@@ -127,10 +137,21 @@ fn feed(stream: &[u8], cuts: impl IntoIterator<Item = usize>) -> Outcome {
 }
 
 fn sample_messages(random: &mut Random) -> Vec<Vec<u8>> {
-    [1, 2, 3, 4, 5, 255, 1_000, 16_384, RELIABLE_LIMIT - 1, RELIABLE_LIMIT]
-        .into_iter()
-        .map(|length| random.bytes(length))
-        .collect()
+    [
+        1,
+        2,
+        3,
+        4,
+        5,
+        255,
+        1_000,
+        16_384,
+        RELIABLE_LIMIT - 1,
+        RELIABLE_LIMIT,
+    ]
+    .into_iter()
+    .map(|length| random.bytes(length))
+    .collect()
 }
 
 #[test]
@@ -162,10 +183,17 @@ fn a_valid_stream_cut_at_every_byte_decodes_to_exactly_what_was_encoded() {
         assert!(outcome.error.is_none());
         assert_eq!(outcome.messages, large[..outcome.messages.len()]);
         assert!(outcome.held <= RELIABLE_LIMIT);
-        let delivered: usize = outcome.messages.iter().map(|m| PREFIX_BYTES + m.len()).sum();
+        let delivered: usize = outcome
+            .messages
+            .iter()
+            .map(|m| PREFIX_BYTES + m.len())
+            .sum();
         // What it holds is the partial frame after the last whole one (a body's prefix is not kept).
         let partial = cut - delivered - if outcome.hello { HELLO.len() } else { 0 };
-        assert!(outcome.held <= partial && outcome.held + PREFIX_BYTES >= partial, "cut {cut}");
+        assert!(
+            outcome.held <= partial && outcome.held + PREFIX_BYTES >= partial,
+            "cut {cut}"
+        );
     }
 }
 
@@ -174,14 +202,23 @@ fn prefix_lengths_at_and_beyond_the_limit_are_decoded_or_refused_before_any_body
     let edge = |length: u32| {
         let mut stream = HELLO.to_vec();
         stream.extend_from_slice(&length.to_le_bytes());
-        stream.extend(std::iter::repeat_n(7, usize::try_from(length).unwrap_or(0).min(RELIABLE_LIMIT + 1)));
+        stream.extend(std::iter::repeat_n(
+            7,
+            usize::try_from(length).unwrap_or(0).min(RELIABLE_LIMIT + 1),
+        ));
         stream
     };
     assert_eq!(wire::prefix(0_u32.to_le_bytes()), Err(WireError::Empty));
     assert_eq!(wire::prefix(1_u32.to_le_bytes()), Ok(1));
     assert_eq!(wire::prefix(65_536_u32.to_le_bytes()), Ok(RELIABLE_LIMIT));
-    assert_eq!(wire::prefix(65_537_u32.to_le_bytes()), Err(WireError::TooLarge));
-    assert_eq!(wire::prefix(u32::MAX.to_le_bytes()), Err(WireError::TooLarge));
+    assert_eq!(
+        wire::prefix(65_537_u32.to_le_bytes()),
+        Err(WireError::TooLarge)
+    );
+    assert_eq!(
+        wire::prefix(u32::MAX.to_le_bytes()),
+        Err(WireError::TooLarge)
+    );
     for (length, expected) in [
         (0, Some(WireError::Empty)),
         (1, None),
@@ -196,12 +233,21 @@ fn prefix_lengths_at_and_beyond_the_limit_are_decoded_or_refused_before_any_body
         for cuts in [vec![], (0..12).collect(), vec![HELLO.len() + 2]] {
             let (outcome, largest) = measured(|| feed(&stream, cuts));
             assert_eq!(outcome.error, expected, "length {length}");
-            assert!(largest <= RELIABLE_LIMIT, "length {length} allocated {largest} bytes");
+            assert!(
+                largest <= RELIABLE_LIMIT,
+                "length {length} allocated {largest} bytes"
+            );
             if expected.is_some() {
-                assert!(outcome.messages.is_empty(), "a refused prefix delivered bytes");
+                assert!(
+                    outcome.messages.is_empty(),
+                    "a refused prefix delivered bytes"
+                );
             } else {
                 assert_eq!(outcome.messages.len(), 1);
-                assert_eq!(outcome.messages[0].len(), usize::try_from(length).expect("small"));
+                assert_eq!(
+                    outcome.messages[0].len(),
+                    usize::try_from(length).expect("small")
+                );
             }
         }
     }
@@ -221,7 +267,9 @@ fn the_hello_is_refused_at_its_first_wrong_byte() {
         for value in 0..=u8::MAX {
             let mut frame = *HELLO;
             frame[index] = value;
-            let expected = (value == HELLO[index]).then_some(()).ok_or(WireError::Hello);
+            let expected = (value == HELLO[index])
+                .then_some(())
+                .ok_or(WireError::Hello);
             assert_eq!(wire::hello(frame), expected);
             let mut stream = frame.to_vec();
             stream.extend_from_slice(&wire::encode_prefix(3));
@@ -233,8 +281,14 @@ fn the_hello_is_refused_at_its_first_wrong_byte() {
         }
     }
     // A message where the hello belongs is refused, never delivered.
-    let outcome = feed(&wire::encode_stream([[9_u8; 4].as_slice()])[HELLO.len()..], []);
-    assert_eq!((outcome.error, outcome.messages.len()), (Some(WireError::Hello), 0));
+    let outcome = feed(
+        &wire::encode_stream([[9_u8; 4].as_slice()])[HELLO.len()..],
+        [],
+    );
+    assert_eq!(
+        (outcome.error, outcome.messages.len()),
+        (Some(WireError::Hello), 0)
+    );
 }
 
 #[test]
@@ -247,9 +301,14 @@ fn random_streams_either_decode_to_what_was_encoded_or_are_refused_within_the_ca
         if case % 2 == 0 && stream.len() >= HELLO.len() {
             stream[..HELLO.len()].copy_from_slice(HELLO);
         }
-        let cuts: Vec<usize> = (0..random.below(4)).map(|_| random.below(length + 1)).collect();
+        let cuts: Vec<usize> = (0..random.below(4))
+            .map(|_| random.below(length + 1))
+            .collect();
         let (outcome, largest) = measured(|| feed(&stream, cuts));
-        assert!(largest <= RELIABLE_LIMIT, "case {case} allocated {largest} bytes");
+        assert!(
+            largest <= RELIABLE_LIMIT,
+            "case {case} allocated {largest} bytes"
+        );
         assert!(outcome.held <= RELIABLE_LIMIT);
         // Whatever was delivered is exactly a valid prefix of the input, framed as it says.
         let expected = wire::encode_stream(outcome.messages.iter().map(Vec::as_slice));
@@ -301,10 +360,14 @@ fn ticket_text_round_trips_or_is_refused() {
         }
         // Every one-byte change either is refused or prints back as the changed text.
         for index in 0..text.len() {
-            for value in [b'@', b'0', b'f', b'F', b'+', b'-', b' ', b':', b'[', b'g', 0, 0x7f] {
+            for value in [
+                b'@', b'0', b'f', b'F', b'+', b'-', b' ', b':', b'[', b'g', 0, 0x7f,
+            ] {
                 let mut bytes = text.clone().into_bytes();
                 bytes[index] = value;
-                let Ok(changed) = String::from_utf8(bytes) else { continue };
+                let Ok(changed) = String::from_utf8(bytes) else {
+                    continue;
+                };
                 if let Ok(parsed) = changed.parse::<Ticket>() {
                     assert_eq!(parsed.to_string(), changed);
                 }
@@ -341,7 +404,10 @@ fn ticket_lengths_and_random_text_are_refused_within_the_limit() {
         let text = "a".repeat(length);
         let (result, largest) = measured(|| text.parse::<Ticket>());
         assert!(result.is_err());
-        assert!(largest <= TICKET_LIMIT, "allocated {largest} bytes for {length}");
+        assert!(
+            largest <= TICKET_LIMIT,
+            "allocated {largest} bytes for {length}"
+        );
     }
     for case in 0..50_000 {
         let length = random.below(if case % 100 == 0 { 4_096 } else { 140 });
@@ -350,11 +416,18 @@ fn ticket_lengths_and_random_text_are_refused_within_the_limit() {
         } else {
             // Random text built from the characters a ticket uses, so some inputs get deep into the parser.
             let alphabet = b"thrum1@0123456789abcdef.:[]";
-            (0..length).map(|_| alphabet[random.below(alphabet.len())]).collect()
+            (0..length)
+                .map(|_| alphabet[random.below(alphabet.len())])
+                .collect()
         };
-        let Ok(text) = String::from_utf8(bytes) else { continue };
+        let Ok(text) = String::from_utf8(bytes) else {
+            continue;
+        };
         let (result, largest) = measured(|| text.parse::<Ticket>());
-        assert!(largest <= TICKET_LIMIT, "case {case} allocated {largest} bytes");
+        assert!(
+            largest <= TICKET_LIMIT,
+            "case {case} allocated {largest} bytes"
+        );
         if let Ok(ticket) = result {
             assert_eq!(ticket.to_string(), text);
         }

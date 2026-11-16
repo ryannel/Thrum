@@ -48,7 +48,10 @@ pub fn prefix(bytes: [u8; PREFIX_BYTES]) -> Result<usize, WireError> {
 /// # Panics
 /// Panics for a length outside 1 to the reliable limit, which the link's send refuses first.
 pub fn encode_prefix(length: usize) -> [u8; PREFIX_BYTES] {
-    assert!((1..=RELIABLE_LIMIT).contains(&length), "unchecked message length");
+    assert!(
+        (1..=RELIABLE_LIMIT).contains(&length),
+        "unchecked message length"
+    );
     u32::try_from(length).expect("bounded length").to_le_bytes()
 }
 
@@ -63,9 +66,17 @@ pub enum Frame {
 
 #[derive(Debug)]
 enum Stage {
-    Hello { have: usize },
-    Prefix { bytes: [u8; PREFIX_BYTES], have: usize },
-    Body { bytes: Vec<u8>, length: usize },
+    Hello {
+        have: usize,
+    },
+    Prefix {
+        bytes: [u8; PREFIX_BYTES],
+        have: usize,
+    },
+    Body {
+        bytes: Vec<u8>,
+        length: usize,
+    },
     Failed(WireError),
 }
 

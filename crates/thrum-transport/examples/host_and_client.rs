@@ -1,7 +1,10 @@
 //! A host and a native client on this machine's loopback, through the public interface.
 //! Run with `cargo run -p thrum-transport --features native --example host_and_client`.
 
-use std::time::{Duration, Instant};
+use std::{
+    io::Write,
+    time::{Duration, Instant},
+};
 use thrum_transport::{Lane, Profile, native};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -13,22 +16,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ticket) = host.ticket() {
             break ticket;
         }
-        assert!(!host.failed() && started.elapsed() < Duration::from_secs(5), "host failed to start");
+        assert!(
+            !host.failed() && started.elapsed() < Duration::from_secs(5),
+            "host failed to start"
+        );
         std::thread::sleep(Duration::from_millis(1));
     };
     let text = ticket.to_string();
-    println!("join ticket: {text}");
+    writeln!(std::io::stdout(), "join ticket: {text}")?;
     // A player pastes the ticket's text; parsing refuses anything but the exact form.
     let client = native::connect(&text.parse()?, profile)?;
     let mut accepted = None;
     let mut now = 0;
-    while !(client.is_open() && accepted.as_ref().is_some_and(thrum_transport::Link::is_open)) {
+    while !(client.is_open()
+        && accepted
+            .as_ref()
+            .is_some_and(thrum_transport::Link::is_open))
+    {
         accepted = accepted.or_else(|| host.accept());
-        assert!(started.elapsed() < Duration::from_secs(5), "link did not open: {:?}", client.event());
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "link did not open: {:?}",
+            client.event()
+        );
         std::thread::sleep(Duration::from_millis(1));
     }
     let link = accepted.expect("accepted");
-    println!("client {:?}, host {:?}", client.event(), link.event());
+    writeln!(
+        std::io::stdout(),
+        "client {:?}, host {:?}",
+        client.event(),
+        link.event()
+    )?;
     client.send(Lane::Reliable, b"hello host", now)?;
     link.send(Lane::Datagram, &[1; 189], now)?;
     let deadline = Instant::now() + Duration::from_secs(2);
@@ -39,9 +58,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::thread::sleep(Duration::from_millis(1));
         now += 1;
     }
-    println!("host took {message:?}; client took a datagram: {}", datagram.is_some());
-    println!("host link counters: {:?}", link.counters(now));
-    println!("host counters: {:?}", host.counters());
+    writeln!(
+        std::io::stdout(),
+        "host took {message:?}; client took a datagram: {}",
+        datagram.is_some()
+    )?;
+    writeln!(
+        std::io::stdout(),
+        "host link counters: {:?}",
+        link.counters(now)
+    )?;
+    writeln!(std::io::stdout(), "host counters: {:?}", host.counters())?;
     link.close(3);
     let deadline = Instant::now() + Duration::from_secs(2);
     let mut closed = None;
@@ -49,6 +76,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         closed = client.event();
         std::thread::sleep(Duration::from_millis(1));
     }
-    println!("client after the host closed: {closed:?}, host link: {:?}", link.event());
+    writeln!(
+        std::io::stdout(),
+        "client after the host closed: {closed:?}, host link: {:?}",
+        link.event()
+    )?;
     Ok(())
 }

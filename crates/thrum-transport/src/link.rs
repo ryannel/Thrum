@@ -468,13 +468,21 @@ impl std::str::FromStr for Ticket {
             .is_ok_and(|parsed| parsed.to_string() == address);
         if !canonical
             || digits.len() != 64
-            || !digits.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+            || !digits
+                .bytes()
+                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
         {
             return Err(LinkError::InvalidTicket);
         }
         let mut hash = [0; 32];
         for (byte, pair) in hash.iter_mut().zip(digits.as_bytes().as_chunks::<2>().0) {
-            let digit = |b: u8| if b.is_ascii_digit() { b - b'0' } else { b - b'a' + 10 };
+            let digit = |b: u8| {
+                if b.is_ascii_digit() {
+                    b - b'0'
+                } else {
+                    b - b'a' + 10
+                }
+            };
             *byte = digit(pair[0]) << 4 | digit(pair[1]);
         }
         Ok(Self {

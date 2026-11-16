@@ -564,8 +564,8 @@ async fn drive(
                 .pop(Lane::Reliable);
             if let Some(bytes) = bytes {
                 send.write_all(&crate::wire::encode_prefix(bytes.len()))
-                .await
-                .map_err(|error| transport_reason(&error))?;
+                    .await
+                    .map_err(|error| transport_reason(&error))?;
                 send.write_all(&bytes)
                     .await
                     .map_err(|error| transport_reason(&error))?;

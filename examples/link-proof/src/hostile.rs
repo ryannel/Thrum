@@ -37,7 +37,9 @@ impl rustls::client::danger::ServerCertVerifier for Pinned {
         if web_transport_quinn::crypto::sha256(&self.1, end).as_ref() == self.0 {
             Ok(rustls::client::danger::ServerCertVerified::assertion())
         } else {
-            Err(rustls::Error::InvalidCertificate(rustls::CertificateError::UnknownIssuer))
+            Err(rustls::Error::InvalidCertificate(
+                rustls::CertificateError::UnknownIssuer,
+            ))
         }
     }
     fn verify_tls12_signature(
@@ -46,7 +48,12 @@ impl rustls::client::danger::ServerCertVerifier for Pinned {
         cert: &rustls::pki_types::CertificateDer<'_>,
         signature: &rustls::DigitallySignedStruct,
     ) -> std::result::Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error> {
-        rustls::crypto::verify_tls12_signature(message, cert, signature, &self.1.signature_verification_algorithms)
+        rustls::crypto::verify_tls12_signature(
+            message,
+            cert,
+            signature,
+            &self.1.signature_verification_algorithms,
+        )
     }
     fn verify_tls13_signature(
         &self,
@@ -54,7 +61,12 @@ impl rustls::client::danger::ServerCertVerifier for Pinned {
         cert: &rustls::pki_types::CertificateDer<'_>,
         signature: &rustls::DigitallySignedStruct,
     ) -> std::result::Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error> {
-        rustls::crypto::verify_tls13_signature(message, cert, signature, &self.1.signature_verification_algorithms)
+        rustls::crypto::verify_tls13_signature(
+            message,
+            cert,
+            signature,
+            &self.1.signature_verification_algorithms,
+        )
     }
     fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
         self.1.signature_verification_algorithms.supported_schemes()
@@ -100,7 +112,14 @@ impl Peer {
         Ok((endpoint, connection))
     }
     /// A raw link up to the point the adapter would report it open: the stream, both hellos.
-    async fn open(&self) -> Result<(quinn::Endpoint, quinn::Connection, quinn::SendStream, quinn::RecvStream)> {
+    async fn open(
+        &self,
+    ) -> Result<(
+        quinn::Endpoint,
+        quinn::Connection,
+        quinn::SendStream,
+        quinn::RecvStream,
+    )> {
         let (endpoint, connection) = self.connect(b"thrum-1").await?;
         let (mut send, mut recv) = connection.open_bi().await.map_err(text)?;
         send.write_all(HELLO).await.map_err(text)?;
@@ -118,48 +137,28 @@ async fn close(connection: &quinn::Connection, code: u32) {
     tokio::time::sleep(Duration::from_millis(300)).await;
 }
 async fn message(send: &mut quinn::SendStream, bytes: &[u8]) -> Result<()> {
-    send.write_all(&wire::encode_prefix(bytes.len())).await.map_err(text)?;
+    send.write_all(&wire::encode_prefix(bytes.len()))
+        .await
+        .map_err(text)?;
     send.write_all(bytes).await.map_err(text)
 }
 /// How the host ended the offender's connection, as the offender saw it, within a deadline.
 async fn closed(connection: &quinn::Connection, within: Duration) -> Value {
     let began = Instant::now();
     match tokio::time::timeout(within, connection.closed()).await {
-        Ok(error) => json!({"closed_by_host": format!("{error}"), "after_ms": began.elapsed().as_millis()}),
+        Ok(error) => {
+            json!({"closed_by_host": format!("{error}"), "after_ms": began.elapsed().as_millis()})
+        }
         Err(_) => json!({"closed_by_host": null, "still_open_after_ms": within.as_millis()}),
     }
 }
 
 async fn offend(case: &str, peer: Peer) -> Result<Value> {
-    let rule_break = |connection: quinn::Connection| async move { closed(&connection, Duration::from_secs(5)).await };
+    let rule_break = |connection: quinn::Connection| async move {
+        closed(&connection, Duration::from_secs(5)).await
+    };
     match case {
-        "random-udp" => {
-            let socket = UdpSocket::bind("127.0.0.1:0").map_err(text)?;
-            let mut state = 0x2545_f491_4f6c_dd1d_u64;
-            let mut next = || {
-                state ^= state << 13;
-                state ^= state >> 7;
-                state ^= state << 17;
-                state
-            };
-            let mut sent = 0;
-            for index in 0..20_000_u64 {
-                let length = usize::try_from(next() % 1_500).map_err(text)? + 1;
-                let mut bytes: Vec<u8> = (0..length).map(|_| next().to_le_bytes()[0]).collect();
-                // A third look like QUIC version-1 long headers, so the host parses them further.
-                if index % 3 == 0 && length > 6 {
-                    bytes[0] = 0xc0 | (bytes[0] & 0x0f);
-                    bytes[1..5].copy_from_slice(&1_u32.to_be_bytes());
-                }
-                if socket.send_to(&bytes, peer.host).is_ok() {
-                    sent += 1;
-                }
-                if index % 500 == 0 {
-                    tokio::time::sleep(Duration::from_millis(5)).await;
-                }
-            }
-            Ok(json!({"udp_datagrams_sent": sent}))
-        }
+        "random-udp" => random_udp(&peer).await,
         "wrong-alpn" => {
             let result = peer.connect(b"thrum-2").await;
             Ok(json!({"connected": result.is_ok(), "error": result.err()}))
@@ -185,7 +184,10 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
             message(&mut send, b"valid").await?;
             let length: u32 = if case == "zero-prefix" { 0 } else { 65_537 };
             send.write_all(&length.to_le_bytes()).await.map_err(text)?;
-            drop(send.write_all(&vec![7; usize::try_from(length).map_err(text)?]).await);
+            drop(
+                send.write_all(&vec![7; usize::try_from(length).map_err(text)?])
+                    .await,
+            );
             Ok(rule_break(connection).await)
         }
         "second-stream" | "uni-stream" => {
@@ -193,10 +195,17 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
             message(&mut send, b"valid").await?;
             if case == "second-stream" {
                 let (mut second, _) = connection.open_bi().await.map_err(text)?;
-                drop(second.write_all(&wire::encode_stream([b"second".as_slice()])).await);
+                drop(
+                    second
+                        .write_all(&wire::encode_stream([b"second".as_slice()]))
+                        .await,
+                );
             } else {
                 let mut uni = connection.open_uni().await.map_err(text)?;
-                drop(uni.write_all(&wire::encode_stream([b"uni".as_slice()])).await);
+                drop(
+                    uni.write_all(&wire::encode_stream([b"uni".as_slice()]))
+                        .await,
+                );
             }
             Ok(rule_break(connection).await)
         }
@@ -204,7 +213,9 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
             let (_endpoint, connection, mut send, _recv) = peer.open().await?;
             message(&mut send, b"valid").await?;
             let ceiling = connection.max_datagram_size();
-            connection.send_datagram(vec![9; 1_001].into()).map_err(text)?;
+            connection
+                .send_datagram(vec![9; 1_001].into())
+                .map_err(text)?;
             let mut result = rule_break(connection).await;
             result["datagram_ceiling"] = json!(ceiling);
             Ok(result)
@@ -212,7 +223,9 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
         "stalled-mid-message" => {
             let (_endpoint, connection, mut send, _recv) = peer.open().await?;
             message(&mut send, b"valid").await?;
-            send.write_all(&wire::encode_prefix(1_000)).await.map_err(text)?;
+            send.write_all(&wire::encode_prefix(1_000))
+                .await
+                .map_err(text)?;
             send.write_all(&[3; 10]).await.map_err(text)?;
             // Past the host's idle timeout: Quinn's keep-alives keep the path live, the message never finishes.
             let mut result = closed(&connection, Duration::from_secs(7)).await;
@@ -233,7 +246,9 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
             }
             let open = connection.close_reason().is_none();
             close(&connection, 9).await;
-            Ok(json!({"messages_sent": sent, "bytes_sent": sent * RELIABLE_LIMIT as u64, "open_at_end": open}))
+            Ok(
+                json!({"messages_sent": sent, "bytes_sent": sent * RELIABLE_LIMIT as u64, "open_at_end": open}),
+            )
         }
         "flood-datagram" => {
             let (_endpoint, connection, _send, _recv) = peer.open().await?;
@@ -250,84 +265,130 @@ async fn offend(case: &str, peer: Peer) -> Result<Value> {
             let open = connection.close_reason().is_none();
             let stats = connection.stats();
             close(&connection, 9).await;
-            Ok(json!({"datagrams_queued": sent, "udp_datagrams_sent": stats.udp_tx.datagrams, "open_at_end": open}))
+            Ok(
+                json!({"datagrams_queued": sent, "udp_datagrams_sent": stats.udp_tx.datagrams, "open_at_end": open}),
+            )
         }
-        "over-cap" => {
-            let attempts = (0..6).map(|_| async {
-                match tokio::time::timeout(Duration::from_secs(6), peer.open()).await {
-                    Ok(Ok((endpoint, connection, send, recv))) => {
-                        tokio::time::sleep(Duration::from_secs(2)).await;
-                        close(&connection, 9).await;
-                        drop((endpoint, send, recv));
-                        "opened".to_owned()
-                    }
-                    Ok(Err(error)) => error,
-                    Err(_) => "no answer in 6 s".to_owned(),
-                }
-            });
-            Ok(json!({"clients": futures_join(attempts).await}))
-        }
-        "unfinished-handshakes" => {
-            // A forwarder passes the clients' packets to the host and drops every answer, so no handshake can end.
-            let forwarder = UdpSocket::bind("127.0.0.1:0").map_err(text)?;
-            forwarder.set_read_timeout(Some(Duration::from_millis(20))).map_err(text)?;
-            let through = forwarder.local_addr().map_err(text)?;
-            let stop = Arc::new(AtomicBool::new(false));
-            let stopped = Arc::clone(&stop);
-            let host = peer.host;
-            let relay = std::thread::spawn(move || {
-                let (mut forwarded, mut dropped) = (0_u64, 0_u64);
-                let mut buffer = [0; 2_048];
-                while !stopped.load(Ordering::Relaxed) {
-                    if let Ok((length, from)) = forwarder.recv_from(&mut buffer) {
-                        if from == host {
-                            dropped += 1;
-                        } else if forwarder.send_to(&buffer[..length], host).is_ok() {
-                            forwarded += 1;
-                        }
-                    }
-                }
-                (forwarded, dropped)
-            });
-            let attempts = (0..3).map(|_| async {
-                let peer = Peer { host: through, hash: peer.hash };
-                match tokio::time::timeout(Duration::from_secs(7), peer.connect(b"thrum-1")).await {
-                    Ok(Ok(_)) => "handshake finished".to_owned(),
-                    Ok(Err(error)) => error,
-                    Err(_) => "unfinished after 7 s".to_owned(),
-                }
-            });
-            let clients = futures_join(attempts).await;
-            stop.store(true, Ordering::Relaxed);
-            let (forwarded, dropped) = relay.join().map_err(|_| "forwarder panicked")?;
-            Ok(json!({"clients": clients, "packets_to_host": forwarded, "host_answers_dropped": dropped}))
-        }
-        "no-hello" => {
-            // One never opens the stream; the other opens it and never writes, which the host can't tell apart.
-            // One after the other, since beside three healthy links the host has room for one more connection.
-            let mut clients = Vec::new();
-            for open_stream in [false, true] {
-                let (_endpoint, connection) = match peer.connect(b"thrum-1").await {
-                    Ok(pair) => pair,
-                    Err(error) => {
-                        clients.push(json!({"connected": false, "error": error}));
-                        continue;
-                    }
-                };
-                let _stream = if open_stream { connection.open_bi().await.ok() } else { None };
-                let mut result = closed(&connection, Duration::from_secs(8)).await;
-                result["opened_stream"] = json!(open_stream);
-                clients.push(result);
-            }
-            Ok(json!({"clients": clients}))
-        }
+        "over-cap" => over_cap(&peer).await,
+        "unfinished-handshakes" => unfinished_handshakes(&peer).await,
+        "no-hello" => no_hello(&peer).await,
         _ => Err(format!("unknown case {case}")),
     }
 }
 
+async fn random_udp(peer: &Peer) -> Result<Value> {
+    let socket = UdpSocket::bind("127.0.0.1:0").map_err(text)?;
+    let mut state = 0x2545_f491_4f6c_dd1d_u64;
+    let mut next = || {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        state
+    };
+    let mut sent = 0;
+    for index in 0..20_000_u64 {
+        let length = usize::try_from(next() % 1_500).map_err(text)? + 1;
+        let mut bytes: Vec<u8> = (0..length).map(|_| next().to_le_bytes()[0]).collect();
+        // A third look like QUIC version-1 long headers, so the host parses them further.
+        if index % 3 == 0 && length > 6 {
+            bytes[0] = 0xc0 | (bytes[0] & 0x0f);
+            bytes[1..5].copy_from_slice(&1_u32.to_be_bytes());
+        }
+        if socket.send_to(&bytes, peer.host).is_ok() {
+            sent += 1;
+        }
+        if index % 500 == 0 {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    }
+    Ok(json!({"udp_datagrams_sent": sent}))
+}
+
+async fn over_cap(peer: &Peer) -> Result<Value> {
+    let attempts = (0..6).map(|_| async {
+        match tokio::time::timeout(Duration::from_secs(6), peer.open()).await {
+            Ok(Ok((endpoint, connection, send, recv))) => {
+                tokio::time::sleep(Duration::from_secs(2)).await;
+                close(&connection, 9).await;
+                drop((endpoint, send, recv));
+                "opened".to_owned()
+            }
+            Ok(Err(error)) => error,
+            Err(_) => "no answer in 6 s".to_owned(),
+        }
+    });
+    Ok(json!({"clients": futures_join(attempts).await}))
+}
+
+async fn unfinished_handshakes(peer: &Peer) -> Result<Value> {
+    // A forwarder passes the clients' packets to the host and drops every answer, so no handshake can end.
+    let forwarder = UdpSocket::bind("127.0.0.1:0").map_err(text)?;
+    forwarder
+        .set_read_timeout(Some(Duration::from_millis(20)))
+        .map_err(text)?;
+    let through = forwarder.local_addr().map_err(text)?;
+    let stop = Arc::new(AtomicBool::new(false));
+    let stopped = Arc::clone(&stop);
+    let host = peer.host;
+    let relay = std::thread::spawn(move || {
+        let (mut forwarded, mut dropped) = (0_u64, 0_u64);
+        let mut buffer = [0; 2_048];
+        while !stopped.load(Ordering::Relaxed) {
+            if let Ok((length, from)) = forwarder.recv_from(&mut buffer) {
+                if from == host {
+                    dropped += 1;
+                } else if forwarder.send_to(&buffer[..length], host).is_ok() {
+                    forwarded += 1;
+                }
+            }
+        }
+        (forwarded, dropped)
+    });
+    let attempts = (0..3).map(|_| async {
+        let peer = Peer {
+            host: through,
+            hash: peer.hash,
+        };
+        match tokio::time::timeout(Duration::from_secs(7), peer.connect(b"thrum-1")).await {
+            Ok(Ok(_)) => "handshake finished".to_owned(),
+            Ok(Err(error)) => error,
+            Err(_) => "unfinished after 7 s".to_owned(),
+        }
+    });
+    let clients = futures_join(attempts).await;
+    stop.store(true, Ordering::Relaxed);
+    let (forwarded, dropped) = relay.join().map_err(|_| "forwarder panicked")?;
+    Ok(json!({"clients": clients, "packets_to_host": forwarded, "host_answers_dropped": dropped}))
+}
+
+async fn no_hello(peer: &Peer) -> Result<Value> {
+    // One never opens the stream; the other opens it and never writes, which the host can't tell apart.
+    // One after the other, since beside three healthy links the host has room for one more connection.
+    let mut clients = Vec::new();
+    for open_stream in [false, true] {
+        let (_endpoint, connection) = match peer.connect(b"thrum-1").await {
+            Ok(pair) => pair,
+            Err(error) => {
+                clients.push(json!({"connected": false, "error": error}));
+                continue;
+            }
+        };
+        let _stream = if open_stream {
+            connection.open_bi().await.ok()
+        } else {
+            None
+        };
+        let mut result = closed(&connection, Duration::from_secs(8)).await;
+        result["opened_stream"] = json!(open_stream);
+        clients.push(result);
+    }
+    Ok(json!({"clients": clients}))
+}
+
 /// Run futures together on this thread's runtime and keep their results in order.
 async fn futures_join<F: Future>(futures: impl IntoIterator<Item = F>) -> Vec<F::Output> {
-    let mut pending: Vec<Option<std::pin::Pin<Box<F>>>> = futures.into_iter().map(|f| Some(Box::pin(f))).collect();
+    let mut pending: Vec<Option<std::pin::Pin<Box<F>>>> =
+        futures.into_iter().map(|f| Some(Box::pin(f))).collect();
     let mut outputs: Vec<Option<F::Output>> = pending.iter().map(|_| None).collect();
     std::future::poll_fn(|context| {
         for (slot, output) in pending.iter_mut().zip(&mut outputs) {
@@ -345,7 +406,10 @@ async fn futures_join<F: Future>(futures: impl IntoIterator<Item = F>) -> Vec<F:
         }
     })
     .await;
-    outputs.into_iter().map(|value| value.expect("every future finished")).collect()
+    outputs
+        .into_iter()
+        .map(|value| value.expect("every future finished"))
+        .collect()
 }
 
 fn delta(after: HostCounters, before: HostCounters) -> Value {
@@ -390,59 +454,131 @@ fn judge(case: &str, counters: &Value, offenders: &[Value], peer: &Value) -> Vec
     };
     let protocol_close = |o: &Value| {
         o["events"].as_array().is_some_and(|events| {
-            events.iter().map(|e| e[1].as_str().unwrap_or("")).collect::<Vec<_>>() == ["Open", "Closed(Protocol)"]
+            events
+                .iter()
+                .map(|e| e[1].as_str().unwrap_or(""))
+                .collect::<Vec<_>>()
+                == ["Open", "Closed(Protocol)"]
         })
     };
     match case {
-        "random-udp" => expect(offenders.is_empty() && count("opened") == 0, "random bytes opened a link"),
+        "random-udp" => expect(
+            offenders.is_empty() && count("opened") == 0,
+            "random bytes opened a link",
+        ),
         "wrong-alpn" | "wrong-path" => {
-            expect(offenders.is_empty() && count("opened") == 0, "a wrong version opened a link");
-            expect(count("refused_version") >= 1, "the host did not report a version refusal");
+            expect(
+                offenders.is_empty() && count("opened") == 0,
+                "a wrong version opened a link",
+            );
+            expect(
+                count("refused_version") >= 1,
+                "the host did not report a version refusal",
+            );
             expect(peer["error"].is_string(), "the offender was not refused");
         }
         "first-frame-not-hello" => {
-            expect(offenders.is_empty() && count("opened") == 0, "a link opened without the hello");
-            expect(count("broke_rules") == 1, "the host did not report the broken rule");
-            expect(peer["closed_by_host"].is_string(), "the host left the connection open");
+            expect(
+                offenders.is_empty() && count("opened") == 0,
+                "a link opened without the hello",
+            );
+            expect(
+                count("broke_rules") == 1,
+                "the host did not report the broken rule",
+            );
+            expect(
+                peer["closed_by_host"].is_string(),
+                "the host left the connection open",
+            );
         }
-        "zero-prefix" | "over-limit-prefix" | "second-stream" | "uni-stream" | "oversize-datagram" => {
+        "zero-prefix" | "over-limit-prefix" | "second-stream" | "uni-stream"
+        | "oversize-datagram" => {
             expect(offenders.len() == 1, "expected one offender link");
             for o in offenders {
-                expect(protocol_close(o), "the offender's link did not close as Protocol");
+                expect(
+                    protocol_close(o),
+                    "the offender's link did not close as Protocol",
+                );
                 // The valid message sent first may be delivered, or discarded with the close: never the rest.
-                expect(o["reliable"].as_u64() <= Some(1) && o["reliable_bytes"].as_u64() <= Some(5) && o["datagrams"] == 0, "offending bytes were delivered");
+                expect(
+                    o["reliable"].as_u64() <= Some(1)
+                        && o["reliable_bytes"].as_u64() <= Some(5)
+                        && o["datagrams"] == 0,
+                    "offending bytes were delivered",
+                );
             }
-            expect(peer["closed_by_host"].is_string(), "the host left the connection open");
+            expect(
+                peer["closed_by_host"].is_string(),
+                "the host left the connection open",
+            );
         }
         "stalled-mid-message" => {
             expect(offenders.len() == 1, "expected one offender link");
             for o in offenders {
                 expect(o["reliable"] == 1, "the partial message was delivered");
-                let events: Vec<&str> = o["events"].as_array().map(|e| e.iter().map(|e| e[1].as_str().unwrap_or("")).collect()).unwrap_or_default();
-                expect(events == ["Open", "Closed(Peer(9))"], "the stall did not end with the offender's close");
+                let events: Vec<&str> = o["events"]
+                    .as_array()
+                    .map(|e| e.iter().map(|e| e[1].as_str().unwrap_or("")).collect())
+                    .unwrap_or_default();
+                expect(
+                    events == ["Open", "Closed(Peer(9))"],
+                    "the stall did not end with the offender's close",
+                );
             }
-            expect(peer["closed_by_host"].is_null(), "the host closed a live, stalled link");
+            expect(
+                peer["closed_by_host"].is_null(),
+                "the host closed a live, stalled link",
+            );
         }
         "flood-reliable" | "flood-datagram" => {
             expect(offenders.len() == 1, "expected one offender link");
             for o in offenders {
-                let delivered = if case == "flood-reliable" { &o["reliable"] } else { &o["datagrams"] };
-                expect(delivered.as_u64().unwrap_or(0) > 0, "the flood delivered nothing");
+                let delivered = if case == "flood-reliable" {
+                    &o["reliable"]
+                } else {
+                    &o["datagrams"]
+                };
+                expect(
+                    delivered.as_u64().unwrap_or(0) > 0,
+                    "the flood delivered nothing",
+                );
             }
         }
         "over-cap" => {
-            let opened = peer["clients"].as_array().map_or(0, |c| c.iter().filter(|c| *c == "opened").count());
-            expect(opened <= 1, "more clients opened than the cap allows beside three healthy links");
-            expect(count("refused_full") >= 5, "the host did not refuse the clients over its cap");
+            let opened = peer["clients"]
+                .as_array()
+                .map_or(0, |c| c.iter().filter(|c| *c == "opened").count());
+            expect(
+                opened <= 1,
+                "more clients opened than the cap allows beside three healthy links",
+            );
+            expect(
+                count("refused_full") >= 5,
+                "the host did not refuse the clients over its cap",
+            );
         }
         "unfinished-handshakes" => {
-            expect(offenders.is_empty() && count("opened") == 0, "an unfinished handshake opened a link");
-            expect(count("startup_timed_out") + count("refused_full") >= 1, "the host reported no unfinished handshake");
+            expect(
+                offenders.is_empty() && count("opened") == 0,
+                "an unfinished handshake opened a link",
+            );
+            expect(
+                count("startup_timed_out") + count("refused_full") >= 1,
+                "the host reported no unfinished handshake",
+            );
         }
         "no-hello" => {
-            expect(offenders.is_empty() && count("opened") == 0, "a link opened without a hello");
-            expect(count("startup_timed_out") == 2, "the host did not drop both silent clients at the startup timeout");
-            let dropped = peer["clients"].as_array().is_some_and(|clients| clients.iter().all(|c| c["closed_by_host"].is_string()));
+            expect(
+                offenders.is_empty() && count("opened") == 0,
+                "a link opened without a hello",
+            );
+            expect(
+                count("startup_timed_out") == 2,
+                "the host did not drop both silent clients at the startup timeout",
+            );
+            let dropped = peer["clients"]
+                .as_array()
+                .is_some_and(|clients| clients.iter().all(|c| c["closed_by_host"].is_string()));
             expect(dropped, "a silent client was left connected");
         }
         _ => expect(false, "unknown case"),
@@ -467,17 +603,30 @@ pub(crate) fn hostile() -> Result<Value> {
         let hash = arena.ticket.hash;
         let name = case.to_owned();
         let offender = std::thread::spawn(move || -> Result<Value> {
-            let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().map_err(text)?;
-            runtime.block_on(offend(&name, Peer { host: address, hash }))
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(text)?;
+            runtime.block_on(offend(
+                &name,
+                Peer {
+                    host: address,
+                    hash,
+                },
+            ))
         });
         while !offender.is_finished() {
             arena.tick();
             std::thread::sleep(Duration::from_millis(1));
         }
-        let peer = offender.join().map_err(|_| format!("{case}: offender panicked"))?;
+        let peer = offender
+            .join()
+            .map_err(|_| format!("{case}: offender panicked"))?;
         let peer = peer.unwrap_or_else(|error| json!({"offender_error": error}));
         // Let the host finish with the offender: startup deadlines and closes.
-        arena.run_until(Duration::from_secs(10), |a| a.host_counters().active == 3).ok();
+        arena
+            .run_until(Duration::from_secs(10), |a| a.host_counters().active == 3)
+            .ok();
         arena.run_for(Duration::from_millis(500));
         let healthy = arena.quiesce();
         let counters = delta(arena.host_counters(), before);
@@ -509,9 +658,12 @@ pub(crate) fn hostile() -> Result<Value> {
         }
     }
     // The host still takes a new link after every case.
-    let late = thrum_transport::native::connect(&arena.ticket, arena.profile.clone()).map_err(text)?;
+    let late =
+        thrum_transport::native::connect(&arena.ticket, arena.profile.clone()).map_err(text)?;
     let late_host = arena.wait_for_link()?;
-    arena.run_until(Duration::from_secs(10), |_| late.is_open()).map_err(|e| format!("a new client could not open: {e}"))?;
+    arena
+        .run_until(Duration::from_secs(10), |_| late.is_open())
+        .map_err(|e| format!("a new client could not open: {e}"))?;
     let accepts_after = late_host.is_open();
     late.close(1);
     let final_healthy = arena.quiesce();
@@ -534,7 +686,8 @@ pub(crate) fn overload() -> Result<Value> {
     let before = arena.quiesce();
     let peaks_before = arena.take_peaks();
     // The stalled client opens, then its game never takes another message.
-    let stalled = thrum_transport::native::connect(&arena.ticket, arena.profile.clone()).map_err(text)?;
+    let stalled =
+        thrum_transport::native::connect(&arena.ticket, arena.profile.clone()).map_err(text)?;
     let host_link = arena.wait_for_link()?;
     arena.run_until(Duration::from_secs(10), |_| stalled.is_open())?;
     arena.claimed.push(host_link.clone());
@@ -557,7 +710,8 @@ pub(crate) fn overload() -> Result<Value> {
                 Ok(()) => accepted += 1,
                 Err(LinkError::Full) => {
                     full += 1;
-                    first_full_ms.get_or_insert(u64::try_from(began.elapsed().as_millis()).unwrap_or(0));
+                    first_full_ms
+                        .get_or_insert(u64::try_from(began.elapsed().as_millis()).unwrap_or(0));
                     break;
                 }
                 Err(error) => return Err(format!("stalled link send: {error:?}")),
@@ -565,7 +719,9 @@ pub(crate) fn overload() -> Result<Value> {
         }
         if now >= next_datagram {
             let sent = Instant::now();
-            host_link.send(Lane::Datagram, &[1; 189], now).map_err(|e| format!("{e:?}"))?;
+            host_link
+                .send(Lane::Datagram, &[1; 189], now)
+                .map_err(|e| format!("{e:?}"))?;
             longest_stalled_send = longest_stalled_send.max(sent.elapsed());
             datagrams += 1;
             next_datagram = now + 1_000 / 60;
@@ -593,7 +749,9 @@ pub(crate) fn overload() -> Result<Value> {
     if !stalled_open {
         failures.push("the stalled link closed".into());
     }
-    if host_counts.lanes[0].queued_bytes > arena.profile.reliable_bytes || host_counts.lanes[1].queued_bytes > arena.profile.datagram_bytes {
+    if host_counts.lanes[0].queued_bytes > arena.profile.reliable_bytes
+        || host_counts.lanes[1].queued_bytes > arena.profile.datagram_bytes
+    {
         failures.push("the stalled link's queues passed their caps".into());
     }
     let rtt_without = arena.rtt_summary("without_stalled_link");

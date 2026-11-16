@@ -15,23 +15,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use thrum_transport::{Controller, Link, Profile, native};
     let args: Vec<_> = std::env::args().collect();
     let role = args.get(1).ok_or("host or client required")?;
-    if role == "hostile" || role == "overload" {
-        let record = if role == "hostile" { hostile::hostile() } else { hostile::overload() }?;
-        writeln!(io::stdout(), "{record}")?;
-        return if record["pass"] == true {
-            Ok(())
-        } else {
-            Err(format!("{role} expectations failed").into())
-        };
-    }
-    if role == "host-drop" {
-        let record = host_drop::run()?;
-        writeln!(io::stdout(), "{record}")?;
-        return if record["pass"] == true {
-            Ok(())
-        } else {
-            Err("host-drop expectations failed".into())
-        };
+    if let Some(result) = in_process(role) {
+        return result;
     }
     let seconds: u64 = args.get(3).map_or("32", String::as_str).parse()?;
     let case = args.get(5).map_or("exchange", String::as_str);
@@ -72,21 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut last_pass = Instant::now();
     let mut links: Vec<(Link, Actor, Instant)> = Vec::new();
     if let Some(host) = &host {
-        loop {
-            if let Some(ticket) = host.ticket() {
-                writeln!(
-                    io::stdout(),
-                    "{}",
-                    serde_json::json!({"ticket":ticket.to_string(), "pid":std::process::id(),"epoch_unix_ms":epoch_unix_ms})
-                )?;
-                io::stdout().flush()?;
-                break;
-            }
-            if host.failed() || epoch.elapsed().as_secs() > 5 {
-                return Err("host startup failed".into());
-            }
-            std::thread::sleep(Duration::from_millis(1));
-        }
+        announce(host, epoch, epoch_unix_ms)?;
     } else {
         let ticket = client_ticket.as_ref().ok_or("ticket required")?;
         writeln!(
@@ -105,16 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let gap = last_pass.elapsed();
         last_pass = Instant::now();
         if case == "suspend" && host.is_none() && gap >= Duration::from_secs(1) {
-            // Before this pass takes anything: what each link had delivered when the process stopped.
-            let now = u64::try_from(epoch.elapsed().as_millis())?;
-            writeln!(
-                io::stdout(),
-                "{}",
-                serde_json::json!({"resumed_after_gap_ms": gap.as_millis(), "elapsed_ms": now,
-                    "unix_ms": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_millis(),
-                    "links_at_resume": links.iter().map(|(l, a, _)| a.record(l, now)).collect::<Vec<_>>()})
-            )?;
-            io::stdout().flush()?;
+            report_resume(&links, epoch, gap)?;
         }
         let command = control
             .and_then(|p| std::fs::read_to_string(p).ok())
@@ -209,7 +171,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if reopen {
             // A new link with the same ticket; nothing of the old one is carried over.
             links.push((
-                native::connect(client_ticket.as_ref().ok_or("client ticket required")?, profile.clone())?,
+                native::connect(
+                    client_ticket.as_ref().ok_or("client ticket required")?,
+                    profile.clone(),
+                )?,
                 Actor::new(0, case),
                 Instant::now(),
             ));
@@ -236,6 +201,74 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The game-facing close is immediate; leave the I/O runtime alive for its bounded close flight.
     std::thread::sleep(Duration::from_millis(500));
     Ok(())
+}
+
+/// Print the host's ticket once its key and certificate exist.
+#[cfg(not(target_arch = "wasm32"))]
+fn announce(
+    host: &thrum_transport::native::Host,
+    epoch: std::time::Instant,
+    epoch_unix_ms: u128,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::{self, Write};
+    loop {
+        if let Some(ticket) = host.ticket() {
+            writeln!(
+                io::stdout(),
+                "{}",
+                serde_json::json!({"ticket":ticket.to_string(), "pid":std::process::id(),"epoch_unix_ms":epoch_unix_ms})
+            )?;
+            io::stdout().flush()?;
+            return Ok(());
+        }
+        if host.failed() || epoch.elapsed().as_secs() > 5 {
+            return Err("host startup failed".into());
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+}
+
+/// Before a resumed client takes anything: what each link had delivered when the process stopped.
+#[cfg(not(target_arch = "wasm32"))]
+fn report_resume(
+    links: &[(thrum_transport::Link, link_proof::Actor, std::time::Instant)],
+    epoch: std::time::Instant,
+    gap: std::time::Duration,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::{self, Write};
+    let now = u64::try_from(epoch.elapsed().as_millis())?;
+    let unix_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_millis();
+    writeln!(
+        io::stdout(),
+        "{}",
+        serde_json::json!({"resumed_after_gap_ms": gap.as_millis(), "elapsed_ms": now, "unix_ms": unix_ms,
+            "links_at_resume": links.iter().map(|(l, a, _)| a.record(l, now)).collect::<Vec<_>>()})
+    )?;
+    io::stdout().flush()?;
+    Ok(())
+}
+
+/// The runs that hold the host and every peer in this one process, ending with their record's verdict.
+#[cfg(not(target_arch = "wasm32"))]
+fn in_process(role: &str) -> Option<Result<(), Box<dyn std::error::Error>>> {
+    use std::io::{self, Write};
+    let record = match role {
+        "hostile" => hostile::hostile(),
+        "overload" => hostile::overload(),
+        "host-drop" => host_drop::run().map_err(|e| e.to_string()),
+        _ => return None,
+    };
+    Some((|| {
+        let record = record?;
+        writeln!(io::stdout(), "{record}")?;
+        if record["pass"] == true {
+            Ok(())
+        } else {
+            Err(format!("{role} expectations failed").into())
+        }
+    })())
 }
 #[cfg(target_arch = "wasm32")]
 fn main() {}

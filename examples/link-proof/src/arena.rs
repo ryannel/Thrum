@@ -84,8 +84,11 @@ pub(crate) struct Arena {
 impl Arena {
     pub(crate) fn start(healthy: usize) -> Result<Self, String> {
         let profile = Profile::default();
-        let host = native::Host::start("127.0.0.1:0".parse().map_err(|_| "address")?, profile.clone())
-            .map_err(|e| e.to_string())?;
+        let host = native::Host::start(
+            "127.0.0.1:0".parse().map_err(|_| "address")?,
+            profile.clone(),
+        )
+        .map_err(|e| e.to_string())?;
         let started = Instant::now();
         let ticket = loop {
             if let Some(ticket) = host.ticket() {
@@ -113,7 +116,8 @@ impl Arena {
             claim_next: 0,
         };
         for _ in 0..healthy {
-            let client = native::connect(&arena.ticket, arena.profile.clone()).map_err(|e| e.to_string())?;
+            let client =
+                native::connect(&arena.ticket, arena.profile.clone()).map_err(|e| e.to_string())?;
             let host = arena.wait_for_link()?;
             arena.run_until(Duration::from_secs(10), |_| client.is_open())?;
             for end in [&client, &host] {
@@ -214,7 +218,10 @@ impl Arena {
             // Host side: check the client's reliable messages and echo its datagrams.
             while let Some(bytes) = link.host.receive(Lane::Reliable) {
                 if bytes != reliable_payload(link.up.received, 0) {
-                    errors.push(format!("healthy {index}: client message {} out of order or corrupt", link.up.received));
+                    errors.push(format!(
+                        "healthy {index}: client message {} out of order or corrupt",
+                        link.up.received
+                    ));
                 }
                 link.up.received += 1;
             }
@@ -229,7 +236,10 @@ impl Arena {
             // Client side: check the host's reliable messages and time the echoes.
             while let Some(bytes) = link.client.receive(Lane::Reliable) {
                 if bytes != reliable_payload(link.down.received, 1) {
-                    errors.push(format!("healthy {index}: host message {} out of order or corrupt", link.down.received));
+                    errors.push(format!(
+                        "healthy {index}: host message {} out of order or corrupt",
+                        link.down.received
+                    ));
                 }
                 link.down.received += 1;
             }
@@ -245,12 +255,21 @@ impl Arena {
                 continue;
             }
             if now >= link.next_reliable {
-                for (end, ordered, direction) in [(&link.client, &mut link.up, 0), (&link.host, &mut link.down, 1)] {
+                for (end, ordered, direction) in [
+                    (&link.client, &mut link.up, 0),
+                    (&link.host, &mut link.down, 1),
+                ] {
                     let sent = Instant::now();
-                    match end.send(Lane::Reliable, &reliable_payload(ordered.sent, direction), now) {
+                    match end.send(
+                        Lane::Reliable,
+                        &reliable_payload(ordered.sent, direction),
+                        now,
+                    ) {
                         Ok(()) => ordered.sent += 1,
                         Err(LinkError::Full) => (),
-                        Err(error) => errors.push(format!("healthy {index}: reliable send {error:?}")),
+                        Err(error) => {
+                            errors.push(format!("healthy {index}: reliable send {error:?}"));
+                        }
                     }
                     longest_send = longest_send.max(sent.elapsed().as_micros());
                 }
@@ -269,7 +288,10 @@ impl Arena {
             }
         }
         self.errors.extend(errors);
-        self.rtts.entry(self.phase.clone()).or_default().extend(rtts);
+        self.rtts
+            .entry(self.phase.clone())
+            .or_default()
+            .extend(rtts);
         for offender in &mut self.offenders {
             while let Some(event) = offender.link.event() {
                 offender.events.push((now, format!("{event:?}")));
@@ -299,13 +321,20 @@ impl Arena {
             peaks.datagram_out = peaks.datagram_out.max(datagram.queued_bytes);
             peaks.reliable_in = peaks.reliable_in.max(reliable.inbound_bytes);
             peaks.datagram_in = peaks.datagram_in.max(datagram.inbound_bytes);
-            total += reliable.queued_bytes + datagram.queued_bytes + reliable.inbound_bytes + datagram.inbound_bytes;
+            total += reliable.queued_bytes
+                + datagram.queued_bytes
+                + reliable.inbound_bytes
+                + datagram.inbound_bytes;
             if reliable.queued_bytes > profile.reliable_bytes
                 || datagram.queued_bytes > profile.datagram_bytes
                 || reliable.inbound_bytes > profile.reliable_bytes
                 || datagram.inbound_bytes > profile.datagram_bytes
             {
-                self.errors.push(format!("{}: host link {} over its caps: {counts:?}", self.case, link.id()));
+                self.errors.push(format!(
+                    "{}: host link {} over its caps: {counts:?}",
+                    self.case,
+                    link.id()
+                ));
             }
         }
         self.peaks.host_total = self.peaks.host_total.max(total);
@@ -329,7 +358,10 @@ impl Arena {
                 .all(|h| h.up.received == h.up.sent && h.down.received == h.down.sent)
         });
         if let Err(error) = settled {
-            self.errors.push(format!("{}: healthy links did not settle: {error}", self.case));
+            self.errors.push(format!(
+                "{}: healthy links did not settle: {error}",
+                self.case
+            ));
         }
         let links: Vec<Value> = self
             .healthy
@@ -346,7 +378,8 @@ impl Arena {
             .collect();
         for (index, h) in self.healthy.iter().enumerate() {
             if !(h.client.is_open() && h.host.is_open()) {
-                self.errors.push(format!("{}: healthy link {index} closed", self.case));
+                self.errors
+                    .push(format!("{}: healthy link {index} closed", self.case));
             }
         }
         self.paused = false;
@@ -362,7 +395,12 @@ impl Arena {
             if samples.is_empty() {
                 return Value::Null;
             }
-            #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss, reason = "quantile index")]
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                clippy::cast_precision_loss,
+                reason = "quantile index"
+            )]
             let index = ((samples.len() - 1) as f64 * q).round() as usize;
             json!(samples[index] as f64 / 1_000.0)
         };
