@@ -242,14 +242,16 @@ impl Tree {
         self.curves[node as usize].capacity
     }
 
-    /// Bytes the nodes' curves of level for volume take.
+    /// Payload bytes of the nodes' curves of level for volume: the arrays' lengths, not
+    /// their allocated capacity.
     pub fn curve_bytes(&self) -> usize {
         size_of_val(self.band.as_slice())
             + size_of_val(self.band_sum.as_slice())
             + size_of_val(self.curves.as_slice())
     }
 
-    /// Bytes the whole prepared body takes in memory.
+    /// Payload bytes of the prepared body's arrays: their lengths, not allocated capacity,
+    /// and without the small-hollow report or the structs themselves.
     pub fn bytes(&self) -> usize {
         self.curve_bytes()
             + size_of_val(self.ground.heights.as_slice())

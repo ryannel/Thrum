@@ -186,6 +186,52 @@ impl Canopy {
             .product()
     }
 
+    /// The heights above a point's at which its exposure changes, each with the exposure
+    /// from that height up to the next: the undersides above it of the layers in the columns
+    /// its edge-width square touches, lowest first. Exposure never falls with height.
+    pub(crate) fn steps(&self, point: [f64; 3]) -> Vec<(f64, f64)> {
+        let [x, y, z] = point;
+        let mut heights: Vec<f64> = Vec::new();
+        if !self.layers.is_empty() {
+            let ((x0, x1), (z0, z1)) = self.span(x, z);
+            for iz in z0..=z1 {
+                for ix in x0..=x1 {
+                    let inside = |i: i64, n: usize| usize::try_from(i).ok().filter(|&i| i < n);
+                    let (Some(cx), Some(cz)) = (inside(ix, self.size[0]), inside(iz, self.size[1]))
+                    else {
+                        continue;
+                    };
+                    for l in &self.layers[cz * self.size[0] + cx] {
+                        if l.underside > y {
+                            heights.push(l.underside);
+                        }
+                    }
+                }
+            }
+        }
+        heights.sort_by(f64::total_cmp);
+        heights.dedup();
+        heights
+            .into_iter()
+            .map(|h| (h, self.exposure([x, h, z])))
+            .collect()
+    }
+
+    /// The columns a point's edge-width square may touch, as inclusive index ranges.
+    fn span(&self, x: f64, z: f64) -> ((i64, i64), (i64, i64)) {
+        let local = [
+            (x - self.origin[0]) / self.cell,
+            (z - self.origin[1]) / self.cell,
+        ];
+        let half = 0.5 * self.edge_width / self.cell;
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "cell indices of finite points; columns outside the grid are open"
+        )]
+        let span = |c: f64| ((c - half).floor() as i64, (c + half).floor() as i64);
+        (span(local[0]), span(local[1]))
+    }
+
     /// Exposure at a world point (x, y, z): the columns' exposures at height y averaged
     /// over a square of the profile's edge width centred on the point, so it passes from
     /// one shelter's share to the next over that width. The same function on any device.
@@ -223,7 +269,8 @@ impl Canopy {
                 }
             }
         }
-        sum / (4.0 * half * half)
+        // Rounding in the weights may carry the mean of open columns a little past 1.
+        (sum / (4.0 * half * half)).min(1.0)
     }
 }
 
