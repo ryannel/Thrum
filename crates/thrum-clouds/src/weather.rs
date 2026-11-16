@@ -5,6 +5,8 @@ use thrum_render::{
     runtime::DeviceSite,
 };
 
+pub(crate) const PASS: &str = "cloud weather map";
+
 /// Presentation resolution and refresh bound, in weather seconds.
 #[derive(Clone, Debug)]
 pub struct WeatherProfile {
@@ -158,7 +160,7 @@ impl WeatherMap {
             source: wgpu::ShaderSource::Wgsl(include_str!("weather.wgsl").into()),
         });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
-            label: Some("cloud weather map"),
+            label: Some(PASS),
             layout: None,
             module: &shader,
             entry_point: Some("main"),

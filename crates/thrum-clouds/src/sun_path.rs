@@ -6,6 +6,14 @@ use thrum_render::{
     runtime::DeviceSite,
 };
 
+pub(crate) const PATH_PASSES: [&str; 3] = [
+    "cloud Sun path near",
+    "cloud Sun path middle",
+    "cloud Sun path far",
+];
+pub(crate) const GROUND_PASS: &str = "cloud ground field";
+pub(crate) const FAR_PASS: &str = "cloud far transmittance";
+
 /// One camera-following window of Sun-ray columns.
 #[derive(Clone, Copy, Debug)]
 pub struct SunLevel {
@@ -136,13 +144,7 @@ impl SunPath {
         });
         let pipelines = std::array::from_fn(|i| {
             device.compute(&wgpu::ComputePipelineDescriptor {
-                label: Some(
-                    [
-                        "cloud Sun path",
-                        "cloud ground field",
-                        "cloud far transmittance",
-                    ][i],
-                ),
+                label: Some(["cloud Sun path", GROUND_PASS, FAR_PASS][i]),
                 layout: None,
                 module: &module,
                 entry_point: Some(["path", "ground", "far"][i]),
@@ -540,7 +542,7 @@ impl SunPath {
     }
     /// Current recording selected a new tick.
     pub fn runs(&self, index: usize) -> bool {
-        self.runs && (index >= 3 || self.ranges[index].1 > 0)
+        index < self.groups.len() && self.runs && (index >= 3 || self.ranges[index].1 > 0)
     }
     /// Last submitted tick and weather time of each level's rows.
     pub fn row_stamps(&self) -> &[Vec<RowStamp>; 3] {

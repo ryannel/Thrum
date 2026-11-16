@@ -85,19 +85,14 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
         ));
     }
     let mut passes = vec![EffectPass {
-        name: "cloud weather map".into(),
+        name: crate::weather::PASS.into(),
         cadence: EffectCadence::TimeSliced,
         async_eligible: true,
         accesses: weather,
     }];
     for i in 0..3 {
         passes.push(EffectPass {
-            name: [
-                "cloud Sun path near",
-                "cloud Sun path middle",
-                "cloud Sun path far",
-            ][i]
-                .into(),
+            name: crate::sun_path::PATH_PASSES[i].into(),
             cadence: EffectCadence::TimeSliced,
             async_eligible: true,
             accesses: vec![
@@ -124,13 +119,13 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> EffectGraph {
     ground.push(access(6, 0..1, A::StorageWrite));
     ground.push(access(15, 0..gpu.sun.uniforms()[3].size(), A::UniformRead));
     passes.push(EffectPass {
-        name: "cloud ground field".into(),
+        name: crate::sun_path::GROUND_PASS.into(),
         cadence: EffectCadence::Skippable,
         async_eligible: true,
         accesses: ground,
     });
     passes.push(EffectPass {
-        name: "cloud far transmittance".into(),
+        name: crate::sun_path::FAR_PASS.into(),
         cadence: EffectCadence::Skippable,
         async_eligible: true,
         accesses: vec![
