@@ -274,7 +274,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one."
     },
     {
