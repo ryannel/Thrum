@@ -243,12 +243,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on (RIVERS M2): In Progress · [plan](RIVERS/PLAN.md)
 - On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do (PUDDLES M2): In Progress · [plan](PUDDLES/PLAN.md)
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2): Not Started · [plan](SIM-2D/PLAN.md)
-- A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): Ready for Review · [plan](TRANSPORT/PLAN.md) · [latest review](../evidence/TRANSPORT/M1-review.md)
+- A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code (TRANSPORT M2): Not Started · [plan](TRANSPORT/PLAN.md)
 - A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader (REVIEW-ENGINE M3): Not Started · [plan](REVIEW-ENGINE/PLAN.md)
 - From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1): Not Started · [plan](GAME-SPLIT/PLAN.md)
 
 ### Recently done
 
+- A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1), 16 Nov · [review](../evidence/TRANSPORT/M1-review.md)
 - The sea names its buffers and passes, shares its records with its shaders under a layout test, and uploads its spectrum only when the spectrum changes (REVIEW-ENGINE M2), 16 Nov · [review](../evidence/REVIEW-ENGINE/M2-review.md)
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1), 16 Nov · [review](../evidence/SIM-2D/M1-review.md)
 - The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves (REPO-RULES M2), 16 Nov · [review](../evidence/REPO-RULES/M2-review.md)
@@ -312,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M2 of 7 · In Progress |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · In Progress |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M2 of 3 · Not Started |
-| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M1 of 2 · Ready for Review |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M2 of 2 · Not Started |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Waiting: On Dependency, SIM-2D:M3 |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
