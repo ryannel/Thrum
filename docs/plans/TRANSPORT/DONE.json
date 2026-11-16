@@ -261,7 +261,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As hard to knock over as the network layer of a public game server. Quinn and Cloudflare's quiche are fuzzed, and a peer's mistake costs that peer its connection and nobody else anything. One hostile, stalled or frozen client costs the host a bounded amount of memory and the other players no reliable message; and, as with Godot's or Unreal's networking, a single-player build carries no socket code."
     }
   ]
