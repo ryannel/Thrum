@@ -1,6 +1,10 @@
 //! Explicit socket runner; default tests never execute this program.
 #[cfg(not(target_arch = "wasm32"))]
+mod arena;
+#[cfg(not(target_arch = "wasm32"))]
 mod host_drop;
+#[cfg(not(target_arch = "wasm32"))]
+mod hostile;
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use link_proof::Actor;
@@ -11,6 +15,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use thrum_transport::{Controller, Link, Profile, native};
     let args: Vec<_> = std::env::args().collect();
     let role = args.get(1).ok_or("host or client required")?;
+    if role == "hostile" || role == "overload" {
+        let record = if role == "hostile" { hostile::hostile() } else { hostile::overload() }?;
+        writeln!(io::stdout(), "{record}")?;
+        return if record["pass"] == true {
+            Ok(())
+        } else {
+            Err(format!("{role} expectations failed").into())
+        };
+    }
     if role == "host-drop" {
         let record = host_drop::run()?;
         writeln!(io::stdout(), "{record}")?;
@@ -55,6 +68,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .duration_since(std::time::UNIX_EPOCH)?
         .as_millis();
     let mut ever_opened = false;
+    // In the suspend case a client notices its own freeze as a gap between loop passes.
+    let mut last_pass = Instant::now();
     let mut links: Vec<(Link, Actor, Instant)> = Vec::new();
     if let Some(host) = &host {
         loop {
@@ -87,6 +102,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ));
     }
     loop {
+        let gap = last_pass.elapsed();
+        last_pass = Instant::now();
+        if case == "suspend" && host.is_none() && gap >= Duration::from_secs(1) {
+            // Before this pass takes anything: what each link had delivered when the process stopped.
+            let now = u64::try_from(epoch.elapsed().as_millis())?;
+            writeln!(
+                io::stdout(),
+                "{}",
+                serde_json::json!({"resumed_after_gap_ms": gap.as_millis(), "elapsed_ms": now,
+                    "unix_ms": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_millis(),
+                    "links_at_resume": links.iter().map(|(l, a, _)| a.record(l, now)).collect::<Vec<_>>()})
+            )?;
+            io::stdout().flush()?;
+        }
         let command = control
             .and_then(|p| std::fs::read_to_string(p).ok())
             .unwrap_or_default();
@@ -127,6 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 links.push((link, Actor::new(1, case), Instant::now()));
             }
         }
+        let mut reopen = false;
         for (link, script, started) in &mut links {
             let now = u64::try_from(epoch.elapsed().as_millis())?;
             script
@@ -150,6 +180,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         serde_json::json!({"closed_result":script.record(link,now),"elapsed_ms":now})
                     )?;
                     io::stdout().flush()?;
+                    if case == "suspend" && host.is_none() {
+                        reopen = true;
+                    }
                 }
             }
             if started.elapsed().as_secs() >= seconds || command == "finish" {
@@ -173,8 +206,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
+        if reopen {
+            // A new link with the same ticket; nothing of the old one is carried over.
+            links.push((
+                native::connect(client_ticket.as_ref().ok_or("client ticket required")?, profile.clone())?,
+                Actor::new(0, case),
+                Instant::now(),
+            ));
+        }
         let now = u64::try_from(epoch.elapsed().as_millis())?;
-        if case == "session" && now >= next_progress {
+        if (case == "session" || case == "suspend") && now >= next_progress {
             writeln!(
                 io::stdout(),
                 "{}",

@@ -26,3 +26,7 @@ web-transport-quinn = { version = "=0.13.6", default-features = false, features 
 wasm-bindgen = { version = "=0.2.129", optional = true }
 wasm-bindgen-futures = { version = "=0.4.79", optional = true }
 js-sys = { version = "=0.3.106", optional = true }
+
+[[example]]
+name = "host_and_client"
+required-features = ["native"]

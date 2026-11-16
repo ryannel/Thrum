@@ -28,6 +28,10 @@ serde_json = "=1.0.154"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 thrum-transport = { path = "../../crates/thrum-transport", features = ["native"] }
+# The hostile peers, written below the engine's adapter. Every version is already locked for the adapter.
+tokio = { version = "=1.54.1", features = ["rt", "net", "time"] }
+web-transport-quinn = { version = "=0.13.6", default-features = false, features = ["ring"] }
+url = "=2.5.8"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 thrum-transport = { path = "../../crates/thrum-transport", features = ["browser"] }

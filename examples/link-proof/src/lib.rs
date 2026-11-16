@@ -31,7 +31,7 @@ impl Actor {
     pub fn new(direction: u8, case: &str) -> Self {
         let mut script = Script::new(direction);
         script.identify(identity());
-        if case == "session" {
+        if case == "session" || case == "suspend" {
             script.stop_at(u64::MAX);
         }
         Self {
@@ -62,7 +62,7 @@ impl Actor {
         let start = *self.began.get_or_insert(now);
         let elapsed = now.saturating_sub(start);
         match self.case.as_str() {
-            "exchange" | "session" => self.script.tick(link, now)?,
+            "exchange" | "session" | "suspend" => self.script.tick(link, now)?,
             "limits" => {
                 if !self.exercised && elapsed >= 500 {
                     self.script.limits(link, now)?;

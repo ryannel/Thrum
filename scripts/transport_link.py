@@ -290,6 +290,129 @@ def host_drop(output):
     return record
 
 
+def in_process(command, output):
+    """The hostile and overload runs: one program holds the host, three healthy links and the offenders."""
+    output.mkdir()
+    result = subprocess.run([str(ROOT / "target/release/link-proof"), command], cwd=ROOT, env=ENV, capture_output=True, text=True, timeout=600)
+    (output / f"{command}.json").write_text(result.stdout)
+    (output / f"{command}.stderr").write_text(result.stderr)
+    record = json.loads(result.stdout.strip().splitlines()[-1])
+    assert result.returncode == 0 and record["pass"] is True, f"{command} failed: {record.get('failures')}"
+    return record
+
+
+IDLE_MS = 4_000
+
+
+def link_rows(path):
+    return rows(path) if path.exists() else []
+
+
+def native_suspend(target, output):
+    """Freeze a native client past the idle timeout with SIGSTOP, resume it and watch both ends."""
+    output.mkdir()
+    host = client = None
+    try:
+        host = start([ROOT / "target/release/link-proof", "host", "unused", 60, "bbr", "suspend"], output / "host.jsonl")
+        host_start = first_row(host, output / "host.jsonl")
+        ticket = host_start["ticket"]
+        binary = ROOT / "target" / ("aarch64-apple-ios-sim" if target == "ios-sim" else "") / "release/link-proof"
+        command = (["xcrun", "simctl", "spawn", SIM] if target == "ios-sim" else []) + [binary, "client", ticket, 16, "bbr", "suspend"]
+        client = start(command, output / "client.jsonl")
+        pid = first_row(client, output / "client.jsonl")["client_pid"]
+        deadline = time.monotonic() + 15
+        while not any("Open" in row.get("events", []) for row in link_rows(output / "client.jsonl")):
+            assert time.monotonic() < deadline, "client did not open"
+            time.sleep(0.01)
+        time.sleep(3)
+        freeze_ms = time.time() * 1000
+        os.kill(pid, signal.SIGSTOP)
+        time.sleep((IDLE_MS + 3_000) / 1000)
+        resume_ms = time.time() * 1000
+        os.kill(pid, signal.SIGCONT)
+        assert client.wait(timeout=60) == 0, "client failed"
+        time.sleep(0.5)
+    finally:
+        stop(client)
+        stop(host)
+    host_rows = rows(output / "host.jsonl")
+    client_rows = rows(output / "client.jsonl")
+    epoch = host_start["epoch_unix_ms"]
+    opened = [row["id"] for row in host_rows if "Open" in row.get("events", [])]
+    assert len(opened) >= 2 and opened[0] != opened[1], f"host saw no second link: {opened}"
+    first_close = next(row for row in host_rows if row.get("id") == opened[0] and any(e.startswith("Closed(") for e in row.get("events", [])))
+    host_close_ms = epoch + first_close["elapsed_ms"]
+    host_close_after_freeze = host_close_ms - freeze_ms
+    assert "Closed(TimedOut)" in first_close["events"], first_close
+    assert 0 < host_close_after_freeze <= IDLE_MS + 1_000, f"host reported the timeout {host_close_after_freeze:.0f} ms after the freeze"
+    resumed = next(row for row in client_rows if "resumed_after_gap_ms" in row)
+    assert resumed["resumed_after_gap_ms"] >= IDLE_MS, resumed
+    old_at_resume = resumed["links_at_resume"][0]
+    old_closed = next(row["closed_result"] for row in client_rows if "closed_result" in row and row["closed_result"]["id"] == old_at_resume["id"])
+    old_events = [e for row in client_rows if row.get("id") == old_at_resume["id"] for e in row.get("events", [])]
+    assert any(e.startswith("Closed(") for e in old_events), "client never reported the old link closed"
+    for key in ["reliable_received", "datagrams_received"]:
+        assert old_closed[key] == old_at_resume[key], f"old link delivered {key} after the resume"
+    new_ids = [row["id"] for row in client_rows if "Open" in row.get("events", []) and row["id"] != old_at_resume["id"]]
+    assert new_ids, "client opened no new link"
+    new_result = next(row["result"] for row in client_rows if "result" in row and row["result"]["id"] == new_ids[0])
+    assert new_result["reliable_received"] > 0 and new_result["reliable_sent"] > 0, "the new link carried nothing"
+    return {
+        "idle_timeout_ms": IDLE_MS, "freeze_unix_ms": freeze_ms, "resume_unix_ms": resume_ms,
+        "frozen_ms": resume_ms - freeze_ms, "host_link_closed_ms_after_freeze": host_close_after_freeze,
+        "host_old_link": opened[0], "host_new_link": opened[1], "host_close_event": first_close,
+        "client_gap": {k: resumed[k] for k in ["resumed_after_gap_ms", "unix_ms"]},
+        "client_old_link_at_resume": old_at_resume, "client_old_link_closed": old_closed, "client_old_link_events": old_events,
+        "client_new_link": new_result,
+        "host_events": [row for row in host_rows if "events" in row],
+    }
+
+
+def chrome_suspend(output):
+    """Reload a page, close a tab, then freeze the renderer, each without closing the link first."""
+    output.mkdir()
+    host = driver = None
+    try:
+        host = start([ROOT / "target/release/link-proof", "host", "unused", 90, "bbr", "suspend"], output / "host.jsonl")
+        host_start = first_row(host, output / "host.jsonl")
+        driver = start(["node", "scripts/transport_browser.mjs", host_start["ticket"], output / "chrome", 60, output / "browser.json", "suspend"], output / "driver.log")
+        assert driver.wait(timeout=150) == 0, (output / "driver.log").read_text()[-3000:]
+        time.sleep(0.5)
+    finally:
+        stop(driver)
+        stop(host)
+        if (output / "chrome").exists():
+            shutil.rmtree(output / "chrome")
+    browser = json.loads((output / "browser.json").read_text())
+    steps = {step["step"]: step for step in browser["steps"]}
+    host_rows = rows(output / "host.jsonl")
+    epoch = host_start["epoch_unix_ms"]
+    opened = [(row["id"], epoch + row["elapsed_ms"]) for row in host_rows if "Open" in row.get("events", [])]
+    def closed_at(link):
+        row = next((row for row in host_rows if row.get("id") == link and any(e.startswith("Closed(") for e in row.get("events", []))), None)
+        return row and {"events": row["events"], "unix_ms": epoch + row["elapsed_ms"]}
+    assert len(opened) >= 3, f"host saw {len(opened)} links, expected one per page load"
+    result = {"idle_timeout_ms": IDLE_MS, "chrome": browser["version"], "steps": browser["steps"], "pages": browser["pages"]}
+    for index, step in enumerate(["reload", "close-tab"]):
+        link, _ = opened[index]
+        closed = closed_at(link)
+        assert closed, f"host never reported the link closed after {step}"
+        after = closed["unix_ms"] - steps[step]["unix_ms"]
+        assert 0 <= after <= IDLE_MS + 1_000, f"{step}: host reported the close {after:.0f} ms later"
+        next_link, next_open = opened[index + 1]
+        assert next_link != link and next_open > steps[step]["unix_ms"], f"{step}: no new link"
+        result[step] = {"old_host_link": link, "host_close": closed, "host_close_ms_after_step": after, "new_host_link": next_link, "new_link_open_ms_after_step": next_open - steps[step]["unix_ms"]}
+    frozen_link, _ = opened[2]
+    freeze, resume = steps["freeze"]["unix_ms"], steps["resume"]["unix_ms"]
+    progress = [{"host_ms": epoch + row["elapsed_ms"], "link": item} for row in host_rows if "progress" in row for item in row["progress"] if item["id"] == frozen_link]
+    result["freeze"] = {
+        "host_link": frozen_link, "frozen_ms": resume - freeze, "renderer_pids": steps["freeze"].get("pids"),
+        "host_close_during_or_after": closed_at(frozen_link),
+        "host_progress_from_before_freeze_to_after_resume": [p for p in progress if freeze - 2_000 <= p["host_ms"] <= resume + 3_000],
+    }
+    return result
+
+
 def session(output):
     """Ten wall-clock minutes, with live sends interrupted by each fault."""
     for target in ["mac-metal","chrome-webgpu","ios-sim"]:
@@ -451,8 +574,8 @@ def closure(output):
     core = run(["cargo", "tree", "--locked", "--offline", "-p", "thrum-transport", "--no-default-features", "--prefix", "none"], capture_output=True, text=True).stdout
     assert len(core.strip().splitlines()) == 1, core
     shipping = {}
-    for package in ["v1-game", "thrum-starter", "thrum-stones", "thrum-lighthouse"]:
-        tree = run(["cargo", "tree", "--locked", "--offline", "-p", package], capture_output=True, text=True).stdout
+    for package in ["v1-game", "v1-game-ios", "thrum-starter", "thrum-stones", "thrum-lighthouse"]:
+        tree = run(["cargo", "tree", "--locked", "--offline", "-p", package, "--target", "all"], capture_output=True, text=True).stdout
         assert "thrum-transport" not in tree
         shipping[package] = "transport absent"
     metadata = json.loads(run(["cargo", "metadata", "--locked", "--offline", "--format-version", "1", "--features", "thrum-transport/native,thrum-transport/browser"], capture_output=True, text=True).stdout)
@@ -467,6 +590,30 @@ def closure(output):
             continue
         reached.add(item)
         pending.extend(nodes[item]["dependencies"])
+    # The crates this module added to the lockfile: in the adapters' closure and not locked before it began.
+    before = {tuple(pair) for pair in baseline}
+    added = sorted({(packages[item]["name"], packages[item]["version"]) for item in reached - {transport}} - before)
+    assert added, "the adapter closure added nothing, so the check below would prove nothing"
+    members = sorted(packages[item]["name"] for item in metadata["workspace_members"])
+    closures = {}
+    for package in members:
+        tree = run(["cargo", "tree", "--locked", "--offline", "-p", package, "--target", "all", "-e", "normal,build", "--prefix", "none"], capture_output=True, text=True).stdout
+        present = {tuple(line.split()[:2]) for line in tree.splitlines() if line.strip()}
+        present = {(name, version.lstrip("v")) for name, version in present}
+        found = sorted(f"{name} {version}" for name, version in present if (name, version) in set(added))
+        if package == "thrum-transport":
+            # The crate that holds the adapters, behind its features: with none, it reaches nothing added.
+            assert not found, f"thrum-transport without features reaches {found[:5]}"
+            closures[package] = {"asks_for_adapters": False, "adapters_behind_features": ["native", "browser"], "added_crates_in_closure": 0}
+        elif package == "link-proof":
+            closures[package] = {"asks_for_adapters": True, "added_crates_in_closure": len(found)}
+        else:
+            assert not found, f"{package} reaches crates this module added: {found[:5]}"
+            assert not any(name == "thrum-transport" for name, _ in present), f"{package} reaches thrum-transport"
+            closures[package] = {"asks_for_adapters": False, "added_crates_in_closure": 0, "thrum_transport_in_closure": False}
+    # Only a package that asks for the socket adapters may reach them: link-proof names the features.
+    assert closures["link-proof"]["added_crates_in_closure"] > 0
+    build_core = run(["cargo", "build", "--locked", "--offline", "-p", "thrum-transport", "--no-default-features"], capture_output=True, text=True)
     licences = []
     for item in sorted(reached - {transport}):
         package = packages[item]
@@ -476,12 +623,13 @@ def closure(output):
         chosen = next((option for option in alternatives if all(part.strip(" ()") in permissive for part in option.split(" AND "))), None)
         assert chosen, (package["name"], licence)
         licences.append({"name": package["name"], "version": package["version"], "license": licence, "selected_license": chosen})
-    return {"core": core.strip(), "shipping": shipping, "existing_versions_preserved": len(baseline), "adapter_licences": licences}
+    return {"core": core.strip(), "core_builds_alone": build_core.returncode == 0, "shipping": shipping, "existing_versions_preserved": len(baseline),
+            "crates_added_by_this_module": [f"{name} {version}" for name, version in added], "workspace_packages": closures, "adapter_licences": licences}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["conformance", "closure", "costs", "session"])
+    parser.add_argument("command", choices=["conformance", "closure", "costs", "session", "hostile", "overload", "suspend"])
     parser.add_argument("--target", choices=["mac-metal", "chrome-webgpu", "ios-sim"], default="mac-metal")
     args = parser.parse_args()
     SCRATCH.mkdir(parents=True, exist_ok=True)
@@ -492,6 +640,17 @@ def main():
         record["simulator"] = {"device":SIM,"target_triple":"aarch64-apple-ios-sim","runtimes":json.loads(run(["xcrun","simctl","list","runtimes","--json"],capture_output=True,text=True).stdout)}
     if args.command == "closure":
         record["closure"] = closure(output)
+    elif args.command in ["hostile", "overload"]:
+        build("mac-metal")
+        record[args.command] = in_process(args.command, output / args.command)
+    elif args.command == "suspend":
+        build("mac-metal")
+        if args.target != "mac-metal":
+            build(args.target)
+        if args.target == "chrome-webgpu":
+            record["suspend"] = chrome_suspend(output / "suspend")
+        else:
+            record["suspend"] = native_suspend(args.target, output / "suspend")
     elif args.command == "session":
         record["session"] = session(output)
     elif args.command == "costs":

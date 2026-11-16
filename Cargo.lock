@@ -1433,7 +1433,10 @@ dependencies = [
  "js-sys",
  "serde_json",
  "thrum-transport",
+ "tokio",
+ "url",
  "wasm-bindgen",
+ "web-transport-quinn",
 ]
 
 [[package]]

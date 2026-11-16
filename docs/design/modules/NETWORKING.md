@@ -191,9 +191,24 @@ the game chooses which transient cues tolerate that risk. Save, achievement and 
 
 N1 depends on message capabilities, not platform sockets in gameplay code: reliable ordered control, bounded command
 submission with semantic acknowledgement, and replaceable timestamped state. Adapters expose actual capabilities,
-message limits and backpressure. The post-V1 track selects native QUIC and browser WebTransport where qualified,
-with an ordered WebSocket fallback. Browser availability and interoperability are device gates;
+message limits and backpressure. Browser availability and interoperability are device gates;
 the world API assumes neither raw browser UDP nor a universally available WebTransport service.
+
+**What is built (TRANSPORT, 16 November 2026).** The [message link](../../plans/TRANSPORT/DESIGN.md) in
+`thrum-transport`: one reliable lane of whole messages up to 65,536 bytes and one datagram lane up to 1,000 bytes,
+events with close reasons, bounded queues with `Full` backpressure and an age limit on queued datagrams, counters,
+and a host that pins its identity in a join ticket. Native clients (Mac, iPhone) speak raw QUIC through Quinn and
+Chrome pages speak WebTransport, both to one host endpoint; an in-memory link with A0's conditioner rehearses the
+same contract with no socket. [The guide](../../TRANSPORT.md) says how a game uses it. Proved on one Mac over
+loopback, with a relay adding A0's delay, jitter and loss: Mac, Chrome and iPhone-simulator clients, ten minutes
+of four clients on one host, hostile, flooding, stalled and frozen peers beside healthy links, and a closure check
+that games without multiplayer contain none of it.
+
+**Selected by A0 and not built.** The ordered WebSocket fallback: Chrome's WebTransport holds the datagram lane, and
+Safari and Firefox now ship WebTransport, so TRANSPORT left it out; it stays A0's fallback if a browser target
+lacks WebTransport. Also not built or run: a public host or a certificate from a public authority, NAT traversal and
+matchmaking, a browser that hosts, Safari and Firefox, a physical iPhone, a second machine or any path that is not
+loopback. What a message means, the envelope, epochs, acknowledgement, clock sync and admission, stays `SESSION`'s.
 
 Use maintained transport/cryptographic libraries and platform integration; do not write custom cryptography. Treat
 incoming data as untrusted regardless of transport. Authentication/service integration stays behind explicit adapters;
