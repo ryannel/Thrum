@@ -4696,13 +4696,13 @@
     "device_evidence": []
   },
   "sea_ambient_field": {
-    "as_of": "2026-11-14",
+    "as_of": "2026-11-16",
     "owner": "SEA",
-    "implementation": "frame_time_gpu_kernels_and_composable_effect_declaration",
-    "correctness": "cpu_loop_velocity_portable_shader_and_metal_field_lifecycle_transition_and_default_limit_oracles_passed",
+    "implementation": "frame_time_gpu_kernels_composable_effect_declaration_typed_resource_table_reflected_Pod_records_and_change_driven_mode_upload",
+    "correctness": "cpu_loop_velocity_portable_shader_and_metal_field_lifecycle_transition_and_default_limit_oracles_passed;_per_entry_binding_graph_reflection_queue_byte_and_retained_transition_oracles_passed",
     "visuals": "not_drawn_this_module",
     "device": "M3_Max_Metal_numerical_qualification_and_per_pass_samples_recorded_no_integrated_performance_claim",
-    "evidence": "../evidence/SEA/M2.md"
+    "evidence": "../evidence/REVIEW-ENGINE/M2/README.md"
   },
   "sea_and_cloud_port_design": {
     "as_of": "2026-11-06",

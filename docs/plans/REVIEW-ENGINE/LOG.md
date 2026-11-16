@@ -1,5 +1,13 @@
 # REVIEW-ENGINE log
 
+- 2026-11-16 M2 gives the sea typed resource/pass/group/pipeline keys, whole Pod shader records and
+  reflection checks, a persistent mode allocation, and a transition into retained spectrum storage.
+  On `977d3b0a2`, all twelve sea tests pass on Metal, including every unchanged SEA test; all twelve
+  model tests pass too. The paired debug upload medians are 38,669.500 and 1,683.166 microseconds;
+  unchanged-frame queue bytes fall from 6,330,544 to 39,088, with GPU allocation unchanged.
+  These are contended upload observations, not integrated frame timings. Exact images use the shared
+  main-branch check. [The evidence](../../evidence/REVIEW-ENGINE/M2/README.md) records identities and limits.
+
 - 2026-11-16 M1 closes the watcher's event-only wait: periodic stat-cache reconciliation recovers silent
   changes without altering the original test's assertions or deadline. On `1d57d92d6`, 12 cooker unit tests
   and four server/watcher tests pass without TMPDIR; ten empty-environment repeats pass too. Restoring the

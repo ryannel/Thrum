@@ -83,8 +83,8 @@
           "lock": "gpu",
           "ask": "Is any buffer or pass still addressed by a literal index or by its place in a list? Are the mip pixel count and the channel count computed from the sizes they depend on?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -94,8 +94,8 @@
           "check": "cargo test --locked --offline -p thrum-sea --test wgsl_records",
           "ask": "Does the test find the bound structs by reflection, so that a new struct with no Rust record fails it, or does it check a hand-kept list?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -106,8 +106,8 @@
           "lock": "gpu",
           "ask": "Does the test count bytes handed to the queue, for a still spectrum, a changed one and a transition? What do the before and after records show a frame's CPU cost was and is? No figure there decides this item.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -118,8 +118,8 @@
           "lock": "gpu",
           "ask": "Did the diff change any assertion, bound or reference in a test that existed before this milestone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
           "verdict": "",
           "review": ""
         },
@@ -128,8 +128,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },
