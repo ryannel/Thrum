@@ -51,8 +51,10 @@ by eight row-major 128 × 128 cache levels. The cache stores the forward result 
 texel's rest place, from its restricted long-wave model. No forces read this display cache.
 
 `filtered_views()` lends the cascade and long-cache textures, respectively. Each wave layer
-has five consecutive array planes: the three field vec4s above, `(sx², sx*sz, sz², J)`,
-and `(J², 0, 0, 0)`. Every channel is averaged linearly through every mip. Cascades
+has five consecutive array planes: the three field vec4s above, `(sx², sx*sz, sz², dZ/dz)`,
+and `(J², 0, 0, 0)`. Mean J is in the displacement plane's fourth channel.
+The pixel reads only the derivative and second-moment planes; vertices read the first three.
+Every channel is averaged linearly through every mip. Cascades
 repeat; cache levels clamp at their edges. Surface consumers use trilinear anisotropic
 sampling over their own rest-space pixel derivatives, and recover covariance as the
 second moments minus the outer product of the filtered mean. Levels omitted from a

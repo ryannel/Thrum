@@ -78,9 +78,8 @@ struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@loc
 struct FilteredLayer { slope:vec2<f32>, second:vec3<f32>, differential:vec3<f32>, }
 fn filtered_layer(t:texture_2d_array<f32>,s:sampler,uv:vec2<f32>,dx:vec2<f32>,dy:vec2<f32>,layer:i32)->FilteredLayer {
     let derivative=textureSampleGrad(t,s,uv,layer+1,dx,dy);
-    let velocity=textureSampleGrad(t,s,uv,layer+2,dx,dy);
     let moments=textureSampleGrad(t,s,uv,layer+3,dx,dy);
-    return FilteredLayer(derivative.xy,moments.xyz,vec3(derivative.zw,velocity.w));
+    return FilteredLayer(derivative.xy,moments.xyz,vec3(derivative.zw,moments.w));
 }
 fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     // Integrate visible unresolved facets, clamping each reflected direction

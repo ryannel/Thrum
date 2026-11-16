@@ -1,5 +1,5 @@
 // Five linear planes per wave layer: displacement/J, derivatives, velocity,
-// slope second moments/J, and J squared. Mips average all planes unchanged.
+// slope second moments/dZdz, and J squared. Mips average all planes unchanged.
 struct Field { displacement:vec4<f32>, slope:vec4<f32>, velocity:vec4<f32> }
 @group(0) @binding(0) var<storage,read> cascades:array<Field>;
 @group(0) @binding(1) var<storage,read> long_field:array<Field>;
@@ -10,7 +10,7 @@ fn plane(f:Field,c:u32)->vec4<f32> {
         case 0u:{return f.displacement;}
         case 1u:{return f.slope;}
         case 2u:{return f.velocity;}
-        case 3u:{return vec4(f.slope.x*f.slope.x,f.slope.x*f.slope.y,f.slope.y*f.slope.y,f.displacement.w);}
+        case 3u:{return vec4(f.slope.x*f.slope.x,f.slope.x*f.slope.y,f.slope.y*f.slope.y,f.velocity.w);}
         default:{return vec4(f.displacement.w*f.displacement.w,0.0,0.0,0.0);}
     }
 }
