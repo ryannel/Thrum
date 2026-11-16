@@ -40,7 +40,7 @@ def build_settings(manifest, lock, packages):
     for profile in manifest.get("profile", {}).values():
         if "package" in profile:
             profile["package"] = {name: value for name, value in profile["package"].items()
-                                  if name in names or name == "*"}
+                                  if name in names or not all(c.isalnum() or c in "_-" for c in name)}
             if not profile["package"]:
                 del profile["package"]
     if "profile" in manifest:

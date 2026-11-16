@@ -32,6 +32,8 @@ class BuildIdentity(unittest.TestCase):
         changed = deepcopy(manifest)
         changed["profile"]["release"]["package"] = {"dep": {"opt-level": 1}}
         self.assertNotEqual(before, build_settings(changed, lock, selected))
+        changed["profile"]["release"]["package"] = {"dep@1": {"opt-level": 1}}
+        self.assertNotEqual(before, build_settings(changed, lock, selected))
 
 
 class CostComparisons(unittest.TestCase):
