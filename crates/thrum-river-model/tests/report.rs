@@ -1,9 +1,8 @@
 //! M1.5: the stopping rule and the report; a solve that runs out of steps is refused and
 //! writes nothing; the work follows the water, not the rectangle; and the same input gives the
 //! same bytes on one thread and on eight.
-#[expect(dead_code, reason = "shared fixture")]
-#[path = "support/valley.rs"]
-mod valley;
+mod support;
+use support::valley;
 use thrum_river_model::{Profile, RiverError, key, solve, write};
 
 #[test]

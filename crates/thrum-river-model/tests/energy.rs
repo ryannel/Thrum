@@ -6,11 +6,8 @@
     clippy::cast_sign_loss,
     reason = "cell indices of positive extents"
 )]
-#[path = "support/section.rs"]
-mod section;
-#[expect(dead_code, reason = "shared fixture")]
-#[path = "support/valley.rs"]
-mod valley;
+mod support;
+use support::{section, valley};
 use thrum_river_model::{Profile, Solution, solve};
 
 const G: f64 = 9.81;

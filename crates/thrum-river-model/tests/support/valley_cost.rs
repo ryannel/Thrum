@@ -2,7 +2,6 @@
 //! `scripts/river_cost.py` runs it in a release build. Arguments: cell size (default 0.25) and
 //! thread count (default 0, the machine's parallelism).
 #[expect(dead_code, reason = "shared fixture")]
-#[path = "../tests/support/valley.rs"]
 mod valley;
 use std::io::Write;
 use thrum_river_model::{Profile, solve};

@@ -9,12 +9,10 @@
     clippy::unwrap_used,
     reason = "test arithmetic over cell indices"
 )]
-#[expect(dead_code, reason = "shared fixture")]
-#[path = "support/valley.rs"]
-mod valley;
+mod support;
+use support::valley::{self, HOLLOW, LAKE};
 use thrum_river_model::{Profile, Solution, solve};
 use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, Profile as WaterProfile, Stage};
-use valley::{HOLLOW, LAKE};
 
 const MARGIN_HEIGHT: f64 = 0.3;
 const RISE: f64 = 0.3;

@@ -7,9 +7,8 @@
     clippy::cast_sign_loss,
     reason = "cell indices of positive extents"
 )]
-#[path = "support/valley.rs"]
 mod support;
-use support::{CENTRE, CREST, DISCHARGE, HOLLOW, NARROWS, NOTCH, bed, valley};
+use support::valley::{CENTRE, CREST, DISCHARGE, HOLLOW, NARROWS, NOTCH, bed, valley};
 use thrum_river_model::{Profile, Solution, solve};
 
 const G: f64 = 9.81;

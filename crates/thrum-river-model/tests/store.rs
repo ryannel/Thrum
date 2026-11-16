@@ -1,9 +1,8 @@
 //! M1.7: a river file holds a solve's output and decodes to the same bytes; its key follows its
 //! inputs; a stale file is refused by name; the reader lives in `thrum-water-model`, which does
 //! not depend on the solver.
-#[expect(dead_code, reason = "shared fixture")]
-#[path = "support/valley.rs"]
-mod valley;
+mod support;
+use support::valley;
 use thrum_river_model::{Manning, Profile, SOLVER_VERSION, key, key_for_version, solve, write};
 use thrum_water_model::{Bed, RiverFile};
 

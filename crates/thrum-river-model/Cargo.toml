@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+# support.rs is a shared module with children, not an integration-test crate root.
+autotests = false
 
 [dependencies]
 blake3 = { version = "=1.8.7", default-features = false, features = ["std"] }
@@ -12,3 +14,29 @@ thrum-water-model = { path = "../thrum-water-model" }
 
 [lints]
 workspace = true
+
+[[example]]
+name = "valley_cost"
+path = "tests/support/valley_cost.rs"
+
+[[test]]
+name = "chart"
+path = "tests/chart.rs"
+[[test]]
+name = "closed_forms"
+path = "tests/closed_forms.rs"
+[[test]]
+name = "energy"
+path = "tests/energy.rs"
+[[test]]
+name = "fronts"
+path = "tests/fronts.rs"
+[[test]]
+name = "report"
+path = "tests/report.rs"
+[[test]]
+name = "store"
+path = "tests/store.rs"
+[[test]]
+name = "valley"
+path = "tests/valley.rs"

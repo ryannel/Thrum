@@ -10,9 +10,8 @@
     clippy::print_stdout,
     reason = "test arithmetic over cell indices; helpers report what they measured"
 )]
-#[path = "support/section.rs"]
 mod support;
-use support::{depths, profile, section};
+use support::section::{depths, profile, section};
 use thrum_river_model::{Grid, Manning, State, Stepper, solve};
 
 const G: f64 = 9.81;
