@@ -85,13 +85,13 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                             .await
                             .expect("consumer GPU contents");
                     nonempty |= field.iter().any(|&value| value != 0);
-                    if let Some((old_tick, old_field)) = &previous_field {
-                        if *old_tick == time.tick {
-                            assert_eq!(
-                                *old_field, field,
-                                "repeated tick retains state with a different phase"
-                            );
-                        }
+                    if let Some((old_tick, old_field)) = &previous_field
+                        && *old_tick == time.tick
+                    {
+                        assert_eq!(
+                            *old_field, field,
+                            "repeated tick retains state with a different phase"
+                        );
                     }
                     previous_field = Some((time.tick, field));
                     if time.display_phase > 2.0 {
