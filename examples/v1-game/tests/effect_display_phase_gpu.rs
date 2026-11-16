@@ -1,8 +1,11 @@
 //! Submitted V1 effect times, independently checked against consumed targets.
 pub mod support;
+#[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
+#[cfg(target_os = "macos")]
 use v1_game::{FrameConfig, FrameHost, FrameSample, effect::DiagnosticEffect};
 
+#[cfg(target_os = "macos")]
 fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
@@ -16,6 +19,7 @@ fn complete(host: &mut FrameHost, device: &wgpu::Device) -> FrameSample {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn identity(sample: &FrameSample) {
     assert_eq!(
         sample.presentation_alpha.to_bits(),
