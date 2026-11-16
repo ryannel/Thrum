@@ -174,7 +174,11 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                 }
                 let observation = origin.elapsed();
                 let target = due + Duration::from_millis(30);
-                let lead = target.saturating_sub(observation);
+                let lead = match i % 12 {
+                    0 => Duration::ZERO,
+                    1 => Duration::from_millis(50),
+                    _ => target.saturating_sub(observation),
+                };
                 host.set_presentation_lead(lead);
                 host.drive(observation, Some(&surface))
                     .expect("threaded frame");
