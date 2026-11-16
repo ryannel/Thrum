@@ -322,3 +322,10 @@
   are retained; no overall pass is claimed. The counter now counts completed GPU rows rather than metadata,
   with a passing CPU regression test. The failed verification is retried on a frozen checkout, with all
   references, comparisons and sampling unchanged. No merge or main-branch campaign is claimed.
+
+- 2026-11-16 The frozen coverage build `f3e96ad1c` passes the complete refreshed-reference verifier:
+  native 38 + 4 comparisons and four Chrome sets of 481 records, with its clean-checkout invariant intact.
+  [Complete compact records](../../evidence/CULLING/M3/replan/verifier-pass/record.json) retain the source,
+  artifacts, workload and toolchain. The preceding incomplete temporal observer is retained separately.
+  The untouched starting-main verifier runs next; no reference or comparison was changed between attempts.
+  Main has advanced without moving the 34 references, so the reviewed plan requires no regeneration.
