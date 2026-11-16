@@ -3507,6 +3507,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-preview-1x.mp4",
+      "size": 3507901,
+      "sha256": "bb946d61cf72fae502e9fa37888ab6ee45b6319af1f2d79aaf4a65b50762083e",
+      "date": "2026-11-16T22:16:22.623767+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/coverage-cost/binaries/candidate",
       "size": 10161840,
       "sha256": "3ddbf7e335ab07148e471c6c2f22fc9e5f142b8b44f0acfeba097894dc8c3199",
@@ -3531,10 +3539,34 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/main-campaign/sources.tar.gz",
+      "size": 169955831,
+      "sha256": "13ef6f5863b4aea307c1601c16ae4f18a4d023a166d3a6a711397506608ff766",
+      "date": "2026-11-16T22:14:24.980990+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/main-inputs.tar",
+      "size": 53852160,
+      "sha256": "9e5b1a7a7b234b49d9ff539040561dc6c5f088c5dcc37c1b5df8743e62e715e6",
+      "date": "2026-11-16T22:18:36.626398+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/motion-selection.tar",
       "size": 174322176,
       "sha256": "30ce9450ebc1bcc359278ba3988a3cc6a64202a07d63c85d2c94b97989853ccd",
       "date": "2026-11-16T22:00:32.285467+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/motion-sources.tar",
+      "size": 2409986048,
+      "sha256": "116a51855810ff37911382eccfb4e03a63269d3dd3da76651290e70938ff8615",
+      "date": "2026-11-16T22:18:28.034143+00:00",
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {

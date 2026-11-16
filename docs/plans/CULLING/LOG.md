@@ -376,3 +376,10 @@
   with game bytes, capture buffers, frame rate and export bounds unchanged. No cause or cadence is inferred.
   [Motion proof and verified source selections](../../evidence/CULLING/M3/replan/motion.md).
   The first campaign stopped on disk reserve after six clean candidate routes; a new bounded run is active.
+
+- 2026-11-16 M3.11's standalone main-build campaign passes eight complete pairs, covering every recipe,
+  source and entity-route combination with four hosts and two counted render workers. The coverage build
+  differs in none of eight routes; the coverage-only control differs in five, at eleven ticks in total.
+  [Report, complete raw sources and identities](../../evidence/CULLING/M3/replan/main-campaign/README.md).
+  All thirteen items now have target evidence.
+  The G3c clause audit and ledger separate implementation, correctness, content and contended costs.
