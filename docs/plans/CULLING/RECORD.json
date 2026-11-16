@@ -242,7 +242,7 @@
       }
     },
     "M3": {
-      "definitions": "9dbb9cac088fe48a11ef07e7a6a08542aab0e90159863b82bd5068639585cf62",
+      "definitions": "150339a5201fd77a3fbc63bc9434e6a9bbb66a0f4a88be798057a6f66c875ecd",
       "reviews": [
         {
           "verdict": "fail",
@@ -291,8 +291,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "CULLING M3 needs something no plan provides yet. The builder wrote: A planner must reconcile M3.10\u2019s unchanged-registry ",
-        "at": "2026-11-16T04:16:37Z"
+        "task": "Re-plan CULLING M3 so its coverage items prove through `merge` and the main-branch check `main-check exact-images`, unde",
+        "at": "2026-11-16T07:42:34Z"
       }
     }
   },
@@ -320,11 +320,15 @@
     {
       "task": "CULLING M3 needs something no plan provides yet. The builder wrote: A planner must reconcile M3.10\u2019s unchanged-registry requirement with BASELINE-GUARD M2\u2019s mandatory pin/refresh edits before landing. The builder's handoff, docs/evidence/CULLING/M3-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/culling at de69d9da1821, which isn't merged; read it with `git show`. Context: BASELINE-GUARD M2 is now a CPU guard and is Ready for Review; the exact baseline gate only warns under the proof regime (8fc5ee2c).",
       "at": "2026-11-16T04:16:37Z"
+    },
+    {
+      "task": "Re-plan CULLING M3 so its coverage items prove through `merge` and the main-branch check `main-check exact-images`, under the proof regime (ORCHESTRATE.md; docs/plans/ARCHITECTURE.md#proofs-run-once-on-main; .agents/skills/thrum-engineering/references/building.md 'Prove once, on main'). A job audit (16 Nov) found M3's builder-built 'qualified landing' pipeline (resume_pipeline, after_jobs, session2/3/4_post, qualified_landing, finish_landing under docs/evidence/CULLING/M3 and tmp/culling-m3) caused about 30% of all failed background jobs and 5 failed GPU holds: each follow-up job asserts the previous one passed, and together they rebuild the proof-before-merge the regime removed. Done: M3's items and checks need no such pipeline; any paired candidate/control or coverage measurement that is genuinely needed is a single bounded check (or moves to the module's last milestone as a qualified number, per the timing rule), and the plan tells the builder to drop the pipeline. Keep the quality bar and what M3 must prove; change how it is proved. The builder's unmerged work is on build/culling; read its handoff docs/evidence/CULLING/M3-handoff.md.",
+      "at": "2026-11-16T07:42:34Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T04:16:37Z"
+    "at": "2026-11-16T07:42:34Z"
   },
   "design_history": [
     {
