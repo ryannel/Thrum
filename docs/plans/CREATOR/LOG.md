@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-16 Completed the unlocked built-in-display journey with the authorized native driver.
+  The real Sun drag changes 25° to 9°, a parameter save applies 50°/120°, and a mesh save
+  updates the silhouette and shadow in the same windows with zero key presses. All eight
+  scene/panel captures were inspected. G6 records this builder proof and its rendering limits.
+  [Window evidence](../../evidence/CREATOR/m3/window/README.md).
+
 - 2026-11-16 The normal merge at `693e3bf54` passed its batch test command and
   integrated the fresh-scene proof. The current session then reported locked while
   the old IORegistry predicate reported unlocked. The corrected guard now rejects
