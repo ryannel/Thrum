@@ -161,7 +161,52 @@
     },
     "M2": {
       "definitions": "e93c09d4b4c3bb6351ee8162d076a2466964c5d977cdcf1cd66270c528c8052a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "1d63087e103fbcdc1b0756cd63e68ff86e90dd16",
+          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "items": {
+            "M2.1": "fail",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.11": "fail",
+            "M2.9": "pass",
+            "M2.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "unpaid-water-source",
+              "item": "M2.1",
+              "repeat": false
+            },
+            {
+              "name": "cover-transfer-exceeds-puddle-water",
+              "item": "M2.11",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 123229,
+            "cached": 1652352,
+            "output": 7132,
+            "turns": 1
+          },
+          "at": "2026-11-16T11:56:45Z"
+        }
+      ],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/PUDDLES/design-review.md",
