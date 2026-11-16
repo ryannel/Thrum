@@ -213,8 +213,7 @@ fn every_class_steps_each_reach_by_its_share_of_the_rain() {
 /// M1.4's account, with a class that stores water: each tick the test sums what the
 /// ground holds cell by cell, from the stores, the cover levels and the canopy, and
 /// closes rain against the puddles, the ground and every sink.
-#[test]
-fn the_account_closes_with_the_stores_and_the_transfers() {
+fn account_case(classes: [GroundClass; 1]) -> Totals {
     let bed = design_bed();
     let crown = Shelter {
         name: "crown".into(),
@@ -235,7 +234,6 @@ fn the_account_closes_with_the_stores_and_the_transfers() {
             canopy.exposure([x, g.heights()[i], z])
         })
         .collect();
-    let classes = [class(20.0, 1.0, 1.0, 0.6)];
     let c = classes[0];
     let mut ground = GroundStores::new(&classes).expect("valid test case");
     let mut state = RainState::new(&tree);
@@ -265,6 +263,7 @@ fn the_account_closes_with_the_stores_and_the_transfers() {
     };
     let (mut worst, mut merges, mut partings) = (0.0_f64, 0, 0);
     let (mut joined, mut filled, mut left, mut soaked) = (0.0, 0.0, 0.0, 0.0);
+    let mut most_owed: f64 = 0.0;
     for t in 0..10_000 {
         let rain = match t {
             0..2600 => Rain {
@@ -304,15 +303,65 @@ fn the_account_closes_with_the_stores_and_the_transfers() {
         let now = state.held() + held(&state, &ground) - owed;
         let residual = (a.rain + a.initial - now - sinks).abs() / a.rain;
         worst = worst.max(residual);
+        // No hollow's ground holds less than none.
+        for l in 0..tree.hollow_count() {
+            assert!(
+                state.hollow_ground(&tree, &ground, 0, l) >= -1e-15 * a.rain,
+                "hollow {l} at {t} s"
+            );
+        }
+        most_owed = most_owed.max(owed);
     }
-    let a = state.account();
+    Totals {
+        worst,
+        merges,
+        partings,
+        entries: [joined, filled, left, soaked],
+        most_owed,
+        account: *state.account(),
+    }
+}
+
+/// What an account case found.
+struct Totals {
+    worst: f64,
+    merges: u32,
+    partings: u32,
+    entries: [f64; 4],
+    most_owed: f64,
+    account: thrum_rain_model::Account,
+}
+
+#[test]
+fn the_account_closes_with_the_stores_and_the_transfers() {
+    let Totals {
+        worst,
+        merges,
+        partings,
+        entries: [joined, filled, left, soaked],
+        most_owed,
+        account: a,
+    } = account_case([class(20.0, 1.0, 1.0, 0.6)]);
     println!(
-        "worst residual {worst:e}; merges {merges}, partings {partings}; joined {joined:e}, filled {filled:e}, left {left:e}, soaked {soaked:e}"
+        "worst residual {worst:e}; merges {merges}, partings {partings}; joined {joined:e}, filled {filled:e}, left {left:e}, soaked {soaked:e}; most owed {most_owed:e}"
     );
     assert!(worst < 1e-9, "worst residual {worst:e}");
     assert!(merges > 0 && partings > 0);
     assert!(joined > 0.0 && filled > 0.0 && left > 0.0 && soaked > 0.0);
     assert!(a.ground_dried > 0.0 && a.canopy > 0.0 && a.edge > 0.0);
+}
+
+/// The same account under the crown and through merges and partings, on ground whose
+/// pores hold more than the first runoff brings: hollows owe their ground, and no
+/// hollow's ground holds less than none.
+#[test]
+fn the_account_closes_when_hollows_owe_their_ground() {
+    let t = account_case([class(5.0, 0.0, 2.0, 0.1)]);
+    println!(
+        "worst residual {:e}; merges {}, partings {}; most owed {:e} m3",
+        t.worst, t.merges, t.partings, t.most_owed
+    );
+    assert!(t.worst < 1e-9 && t.most_owed > 0.0 && t.merges > 0 && t.partings > 0);
 }
 
 /// The review's case: from dry, a shower on a flat floor of 8 by 8 cells inside a rim
@@ -383,4 +432,94 @@ fn a_shower_on_a_dry_flat_floor_makes_no_water() {
         covered > 0 && most > 0.0,
         "the floor is covered short of water"
     );
+}
+
+/// The second review's cases: from dry, a short shower at 60 mm/h on the flat floor, then
+/// drying at 20 mm/h for three hours with no shower to follow, for two soak rates, two
+/// reliefs and three showers. Every tick the puddle, what each hollow's ground holds and
+/// what it owes are never less than none, a tick's sinks never take more than the water
+/// there was at its start and the tick's rain, the account closes, and by the end the
+/// ground is dry, nothing is owed, and the sinks hold all the rain.
+#[test]
+fn a_short_shower_then_drying_never_spends_water_that_is_not_there() {
+    let n = 10;
+    let heights: Vec<f64> = (0..n * n)
+        .map(|i| {
+            if i % n == 0 || i % n == n - 1 || i / n == 0 || i / n == n - 1 {
+                0.04
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    let cell = 0.05;
+    let bed =
+        thrum_rain_model::Ground::new([0.0, 0.0], cell, [n, n], heights).expect("valid test case");
+    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
+    let mut owing_cases = 0;
+    for soak in [1.0, 30.0] {
+        for relief in [0.1, 3.0] {
+            for shower in [50, 150, 500] {
+                let c = class(soak, 0.0, 3.0, relief);
+                let mut ground = GroundStores::new(&[c]).expect("valid test case");
+                let mut state = RainState::new(&tree);
+                let mut report = TickReport::default();
+                let (mut worst, mut most) = (0.0_f64, 0.0_f64);
+                let mut there = 0.0;
+                for t in 0..(shower + 3 * 3600) {
+                    let rain = if t < shower {
+                        Rain {
+                            flux: mm_h(60.0),
+                            drying: 0.0,
+                        }
+                    } else {
+                        Rain {
+                            flux: 0.0,
+                            drying: mm_h(20.0),
+                        }
+                    };
+                    let before = state.account().sinks();
+                    state
+                        .step_with(&tree, rain, &ground, 0, 1.0, 1, &mut report)
+                        .expect("valid test case");
+                    ground.step(rain, 1.0).expect("valid test case");
+                    let a = state.account();
+                    let fell = rain.flux / 1000.0 * (n * n) as f64 * cell * cell;
+                    let case = format!("soak {soak}, relief {relief}, shower {shower} s, at {t} s");
+                    assert!(
+                        a.sinks() - before <= there + fell + 1e-15,
+                        "sinks took water not there: {case}"
+                    );
+                    for l in 0..tree.hollow_count() {
+                        assert!(
+                            state.hollow_ground(&tree, &ground, 0, l) >= -1e-18,
+                            "negative ground: {case}"
+                        );
+                        assert!(state.owed()[l] >= 0.0);
+                    }
+                    let held = state.held() + state.ground_held(&tree, &ground, 0);
+                    assert!(state.held() >= 0.0 && held >= -1e-18, "{case}");
+                    worst = worst.max((a.rain - held - a.sinks()).abs() / a.rain);
+                    most = most.max(state.owed().iter().sum());
+                    there = held;
+                }
+                let a = state.account();
+                let owed: f64 = state.owed().iter().sum();
+                println!(
+                    "soak {soak} mm/h, relief {relief} mm, shower {shower} s: worst residual {worst:.1e}, most owed {:.4} l; after drying ground {:.1e} of the rain, owed {owed:.1e} m3",
+                    most * 1e3,
+                    state.ground_held(&tree, &ground, 0) / a.rain
+                );
+                assert!(worst < 1e-9);
+                assert!(state.held() == 0.0 && owed <= 1e-9 * a.rain);
+                assert!(
+                    state.ground_held(&tree, &ground, 0) < 1e-6 * a.rain,
+                    "the ground dries"
+                );
+                assert!((a.sinks() - a.rain).abs() < 1e-6 * a.rain);
+                owing_cases += usize::from(most > 0.0);
+            }
+        }
+    }
+    assert!(owing_cases >= 4, "{owing_cases} cases owed water");
 }

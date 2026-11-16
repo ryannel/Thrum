@@ -57,6 +57,14 @@ impl Account {
     }
 }
 
+/// The stores' reading of one hollow's ground, cubic metres: full pores under its cover
+/// and each uncovered cell's store water at its reach.
+fn hollow_reading(tree: &Tree, l: usize, cover: f64, pores: f64, vol: &[f64; 3], area: f64) -> f64 {
+    let (n, w) = tree.catchment.band(l, f64::NEG_INFINITY, cover);
+    let (_, all) = tree.catchment.band(l, f64::NEG_INFINITY, f64::INFINITY);
+    pores * n as f64 * area + (0..3).map(|r| (all[r] - w[r]) * area * vol[r]).sum::<f64>()
+}
+
 /// What one hollow's catchment gained in a tick, cubic metres.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LeafGain {
@@ -207,27 +215,32 @@ impl RainState {
     }
 
     /// Cubic metres the ground of the body holds: the class's stores over its open
-    /// cells, read at each one's exposure, and full pores under water.
+    /// cells, read at each one's exposure, and full pores under water, less what the
+    /// hollows owe their ground.
     pub fn ground_held(&self, tree: &Tree, ground: &GroundStores, class: usize) -> f64 {
         let c = ground.classes[class];
         let area = tree.ground().spacing().powi(2);
         let h = tree.hollow_count();
         let vol: [f64; 3] = std::array::from_fn(|r| ground.stores[class][r].water(c.pores));
-        let mut held = 0.0;
-        for slot in 0..=h {
-            let level = if slot < h {
-                self.cover[slot]
-            } else {
-                f64::NEG_INFINITY
-            };
-            let (n, w) = tree.catchment.band(slot, f64::NEG_INFINITY, level);
-            held += c.pores * n as f64 * area;
-            let (_, all) = tree.catchment.band(slot, f64::NEG_INFINITY, f64::INFINITY);
-            for r in 0..3 {
-                held += (all[r] - w[r]) * area * vol[r];
-            }
-        }
-        held - self.owed.iter().sum::<f64>()
+        (0..h)
+            .map(|l| self.hollow_ground(tree, ground, class, l))
+            .sum::<f64>()
+            + hollow_reading(tree, h, f64::NEG_INFINITY, c.pores, &vol, area)
+    }
+
+    /// Cubic metres the ground draining to one hollow holds: the stores' reading of it
+    /// less what the hollow owes it. Never less than none.
+    pub fn hollow_ground(
+        &self,
+        tree: &Tree,
+        ground: &GroundStores,
+        class: usize,
+        hollow: usize,
+    ) -> f64 {
+        let c = ground.classes[class];
+        let area = tree.ground().spacing().powi(2);
+        let vol: [f64; 3] = std::array::from_fn(|r| ground.stores[class][r].water(c.pores));
+        hollow_reading(tree, hollow, self.cover[hollow], c.pores, &vol, area) - self.owed[hollow]
     }
 
     /// Ticks stepped.
@@ -456,6 +469,27 @@ impl RainState {
             on_water: 0.0,
             ..edge
         };
+        // A hollow that owes its ground water holds less than the stores' reading of it,
+        // so its ground's drying and percolation take only the share of the reading that
+        // is water, and the debt fades by the rest: the ground never holds less than none.
+        if let Some(stores) = stores {
+            let vol: [f64; 3] = std::array::from_fn(|r| stores[r].water(class.pores));
+            for (l, g) in report.hollows.iter_mut().enumerate() {
+                if self.owed[l] <= 0.0 {
+                    continue;
+                }
+                let reading = hollow_reading(tree, l, self.cover[l], class.pores, &vol, area);
+                let short = if reading > 0.0 {
+                    (self.owed[l] / reading).min(1.0)
+                } else {
+                    1.0
+                };
+                let loss = g.ground + g.ground_dried;
+                self.owed[l] = (self.owed[l] - loss * short).max(0.0);
+                g.ground *= 1.0 - short;
+                g.ground_dried *= 1.0 - short;
+            }
+        }
         let a = &mut self.account;
         a.rain += fall * area * tree.ground().heights().len() as f64;
         a.canopy += edge.canopy;

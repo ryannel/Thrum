@@ -579,6 +579,32 @@ fn a_puddle_that_cannot_pay_for_the_ground_it_covers_owes_it() {
         }
         let filled = owing.min(water);
         owed = owing - filled;
+        // The hollow's ground holds the stores' reading of it less what is owed, so its
+        // uncovered cells' drying and percolation take only the reading's share that is
+        // water, and the debt fades by the rest.
+        let f = ground.flows(rain, 1.0).expect("valid test case")[0][0];
+        let (mut reading, mut loss) = (0.0, 0.0);
+        for (i, &z) in heights.iter().enumerate() {
+            if tree.labels()[i] != 0 {
+                continue;
+            }
+            if z < now {
+                reading += class.pores * a;
+            } else {
+                reading += s.water(class.pores) * a;
+                loss += (f.percolated + f.dried) * a;
+            }
+        }
+        let mut sinks = loss;
+        if owed > 0.0 {
+            let short = if reading > 0.0 {
+                (owed / reading).min(1.0)
+            } else {
+                1.0
+            };
+            owed = (owed - loss * short).max(0.0);
+            sinks = loss * (1.0 - short);
+        }
         state
             .step_with(&tree, rain, &ground, 0, 1.0, 1, &mut report)
             .expect("valid test case");
@@ -590,6 +616,12 @@ fn a_puddle_that_cannot_pay_for_the_ground_it_covers_owes_it() {
         close("left", h.left, left, scale);
         close("soaked", h.soaked, soaked, scale);
         close("owed", state.owed()[0], owed, scale);
+        close("ground sinks", h.ground + h.ground_dried, sinks, scale);
+        // What the hollow's ground holds is never less than none.
+        assert!(
+            state.hollow_ground(&tree, &ground, 0, 0) >= -1e-18,
+            "at {t} s"
+        );
         most = most.max(owed);
         if owed > 0.0 {
             // What is owed is part of the state the game keeps.
