@@ -156,7 +156,7 @@
     {
       "id": "M2",
       "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -265,7 +265,17 @@
           "item": "M2.11",
           "repeat": true
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "a planner needs to rewrite the design's covering and uncovering rule and M2.11 to say what happens when a puddle holds less water than the pores it rises over or the film it must leave.",
+        "work": {
+          "commit": "0edf93802ec46e87d42b22c3e190cdecd5f16940",
+          "branch": "build/puddles",
+          "pushed": true
+        },
+        "handoff": "docs/evidence/PUDDLES/M2-handoff.md"
+      }
     },
     {
       "id": "M3",
