@@ -355,3 +355,9 @@
   removing only the exact approved coverage addition. All 34 registered reference files are unchanged.
   The official merge is retried alone. Existing target proofs, reference inspection, full verifier records
   and coverage-cost rows stand; no main-branch campaign or final motion inspection is claimed yet.
+
+- 2026-11-16 T2-CAPTURE landed comparison tooling and new pins without moving references. A diagnostic
+  merge identifies only the registry conflict; the waiting CULLING client is canceled and the branch rebased.
+  All baseline definitions are retained, combined pins recomputed and CULLING M3 refreshes preserved.
+  The CPU reference guard passes. [Pin reconciliation](../../evidence/CULLING/M3/replan/pin-rebase.json).
+  The official merge is retried alone, with no repeated image proof or coverage-cost measurement.
