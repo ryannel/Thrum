@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -176,17 +176,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "A planner ruling permitting per-view height maps or defining supported camera bounds would unblock M1.1.",
-        "work": {
-          "commit": "795ab3e88a911c5c6c2779061b5232811263a258",
-          "branch": "build/scene-views",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/SCENE-VIEWS/M1-handoff.md"
-      }
+      ]
     },
     {
       "id": "M2",
