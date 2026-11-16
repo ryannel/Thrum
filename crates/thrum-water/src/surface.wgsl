@@ -100,13 +100,6 @@ struct VertexOut {
     return VertexOut(clip,world,rest,f.velocity.xyz,current,previous);
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
-fn water_fresnel(cosine:f32)->f32 {
-    let c=clamp(cosine,0.0,1.0);let index=1.333;
-    let transmitted=sqrt(1.0-(1.0-c*c)/(index*index));
-    let perpendicular=(c-index*transmitted)/(c+index*transmitted);
-    let parallel=(index*c-transmitted)/(index*c+transmitted);
-    return 0.5*(perpendicular*perpendicular+parallel*parallel);
-}
 @fragment fn water_fragment(input:VertexOut)->Output {
     let footprint=max(length(dpdx(input.rest)),length(dpdy(input.rest)));
     var slope=long_at(input.rest,max(0.01,footprint)).slope.xy*water.gains.x;
@@ -130,14 +123,19 @@ fn water_fresnel(cosine:f32)->f32 {
     // must be carried through its inverse Jacobian, as the long cache already is.
     let determinant=max(0.05,differential.x*differential.z-differential.y*differential.y);
     slope=vec2(slope.x*differential.z-slope.y*differential.y,slope.y*differential.x-slope.x*differential.y)/determinant;
-    let variance=max(0.0,(covariance.x*(differential.z*differential.z+differential.y*differential.y)+covariance.z*(differential.x*differential.x+differential.y*differential.y)-2.0*covariance.y*differential.y*(differential.x+differential.z))/(determinant*determinant));
+    let a=differential.z;let b=-differential.y;let c=differential.x;
+    covariance=vec3(
+        a*a*covariance.x+2.0*a*b*covariance.y+b*b*covariance.z,
+        a*b*covariance.x+(a*c+b*b)*covariance.y+b*c*covariance.z,
+        b*b*covariance.x+2.0*b*c*covariance.y+c*c*covariance.z)/(determinant*determinant);
+    let variance=max(0.0,covariance.x+covariance.z);
     let n=normalize(vec3(-slope.x,1.0,-slope.y));
     let v=normalize(view.camera_xyz_time.xyz-input.world);
     let nv=max(dot(n,v),0.001);
     // GGX's perceptual roughness is sqrt(alpha); alpha is the RMS unresolved slope.
     let roughness=clamp(pow(max(variance,0.000004),0.25),0.045,0.8);
     let reflected=environment_reflection(reflect(-v,n),roughness,nv);
-    let fresnel=water_fresnel(nv);
+    let fresnel=water_mean_fresnel(slope,covariance,v);
     // A dielectric interface splits the reflected and transmitted paths by R.
     // The environment lends its filtered radiance; its opaque-material DFG is not R.
     var light=reflected.radiance*fresnel;

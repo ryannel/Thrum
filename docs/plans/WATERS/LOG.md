@@ -367,3 +367,8 @@
   This retains contractivity while avoiding the trace's false rejection of orthogonal trains.
   A separable crossing-wave closed form passes on the CPU; native/portable GPU probes include that case.
   Water's admission and the example's profile use that same authority, without an allocation in frame validation.
+- 2026-11-16 Corrected the geometry-to-BRDF transition: sky reflection and transmission now use the visible
+  unresolved slope distribution's mean dielectric reflectance, instead of a perfectly flat facet at the horizon.
+  The full short-wave covariance is transported through the horizontal map before that average.
+  A Metal probe agrees with independent Box-Muller integration and rejects the flat-mirror negative control;
+  the zero-variance limit and lent record layouts pass. The same lent sky, Sun and exposure remain the only light.

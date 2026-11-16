@@ -1,4 +1,6 @@
 //! Shared water, lit by the scene's lent environment. The host owns all clocks and submission.
+#[cfg(test)]
+mod fresnel_tests;
 mod prepare;
 mod records;
 use std::sync::{Arc, Mutex};

@@ -106,8 +106,9 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         immediate_size: 0,
     });
     let source = format!(
-        "{}\n{}",
+        "{}\n{}\n{}",
         environment.shader_source.replace("@group(0)", "@group(2)"),
+        include_str!("fresnel.wgsl"),
         include_str!("surface.wgsl")
     );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {

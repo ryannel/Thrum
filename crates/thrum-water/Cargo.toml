@@ -16,3 +16,6 @@ thrum-sea = { path = "../thrum-sea" }
 thrum-sea-model = { path = "../thrum-sea-model" }
 thrum-water-model = { path = "../thrum-water-model" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[dev-dependencies]
+thrum-test-support = { path = "../thrum-test-support", features = ["render"] }

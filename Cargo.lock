@@ -3293,6 +3293,7 @@ dependencies = [
  "thrum-render",
  "thrum-sea",
  "thrum-sea-model",
+ "thrum-test-support",
  "thrum-water-model",
  "wgpu",
 ]

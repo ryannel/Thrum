@@ -52,7 +52,7 @@ allowed_workspace_dependencies = ["thrum-sea-model"]
 
 [packages.thrum-water]
 manifest = "crates/thrum-water/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-render", "thrum-sea", "thrum-sea-model", "thrum-water-model"]
+allowed_workspace_dependencies = ["thrum-render", "thrum-sea", "thrum-sea-model", "thrum-water-model", "thrum-test-support"]
 
 [packages.water-scene]
 manifest = "examples/water/Cargo.toml"
