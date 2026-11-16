@@ -26,7 +26,37 @@
   "milestones": {
     "M1": {
       "definitions": "2bcddd7cd5272205c9397ee6152a47aae5151b37949a4200d52837bd114abace",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "4426db09669c847f5d138505592fd366b3b44859",
+          "review": "docs/evidence/REPO-RULES/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 91555,
+            "cached": 1088640,
+            "output": 5528,
+            "turns": 1
+          },
+          "at": "2026-11-16T03:49:00Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "REPO-RULES M1 needs something no plan provides yet. The builder wrote: WATERS must remove its eight new test path attrib",
@@ -67,6 +97,13 @@
           "output": 83561,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "4426db09669c847f5d138505592fd366b3b44859",
+        "review": "docs/evidence/REPO-RULES/M1-review.md",
+        "checked": "1fde1cbcedcb831957f3c7bf570954f8fe399190",
+        "at": "2026-11-16T03:49:00Z"
       }
     },
     "M2": {
