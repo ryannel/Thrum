@@ -391,7 +391,36 @@
     },
     "M10": {
       "definitions": "150ae298e726d562d690337eadc8be3e7b3d7948e12cbd818e29fded39b7129e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
+          "items": {
+            "D10.1": "pass",
+            "D10.2": "pass",
+            "D10.3": "pass",
+            "D10.4": "pass",
+            "D10.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 311554,
+            "cached": 12394496,
+            "output": 24191,
+            "turns": 1
+          },
+          "at": "2026-11-16T20:14:58Z"
+        }
+      ],
       "authorised": {
         "by": "human decision",
         "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
@@ -426,6 +455,13 @@
           "output": 76623,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "f1e4b7deaaafbc63a62545da7f86122b0d991150",
+        "review": "docs/evidence/APPLE-TILE/M10-review.md",
+        "checked": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "at": "2026-11-16T20:14:58Z"
       }
     },
     "M11": {

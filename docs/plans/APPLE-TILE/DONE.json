@@ -271,8 +271,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Inspect graph hazards and refusal tests, locked-wgpu encoder API separation, one queue and error paths. Native-written resources are initialized through wgpu, never aliased/discarded and retained by the generation. The first implementation step is a small same-submit native copy/select fixture versus its prepared WGSL twin, with exact readbacks; do not broaden route integration until this passes. A failure returns to boundary design review, never a wider tolerance.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
           "builder_result": "pass"
         },
         {
@@ -281,8 +281,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "inspect": "Use T2 still/fixed submitted output plus exact linear/output/history readbacks for finite nonnegative half texels, and realtime for diagnostic motion. Current scene copies to history/output; alternate submissions select prior submitted history in a declared crop and toggle the reserved binary-exact 0/1 fixture tile from prior state. Previous/next history textures are distinct, preinitialized and submission-selected. Scene/history regions use bit-preserving native blits and public wgpu copies; the reserved 0/1 tile uses native storage writes versus its WGSL twin with integer selection. Verify native commands actually produce the writes. No-op native work, hidden WGSL production, stale source/history and omitted reset must fail exact comparisons. Ordinary scene runs disable the witness and remain exact to M0; no 1-ULP or perceptual bound applies.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
           "builder_result": "pass"
         },
         {
@@ -291,8 +291,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Run same-submit, held-slot, acquire-refusal, cut, extent replacement, loss and submission-failure witnesses. Preserve healthy flush vs lost-device abandon. Do not add submit-without-present to avoid a reset.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
           "builder_result": "pass"
         },
         {
@@ -301,8 +301,8 @@
           "target": "ios-sim",
           "evidence": "docs/evidence/APPLE-TILE/M10/README.md",
           "ask": "Run the encoded-native-frame lease/background race test and simulator diagnostic-pattern background/resume witness. Use simctl endpoint/function evidence with recorded coverage plus lease/queue/history logs, never claimed submitted temporal output or elapsed-time engine motion before T2 M2. Report function only; retain world/input. No cooked dependency is introduced here.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
           "builder_result": "pass"
         },
         {
@@ -316,15 +316,15 @@
             "type": "access",
             "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
           },
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M10-review.md",
           "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model."
     },
     {
