@@ -132,7 +132,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "in_progress",
       "quality_bar": "Aerial perspective at sea level as at the sea's horizon in Sea of Thieves and on the coast of Red Dead Redemption 2: water, low ground and whatever stands just above the horizon take the haze their distance gives, toward a setting Sun and away from it, with no band or thin strip that moves as the camera tilts. This milestone holds that by numbers and by where the retained images moved. The look on a real sea is judged in WATERS M2, which waits for it.",
       "items": [
         {
@@ -234,17 +234,7 @@
           "review": "",
           "builder_result": "open"
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "Restore reliable cooker edit publication so the full gate and Chrome showcase checks can pass before merging.",
-        "work": {
-          "commit": "603c3ddc66f60d71df144622993f6512093ae5f5",
-          "branch": "build/atmosphere",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/ATMOSPHERE/M9-handoff.md"
-      }
+      ]
     },
     {
       "id": "M6",
