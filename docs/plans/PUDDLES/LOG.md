@@ -96,3 +96,7 @@
   with nothing owed, and so does an owing account under the crown through merges. Its probe gives min_ground 0.
   Suspected: when an empty puddle uncovers ground, the film it couldn't leave is a debt, not water on that ground;
   the design's text assumes the puddle has it. A planner may want the design to name the debt.
+- 2026-11-16 Merge check failed in `v1-game` `cooked_assets_gpu::discarded_frames_leave_no_trace_on_cooked_uploads`
+  ("part of the edit was committed"). Verified: v1-game links neither M2 crate; on main f41ebc97b, under the gpu lock,
+  the test passed 3/3 alone and the whole file 13/13 three times. Suspected: a load-dependent flake (the assert needs
+  one frame to commit upload bytes) while other builders share the GPU; it belongs to that test's owning module.
