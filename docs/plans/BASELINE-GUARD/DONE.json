@@ -79,8 +79,8 @@
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Read the guard and the registry. Is each pin computed from the commit's tree, over every field of the entry but the pin and the refresh, every tracked file of the reference and every comparison file? Does each baseline list every comparison file the design's table names for it? Does the first refresh of each baseline name an anchor that the module list holds?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -90,8 +90,8 @@
           "check": "python3 scripts/test_exact_baselines.py GuardTests",
           "ask": "Read the tests. Is each case decided by the function `./dev check` calls, in a Git repository made for the test, with the refusal's text asserted to name the baseline, the owner and the file? Is there a flag, an environment variable or a file other than the registry that makes the guard pass?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -101,8 +101,8 @@
           "check": "sh -c '! grep -rn proof_path scripts tools'",
           "ask": "Does `./dev check` call the guard, and does it fail when the guard fails? Does a `verify --full` record still hold the revision, the content key, the binary and Wasm hashes and the cooked root?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -112,8 +112,8 @@
           "check": "python3 scripts/test_exact_baselines.py ScratchTests",
           "ask": "Read the pruning and its tests. Can it remove anything outside `tmp/baseline-guard/` of its own checkout, the run in progress, or the latest failed run's captures? What do the recorded sizes say the checkout holds after a day of runs?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -122,8 +122,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes on a main commit that contains the claimed one: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
           "ask": "Read this milestone's diff. Is every file under the registered references unchanged, and does the registry still hold the same five baselines with their earlier fields as they were?"
@@ -133,8 +133,8 @@
           "statement": "`CONTRIBUTING.md`, `./dev help`, the engineering skill's building reference and the module list's exact-baseline rules describe the guard, the pins, and how a planned refresh, an edited comparison file and an added, redefined or retired baseline each record themselves. None still describes a proof file or a gate.",
           "ask": "Do the four documents agree with the guard as built? Does a builder making a planned refresh find in them every step it must take (regenerate, run `verify --full`, update the pin and the refresh, merge in one landing), and a planner retiring a baseline the record it must leave?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         },
@@ -144,8 +144,8 @@
           "check": "python3 scripts/test_exact_baselines.py RegisteredSetTests",
           "ask": "Read the tests. Does one remove a single baseline and leave every other entry, pin and refresh untouched, and is the refusal's text asserted to name that baseline? Is each case decided by the function `./dev check` calls, against the merge base's registry read from Git and not from the working tree?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/BASELINE-GUARD/M2.md",
           "verdict": "",
           "review": ""
         }

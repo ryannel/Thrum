@@ -236,3 +236,10 @@
   `ScratchTests` and the `proof_path` search each fail before the work, and none errors. M2.5's `verify` was
   not run: its command is unchanged, and it would wait on or start the shared run on main. `./dev check-docs`
   passes.
+
+- 2026-11-16 M2 builder implemented committed-tree reference/definition pins, refresh-anchor validation,
+  merge-base registration/retirement checks and CPU guard integration; local proof publication is removed.
+  Retention keeps 48 completed records and the newest failed capture set, estimated 1.69 GiB from measured
+  runs; incomplete runs stay for diagnosis. Focused tests and retained-reference identity checks pass.
+  [M2 evidence](../../evidence/BASELINE-GUARD/M2.md) separates those checks from the shared exact-image run
+  that the lead performs on main after the merge. No retained reference or comparison behavior changed.
