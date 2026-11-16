@@ -26,7 +26,49 @@
   "milestones": {
     "M1": {
       "definitions": "aca0b785371f8cbf2065f5499eb6d8fbd892765efff3caaea00b465521bca911",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "63c0d04cd33e4fd735ead0cb4ffe377f4097b5e8",
+          "review": "docs/evidence/TRANSPORT/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "host-drop-leaves-open-links",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 159145,
+            "cached": 2732928,
+            "output": 8871,
+            "turns": 1
+          },
+          "at": "2026-11-16T06:28:17Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner ruled on TRANSPORT's timing (15 Nov), in their words: \"it can come before V1 if we have space for it, but it's",
