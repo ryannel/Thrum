@@ -73,3 +73,8 @@
   Cost record: 640,000 cells prepared in 0.082 s into 624 hollows; a fill step takes 71 µs on 1 thread. M1.12 is left
   to the main-branch check exact-images. Fixed in building: a component meeting the edge-joined one spills into the
   hollow across, not off the rectangle. Suspected: the threaded step loses to one thread at this size (spawn per tick).
+- 2026-11-16 M1 review fix (code 2ae13f69c). Verified: rain on water now goes to its first hit at the water's
+  surface; each shaded cell keeps its exposure by height. receivers.rs checks every receiver on every tick
+  as a puddle rises past a low slab, plus the review's covered floor; both tests fail on the old code. All
+  rain-model tests pass, clippy clean; the cost record was taken again (fill step 71 µs on 1 thread). Byte
+  counts are now labelled payload. Not done: thread reuse in the fill step (review suggestion).

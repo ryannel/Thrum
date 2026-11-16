@@ -1,15 +1,15 @@
 {
   "cells": 640000,
   "cell_m": 0.05,
-  "prepare_seconds": 0.082018,
+  "prepare_seconds": 0.078032,
   "prepare_seconds_runs": [
-    0.084637,
-    0.082018,
-    0.079401
+    0.082121,
+    0.078032,
+    0.0776
   ],
   "hollows": 624,
   "nodes": 934,
-  "bytes": 24356064,
+  "bytes": 19236064,
   "curve_bytes": 3823728,
   "curve_bytes_per_node": 4093.9,
   "small_hollows": 0,
@@ -17,20 +17,20 @@
     "hollows_holding_water": 624,
     "puddles": 624,
     "tick_s": 0.016667,
-    "seconds_one_thread": 7.1458e-05,
-    "seconds_all_threads": 0.00022925,
+    "seconds_one_thread": 7.075e-05,
+    "seconds_all_threads": 0.000205375,
     "threads": 14,
     "samples": 200
   },
-  "commit": "8d971e52bfbdcdd7581f1e66f3fd95724d92f42d",
+  "commit": "2ae13f69c4bf3577424ca00035eaf230482f1010",
   "dirty": false,
   "build": "release (cargo run --release)",
   "load_average": [
-    10.7,
-    12.46,
-    14.19
+    23.77,
+    31.0,
+    21.99
   ],
   "machine": "arm64 26.6.2",
-  "date": "2026-11-16T00:07:21+00:00",
+  "date": "2026-11-16T04:56:54+00:00",
   "note": "taken while other builders share the machine; a tripwire, not a budget"
 }
