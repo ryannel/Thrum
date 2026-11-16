@@ -94,7 +94,7 @@ allowed_workspace_dependencies = ["thrum-asset", "thrum-render", "thrum-test-sup
 manifest = "crates/thrum-cook/Cargo.toml"
 # Authoring-only G5 cooker; no shipping package may depend on it.
 # Its only other edge is a dev-dependency on the asset-loop viewer for the edit-to-visible harness.
-allowed_workspace_dependencies = ["thrum-asset", "asset-loop", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-asset", "asset-loop", "thrum-test-support", "thrum-asset-gpu"]
 
 [packages.asset-loop]
 manifest = "examples/asset-loop/Cargo.toml"

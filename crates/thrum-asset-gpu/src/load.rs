@@ -19,6 +19,7 @@ use thrum_asset::{AssetStore, HeadWatcher, Manifest};
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::CookedSource;
+use crate::mesh_upload::MeshUpload;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::staging::Progress;
 use crate::staging::{Bytes, Filler, StagedUpload, StagingPlan, StagingRing};
@@ -556,7 +557,7 @@ impl Loader {
     }
 
     fn stage_mesh(&self, plan: &mut StagingPlan, mesh: &Arc<MeshProduct>) -> GpuMesh {
-        let tables = Arc::new(MeshletTables::new(mesh));
+        let tables = Arc::new(MeshUpload::new(Arc::clone(mesh)));
         let part = |part| -> Arc<dyn Bytes> {
             Arc::new(MeshPart {
                 mesh: Arc::clone(mesh),
@@ -602,7 +603,7 @@ impl Loader {
                 )
             }),
             meshlet_count: u32::try_from(mesh.meshlets().len()).unwrap_or(u32::MAX),
-            index_count: u32::try_from(tables.indices.len()).unwrap_or(0),
+            index_count: u32::try_from(tables.indices().len()).unwrap_or(0),
             caster_box: caster_box(mesh.positions()),
             rest_points: rest_points(mesh.positions()),
         };
@@ -697,7 +698,7 @@ enum Part {
 /// One staged array of a mesh: the product's own bytes, or its expanded meshlet tables.
 struct MeshPart {
     mesh: Arc<MeshProduct>,
-    tables: Arc<MeshletTables>,
+    tables: Arc<MeshUpload>,
     part: Part,
 }
 
@@ -706,38 +707,10 @@ impl Bytes for MeshPart {
         match self.part {
             Part::Positions => bytemuck::cast_slice(self.mesh.positions()),
             Part::Attributes => bytemuck::cast_slice(self.mesh.attributes()),
-            Part::Indices => bytemuck::cast_slice(&self.tables.indices),
-            Part::Ranges => bytemuck::cast_slice(&self.tables.ranges),
+            Part::Indices => bytemuck::cast_slice(self.tables.indices()),
+            Part::Ranges => bytemuck::cast_slice(self.tables.ranges()),
             Part::Bounds => bytemuck::cast_slice(self.mesh.meshlet_bounds()),
         }
-    }
-}
-
-/// Meshlets as indexed draws: global indices per meshlet, and each meshlet's index range.
-pub(crate) struct MeshletTables {
-    pub(crate) indices: Vec<u32>,
-    pub(crate) ranges: Vec<[u32; 2]>,
-}
-
-impl MeshletTables {
-    pub(crate) fn new(mesh: &MeshProduct) -> Self {
-        let vertices = mesh.meshlet_vertices();
-        let triangles = mesh.meshlet_triangles();
-        let mut indices = Vec::with_capacity(triangles.len());
-        let mut ranges = Vec::with_capacity(mesh.meshlets().len());
-        for meshlet in mesh.meshlets() {
-            let first = u32::try_from(indices.len()).unwrap_or(u32::MAX);
-            let start = meshlet.triangle_offset as usize;
-            let local = &triangles[start..start + meshlet.triangle_count as usize * 3];
-            // `validate_references` proved every local index names a meshlet vertex.
-            indices.extend(
-                local
-                    .iter()
-                    .map(|&index| vertices[meshlet.vertex_offset as usize + usize::from(index)]),
-            );
-            ranges.push([first, meshlet.triangle_count * 3]);
-        }
-        Self { indices, ranges }
     }
 }
 

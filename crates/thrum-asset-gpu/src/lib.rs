@@ -37,6 +37,7 @@ mod lease;
 pub use fault::FaultProbe;
 mod load;
 mod material;
+pub mod mesh_upload;
 mod placement;
 mod staging;
 

@@ -17,6 +17,8 @@ use thrum_asset::Profile;
 use thrum_cook::tripwire::{self, Rule};
 use thrum_cook::{CookConfig, Cooker, Durability, Quality, StatCache, demo, watch};
 
+mod mesh_load;
+
 const EDITS: usize = 12;
 const EDIT_PERIOD: Duration = Duration::from_millis(500);
 const FRAME_PERIOD: Duration = Duration::from_micros(8_333);
@@ -98,6 +100,7 @@ fn main() {
     )
     .ok();
     let mut metrics = Metrics::new();
+    mesh_load::measure(&mut report);
     for files in [1_000, 10_000] {
         scan(
             &root.join(format!("scan-{files}")),

@@ -1,5 +1,6 @@
 [package]
 name = "thrum-cook"
+autobenches = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -22,6 +23,7 @@ rayon = "=1.12.0"
 thrum-asset = { path = "../thrum-asset" }
 
 [dev-dependencies]
+thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 asset-loop = { path = "../../examples/asset-loop", features = ["test-support"] }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
