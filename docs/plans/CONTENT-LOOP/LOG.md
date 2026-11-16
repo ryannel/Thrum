@@ -1,8 +1,13 @@
 # CONTENT-LOOP log
 
+- 2026-11-16 M4 review repair removes the added watcher-test logging. The complete integration-test
+  file now matches `a7390265` byte for byte; all four native integration tests pass on this Mac.
+  The earlier preservation claim was stale after integration and is superseded by this fresh proof.
+  Production cooker code is unchanged. [Evidence](../../evidence/CONTENT-LOOP/M4.md).
+
 - 2026-11-16 M4 adds adaptive sweeps independent of notice traffic, with a 500 ms floor, ten-times-cost
-  wait, recent-write deferral and a silent idle path. The notice fast path and existing integration test
-  are unchanged. All five item checks, 19 cooker unit tests and Clippy pass on this Mac. A reproduced
+  wait, recent-write deferral and a silent idle path. The notice fast path is unchanged; the test's
+  preservation claim is superseded by the review repair above. Five item checks, 19 unit tests and Clippy passed. A reproduced
   interrupted glTF plan now retries when the same bytes are restored with a changed stamp; bad saves
   remain quiet after one error. Warm sweeps measured 11.031–60.717 ms at 1,000 files and 120.881–269.822 ms
   at 10,000 under recorded heavy load; these are baselines, not qualified performance. The first checkpoint

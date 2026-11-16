@@ -181,10 +181,10 @@
           ],
           "ask": "Compare `crates/thrum-cook/tests/serve_and_watch.rs` with commit `a7390265`. Is `the_watcher_publishes_an_edited_source` the same test, with no wait lengthened, no retry added and no assertion removed or loosened?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/review-repair.log.gz",
           "verdict": "fail",
           "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M4.4",
