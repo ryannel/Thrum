@@ -67,3 +67,10 @@
 - 2026-11-16 Planner's call on the other flake named with that request, `window-proof.py` ending "CUA app
   selection timed out": left with `APPLE-TILE` M10. It is a 180-second wait for a computer-use action in the
   attended window proof, shares no mechanism with the ring, and can only be reproduced with the owner at the Mac.
+
+- 2026-11-16 Built M3's opt-in headless realtime admission wait, separate wait-gap records and exit-75
+  propagation through the Mac capture, native matrices and exact verifier; other defaults and comparisons hold.
+  Actual Metal mixed-load control loses 163 images at a full ring; eight wait arms verify 2,245/2,245 originals.
+  SDR/linear forced-full controls and seven exit-path tests pass; a stronger CPU load honestly expires the writer.
+  [Evidence and limits](../../evidence/T2-CAPTURE/M3/README.md) retain the records, source hashes and scope audit.
+  The shared exact-images run after merge remains the proof of record; no branch-wide exact run was made.
