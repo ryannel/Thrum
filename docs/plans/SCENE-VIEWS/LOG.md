@@ -1,5 +1,12 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 replacement session fetched main at `66dc2da2f` and confirmed the
+  design and M1.1 are unchanged. The shared finite height map still contradicts
+  unrestricted-camera equality; the retained Metal counterexample remains relevant.
+  No implementation changed or GPU proof was repeated. The lead needs the planner's
+  ownership or camera-admission ruling before M1.1 can close.
+  [The updated handoff](../../evidence/SCENE-VIEWS/M1-handoff.md) preserves the proofs.
+
 - 2026-11-16 M1 resumed builder: source `9be4a4887` adds the remaining functional check targets.
   All eleven commands pass on Metal's portable and Apple-tile recipes; ten functional items
   have builder passes. Resize republishes slot attachments; late effects bind bucket offsets.
