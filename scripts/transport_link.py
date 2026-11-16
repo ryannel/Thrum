@@ -570,7 +570,12 @@ def closure(output):
     baseline = json.loads((ROOT / "docs/evidence/TRANSPORT/lock-before.json").read_text())
     locked = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
     present = {(p["name"], p["version"]) for p in locked}
-    assert all(tuple(pair) in present for pair in baseline), "an existing locked version moved"
+    names = {name for name, _ in present}
+    # A version moved when a package from before this module is still locked but not at that version. A package
+    # that another change has since removed from the workspace or the lockfile is not a moved version.
+    moved = [pair for pair in baseline if tuple(pair) not in present and pair[0] in names]
+    removed = [pair for pair in baseline if pair[0] not in names]
+    assert not moved, f"an existing locked version moved: {moved}"
     core = run(["cargo", "tree", "--locked", "--offline", "-p", "thrum-transport", "--no-default-features", "--prefix", "none"], capture_output=True, text=True).stdout
     assert len(core.strip().splitlines()) == 1, core
     shipping = {}
@@ -623,7 +628,7 @@ def closure(output):
         chosen = next((option for option in alternatives if all(part.strip(" ()") in permissive for part in option.split(" AND "))), None)
         assert chosen, (package["name"], licence)
         licences.append({"name": package["name"], "version": package["version"], "license": licence, "selected_license": chosen})
-    return {"core": core.strip(), "core_builds_alone": build_core.returncode == 0, "shipping": shipping, "existing_versions_preserved": len(baseline),
+    return {"core": core.strip(), "core_builds_alone": build_core.returncode == 0, "shipping": shipping, "existing_versions_preserved": len(baseline)-len(removed), "removed_since_baseline": removed,
             "crates_added_by_this_module": [f"{name} {version}" for name, version in added], "workspace_packages": closures, "adapter_licences": licences}
 
 
