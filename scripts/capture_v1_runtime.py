@@ -119,7 +119,8 @@ def finalize(output, manifest, runtime, verify_only=False):
         frame_dir.mkdir(exist_ok=True)
     begin = time.monotonic_ns()
     by_id = {row['submission_id']: row for row in runtime['images']}
-    for record, raw in zip(records, decoded_frames(source, encoding, report['frame_sha256'], frame_bytes), strict=True):
+    for record, raw in zip(records, decoded_frames(source, encoding, report['frame_sha256'], frame_bytes,
+                                                  manifest.get('record_limit', 1024)), strict=True):
         identity = record['submission_id']
         record['rgba_sha256'] = hashlib.sha256(raw).hexdigest()
         if not verify_only:
@@ -242,6 +243,7 @@ def run(args):
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted([*(ROOT / "crates").rglob("*.wgsl"), *(ROOT / "crates").rglob("*.metal")])},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
+        "record_limit": 4096 if args.case == 'clouds-drift' else 1024,
         "timebase": args.mode,
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
         "parameter_sha256": digest(args.params.resolve()),
