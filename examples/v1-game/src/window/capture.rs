@@ -580,7 +580,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
                 && driver.omissions() == 0
                 && trace.writer_omissions == 0));
     let phase_counts = trace.display_phase_counts();
-    let mut result = json!({"display_phase_counts":phase_counts,"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
+    let mut result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
@@ -594,6 +594,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         "ring_omissions":driver.omissions(),"writer_omissions":trace.writer_omissions,
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
+    result["display_phase_counts"] = phase_counts;
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
