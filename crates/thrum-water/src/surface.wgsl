@@ -159,8 +159,12 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let sunlight=sun_irradiance(input.world);
     let incident=environment_diffuse(vec3(0.0,1.0,0.0))+sunlight*max(l.y,0.0);
     light+=(1.0-fresnel)*incident*water.scatter.rgb/3.14159265;
-    let crest=max(0.0,input.world.y-water.level_dt_reset.x)*max(0.0,1.0-determinant);
-    light+=(1.0-fresnel)*water.scatter.rgb*sunlight*crest*0.1*pow(max(dot(-v,l),0.0),4.0);
+    // Height in RMS-wave units and horizontal compression locate the thin
+    // crest. Its extra in-scatter is bounded and uses the same lent irradiance
+    // as the body; no independent light, pattern, or geometric sharpening.
+    let crest_height=max(0.0,input.world.y-water.level_dt_reset.x)/max(water.scatter.w,0.001);
+    let crest=1.0-exp(-crest_height*max(0.0,1.0-determinant));
+    light+=(1.0-fresnel)*incident*water.scatter.rgb*crest;
     let h=normalize(l+v);let nh=max(dot(n,h),0.0);let nl=max(dot(n,l),0.0);
     let a2=pow(roughness,4.0);let d=a2/(3.14159265*pow(nh*nh*(a2-1.0)+1.0,2.0));
     let gv=2.0*nv/(nv+sqrt(a2+(1.0-a2)*nv*nv));

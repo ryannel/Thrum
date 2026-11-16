@@ -73,7 +73,12 @@ impl Parameters {
                 [l.origin[0] as f32, l.origin[1] as f32, l.texel as f32, 0.0]
             }),
             long_covariance: long_variances,
-            scatter: [deep_scatter[0], deep_scatter[1], deep_scatter[2], 0.0],
+            scatter: [
+                deep_scatter[0],
+                deep_scatter[1],
+                deep_scatter[2],
+                spectrum.variance().sqrt() as f32,
+            ],
         }
     }
 }
