@@ -1,211 +1,63 @@
 # SIM-2D M1 review
 
-Reviewed commit `2aa357818ab5` (builder's work ends at `5b37129b0271`). Reviewer: Claude Opus 5.5, high effort,
-16 November 2026. First review of this milestone.
+**PASS: all 12 items pass; no Must Fix findings.** Reviewed `b13711488def74f7f29d85d32c7ff8393ce32fc8`, with builder checkpoint `d8d6be30e41b`, on 16 November 2026. The four previous Must Fix findings are resolved.
 
-**Result: FAIL.** 4 items fail (M1.1, M1.2, M1.3, M1.8), 0 Could Not Judge, 0 Must Fix outside the items.
-Both causes are small. The crowd itself is sound: the trace, the corrected-timeline fold, the digest, the refusal and
-the wire route all do what the design says, and I reproduced the retained folds myself on the Mac.
+## Scope and proof
 
-## What I did
+I read the acceptance statements, design, plan, governing contracts, changed implementation and tests before reading the previous review and builder narrative. The initial broad DONE.json read also exposed its existing verdict/findings fields; I did not use those as the review checklist. I judged all twelve items from their proofs, then revisited the previous review explicitly below.
 
-- Read the design (mechanisms 1–7, Cost, Proof), PLAN M1 and every changed line of the builder's commits:
-  `61b84d7e3` (the main change: `thrum-core` profile, digest, refusal; `thrum-sim2d`; `crowd-2d`; `crowd-2d-run`;
-  conformance and browser scripts), `e6169753f`, `1c88126cb`, `2eba83342`, `242bc29a7`, `d9311107a`, `9bbcab7c6`,
-  and the evidence and log commits up to `5b37129b0`. No builder commit touches `examples/v1-game` or weakens an
-  existing test.
-- Built `crowd-2d-run` in release from this checkout and ran the 2,000-body trace straight and rewinding, and the
-  5,000-body trace straight ([output](M1-review/mac-straight-and-rewinding.txt)). All three reproduce the retained
-  folds; the rewinding run reports 30 rewinds, all 30 changing a digest.
-- Read the target receipts (`docs/evidence/SIM-2D/M1/*.json`) and the git history of both cost records.
-- Confirmed the main-branch check `exact-images` passed on `da0f278277c4`, the commit the script checked
-  (`.git/orchestrate/main-checks/exact-images/runs/1794784938449-da0f278277c4.json`).
-- Relied on the script's run of `./dev check` and every item's check on `da0f278277c4`. I re-ran none of the
-  Chrome or simulator checks: nothing in them depends on timing, and my Mac runs matched the receipts.
-- Edge conditions: the ORCHESTRATE target edge conditions (low sun, storm, distance, fast camera, full refresh;
-  rotation and background on the simulator) are visual or app-lifecycle conditions and do not apply to a headless
-  conformance executable. The conditions that do apply are the design's: all three sizes, rewinds, debug and release,
-  the wire route and slot reuse. The receipts and the checks cover them, and I re-ran the release and rewinding paths.
-- No item has a Reviewer Inspection, so there are no screenshots. The only file in the evidence folder is my run
-  output.
+Reviewed the profile and fixture generator, registered-world digest and metadata encoding, component registration and refusal paths, transaction preflight, runtime integration, circle index, crowd rules/history, native/Wasm runner, codec route, cost measurement, target launcher, source identity and its tests, package registrations and dependencies. Read the builder's final evidence diff at `d8d6be30e41b`. Generated retained data was checked structurally and by comparisons, rather than treating numerical text as an explanation. The implementation uses the existing registered runtime and publication API; no alternate authority loop or canned digest output was found. V1 rules/tests were not weakened by SIM-2D.
 
-## Findings, worst first
+The proof of record is the script's successful `./dev check` and eleven item commands on `fd2a2679b4e4`, as supplied in the task. I read the saved target-check output and the actual JSON results left in this checkout's `tmp/sim2d/`; those target receipts name that clean commit. [Selected check receipts](M1-review/check-receipts.json) retain command, time, exit and log locations. No device check or full suite was repeated. The relevant Rust and runner files are unchanged between that checked commit and this review; the intervening workspace additions are outside the runner closure. I recomputed the current source key and it matches both cost records: `211f3c1f91ce5a4c82276eb554d8878f8002bc23169b8ac49cb1b151ab18fd48`.
 
-### 1. Must Fix (verified): M1.1, M1.2 and M1.3: the profile's retained vectors leave out the input conversion
+I ran an independent CPU/data audit: `python3 docs/evidence/SIM-2D/M1-review/audit.py`. It passed. [Source](M1-review/audit.py) and [result](M1-review/audit.json) retain the check. It independently calculates all 262,147 added input-vector words using binary32 packing, checks the unchanged 3,790-word arithmetic prefix, checks the Crowd reference against its original committed bytes, compares every target receipt's checkpoint/fold and activity witnesses, and recomputes all three cost flags from the retained rows. This is an additional data audit, not a new device execution.
 
-**Items M1.1, M1.2, M1.3.** Their statements say the profile's retained vectors reproduce on each target. Design
-mechanism 6 defines those vectors as "every operation of the profile number at the edges of the format, **and the
-input conversion at the wire's rounding boundaries**", run in the same command on each target. The retained vectors
-do not include the input conversion, so these statements are not yet true.
+No item specifies Reviewer Inspection, and this milestone implements no drawing or app lifecycle. There is consequently no visual inspection list or new screenshot. Low sun, storm, camera distance/speed and refresh, and simulator rotation/background are not applicable to the plain headless simulation executable. Relevant edges are signed zeros, subnormals, ties, overflow/NaN, every wire integer and rounding boundary, three crowd sizes, slot churn, corrected eight-tick replay, debug/release and local/wire routes. Their checked paths are assessed below. I did not rerun the product or qualify performance independently; timings remain shared-host baselines. Physical iPhone, x86, Android and other browsers remain unproved.
 
-- `crates/thrum-core/src/profile.rs`, `conformance_vectors()`: arithmetic, comparisons, `to_i32` and `from_i32`,
-  and `random`. There is no `Number::from_axis` call. `vectors.json` has 3,790 words, which is exactly 18 operands ×
-  210 words plus 7 `from_i32` words plus 3 `random` words, so nothing else is in it.
-- `scripts/sim2d_conformance.py run` compares only `vectors()` and the crowd trace on each target. In Chrome and
-  the simulator, the input conversion is therefore exercised only by the trace's few axes (0.1, 0.5, −0.5, −0, 0.3,
-  −0.7, ±1, −0.9) and their wire copies, and never at a rounding boundary.
-- The exhaustive boundary comparison (`examples/crowd-2d-run/tests/input_route.rs`) runs on the Mac only, as
-  M1.12 asks. It does not stand in for the per-target vectors. `from_axis` goes through `f64` multiply,
-  `f64::round` and a saturating `as i16`, and a Wasm or iOS difference there is exactly what the per-target
-  vectors exist to catch.
+## Item verdicts and reviewer answers
 
-**What would fix it:** add the input conversion to the retained vectors: every wire integer's axis, both
-`next_down`/`next_up` neighbours of each `(k + 0.5)/32767` boundary, ±1, ±0 and a few off-grid values. Then
-regenerate `vectors.json` on purpose and re-run `run` on the three targets. This is one change, which clears all
-three findings.
+| Item | Verdict | Evidence and judgement |
+| --- | --- | --- |
+| M1.1 | pass | Mac vectors and all three trace sizes match. The 2,000-body wire and debug runs match too. `retain()` explicitly uses straight corrected input and asserts zero rewinds. `run_trace` replaces `timeline[tick-1]` on replay, then folds that corrected list and extracts checkpoints. `Simulation` registers `Crowd::simulate` with `GameRuntime`; births/deaths use structural edits and rewinds/amendment/replay use `RuntimeHistory`. Whole batches go through the real `thrum-network` encode/decode and typed `decode_frame`. Each size reports positive hits, reused slots and changed rewinds; the wire row reports 21,903 changed axes. As specified by the design, only the smallest size takes the wire route; local rows legitimately report zero wire-changed axes. |
+| M1.2 | pass | The real Chrome launcher serves and imports the Wasm artifact and calls the same exports. Its clean-checkout receipt matches every retained checkpoint and fold at 2,000/5,000/10,000 bodies and the 2,000-body wire route; the entire expanded vector array is compared before the traces. No JS stand-in computes the simulation. |
+| M1.3 | pass | The runner builds `aarch64-apple-ios-sim` and invokes it with `simctl spawn` on the named iPhone 18 Pro simulator. Its clean-checkout receipt reports the same vectors, folds, checkpoints and activity witnesses, including the wire route. This proves simulator function only. |
+| M1.4 | pass | The sole rule alteration is the injected platform sine applied to enemy steering's x coordinate. It uses the same `Runner.invoke`, `conformance`, runtime, timeline and fold calculation as normal runs. Mac and Chrome differ at tick 1; folds are `b99ebe393d898a94` and `45158c2a1ea1a2f5`. Equal folds fail the command. The final comparison is direct fold inequality rather than a call to `compare()`; see the non-blocking suggestion below. |
+| M1.5 | pass | `Number` has private storage; permitted integer/input conversions, arithmetic, sqrt, negation, abs, partial comparisons, rounding operations and comparison-based min/max/clamp. No raw-float constructor, raw-bits accessor, sign-bit operation, total ordering, power or FMA is exposed by the type. Encoding canonicalizes NaN payload/sign. The 18-operand arithmetic cross-product covers signed zeros, minimum/maximum subnormals, minimum normal, half values, adjacent values around 1/2, integer precision limit, maximum finite values, infinities and NaN. It exercises subnormal output, ties (`2^24 + 1`, minimum subnormal times one half, round of ±0.5, integer ±16,777,217), overflow and NaN operands where applicable. The added input suffix covers every wire value and boundary. The diagnostic sine's feature exposure remains a suggestion. |
+| M1.6 | pass | `profile_refusal` registers a composite `Scalar(Number)` and drives a registered edit through ordinary `runtime.step`, once with infinity and once with NaN. Refusal names schema 123 and the actual slot, leaves tick/resource/digest unchanged, and a subsequent valid tick commits. The default `StateEncode::is_finite` follows nested encoding; edit replacements/batches and spawn bundles validate before mutation, while tentative direct writes are checked before commit and use the runtime rollback path. |
+| M1.7 | pass | Library mutation tests change live flag, generation, stable identity, structural tick, free-list order, component presence/value/change tick, identity index and row directory individually, plus tick. The integration test changes a game resource, compares independent epochs at every tick and compares rewind/replay with straight execution. Schema order and slot order are explicit; integers use fixed-width little endian, lengths/row indices become u64, and the mixer has published FNV-1a answers. No covered value passes through `std::hash`. Both tests run in the workspace gate, although the item's standalone command names only the integration test. |
+| M1.8 | pass | Both retained Mac runs are release executions of the real history/runtime over the complete trace, with 120 warm-up ticks, three sizes, load, neighbours, tick/index/digest times and eight-tick rewind/replay. Recorded source manifests and compiler are validated against the current build inputs. Both repeats retain the previous record's last comparable row; the second also retains the first repeat. Previous-record Git identity and SHA-256 are checked. All flags agree with independent recalculation. Completeness and identity decide success; no elapsed-time threshold fails the check. |
+| M1.9 | pass | Same complete two-run record in actual cross-origin-isolated Chrome, using `web_time::Instant`. Every size has the five requested timings, load and neighbours. Historical and within-run comparisons are retained and verified. The 5,000-body scaling flag is true in both repeats; clock and quarter-regression flags are false, consistently with the numbers. |
+| M1.10 | pass | `retained_slice` reads the same `examples/crowd-2d/retained/crowd.txt` as the command, compares exactly 240 tick digests and asserts positive reuse/hits/changed replay. It cannot regenerate the file; regeneration is a separate explicit tooling action. `./dev check` runs workspace tests, including this test and the V1 simulation tests. |
+| M1.11 | pass | **main-branch check exact-images**. Read receipt `1794815899543-fd2a2679b4e4.json` in `.git/orchestrate/main-checks/exact-images/runs/`: final result pass, with the successful full verification ending at 08:11:42Z. The receipt marks a flaky first capture-stage attempt followed by the passing retry; this is not hidden. No SIM-2D image reference was refreshed. |
+| M1.12 | pass | `input_route` exercises all 65,535 accepted wire integers, each rounding boundary and both binary32 neighbours, ±1 and ±0. It calls public whole-batch encode/decode, not copied codec arithmetic, and compares encoded profile bits with the decoded axis bits, including idempotence. The local/wire slice matches the retained timeline and asserts changed axes above zero. Crowd converts those axes with `Number::from_axis`, stores converted controls and uses them to move players. There is no alternative raw-f32 constructor; profile lint enforcement remains M3. The test is in the workspace gate. |
 
-### 2. Must Fix (verified): M1.8: a Mac row that trips the quarter-slower tripwire is not flagged
+The retained folds are `87496bd96b8c5be4` (2,000/3,600), `290bd104cb7a0409` (5,000/3,600) and `8f66295acaf3bd0c` (10,000/36,000). Rewinds change digests 30, 30 and 300 times respectively; hits are 599, 599 and 5,999, with reused live slots 600, 600 and 5,461. These are real state/history witnesses, not merely equality at the final endpoint. The quality bar is met within the named targets and trace envelope.
 
-**Item M1.8.** The statement says "the record flags each tripwire the design names that a row trips". The design's
-first tripwire is "a row about a quarter slower than the last comparable one at the same neighbour count". The
-current record (`docs/evidence/SIM-2D/M1/costs-mac-metal.json`, measured at `371450716`) has a 5,000-body run 1 of
-1.751 ms at 65,407 neighbours per tick. The previous retained record (`a3f4c2236`, at `bf07e76eb`) has 1.21 and
-1.19 ms at the same 65,407 neighbours. That is 45–47% slower, and the record says `quarter_slower_tripwire: false`.
-The builder found the same thing and wrote it in prose in `M1.md` ("44.7% slower than its previous retained
-repeat"), but it is not in the record.
+## Previous Must Fix findings
 
-Cause: `measure()` in `scripts/sim2d_conformance.py` compares each row only with the same size's row in an
-earlier repeat of the same invocation. Run 1 can never be flagged, and a change across commits, which is what the
-tripwire is for, can never be flagged either. `costs()` checks only that the field is a boolean.
+Each name is taken from `RECORD.json` after independently assessing the items.
 
-**What would fix it:** compare each row with the last comparable row of the previously retained record as well as
-the earlier repeat, record which row it was compared with, and remeasure or recompute the current record. No
-time should decide the result: the record only has to flag the row.
+| Earlier finding name | Current result |
+| --- | --- |
+| Retained profile vectors omit the input conversion at the wire boundaries | Resolved. The retained vector now has 265,937 words, including the exhaustive input suffix; Mac compares it in the target command. |
+| Chrome run does not check the input conversion at the wire boundaries | Resolved. Chrome executes and compares that same expanded vector through Wasm. |
+| Simulator run does not check the input conversion at the wire boundaries | Resolved. The simulator executable executes and compares that same expanded vector. |
+| Quarter-slower tripwire compares only within one record | Resolved. Both repeats compare with the pinned previous record, retain the comparator and ratio, and the validator recomputes the expected comparisons. `test_sim2d_conformance.py` covers both repeats and the earlier 1.19 → 1.751 ms regression. |
 
-### 3. Suggestion (verified): M1.9's Chrome record has the same blind spot
+## Suggestions and remaining limits
 
-The Chrome record is computed by the same `measure()`. No Chrome row trips against the previous record (1.37 →
-1.41–1.495 ms at 5,000 bodies is at most 9%), so M1.9's statement holds for the record as it stands, and the item
-passes. The fix for finding 2 fixes it here too.
+No suggestion below fails an item or changes milestone status.
 
-### 4. Suggestion (verified): the sine is reachable from a rule package in a workspace build
+1. **Suggestion, verified — diagnostic sine exposure (M1.5/M3).** `crates/thrum-core/src/profile.rs:212` exports `platform_sine_control` under the runner-enabled feature, and `examples/crowd-2d/src/rules.rs:68` provides a public injection hook. Cargo feature unification makes the function reachable during a workspace build. The reference rules use it only when the diagnostic runner requests the negative control, so this is not a current deterministic-run defect. M3 should ensure rule packages cannot accidentally depend on that diagnostic route. Verified by source/dependency reading, not a new misuse fixture.
 
-`platform_sine_control` lives in `thrum_core::profile` behind the `conformance-control` feature, which
-`crowd-2d-run` enables. Cargo unifies features within one build, so in `cargo build --workspace` or `./dev check`,
-`crowd-2d` compiles against a `thrum-core` that exports the sine. A rule could call it and compile there, and fail
-only when built alone. It is not a method of `Number`, and the reference crowd does not call it. M1.5 passes, but
-M3's rule-package guard should refuse the symbol or the feature, or the control function should move out of
-`thrum-core`. Separately, `Crowd::control` is a public injection hook inside the rule package.
+2. **Suggestion, verified — make standalone proof commands cover their complete claims (M1.4/M1.7).** `scripts/sim2d_conformance.py:238` compares control folds directly rather than exercising the ordinary retained comparator; `world_digest` runs the epoch/replay integration test while field-by-field mutations live in `registered_world/digest_tests.rs`. The existing gate and shared digest path prove these items, but a future change to comparison logic could be missed by the control, and the standalone digest command does not run the mutation test. Consider a negative-control test of the actual comparator and including the library mutation tests in the item command. No comparator mutation was injected in this review.
 
-### 5. Suggestion (verified): M1.7's check does not run the coverage test
+3. **Suggestion, verified — validate the remaining cost flags (M1.8/M1.9).** `scripts/sim2d_conformance.py:319` checks clock/scaling flags only for boolean type, while quarter-slower flags are recomputed. The current records are correct: my independent audit recomputed all flags. Recomputing the other two in `costs()` would protect against stale or edited flags. This is a proof-strengthening suggestion, not a defect in the retained rows.
 
-`cargo test -p thrum-core --test world_digest` runs only the epoch-and-rewind test. The one-at-a-time coverage
-mutations are in the library's unit tests (`crates/thrum-core/src/sim/registered_world/digest_tests.rs`), which run
-in `./dev check` but not under the item's command. The item passes because both tests exist and both run in the
-gate. Naming both in the check would make the item prove itself.
+The previous review's other suggestions remain non-blocking: the full profile-column scan at `runtime.rs:1449` is visible in code and included in measured tick costs, but its isolated overhead was not measured here; identity-index encoding at `registered_world.rs:736` checks live-identity lookups and would omit a hypothetical stale dead-identity entry, for which no producing product path was found. The trace comment still says generation > 0 where the witness tests > 1. The previous Chrome chronological-comparison suggestion is resolved by the shared cost fix.
 
-### 6. Suggestion (verified): M1.4's control uses a different comparison from M1.2
+For SESSION/SWARM planning, eight-tick replay at 10,000 is about 67.7–68.0 ms on Mac and 71.1–71.7 ms in Chrome. These remain single rewind/replay samples per repeat under recorded shared-host load, not qualified latency or frame-rate promises. The 5,000-body scaling flags are retained and the builder explains the independently growing grid-table work. No new performance threshold is imposed.
 
-`control()` runs through the same `Runner`/`invoke`/`conformance` path as `run()`, but it compares the Mac fold
-with the Chrome fold directly, not through `compare()` against the retained file. It is the same fold equality
-that `compare()` starts with, so the control does show that the cross-target comparison can fail. Running the
-Chrome control row through `compare()` and requiring it to fail would match the quality bar's wording exactly.
+Only this review, M1 verdict/review/status fields, and the review evidence folder are changed. Existing `findings` are left for the script to clear on pass, as the skill directs; builder results, counts and other milestones are untouched.
 
-### 7. Suggestion (suspected, not measured separately): the profile check rescans every column each tick
-
-`GameRuntime::step_inner` calls `world.validate_profile()` after edit validation, which reads every slot of every
-profile column on every tick. It is needed for direct-write callbacks, which write tentatively. For edit-only
-rules it repeats the per-value checks already made in `validate_batch_replace` and `EditScratch::validate`. It
-is inside the recorded tick time, so it is a baseline, not a defect. The 10,000-body digest at about 1.2 ms
-against the probe's 0.18 ms is worth a look too.
-
-### 8. Suggestion (minor): the identity index is digested only through live slots
-
-`RegisteredWorld::digest` encodes the identity index by looking up each live slot's stable identity. A stale entry
-for a dead identity would not change the digest. Nothing in the product produces one, so this is a note for
-`SESSION`'s baseline restore. (`run_trace`'s comment also says `generation > 0` while the code tests `> 1`.)
-
-## Item results
-
-| Item | Result | Reason |
-|---|---|---|
-| M1.1 | fail | Finding 1. The rest holds, see the answers below |
-| M1.2 | fail | Finding 1. The Chrome receipt otherwise reproduces all three folds, the checkpoints and the wire route |
-| M1.3 | fail | Finding 1. The simulator receipt otherwise reproduces all three folds, the checkpoints and the wire route |
-| M1.4 | pass | Answers below. Control diverges at tick 1 (Mac `b99ebe39…`, Chrome `45158c2a…`) |
-| M1.5 | pass | Answers below |
-| M1.6 | pass | Answers below |
-| M1.7 | pass | Answers below; finding 5 is a Suggestion |
-| M1.8 | fail | Finding 2 |
-| M1.9 | pass | The record is complete, the replay is recorded at each size, and no Chrome row trips a tripwire against any earlier record; finding 3 |
-| M1.10 | pass | Answers below |
-| M1.11 | pass | main-branch check exact-images passed on `da0f278277c4` |
-| M1.12 | pass | Answers below |
-
-## Answers to the Reviewer Questions
-
-**M1.1.**
-- *Straight retained run?* Yes. `retain()` invokes `conformance(..., straight=True, ...)`, so `frames(tick, true)`
-  holds the corrections from tick 1, and it asserts `rewinds == 0`. My own straight runs at 2,000 and 5,000 give the
-  retained folds.
-- *One digest per tick, as last committed?* Yes. `run_trace` pushes one digest per forward tick, and replay
-  overwrites `timeline[tick-1]`. The fold and the checkpoints are taken from that list afterwards.
-- *Registered runtime and history?* Yes. The crowd steps through `GameRuntime::new_published` with one registered
-  system, uses `Edit::spawn`/`Edit::despawn` with a `StructuralPermit`, and rewinds through
-  `RuntimeHistory::rewind`, `amend_future` and `replay_next`. There is no private loop.
-- *Wire route through `thrum-network`?* Yes. `wire_route` calls `input_batch::encode` and `decode` on the whole
-  four-frame batch, then `decode_frame`.
-- *Witnesses above zero?* Yes. `compare()` asserts that reused, hits, rewinds and changed rewinds are above zero
-  for every row, and that changed axes are above zero on the wire row (21,903). The wire route runs only the
-  smallest size, as the design says.
-
-**M1.4.** The control replaces `chase.x` with `sin(chase.x)` in the enemy steering rule, and nothing else changes.
-It goes through the same runner and the same `conformance` export as M1.2. The comparison is a direct fold
-inequality, not `compare()` (finding 6).
-
-**M1.5.**
-- *Does `Number` expose anything outside mechanism 1's list?* No. It exposes `from_i32`, `to_i32` and `from_axis`
-  (the input conversion); sqrt, abs, floor, ceil, trunc and round; comparison-based min, max and clamp; `+ - * /`
-  and negation; and derived `PartialEq` and `PartialOrd`, which are partial comparison only. There is no sine,
-  power, fused multiply-add, sign-bit read, `to_bits`, `total_cmp` or `From<f32>`, and the inside is private.
-  `StateEncode::encode` writes the bits into a digest with NaN normalised, so the only sign it can reveal is a
-  zero's, which IEEE fixes. The feature-gated sine is finding 4.
-- *Do the vectors cover the edges?* Yes. The operands include ±0, ±min subnormal, max subnormal, min normal,
-  ±0.5, 1, 1+ulp, 2−ulp, 2, 2²⁴, ±max and ±∞, and a NaN with a payload. They produce subnormal results (min normal
-  − max subnormal, subnormal × 0.5), ties (2²⁴ + 1, min subnormal × 0.5, `round(±0.5)`, `from_i32(±16,777,217)`),
-  both zeros, overflow (max × 2, max + max) and NaN operands, all against every operand. Square root and division
-  cannot produce exact ties.
-
-**M1.6.** Yes. `profile_refusal.rs` registers a `Number` component with `register_profile`, and a registered
-`Simulate` rule pushes `Edit::replace` with the candidate's value. `runtime.step` refuses it with
-`NonFinite { schema: 123, slot }`, once for `1/0` and once for `0/0`. The tick, the resource and the digest are
-unchanged, and the next valid tick commits.
-
-**M1.7.**
-- *Does it change each kind of covered value one at a time?* Yes, across two tests.
-  - `digest_tests.rs` mutates, one at a time, the live flag, generation, stable identity, structural tick,
-    free-list order, component presence, component value, change tick, identity index and row directory, and
-    compares tick 0 with tick 1.
-  - `world_digest.rs` changes the game resource, compares worlds in epochs 1 and 999 at every tick, and compares a
-    rewound-and-replayed world with a straight one.
-- *Is any value hashed through `std::hash` or at the machine's width?* No. The mixer is FNV-1a over explicit
-  little-endian bytes, with published vectors. `usize` lengths and rows are widened to `u64`.
-
-**M1.8.**
-- *Release builds of the claimed source, through the engine runtime, with load?* Yes. Both runs are release builds
-  of `crowd-2d-run`, timed through `RuntimeHistory::step` on the real crowd, with `getloadavg` recorded for each
-  run. The record's `source_sha256` is checked against the current sources.
-- *Replay figure for `SESSION`?* Yes: `rewind_eight_ms` and `replay_eight_ms` at each size, one sample each.
-- *Does the command decide on completeness, never on time?* Yes. `costs()` asserts only presence, types and source
-  identity. The item fails on finding 2.
-
-**M1.10.** Yes. The test reads `examples/crowd-2d/retained/crowd.txt` through `include_str!`, which is the same
-file the conformance command reads, and it has no regeneration path (only the explicit `retain` action writes the
-file). It compares 240 slice ticks and requires reuse, hits and changed rewinds. No builder commit touched the V1
-game, and `./dev check` (`cargo test --workspace`) passed on `da0f278277c4`.
-
-**M1.12.**
-- *Does the wire side use the public codec?* Yes. The test goes through `input_batch::encode`/`decode` on whole
-  batches, not a copy of the arithmetic.
-- *Does it cover every case the item names?* Yes. It covers all 65,535 wire values, both neighbours of every
-  boundary, ±1 and ±0, and checks that converting a decoded axis gives the same bits.
-- *Do changed axes steer players?* Yes. The slice asserts `changed_axes > 0`, and the controls set player
-  velocity.
-- *Does it run in `./dev check`?* Yes, as part of the workspace tests.
-- *Can a rule turn an axis into a profile number another way?* Not through the type: `Number` has no conversion from
-  a raw `f32`. Only raw-float arithmetic followed by an integer cast could do it, and M3's lint is planned to refuse
-  that.
-
-## Proposed items
-
-None. Both Must Fix findings break the items' own statements, so the existing items already catch them.
+PASS M1

@@ -13,7 +13,7 @@
           "ask": "Read the runner and the retained file. Were the retained digests made by a straight run that had the corrected inputs from the start and never rewound? Does the fold hold one digest per tick, that of the tick as last committed, with superseded digests left out? Does the crowd step through thrum_core::sim's registered runtime, with spawns and despawns as structural edits and rewinds through its history, and not through a private loop? Does the wire route pass every frame through thrum-network's own encode and decode? Does the run report slots reused, hits, rewinds, rewinds whose replay changed a digest, and axes the wire changed, each above zero at every size?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/mac-metal.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -23,7 +23,7 @@
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SIM-2D/M1/chrome-webgpu.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -33,7 +33,7 @@
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
           "evidence": "docs/evidence/SIM-2D/M1/ios-sim.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -87,7 +87,7 @@
           "ask": "Were both retained runs release builds of the claimed commit, timed through the engine's runtime and not a stand-in, with the load on the machine recorded? Does the record give the replay figure SESSION needs: eight ticks at each size? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/costs-mac-metal.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
@@ -137,30 +137,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail.",
-      "findings": [
-        {
-          "name": "Retained profile vectors omit the input conversion at the wire boundaries",
-          "item": "M1.1",
-          "repeat": false
-        },
-        {
-          "name": "Chrome run does not check the input conversion at the wire boundaries",
-          "item": "M1.2",
-          "repeat": false
-        },
-        {
-          "name": "Simulator run does not check the input conversion at the wire boundaries",
-          "item": "M1.3",
-          "repeat": false
-        },
-        {
-          "name": "Quarter-slower tripwire compares only within one record",
-          "item": "M1.8",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail."
     },
     {
       "id": "M2",
