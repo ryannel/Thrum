@@ -219,13 +219,25 @@ impl CircleIndex {
             }
         }
         let (minimum, maximum) = shape.bounds();
+        // Outward slack covers binary32 subtraction/projection/bound rounding,
+        // including tiny shapes that straddle zero. It changes candidate work,
+        // never the predicate or canonical order; wide queries still scan bodies.
+        let magnitude = minimum
+            .x
+            .abs()
+            .max(minimum.y.abs())
+            .max(maximum.x.abs())
+            .max(maximum.y.abs())
+            + self.maximum_radius;
+        let slack = magnitude / Number::from_i32(1 << 20)
+            + Number::ONE / Number::from_i32(1 << 30) / Number::from_i32(1 << 30);
         let low = self.coordinates(Vector {
-            x: minimum.x - self.maximum_radius,
-            y: minimum.y - self.maximum_radius,
+            x: minimum.x - self.maximum_radius - slack,
+            y: minimum.y - self.maximum_radius - slack,
         });
         let high = self.coordinates(Vector {
-            x: maximum.x + self.maximum_radius,
-            y: maximum.y + self.maximum_radius,
+            x: maximum.x + self.maximum_radius + slack,
+            y: maximum.y + self.maximum_radius + slack,
         });
         let area = i64::from(high.0 - low.0 + 1) * i64::from(high.1 - low.1 + 1);
         if area > i64::try_from(self.rows.len()).expect("body count fits") {
@@ -271,7 +283,15 @@ impl CircleIndex {
             let dx = centre.x - circle.centre.x;
             let dy = centre.y - circle.centre.y;
             let squared = dx * dx + dy * dy;
-            if squared > distance * distance || k == 0 {
+            let in_range = Shape::Circle {
+                centre,
+                radius: distance,
+            }
+            .intersects(&Circle {
+                radius: Number::ZERO,
+                ..*circle
+            });
+            if !in_range || k == 0 {
                 return;
             }
             let position = output.partition_point(|&(prior, slot)| {

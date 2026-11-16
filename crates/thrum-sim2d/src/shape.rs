@@ -38,6 +38,29 @@ fn squared(a: Vector, b: Vector) -> N {
     x * x + y * y
 }
 
+fn tiny_scale() -> N {
+    N::ONE / N::from_i32(1 << 30) / N::from_i32(1 << 30)
+}
+
+fn within(a: Vector, b: Vector, radius: N) -> bool {
+    if radius >= tiny_scale() {
+        return squared(a, b) <= radius * radius;
+    }
+    // Preserve the normal-scale profile arithmetic used by retained games.
+    // Below 2^-60, normalize before squaring so distinct points and tiny
+    // diagonals cannot become intersections through squared-distance underflow.
+    let x = a.x - b.x;
+    let y = a.y - b.y;
+    let scale = x.abs().max(y.abs()).max(radius);
+    if scale == N::ZERO {
+        return true;
+    }
+    let x = x / scale;
+    let y = y / scale;
+    let radius = radius / scale;
+    x * x + y * y <= radius * radius
+}
+
 impl Shape {
     pub(super) fn valid(self) -> bool {
         match self {
@@ -88,21 +111,29 @@ impl Shape {
         match self {
             Self::Circle { centre, radius } => {
                 let sum = radius + circle.radius;
-                squared(centre, circle.centre) <= sum * sum
+                within(centre, circle.centre, sum)
             }
             Self::Box { minimum, maximum } => {
                 let closest = Vector {
                     x: circle.centre.x.clamp(minimum.x, maximum.x),
                     y: circle.centre.y.clamp(minimum.y, maximum.y),
                 };
-                squared(closest, circle.centre) <= circle.radius * circle.radius
+                within(closest, circle.centre, circle.radius)
             }
             Self::Capsule { start, end, radius } => {
                 let dx = end.x - start.x;
                 let dy = end.y - start.y;
                 let length = dx * dx + dy * dy;
-                let t = if length == N::ZERO {
+                let scale = dx.abs().max(dy.abs());
+                let t = if scale == N::ZERO {
                     N::ZERO
+                } else if scale < tiny_scale() {
+                    let x = dx / scale;
+                    let y = dy / scale;
+                    (((circle.centre.x - start.x) * x + (circle.centre.y - start.y) * y)
+                        / scale
+                        / (x * x + y * y))
+                        .clamp(N::ZERO, N::ONE)
                 } else {
                     (((circle.centre.x - start.x) * dx + (circle.centre.y - start.y) * dy) / length)
                         .clamp(N::ZERO, N::ONE)
@@ -112,7 +143,7 @@ impl Shape {
                     y: start.y + dy * t,
                 };
                 let sum = radius + circle.radius;
-                squared(closest, circle.centre) <= sum * sum
+                within(closest, circle.centre, sum)
             }
         }
     }

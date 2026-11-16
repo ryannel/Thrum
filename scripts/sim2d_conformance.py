@@ -243,6 +243,7 @@ def retain_mixed():
 
 
 def run(target, parallel=False):
+    measured_source = source_key()
     runner = Runner(target)
     assert runner.invoke("vectors", []) == json.loads(VECTORS.read_text()), "profile vectors differ"
     rows = []
@@ -270,7 +271,8 @@ def run(target, parallel=False):
             row.pop("timeline")
             row["build"] = "debug"
             rows.append(row)
-    return {"rows": rows, "artifact_sha256": runner.artifact_hash, "simulator": runner.device, "user_agent": runner.user_agent, "profile_vectors": "pass"}
+    assert source_key() == measured_source, "simulation sources changed during conformance"
+    return {"rows": rows, "source_sha256": measured_source, "artifact_sha256": runner.artifact_hash, "simulator": runner.device, "user_agent": runner.user_agent, "profile_vectors": "pass"}
 
 
 def control(target):
@@ -299,6 +301,7 @@ def allocation_counts():
 def measure(target):
     measured_inputs = source_inputs()
     measured_source = source_key(measured_inputs)
+    measured_commit = command(["git", "rev-parse", "HEAD"]).strip()
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
     previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
@@ -324,7 +327,7 @@ def measure(target):
             for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
                 assert isinstance(row[key], (float, int)) and row[key] >= 0, f"missing timing {key}"
             comparisons = []
-            for origin, record in [("previous_record", previous), ("current_record", {"commit": command(["git", "rev-parse", "HEAD"]).strip(), "runs": runs})]:
+            for origin, record in [("previous_record", previous), ("current_record", {"commit": measured_commit, "runs": runs})]:
                 comparison = last_comparable(row, record, origin)
                 if comparison:
                     comparisons.append(comparison)
@@ -334,7 +337,7 @@ def measure(target):
             row["super_neighbour_scaling_tripwire"] = index % 3 != 0 and row["tick_ms_per_neighbour"] > rows[index - 1]["tick_ms_per_neighbour"]
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
-    return {"runs": runs, "allocations": allocations, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
+    return {"commit": measured_commit, "runs": runs, "allocations": allocations, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
 
 
 def last_comparable(row, record, origin):

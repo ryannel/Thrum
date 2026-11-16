@@ -52,7 +52,15 @@ fn compare(bodies: &[Circle], size: N, shapes: &[Shape]) {
                         let x = body.centre.x - centre.x;
                         let y = body.centre.y - centre.y;
                         let d = x * x + y * y;
-                        (d <= distance * distance).then_some((d, body.slot))
+                        Shape::Circle {
+                            centre,
+                            radius: distance,
+                        }
+                        .intersects(&Circle {
+                            radius: N::ZERO,
+                            ..*body
+                        })
+                        .then_some((d, body.slot))
                     })
                     .collect();
                 expected.sort_unstable_by(|a, b| {
@@ -152,4 +160,47 @@ fn generated_sequences_match_full_enumeration() {
             compare(&fractional, size, &shapes);
         }
     }
+    let tiny = N::ONE
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000);
+    let origin = v(0, 0);
+    let small = |x, y| Vector {
+        x: N::from_i32(x) * tiny,
+        y: N::from_i32(y) * tiny,
+    };
+    let bodies: Vec<_> = (0..30_u32)
+        .map(|slot| Circle {
+            slot,
+            centre: small(
+                i32::try_from(slot % 5).expect("small scene") - 2,
+                i32::try_from(slot / 5).expect("small scene") - 3,
+            ),
+            radius: if slot % 2 == 0 { tiny } else { N::ZERO },
+        })
+        .collect();
+    compare(
+        &bodies,
+        N::ONE / N::from_i32(16),
+        &[
+            Shape::Circle {
+                centre: origin,
+                radius: N::ZERO,
+            },
+            Shape::Circle {
+                centre: origin,
+                radius: tiny,
+            },
+            Shape::Box {
+                minimum: origin,
+                maximum: origin,
+            },
+            Shape::Capsule {
+                start: small(-2, 0),
+                end: small(2, 0),
+                radius: tiny,
+            },
+        ],
+    );
 }

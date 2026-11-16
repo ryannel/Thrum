@@ -189,3 +189,60 @@ fn nearest_hand_worked_ties_and_cutoff() {
         .expect("valid fixture");
     assert_eq!(out, []);
 }
+
+#[test]
+fn tiny_shapes_do_not_gain_hits_when_squares_underflow() {
+    let tiny = N::ONE
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000)
+        / N::from_i32(1_000_000);
+    let p = |x, y| Vector {
+        x: N::from_i32(x) * tiny,
+        y: N::from_i32(y) * tiny,
+    };
+    let point = |x, y| Circle {
+        slot: 0,
+        centre: p(x, y),
+        radius: N::ZERO,
+    };
+    let disc = Shape::Circle {
+        centre: p(0, 0),
+        radius: tiny,
+    };
+    assert!(disc.intersects(&point(1, 0)));
+    assert!(!disc.intersects(&point(1, 1)));
+    assert!(
+        !Shape::Circle {
+            centre: p(0, 0),
+            radius: N::ZERO
+        }
+        .intersects(&point(-1, 0))
+    );
+    let bounds = Shape::Box {
+        minimum: p(0, 0),
+        maximum: p(0, 0),
+    };
+    assert!(!bounds.intersects(&point(-1, 0)));
+    assert!(bounds.intersects(&Circle {
+        radius: tiny,
+        ..point(1, 0)
+    }));
+    assert!(!bounds.intersects(&Circle {
+        radius: tiny,
+        ..point(1, 1)
+    }));
+    let capsule = Shape::Capsule {
+        start: p(-2, 0),
+        end: p(2, 0),
+        radius: N::ZERO,
+    };
+    assert!(capsule.intersects(&point(0, 0)));
+    assert!(capsule.intersects(&point(2, 0)));
+    assert!(!capsule.intersects(&point(3, 0)));
+    assert!(!capsule.intersects(&point(0, 1)));
+    assert!(capsule.intersects(&Circle {
+        radius: tiny,
+        ..point(0, 1)
+    }));
+}
