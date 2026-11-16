@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-a-capture-that-drops-frames",
-        "module": "T2-CAPTURE",
+        "anchor": "ruling-on-culling-m3",
+        "module": "CULLING",
         "milestone": "M3"
       },
-      "pin": "f9b29dbd957afbbd48ebae1494af4cef804c7cfd5c6a5e8bb3dc7caa7a4ed6d3"
+      "pin": "1c195dd0a335d6d5b4355fd8cb96fd955067f1c2a37a2f6557805b3086526546"
     },
     {
       "id": "chrome-day-sdr",
@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-a-capture-that-drops-frames",
-        "module": "T2-CAPTURE",
+        "anchor": "ruling-on-culling-m3",
+        "module": "CULLING",
         "milestone": "M3"
       },
-      "pin": "6e8d0d8ccb3df95466bbf777a2656b79231bdc8eab6261ed4a20a1d74d919950"
+      "pin": "93924d130f96bdb38ceb8138421ed8550dd0bc54693093bd83e04afd220348d6"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-a-capture-that-drops-frames",
-        "module": "T2-CAPTURE",
+        "anchor": "ruling-on-culling-m3",
+        "module": "CULLING",
         "milestone": "M3"
       },
-      "pin": "0c29146ccb3586c72dd1245904771518722fb28245f0df1d798a06df7f45be8d"
+      "pin": "4362295d13c88c59f24ccee95635c6690ea5762446eccbb6b99b60956ad87c37"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,11 +95,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-a-capture-that-drops-frames",
-        "module": "T2-CAPTURE",
+        "anchor": "ruling-on-culling-m3",
+        "module": "CULLING",
         "milestone": "M3"
       },
-      "pin": "9d6f9fcf4e32a1d0858cae824db6e880d944e548e1f16b75e6ece3b3a984e826"
+      "pin": "b08132f3b9a5fca8985c6fb57ff4620325b7c927772927449da36d1afaaf74bd"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -115,11 +115,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-a-capture-that-drops-frames",
-        "module": "T2-CAPTURE",
+        "anchor": "ruling-on-culling-m3",
+        "module": "CULLING",
         "milestone": "M3"
       },
-      "pin": "e4b0b3c6e8f0767bbcfae6c7042a84cabbfb63b842939f51a92a26878e66d8e5"
+      "pin": "4fecc3cefac22b3f8e680a37b4be5fc8dd024d317f1a389c405aba9981c52857"
     }
   ],
   "retired": []
