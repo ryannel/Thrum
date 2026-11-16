@@ -100,3 +100,7 @@
   did. `SESSION`'s files are unchanged: its M2 onward wait on `TRANSPORT:M1` alone, not on V1. The work on
   `build/transport` stays for the builder that resumes M1, as the plan's note says. The changed paragraph has
   not been reviewed; no builder starts until a design review returns Design Approved.
+- 2026-11-16 Builder: M1 complete and merged; every item passes, evidence in
+  [M1.md](../../evidence/TRANSPORT/M1.md). Verified: M1.1 to M1.11 target proofs at `2b8d0530a`; the exact-baseline
+  verifier passed all five baselines at `ae375af3d` before the last rebase. Not yet verified: that pass on the merged
+  tip, which the main-branch check `exact-images` supplies; transport touches no captured crate, so a change is unlikely.
