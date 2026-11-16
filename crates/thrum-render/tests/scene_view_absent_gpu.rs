@@ -8,6 +8,35 @@ fn source_fingerprint(text: &str) -> u64 {
     })
 }
 
+fn pre_view_source(text: &str) -> String {
+    // CULLING's independently landed exact-image fix gives both ordinary
+    // fragment entries an explicit full sample mask. Undo only that known
+    // upstream patch for this module's historical source oracle; all other
+    // bytes must still match the pre-view hashes below.
+    const COVERAGE: &str = "// Explicit coverage prevents Metal triangle merging from borrowing a neighbour\n\
+// primitive's interpolants for derivative/helper lanes. All samples stay covered;\n\
+// the ordinary depth test still owns visibility. Volumes keep FragmentOutput.\n\
+struct OpaqueFragmentOutput {\n\
+    @location(0) colour: vec4<f32>,\n\
+    @location(1) motion: vec2<f32>,\n\
+    @location(2) reactive: f32,\n\
+    @builtin(sample_mask) coverage: u32,\n\
+}\n";
+    if !text.contains("OpaqueFragmentOutput") {
+        return text.to_owned();
+    }
+    assert_eq!(
+        text.matches(COVERAGE).count(),
+        1,
+        "exact upstream coverage declaration"
+    );
+    let text = text.replacen(COVERAGE, "", 1);
+    assert_eq!(text.matches("OpaqueFragmentOutput").count(), 4);
+    assert_eq!(text.matches(", 0xffffffffu)").count(), 2);
+    text.replace("OpaqueFragmentOutput", "FragmentOutput")
+        .replace(", 0xffffffffu)", ")")
+}
+
 #[test]
 fn every_main_shader_variant_retains_its_pre_view_bytes() {
     use thrum_render::{
@@ -51,13 +80,10 @@ fn every_main_shader_variant_retains_its_pre_view_bytes() {
             host.set_scene_contribution(Box::new(observer))
                 .expect("no-view observer");
             let control = control.lock().expect("control");
+            let source = pre_view_source(&control.main_shader);
+            assert_eq!(source.len(), length, "air={air} shadow={shadow}");
             assert_eq!(
-                control.main_shader.len(),
-                length,
-                "air={air} shadow={shadow}"
-            );
-            assert_eq!(
-                source_fingerprint(&control.main_shader),
+                source_fingerprint(&source),
                 expected,
                 "air={air} shadow={shadow}"
             );
