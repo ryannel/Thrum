@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
