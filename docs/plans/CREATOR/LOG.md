@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-16 M3.4 remains unproved because Computer Use exposes only the scene window and
+  the requested native-driver exception has no reply. The queued normal merge was canceled
+  before child work started. The [handoff](../../evidence/CREATOR/M3-handoff.md) records terminal
+  job identities, committed fresh-scene proof and the required access.
+
 - 2026-11-16 A fresh agent built and inspected a 34-line folded-sail scene on Mac Metal and
   hardware Chrome using only the permitted creator documents. The current-source native
   mistake journey also passes its saved-file assertions and diagnostic audits. The README
