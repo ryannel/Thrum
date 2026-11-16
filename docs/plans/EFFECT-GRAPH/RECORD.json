@@ -262,12 +262,12 @@
       }
     },
     "M4": {
-      "definitions": "db473ce4cb6c2bbbcf3f73d20b0145e9f743c57c392b2db78ecbdc3fdd319e53",
+      "definitions": "452634afe76102cf07932973e70d87ee8be37b4457eadfd3e520353c04b4c1a0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared display",
-        "at": "2026-11-16T09:54:03Z"
+        "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, whic",
+        "at": "2026-11-16T12:56:12Z"
       }
     }
   },
@@ -291,11 +291,15 @@
     {
       "task": "CLOUDS M2 needs something no plan provides yet. The builder wrote: The planner must settle and assign the shared display-time interface change before M2.7\u2019s uneven 60\u00d7 shade motion can be completed. The builder's handoff, docs/evidence/CLOUDS/M2-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/clouds at 0756d0adce44, which isn't merged; read it with `git show`.",
       "at": "2026-11-16T09:54:03Z"
+    },
+    {
+      "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, which CLOUDS M2 now depends on). Their latest design reviews in docs/evidence/CLOUDS/ and docs/evidence/EFFECT-GRAPH/ on origin/main each have 1 Must Fix finding. Resolve both in the designs and plans, together since they come from one interface change. Their Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-16T12:56:12Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T09:54:03Z"
+    "at": "2026-11-16T12:56:12Z"
   },
   "design_history": [
     {
