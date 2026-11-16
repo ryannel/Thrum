@@ -216,10 +216,10 @@
           "statement": "In real time on the Mac, with the default mode, nothing pops, flickers or goes missing at the frame edges during a fast yaw or at occluder silhouettes when stepping out of cover.",
           "inspect": "Capture the valley with T2 engine capture: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback, not elapsed-time motion. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive frames at 1x.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/motion.md; docs/evidence/CULLING/M3/replan/native-selection.tar; docs/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.8",

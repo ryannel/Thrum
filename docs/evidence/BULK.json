@@ -3523,10 +3523,26 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/field-and-fixed-selection.tar",
+      "size": 38195200,
+      "sha256": "c06d659c1d2603e2f830e98e229e1181e73d4a1381a822477fea8f6c1ca1ea05",
+      "date": "2026-11-16T21:14:49.856245+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/native-differences/b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73.png",
       "size": 2659905,
       "sha256": "b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73",
       "date": "2026-11-16T13:15:20.494149+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/native-selection.tar",
+      "size": 92504576,
+      "sha256": "0d6cef4bf6963a134b07a2b9875760702c468b1b204b0b6b581d69064487b005",
+      "date": "2026-11-16T21:12:21.637916+00:00",
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
