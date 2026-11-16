@@ -436,6 +436,7 @@ pub(crate) struct Control {
     pub(crate) main_frame: Option<ContributionFrame>,
     pub(crate) allow_refusal: bool,
     pub(crate) results: Vec<Result<(), thrum_render::contribution::SecondaryViewError>>,
+    admitted: Vec<bool>,
 }
 pub(crate) struct Observer {
     pub(crate) control: Arc<Mutex<Control>>,
@@ -447,6 +448,7 @@ impl Observer {
         let control = Arc::new(Mutex::new(Control {
             requests: vec![None; slots],
             order: (0..slots).collect(),
+            admitted: vec![false; slots],
             ..Control::default()
         }));
         (
@@ -644,18 +646,20 @@ impl SceneContribution for Observer {
         let mut control = self.control.lock().expect("control");
         control.main_frame = Some(*frame);
         control.results.clear();
+        control.admitted.fill(false);
         for index in control.order.clone() {
             if let Some(request) = control.requests[index] {
                 let result = control.handles[index].request(&request);
                 if !control.allow_refusal {
                     result.expect("public ask");
                 }
+                control.admitted[index] = result.is_ok();
                 control.results.push(result);
             }
         }
     }
     fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
-        self.control.lock().expect("control").requests[index].is_some()
+        self.control.lock().expect("control").admitted[index]
     }
     fn encode_after_opaque(
         &mut self,
