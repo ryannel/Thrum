@@ -69,7 +69,7 @@
     {
       "id": "M2",
       "name": "The sea names its buffers and passes, shares its records with its shaders under a layout test, and uploads its spectrum only when the spectrum changes",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -85,8 +85,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md"
         },
         {
           "id": "M2.2",
@@ -96,8 +96,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md"
         },
         {
           "id": "M2.3",
@@ -108,8 +108,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md"
         },
         {
           "id": "M2.4",
@@ -120,8 +120,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M2/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md"
         },
         {
           "id": "M2.5",
@@ -129,7 +129,9 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md"
         }
       ]
     },

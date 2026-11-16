@@ -107,7 +107,36 @@
     },
     "M2": {
       "definitions": "b73d225ec0fe823ce74d21bb3b7e3f6ff6260c35d4e6d7f8f27ce5a1f0cd8a44",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "c543daab5cde5c9b59d2d4ffd001068acd8955c9",
+          "review": "docs/evidence/REVIEW-ENGINE/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 103332,
+            "cached": 1169664,
+            "output": 5049,
+            "turns": 1
+          },
+          "at": "2026-11-16T10:17:47Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
@@ -148,6 +177,13 @@
           "output": 179414,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "c543daab5cde5c9b59d2d4ffd001068acd8955c9",
+        "review": "docs/evidence/REVIEW-ENGINE/M2-review.md",
+        "checked": "7cec546038ba716b9f533587f2bf8c79f9a7c17d",
+        "at": "2026-11-16T10:17:47Z"
       }
     },
     "M3": {
