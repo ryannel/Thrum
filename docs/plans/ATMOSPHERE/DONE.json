@@ -188,7 +188,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Does the evidence hold the verifier's passing record at the starting commit, and do both logs list each moved reference's old and new SHA-256 and say which of the five sets did not move? Read the landing's diff of `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-atmosphere-m9`, `ATMOSPHERE` and `M9`? Did the landing leave the comparison scripts and their sampling as they were?",
           "target": "mac-metal",
-      "evidence": "main-branch check exact-images; docs/evidence/ATMOSPHERE/M9-continuation.md; docs/evidence/ATMOSPHERE/M9-baselines.md",
+      "evidence": "main-branch check exact-images; docs/evidence/ATMOSPHERE/M9-continuation.md; docs/evidence/ATMOSPHERE/M9-baseline-refresh.json",
           "verdict": "",
           "review": "",
       "builder_result": "pass"
