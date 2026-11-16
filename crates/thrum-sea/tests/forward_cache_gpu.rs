@@ -4,15 +4,24 @@
     reason = "shared harness includes other independent sea oracles"
 )]
 mod support;
-use std::{sync::mpsc, time::Duration};
+use std::{fmt::Write as _, sync::mpsc, time::Duration};
 
 #[test]
 fn forward_fields_and_full_lean_pyramids_match_the_model() {
     for portable in [false, true] {
-        let Some(mut h) = support::Harness::new(portable) else {
+        let spectrum = support::spectrum(8.0);
+        let choppiness = (0.85
+            / thrum_sea_model::contraction_bound(&spectrum.long, 1.0).expect("bound"))
+        .min(4.0);
+        let Some(mut h) = support::Harness::with_profile(
+            portable,
+            thrum_sea::Profile {
+                choppiness,
+                ..Default::default()
+            },
+        ) else {
             return;
         };
-        let spectrum = support::spectrum(8.0);
         for time in [10.125, 86400.125] {
             let output = h.frame(&spectrum, time, &[], true).expect("submitted");
             support::check_long(&mut h, &output, &spectrum, time, &[], true);
@@ -26,6 +35,11 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                     &output.long[4096 * 12..]
                 };
                 let base = read(&h.device, &h.queue, texture, 0);
+                if index == 1 {
+                    let (height, slope) =
+                        check_cache(&base, &h.sea.levels, &spectrum, time, choppiness);
+                    writeln!(h.record,"filtered cache time {time}: max height {height:.9} m; max rest slope {slope:.9}").expect("record");
+                }
                 // Every plane, including rest derivatives, rates, J and J^2.
                 for layer in 0..layers {
                     for pixel in 0..width * width {
@@ -93,6 +107,44 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
             "forward-cache-native"
         });
     }
+}
+
+fn check_cache(
+    base: &[f64],
+    levels: &[thrum_sea::CacheLevel; 8],
+    spectrum: &thrum_sea_model::Spectrum,
+    time: f64,
+    choppiness: f64,
+) -> (f64, f64) {
+    let mut height = 0.0_f64;
+    let mut slope = 0.0_f64;
+    for (level, info) in levels.iter().enumerate() {
+        let model = thrum_sea_model::LongWaves::new(
+            spectrum
+                .long
+                .iter()
+                .copied()
+                .filter(|c| c.wave_vector[0].hypot(c.wave_vector[1]) <= info.max_wavenumber)
+                .collect(),
+            choppiness,
+        )
+        .expect("restricted model");
+        for pixel in 0..128 * 128 {
+            let rest = [
+                info.origin[0] + ((pixel % 128) as f64 + 0.5) * info.texel,
+                info.origin[1] + ((pixel / 128) as f64 + 0.5) * info.texel,
+            ];
+            let cpu = model.forward(rest, time).expect("forward");
+            let offset = (level * 5 * 128 * 128 + pixel) * 4;
+            height = height.max((base[offset + 1] - cpu.displacement[1]).abs());
+            for axis in 0..2 {
+                slope = slope.max((base[offset + 128 * 128 * 4 + axis] - cpu.slope[axis]).abs());
+            }
+        }
+    }
+    assert!(height < 0.002, "texture height {height}");
+    assert!(slope < 0.002, "texture slope {slope}");
+    (height, slope)
 }
 
 fn half(bits: u16) -> f64 {
