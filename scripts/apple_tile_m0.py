@@ -17,6 +17,7 @@ import sys
 from compare_v1_pixels import compare
 from capture_spool import decoded_frames
 from capture_v1_runtime import finalize, save_manifest
+from capture_result import CaptureUnjudged
 from t2_writer_probe import package
 from run_v1_showcase import MOVING_IDENTITY, store_root
 
@@ -117,6 +118,8 @@ def run_t2(args, directory, name, options, stars='on'):
     with (directory / f'{name}.log').open('wb') as log:
         result = subprocess.run(command, env=environment, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=180)
     manifest = json.loads((output / 'manifest.json').read_text())
+    if result.returncode == 75 and manifest.get('could_not_judge'):
+        raise CaptureUnjudged(f"{name}: {manifest['incomplete_conditions']}")
     if result.returncode or not manifest.get('capture_complete'):
         raise ValueError(f'{name} T2 capture failed; see its log and manifest')
     return {'directory': str(output), 'capture_complete': True, 'options': {k: str(v) for k, v in options.items()},

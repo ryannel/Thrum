@@ -395,6 +395,15 @@ fn main() -> TaskResult {
                 "-s",
                 "scripts",
                 "-p",
+                "test_capture_unjudged.py",
+            ])?;
+            python(&[
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "scripts",
+                "-p",
                 "test_mac_m2_window.py",
             ])?;
             cargo(&["fmt", "--all", "--", "--check"])?;

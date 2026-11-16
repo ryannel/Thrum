@@ -8,7 +8,11 @@ mod capture;
 fn main() {
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
         let scenario = std::env::var("THRUM_CAPTURE_CASE").unwrap_or_else(|_| "pan".to_owned());
-        if let Err(error) = v1_game::run_runtime_capture(std::path::Path::new(&output), &scenario) {
+        let (wait, hold) =
+            capture_admission().unwrap_or_else(|error| report_capture_failure(&error));
+        if let Err(error) =
+            v1_game::run_runtime_capture(std::path::Path::new(&output), &scenario, wait, hold)
+        {
             report_capture_failure(&error);
         }
         return;
@@ -20,6 +24,22 @@ fn main() {
         return;
     }
     v1_game::run_window();
+}
+
+#[cfg(target_os = "macos")]
+fn capture_admission() -> Result<(bool, std::time::Duration), String> {
+    let wait = match std::env::var("THRUM_CAPTURE_ADMISSION").as_deref() {
+        Ok("omit") | Err(_) => false,
+        Ok("wait") => true,
+        _ => return Err("capture admission must be omit or wait".to_owned()),
+    };
+    let hold = std::env::var("THRUM_CAPTURE_HOLD_FULL_MS")
+        .ok()
+        .map(|value| value.parse::<u64>())
+        .transpose()
+        .map_err(|e| e.to_string())?
+        .unwrap_or(0);
+    Ok((wait, std::time::Duration::from_millis(hold)))
 }
 
 #[cfg(target_os = "macos")]

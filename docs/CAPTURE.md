@@ -32,6 +32,22 @@ Use `--mode still` for one settled submitted image, `--mode fixed` for synthetic
 between readbacks; their smoothness cannot prove runtime motion. Existing `THRUM_CAPTURE_SCENE` and
 `FrameHost::capture_pixels` retain separate endpoint/no-history/alpha-one oracle semantics.
 
+Mac realtime capture defaults to `--admission omit`. Opt-in `--admission wait` drains readbacks and writer
+leases before taking another opportunity when all six staging slots are reserved. It preserves each actual
+submission time and counts admission-wait gaps separately in `runtime.json` and the manifest. It can prove
+that every submitted image was retained; only `omit` can qualify scheduling, cadence or observer cost.
+The exact-image matrices select `wait` for their realtime motion arms; their fixed comparisons are unchanged.
+The browser, simulator and windowed capture keep their existing admission.
+
+A Mac runtime record with `complete: false` exits **75**, keeps an incomplete manifest and names the failed
+conditions. Native matrices and the full exact-image verifier propagate that unjudged result. It covers no
+commit and is never a pass. Compared-byte/identity differences, invalid joins/hashes/backend, crashes, absent
+records and expired process/admission deadlines remain failures. A failure encountered before an incomplete
+capture wins. There is no retry within a capture or verifier. The admission wait deadline is ten seconds.
+`THRUM_CAPTURE_HOLD_FULL_MS=350` is a declared diagnostic that withholds image collection until the ring fills,
+then releases it after 350 ms; it is disabled by default. Reproduce the bounded controls with
+`scripts/capture_admission_proof.py ring-full` or `loaded` under the GPU lock.
+
 The pan requests 120 opportunities/s at 1920×1080, holds yaw zero for one second, turns to 36° over two
 seconds, then holds the accepted final state for at least one second. The world remains paused. A real
 initial submission anchors zero; earlier request/accept observations retain signed times. Missing opportunity

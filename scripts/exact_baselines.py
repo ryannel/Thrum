@@ -157,9 +157,11 @@ def prune_scratch(root=ROOT):
             continue
         if 'seconds' in record and (record.get('passed') is True or 'error' in record):
             completed.append((directory, record))
-    latest_failure = next((directory for directory, record in completed if not record.get('passed')), None)
+    latest_failure = next((directory for directory, record in completed
+                           if not record.get('passed') and not record.get('could_not_judge')), None)
+    latest_unjudged = next((directory for directory, record in completed if record.get('could_not_judge')), None)
     for index, (directory, _) in enumerate(completed):
-        if directory == latest_failure:
+        if directory in (latest_failure, latest_unjudged):
             continue
         if index >= KEEP_RECORDS:
             shutil.rmtree(directory)
@@ -263,6 +265,11 @@ def verify(root=ROOT):
                                    'seconds': time.monotonic() - start, 'log': str(log.relative_to(root))})
         save(output / 'record.json', report)
         if code:
+            if code == 75 and name in ('apple_tile_m1', 'apple_tile_m2'):
+                manifest = json.loads((output / name / 'manifest.json').read_text())
+                if manifest.get('could_not_judge'):
+                    from capture_result import CaptureUnjudged
+                    raise CaptureUnjudged(f"{name}: {manifest['incomplete_capture']}")
             identity = f"baseline {baseline['id']} owner {baseline['owner']}: " if baseline else ''
             detail = log.read_text()[-3000:]
             raise ValueError(f'{identity}comparison/stage {name} failed (exit {code}): {detail}')
@@ -330,9 +337,12 @@ def verify(root=ROOT):
         print(f'PASS exact baselines; record {output.relative_to(root)}/record.json; {report["seconds"]:.2f}s')
     except Exception as error:
         report.update(error=str(error), seconds=time.monotonic() - started)
+        from capture_result import CaptureUnjudged
+        if isinstance(error, CaptureUnjudged):
+            report.update(could_not_judge=True, incomplete_capture=str(error))
         save(output / 'record.json', report)
         print(f'FAIL {error}\nRecord: {output / "record.json"}', file=sys.stderr)
-        return 1
+        return 75 if report.get('could_not_judge') else 1
     return 0
 
 

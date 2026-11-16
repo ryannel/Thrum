@@ -19,8 +19,13 @@ mod capture;
 /// Run a declared unattended capture scenario through the ordinary game.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
-pub fn run_runtime_capture(output: &std::path::Path, scenario: &str) -> Result<(), String> {
-    capture::run(output, scenario)
+pub fn run_runtime_capture(
+    output: &std::path::Path,
+    scenario: &str,
+    wait: bool,
+    hold_full: std::time::Duration,
+) -> Result<(), String> {
+    capture::run(output, scenario, wait, hold_full)
 }
 
 const KEY_A: u8 = 1;

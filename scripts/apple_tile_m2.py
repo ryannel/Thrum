@@ -13,6 +13,7 @@ import subprocess
 
 from apple_tile_m0 import ROOT, ROUTE, digest, finish_t2, run_native, run_t2, save, validate_store
 from apple_tile_m1 import BASELINE, retained_comparison
+from capture_result import CaptureUnjudged
 
 
 def run(args):
@@ -48,7 +49,7 @@ def run(args):
                 save(args.output / 'manifest.json', report)
             for case in ['render-stall', 'route']:
                 name = f'{recipe}-{case}-motion'
-                options = {'mode': 'realtime', 'case': case}
+                options = {'mode': 'realtime', 'case': case, 'admission': 'wait'}
                 if case == 'route':
                     path = args.output / f'{recipe}-runtime-route.json'
                     save(path, dict(route, render_extent=[1920, 1080]))
@@ -57,6 +58,9 @@ def run(args):
                 report['runs'][name].update(finish_t2(args.output / name, viewing=True))
                 save(args.output / 'manifest.json', report)
         report['passed'] = True
+    except CaptureUnjudged as error:
+        report.update(could_not_judge=True, incomplete_capture=str(error))
+        report['failures'].append(str(error))
     except Exception as error:
         report['failures'].append(str(error))
     finally:
@@ -66,7 +70,7 @@ def run(args):
             os.environ['THRUM_RECIPE'] = previous
         save(args.output / 'manifest.json', report)
     print(json.dumps({'passed': report['passed'], 'failures': report['failures']}))
-    return 0 if report['passed'] else 1
+    return 0 if report['passed'] else 75 if report.get('could_not_judge') else 1
 
 
 if __name__ == '__main__':

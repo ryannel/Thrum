@@ -1,5 +1,7 @@
 //! Authored V1 scenarios on the shared unattended engine driver.
 
+mod admission;
+
 use serde_json::{Value, json};
 use std::io::Write;
 use std::{
@@ -22,7 +24,12 @@ use thrum_render::{
 
 /// Run the ordinary game on a dedicated render-owner thread. Stdout is raw RGBA;
 /// scripts own the sequential spool, packaging and finalized evidence manifest.
-pub(super) fn run(output: &Path, scenario: &str) -> Result<(), String> {
+pub(super) fn run(
+    output: &Path,
+    scenario: &str,
+    wait: bool,
+    hold_full: Duration,
+) -> Result<(), String> {
     if !matches!(
         scenario,
         "pan"
@@ -45,7 +52,7 @@ pub(super) fn run(output: &Path, scenario: &str) -> Result<(), String> {
     let scenario = scenario.to_owned();
     std::thread::Builder::new()
         .name("thrum-headless-render".to_owned())
-        .spawn(move || pollster::block_on(record(&output, &scenario)))
+        .spawn(move || pollster::block_on(record(&output, &scenario, wait, hold_full)))
         .map_err(|e| e.to_string())?
         .join()
         .map_err(|_| "capture render owner panicked".to_owned())?
@@ -220,6 +227,7 @@ impl Trace {
         driver: &mut Offscreen<G>,
         writer: Option<&ImageWriter>,
         origin: Instant,
+        collect_images: bool,
     ) -> Result<(), String> {
         while let Some(sample) = driver.completed()? {
             self.gpu.push(
@@ -233,8 +241,10 @@ impl Trace {
             while let Some(image) = writer.recycled() {
                 driver.recycle(image);
             }
-            while let Some(image) = driver.image()? {
-                self.image(driver, writer, image, origin);
+            if collect_images {
+                while let Some(image) = driver.image()? {
+                    self.image(driver, writer, image, origin);
+                }
             }
         }
         Ok(())
@@ -413,15 +423,25 @@ fn prepare_parameters<G: Game>(
     Ok((preset_requested, preset_accepted))
 }
 
-async fn record(output: &Path, scenario: &str) -> Result<(), String> {
+fn capture_source() -> Result<CaptureSource, String> {
+    match std::env::var("THRUM_CAPTURE_SOURCE").as_deref() {
+        Ok("sdr") | Err(_) => Ok(CaptureSource::Sdr),
+        Ok("scene-linear") => Ok(CaptureSource::SceneLinear),
+        Ok("native-output") => Ok(CaptureSource::NativeOutput),
+        Ok("native-history") => Ok(CaptureSource::NativeHistory),
+        _ => Err("unknown capture source".to_owned()),
+    }
+}
+
+async fn record(
+    output: &Path,
+    scenario: &str,
+    wait: bool,
+    hold_full: Duration,
+) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
-    let source = match std::env::var("THRUM_CAPTURE_SOURCE").as_deref() {
-        Ok("sdr") | Err(_) => CaptureSource::Sdr,
-        Ok("scene-linear") => CaptureSource::SceneLinear,
-        Ok("native-output") => CaptureSource::NativeOutput,
-        Ok("native-history") => CaptureSource::NativeHistory,
-        _ => return Err("unknown capture source".to_owned()),
-    };
+    let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
+    let source = capture_source()?;
     let (qos, encoding, disk_limit) = capture_settings()?;
     let active_pacing = active_pacing()?;
     let (adapter, device, queue, capabilities) = metal_device().await?;
@@ -474,6 +494,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         if mode == "still" || scenario == "clouds-still" {
             break;
         }
+        admission.wait(&mut driver, &mut trace, writer.as_ref(), origin, &mut clock)?;
         let opportunity = if active_pacing {
             clock.next_active_opportunity()
         } else {
@@ -526,6 +547,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             stalled = true;
         }
         let step = WorkClock::start().map_err(|e| e.to_string())?;
+        let admission_usage = driver.capture_usage();
+        let omissions_before = driver.omissions();
         let report = driver.step_for(&opportunity)?;
         let step = step.finish().map_err(|e| e.to_string())?;
         let returned = origin.elapsed();
@@ -533,7 +556,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             final_hold = Some(origin.elapsed());
         }
         let drain = Instant::now();
-        trace.drain(&mut driver, writer.as_ref(), origin)?;
+        let collect = admission.collect_images(&driver, origin);
+        trace.drain(&mut driver, writer.as_ref(), origin, collect)?;
         let drain = drain.elapsed();
         let work = work.finish().map_err(|e| e.to_string())?;
         trace.opportunities.push(json!({"step_cpu_start":step.cpu_start,"step_cpu_end":step.cpu_end,"loop_cpu_start":work.cpu_start,"loop_cpu_end":work.cpu_end,"step_thread_cpu_ns":step.cpu.as_nanos(),"step_wall_ns":step.wall.as_nanos(),"loop_thread_cpu_ns":work.cpu.as_nanos(),"loop_work_wall_ns":work.wall.as_nanos(),"drain_wall_ns":drain.as_nanos(),"id":opportunity.index,"request_ns":opportunity.requested.as_nanos(),
@@ -542,6 +566,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             "skipped_before":opportunity.skipped_before,"skip_reason":"driver busy or host oversleep",
             "returned_ns":returned.as_nanos(),"requested_yaw_degrees":yaw,"accepted_yaw_degrees":accepted_yaw,
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
+            "admission_usage":admission_usage,"ring_omissions":driver.omissions()-omissions_before,
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}));
         last_sample_time = opportunity.scenario_time;
         if mode == "fixed" {
@@ -556,7 +581,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         .count();
     let deadline = Instant::now() + Duration::from_secs(10);
     while capture && trace.images.len() < submitted && Instant::now() < deadline {
-        trace.drain(&mut driver, writer.as_ref(), origin)?;
+        trace.drain(&mut driver, writer.as_ref(), origin, true)?;
         std::thread::sleep(Duration::from_millis(1));
     }
     let writer_result = writer.map_or(
@@ -595,6 +620,11 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
             "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
     result["display_phase_counts"] = phase_counts;
+    result["interval_complete"] = json!(interval_complete);
+    result["admission_policy"] = json!(admission.policy);
+    result["admission_waits"] = json!(admission.waits);
+    result["admission_skipped_opportunities"] = json!(admission.skipped);
+    result["admission_diagnostic"] = admission.diagnostic();
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
     result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
@@ -677,7 +707,7 @@ fn drain_fixed<G: Game>(
         .filter(|row| row["submitted"] == true)
         .count();
     while trace.images.len() < expected {
-        trace.drain(driver, writer, origin)?;
+        trace.drain(driver, writer, origin, true)?;
         if Instant::now() >= deadline {
             return Err("fixed sample readback deadline".to_owned());
         }

@@ -20,6 +20,7 @@ import sys
 from t2_writer_probe import ALLOWANCE, FRAME_BYTES, package
 from t2_load import LoadRecord
 from capture_spool import decoded_frames
+from capture_result import CaptureUnjudged
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -175,21 +176,16 @@ def preview(output, manifest, runtime, records):
 
 def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
     """Refuse incomplete intervals and non-bijective submission/image joins."""
-    if not runtime["complete"] or runtime["backend"] != "Metal":
-        raise ValueError("runtime incomplete or wrong backend")
+    if runtime["backend"] != "Metal":
+        raise ValueError("wrong backend")
     submitted_rows = [row for row in runtime["opportunities"] if row["submitted"]]
     submitted = {row["submission_id"]: row for row in submitted_rows}
     if len(submitted) != len(submitted_rows):
         raise ValueError("duplicate submission identity")
     images = runtime["images"]
     image_ids = [row["submission_id"] for row in images]
-    if runtime["scenario"] == "off":
-        if images or spool_bytes:
-            raise ValueError("capture-off row produced pixels")
-        return []
-    if (len(set(image_ids)) != len(image_ids) or set(image_ids) != set(submitted)
-            or spool_bytes != len(images) * frame_bytes):
-        raise ValueError("incomplete runtime/record join")
+    if len(set(image_ids)) != len(image_ids) or not set(image_ids).issubset(submitted):
+        raise ValueError("invalid runtime/record join")
     previous = -1
     for image in sorted(images, key=lambda row: row["submission_id"]):
         event = submitted[image["submission_id"]]
@@ -198,6 +194,25 @@ def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
         if event.get("accepted_ns") is not None and image["submit_ns"] < event["accepted_ns"]:
             raise ValueError("image predates its accepted controls")
         previous = image["submit_ns"]
+    if not runtime['complete']:
+        conditions = []
+        if not runtime.get('interval_complete', True):
+            conditions.append('interval incomplete')
+        if len(images) != len(submitted):
+            conditions.append(f'image count {len(images)}/{len(submitted)}')
+        for key in ['ring_omissions', 'writer_omissions']:
+            if runtime.get(key):
+                conditions.append(f'{key}: {runtime[key]}')
+        if 'Err' in runtime.get('writer_result', {}):
+            conditions.append(f"writer result: {runtime['writer_result']['Err']}")
+        raise CaptureUnjudged('; '.join(conditions) or 'runtime complete: false')
+    if runtime["scenario"] == "off":
+        if images or spool_bytes:
+            raise ValueError("capture-off row produced pixels")
+        return []
+    if (len(set(image_ids)) != len(image_ids) or set(image_ids) != set(submitted)
+            or spool_bytes != len(images) * frame_bytes):
+        raise ValueError("incomplete runtime/record join")
     return [{"submission_id": identity, "offset": index * frame_bytes}
             for index, identity in enumerate(image_ids)]
 
@@ -209,10 +224,15 @@ def run(args):
         runtime = json.loads((output / 'runtime.json').read_text())
         try:
             finalize(output, manifest, runtime, args.verify_only)
+        except CaptureUnjudged as error:
+            manifest.update(complete=False, could_not_judge=True, failure=str(error),
+                            incomplete_conditions=str(error))
         except Exception as error:
-            manifest.update(complete=False, failure=str(error))
+            manifest.update(complete=False, could_not_judge=False, failure=str(error))
         save_manifest(output, manifest)
         if not manifest['complete']:
+            if manifest.get('could_not_judge'):
+                raise SystemExit(75)
             raise SystemExit(manifest.get('failure', 'incomplete'))
         return
     if output.exists():
@@ -245,6 +265,7 @@ def run(args):
         "scenario": args.case,
         "record_limit": 4096 if args.case == 'clouds-drift' else 1024,
         "timebase": args.mode,
+        "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
         "parameter_sha256": digest(args.params.resolve()),
         "output_allowance_bytes": ALLOWANCE,
@@ -280,6 +301,7 @@ def run(args):
         else 'true' if manifest['permission_before']['denied'] is False else None)
     manifest['screen_recording_preflight_error'] = manifest['permission_before']['error']
     environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode, THRUM_CAPTURE_SOURCE=args.source, THRUM_CAPTURE_RUNTIME_PARAMS=str(args.params.resolve()))
+    environment['THRUM_CAPTURE_ADMISSION'] = manifest['admission_policy']
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
             environment[variable] = getattr(args,option)
@@ -342,6 +364,10 @@ def run(args):
         if returncode:
             raise ValueError(f"game failed: exit {returncode}; see stderr.txt")
         runtime = json.loads((output / "runtime.json").read_text())
+        if runtime.get('admission_policy', 'omit') != manifest['admission_policy']:
+            raise ValueError('capture admission policy differs from request')
+        manifest['admission_waits'] = runtime.get('admission_waits', [])
+        manifest['admission_skipped_opportunities'] = runtime.get('admission_skipped_opportunities', 0)
         manifest['console_after'], _ = console_observation()
         manifest['console_locked_after_capture'] = manifest['console_after']['locked']
         manifest['permission_after'] = permission_observation()
@@ -353,13 +379,24 @@ def run(args):
         expected_source = {'sdr': 'Sdr', 'scene-linear': 'SceneLinear', 'native-output': 'NativeOutput', 'native-history': 'NativeHistory'}[args.source]
         if runtime.get('pixel_source', 'Sdr') != expected_source:
             raise ValueError('engine capture source differs from requested source')
+        if 'Ok' in runtime.get('writer_result', {}):
+            if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
+                raise ValueError('encoded byte count differs from writer')
+            if not runtime['complete'] and runtime['scenario'] != 'off':
+                for _ in decoded_frames(output / manifest['spool_file'], runtime['spool_encoding'],
+                        report['frame_sha256'], frame_bytes, manifest['record_limit']):
+                    pass
         validate_runtime(runtime, report.get('bytes', 0), frame_bytes)
         if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
             raise ValueError('encoded byte count differs from writer')
         manifest.update(capture_complete=True, packaging_pending=True)
         if not args.defer:
             finalize(output, manifest, runtime, args.verify_only)
+    except CaptureUnjudged as error:
+        manifest.update(complete=False, capture_complete=False, could_not_judge=True,
+                        incomplete_conditions=str(error), failure=str(error))
     except Exception as error:
+        manifest['could_not_judge'] = False
         manifest["failure"] = str(error)
         if process is not None and process.poll() is None:
             process.kill()
@@ -373,6 +410,8 @@ def run(args):
         save_manifest(output, manifest)
     print(json.dumps({key: manifest[key] for key in ("complete", "console_locked", "retained_bytes")}))
     if not manifest["complete"] and not (args.defer and manifest.get("capture_complete")):
+        if manifest.get('could_not_judge'):
+            raise SystemExit(75)
         raise SystemExit(manifest.get("failure", "incomplete"))
 
 
@@ -401,6 +440,8 @@ if __name__ == "__main__":
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
+    parser.add_argument('--admission', choices=['omit', 'wait'], default='omit',
+                        help='realtime readback admission; wait cannot prove runtime cadence or observer cost')
     parser.add_argument("--source", choices=["sdr", "scene-linear", "native-output", "native-history"], default="sdr",
                         help="scene-linear keeps exact RGBA16Float sources with verification only")
     run(parser.parse_args())

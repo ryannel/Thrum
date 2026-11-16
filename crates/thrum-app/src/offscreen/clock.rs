@@ -33,6 +33,22 @@ pub struct Opportunity {
 }
 
 impl OpportunityClock {
+    /// Discard elapsed opportunities before an admission wait or after it.
+    /// The caller records the returned count with the reason for that interval.
+    /// Fixed clocks never discard opportunities.
+    pub fn discard_elapsed(&mut self) -> u32 {
+        if self.timebase == Timebase::Fixed {
+            return 0;
+        }
+        let next =
+            u32::try_from(self.origin.elapsed().as_nanos() * u128::from(self.hz) / 1_000_000_000)
+                .unwrap_or(u32::MAX)
+                .saturating_add(1);
+        let skipped = next.saturating_sub(self.index);
+        self.index = self.index.max(next);
+        skipped
+    }
+
     /// Start after a primed initial submission at time zero.
     /// # Errors
     /// Refuses zero or implausibly high opportunity rates.
