@@ -1,8 +1,6 @@
 # Unattended frame evidence — T2 capture
 
-Status: Mac M0 passed its third milestone review. Chrome M1 is implemented and claimed for lead review,
-9 November 2026. Simulator M2 remains open. See the [plan](PLAN.md) for current proof.
-[Brief](BRIEF.md) · [plan](PLAN.md) · [criteria](DONE.json).
+[Brief](BRIEF.md) · [plan](PLAN.md) · [criteria](DONE.json) · [log](LOG.md).
 This is a child of [Diagnostics and delivery](../../design/modules/TOOLS-DELIVERY.md), not a new engine subsystem or package.
 The author inspected current capture code before completing this design; this is not a blind study.
 
@@ -61,7 +59,8 @@ Walk one frame:
    with two Zstd level-1 workers during capture. A separate I/O worker drains a finite 256 MiB encoded reserve
    to the sequential spool; frame IDs join records to submissions. After capture/drain and durable flush,
    packaging reconstructs every original record and checks its hash before creating lossless PNGs and the host-time movie. Disk I/O and packaging happen
-   off the world/render lanes. No per-frame GPU wait, pipe write or encoder backpressure on those lanes.
+   off the world/render lanes. No per-frame GPU wait, pipe write or encoder backpressure on those lanes. The one
+   declared exception is a capture that selects `wait` admission ([a full ring](#a-full-ring-and-a-run-that-could-not-judge)).
 5. The writer atomically finalizes artifacts and their manifest after a bounded drain. Missing or invalid pixels,
    late callbacks and write/encode failure produce explicit incomplete outcomes. Never report successful evidence
    merely because a movie file exists. Device-loss cancellation needs no lost-fence wait or old-queue flush.
@@ -116,7 +115,9 @@ HDR/linear stages cost more and must be charged separately. Unified memory does 
 
 Preflight a finite session duration, extent, staging/CPU-queue byte caps, output-byte allowance and free space.
 Choose and record capacities before allocation. They are configurable operational limits, not frame-count semantics.
-On queue exhaustion, never block the renderer: report the missing capture and incomplete interval. On output limits,
+On queue exhaustion the tap never blocks the renderer. Under `omit` admission, the default, it reports the missing
+capture and an incomplete interval; under `wait` the driver holds the next opportunity back instead
+([a full ring](#a-full-ring-and-a-run-that-could-not-judge)). On output limits,
 stop capture with a reason while the app remains healthy. Finalization has a deadline and retains usable incomplete
 diagnostics. Do not allocate one unbounded array of the entire session or keep GPU frame slots hostage to encoding.
 
@@ -151,6 +152,78 @@ requested/start/end host times and duration, and the scenario hash pins it. Test
 hook fires without its diagnostic action. These controls must expose real elapsed gaps in the images/PTS, not edit
 timestamps after capture. Writer saturation is a separate capture-failure control.
 
+## A full ring, and a run that could not judge
+
+Added 16 November 2026, for M3. On that day the main-branch check `exact-images` failed four times at a realtime
+motion arm of `APPLE-TILE`'s matrices, at a different arm each time and twice on one commit: `portable-variants-motion`,
+`apple-tile-route-motion`, `portable-route-motion` and `apple-tile-render-stall-motion`. The retained record of one
+reports `complete: false` with 129 ring omissions, none from the writer, 419 images and 547 GPU records, while five
+modules' GPU tests ran beside it ([handoff](../../evidence/REVIEW-ENGINE/M3-handoff.md)). Those tests run inside
+`./dev check`, which takes no lock, so no lock keeps them away. The completeness rule was right to refuse the run.
+
+**The cause, to be confirmed first by M3.1.** A realtime capture asks for 120 opportunities a second on elapsed
+host time. Each submission reserves one of six staging slots until its readback is mapped and copied out. When
+other GPU work delays readbacks, all six stay reserved, the tap admits no copy, and the frame is submitted without
+one: an omission. These arms (`variants`, `route`, `render-stall`) are not on a fixed clock. `route` and the stall
+control are refused in `fixed` mode, because a running world and a stall need real elapsed time. A `fixed` or
+`still` capture already waits for each image and cannot lose one this way.
+
+**Admission is a declared policy of a realtime capture: `omit` or `wait`.**
+
+- **`omit`** is the behaviour above and stays the default. Only an `omit` run may support a claim about
+  scheduling, cadence, dropped views or observer cost, because the capture never holds the render owner back.
+- **`wait`.** The driver does not take a presentation opportunity while the tap can admit no copy. It keeps
+  draining completed readbacks and returned writer leases until the tap can admit one, then takes the next
+  opportunity the elapsed clock offers. So the ring is never full at a submission, every submitted frame has its
+  image, and load shows as fewer submissions, further apart.
+- **It stays honest.** A wait is the same kind of gap the render-stall control makes. The world lane keeps its
+  own clock, each image keeps its host submission time, and movie PTS show the gap. Nothing is re-timed,
+  synthesised or dropped, so a slow run still looks slow, as the brief requires.
+- **Where it lives.** In the driver that owns the opportunity loop, not inside `FrameHost`. The tap still never
+  blocks, still counts an omission whenever it is asked to admit with no free slot, and that count stays the
+  referee: under `wait`, a nonzero count is a defect. The completeness rule does not change under either policy.
+- **The record.** `runtime.json` and the manifest name the policy. Each opportunity the driver let pass while
+  it waited is counted with that reason and the time waited, apart from "driver busy or host oversleep".
+- **The bound.** The wait has a deadline, as fixed mode's readback wait has. When it expires the capture ends in
+  error with no completed record, as that one does: a ring that frees no slot for that long is stuck, not busy,
+  and has to show as a failure.
+- **Memory.** The existing staging, CPU-buffer and byte limits hold. `wait` needs no larger ring.
+
+It covers any load under which readbacks still complete, both recipes, both capture stages and every realtime
+scenario of the headless Mac driver. The windowed tap, the browser and the simulator keep `omit`: the OS owns
+their opportunities, and none of them is a realtime arm of the exact-images check.
+
+**Who selects `wait`.** The realtime motion arms of `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`,
+under [the ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames). Those arms compare no pixels; they
+assert a complete, hash-verified sequence under each recipe. Another module selects `wait` when its claim is
+that every submitted image was kept, and never for a claim only `omit` supports.
+
+**A run that could not judge.** With `wait`, load no longer empties a sequence, but a capture can still end
+incomplete: the final drain or the writer can miss its deadline, and an `omit` run can still drop. That says
+nothing about the commit, so it is reported apart from a failure, with exit status 75 (`EX_TEMPFAIL`):
+
+- `scripts/capture_v1_runtime.py` exits 75 when the game wrote a runtime record that says `complete: false`. The
+  manifest keeps `complete: false` and names each condition that failed: the interval, the image count, ring
+  omissions, writer omissions or the writer's result.
+- Each native matrix exits 75 when a capture it ran exited 75 and nothing it had compared differed.
+  `scripts/exact_baselines.py verify --full` exits 75 when a matrix did. Its record says the run could not judge
+  and names the capture and the condition, and is never a pass.
+- Everything else stays a failure, non-zero and never 75: a difference in compared bytes or identities, a wrong
+  backend, a hash or join mismatch, a crash, a missing runtime record, a process deadline and an expired wait.
+- From orchestrate 2.3.6 the script tries a run that exits 75 again, up to three attempts, then keeps it as
+  unjudged: it covers nothing, fails nothing and starts no bisect. Earlier versions count 75 from the full run as
+  a failure, as today.
+- **Known limit.** A commit that makes a capture end incomplete every time shows as unjudged on every run, and
+  no bisect names it. The verifier's record names the condition for the lead, and the tap and writer tests in
+  `./dev check` are what stop such a commit before it merges.
+
+**Rejected.** A larger ring only postpones the loss: that run was short by 129 frames of about 548 in eight
+seconds, and any fixed ring empties under a sustained deficit. A lock or a quiet machine: the competing tests take
+no lock. A fixed clock for these arms: `route` and the stall control need elapsed time. A retry inside the capture
+or the verifier: [BASELINE-GUARD](../BASELINE-GUARD/DESIGN.md) forbids one, and the script already retries a whole
+run. Taking the motion arms out of the check would also remove the dependence on load, at the price of no longer
+running motion on main; [the plan](PLAN.md#open-for-the-human) holds that choice for the human.
+
 ## Research and reconciliation
 
 Research consulted 9 November 2026; official sources were inspected for the following mechanisms and limits:
@@ -170,6 +243,27 @@ Research consulted 9 November 2026; official sources were inspected for the foll
   drawable timestamp can be zero for an unpresented/dropped frame. It is not available as a qualified observer through
   the current wgpu surface path. Do not add a raw drawable bridge just to replace Instruments. A future supported
   presentation observer needs its own attribution/lifecycle proof; it would still require an active real display.
+
+Consulted 16 November 2026, for M3:
+
+- [OBS Studio's status indicators](https://obsproject.com/forum/resources/status-indicators-and-what-they-mean.957/updates)
+  and its forum's reports: a realtime recorder counts frames "missed due to rendering lag" when it cannot get
+  frames off a loaded GPU in time, and the remedy offered is less load. A recorder that must not hold its source
+  back drops under load by construction, which is `omit`.
+- [Unreal's Movie Render Pipeline](https://dev.epicgames.com/documentation/en-us/unreal-engine/movie-render-pipeline-in-unreal-engine),
+  overview: Epic's offline image-sequence renderer, which
+  [a course page](https://www.studiomatrx.org/students/real-time-vr-for-architecture/movie-render-queue-and-output)
+  describes as decoupled from the frame budget. Epic's page does not say how it handles readback, so this is a
+  reading, not a source: a recorder that must keep every frame holds its source back, which is `wait`. Its fixed
+  time step is not copied, because these arms need elapsed time.
+- [BSD `sysexits.h`](https://stuff.mit.edu/afs/athena/astaff/reference/4.3network2/include/sysexits.h):
+  `EX_TEMPFAIL` is 75, a temporary failure the caller is invited to retry, which is what orchestrate 2.3.6 reads
+  it as.
+
+Code read for M3: the opportunity loop and completeness rule in `examples/v1-game/src/window/capture.rs`, the
+elapsed clock in `crates/thrum-app/src/offscreen/clock.rs`, the tap in
+`crates/thrum-render/src/runtime/submitted_capture.rs`, `scripts/capture_v1_runtime.py`, `APPLE-TILE`'s
+matrices and `scripts/exact_baselines.py`.
 
 Current code inspected: `examples/v1-game/src/bin/window/{capture,motion,route}.rs` shares cooked content and
 FrameHost but owns a game-side target/copy and waits on readback; motion steps one world tick per frame. Retain its
@@ -247,6 +341,12 @@ Implementation ownership: `thrum-render` owns graph tap, targets, staging, fence
 existing scripts own manifests, lossless/movie packaging and validation. V1 keeps only authored scenarios, presets,
 content and bindings. G3t owns linear recipe comparison and G4 owns output-provider/EDR qualification; both use this
 capture service rather than copying it. Follow CONTRIBUTING and the architecture registry if dependencies change.
+
+M3 follows M2 and waits on no other module. Its builder also edits `APPLE-TILE`'s matrices and
+`BASELINE-GUARD`'s verifier, only as [the ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames)
+allows, and records the changed pins as that ruling says. It changes no retained reference, compared checkpoint,
+sampling or equality rule. If the loss M3.1 reproduces is not a full ring, the builder ends `BLOCKED` with the
+record, because the mechanism above rests on that cause.
 
 ## Proof, retention and review handoff
 

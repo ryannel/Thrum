@@ -243,3 +243,8 @@
   runs; incomplete runs stay for diagnosis. Focused tests and retained-reference identity checks pass.
   [M2 evidence](../../evidence/BASELINE-GUARD/M2.md) separates those checks from the shared exact-image run
   that the lead performs on main after the merge. No retained reference or comparison behavior changed.
+
+- 2026-11-16 Ruling with `T2-CAPTURE`: its M3 builder changes `scripts/exact_baselines.py` and
+  `scripts/exact_baselines_native.py` so a run whose Mac capture ended incomplete exits 75, "could not judge",
+  and is recorded as that. No item of this module changes.
+  [Ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames).

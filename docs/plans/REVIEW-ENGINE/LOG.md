@@ -130,3 +130,7 @@
   Fix). M3.3 no longer runs the rule engine, which `REPO-RULES` M1 builds: it searches the cooker's manifest and
   sources, so M3 keeps no dependency and can follow M2 at once. The design says which deferred-publication state
   the engine keeps when the game-authored capture goes.
+
+- 2026-11-16 Planner: the dependency M3 is blocked on, a shared exact-images run that covers its merged commit,
+  is planned as `T2-CAPTURE` M3, which owns the capture that dropped frames. No item or `depends_on` changes
+  here, since a run can pass before then. [Ruling](../ARCHITECTURE.md#ruling-on-a-capture-that-drops-frames).

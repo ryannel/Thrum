@@ -257,7 +257,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Quality knobs**: each cadence and step budget is a runtime value with a declared history invalidation. None changes a physical profile or what a query returns | `WATERS`, `CLOUDS`, `ATMOSPHERE` → the governor in `APPLE-PRESENTATION:M7` | C04, port decision, [WATERS](WATERS/DESIGN.md#capabilities-recipes-limits-and-knobs) |
 | Typed controls, parameter files, the scene shell on Mac and web | `CREATOR` → `SHOWCASE`, demo scenes for `WATERS` and `CLOUDS` | C11, [G6 decision](../design/decisions/G6-CREATOR-EXPERIENCE.md), [CREATOR](CREATOR/DESIGN.md) |
 | **Frame timing feed**: completed frame samples with pass-name GPU timing, and one timing-demand switch on the frame host (on by default; off writes no timestamps and the sample says GPU time was not requested) | The frame runtime (`APPLE-TILE:M3` for pass names; the switch by the ruling below) → `CREATOR`'s profiler, frames reports, Mac qualification, capture | C12, [CREATOR](CREATOR/DESIGN.md#the-frame-timing-feed) |
-| Engine capture modes and evidence | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
+| Engine capture modes and evidence, and a realtime capture's admission policy: `omit` by default, `wait` for a sequence that must keep every submitted frame | `T2-CAPTURE` → every visual milestone | C12, [T2 capture](T2-CAPTURE/DESIGN.md) |
 | **Resolved selections**: each selectable path tells the game what it resolved to on this device (recipe, reconstructor, display mode, governor state, culling mode), so a run can report what it ran and a fallback cannot pass as the feature | `APPLE-TILE`, `APPLE-PRESENTATION`, `CULLING` → `SHOWCASE`'s exit report | C04, [SHOWCASE](SHOWCASE/DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) |
 | **Exact baselines**: retained references, their owner, and the verifier that one run on main shares between every landing | Each baseline's owner (references), `BASELINE-GUARD` (registry, verifier, reference guard) → every module that edits the covered paths | [Exact baselines](#exact-baselines) |
 
@@ -977,6 +977,46 @@ for `APPLE-TILE` to resolve it.
 - **When it ends.** With the landing that makes a fixed capture commit every due tick whatever real time its
   tick work takes. On content that holds it, a failure of this kind is evidence that the correction does not
   hold: the builder ends `BLOCKED` with the record, and a planner settles it here.
+
+<a id="ruling-on-a-capture-that-drops-frames"></a>
+
+**Ruling on a motion capture that drops frames under load (with `T2-CAPTURE`, `APPLE-TILE`, `BASELINE-GUARD` and
+`REVIEW-ENGINE`), 16 November 2026.** `REVIEW-ENGINE` M3's builder stopped with every item passed: the
+main-branch check kept failing before any pixel was compared
+([its handoff](../evidence/REVIEW-ENGINE/M3-handoff.md)). The owner asked for the capture to keep every frame on
+a loaded machine and to exit 75 when it is incomplete.
+
+- **What it is.** Four runs of the verifier failed on 16 November, each at a different realtime motion arm of
+  `APPLE-TILE`'s native matrices and two of them on one commit. One retained record holds 129 ring omissions
+  and none from the writer, with five modules' GPU tests running beside it. No image differed and no reference
+  is stale. Those arms run on elapsed time, and their six-slot readback ring fills when other GPU work delays
+  readbacks ([`T2-CAPTURE`'s design](T2-CAPTURE/DESIGN.md#a-full-ring-and-a-run-that-could-not-judge)).
+- **Whose it is.** The capture is `T2-CAPTURE`'s, and the work is its M3. `APPLE-TILE` and `BASELINE-GUARD`
+  gain no milestone and no item: `APPLE-TILE` M10 is waiting for an attended sitting, and this must not wait
+  with it. `REVIEW-ENGINE` M3 changes nothing and stays blocked until a shared run covers its commit, which the
+  lead may get before M3 lands.
+- **What M3's builder changes in other modules' files, and nothing else there.** In `APPLE-TILE`'s
+  `scripts/apple_tile_m0.py`, `apple_tile_m1.py` and `apple_tile_m2.py`: the realtime motion arms select `wait`
+  admission, and a matrix exits 75 when a capture it ran was incomplete and nothing it had compared differed.
+  In `BASELINE-GUARD`'s `scripts/exact_baselines.py` and `exact_baselines_native.py`: a run whose matrix exited
+  75 exits 75, its record says it could not judge and names the capture, and the scratch rule keeps that
+  capture as it keeps the latest failure.
+- **What does not change.** Every retained reference, compared checkpoint, sampling and equality rule, and the
+  completeness rule: every submission has its image, with no ring or writer omission. The verifier still exits
+  non-zero on any difference and never 75 for one. It does not retry inside a run, accept a nearer frame, skip
+  a record or compare within a tolerance. The motion arms compared no pixels before and compare none now.
+- **The registry.** The matrices and the verifier are pinned comparison files, so every baseline's pin changes
+  and no reference moves. The builder copies the pins the guard prints and sets each `refresh` to
+  `ruling-on-a-capture-that-drops-frames`, `T2-CAPTURE` and `M3`, in the landing that changes the files. There
+  are no reference hashes to record.
+- **Earlier rulings.** [Load variation](#a-frame-that-varies-under-load) and
+  [a stalled tick](#a-fixed-capture-that-stalls) are differences, so they stay failures and their rules stand.
+  Where `T2-CAPTURE`'s earlier text says a capture never holds the renderer back, its M3 section now says when
+  one may. `BASELINE-GUARD`'s limit on editing the matrices binds its own builders.
+- **Everyone else.** Nothing is owed. A module's own realtime capture keeps `omit` unless that module selects
+  `wait`, which it may do only for a claim that every submitted image was kept.
+- **Not part of this.** `docs/evidence/APPLE-TILE/M10/window-proof.py` ending "CUA app selection timed out" is
+  a wait for a computer-use action in the attended window proof. It stays with `APPLE-TILE` M10's sitting.
 
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
@@ -2326,3 +2366,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   A reproduction of the showcase valley's cameras expects no registered exact baseline to move
   ([part G](../evidence/SCENE-VIEWS/design-proof/README.md)); the verifier decides. `SCENE-VIEWS` M1.1, M1.7
   and M1.13 are written again and it gains M1.14. No other module's item or design changed.
+- 2026-11-16 `T2-CAPTURE` gained M3 and the ruling on
+  [a motion capture that drops frames under load](#ruling-on-a-capture-that-drops-frames), after the
+  main-branch check failed four times at realtime motion arms under other modules' GPU tests. A realtime capture
+  may now wait for its readback ring instead of dropping, and an incomplete Mac capture exits 75. M3's builder
+  edits `APPLE-TILE`'s matrices and `BASELINE-GUARD`'s verifier under that ruling; neither module's items change.

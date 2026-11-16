@@ -56,3 +56,14 @@
 - 2026-11-11 Plan reshaped for orchestrate 1.7.0: status lines and the finished work lists removed (git keeps
   them), and `Ownership and sequence` and `Proof, retention and review handoff` moved to the design. No item or
   scope changed.
+
+- 2026-11-16 Human, through the lead: "An exact-image check must not depend on machine load. Plan work so the
+  motion capture keeps every frame on a loaded machine: backpressure when the ring is full, so the renderer
+  waits rather than drops, assuming the capture steps on a fixed clock (confirm that). Also have the capture
+  exit 75 when runtime.json is incomplete". M3 planned for it, here because the module list gives the capture
+  to this module. Not confirmed: the failing arms step on elapsed time, so `wait` means fewer frames, each kept.
+  [Design](DESIGN.md#a-full-ring-and-a-run-that-could-not-judge); the plan holds three assumptions.
+
+- 2026-11-16 Planner's call on the other flake named with that request, `window-proof.py` ending "CUA app
+  selection timed out": left with `APPLE-TILE` M10. It is a 180-second wait for a computer-use action in the
+  attended window proof, shares no mechanism with the ring, and can only be reproduced with the owner at the Mac.

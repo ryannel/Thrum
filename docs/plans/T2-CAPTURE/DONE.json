@@ -182,6 +182,63 @@
       "diagnoses": 1,
       "status": "done",
       "quality_bar": "Functionally intact cooked scene and normal-speed interaction through simulator lifecycle changes, with honest function-only provenance and no device-speed or physical-display claim."
+    },
+    {
+      "id": "M3",
+      "name": "A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit",
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "quality_bar": "Evidence as honest as T2 M0's, with the separation a build farm such as Chromium's LUCI keeps between an infrastructure failure and a test failure: every image the renderer submitted is retained with its real submission time, every opportunity the capture cost is counted with its reason, and a run that could not judge says so and is read as neither a pass nor a failure of the commit.",
+      "items": [
+        {
+          "id": "M3.1",
+          "statement": "While other processes load the GPU heavily enough that a realtime capture under `omit` loses frames in the same sitting, with every staging slot reserved where a frame was omitted, each motion arm the exact-images check runs (variants, route and render-stall, under both recipes) completes under `wait`: every submitted image retained, with no ring or writer omission.",
+          "check": "python3 scripts/capture_admission_proof.py loaded",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.2",
+          "statement": "With the ring held full by a declared diagnostic control, whatever else the machine is doing, a realtime capture under `wait` completes, each image keeps its host submission time, and its runtime record and manifest name the policy and count each opportunity the driver let pass while it waited. The same control under `omit`, which stays the default, still ends incomplete with its omissions counted.",
+          "check": "python3 scripts/capture_admission_proof.py ring-full",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "M3.3",
+          "statement": "A Mac capture whose runtime record says it is incomplete ends with exit status 75 from `scripts/capture_v1_runtime.py`, from each native matrix and from `scripts/exact_baselines.py verify --full`, and the verifier's record says the run could not judge and names the capture and the condition. A difference in compared bytes or identities, a crash, a missing runtime record and an expired wait still end as failures, never 75, and a difference found before an incomplete capture in the same run wins. `./dev check` runs these tests.",
+          "check": "python3 -m unittest discover -s scripts -p test_capture_unjudged.py && grep -q test_capture_unjudged tools/xtask/src/main.rs",
+          "ask": "Do the tests in scripts/test_capture_unjudged.py drive the real exit paths of the capture command, the two matrices and the verifier (stand-in child processes are fine), and cover each outcome the statement lists?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.4",
+          "statement": "Nothing that decides an exact comparison moved. The only capture whose default behaviour changes is the realtime motion arms of `scripts/apple_tile_m1.py` and `scripts/apple_tile_m2.py`, which select `wait`.",
+          "ask": "Compared with the commit the milestone started from, does the landing change any retained reference, any compared checkpoint or its sampling, any equality rule, the completeness rule (every submission has its image, with no ring or writer omission), or the admission of any capture other than those motion arms? The registry's pins and refreshes for the changed comparison files are expected.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.5",
+          "statement": "The shared run on main passes on a commit that holds this landing.",
+          "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
     }
   ]
 }
