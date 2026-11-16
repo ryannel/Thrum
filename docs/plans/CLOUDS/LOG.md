@@ -319,3 +319,9 @@
   supplied-volume Sun rays at four elevations, partial envelopes, ground overlap and medium agreement.
   [The receipt](../../evidence/CLOUDS/M13-sun-path-fix.json) records source and output; existing visibility
   integral regressions still pass. No GPU speed, rendered fog or display qualification is claimed.
+- 2026-11-16 Resumed M13 at `df12d883c`; all ten builder proofs remain recorded.
+  The milestone helper confirms M13.1–9 on mac-metal. M13.10 returns the expected
+  `NOT_ON_MAIN`, pending the shared exact-images run after merge. Its 600-second
+  workspace gate times out during GPU tests without a reported test failure;
+  canonical integration runs the gate with its merge timeout. [CPU evidence](../../evidence/CLOUDS/M13.md)
+  includes the latest Sun-path and medium regressions; no visual claim is added.
