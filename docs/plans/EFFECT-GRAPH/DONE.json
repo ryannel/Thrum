@@ -308,8 +308,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Are the expected phases written in the test from its scripted observations, tick rate and leads, and not computed with the clock's own phase function? Do they include a consumed target past the next tick's due time, one at the bound and one beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -343,8 +343,8 @@
           "ask": "Does the test take the platform target from the runner's schedule and the observation and lead from each frame's record, and none of them from the phase? Does it pass on a busy machine, holding expired frames to the same identity, and counting frames at the bound and frames whose clock was stopped instead of failing on them?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -363,8 +363,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
