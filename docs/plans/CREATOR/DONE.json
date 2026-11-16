@@ -196,14 +196,14 @@
           "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
           "inspect": "If the session is unlocked, launch the starter, drag the slider and save the parameter file and one asset yourself, capturing the real window and panel by window id around each. If it is locked, judge the attended run's window captures and report lines, and say so. Did each change the visible scene, in order, with no key press? An offscreen frame does not count.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CREATOR/M3.md; docs/evidence/CREATOR/m3/access-preflight.json (read-only setup passes; real-window journey still open)",
+          "evidence": "docs/evidence/CREATOR/M3.md; docs/evidence/CREATOR/m3/window/README.md; docs/evidence/CREATOR/m3/window/run.json; docs/evidence/CREATOR/m3/window/starter.log",
           "verdict": "",
           "review": "",
           "needs": {
             "type": "access",
             "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
           },
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",

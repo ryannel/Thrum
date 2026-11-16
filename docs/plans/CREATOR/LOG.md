@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-16 Restored M3.4's passing builder record after the session restart restored its
+  older access-only entry. The retained real-window journey proves the slider and both saves;
+  the brief now distinguishes that builder evidence from independent review. Documentation
+  checks pass. The lead owns the merged checks and fresh review. [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-16 Completed the unlocked built-in-display journey with the authorized native driver.
   The real Sun drag changes 25° to 9°, a parameter save applies 50°/120°, and a mesh save
   updates the silhouette and shadow in the same windows with zero key presses. All eight

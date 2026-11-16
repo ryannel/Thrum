@@ -134,7 +134,7 @@ through the module named, and [the status page](STATUS.md) says where that modul
   [M1](../evidence/CREATOR/M1.md) proves the shared Mac/Chrome scene route and live assets;
   [M2](../evidence/CREATOR/M2.md) and its [independent review](../evidence/CREATOR/M2-review.md)
   prove the profiler. [M3](../evidence/CREATOR/M3.md) records the docs and native mistake journey;
-  the fresh two-target exercise and visible-window qualification remain open. The clipping and
+  the fresh two-target exercise and visible-window journey have passing builder evidence and await independent review. The clipping and
   shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside this gate's scope.
 - **G7, V1 showcase.** Assemble the exit scene on Mac Apple tile and portable and on Chrome portable. The fixed
   route passes correctness and agent visual review; record whole frames and visible stutter, startup and hitches.
