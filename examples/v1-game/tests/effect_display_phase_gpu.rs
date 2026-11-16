@@ -73,6 +73,8 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                     host.drive(observation, Some(&surface))
                         .expect("scripted frame");
                     let sample = complete(&mut host, &device);
+                    assert_eq!(sample.observation, observation);
+                    assert_eq!(sample.presentation_lead, lead);
                     identity(&sample);
                     let time = handle.lock().expect("effect").time.expect("delivered time");
                     assert_eq!(time.tick, sample.tick);
@@ -188,6 +190,10 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                 };
                 identity(&sample);
                 let time = handle.lock().expect("effect").time.expect("delivered time");
+                assert_eq!(sample.observation, observation);
+                assert_eq!(sample.presentation_lead, lead);
+                assert_eq!(time.tick, sample.tick);
+                assert_eq!(time.alpha, sample.presentation_alpha);
                 assert_eq!(time.display_phase, sample.display_phase);
                 interpolating +=
                     usize::from(sample.clock_interpolating && sample.display_phase < 4.0);

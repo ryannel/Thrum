@@ -308,8 +308,8 @@
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Are the expected phases written in the test from its scripted observations, tick rate and leads, and not computed with the clock's own phase function? Do they include a consumed target past the next tick's due time, one at the bound and one beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -320,8 +320,8 @@
           "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -332,8 +332,8 @@
           "ask": "Does the test take the platform target from the runner's schedule and the observation and lead from each frame's record, and none of them from the phase? Does it pass on a busy machine, holding expired frames to the same identity, and counting frames at the bound and frames whose clock was stopped instead of failing on them?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -342,8 +342,8 @@
           "statement": "C02 in `docs/design/CONTRACTS.md` states the display phase: that it describes the consumed target, the frame's observation plus its bounded lead; its bound; that alpha is the phase held to 1; that sampling it never advances authority; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
           "ask": "Do C02's words say what the design's section on the display phase says, with nothing added that it does not say? Does the ledger row claim only what M4.1 to M4.3 proved?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -352,8 +352,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
