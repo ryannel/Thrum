@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-atmosphere-m9",
-        "module": "ATMOSPHERE",
-        "milestone": "M9"
+        "anchor": "ruling-on-a-capture-that-drops-frames",
+        "module": "T2-CAPTURE",
+        "milestone": "M3"
       },
-      "pin": "26ed5b401612d9ca3416981251bfdb42e733af28f600076f4663585f684e7b52"
+      "pin": "f9b29dbd957afbbd48ebae1494af4cef804c7cfd5c6a5e8bb3dc7caa7a4ed6d3"
     },
     {
       "id": "chrome-day-sdr",
@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-atmosphere-m9",
-        "module": "ATMOSPHERE",
-        "milestone": "M9"
+        "anchor": "ruling-on-a-capture-that-drops-frames",
+        "module": "T2-CAPTURE",
+        "milestone": "M3"
       },
-      "pin": "ee0a985988e8365fb523fbc55ca154e9f191ddf322e56e170bfd11ffd844c855"
+      "pin": "6e8d0d8ccb3df95466bbf777a2656b79231bdc8eab6261ed4a20a1d74d919950"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-atmosphere-m9",
-        "module": "ATMOSPHERE",
-        "milestone": "M9"
+        "anchor": "ruling-on-a-capture-that-drops-frames",
+        "module": "T2-CAPTURE",
+        "milestone": "M3"
       },
-      "pin": "a54b919c48c90b926db372a3669acfe8040b4cf0e96093f4dc59267778ac5d87"
+      "pin": "0c29146ccb3586c72dd1245904771518722fb28245f0df1d798a06df7f45be8d"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,11 +95,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-atmosphere-m9",
-        "module": "ATMOSPHERE",
-        "milestone": "M9"
+        "anchor": "ruling-on-a-capture-that-drops-frames",
+        "module": "T2-CAPTURE",
+        "milestone": "M3"
       },
-      "pin": "2e255226a9f83a9a88cab8bbf68ec8f6d55457d567a240b4cd15b227d416d087"
+      "pin": "9d6f9fcf4e32a1d0858cae824db6e880d944e548e1f16b75e6ece3b3a984e826"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -115,11 +115,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-atmosphere-m9",
-        "module": "ATMOSPHERE",
-        "milestone": "M9"
+        "anchor": "ruling-on-a-capture-that-drops-frames",
+        "module": "T2-CAPTURE",
+        "milestone": "M3"
       },
-      "pin": "44f54ebc2e3b28813a2be6effec3605454fcc4d007d4699ac695aa52a59512d7"
+      "pin": "e4b0b3c6e8f0767bbcfae6c7042a84cabbfb63b842939f51a92a26878e66d8e5"
     }
   ],
   "retired": []
