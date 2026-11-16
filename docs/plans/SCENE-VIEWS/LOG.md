@@ -1,5 +1,12 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 builder continued: source `64e691e8d` prepares own clusters, aerial products,
+  Sun cascades and visibility, and exposes opt-in opaque contribution surfaces and callbacks.
+  M1.5, M1.6, M1.9 and M1.11 pass their Metal checks through the public seam; the complete
+  volume, clip/depth, owner/refusal and pair evidence is in [the proof](../../evidence/SCENE-VIEWS/M1/64e691e8d-proof.md).
+  Renderer Clippy and shape checks pass. The full repository gate is running as a background job.
+  Other M1 items and the merge remain unfinished; no design or comparison bound changed.
+
 - 2026-11-16 M1 builder: added checked camera, clip-plane, extent and shadow-profile admission;
   three public admission tests and `./dev check` pass. No slot transport or secondary draw is built.
   Metal reproduction at `1960293fb`: sharing a height map centred 40 km from the requested camera

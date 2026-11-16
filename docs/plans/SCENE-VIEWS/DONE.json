@@ -69,8 +69,8 @@
           "ask": "Is the reference volume stored by `ATMOSPHERE`'s aerial pass as it runs with no request, for a camera the test places on the plane, so that no expected value comes from the view's own path? Would a volume whose never-crossing lines are empty fail on the raised plane, and would one laid out from the view's camera, or air that starts there, fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M1/64e691e8d-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -92,8 +92,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_clip_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M1/64e691e8d-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -126,8 +126,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test scene_view_seam",
           "ask": "Could `WATERS`' builder write its mirror from the seam's documentation and types without reading `thrum-render`'s internals? Does any other module's item, test, bound or reference differ from before this milestone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/SCENE-VIEWS/M1/64e691e8d-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -138,10 +138,10 @@
           "lock": "gpu",
           "ask": "Do the two requests differ in every field, and would per-view products shared between slots (one cluster table, aerial volume, cascade set or culled list) fail?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SCENE-VIEWS/M1/64e691e8d-proof.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
