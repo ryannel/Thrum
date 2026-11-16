@@ -2,11 +2,11 @@
 
 - 2026-11-16 M4 adds adaptive sweeps independent of notice traffic, with a 500 ms floor, ten-times-cost
   wait, recent-write deferral and a silent idle path. The notice fast path and existing integration test
-  are unchanged. All five item checks passed on this Mac; builder inspection covers the schedule and
-  manifest comparisons. Warm sweeps measured 3.458–3.851 ms at 1,000 files and 29.858–36.144 ms at 10,000,
-  under recorded concurrent load; these are baselines, not qualified performance. The full repository
-  gate stopped at the unchanged V1 discarded-frame test's first-copy assertion; the evidence records its
-  readiness race. Bad saves also stay quiet after one error. The merge gate follows.
+  are unchanged. All five item checks, 19 cooker unit tests and Clippy pass on this Mac. A reproduced
+  interrupted glTF plan now retries when the same bytes are restored with a changed stamp; bad saves
+  remain quiet after one error. Warm sweeps measured 11.031–60.717 ms at 1,000 files and 120.881–269.822 ms
+  at 10,000 under recorded heavy load; these are baselines, not qualified performance. The first checkpoint
+  merged as `c3342faa9`; the restored-source repair follows through the merge gate.
   [Evidence and limits](../../evidence/CONTENT-LOOP/M4.md).
 
 - 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed the lease-only consumer, the per-mip
