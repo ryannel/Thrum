@@ -3002,6 +3002,22 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M9-images/native/sun-sdr/checkpoint-0-png/after.png",
+      "size": 2660096,
+      "sha256": "599aa56d52c8ddd0cc3aa4f5fdeb9d9b295b87538ea400c7018e6bb99e6a72cd",
+      "date": "2026-11-16T10:52:12.604022+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/ATMOSPHERE/M9-images/native/sun-sdr/checkpoint-0-png/before.png",
+      "size": 2660128,
+      "sha256": "e80f23e985f393392e6c5e7b3b8c334ea6cebcfea45e2fd0c870bc8bcc092b65",
+      "date": "2026-11-16T10:52:12.511985+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/ATMOSPHERE/m5/images/metal-low-sun-off-realtime-09-1.25.png",
       "size": 3010188,
