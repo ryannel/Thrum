@@ -134,7 +134,7 @@
     {
       "id": "M2",
       "name": "On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
