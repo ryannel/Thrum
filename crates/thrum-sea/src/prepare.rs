@@ -21,8 +21,8 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
     if profile.cache_levels != LEVELS {
         return Err("sea cache_levels: supported value is 8".into());
     }
-    if !profile.choppiness.is_finite() || !(0.0..=1.0).contains(&profile.choppiness) {
-        return Err("sea choppiness: expected finite 0..=1".into());
+    if !profile.choppiness.is_finite() || !(0.0..=4.0).contains(&profile.choppiness) {
+        return Err("sea choppiness: expected finite 0..=4".into());
     }
     let limits = device.limits();
     let resources = spec::resources();

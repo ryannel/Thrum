@@ -14,6 +14,10 @@ use spec::declaration;
 /// and `p.physical.x` (choppiness), plus the `Long` and `Field` layouts from the
 /// crate README. Phases must be reduced in f64 at the query's own time/anchor.
 pub const LONG_WAVE_EVALUATOR: &str = include_str!("long_waves.wgsl");
+/// Uniform contraction bound admitted by the bounded GPU long-wave inversion.
+/// The CPU oracle admits sums below one; 0.9 leaves a convergence margin for
+/// the GPU's 256 iterations and metre-scale binary32 residual.
+pub const LONG_WAVE_CONTRACTION_LIMIT: f64 = 0.9;
 /// Complete ambient shader source, for layout and binding reflection tools.
 pub const SHADER: &str = concat!(
     include_str!("ambient.wgsl"),
@@ -132,7 +136,7 @@ pub struct Profile {
     pub cascades: u32,
     /// Must be eight; cache texels double outward from one metre.
     pub cache_levels: u32,
-    /// Gerstner horizontal choppiness; contraction is checked on upload.
+    /// Gerstner horizontal choppiness in 0..=4; contraction is checked on upload.
     pub choppiness: f64,
 }
 impl Default for Profile {

@@ -102,9 +102,9 @@ impl Water {
                 profile.waves.choppiness * c.amplitude * c.wave_vector[0].hypot(c.wave_vector[1])
             })
             .sum();
-        if contraction >= 0.5 {
+        if contraction >= thrum_sea::LONG_WAVE_CONTRACTION_LIMIT {
             return Err(WaterError::InvalidSpectrum(
-                "ambient long-wave contraction must be below 0.5".into(),
+                "ambient long-wave contraction must be below 0.9".into(),
             ));
         }
         if spectrum.long.len() > 192

@@ -35,7 +35,7 @@ fn a_narrow_swell_keeps_its_height_when_it_turns() {
                 outside += energy;
             }
         }
-        // The earlier cos^4(theta/2) puts about 30% outside this cone.
+        // The earlier cos^4(theta/2) puts substantial energy outside this cone.
         // A narrow swell must not turn into several comparable crossing trains.
         assert!(
             outside / total < 0.05,

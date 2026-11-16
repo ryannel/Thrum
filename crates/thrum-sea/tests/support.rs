@@ -9,6 +9,7 @@ pub(super) struct Harness {
     pub(super) queue: wgpu::Queue,
     pub(super) sea: Ambient,
     pub(super) record: String,
+    choppiness: f64,
 }
 pub(super) struct Output {
     pub(super) long: Vec<f32>,
@@ -28,6 +29,9 @@ pub(super) const ANCHOR: [f64; 2] = [50000.25, -50000.75];
 
 impl Harness {
     pub(super) fn new(portable: bool) -> Option<Self> {
+        Self::with_profile(portable, Profile::default())
+    }
+    pub(super) fn with_profile(portable: bool, physical: Profile) -> Option<Self> {
         let thread = std::thread::current();
         let gpu = thrum_test_support::gpu(
             thread.name().unwrap_or("sea harness"),
@@ -53,8 +57,7 @@ impl Harness {
             },
         );
         let site = DeviceSite::untracked(device.clone());
-        let sea =
-            Ambient::new(&site, Profile::default()).expect("valid Metal qualification fixture");
+        let sea = Ambient::new(&site, physical).expect("valid Metal qualification fixture");
         sea.graph()
             .validate()
             .expect("valid Metal qualification fixture");
@@ -91,6 +94,7 @@ impl Harness {
             queue,
             sea,
             record,
+            choppiness: physical.choppiness,
         })
     }
     pub(super) fn frame(
@@ -304,7 +308,8 @@ pub(super) fn check_long(
 ) {
     let mut height = 0.0_f64;
     let mut slope = 0.0_f64;
-    let oracle = LongWaves::new(s.long.clone(), 0.1).expect("valid Metal qualification fixture");
+    let oracle =
+        LongWaves::new(s.long.clone(), h.choppiness).expect("valid Metal qualification fixture");
     for (i, &p) in points.iter().enumerate() {
         compare_long(
             &out.long[i * 12..],
@@ -322,7 +327,7 @@ pub(super) fn check_long(
                 .copied()
                 .filter(|c| c.wave_vector[0].hypot(c.wave_vector[1]) <= info.max_wavenumber)
                 .collect(),
-            0.1,
+            h.choppiness,
         )
         .expect("valid Metal qualification fixture");
         for i in (0_u32..128 * 128).step_by(if full { 1 } else { 257 }) {

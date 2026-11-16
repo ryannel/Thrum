@@ -172,8 +172,8 @@ fn validate(
         .iter()
         .map(|c| sea.profile.choppiness * c.amplitude * c.wave_vector[0].hypot(c.wave_vector[1]))
         .sum();
-    if !steepness.is_finite() || steepness >= 0.5 {
-        return Err("sea long waves: contraction bound must be below 0.5".into());
+    if !steepness.is_finite() || steepness >= crate::LONG_WAVE_CONTRACTION_LIMIT {
+        return Err("sea long waves: contraction bound must be below 0.9".into());
     }
     for band in spectrum.cascades.iter().filter(|_| changed) {
         if !band.length().is_finite()

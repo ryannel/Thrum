@@ -357,3 +357,8 @@
   Corrected directional weights inside the existing spectrum model, conserving each band's variance and
   swell height on rotation; the wind, swell, component count, phase identities and GPU evaluator remain shared.
   The angular regression and spectrum's independent energy checks pass; the next submitted look judges quality.
+- 2026-11-16 Continued the numerical diagnosis under the owner's carry-on direction: the CPU oracle already
+  admits contraction below one, but the GPU's old 24-iteration cap forced a 0.5 restriction and q≤1.
+  Expanded the existing profile to q≤4 and contraction below 0.9, with a 256-iteration cap and the same early exit.
+  Native and portable Metal probes at contraction 0.89 match the independent oracle; the old cap fails a
+  near-crest slope control. The example selects a 0.85 bound. No wave mechanism or CPU oracle was replaced.

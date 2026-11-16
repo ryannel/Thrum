@@ -1,7 +1,10 @@
 // Shared body-query/cache evaluator: invert horizontal displacement at the world point.
 fn sample_long(point: vec2<f32>, max_k: f32) -> Field {
     var offset=vec2(0.0);
-    for(var iteration=0u; iteration<24u; iteration++) {
+    // With the admitted contraction below 0.9 the residual shrinks by at
+    // least 0.9 each iteration. Normal sea samples exit much earlier; the
+    // larger cap also converges near a strongly compressed regular crest.
+    for(var iteration=0u; iteration<256u; iteration++) {
         var next=vec2(0.0);
         for(var j=0u; j<p.time.y; j++) {
             let c=components[j]; let k=c.physical.xy; let magnitude=length(k);

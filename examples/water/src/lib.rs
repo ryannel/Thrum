@@ -38,7 +38,7 @@ pub fn profile(spectrum: &Spectrum) -> Profile {
         deep_scatter: [0.001, 0.007, 0.009],
         ..Profile::default()
     };
-    profile.waves.choppiness = (0.45 / steepness).min(0.9);
+    profile.waves.choppiness = (0.85 / steepness).min(4.0);
     profile
 }
 /// The scene's sea declaration. The empty bed is far below any wave.
