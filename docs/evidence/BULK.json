@@ -3995,6 +3995,134 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/absent-40m/frames.zst",
+      "size": 2624733,
+      "sha256": "c64bec4ffbfee275d923b4ff608a9cfed5ac4eb769bd6b3f2015a356a1474f4d",
+      "date": "2026-11-16T09:06:58.626120+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/absent-low-2m/frames.zst",
+      "size": 2631790,
+      "sha256": "ad2e38516aa76172dbef782c7ed79bd6b6af18e8b577d52534bf47df40a7444d",
+      "date": "2026-11-16T09:06:59.130438+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/absent-low-40m/frames.zst",
+      "size": 3114344,
+      "sha256": "7800b04d895cfc722e83cd2c8113c52f3313a041b8dba7579fd0788da3c9465a",
+      "date": "2026-11-16T09:06:58.882318+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-1x/frames.zst",
+      "size": 338136721,
+      "sha256": "21536b056f6d801b4d2edd38b3cf40348921d37821319e1d8c27ca4cbe8c557a",
+      "date": "2026-11-16T09:06:53.178553+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-1x/preview-1x.mp4",
+      "size": 7845093,
+      "sha256": "1e56648af4b215357fee1ae153b2fb7a734d6e209e9e6f7c76f8561cd9dd1de8",
+      "date": "2026-11-16T09:06:54.287948+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-1x/runtime.json",
+      "size": 8863428,
+      "sha256": "d3b4a4b7678cf3397c648a2cd3eef851a994b511b06051d4d67641f0a4e53656",
+      "date": "2026-11-16T09:06:52.682281+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-60x/frames.zst",
+      "size": 670411096,
+      "sha256": "0bcc9904746ec0137ad0e8952c51141f79cceafa1bc7c40ed756fd2aad3fc4f1",
+      "date": "2026-11-16T09:06:56.244303+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-60x/preview-1x.mp4",
+      "size": 12187519,
+      "sha256": "1d3f082d6d1d4f623c2d28566084f2673c1e91257bdc863fe8479d2b6e5a7e5d",
+      "date": "2026-11-16T09:06:58.416377+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/drift-60x/runtime.json",
+      "size": 8969955,
+      "sha256": "9cd3fcda7f45733b9d0d4aa8f70c359102352c006f3aafa4aa05ed729875b0f0",
+      "date": "2026-11-16T09:06:54.665150+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/low-sun-2m/frames.zst",
+      "size": 2219220,
+      "sha256": "584e44eaa9b8bc0f6aa7cffd9546acc3800bf12ac5f813dfc5628d0d780be692",
+      "date": "2026-11-16T09:06:52.448565+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/low-sun-40m/frames.zst",
+      "size": 2550150,
+      "sha256": "33b5fafd31231b916902cd93d2e67862bade09feeeab5bcba7cc483675fdf96e",
+      "date": "2026-11-16T09:06:51.961081+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/noon-2m/frames.zst",
+      "size": 2105841,
+      "sha256": "b3fda798fe4e9ffa0f0ee871ab239a524b9d7a0a3f60484ba7f8350fe6ea87e6",
+      "date": "2026-11-16T09:06:54.447771+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/noon-40m/frames.zst",
+      "size": 2441298,
+      "sha256": "4471bcffb84bed66a9334c0ea6928e5cfc7c7c4e61d2658d9feebdda753bfd6b",
+      "date": "2026-11-16T09:06:52.234447+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/receiver-1x-2m/frames.zst",
+      "size": 400944441,
+      "sha256": "71e2ba6b164fffb1ca3d87843fd0c0851124cc9cde550995067b9a227d0634fd",
+      "date": "2026-11-16T09:10:25.190419+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/receiver-1x-2m/preview-1x.mp4",
+      "size": 7083494,
+      "sha256": "9ea93188ccf50c2bf7900356d01bcc4b505a2f2194902be82069987d2dd221b4",
+      "date": "2026-11-16T09:10:26.180137+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/M2-captures/receiver-1x-2m/runtime.json",
+      "size": 8992213,
+      "sha256": "aa1d82fbd4a644b296cfe9d4295484e2781257946cf5bd49c82da6d4988ac3dc",
+      "date": "2026-11-16T09:10:24.736078+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CONTENT-LOOP/M2/realtime/frames.zst",
       "size": 476272219,
       "sha256": "c5a4e429f941846c02aa8576fd2178d7d10bd52e542cd978c5cae282c40db686",

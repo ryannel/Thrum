@@ -373,8 +373,8 @@
           "statement": "With a fair sky's weather, at noon and at a 15\u00b0 Sun, patches of sunlight and shade lie over the valley with soft edges. Shaded ground stays lit by the sky and is never black. Terrain, an object and a cooked mesh under one patch agree. No tile, band or line shows where a level of the product ends.",
           "inspect": "Capture `fixed` stills with T2 engine capture in the valley at noon and at a 15\u00b0 Sun, from 2 m and from 40 m. Judge each frame whole, and in native-size crops of a shade edge on terrain, of an object that an edge crosses, and of the far valley.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M2.md; docs/evidence/CLOUDS/M2-captures/README.md; docs/evidence/CLOUDS/M2-visual-opinion.md",
           "verdict": "",
           "review": ""
         },
@@ -384,7 +384,7 @@
           "inspect": "Capture `realtime` sequences from 40 m at noon, 20 seconds at 1x in a 10 m/s wind and 20 seconds at 60x in a 40 m/s wind. Judge consecutive frames, whole and in native-size crops of one shade edge followed through the sequence. Beside them, from the 60x capture's time record, tabulate the travel between consecutive frames against the interval between their consumed targets, with each frame's lead status.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "",
+          "evidence": "docs/evidence/CLOUDS/M2-temporal-blocker.md; docs/evidence/CLOUDS/M2-captures/README.md; docs/evidence/CLOUDS/M2-visual-opinion.md",
           "verdict": "",
           "review": ""
         },

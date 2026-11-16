@@ -350,3 +350,11 @@
   one tick, which is true only until the world's clock first stops. Three places now say it is the world's time
   ([the timing model](../EFFECT-GRAPH/DESIGN.md#the-timing-model)). No item and no mechanism changed: this module
   reads the tick and the phase as before.
+  [Valley inspection](../../evidence/CLOUDS/M2.md) records the subsequent merged build.
+- 2026-11-16 M2 source `5ec67bed0` merged with the workspace gate passing; fixed-still
+  completion bookkeeping is corrected. M2.6's four views and receiver passage pass builder
+  and fresh-agent inspection. M2.7's complete 60× sequence visibly steps unevenly.
+  Submitted alpha alternates near .92 and 1, requiring 36.8/3.2 m wind steps at ~8 ms.
+  [Proposal](../../evidence/CLOUDS/M2-temporal-blocker.md): the planner should assign a shared
+  display-time policy to HOST/EFFECT-GRAPH that preserves unclipped target information;
+  CLOUDS cannot recover it from the existing alpha. Other possible pop causes remain unisolated.

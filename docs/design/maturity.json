@@ -2693,7 +2693,7 @@
       "weather_shade_evidence": {
         "implementation": "CLOUDS M1/M13 CPU model and M2 Weather/Shade contribution; no visible cloud layer",
         "correctness": "Mac Metal weather, integer cell, Sun-path, continuity and game integration probes; measured approximation limits are recorded separately",
-        "visuals": "M2 valley capture inspection pending",
+        "visuals": "M2.6 Mac fixed valley stills and receiver agreement inspected by builder and fresh agent; M2.7 realtime 60x motion fails even-step inspection (M2-temporal-blocker.md)",
         "device": "Apple M3 Max Metal, including WebGPU default limits; no Chrome or physical display cadence qualification",
         "record": "../evidence/CLOUDS/M2-conformance.md"
       },
