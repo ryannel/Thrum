@@ -299,7 +299,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, and no step when a tick commits. Alpha stays the same function of the clock and the consumed target, and no frame without a lead changes.",
       "items": [
         {
@@ -364,7 +364,17 @@
           "item": "M4.2",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "May the planner explicitly permit delayed zero-lead frames to retain an older endpoint, as the current fix does?",
+        "work": {
+          "commit": "68e4b2888926c0d45879c8c91d109892dfd1389b",
+          "branch": "build/effect-graph",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/EFFECT-GRAPH/M4-handoff.md"
+      }
     }
   ]
 }
