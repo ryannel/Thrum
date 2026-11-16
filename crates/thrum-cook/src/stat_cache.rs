@@ -45,7 +45,7 @@ pub struct ScanCounts {
     pub hashed: usize,
     /// Files that disappeared.
     pub removed: usize,
-    /// Files whose stamp changed while being hashed; they are retried by the next scan.
+    /// Files deferred by a recent write or an unstable read; retried by the next scan.
     pub unstable: usize,
 }
 
@@ -219,7 +219,7 @@ impl StatCache {
                     self.entries.insert(path, entry);
                 }
                 None => {
-                    // Keep the last stable hash, if any, until the writer finishes.
+                    // Keep the last stable hash, if any, until the writer settles.
                     counts.unstable += 1;
                 }
             }

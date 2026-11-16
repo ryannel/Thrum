@@ -1,5 +1,12 @@
 # CONTENT-LOOP log
 
+- 2026-11-16 M4 adds adaptive sweeps independent of notice traffic, with a 500 ms floor, ten-times-cost
+  wait, recent-write deferral and a silent idle path. The notice fast path and existing integration test
+  are unchanged. All five item checks passed on this Mac; builder inspection covers the schedule and
+  manifest comparisons. Warm sweeps measured 3.458–3.851 ms at 1,000 files and 29.858–36.144 ms at 10,000,
+  under recorded concurrent load; these are baselines, not qualified performance. The full repository
+  gate and merge follow. [Evidence and limits](../../evidence/CONTENT-LOOP/M4.md).
+
 - 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed the lease-only consumer, the per-mip
   comparisons, the coupled-reader test, the staging probe and the public guide. The item check passed there
   (job `20261113-170643-440`), and the full milestone check, `./dev check` included, passed at `23f3cf2f`
