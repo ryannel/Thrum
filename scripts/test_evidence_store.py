@@ -47,7 +47,7 @@ class EvidenceStore(unittest.TestCase):
         for path in (first, second):
             command(self.root, "worktree", "add", "--detach", str(path), "HEAD")
         self.assertEqual(store.store(first), store.store(second))
-        self.assertEqual(store.store(first), self.root.parent / "repo-evidence-store")
+        self.assertEqual(store.store(first), self.root.parent / "thrum-evidence-store")
         source = self.write("new-capture", b"new uncommitted video\x00" * 200)
         logical = "docs/evidence/example/capture.mp4"
         with patch.dict(os.environ, {}, clear=True):

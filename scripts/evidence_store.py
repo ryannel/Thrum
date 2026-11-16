@@ -83,7 +83,7 @@ def store(root):
         return Path(os.environ["THRUM_EVIDENCE_STORE"]).expanduser().resolve()
     common = Path(git(root, "rev-parse", "--git-common-dir").decode().strip())
     common = (root / common).resolve()
-    return common.parent.parent / (common.parent.name + "-evidence-store")
+    return common.parent.parent / "thrum-evidence-store"
 
 
 def tracked(root):
