@@ -5,7 +5,9 @@
   are unchanged. All five item checks passed on this Mac; builder inspection covers the schedule and
   manifest comparisons. Warm sweeps measured 3.458–3.851 ms at 1,000 files and 29.858–36.144 ms at 10,000,
   under recorded concurrent load; these are baselines, not qualified performance. The full repository
-  gate and merge follow. [Evidence and limits](../../evidence/CONTENT-LOOP/M4.md).
+  gate stopped at the unchanged V1 discarded-frame test's first-copy assertion; the evidence records its
+  readiness race. Bad saves also stay quiet after one error. The merge gate follows.
+  [Evidence and limits](../../evidence/CONTENT-LOOP/M4.md).
 
 - 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed the lease-only consumer, the per-mip
   comparisons, the coupled-reader test, the staging probe and the public guide. The item check passed there
