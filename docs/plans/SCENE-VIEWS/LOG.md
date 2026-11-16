@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 resumed builder: source `9be4a4887` adds the remaining functional check targets.
+  All eleven commands pass on Metal's portable and Apple-tile recipes; ten functional items
+  have builder passes. Resize republishes slot attachments; late effects bind bucket offsets.
+  [The proof](../../evidence/SCENE-VIEWS/M1/9be4a4887-proof.md) records exact comparisons, shadow/air
+  negative controls and the remaining M1.1 defect: shared main-centred height support still
+  misses 283 pixels by up to 2,904 steps. Its builder result stays open pending the planner's
+  ownership or admission ruling. Repository gate and merge results follow in the handoff.
+
 - 2026-11-16 M1 builder continued: source `64e691e8d` prepares own clusters, aerial products,
   Sun cascades and visibility, and exposes opt-in opaque contribution surfaces and callbacks.
   M1.5, M1.6, M1.9 and M1.11 pass their Metal checks through the public seam; the complete
