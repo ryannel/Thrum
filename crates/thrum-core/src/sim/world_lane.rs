@@ -311,6 +311,7 @@ pub struct WorldLane<T: WorldTask> {
     join: Option<JoinHandle<()>>,
     snapshot: Snapshot,
     page: Option<WorldPublication<T::Page>>,
+    refused: Option<(Snapshot, Option<WorldPublication<T::Page>>)>,
     last_completed: u64,
     last_tick_cpu: Duration,
     last_skipped: u64,
@@ -394,6 +395,7 @@ impl<T: WorldTask> WorldLane<T> {
             join: Some(join),
             snapshot,
             page: Some(page),
+            refused: None,
             last_completed: 0,
             last_tick_cpu: Duration::ZERO,
             last_skipped: 0,
@@ -405,14 +407,23 @@ impl<T: WorldTask> WorldLane<T> {
     }
 
     /// Poll metadata and its matching page without waiting for the owner.
-    /// An interpolating endpoint newer than `now` leaves the previous pair in
-    /// place: render-owner preemption must not make its observation sample a
-    /// future tick. Authority continues independently; a later poll sees progress.
+    /// An interpolating endpoint newer than `now` is retained as the refused
+    /// pair. A later observation can show it even if the owner has moved ahead
+    /// again. Neither the shown pair nor authority moves backwards.
     /// `now` uses the owner's origin and advances monotonically.
     /// # Errors
     /// Returns a retained authority or synchronization fault.
     pub fn poll(&mut self, now: Duration) -> Result<WorldAdvance, WorldLaneFault> {
         self.sample_now = now;
+        if self
+            .refused
+            .as_ref()
+            .is_some_and(|(snapshot, _)| snapshot.clock.accepts_observation(now))
+            && let Some((snapshot, page)) = self.refused.take()
+        {
+            self.snapshot = snapshot;
+            self.page = page;
+        }
         match self.shared.state.try_lock() {
             Ok(state) => {
                 if let Some(error) = &state.fault {
@@ -427,6 +438,16 @@ impl<T: WorldTask> WorldLane<T> {
                         });
                     }
                     self.snapshot = state.snapshot;
+                    self.refused = None;
+                } else {
+                    self.refused = Some((
+                        state.snapshot,
+                        state.page.as_ref().map(|page| WorldPublication {
+                            id: page.id,
+                            timeline: page.timeline,
+                            page: page.page.clone(),
+                        }),
+                    ));
                 }
             }
             Err(TryLockError::WouldBlock) => {}

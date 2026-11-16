@@ -66,8 +66,11 @@ roles and epochs; replicas publish admitted server state, while prediction runs 
 Presentation reads immutable committed state, optionally interpolating adjacent snapshots with alpha in [0,1].
 The display phase describes the consumed target: the frame's world-clock observation plus its bounded lead.
 An interpolating frame's committed endpoint is no later than its observation. If render-owner preemption
-lets a resident world publish a newer endpoint, the lane keeps its previous clock/page pair for that poll;
-the world continues independently and a fresh observation consumes the accumulated progress.
+lets a resident world publish a newer endpoint, the lane shows the newest eligible clock/page pair among
+the published pair, the pair already shown and the refused pair retained from an earlier poll. A published
+pair newer than the one shown becomes the refused pair. No poll goes backwards; with observations read
+from the running clock after the previous poll, each poll after the first shows at least the newest pair
+the previous poll saw. Completed ticks are counted once as shown progress; the world continues independently.
 While the clock interpolates, it is the fraction of the next tick elapsed at that target, without stopping at
 one, bounded to [0, 1 + 50 ms / tick duration]. Alpha is that phase held to one, with its existing arithmetic.
 Paused, overloaded, holding or queued clocks, and capture frames, show exactly one and report no interpolation.

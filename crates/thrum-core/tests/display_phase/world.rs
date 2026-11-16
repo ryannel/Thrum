@@ -125,3 +125,53 @@ fn delayed_observation_retains_a_causal_pair_and_later_poll_reports_all_progress
         repeated.tick - latest.tick
     );
 }
+
+#[test]
+fn every_delayed_poll_advances_to_at_least_the_previously_seen_pair() {
+    let origin = Instant::now();
+    let world = ClockedWorld::new(Game(0), ClockConfig::default(), Duration::ZERO).expect("world");
+    let (mut lane, controls) = WorldLane::start(world, (), origin, || {}).expect("world lane");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut previous_newest = 0;
+    let mut previous_shown = 0;
+    let mut completed = 0_u64;
+    for _ in 0..12 {
+        // This is read AFTER the preceding poll. Every poll below is delayed:
+        // wait for authority to commit an endpoint due after this observation.
+        let observation = origin.elapsed();
+        let first_future_tick = u64::try_from(observation.as_nanos() * 60 / 1_000_000_000 + 1)
+            .expect("short running-clock test");
+        while controls.check_health().expect("running owner") < first_future_tick {
+            assert!(Instant::now() < deadline, "owner must keep committing");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        let newest = controls.check_health().expect("published progress");
+        let report = lane.poll(observation).expect("delayed poll");
+        assert!(report.tick < newest, "newest endpoint is not yet due");
+        assert!(
+            report.tick >= previous_newest,
+            "must retain the refused pair"
+        );
+        assert!(report.tick >= previous_shown, "never go backwards");
+        completed += u64::from(report.completed_ticks);
+        assert_eq!(completed, report.tick, "count each completed tick once");
+        assert_eq!(lane.current_page(), Some(report.tick));
+        assert!(lane.is_interpolating());
+        for lead in [
+            Duration::ZERO,
+            Duration::from_millis(8),
+            Duration::from_millis(50),
+        ] {
+            let phase = lane.display_phase_at(lead);
+            assert_eq!(lane.presentation_alpha_at(lead), phase.min(1.0));
+            if phase < 4.0 {
+                let display = (report.tick as f64 - 1.0 + f64::from(phase)) / 60.0;
+                let expected = (observation + lead).as_secs_f64() - 1.0 / 60.0;
+                assert!((display - expected).abs() < 1e-6);
+            }
+        }
+        previous_newest = newest;
+        previous_shown = report.tick;
+    }
+    assert!(previous_shown >= 11);
+}
