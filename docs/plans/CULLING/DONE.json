@@ -226,10 +226,10 @@
           "statement": "In real time in Chrome, with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the valley route.",
           "inspect": "Capture the valley in Chrome with T2 engine capture: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive frames at 1x.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3/replan/motion.md; docs/evidence/CULLING/M3/replan/motion-selection/record.json; docs/evidence/CULLING/M3/replan/motion-selection.tar",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.9",

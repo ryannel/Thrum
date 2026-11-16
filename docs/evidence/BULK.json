@@ -3531,6 +3531,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/motion-selection.tar",
+      "size": 174322176,
+      "sha256": "30ce9450ebc1bcc359278ba3988a3cc6a64202a07d63c85d2c94b97989853ccd",
+      "date": "2026-11-16T22:00:32.285467+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/native-differences/b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73.png",
       "size": 2659905,
       "sha256": "b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73",

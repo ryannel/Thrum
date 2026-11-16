@@ -368,3 +368,11 @@
   [Landing and registry audit](../../evidence/CULLING/M3/replan/landing/registry-audit.json) and
   [fresh default-release build identities](../../evidence/CULLING/M3/replan/main-builds.json) retain the proof.
   The main-build loaded campaign and final target motion capture pass are now running separately.
+
+- 2026-11-16 M3.7 and M3.8 have fresh merged-build T2 content inspection: native 963 and Chrome 416
+  complete submitted images, plus five exact fixed checkpoints and paired mixed-field cover sequences.
+  No culling pop, hole or flicker was observed in whole frames and consecutive 1× edge/ridge/cover crops.
+  Three incomplete Chrome exports remain recorded; the complete arm uses an eight-thread Node observer pool,
+  with game bytes, capture buffers, frame rate and export bounds unchanged. No cause or cadence is inferred.
+  [Motion proof and verified source selections](../../evidence/CULLING/M3/replan/motion.md).
+  The first campaign stopped on disk reserve after six clean candidate routes; a new bounded run is active.
