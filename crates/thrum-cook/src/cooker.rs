@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Component, Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 use rayon::prelude::*;
 use thrum_asset::layout::{MANIFEST_MAGIC, ManifestMeta, ManifestRecord, manifest_tag};
@@ -94,6 +94,7 @@ pub struct Cooker {
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
+    retry: bool,
 }
 
 impl Cooker {
@@ -121,6 +122,7 @@ impl Cooker {
             published: BTreeMap::new(),
             verified: HashSet::new(),
             generation: 0,
+            retry: false,
         };
         cooker.recover();
         Ok(cooker)
@@ -197,6 +199,21 @@ impl Cooker {
         self.cycle(scan, start.elapsed())
     }
 
+    // Only a watch sweep waits for recent writes. Startup and explicit cooks remain immediate.
+    // Hash changes, rather than racy rehashes, decide whether the store needs any work.
+    pub(crate) fn sweep(&mut self, now: SystemTime) -> Result<Option<CookReport>, CookError> {
+        let start = Instant::now();
+        let before = self.stat.revision();
+        let scan = self
+            .stat
+            .scan_settled(&self.config.source, now, crate::watch::MAX_BATCH)
+            .inspect_err(|_| self.retry = true)?;
+        if self.stat.revision() == before && !self.retry {
+            return Ok(None);
+        }
+        self.cycle(scan, start.elapsed()).map(Some)
+    }
+
     /// Re-stat only `paths` (absolute, or relative to the source root), then cook and publish.
     ///
     /// # Errors
@@ -220,6 +237,8 @@ impl Cooker {
     }
 
     fn cycle(&mut self, scan: ScanCounts, scan_time: Duration) -> Result<CookReport, CookError> {
+        // A failed publication or cache write must be retried even with unchanged source hashes.
+        self.retry = true;
         let mut report = CookReport {
             scan,
             scan_time,
@@ -250,6 +269,9 @@ impl Cooker {
                 (job, outcome)
             })
             .collect();
+        // A source can change after hashing but before cooking. Retry even if its next stable
+        // hash equals the cached hash: no new revision would otherwise trigger that job.
+        let mut retry = false;
         for (job, outcome) in outcomes {
             match outcome {
                 Ok(product) => {
@@ -261,7 +283,10 @@ impl Cooker {
                     self.refusals.insert(job.key, reason.clone());
                     refused.insert((job.name, job.profile), reason);
                 }
-                Err(error) => failed.push((job.name, error.to_string())),
+                Err(error) => {
+                    retry = true;
+                    failed.push((job.name, error.to_string()));
+                }
             }
         }
         // Keep serving the last good products of any asset that failed to plan or cook, except
@@ -292,6 +317,7 @@ impl Cooker {
             .into_iter()
             .map(|((name, profile), reason)| (name, profile, reason))
             .collect();
+        self.retry = retry;
         Ok(report)
     }
 

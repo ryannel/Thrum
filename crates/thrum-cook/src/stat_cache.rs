@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs::Metadata;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rayon::prelude::*;
 use thrum_asset::ContentHash;
@@ -53,6 +53,7 @@ pub struct ScanCounts {
 #[derive(Debug, Default)]
 pub struct StatCache {
     entries: HashMap<PathBuf, Entry>,
+    revision: u64,
 }
 
 impl StatCache {
@@ -74,6 +75,27 @@ impl StatCache {
     /// # Errors
     /// I/O failure walking the tree.
     pub fn scan_all(&mut self, root: &Path) -> std::io::Result<ScanCounts> {
+        self.scan_tree(root, None)
+    }
+
+    pub(crate) fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    pub(crate) fn scan_settled(
+        &mut self,
+        root: &Path,
+        now: SystemTime,
+        age: Duration,
+    ) -> std::io::Result<ScanCounts> {
+        self.scan_tree(root, Some((now, age)))
+    }
+
+    fn scan_tree(
+        &mut self,
+        root: &Path,
+        settle: Option<(SystemTime, Duration)>,
+    ) -> std::io::Result<ScanCounts> {
         let mut found = Vec::new();
         walk(root, Path::new(""), &mut found)?;
         let removed: Vec<PathBuf> = self
@@ -82,9 +104,10 @@ impl StatCache {
             .filter(|path| found.binary_search(path).is_err())
             .cloned()
             .collect();
-        let mut counts = self.refresh(root, &found);
+        let mut counts = self.refresh(root, &found, settle);
         for path in removed {
             self.entries.remove(&path);
+            self.revision += 1;
             counts.removed += 1;
         }
         Ok(counts)
@@ -121,27 +144,42 @@ impl StatCache {
                     .collect();
                 for path in prefix {
                     self.entries.remove(&path);
+                    self.revision += 1;
                     removed += 1;
                 }
             }
         }
         found.sort();
         found.dedup();
-        let mut counts = self.refresh(root, &found);
+        let mut counts = self.refresh(root, &found, None);
         counts.removed += removed;
         Ok(counts)
     }
 
-    fn refresh(&mut self, root: &Path, paths: &[PathBuf]) -> ScanCounts {
+    fn refresh(
+        &mut self,
+        root: &Path,
+        paths: &[PathBuf],
+        settle: Option<(SystemTime, Duration)>,
+    ) -> ScanCounts {
         let now = now_ns();
         let previous = &self.entries;
         let results: Vec<(PathBuf, Option<Entry>, bool)> = paths
             .par_iter()
             .map(|relative| {
                 let absolute = root.join(relative);
-                let Ok(stamp) = std::fs::metadata(&absolute).map(|meta| stamp(&meta)) else {
+                let Ok(meta) = std::fs::metadata(&absolute) else {
                     return (relative.clone(), None, false);
                 };
+                if settle.is_some_and(|(now, age)| {
+                    meta.modified()
+                        .ok()
+                        .and_then(|modified| now.duration_since(modified).ok())
+                        .is_some_and(|elapsed| elapsed < age)
+                }) {
+                    return (relative.clone(), None, false);
+                }
+                let stamp = stamp(&meta);
                 if let Some(entry) = previous.get(relative)
                     && entry.stamp == stamp
                     && entry.stamp.modified_ns < entry.hashed_ns - RACY_WINDOW_NS
@@ -171,6 +209,13 @@ impl StatCache {
                 }
                 Some(entry) => {
                     counts.hashed += 1;
+                    if self
+                        .entries
+                        .get(&path)
+                        .is_none_or(|old| old.hash != entry.hash)
+                    {
+                        self.revision += 1;
+                    }
                     self.entries.insert(path, entry);
                 }
                 None => {
@@ -246,7 +291,10 @@ fn decode(bytes: &[u8]) -> Option<StatCache> {
             },
         );
     }
-    (reader.at == bytes.len()).then_some(StatCache { entries })
+    (reader.at == bytes.len()).then_some(StatCache {
+        entries,
+        revision: 0,
+    })
 }
 
 struct Cursor<'a> {
