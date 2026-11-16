@@ -324,21 +324,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
-      "blocked": {
-        "reason": "needs_access",
-        "items": [
-          "D10.5"
-        ],
-        "what": "Restore responsive Computer Use access to ThrumM10 and complete any pending app-access approval in the visible session.",
-        "work": {
-          "commit": "5bb1ffba565d5ba2ac3640f5fb5d26c4b37d6538",
-          "branch": "build/apple-tile-m0",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/APPLE-TILE/M10-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model."
     },
     {
       "id": "M11",
