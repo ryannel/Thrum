@@ -41,6 +41,59 @@ fn identity(sample: &FrameSample) {
 
 #[test]
 #[cfg(target_os = "macos")]
+fn delayed_observation_still_describes_the_consumed_target() {
+    pollster::block_on(async {
+        let (_, device, queue, _) = support::device("portable", false).await;
+        let (view, profile) = support::presentation(&device, [96, 54]);
+        let host = FrameHost::new(
+            &device,
+            &queue,
+            FrameConfig {
+                render_extent: [96, 54],
+                surface: Some(profile),
+            },
+        )
+        .await
+        .expect("V1 game");
+        let origin = Instant::now();
+        let (mut host, controls) = host.into_threaded(origin, || {}).expect("world lane");
+        let observation = origin.elapsed();
+        // Model preemption between reading the observation and polling the lane.
+        std::thread::sleep(Duration::from_millis(40));
+        let progress_deadline = Instant::now() + Duration::from_secs(3);
+        while controls.check_health().expect("running world") < 2 {
+            assert!(Instant::now() < progress_deadline);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        host.set_presentation_lead(Duration::ZERO);
+        host.drive(
+            observation,
+            Some(&v1_game::SurfaceOutput {
+                view: &view,
+                extent: [96, 54],
+            }),
+        )
+        .expect("delayed render owner");
+        let deadline = Instant::now() + Duration::from_secs(60);
+        let sample = loop {
+            if let Some(sample) = host.poll_completed().expect("completion") {
+                break sample;
+            }
+            assert!(Instant::now() < deadline);
+            device
+                .poll(wgpu::PollType::wait_indefinitely())
+                .expect("Metal");
+        };
+        assert!(
+            sample.clock_interpolating,
+            "the counterexample needs an active clock"
+        );
+        identity(&sample);
+    });
+}
+
+#[test]
+#[cfg(target_os = "macos")]
 fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
     pollster::block_on(async {
         let (instance, device, queue, caps) = support::device("portable", false).await;
