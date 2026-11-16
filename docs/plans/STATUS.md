@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-5 of 31 modules done · 16 in progress · 10 to come
+6 of 31 modules done · 15 in progress · 10 to come
 
 ### Needs you now
 
@@ -234,7 +234,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - ATMOSPHERE M9 Haze near sea level deepens evenly to the horizon: it no longer thins just above the horizon or lies in bands across low ground and water, on the Mac and in Chrome: Blocked: Needs Dependency: Restore reliable cooker edit publication so the full gate and Chrome showcase checks can pass before merging. A planner adds it to the module that owns it
-- A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh (BASELINE-GUARD M2): Ready for Review · [plan](BASELINE-GUARD/PLAN.md)
 - CULLING M3 The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome: Blocked: Needs Dependency: A planner must reconcile M3.10’s unchanged-registry requirement with BASELINE-GUARD M2’s mandatory pin/refresh edits before landing. A planner adds it to the module that owns it
 - A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3): Ready for Review · [plan](EFFECT-GRAPH/PLAN.md)
 - A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac (CONTENT-LOOP M4): In Progress · [plan](CONTENT-LOOP/PLAN.md)
@@ -249,6 +248,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A commit that changes a registered reference image or its comparison is refused at the merge unless it records the refresh (BASELINE-GUARD M2), 16 Nov · [review](../evidence/BASELINE-GUARD/M2-review.md)
 - Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point (WATERS M1), 15 Nov · [review](../evidence/WATERS/M1-review.md)
 - The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly (CLOUDS M1), 15 Nov · [review](../evidence/CLOUDS/M1-review.md)
 - After the Apple tile change, the cooked valley still moves and presents smoothly on built-in ProMotion (PLATFORM-RUNTIME-MAC M3), 14 Nov · [review](../evidence/PLATFORM-RUNTIME-MAC/M3-review.md)
@@ -287,7 +287,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE M0, M2, M3, M11 and M12 | M3 of 12 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | M9 of 5 · Blocked: Needs Dependency |
-| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | M2 of 2 · Ready for Review |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | M3 of 3 · Blocked: Needs Dependency |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M3 of 3 · Ready for Review |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M4 of 4 · In Progress |
