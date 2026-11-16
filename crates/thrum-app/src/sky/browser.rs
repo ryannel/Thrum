@@ -74,6 +74,7 @@ pub async fn create_scene(
     let mut game = build().map_err(js)?;
     let _ = game.update();
     let scene = SkyScene {
+        temporal_sampling: game.temporal_sampling,
         sky: game.sky,
         ground: game.ground.is_some(),
     };

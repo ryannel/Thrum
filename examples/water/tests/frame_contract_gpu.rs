@@ -7,9 +7,9 @@ use thrum_render::{contribution::SceneContributions, synthetic::Reconstruction};
     reason = "the independent f64 oracle is projected into the renderer's bounded f32 camera"
 )]
 fn tick_and_repeat_motion_follow_the_cpu_surface() {
-    let mut fixture = support::Fixture::new([384, 216]);
+    let mut fixture = support::Fixture::temporal([384, 216]);
     let _map = fixture.signal(0.45);
-    assert_eq!(fixture.host.reconstruction(), Reconstruction::Off);
+    assert_eq!(fixture.host.reconstruction(), Reconstruction::Taau);
     let cpu = thrum_sea_model::LongWaves::new(vec![support::component(0.45)], 0.1).expect("oracle");
     let matrix = support::matrix(fixture.extent, 2.0);
     let mut previous = 0.2 - 1.0 / 60.0;

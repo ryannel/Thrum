@@ -331,6 +331,7 @@ impl FrameWorld for StillWorld {
 pub struct SkyScene {
     sky: Sky,
     ground: bool,
+    temporal_sampling: bool,
 }
 
 impl SceneSource<SourceTick> for SkyScene {
@@ -357,6 +358,12 @@ impl SceneSource<SourceTick> for SkyScene {
             .camera
             .view(extent)?
             .with_temporal_inputs(self.sky.temporal_inputs);
+        let view = if self.temporal_sampling {
+            view.with_reconstruction(true)
+                .with_jitter_sequence(0, extent)
+        } else {
+            view
+        };
         let lighting = match lighting {
             Some(published) => published,
             None => self.sky.lighting()?,
@@ -405,6 +412,7 @@ type ReloadReport = Box<dyn FnMut() -> Vec<Result<String, String>>>;
 /// A still scene under the sky, hosted by the app shell. See the [module](self) example.
 pub struct SkyGame {
     tick_duration: Option<Duration>,
+    temporal_sampling: bool,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -447,6 +455,7 @@ impl SkyGame {
         drop((controls, camera, update));
         Self {
             tick_duration: None,
+            temporal_sampling: false,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -485,6 +494,14 @@ impl SkyGame {
     #[must_use]
     pub fn with_ground(mut self, colour: Option<[f32; 3]>) -> Self {
         self.ground = colour;
+        self
+    }
+
+    /// Select the registry's temporal reconstructor and jittered sampling when
+    /// this scene is prepared. The default kit scene uses spatial sampling.
+    #[must_use]
+    pub fn with_temporal_sampling(mut self, enabled: bool) -> Self {
+        self.temporal_sampling = enabled;
         self
     }
 
@@ -735,6 +752,7 @@ impl SkyGame {
             SkyScene {
                 sky: self.sky,
                 ground: self.ground.is_some(),
+                temporal_sampling: self.temporal_sampling,
             },
             ground_scene(self.ground)?,
             FALLBACK_EXPOSURE,

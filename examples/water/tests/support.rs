@@ -67,12 +67,19 @@ impl Fixture {
         Self::paired(extent, true)
     }
     pub(crate) fn paired(extent: [u32; 2], water: bool) -> Self {
+        Self::with_sampling(extent, water, false)
+    }
+    pub(crate) fn temporal(extent: [u32; 2]) -> Self {
+        Self::with_sampling(extent, true, true)
+    }
+    fn with_sampling(extent: [u32; 2], water: bool, temporal_sampling: bool) -> Self {
         let (device, queue, caps) = device();
         let (mut game, report) = water_scene::build_paired(
             std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some(),
             water,
         )
         .expect("scene");
+        game = game.with_temporal_sampling(temporal_sampling);
         let host = game
             .prepare(
                 Gpu {
