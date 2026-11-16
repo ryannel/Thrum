@@ -65,8 +65,9 @@ try {
     const module = await import(${JSON.stringify(url)});
     await module.default();
     const request = ${JSON.stringify(request)};
-    const result = module[request.method](...request.args);
-    return { result: JSON.parse(result), userAgent: navigator.userAgent, crossOriginIsolated };
+    const invoke = item => JSON.parse(module[item.method](...item.args));
+    const result = Array.isArray(request) ? request.map(invoke) : invoke(request);
+    return { result, userAgent: navigator.userAgent, crossOriginIsolated };
   })()`;
   const evaluated = await call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, timeout: 1800000 });
   if (evaluated.exceptionDetails) throw new Error(JSON.stringify(evaluated.exceptionDetails));

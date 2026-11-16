@@ -1,5 +1,6 @@
 """Cost regressions must survive record boundaries and retain their comparator."""
 import unittest
+import json
 import tempfile
 from pathlib import Path
 from contextlib import redirect_stderr
@@ -7,7 +8,46 @@ from io import StringIO
 from copy import deepcopy
 from unittest.mock import patch
 
-from sim2d_conformance import ROOT, build_settings, last_comparable, load_cost_record, main, measure, runner_graph
+from sim2d_conformance import ROOT, Runner, SIZES, build_settings, last_comparable, load_cost_record, main, measure, run, runner_graph
+
+
+class BrowserBatch(unittest.TestCase):
+    def test_conformance_takes_one_queue_turn_for_every_retained_route(self):
+        runner = Runner.__new__(Runner)
+        runner.target = "chrome-webgpu"
+        runner.program = "web-root"
+        runner.artifact_hash = "artifact"
+        runner.device = None
+        rows = [{"timeline": [], "oversize": 1, "capsule_hits": 1, "swept_only_hits": 1}
+                for _ in range(8)]
+        packet = {"result": [json.loads((ROOT / "crates/thrum-core/src/profile/vectors.json").read_text()), *rows],
+                  "userAgent": "Chrome", "crossOriginIsolated": True}
+        with patch("sim2d_conformance.Runner", return_value=runner), \
+                patch("sim2d_conformance.source_key", return_value="source"), \
+                patch("sim2d_conformance.device_command", return_value=json.dumps(packet)) as device, \
+                patch("sim2d_conformance.compare") as compare:
+            result = run("chrome-webgpu")
+        device.assert_called_once()
+        resource, command = device.call_args.args
+        self.assertEqual(resource, "chrome")
+        requests = json.loads(command[-1])
+        self.assertEqual(requests[0], {"method": "vectors", "args": []})
+        expected = []
+        for mixed in [False, True]:
+            expected.extend([count, ticks, False, False, False, mixed, False] for count, ticks in SIZES)
+            expected.append([2000, 3600, False, True, False, mixed, False])
+        self.assertEqual([request["args"] for request in requests[1:]], expected)
+        self.assertEqual(compare.call_count, 8)
+        self.assertEqual(len(result["rows"]), 8)
+
+    def test_missing_browser_result_is_refused(self):
+        runner = Runner.__new__(Runner)
+        runner.target = "chrome-webgpu"
+        runner.program = "web-root"
+        packet = {"result": [], "userAgent": "Chrome", "crossOriginIsolated": True}
+        with patch("sim2d_conformance.device_command", return_value=json.dumps(packet)):
+            with self.assertRaisesRegex(RuntimeError, "incomplete conformance batch"):
+                runner.invoke_many([("vectors", [])])
 
 
 class BuildIdentity(unittest.TestCase):

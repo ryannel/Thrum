@@ -154,10 +154,7 @@ class Runner:
 
     def invoke(self, method, args):
         if self.target == "chrome-webgpu":
-            packet = json.loads(device_command("chrome", ["node", "scripts/sim2d_browser.mjs", self.program, json.dumps({"method": method, "args": args})]))
-            self.user_agent = packet["userAgent"]
-            self.isolated = packet["crossOriginIsolated"]
-            return packet["result"]
+            return self.invoke_many([(method, args)])[0]
         if method == "vectors":
             arguments = ["vectors"]
         elif method in ["costs", "measure_trace"]:
@@ -173,6 +170,18 @@ class Runner:
         prefix = ["xcrun", "simctl", "spawn", self.device] if self.device else []
         invoke = prefix + [self.program] + arguments
         return json.loads(device_command("simulator", invoke) if self.device else command(invoke))
+
+    def invoke_many(self, requests):
+        """Keep a Chrome conformance run in one queue turn, after compilation."""
+        if self.target != "chrome-webgpu":
+            return [self.invoke(method, args) for method, args in requests]
+        packet = json.loads(device_command("chrome", ["node", "scripts/sim2d_browser.mjs", self.program,
+                            json.dumps([{"method": method, "args": args} for method, args in requests])]))
+        self.user_agent = packet["userAgent"]
+        self.isolated = packet["crossOriginIsolated"]
+        if len(packet["result"]) != len(requests):
+            raise RuntimeError("Chrome returned an incomplete conformance batch")
+        return packet["result"]
 
 
 def references(path=RETAINED):
@@ -245,12 +254,17 @@ def retain_mixed():
 def run(target, parallel=False):
     measured_source = source_key()
     runner = Runner(target)
-    assert runner.invoke("vectors", []) == json.loads(VECTORS.read_text()), "profile vectors differ"
+    requests = [("vectors", [])]
+    for mixed in [False, True]:
+        requests.extend(("trace", [count, ticks, False, False, False, mixed, parallel]) for count, ticks in SIZES)
+        requests.append(("trace", [2000, 3600, False, True, False, mixed, parallel]))
+    results = iter(runner.invoke_many(requests))
+    assert next(results) == json.loads(VECTORS.read_text()), "profile vectors differ"
     rows = []
     for mixed in [False, True]:
         retained = references(MIXED if mixed else RETAINED)
         for count, ticks in SIZES:
-            row = runner.invoke("trace", [count, ticks, False, False, False, mixed, parallel])
+            row = next(results)
             compare(row, retained)
             if mixed:
                 assert row["oversize"] > 0 and row["capsule_hits"] > 0
@@ -259,7 +273,7 @@ def run(target, parallel=False):
                 assert row["parallel_chunks"] > 0, "steering did not dispatch native chunks"
             row.pop("timeline")
             rows.append(row)
-        wire = runner.invoke("trace", [2000, 3600, False, True, False, mixed, parallel])
+        wire = next(results)
         compare(wire, retained)
         wire.pop("timeline")
         rows.append(wire)
