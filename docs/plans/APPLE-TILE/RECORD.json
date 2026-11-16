@@ -397,7 +397,36 @@
         "words": "Yes, move d3.5 (answering: move APPLE-TILE M3's attended window check D3.5 to a later milestone so M3 can be reviewed now?)",
         "at": "2026-11-13T23:35:19Z"
       },
-      "counted_after": 0
+      "counted_after": 0,
+      "ready_for_review": {
+        "commit": "693e3bf54e5b1fe8d7cffcd466c891ab70c70150",
+        "checked": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "at": "2026-11-16T18:35:59Z",
+        "reused": [
+          "Test command"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "visible",
+        "usage": {
+          "input": 196437,
+          "cached": 47212288,
+          "output": 76623,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 196437,
+          "cached": 47212288,
+          "output": 76623,
+          "turns": 1
+        }
+      }
     },
     "M11": {
       "definitions": "3e35fe0b1eb719be5c57bddb462add2199a6ee96e72b1cbec8e174611f4ee48a",
