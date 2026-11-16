@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-16 M3 continuation diagnosed the shared verifier failure as incomplete motion capture:
+  the retained failing arm has 129 ring omissions, zero writer omissions and no pixel mismatch.
+  Concurrent GPU tests are recorded; contention is suspected, not established as the cause.
+  The shared checker subsequently passed every exact baseline on `d31a941736e2`, including the
+  mapped-index implementation. Later M3 commits remain uncovered while its bisect continues.
+  [The handoff](../../evidence/REVIEW-ENGINE/M3-handoff.md) preserves records and the remaining dependency.
+
 - 2026-11-16 M3 uploads the mapped index section, derives meshlet ranges by prefix sum, writes
   whole Pod drawing records and measures the engine loader in the cooker test and tripwire.
   On `3408034a5`, the mapped Metal readback, unchanged asset-GPU tests, shader reflection and
