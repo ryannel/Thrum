@@ -181,7 +181,44 @@
     },
     "M4": {
       "definitions": "b8ec538d1e7879e413afe4ae2bb759c633e3ab5a5b3b6edf35f27e9722205b31",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "pass",
+            "M4.3": "fail",
+            "M4.4": "pass",
+            "M4.5": "pass",
+            "M4.6": "pass"
+          },
+          "findings": [
+            {
+              "name": "unchanged_watcher_test_contains_added_logging",
+              "item": "M4.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 94046,
+            "cached": 705664,
+            "output": 4229,
+            "turns": 1
+          },
+          "at": "2026-11-16T04:48:29Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Main is broken for every merge: the Test command `./dev check` fails in the script's clean checkouts on thrum-cook's `th",

@@ -148,8 +148,8 @@
           "ask": "Read the test. Is it the loop the `watch` command runs, with only the notice source replaced, and does that source report nothing for the whole test? Does it compare each published manifest with a fresh cook's, not only wait for a generation number?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -165,8 +165,8 @@
           "ask": "Read the test. Is the sweep off for the whole test, are the notices in the form the macOS source delivers (absolute paths under the canonical root), and does it tell a re-read of the named paths from a whole scan by the cycle's scan counts?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -181,10 +181,10 @@
           ],
           "ask": "Compare `crates/thrum-cook/tests/serve_and_watch.rs` with commit `a7390265`. Is `the_watcher_publishes_an_edited_source` the same test, with no wait lengthened, no retry added and no assertion removed or loosened?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M4.4",
@@ -199,8 +199,8 @@
           "ask": "Does the test let several sweeps pass, then compare every file under the store by name, bytes and modification time with what was there before them, and count the callback's calls?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -216,8 +216,8 @@
           "ask": "Is each outcome decided by a time the test passes in or sets on the file, with no sleep deciding it, so that the test cannot depend on the machine's load?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/item-checks.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         },
         {
@@ -226,16 +226,23 @@
           "ask": "Read the loop and the evidence. Is the wait derived from the last sweep's measured time, and does the record hold both tree sizes, the load when they were measured and the constants in use?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M4.md; docs/evidence/CONTENT-LOOP/M4/baseline.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M4-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As dependable as a sync tool that must converge, such as Mutagen: no save is ever left uncooked, whatever the machine reports. On a healthy machine an edit shows as fast as it did before, and a watching cooker with nothing to do costs next to nothing."
+      "status": "in_progress",
+      "quality_bar": "As dependable as a sync tool that must converge, such as Mutagen: no save is ever left uncooked, whatever the machine reports. On a healthy machine an edit shows as fast as it did before, and a watching cooker with nothing to do costs next to nothing.",
+      "findings": [
+        {
+          "name": "unchanged_watcher_test_contains_added_logging",
+          "item": "M4.3",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M2",
