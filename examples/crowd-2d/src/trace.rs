@@ -8,6 +8,12 @@ use thrum_core::{
 /// Compact corrected timeline and witnesses from one trace execution.
 #[derive(Clone, Debug, Default)]
 pub struct TraceResult {
+    /// Forced native steering chunks dispatched.
+    pub parallel_chunks: u64,
+    /// Oversize circles seen across builds.
+    pub oversize: u64,
+    /// Fast crossings that hit through a capsule and miss at the endpoint.
+    pub swept_only_hits: u64,
     /// One endpoint digest per tick, replaced when replay supersedes it.
     pub timeline: Vec<u64>,
     /// Fold over the corrected timeline only.
@@ -77,6 +83,9 @@ pub fn run_trace(
             )
             .expect("trace tick");
         result.neighbours += simulation.candidate.neighbours;
+        result.parallel_chunks += simulation.candidate.parallel_chunks;
+        result.oversize += simulation.candidate.oversize;
+        result.swept_only_hits += simulation.candidate.swept_only_hits;
         result.timeline.push(simulation.digest());
         if !straight && tick % 120 == 0 {
             let start = tick - 8;

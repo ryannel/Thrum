@@ -16,7 +16,25 @@ fn median(values: &mut [f64]) -> f64 {
 /// If a recorded reference input cannot commit or rewind.
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn costs(count: u32) -> String {
-    let mut sim = Simulation::new(count, 1);
+    measure_trace(count, false, false)
+}
+
+/// Measure a full trace, including forced native steering when selected.
+///
+/// # Panics
+/// If a reference tick or rollback fails.
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn measure_trace(count: u32, mixed: bool, parallel: bool) -> String {
+    let mut sim = if mixed {
+        Simulation::mixed(count, 1)
+    } else {
+        Simulation::new(count, 1)
+    };
+    if parallel {
+        sim.runtime
+            .set_execution_mode(thrum_core::sim::ExecutionMode::RayonForced);
+    }
+    let mut parallel_chunks = 0;
     let mut tick_times = Vec::new();
     let mut index_times = Vec::new();
     let mut digest_times = Vec::new();
@@ -33,6 +51,7 @@ pub fn costs(count: u32) -> String {
             continue;
         }
         neighbours += sim.candidate.neighbours;
+        parallel_chunks += sim.candidate.parallel_chunks;
         tick_times.push(elapsed);
         let start = Instant::now();
         sim.rebuild_index();
@@ -57,7 +76,8 @@ pub fn costs(count: u32) -> String {
     assert_eq!(sim.digest(), expected);
     let tick = median(&mut tick_times);
     let visited = neighbours as f64 / tick_times.len() as f64;
-    json!({ "bodies": count, "ticks": ticks, "warmup_ticks": 120, "samples": tick_times.len(), "tick_median_ms": tick,
+    json!({ "trace": if mixed { "mixed" } else { "crowd" }, "parallel": parallel, "parallel_chunks": parallel_chunks,
+        "bodies": count, "ticks": ticks, "warmup_ticks": 120, "samples": tick_times.len(), "tick_median_ms": tick,
         "index_median_ms": median(&mut index_times), "digest_median_ms": median(&mut digest_times),
         "rewind_eight_ms": rewind, "replay_eight_ms": replay, "neighbours_per_tick": visited,
         "tick_ms_per_neighbour": tick / visited, "clock_tripwire": tick > 1000.0 / 60.0 }).to_string()

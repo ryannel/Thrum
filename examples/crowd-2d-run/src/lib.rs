@@ -1,6 +1,6 @@
 //! Target-independent conformance and input-wire route. Platform launch is tooling-owned.
 mod costs;
-pub use costs::costs;
+pub use costs::{costs, measure_trace};
 use crowd_2d::{Simulation, run_trace};
 use serde_json::{Value, json};
 use thrum_core::{profile::platform_sine_control, sim::InputFrame};
@@ -67,7 +67,37 @@ pub fn wire_route(frames: &mut [InputFrame<()>; 4]) -> u64 {
 /// A rule, history operation or profile vector violates the conformance contract.
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn conformance(count: u32, ticks: u32, straight: bool, wire: bool, control: bool) -> String {
-    let mut simulation = Simulation::new(count, 1);
+    trace(count, ticks, straight, wire, control, false, false)
+}
+
+/// Execute either retained trace with explicit executor selection.
+///
+/// # Panics
+/// If a reference rule or history invariant fails.
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "primitive Wasm ABI mirrors the target runner's trace switches"
+)]
+pub fn trace(
+    count: u32,
+    ticks: u32,
+    straight: bool,
+    wire: bool,
+    control: bool,
+    mixed: bool,
+    parallel: bool,
+) -> String {
+    let mut simulation = if mixed {
+        Simulation::mixed(count, 1)
+    } else {
+        Simulation::new(count, 1)
+    };
+    if parallel {
+        simulation
+            .runtime
+            .set_execution_mode(thrum_core::sim::ExecutionMode::RayonForced);
+    }
     if control {
         simulation.game.control = Some(platform_sine_control);
     }
@@ -75,6 +105,10 @@ pub fn conformance(count: u32, ticks: u32, straight: bool, wire: bool, control: 
         if wire { wire_route(frames) } else { 0 }
     });
     json!({ "bodies": count, "ticks": ticks, "straight": straight, "wire": wire, "control": control,
+        "trace": if mixed { "mixed" } else { "crowd" }, "parallel": parallel,
+        "parallel_chunks": result.parallel_chunks, "oversize": result.oversize,
+        "capsule_hits": if mixed { result.hits } else { 0 },
+        "swept_only_hits": result.swept_only_hits,
         "fold": format!("{:016x}", result.fold),
         "checkpoints": result.checkpoints.iter().map(|&(tick, digest)| json!([tick, format!("{digest:016x}")])).collect::<Vec<_>>(),
         "timeline": result.timeline.iter().map(|digest| format!("{digest:016x}")).collect::<Vec<_>>(),

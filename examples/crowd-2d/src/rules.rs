@@ -9,7 +9,7 @@ use thrum_core::{
         TickGame, WorldRead, WritePermit,
     },
 };
-use thrum_sim2d::{Circle, CircleIndex};
+use thrum_sim2d::{Circle, CircleIndex, Shape};
 
 /// Complete body authority. Kinds are player=0, enemy=1 and projectile=2.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -64,6 +64,7 @@ impl StateEncode for Resources {
 
 /// Reference rule set and registered capabilities.
 pub struct Crowd {
+    mixed: bool,
     /// Diagnostic injection used solely by the platform-sine negative control.
     pub control: Option<fn(N) -> N>,
     read: ReadPermit<Body>,
@@ -76,6 +77,13 @@ pub struct Crowd {
 
 /// Reusable derived state and candidate edits.
 pub struct Candidate {
+    steering: Vec<Vec<(u32, Body, u64)>>,
+    /// Native forced-parallel steering chunks in the last step.
+    pub parallel_chunks: u64,
+    /// Oversize circles indexed in the last step.
+    pub oversize: u64,
+    /// Fast capsule hits whose endpoint alone misses the same target.
+    pub swept_only_hits: u64,
     rows: Vec<(Handle, StableId, Body)>,
     circles: Vec<Circle>,
     index: CircleIndex,
@@ -128,6 +136,54 @@ fn enemy(tick: u64, id: u64) -> Body {
 fn batch(candidate: &Candidate) -> &dyn Any {
     &candidate.batch
 }
+
+fn steer(
+    slot: u32,
+    body: &mut Body,
+    neighbours: &mut u64,
+    players: [Vector; 4],
+    index: &CircleIndex,
+    control: Option<fn(N) -> N>,
+) {
+    let mut target = players[0];
+    let dx = target.x - body.position.x;
+    let dy = target.y - body.position.y;
+    let mut distance = dx * dx + dy * dy;
+    for player in players {
+        let dx = player.x - body.position.x;
+        let dy = player.y - body.position.y;
+        let squared = dx * dx + dy * dy;
+        if squared < distance {
+            target = player;
+            distance = squared;
+        }
+    }
+    let mut chase = direction(body.position, target);
+    if let Some(control) = control {
+        chase.x = control(chase.x);
+    }
+    let mut push = vector(0, 0);
+    index
+        .overlap(body.position, N::from_i32(2), |circle| {
+            if circle.slot == slot {
+                return;
+            }
+            *neighbours += 1;
+            let dx = body.position.x - circle.centre.x;
+            let dy = body.position.y - circle.centre.y;
+            let squared = dx * dx + dy * dy;
+            if squared > N::ZERO && squared < N::ONE {
+                let scale = (N::ONE - squared) / squared.max(N::ONE / N::from_i32(64));
+                push.x = push.x + dx * scale;
+                push.y = push.y + dy * scale;
+            }
+        })
+        .expect("enemy in domain");
+    body.velocity = Vector {
+        x: (chase.x / N::from_i32(128) + push.x / N::from_i32(32)).clamp(-N::ONE, N::ONE),
+        y: (chase.y / N::from_i32(128) + push.y / N::from_i32(32)).clamp(-N::ONE, N::ONE),
+    };
+}
 fn birth(
     candidate: &Candidate,
     index: usize,
@@ -141,7 +197,7 @@ impl Crowd {
     fn simulate(
         &self,
         world: &WorldRead<'_>,
-        _executor: Executor,
+        executor: Executor,
         tick: u64,
         candidate: &mut Candidate,
         edits: &mut EditWriter<'_, Candidate>,
@@ -172,15 +228,46 @@ impl Crowd {
                 y: body.position.y + body.velocity.y,
             };
             let mut hit = None;
+            let shape = if self.mixed {
+                Shape::Capsule {
+                    start: body.position,
+                    end: endpoint,
+                    radius: body.radius,
+                }
+            } else {
+                Shape::Circle {
+                    centre: endpoint,
+                    radius: body.radius,
+                }
+            };
             candidate
                 .index
-                .overlap(endpoint, body.radius, |circle| {
+                .query(shape, |circle| {
                     if hit.is_none() {
                         hit = Some(circle.slot);
                     }
                 })
                 .expect("projectile in domain");
             if let Some(slot) = hit {
+                if self.mixed {
+                    let target = column.at_slot(slot).expect("indexed enemy");
+                    let endpoint_shape = Shape::Circle {
+                        centre: endpoint,
+                        radius: body.radius,
+                    };
+                    let circle = Circle {
+                        slot,
+                        centre: target.position,
+                        radius: target.radius,
+                    };
+                    let diameter = target.radius + target.radius;
+                    if !endpoint_shape.intersects(&circle)
+                        && body.velocity.x * body.velocity.x + body.velocity.y * body.velocity.y
+                            > diameter * diameter
+                    {
+                        candidate.swept_only_hits += 1;
+                    }
+                }
                 candidate.damage[slot as usize] += 1;
                 candidate.resources.hits += 1;
                 candidate.dead.push(handle.slot);
@@ -188,7 +275,31 @@ impl Crowd {
                 candidate.dead.push(handle.slot);
             }
         }
-        for &(handle, _, mut body) in &candidate.rows {
+        for chunk in &mut candidate.steering {
+            chunk.clear();
+        }
+        for (row, &(handle, _, body)) in candidate.rows.iter().enumerate() {
+            candidate.steering[row / 256].push((handle.slot, body, 0));
+        }
+        let index = &candidate.index;
+        let control = self.control;
+        executor.for_each_mut(&mut candidate.steering, |chunk| {
+            for (slot, body, neighbours) in chunk {
+                if body.kind == 1 {
+                    steer(*slot, body, neighbours, players, index, control);
+                }
+            }
+        });
+        if executor.mode() == thrum_core::sim::ExecutionMode::RayonForced
+            && !cfg!(target_arch = "wasm32")
+        {
+            candidate.parallel_chunks = candidate
+                .steering
+                .iter()
+                .filter(|chunk| !chunk.is_empty())
+                .count() as u64;
+        }
+        for (row, &(handle, _, mut body)) in candidate.rows.iter().enumerate() {
             if body.kind == 1 && candidate.damage[handle.slot as usize] > 0 {
                 body.health -= i32::try_from(candidate.damage[handle.slot as usize])
                     .expect("bounded projectiles");
@@ -222,8 +333,16 @@ impl Crowd {
                             candidate.births.push(Body {
                                 position: body.position,
                                 velocity: Vector {
-                                    x: normal.x / N::from_i32(2),
-                                    y: normal.y / N::from_i32(2),
+                                    x: if self.mixed {
+                                        normal.x * N::from_i32(4)
+                                    } else {
+                                        normal.x / N::from_i32(2)
+                                    },
+                                    y: if self.mixed {
+                                        normal.y * N::from_i32(4)
+                                    } else {
+                                        normal.y / N::from_i32(2)
+                                    },
                                 },
                                 radius: N::ONE / N::from_i32(6),
                                 kind: 2,
@@ -234,49 +353,9 @@ impl Crowd {
                     }
                 }
                 1 => {
-                    let mut target = players[0];
-                    let dx = target.x - body.position.x;
-                    let dy = target.y - body.position.y;
-                    let mut distance = dx * dx + dy * dy;
-                    // Compare squared distances, retaining player index on ties.
-                    for player in players {
-                        let dx = player.x - body.position.x;
-                        let dy = player.y - body.position.y;
-                        let squared = dx * dx + dy * dy;
-                        if squared < distance {
-                            target = player;
-                            distance = squared;
-                        }
-                    }
-                    let mut chase = direction(body.position, target);
-                    if let Some(control) = self.control {
-                        chase.x = control(chase.x);
-                    }
-                    let mut push = vector(0, 0);
-                    candidate
-                        .index
-                        .overlap(body.position, N::from_i32(2), |circle| {
-                            if circle.slot == handle.slot {
-                                return;
-                            }
-                            candidate.neighbours += 1;
-                            let dx = body.position.x - circle.centre.x;
-                            let dy = body.position.y - circle.centre.y;
-                            let squared = dx * dx + dy * dy;
-                            if squared > N::ZERO && squared < N::ONE {
-                                let scale =
-                                    (N::ONE - squared) / squared.max(N::ONE / N::from_i32(64));
-                                push.x = push.x + dx * scale;
-                                push.y = push.y + dy * scale;
-                            }
-                        })
-                        .expect("enemy in domain");
-                    body.velocity = Vector {
-                        x: (chase.x / N::from_i32(128) + push.x / N::from_i32(32))
-                            .clamp(-N::ONE, N::ONE),
-                        y: (chase.y / N::from_i32(128) + push.y / N::from_i32(32))
-                            .clamp(-N::ONE, N::ONE),
-                    };
+                    let (_, steered, visited) = candidate.steering[row / 256][row % 256];
+                    body.velocity = steered.velocity;
+                    candidate.neighbours += visited;
                 }
                 _ => {
                     body.health -= 1;
@@ -316,6 +395,8 @@ impl TickGame for Crowd {
         candidate.damage.fill(0);
         candidate.resources.clone_from(&self.resources);
         candidate.neighbours = 0;
+        candidate.parallel_chunks = 0;
+        candidate.swept_only_hits = 0;
     }
     fn reset_parallel_output(&self, _output: &mut ()) {}
     fn merge_parallel(
@@ -399,6 +480,18 @@ impl Simulation {
     /// # Panics
     /// If count is outside the reference workload's supported 4..=10,000 bodies.
     pub fn new(count: u32, epoch: u128) -> Self {
+        Self::with_trace(count, epoch, false)
+    }
+
+    /// Construct the Mixed trace: oversize enemies and swept fast projectiles.
+    ///
+    /// # Panics
+    /// If the reference workload is outside 4..=10,000 bodies.
+    pub fn mixed(count: u32, epoch: u128) -> Self {
+        Self::with_trace(count, epoch, true)
+    }
+
+    fn with_trace(count: u32, epoch: u128, mixed: bool) -> Self {
         assert!((4..=10_000).contains(&count), "reference crowd count");
         let capacity = count as usize + 128;
         let mut registry = ComponentRegistry::default();
@@ -436,6 +529,7 @@ impl Simulation {
             .structural_permit(system, 1)
             .expect("structural permit");
         let mut game = Crowd {
+            mixed,
             control: None,
             read,
             write,
@@ -472,6 +566,8 @@ impl Simulation {
                 body.kind = 0;
                 body.player = index;
                 body.position = vector(index_i32 * 3 - 4, 0);
+            } else if mixed && index % 997 == 0 {
+                body.radius = N::from_i32(6);
             }
             runtime
                 .seed(StableId(u128::from(index) + 1), |writer| {
@@ -481,6 +577,12 @@ impl Simulation {
                 .expect("seed body");
         }
         let mut candidate = Candidate {
+            steering: (0..capacity.div_ceil(256))
+                .map(|_| Vec::with_capacity(256))
+                .collect(),
+            parallel_chunks: 0,
+            oversize: 0,
+            swept_only_hits: 0,
             rows: Vec::with_capacity(capacity),
             circles: Vec::with_capacity(capacity),
             index: CircleIndex::new(N::from_i32(4)).expect("cell size"),
@@ -539,6 +641,11 @@ impl Candidate {
         self.index
             .build(&self.circles)
             .expect("validated reference circles");
+        self.oversize = self
+            .circles
+            .iter()
+            .filter(|circle| circle.radius > N::from_i32(4))
+            .count() as u64;
         Ok(())
     }
 }

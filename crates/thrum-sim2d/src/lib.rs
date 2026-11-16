@@ -1,5 +1,7 @@
 //! Reusable derived circle grid. Query order is cell row, column, then slot.
 use thrum_core::profile::{Number, StateEncode, Vector};
+mod shape;
+pub use shape::Shape;
 
 /// An indexed circle with a game-selected logical slot.
 #[derive(Clone, Copy, Debug)]
@@ -44,6 +46,8 @@ pub struct CircleIndex {
     rows: Vec<Circle>,
     sorted: Vec<usize>,
     oversize: Vec<usize>,
+    ordered: Vec<(u64, usize)>,
+    ordering_scratch: Vec<(u64, usize)>,
     maximum_radius: Number,
 }
 
@@ -72,6 +76,8 @@ impl CircleIndex {
             rows: Vec::new(),
             sorted: Vec::new(),
             oversize: Vec::new(),
+            ordered: Vec::new(),
+            ordering_scratch: Vec::new(),
             maximum_radius: Number::ZERO,
         })
     }
@@ -141,6 +147,39 @@ impl CircleIndex {
             self.sorted[cell.start + cell.written] = index;
             cell.written += 1;
         }
+        self.ordered.clear();
+        for (index, circle) in circles
+            .iter()
+            .enumerate()
+            .filter(|(_, circle)| circle.radius <= self.size)
+        {
+            let (x, y) = self.coordinates(circle.centre);
+            let x = u32::from_le_bytes(x.to_le_bytes()) ^ 0x8000_0000;
+            let y = u32::from_le_bytes(y.to_le_bytes()) ^ 0x8000_0000;
+            self.ordered
+                .push(((u64::from(y) << 32) | u64::from(x), index));
+        }
+        self.ordering_scratch.resize(self.ordered.len(), (0, 0));
+        // Stable byte counting passes preserve ascending slots in a cell and
+        // keep build work linear, including the wide-query fallback ordering.
+        for shift in (0..64).step_by(8) {
+            let mut counts = [0; 256];
+            for &(key, _) in &self.ordered {
+                counts[((key >> shift) & 255) as usize] += 1;
+            }
+            let mut start = 0;
+            for count in &mut counts {
+                let next = start + *count;
+                *count = start;
+                start = next;
+            }
+            for &entry in &self.ordered {
+                let bucket = ((entry.0 >> shift) & 255) as usize;
+                self.ordering_scratch[counts[bucket]] = entry;
+                counts[bucket] += 1;
+            }
+            std::mem::swap(&mut self.ordered, &mut self.ordering_scratch);
+        }
         Ok(())
     }
 
@@ -155,49 +194,46 @@ impl CircleIndex {
         &self,
         centre: Vector,
         radius: Number,
-        mut visit: impl FnMut(&Circle),
+        visit: impl FnMut(&Circle),
     ) -> Result<(), QueryError> {
-        if !valid_circle(&Circle {
-            slot: 0,
-            centre,
-            radius,
-        }) {
+        self.query(Shape::Circle { centre, radius }, visit)
+    }
+
+    /// Visit overlaps in oversize-slot then cell-row, column, slot order.
+    /// Queries are read-only, allocation-free and safe to share across rules.
+    ///
+    /// # Errors
+    /// A shape coordinate or radius is outside the domain, or box bounds are reversed.
+    ///
+    /// # Panics
+    /// If the caller's visitor panics or the body count exceeds i64.
+    pub fn query(&self, shape: Shape, mut visit: impl FnMut(&Circle)) -> Result<(), QueryError> {
+        if !shape.valid() {
             return Err(QueryError::Query);
         }
-        let accepts = |circle: &Circle| {
-            let dx = centre.x - circle.centre.x;
-            let dy = centre.y - circle.centre.y;
-            let sum = radius + circle.radius;
-            dx * dx + dy * dy <= sum * sum
-        };
+        let accepts = |circle: &Circle| shape.intersects(circle);
         for &index in &self.oversize {
             let circle = &self.rows[index];
             if accepts(circle) {
                 visit(circle);
             }
         }
-        let reach = radius + self.maximum_radius;
+        let (minimum, maximum) = shape.bounds();
         let low = self.coordinates(Vector {
-            x: centre.x - reach,
-            y: centre.y - reach,
+            x: minimum.x - self.maximum_radius,
+            y: minimum.y - self.maximum_radius,
         });
         let high = self.coordinates(Vector {
-            x: centre.x + reach,
-            y: centre.y + reach,
+            x: maximum.x + self.maximum_radius,
+            y: maximum.y + self.maximum_radius,
         });
         let area = i64::from(high.0 - low.0 + 1) * i64::from(high.1 - low.1 + 1);
         if area > i64::try_from(self.rows.len()).expect("body count fits") {
-            let mut found: Vec<_> = self
-                .rows
-                .iter()
-                .filter(|circle| circle.radius <= self.size && accepts(circle))
-                .collect();
-            found.sort_unstable_by_key(|circle| {
-                let (x, y) = self.coordinates(circle.centre);
-                (y, x, circle.slot)
-            });
-            for circle in found {
-                visit(circle);
+            for &(_, index) in &self.ordered {
+                let circle = &self.rows[index];
+                if accepts(circle) {
+                    visit(circle);
+                }
             }
         } else {
             for y in low.1..=high.1 {

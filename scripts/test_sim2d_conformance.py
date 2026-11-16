@@ -1,9 +1,13 @@
 """Cost regressions must survive record boundaries and retain their comparator."""
 import unittest
+import tempfile
+from pathlib import Path
+from contextlib import redirect_stderr
+from io import StringIO
 from copy import deepcopy
 from unittest.mock import patch
 
-from sim2d_conformance import build_settings, last_comparable, measure, runner_graph
+from sim2d_conformance import ROOT, build_settings, last_comparable, load_cost_record, main, measure, runner_graph
 
 
 class BuildIdentity(unittest.TestCase):
@@ -55,6 +59,23 @@ class BuildIdentity(unittest.TestCase):
 
 
 class CostComparisons(unittest.TestCase):
+    def test_validation_cannot_overwrite_measurement_with_receipt(self):
+        destination = ROOT / "docs/evidence/SIM-2D/M1/costs-mac-metal.json"
+        with patch("sys.argv", ["sim2d_conformance.py", "costs", "--output", str(destination)]), \
+                patch("sim2d_conformance.identity", return_value={}), \
+                patch("sim2d_conformance.costs") as validate, redirect_stderr(StringIO()):
+            with self.assertRaises(SystemExit) as error:
+                main()
+        self.assertEqual(error.exception.code, 2)
+        validate.assert_not_called()
+
+    def test_receipt_is_refused_before_measurement_instead_of_keyerror(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "costs.json"
+            path.write_text('{"record":"costs-mac-metal.json","timings_are_baselines":true}')
+            with self.assertRaisesRegex(ValueError, "expected a measurement with runs"):
+                load_cost_record(path)
+
     def test_measure_keeps_previous_record_for_both_repeats(self):
         previous = {"commit": "previous", "runs": [{"repeat": 2, "rows": [
             {"bodies": count, "neighbours_per_tick": count, "tick_median_ms": 1.0}

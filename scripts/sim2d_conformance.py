@@ -15,12 +15,21 @@ from copy import deepcopy
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/sim2d"
 RETAINED = ROOT / "examples/crowd-2d/retained/crowd.txt"
+MIXED = ROOT / "examples/crowd-2d/retained/mixed.txt"
 VECTORS = ROOT / "crates/thrum-core/src/profile/vectors.json"
 SIZES = [(2000, 3600), (5000, 3600), (10000, 36000)]
 
 
 def command(args):
     return subprocess.check_output([str(arg) for arg in args], cwd=ROOT, text=True)
+
+
+def device_command(resource, args):
+    """Lock each device invocation, never the whole multi-trace cost campaign."""
+    script = os.environ.get("ORCHESTRATE_SCRIPT")
+    if not script:
+        raise RuntimeError("Set ORCHESTRATE_SCRIPT to agent_loop.py; target invocations take their own device locks")
+    return command([sys.executable, script, "lock", resource, "--", *args])
 
 
 def identity():
@@ -128,8 +137,8 @@ def simulator():
         raise RuntimeError("iPhone 18 Pro simulator is unavailable")
     device = matches[0]
     if device["state"] != "Booted":
-        subprocess.run(["xcrun", "simctl", "boot", device["udid"]], check=True)
-        subprocess.run(["xcrun", "simctl", "bootstatus", device["udid"], "-b"], check=True)
+        device_command("simulator", ["xcrun", "simctl", "boot", device["udid"]])
+        device_command("simulator", ["xcrun", "simctl", "bootstatus", device["udid"], "-b"])
     return device["udid"]
 
 
@@ -144,25 +153,30 @@ class Runner:
 
     def invoke(self, method, args):
         if self.target == "chrome-webgpu":
-            packet = json.loads(command(["node", "scripts/sim2d_browser.mjs", self.program, json.dumps({"method": method, "args": args})]))
+            packet = json.loads(device_command("chrome", ["node", "scripts/sim2d_browser.mjs", self.program, json.dumps({"method": method, "args": args})]))
             self.user_agent = packet["userAgent"]
             self.isolated = packet["crossOriginIsolated"]
             return packet["result"]
         if method == "vectors":
             arguments = ["vectors"]
-        elif method == "costs":
+        elif method in ["costs", "measure_trace"]:
             arguments = [args[0], "costs"]
+            if method == "measure_trace":
+                arguments += [flag for flag, enabled in zip(["--mixed", "--parallel"], args[1:]) if enabled]
         else:
-            count, ticks, straight, wire, control = args
+            count, ticks, straight, wire, control = args[:5]
             arguments = [count, ticks]
             arguments += [flag for flag, enabled in [("--straight", straight), ("--wire", wire), ("--control", control)] if enabled]
+            if method == "trace":
+                arguments += [flag for flag, enabled in zip(["--mixed", "--parallel"], args[5:]) if enabled]
         prefix = ["xcrun", "simctl", "spawn", self.device] if self.device else []
-        return json.loads(command(prefix + [self.program] + arguments))
+        invoke = prefix + [self.program] + arguments
+        return json.loads(device_command("simulator", invoke) if self.device else command(invoke))
 
 
-def references():
+def references(path=RETAINED):
     result = {}
-    for line in RETAINED.read_text().splitlines():
+    for line in path.read_text().splitlines():
         if line.startswith("#") or not line:
             continue
         kind, count, tick, value = line.split()
@@ -211,16 +225,39 @@ def retain():
     return {"retained": str(RETAINED.relative_to(ROOT)), "folds": {row["bodies"]: row["fold"] for row in rows}}
 
 
-def run(target):
-    retained = references()
+def retain_mixed():
+    """Explicitly record only the new trace; Crowd is immutable after M1."""
+    runner = Runner("mac-metal")
+    rows = [runner.invoke("trace", [count, ticks, True, False, False, True, False]) for count, ticks in SIZES]
+    lines = ["# Mixed: straight corrected Mac run, oversize enemies and swept projectiles.", "# " + json.dumps(identity(), sort_keys=True)]
+    for row in rows:
+        assert row["oversize"] > 0 and row["capsule_hits"] > 0
+        count = row["bodies"]
+        lines.append(f"fold {count} {row['ticks']} {row['fold']}")
+        lines.extend(f"checkpoint {count} {tick} {digest}" for tick, digest in row["checkpoints"])
+        if count == 2000:
+            lines.extend(f"slice 2000 {tick} {digest}" for tick, digest in enumerate(row["timeline"][:240], 1))
+    MIXED.write_text("\n".join(lines) + "\n")
+    return {"retained": str(MIXED.relative_to(ROOT)), "folds": {row["bodies"]: row["fold"] for row in rows}}
+
+
+def run(target, parallel=False):
     runner = Runner(target)
     assert runner.invoke("vectors", []) == json.loads(VECTORS.read_text()), "profile vectors differ"
     rows = []
-    for count, ticks in SIZES:
-        row = runner.invoke("conformance", [count, ticks, False, False, False])
-        compare(row, retained)
-        row.pop("timeline")
-        rows.append(row)
+    for mixed in [False, True]:
+        retained = references(MIXED if mixed else RETAINED)
+        for count, ticks in SIZES:
+            row = runner.invoke("trace", [count, ticks, False, False, False, mixed, parallel])
+            compare(row, retained)
+            if mixed:
+                assert row["oversize"] > 0 and row["capsule_hits"] > 0
+                assert row["swept_only_hits"] > 0
+            if parallel:
+                assert row["parallel_chunks"] > 0, "steering did not dispatch native chunks"
+            row.pop("timeline")
+            rows.append(row)
+    retained = references()
     wire = runner.invoke("conformance", [2000, 3600, False, True, False])
     compare(wire, retained)
     wire.pop("timeline")
@@ -253,12 +290,14 @@ def measure(target):
     if target == "ios-sim":
         raise ValueError("Simulator timing is not a qualified cost target")
     previous_path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
-    previous = json.loads(previous_path.read_text()) if previous_path.exists() else None
+    previous = load_cost_record(previous_path) if previous_path.exists() else None
     previous_hash = hashlib.sha256(previous_path.read_bytes()).hexdigest() if previous else None
     runner = Runner(target)
     runs = []
     for repeat in range(2):
-        rows = [runner.invoke("costs", [count]) for count, _ in SIZES]
+        rows = [runner.invoke("measure_trace", [count, mixed, parallel])
+                for parallel in ([False, True] if target == "mac-metal" else [False])
+                for mixed in [False, True] for count, _ in SIZES]
         for row in rows:
             expected_ticks = dict(SIZES)[row["bodies"]]
             assert row["ticks"] == expected_ticks and row["samples"] == expected_ticks - 120 and row["neighbours_per_tick"] > 0
@@ -271,9 +310,8 @@ def measure(target):
                     comparisons.append(comparison)
             row["quarter_slower_comparisons"] = comparisons
             row["quarter_slower_tripwire"] = any(entry["tripped"] for entry in comparisons)
-        for smaller, row in zip(rows, rows[1:]):
-            row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > smaller["tick_ms_per_neighbour"]
-        rows[0]["super_neighbour_scaling_tripwire"] = False
+        for index, row in enumerate(rows):
+            row["super_neighbour_scaling_tripwire"] = index % 3 != 0 and row["tick_ms_per_neighbour"] > rows[index - 1]["tick_ms_per_neighbour"]
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
     return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_inputs": measured_inputs, "source_sha256": measured_source, "timings_are_baselines": True}
@@ -285,18 +323,28 @@ def last_comparable(row, record, origin):
         return None
     for run in reversed(record["runs"]):
         for prior in reversed(run["rows"]):
-            if prior["bodies"] == row["bodies"] and abs(row["neighbours_per_tick"] / prior["neighbours_per_tick"] - 1) < 0.01:
+            same_work = origin == "previous_record" or (prior.get("trace", "crowd") == row.get("trace", "crowd") and prior.get("parallel", False) == row.get("parallel", False))
+            if same_work and prior["bodies"] == row["bodies"] and abs(row["neighbours_per_tick"] / prior["neighbours_per_tick"] - 1) < 0.01:
                 ratio = row["tick_median_ms"] / prior["tick_median_ms"]
                 return {"origin": origin, "commit": record["commit"], "repeat": run["repeat"],
+                        "trace": prior.get("trace", "crowd"), "parallel": prior.get("parallel", False),
                         "bodies": prior["bodies"], "neighbours_per_tick": prior["neighbours_per_tick"],
                         "tick_median_ms": prior["tick_median_ms"], "ratio": ratio, "tripped": ratio > 1.25}
     return None
 
 
+def load_cost_record(path):
+    """A validation receipt is not a measurement; fail before running expensive work."""
+    record = json.loads(path.read_text())
+    if not isinstance(record.get("runs"), list) or not record["runs"]:
+        raise ValueError(f"{path}: expected a measurement with runs; a costs receipt cannot replace a measure record")
+    return record
+
+
 def costs(target):
     """Check the retained device measurements, independently of their time values."""
-    path = ROOT / f"docs/evidence/SIM-2D/M1/costs-{target}.json"
-    record = json.loads(path.read_text())
+    path = ROOT / f"docs/evidence/SIM-2D/M2/costs-{target}.json"
+    record = load_cost_record(path)
     assert record["target"] == target and record["dirty"] is False
     current = source_inputs()
     assert source_key(record["source_inputs"]) == record["source_sha256"], "cost input manifest hash differs"
@@ -306,14 +354,18 @@ def costs(target):
     assert len(record["runs"]) == 2
     previous = None
     if record["previous_record_commit"]:
-        retained = command(["git", "show", f"{record['previous_record_commit']}:{path.relative_to(ROOT)}"])
+        retained = command(["git", "show", f"{record['previous_record_commit']}:docs/evidence/SIM-2D/M1/costs-{target}.json"])
         assert hashlib.sha256(retained.encode()).hexdigest() == record["previous_record_sha256"]
         previous = json.loads(retained)
     for index, run in enumerate(record["runs"]):
         assert run["build"] == "release" and len(run["load"]) == 3
-        assert [(row["bodies"], row["ticks"]) for row in run["rows"]] == SIZES
+        assert [(row["bodies"], row["ticks"], row["trace"], row["parallel"]) for row in run["rows"]] == [
+            (count, ticks, trace, parallel) for parallel in ([False, True] if target == "mac-metal" else [False])
+            for trace in ["crowd", "mixed"] for count, ticks in SIZES]
         for row in run["rows"]:
             assert row["samples"] == row["ticks"] - 120 and row["neighbours_per_tick"] > 0
+            if row["parallel"]:
+                assert row["parallel_chunks"] > 0
             for key in ["tick_median_ms", "index_median_ms", "digest_median_ms", "rewind_eight_ms", "replay_eight_ms"]:
                 assert isinstance(row[key], (float, int)) and row[key] >= 0
             for key in ["clock_tripwire", "quarter_slower_tripwire", "super_neighbour_scaling_tripwire"]:
@@ -336,13 +388,23 @@ def costs(target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["retain", "run", "control", "measure", "costs"])
+    parser.add_argument("action", choices=["retain", "retain-mixed", "run", "control", "measure", "costs"])
+    parser.add_argument("--parallel", action="store_true")
     parser.add_argument("--target", choices=["mac-metal", "chrome-webgpu", "ios-sim"], default="mac-metal")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     SCRATCH.mkdir(parents=True, exist_ok=True)
     record = {"action": args.action, "target": args.target, **identity()}
-    result = retain() if args.action == "retain" else globals()[args.action](args.target)
+    protected = [ROOT / f"docs/evidence/SIM-2D/{milestone}/costs-{target}.json"
+                 for milestone in ["M1", "M2"] for target in ["mac-metal", "chrome-webgpu"]]
+    if args.action != "measure" and args.output and args.output.resolve() in protected:
+        parser.error("only measure may write a retained cost record; costs writes a validation receipt")
+    if args.action == "retain-mixed":
+        result = retain_mixed()
+    elif args.action == "run":
+        result = run(args.target, args.parallel)
+    else:
+        result = retain() if args.action == "retain" else globals()[args.action](args.target)
     record.update(result)
     destination = args.output or SCRATCH / f"{args.action}-{args.target}.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
