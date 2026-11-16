@@ -26,6 +26,15 @@ def save(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
+def completed_worker_rows(output):
+    """Count completed render records, excluding metadata and unfinished writes."""
+    result = {}
+    for path in output.glob('worker-*/rows.jsonl'):
+        rows = map(json.loads, path.read_bytes().split(b'\n')[:-1])
+        result[str(path.relative_to(output))] = sum('tick' in row and 'mode' in row for row in rows)
+    return result
+
+
 def pair(args, output, turn):
     recipe = ('portable', 'apple-tile')[turn % 2]
     source = ('sdr', 'scene-linear')[(turn // 2) % 2]
@@ -44,8 +53,7 @@ def pair(args, output, turn):
               'runs': [], 'worker_rounds': [], 'passed': False}
 
     def counts():
-        return {str(p.relative_to(output)): p.read_text().count('\n')
-                for p in output.glob('worker-*/rows.jsonl')}
+        return completed_worker_rows(output)
 
     def worker(number):
         iteration = 0
