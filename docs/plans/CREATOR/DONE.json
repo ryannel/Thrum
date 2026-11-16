@@ -219,16 +219,16 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
       "blocked": {
         "reason": "needs_access",
         "items": [
           "M3.4"
         ],
-        "what": "Approve any pending native-app Computer Use prompt or restore that connection so M3.4 can complete its drag and window captures.",
+        "what": "Unlock the Mac and leave its built-in display awake so M3.4\u2019s visible-window proof can run.",
         "work": {
-          "commit": "7afeb790128dd381d1d86f19ac0b21bd110ffd8f",
+          "commit": "fad0fe9dec452aac573b32a1ccbb288c4953b8f1",
           "branch": "build/creator-m1",
           "pushed": false
         },
