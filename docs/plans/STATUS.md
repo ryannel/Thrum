@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-7 of 31 modules done · 14 in progress · 10 to come
+7 of 31 modules done · 15 in progress · 9 to come
 
 ### Needs you now
 
@@ -242,10 +242,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 - On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes (RIVERS M1): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../evidence/RIVERS/M1-review.md)
 - On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry (PUDDLES M1): In Progress · [plan](PUDDLES/PLAN.md) · [latest review](../evidence/PUDDLES/M1-review.md)
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M1-review.md)
-- A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): In Progress · [plan](TRANSPORT/PLAN.md)
+- A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): Ready for Review · [plan](TRANSPORT/PLAN.md)
 - The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves (REPO-RULES M2): Not Started · [plan](REPO-RULES/PLAN.md)
 - The sea names its buffers and passes, shares its records with its shaders under a layout test, and uploads its spectrum only when the spectrum changes (REVIEW-ENGINE M2): Not Started · [plan](REVIEW-ENGINE/PLAN.md)
-- A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required (TEST-SUPPORT M1): Not Started · [plan](TEST-SUPPORT/PLAN.md)
+- A GPU test in the sea, asset and cooker crates gets its device from one helper, and with no GPU it is skipped with a line anyone running the tests sees, or fails when a GPU is required (TEST-SUPPORT M1): In Progress · [plan](TEST-SUPPORT/PLAN.md)
 
 ### Recently done
 
@@ -304,14 +304,14 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M1 of 7 · In Progress |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M1 of 8 · In Progress |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M1 of 3 · In Progress |
-| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M1 of 2 · In Progress |
+| 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M1 of 2 · Ready for Review |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D M3 to start; TRANSPORT M1 for its second milestone and TRANSPORT M2 for its socket milestones; RENDER-2D M5 for its last | Waiting: On Dependency, SIM-2D:M3 |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D M5 and APPLE-PRESENTATION M6 | Waiting: On Dependency, RENDER-2D:M5, APPLE-PRESENTATION:M6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE M8 to start, with the owner's pick of a concept; SIM-2D M3, SESSION M1, RENDER-2D M5 and GAME-SPLIT M4 for the first slice; GAME-UI M4 for the whole run alone and GAME-UI M6 for the iPhone simulator; SESSION M4 for a rehearsed match and SESSION M7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:M8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes for the rename and the tidy-up | M2 of 4 · Not Started |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES M1 for its errors | M2 of 5 · Not Started |
-| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | M1 of 2 · Not Started |
+| 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | M1 of 2 · In Progress |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Waiting: On Dependency, ATMOSPHERE:M9, APPLE-TILE:M10, APPLE-PRESENTATION:M3, CULLING:M3 |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Waiting: On Dependency, CREATOR:M3, APPLE-TILE:M10, APPLE-PRESENTATION:M3, CULLING:M3 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | Waiting: On Dependency, TEST-SUPPORT:M1 |
