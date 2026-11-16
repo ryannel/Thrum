@@ -267,10 +267,10 @@
           "statement": "Only shared triangle edges moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel lies along an edge between triangles of opaque geometry. The sky, the stars and the letterbox bars hold their old bytes, and no difference fills a triangle's interior. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and captures whose digests are the refreshed ones, for each set that moved.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: thin lines that follow the terrain's and the props' triangle edges, none in the sky, among the stars or in the bars, and no filled patch. Read the builder's Chrome difference images the same way for each Chrome set that moved, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/CULLING/M3.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.13",

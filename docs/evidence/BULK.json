@@ -3379,6 +3379,134 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0000/before.raw.gz",
+      "size": 3848654,
+      "sha256": "3538c48c89e2555da38d79e44e56b9de9358972514687e1d7fd29e64395aa2f4",
+      "date": "2026-11-16T14:01:55.123489+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0062/before.raw.gz",
+      "size": 3853939,
+      "sha256": "7c260ecc7f07b44ae7ad32850d14a4717a7fac869e079e7367b88086d4b76189",
+      "date": "2026-11-16T14:01:55.208584+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0106/before.raw.gz",
+      "size": 4121663,
+      "sha256": "975ca2c2f95ede27e16cd19f4c9265b42f9b0be3cf11870d5341f165547e52a5",
+      "date": "2026-11-16T14:01:55.286787+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0231/before.raw.gz",
+      "size": 4274393,
+      "sha256": "75f15c4541ebc256b49011cebd4085683b89ae7171f96bee9e82190ec5362374",
+      "date": "2026-11-16T14:01:55.376859+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0258/before.raw.gz",
+      "size": 4245968,
+      "sha256": "8fa373b7bcdbb0c530ced0efb74aa5f8ddb81b36320cac2464230e796419e1fb",
+      "date": "2026-11-16T14:01:55.461154+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0261/before.raw.gz",
+      "size": 4248676,
+      "sha256": "17d60224b9809d34774e7638c34285ae9eea2938a4bfaad15b26b9a35aa58e1d",
+      "date": "2026-11-16T14:01:55.538813+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0267/before.raw.gz",
+      "size": 4001425,
+      "sha256": "afaa9224451155ef1f7b7005524b6761a6d7a2b0d38ddee8b02bb4caf5b3af60",
+      "date": "2026-11-16T14:01:55.614542+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0411/before.raw.gz",
+      "size": 2654444,
+      "sha256": "64d38981f1a6972b4d5521d09b0ee226a67369510954c421fe742b3849096ee1",
+      "date": "2026-11-16T14:01:55.689030+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-day-scene-linear/frame-0480/before.raw.gz",
+      "size": 2513407,
+      "sha256": "45ba303a78475f076aa35ba712f3c207ad10ee3a28beb0b5c518a445816e6e59",
+      "date": "2026-11-16T14:01:55.760864+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0000/before.raw.gz",
+      "size": 2921427,
+      "sha256": "83fc486a3aed0720fb29046b5d32506e9ca12df79f8205caa6032cef56d06a3e",
+      "date": "2026-11-16T14:01:55.933072+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0062/before.raw.gz",
+      "size": 2931775,
+      "sha256": "7172f9effdd1a1bf68f636e22026f926ddc15f3f2e79fb33d4720d5f8af339f8",
+      "date": "2026-11-16T14:01:56.006732+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0106/before.raw.gz",
+      "size": 3364093,
+      "sha256": "95495e878eaea7c1479537869b2677f02d6393988235061a769325708d0b26c6",
+      "date": "2026-11-16T14:01:56.087511+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0231/before.raw.gz",
+      "size": 4106988,
+      "sha256": "b37edb2e78c53e3b0034c38606aa1813fb8b8ddb20d1501217fc895400f16fbc",
+      "date": "2026-11-16T14:01:56.162535+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0258/before.raw.gz",
+      "size": 4296894,
+      "sha256": "8d002d1ec6e40f86938a158a3f95f7c777ff6f1ea340fd1eab53df9482bd61f3",
+      "date": "2026-11-16T14:01:56.242162+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0267/before.raw.gz",
+      "size": 2865278,
+      "sha256": "7d19758b52caad8689a0617e002738c624ff323dd5750a5f4405496621a58733",
+      "date": "2026-11-16T14:01:56.320298+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CULLING/M3/replan/chrome-differences/chrome-night-scene-linear/frame-0312/before.raw.gz",
+      "size": 2553871,
+      "sha256": "dc9d65e91b3f73c20a1fabe1364c612e4f51a2ef7cc10c2a1114dd3b72477830",
+      "date": "2026-11-16T14:01:56.390154+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CULLING/M3/replan/native-differences/b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73.png",
       "size": 2659905,
       "sha256": "b5d35fcc175a3ed91820dfbbed32462e7822efca57d2f59df4a7552876e86d73",

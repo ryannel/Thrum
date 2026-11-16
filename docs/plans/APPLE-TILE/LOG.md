@@ -384,3 +384,11 @@
   [paired timing](../../evidence/ATMOSPHERE/M9-cost.md) distinguish observed results
   from the independent solar and sea-level look qualifications still owed.
   Canonical integration follows; this entry does not claim a merge.
+
+- 2026-11-16 CULLING M3 regenerates references for the opaque coverage output, preserving ATMOSPHERE M9.
+  Only triangle-join derivatives move; native and selected Chrome masks show unchanged sky, stars and bars.
+  All five sets moved: apple-tile-native, chrome-day-sdr, chrome-day-scene-linear, chrome-night-sdr and
+  chrome-night-scene-linear; none stayed unchanged. [All 34 old/new file SHA-256 pairs and cause](../../evidence/CULLING/M3/replan/reference-refresh.json)
+  are the shared refresh record. Owner scripts generated the captures; comparisons and sampling are unchanged.
+  The complete starting day-linear retry matches every registered digest after one first-run variation;
+  its source and web artifact hashes are identical. Refreshed-build verification and the merge remain pending.

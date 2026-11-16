@@ -307,3 +307,11 @@
   Documentation checks pass. ATMOSPHERE M9 moved eighteen reference files, so fresh differences are required.
   The shared exact-image run fails at the pre-existing APPLE-TILE temporal capture stage and is bisecting;
   no current reference qualification, target pass or merge is claimed. [Evidence](../../evidence/CULLING/M3.md).
+
+- 2026-11-16 Current native/Chrome route checks and temporal cycle pass; paired rows keep Frustum and all
+  twenty scene/star/request cases pass. Coverage changes implicit derivatives only at opaque triangle joins.
+  Thirty native references and four Chrome manifests are regenerated without changing comparisons or sampling.
+  All five sets moved: apple-tile-native, chrome-day-sdr, chrome-day-scene-linear, chrome-night-sdr and
+  chrome-night-scene-linear; none stayed unchanged. [Every old/new SHA-256](../../evidence/CULLING/M3/replan/reference-refresh.json).
+  Native and all 36 selected Chrome difference pairs pass the builder's inspection; the initial old-main
+  day-linear variation and full unchanged retry are retained. The refreshed-build verifier and merge remain.
