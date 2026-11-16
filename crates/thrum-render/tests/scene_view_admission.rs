@@ -74,6 +74,11 @@ fn refuses_camera_extent_plane_and_profile_by_name() {
 
 #[test]
 fn plane_is_normalized_and_near_plane_is_held_at_five_cm() {
+    for scale in [1e-40, 1.0, f32::MAX] {
+        let plane = ViewClipPlane::new([0.0, scale, 0.0, -scale])
+            .expect("finite plane is normalized without overflow or underflow");
+        assert_eq!(plane.equation(), [0.0, 1.0, 0.0, -1.0]);
+    }
     let plane = ViewClipPlane::new([0.0, 2.0, 0.0, -100.0]).expect("plane");
     assert_eq!(plane.equation(), [0.0, 1.0, 0.0, -50.0]);
     for (height, expected_offset) in [

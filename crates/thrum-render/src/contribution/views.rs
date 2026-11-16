@@ -24,14 +24,12 @@ impl ViewClipPlane {
     /// Refuses a zero or nonfinite normal or offset.
     pub fn new(equation: [f32; 4]) -> Result<Self, SecondaryViewError> {
         let normal = Vec3::from_array([equation[0], equation[1], equation[2]]);
-        let length = normal.length();
-        if !equation.iter().all(|value| value.is_finite())
-            || !length.is_finite()
-            || length <= f32::MIN_POSITIVE
-        {
+        let scale = normal.abs().max_element();
+        if !equation.iter().all(|value| value.is_finite()) || scale <= 0.0 {
             return Err(SecondaryViewError::InvalidClipPlane);
         }
-        let equation = equation.map(|value| value / length);
+        let length = (normal / scale).length();
+        let equation = equation.map(|value| (value / scale) / length);
         if !equation.iter().all(|value| value.is_finite()) {
             return Err(SecondaryViewError::InvalidClipPlane);
         }
