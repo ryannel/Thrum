@@ -218,6 +218,12 @@ def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
 
 def validate_source(output, manifest, runtime):
     """A corrupt retained source is a failure even in an incomplete interval."""
+    expected = {'sdr': 'Sdr', 'scene-linear': 'SceneLinear', 'native-output': 'NativeOutput',
+                'native-history': 'NativeHistory'}[manifest.get('capture_source', 'sdr')]
+    if runtime.get('pixel_source', 'Sdr') != expected:
+        raise ValueError('engine capture source differs from requested source')
+    if runtime.get('admission_policy', 'omit') != manifest.get('admission_policy', 'omit'):
+        raise ValueError('capture admission policy differs from request')
     frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
     report = runtime['writer_result'].get('Ok', {})
     if 'Ok' in runtime['writer_result']:
@@ -390,9 +396,6 @@ def run(args):
             "recipe": runtime["recipe"], "enabled_features": runtime["enabled_features"],
             "shader_hashes": manifest["shader_hashes"]}, sort_keys=True).encode()).hexdigest()
         report = runtime['writer_result'].get('Ok', {})
-        expected_source = {'sdr': 'Sdr', 'scene-linear': 'SceneLinear', 'native-output': 'NativeOutput', 'native-history': 'NativeHistory'}[args.source]
-        if runtime.get('pixel_source', 'Sdr') != expected_source:
-            raise ValueError('engine capture source differs from requested source')
         validate_source(output, manifest, runtime)
         if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
             raise ValueError('encoded byte count differs from writer')

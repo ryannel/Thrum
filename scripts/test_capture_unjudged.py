@@ -66,6 +66,10 @@ pathlib.Path(os.environ['THRUM_CAPTURE_RUNTIME'], 'runtime.json').write_text(jso
                         self.assertFalse(manifest['complete'])
                         self.assertTrue(manifest['could_not_judge'])
                         self.assertTrue(manifest['incomplete_conditions'])
+                    if case not in ('crash', 'missing', 'expired-wait'):
+                        final = subprocess.run([sys.executable, str(capture.ROOT / 'scripts/capture_v1_runtime.py'),
+                            '--output', str(output), '--finalize', '--verify-only'], capture_output=True, timeout=30)
+                        self.assertEqual(final.returncode, expected, final.stderr)
 
     def test_process_deadline_is_failure(self):
         # Drive the actual process-deadline branch without waiting ninety seconds.
