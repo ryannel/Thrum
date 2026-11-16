@@ -145,3 +145,8 @@
   its witness state on the sketch; its last assertion, that the sketch takes the soak rate over full pores,
   now fails, as intended. Not run: the Rust model, hollows that share a puddle, and M2's item checks other
   than `--test marks`, which fails for want of the file, as it should.
+- 2026-11-16 M2 third review: Blocked on M2.11, no code changed ([handoff](../../evidence/PUDDLES/M2-handoff.md)).
+  Verified on the review's witness: the floor's pores have room for 4.8e-4 m³ and the whole shower is 2.1e-4 m³,
+  so the puddle can't fill the pores it rises over and holds nothing when it uncovers. Proposal for a planner:
+  the design's covering rule must say what happens when a puddle holds less than a transfer. Suspected: no
+  shortfall arises without unfilled pores (three no-pore showers showed none).
