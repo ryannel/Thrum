@@ -43,7 +43,11 @@ fn long_level(point:vec2<f32>,level:u32)->Field {
     return add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),result,fade);
 }
 fn long_lod(point:vec2<f32>,spacing:f32)->f32 {
-    return clamp(log2(max(max(spacing,1.0),length(point-view.camera_xyz_time.xz)/32.0)),0.0,7.0);
+    let level=clamp(log2(max(max(spacing,1.0),length(point-view.camera_xyz_time.xz)/32.0)),0.0,7.0);
+    // Both caches cover this point. Retain the finer resolved waves until
+    // the outer part of their overlap, rather than turning them into the
+    // coarser level's statistics as soon as that level becomes available.
+    return floor(level)+smoothstep(0.5,1.0,fract(level));
 }
 fn long_at(point:vec2<f32>,spacing:f32)->Field {
     let lod=long_lod(point,spacing);let low=u32(floor(lod));

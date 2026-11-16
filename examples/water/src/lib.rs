@@ -40,7 +40,7 @@ pub fn forcing() -> Forcing {
         fetch: 100_000.0,
         swells: vec![Swell {
             significant_height: 2.5,
-            wavelength: 90.0,
+            wavelength: 200.0,
             direction: 0.25,
         }],
     }
