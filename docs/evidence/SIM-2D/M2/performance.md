@@ -72,9 +72,20 @@ so this persistent increase cannot be explained solely by one unusually slow rep
 The measurements do not isolate each change's causal contribution. Shared-host one-minute
 load brackets range from 4.65 to 27.59; these are not quiet-machine qualifications.
 
+The [Chrome CPU diagnostic](chrome-profile.json), with its [raw CDP profile](chrome-cpu-profile.json),
+observes the unchanged final Wasm artifact over the full 2,000-body cost run. Its 3,247 samples
+include 1,364 self samples in steering queries, 480 in shared intersection predicates and 425
+in index builds. This locates the changed paths in Chrome itself and supports the hot-path
+explanation above; samples do not isolate a causal share of the M1-to-M2 increase. The observed
+tick median is 1.025 ms, close to the two unobserved rows, and does not replace them.
+
 Mixed tick medians are 1.000–1.055, 2.295–2.350 and 14.360–14.545 ms at the three sizes.
 Mixed has no same-neighbour-count M1 comparator. No Chrome row trips the clock flag or
 the chronological repeat-regression flag. Scaling flags occur at 5,000 bodies in both
 Mixed repeats and Crowd's first repeat: the same table-capacity step described above.
 The second Crowd repeat's per-neighbour cost decreases slightly at that step, and it is
 retained with its false flag rather than rounded into a scaling claim.
+
+At 10,000 bodies, Chrome's eight-tick replay is 113.865–124.020 ms across both traces
+and repeats. Like the Mac replay rows, this is planning evidence for SESSION, not a
+claim that replay plus rendering fits one frame.

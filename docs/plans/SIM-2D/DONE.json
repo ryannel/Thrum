@@ -150,10 +150,10 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test oracle",
           "ask": "Read the test. Does the brute-force side enumerate every body without using the index's cells or tables, and sort by the design's key? Is each scene kind in the statement generated?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/tests.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.2",
@@ -161,30 +161,30 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test predicates",
           "ask": "Are the expected answers written out from geometry in the test, and not computed by the predicates under test?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/tests.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.3",
           "statement": "A projectile that crosses an enemy's whole diameter within one tick hits it through the capsule query, and the test shows the same projectile missing when only its end position is tested.",
           "check": "cargo test --locked --offline -p crowd-2d --test swept_hit",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/tests.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.4",
           "statement": "The index keeps its storage between builds. The allocations a warmed build and each kind of query make at 10,000 bodies are counted on the Mac and are in the cost record, with the source of any that remain. The counts are baselines: none decides the result.",
           "ask": "Does the index reuse its buffers from one build to the next by design? Were the counts measured by a counting allocator around warmed calls, and not asserted? Does any check or test fail on a count? None should.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/costs-mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.5",
@@ -192,30 +192,30 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Is the Crowd trace's retained file byte for byte the one M1 was accepted with, by git history? Does the Mixed run report oversize bodies indexed and capsule hits, each above zero?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/mac-metal.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.6",
           "statement": "As Wasm in Chrome both retained traces reproduce the same digests the Mac does.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/chrome-webgpu.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.7",
           "statement": "In the iPhone simulator both retained traces reproduce the same digests the Mac does.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/ios-sim.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.8",
@@ -223,10 +223,10 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal --parallel",
           "ask": "Does the run report the crowd's steering rules dispatched in parallel chunks, with a count above zero?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/mac-parallel.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.9",
@@ -234,30 +234,30 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Do the rows support the explanation given for each slower one? Is forced-parallel reported as measured, whichever way it came out?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.10",
           "statement": "In Chrome, for both traces at the three sizes, tick, index build and time per neighbour visited are on record from two separate runs with build and load. Any row about a quarter slower than M1's at the same neighbour count is explained.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.11",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.12",
@@ -265,10 +265,10 @@
           "check": "cargo test --locked --offline -p thrum-sim2d --test domain",
           "ask": "Does the wide query in the test cover so many cells, at the smallest cell size the index accepts, that walking them could not finish in the test's time?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M2/tests.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,

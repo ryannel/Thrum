@@ -1,5 +1,13 @@
 # SIM-2D log
 
+- 2026-11-16 M2 added ordered circle, box, capsule and nearest queries with bounded wide scans.
+  The oracle, hand geometry, domain refusal and live swept-hit checks pass on the Mac.
+  Final Mac serial/parallel, Chrome and simulator runs reproduce Crowd and Mixed, including wire routes.
+  Crowd's retained file is unchanged; Mixed was retained independently by a straight corrected run.
+  Two full release repeats per cost target retain load and comparator rows; warmed calls allocate zero.
+  Mac and Chrome CPU profiles locate hot paths behind the recorded regressions; no causal share is claimed.
+  Full and documentation gates pass. [Evidence and limits](../../evidence/SIM-2D/M2.md); images use the main check.
+
 - 2026-11-15 M1 integration resumed with all twelve retained builder results passing.
   Stopped the inherited, idle two-hour custom merge job without source changes.
   M1.11 now cites the shared main-branch exact-images check required by current policy;

@@ -1,14 +1,14 @@
 {
   "action": "run",
   "target": "mac-metal",
-  "commit": "735544cec55ea98fc8014b567a6724805d1b31e0",
-  "dirty": false,
-  "utc": "2026-11-16T10:30:21.132050+00:00",
+  "commit": "a9956ffa7dd5d99b2f8d58f2f7ce85d05ee663a4",
+  "dirty": true,
+  "utc": "2026-11-16T12:52:05.806890+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    8.126953125,
-    10.8017578125,
-    10.64892578125
+    8.0517578125,
+    10.2421875,
+    10.98583984375
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "rows": [
@@ -3595,7 +3595,8 @@
       "build": "debug"
     }
   ],
-  "artifact_sha256": "437ece8fe0281130a27d71683d2df1d08e4bb2dea06e6bafd0c4d7b4a72f2601",
+  "source_sha256": "b2ae5a08c3585081315bcbecb8368247cf69afacd37868c310f0f8660cf9f613",
+  "artifact_sha256": "530ad3fd189fc801ab30559c4fcbaf3f21365da3fe3c79808349eeb43cfbff09",
   "simulator": null,
   "user_agent": null,
   "profile_vectors": "pass"

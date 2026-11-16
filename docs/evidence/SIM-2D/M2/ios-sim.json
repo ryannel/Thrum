@@ -1,14 +1,14 @@
 {
   "action": "run",
   "target": "ios-sim",
-  "commit": "e8879f7cd87d2ecb5c6666a46bc37b029d75ff1f",
-  "dirty": false,
-  "utc": "2026-11-16T10:27:29.235602+00:00",
+  "commit": "244256e28237b736b5b3b5c2e240d98d230decf2",
+  "dirty": true,
+  "utc": "2026-11-16T12:27:44.157161+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    23.07763671875,
-    13.27734375,
-    11.3173828125
+    18.36767578125,
+    12.96923828125,
+    10.64111328125
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "rows": [
@@ -1520,6 +1520,148 @@
     },
     {
       "bodies": 2000,
+      "capsule_hits": 0,
+      "changed_axes": 21903,
+      "changed_rewinds": 30,
+      "checkpoints": [
+        [
+          120,
+          "4c5dde44f50532a5"
+        ],
+        [
+          240,
+          "2a2fb782d9f270b9"
+        ],
+        [
+          360,
+          "4b6034017bbb9b22"
+        ],
+        [
+          480,
+          "11ff48461b3a77bf"
+        ],
+        [
+          600,
+          "02fbc7bfbc271463"
+        ],
+        [
+          720,
+          "52c70ab3407295d5"
+        ],
+        [
+          840,
+          "0c51bde8f8146a26"
+        ],
+        [
+          960,
+          "9a696f7ef2a0797d"
+        ],
+        [
+          1080,
+          "52d98e44fcb3c676"
+        ],
+        [
+          1200,
+          "1c9b862e3b6ac589"
+        ],
+        [
+          1320,
+          "6de5313faaff61f5"
+        ],
+        [
+          1440,
+          "5d899febf833c785"
+        ],
+        [
+          1560,
+          "33dc5eea1941afc2"
+        ],
+        [
+          1680,
+          "7a97765686ca5d0a"
+        ],
+        [
+          1800,
+          "df68fea436ff0c27"
+        ],
+        [
+          1920,
+          "820dd3877619398d"
+        ],
+        [
+          2040,
+          "8eba73d621d59e2e"
+        ],
+        [
+          2160,
+          "f08b97f0c25b0788"
+        ],
+        [
+          2280,
+          "492f828ea704f823"
+        ],
+        [
+          2400,
+          "2478a69634ab43b6"
+        ],
+        [
+          2520,
+          "a5087a88c72d9ef7"
+        ],
+        [
+          2640,
+          "a66948eb894500c4"
+        ],
+        [
+          2760,
+          "fca20e499dac900b"
+        ],
+        [
+          2880,
+          "f5bcfeebd68d41e0"
+        ],
+        [
+          3000,
+          "fb03bdc8cea7ef97"
+        ],
+        [
+          3120,
+          "8e95db8a6f17ab0b"
+        ],
+        [
+          3240,
+          "6c709e46de498e18"
+        ],
+        [
+          3360,
+          "1e37ed60e8976e61"
+        ],
+        [
+          3480,
+          "ce084cfde1a7da81"
+        ],
+        [
+          3600,
+          "e75860dd1d83f801"
+        ]
+      ],
+      "control": false,
+      "fold": "87496bd96b8c5be4",
+      "hits": 599,
+      "neighbours": 104832382,
+      "oversize": 0,
+      "parallel": false,
+      "parallel_chunks": 0,
+      "reused": 600,
+      "rewinds": 30,
+      "straight": false,
+      "swept_only_hits": 0,
+      "ticks": 3600,
+      "trace": "crowd",
+      "wire": true
+    },
+    {
+      "bodies": 2000,
       "capsule_hits": 599,
       "changed_axes": 0,
       "changed_rewinds": 30,
@@ -3026,148 +3168,149 @@
     },
     {
       "bodies": 2000,
-      "capsule_hits": 0,
+      "capsule_hits": 599,
       "changed_axes": 21903,
       "changed_rewinds": 30,
       "checkpoints": [
         [
           120,
-          "4c5dde44f50532a5"
+          "f3370c234460c79a"
         ],
         [
           240,
-          "2a2fb782d9f270b9"
+          "70085ca108b4dde9"
         ],
         [
           360,
-          "4b6034017bbb9b22"
+          "4ec191f11734aa0a"
         ],
         [
           480,
-          "11ff48461b3a77bf"
+          "395cc382a89e327d"
         ],
         [
           600,
-          "02fbc7bfbc271463"
+          "017f529e23181782"
         ],
         [
           720,
-          "52c70ab3407295d5"
+          "f78892c61666838b"
         ],
         [
           840,
-          "0c51bde8f8146a26"
+          "6d267488cef07ba0"
         ],
         [
           960,
-          "9a696f7ef2a0797d"
+          "ad57a21a150c71a3"
         ],
         [
           1080,
-          "52d98e44fcb3c676"
+          "c3f86d95e431bbfa"
         ],
         [
           1200,
-          "1c9b862e3b6ac589"
+          "e76aa752b9bd4d71"
         ],
         [
           1320,
-          "6de5313faaff61f5"
+          "6f8901a55c45c47b"
         ],
         [
           1440,
-          "5d899febf833c785"
+          "c3af488baf7ed1ef"
         ],
         [
           1560,
-          "33dc5eea1941afc2"
+          "63ae8aa350d89771"
         ],
         [
           1680,
-          "7a97765686ca5d0a"
+          "9436d1aab102d438"
         ],
         [
           1800,
-          "df68fea436ff0c27"
+          "ffdbe4717dea3ce5"
         ],
         [
           1920,
-          "820dd3877619398d"
+          "66b5c797ddc8a5e6"
         ],
         [
           2040,
-          "8eba73d621d59e2e"
+          "1ef1d8d088ce5153"
         ],
         [
           2160,
-          "f08b97f0c25b0788"
+          "6f4da85da9de32f4"
         ],
         [
           2280,
-          "492f828ea704f823"
+          "63123092553cb6d4"
         ],
         [
           2400,
-          "2478a69634ab43b6"
+          "874f955abbf2eb57"
         ],
         [
           2520,
-          "a5087a88c72d9ef7"
+          "8acc48b2c61bca76"
         ],
         [
           2640,
-          "a66948eb894500c4"
+          "c0ec8aa2bb1e9dc0"
         ],
         [
           2760,
-          "fca20e499dac900b"
+          "c1f83fd4fba9ee04"
         ],
         [
           2880,
-          "f5bcfeebd68d41e0"
+          "8aefc17f60345421"
         ],
         [
           3000,
-          "fb03bdc8cea7ef97"
+          "49362608327dfc3b"
         ],
         [
           3120,
-          "8e95db8a6f17ab0b"
+          "adde0a10e7e591de"
         ],
         [
           3240,
-          "6c709e46de498e18"
+          "5c36c98e8de73cb7"
         ],
         [
           3360,
-          "1e37ed60e8976e61"
+          "4c3d52df936d5534"
         ],
         [
           3480,
-          "ce084cfde1a7da81"
+          "142e8c7cd202b27b"
         ],
         [
           3600,
-          "e75860dd1d83f801"
+          "28e3580dc00c8c84"
         ]
       ],
       "control": false,
-      "fold": "87496bd96b8c5be4",
+      "fold": "86a267a9eb4c94b0",
       "hits": 599,
-      "neighbours": 104832382,
-      "oversize": 0,
+      "neighbours": 106067060,
+      "oversize": 4633,
       "parallel": false,
       "parallel_chunks": 0,
       "reused": 600,
       "rewinds": 30,
       "straight": false,
-      "swept_only_hits": 0,
+      "swept_only_hits": 438,
       "ticks": 3600,
-      "trace": "crowd",
+      "trace": "mixed",
       "wire": true
     }
   ],
-  "artifact_sha256": "2e2080c95190ad771918160a82de2ae5efa9ded0b0bbf75a3a7d1d0f23faf1d0",
+  "source_sha256": "b2ae5a08c3585081315bcbecb8368247cf69afacd37868c310f0f8660cf9f613",
+  "artifact_sha256": "da27fb20c116b8915a6054dd29d36ca2063f93a968a341241d1d6f6c5f968463",
   "simulator": "47494973-E92C-4194-9DE7-3C557951B608",
   "user_agent": null,
   "profile_vectors": "pass"
