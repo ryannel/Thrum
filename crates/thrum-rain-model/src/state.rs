@@ -27,11 +27,11 @@ impl RainState {
             a.initial,
             a.ground_dried,
             a.soaked,
-            a.unpaid,
         ]
         .into_iter()
         .chain(self.cover.iter().copied())
         .chain(self.band.iter().copied())
+        .chain(self.owed.iter().copied())
         {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -84,7 +84,6 @@ impl RainState {
             initial: f()?,
             ground_dried: f()?,
             soaked: f()?,
-            unpaid: f()?,
         };
         let h = tree.hollow_count();
         let mut cover = Vec::with_capacity(h);
@@ -98,6 +97,14 @@ impl RainState {
                 return Err(RainError::State("invalid damp band"));
             }
             band.push(m);
+        }
+        let mut owed = Vec::with_capacity(h);
+        for _ in 0..h {
+            let m = r.f64()?;
+            if !m.is_finite() || m < 0.0 {
+                return Err(RainError::State("invalid owed water"));
+            }
+            owed.push(m);
         }
         if cover.iter().any(|v| !v.is_finite()) {
             return Err(RainError::State("invalid cover level"));
@@ -129,6 +136,7 @@ impl RainState {
             account,
             cover,
             band,
+            owed,
             ground_tick,
         })
     }

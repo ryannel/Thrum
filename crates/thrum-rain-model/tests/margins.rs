@@ -143,7 +143,7 @@ fn a_hollow_s_band_follows_its_level_and_outlasts_its_water() {
             emptied = Some((t, own));
         }
         let a = state.account();
-        account.push((a.rain, a.sinks(), a.initial + a.unpaid));
+        account.push((a.rain, a.sinks(), a.initial));
     }
     let (t, band) = emptied.expect("the pothole empties");
     println!("emptied at {t} s with a band of {:.3} mm", band * 1e3);

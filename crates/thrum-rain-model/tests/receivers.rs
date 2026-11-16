@@ -484,5 +484,166 @@ fn water_that_covers_or_leaves_ground_moves_its_stores_by_their_own_entries() {
         seen.iter().all(|&n| n > 10) && shaded,
         "ticks with each entry {seen:?}, shaded ground {shaded}"
     );
-    assert_eq!(state.account().unpaid, 0.0);
+    assert!(state.owed()[0] == 0.0, "every donor in this case can pay");
+}
+
+/// M2.11, third case: a donor that cannot pay. A flat floor of 8 by 8 cells inside a rim
+/// 4 cm high, from dry, under open sky: 3 mm of pores that soak at 30 mm/h, 0.1 mm of
+/// relief and no percolation, under 60 mm/h and then drying. The runoff that first
+/// reaches the floor covers all of it with far less water than its pores' room. Each tick
+/// the test works every entry from the cells, the stores and the puddle's water at the
+/// tick's start: the surface water that joins, the pores filled only with water the
+/// puddle has, the room it could not fill owed by the hollow and paid from its next
+/// water, owed pores soaking nothing when the water leaves them, and surface water left
+/// only from water the puddle has. The puddle's water changes by exactly its entries,
+/// and the ground's water is the test's own sum over cells less what is owed.
+#[test]
+fn a_puddle_that_cannot_pay_for_the_ground_it_covers_owes_it() {
+    let n = 10;
+    let heights: Vec<f64> = (0..n * n)
+        .map(|i| {
+            let (x, y) = (i % n, i / n);
+            if x == 0 || y == 0 || x == n - 1 || y == n - 1 {
+                0.04
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    let bed = thrum_rain_model::Ground::new([0.0, 0.0], CELL, [n, n], heights.clone())
+        .expect("valid test case");
+    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
+    assert_eq!(tree.hollow_count(), 1);
+    let class = stored(30.0, 0.0, 3.0, 0.1);
+    let mut ground = thrum_rain_model::GroundStores::new(&[class]).expect("valid test case");
+    let mut state = RainState::new(&tree);
+    let mut report = TickReport::default();
+    let a = CELL * CELL;
+    let floor = 64.0 * a;
+    let mut owed = 0.0;
+    // Ticks with: a covering short of water, owed water paid with no change of cover,
+    // and water leaving owed pores.
+    let mut seen = [0_usize; 3];
+    let mut most: f64 = 0.0;
+    let (mut stood, mut gone): (f64, f64) = (0.0, 0.0);
+    // A first shower stops 30 s after the floor is first covered short of water, so the
+    // water leaves pores still owed; a second, from 1,200 s, lasts until the pores are
+    // full and the puddle stands; then it dries.
+    let mut first_short = None;
+    for t in 0..8000 {
+        let showers = first_short.is_none_or(|s| t < s + 30) || (1200..2400).contains(&t);
+        let rain = if showers {
+            Rain {
+                flux: mm_h(60.0),
+                drying: 0.0,
+            }
+        } else {
+            Rain {
+                flux: 0.0,
+                drying: mm_h(20.0),
+            }
+        };
+        let (old, now) = (state.cover_levels()[0], state.levels(&tree)[0]);
+        let v0 = state.held();
+        let s = ground.store(0, 0);
+        let cells = heights
+            .iter()
+            .enumerate()
+            .filter(|&(i, &z)| tree.labels()[i] == 0 && z >= old.min(now) && z < old.max(now))
+            .count() as f64;
+        let (surface, room) = (
+            s.surface * cells * a,
+            (1.0 - s.fill) * class.pores * cells * a,
+        );
+        // The test's own entries.
+        let (mut joined, mut left, mut soaked, mut water) = (0.0, 0.0, 0.0, v0);
+        let mut owing = owed;
+        if now > old && cells > 0.0 {
+            joined = surface;
+            water += surface;
+            owing += room;
+            seen[0] += usize::from(water < owing);
+            if water < owing && first_short.is_none() {
+                first_short = Some(t);
+            }
+        } else if now < old && cells > 0.0 {
+            let forgiven = owing.min(room);
+            seen[2] += usize::from(forgiven > 0.0);
+            owing -= forgiven;
+            soaked = room - forgiven;
+            left = surface.min(water);
+            water -= left;
+            owing += surface - left;
+        } else {
+            seen[1] += usize::from(owing > 0.0 && water > 0.0);
+        }
+        let filled = owing.min(water);
+        owed = owing - filled;
+        state
+            .step_with(&tree, rain, &ground, 0, 1.0, 1, &mut report)
+            .expect("valid test case");
+        ground.step(rain, 1.0).expect("valid test case");
+        let h = report.hollows[0];
+        let scale = room.max(surface).max(floor * mm_h(60.0) / 1000.0);
+        close("joined", h.joined, joined, scale);
+        close("filled", h.filled, filled, scale);
+        close("left", h.left, left, scale);
+        close("soaked", h.soaked, soaked, scale);
+        close("owed", state.owed()[0], owed, scale);
+        most = most.max(owed);
+        if owed > 0.0 {
+            // What is owed is part of the state the game keeps.
+            let back = RainState::decode(&state.encode(), &tree).expect("its own bytes");
+            assert_eq!(back, state);
+        }
+        if owed == 0.0 {
+            stood = stood.max(state.held());
+        }
+        gone += h.left + h.soaked;
+        // The donor loses what the receivers gain: the puddle's water moves by its
+        // entries and nothing else.
+        let moved = v0 + h.joined - h.filled - h.left + h.on_water + h.runoff
+            - report.dried
+            - report.percolated
+            - report.edge_spill;
+        close("puddle", state.held(), moved, scale);
+        // The ground's water is the test's own sum over cells, less what is owed.
+        let cover = state.cover_levels()[0];
+        let s = ground.store(0, 0);
+        let own: f64 = heights
+            .iter()
+            .enumerate()
+            .map(|(i, &z)| {
+                if tree.labels()[i] == 0 && z < cover {
+                    class.pores * a
+                } else {
+                    s.water(class.pores) * a
+                }
+            })
+            .sum::<f64>()
+            - owed;
+        let ground_held = state.ground_held(&tree, &ground, 0);
+        close("ground", ground_held, own, scale);
+        // And the account closes with no source but the rain.
+        let acc = state.account();
+        close(
+            "account",
+            acc.rain,
+            state.held() + ground_held + acc.sinks(),
+            acc.rain,
+        );
+    }
+    println!(
+        "ticks short {}, paying {}, leaving owed pores {}; most owed {most:e} m3; deepest puddle {:.2} mm; left and soaked {gone:e} m3",
+        seen[0],
+        seen[1],
+        seen[2],
+        stood / floor * 1e3
+    );
+    assert!(seen.iter().all(|&k| k > 0), "{seen:?}");
+    assert!(
+        stood > 1e-3 * floor && gone > 0.0,
+        "the puddle stands and leaves the floor"
+    );
+    assert!(state.held() >= 0.0 && most > 0.1 * class.pores * floor);
 }

@@ -41,9 +41,6 @@ pub struct Account {
     pub ground_dried: f64,
     /// What full pores held beyond their class's fill when water left them.
     pub soaked: f64,
-    /// Pore room or surface water a puddle could not pay as water rose over or left
-    /// ground, for want of water; the account counts it as a source.
-    pub unpaid: f64,
 }
 
 impl Account {
@@ -113,6 +110,7 @@ pub struct RainState {
     pub(crate) account: Account,
     pub(crate) cover: Vec<f64>,
     pub(crate) band: Vec<f64>,
+    pub(crate) owed: Vec<f64>,
     pub(crate) ground_tick: Option<u64>,
 }
 
@@ -135,6 +133,7 @@ impl RainState {
             account: Account::default(),
             cover: (0..h).map(|k| tree.nodes[k].lower).collect(),
             band: vec![0.0; h],
+            owed: vec![0.0; h],
             ground_tick: None,
         }
     }
@@ -143,6 +142,14 @@ impl RainState {
     /// is under water and its pores are full; the rest is open ground.
     pub fn cover_levels(&self) -> &[f64] {
         &self.cover
+    }
+
+    /// Water each hollow's ground is owed, cubic metres: pore room under the water and
+    /// surface water on ground the water left that the hollow's puddle has not yet had
+    /// the water to pay. The stores' reading of that ground holds this much less, and the
+    /// puddle pays it before it stands; [`Self::ground_held`] counts it.
+    pub fn owed(&self) -> &[f64] {
+        &self.owed
     }
 
     /// Height of the damp band above each hollow's waterline, metres.
@@ -220,7 +227,7 @@ impl RainState {
                 held += (all[r] - w[r]) * area * vol[r];
             }
         }
-        held
+        held - self.owed.iter().sum::<f64>()
     }
 
     /// Ticks stepped.
@@ -487,7 +494,9 @@ impl RainState {
     /// Ground water rose over or left since the cover was last set: covered ground's
     /// surface water joins the puddle and the puddle fills its pores; ground the water
     /// leaves takes the class's state, the puddle leaves its surface water there, and
-    /// what the full pores held beyond the class's fill is soaked.
+    /// what the full pores held beyond the class's fill is soaked. What a puddle has not
+    /// the water to pay is owed by its hollow, paid first from the puddle's water as it
+    /// comes, and pores still owed hold nothing to soak when the water leaves them.
     #[expect(
         clippy::float_cmp,
         reason = "only a level that moved at all changes the cover"
@@ -515,21 +524,30 @@ impl RainState {
             let room = class.pores * (n as f64 - filled) * area;
             let k = self.holder(tree, id(l)) as usize;
             let g = &mut report.hollows[l];
-            let pay = if new > old {
+            if new > old {
                 g.joined += surface;
-                g.filled += room;
-                room - surface
+                self.volume[k] += surface;
+                self.owed[l] += room;
             } else {
-                g.left += surface;
-                g.soaked += room;
-                self.account.soaked += room;
-                surface
-            };
-            let v = self.volume[k] - pay;
-            if v < 0.0 {
-                self.account.unpaid -= v;
+                let forgiven = self.owed[l].min(room);
+                self.owed[l] -= forgiven;
+                g.soaked += room - forgiven;
+                self.account.soaked += room - forgiven;
+                let left = surface.min(self.volume[k]);
+                self.volume[k] -= left;
+                g.left += left;
+                self.owed[l] += surface - left;
             }
-            self.volume[k] = v.max(0.0);
+        }
+        // Each hollow's puddle pays what its ground is owed from the water it has.
+        for (l, g) in report.hollows.iter_mut().enumerate() {
+            if self.owed[l] > 0.0 {
+                let k = self.holder(tree, id(l)) as usize;
+                let pay = self.owed[l].min(self.volume[k]);
+                self.volume[k] -= pay;
+                self.owed[l] -= pay;
+                g.filled += pay;
+            }
         }
     }
 

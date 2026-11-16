@@ -299,17 +299,88 @@ fn the_account_closes_with_the_stores_and_the_transfers() {
         let a = state.account();
         let sinks =
             a.canopy + a.ground + a.percolated + a.dried + a.edge + a.ground_dried + a.soaked;
-        let now = state.held() + held(&state, &ground);
-        let residual = (a.rain + a.initial + a.unpaid - now - sinks).abs() / a.rain;
+        // Ground the hollows owe holds that much less than the stores' reading of it.
+        let owed: f64 = state.owed().iter().sum();
+        let now = state.held() + held(&state, &ground) - owed;
+        let residual = (a.rain + a.initial - now - sinks).abs() / a.rain;
         worst = worst.max(residual);
     }
     let a = state.account();
     println!(
-        "worst residual {worst:e}; merges {merges}, partings {partings}; joined {joined:e}, filled {filled:e}, left {left:e}, soaked {soaked:e}; unpaid {:e}",
-        a.unpaid
+        "worst residual {worst:e}; merges {merges}, partings {partings}; joined {joined:e}, filled {filled:e}, left {left:e}, soaked {soaked:e}"
     );
     assert!(worst < 1e-9, "worst residual {worst:e}");
     assert!(merges > 0 && partings > 0);
     assert!(joined > 0.0 && filled > 0.0 && left > 0.0 && soaked > 0.0);
     assert!(a.ground_dried > 0.0 && a.canopy > 0.0 && a.edge > 0.0);
+}
+
+/// The review's case: from dry, a shower on a flat floor of 8 by 8 cells inside a rim
+/// 4 cm high, at a 60 Hz step. The ground has 3 mm of pores that soak at 1 mm/h, 0.1 mm
+/// of relief and no percolation; the rain is 10 mm/h with drying off. The runoff that
+/// first reaches the floor covers all of it with far less water than its pores' room. No
+/// water is made: the puddle, the ground less what the hollow owes, and the sinks hold the
+/// rain, every tick, within 1e-9 of it; and they never hold more than has fallen.
+#[test]
+fn a_shower_on_a_dry_flat_floor_makes_no_water() {
+    let n = 10;
+    let heights: Vec<f64> = (0..n * n)
+        .map(|i| {
+            if i % n == 0 || i % n == n - 1 || i / n == 0 || i / n == n - 1 {
+                0.04
+            } else {
+                0.0
+            }
+        })
+        .collect();
+    let cell = 0.05;
+    let bed = thrum_rain_model::Ground::new([0.0, 0.0], cell, [n, n], heights.clone())
+        .expect("valid test case");
+    let tree = Tree::prepare(&bed, &Canopy::open(), &Profile::default()).expect("valid test case");
+    let c = class(1.0, 0.0, 3.0, 0.1);
+    let mut ground = GroundStores::new(&[c]).expect("valid test case");
+    let mut state = RainState::new(&tree);
+    let mut report = TickReport::default();
+    let rain = Rain {
+        flux: mm_h(10.0),
+        drying: 0.0,
+    };
+    let dt = 1.0 / 60.0;
+    let a = cell * cell;
+    let (mut worst, mut most, mut soaked) = (0.0_f64, 0.0_f64, 0.0);
+    let mut covered = 0;
+    for _ in 0..20_000 {
+        state
+            .step_with(&tree, rain, &ground, 0, dt, 1, &mut report)
+            .expect("valid test case");
+        ground.step(rain, dt).expect("valid test case");
+        // The test's own ground: covered floor holds full pores, the rest the store's
+        // water, less what the hollow owes.
+        let cover = state.cover_levels()[0];
+        let s = ground.store(0, 0);
+        let mut own = 0.0;
+        for (i, &z) in heights.iter().enumerate() {
+            let under = tree.labels()[i] == 0 && z < cover;
+            covered += usize::from(under);
+            own += a * if under { c.pores } else { s.water(c.pores) };
+        }
+        own -= state.owed()[0];
+        assert!((own - state.ground_held(&tree, &ground, 0)).abs() < 1e-15);
+        let acc = state.account();
+        let held = state.held() + own;
+        worst = worst.max((acc.rain + acc.initial - held - acc.sinks()).abs() / acc.rain);
+        assert!(held + acc.sinks() <= acc.rain * (1.0 + 1e-9), "water made");
+        most = most.max(state.owed()[0]);
+        soaked = acc.soaked;
+    }
+    println!(
+        "worst residual {worst:e}; most owed {:.4} l; soaked {:.4} l; cell-ticks covered {covered}",
+        most * 1e3,
+        soaked * 1e3
+    );
+    assert!(worst < 1e-9, "worst residual {worst:e}");
+    assert!(
+        covered > 0 && most > 0.0,
+        "the floor is covered short of water"
+    );
 }
