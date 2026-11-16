@@ -1,22 +1,10 @@
 # CONTENT-LOOP log
 
-- 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed that `LentDiagnostic` has only
-  a public lease, that native comparisons map the lease's portable identity for every mip, and that
-  discard/capture cannot commit its observed serials. The coupled-reader test checks every submitted
-  image and sampled buffer against all-old/all-new references in both contribution orders. The staging
-  probe fails the mapped-write operation, reaching the production slot-release branch. The public
-  guide documents request names, readiness, serial commit, device rebuilding and consumer ownership.
-  These are source-inspection findings. The final item check at `4f47db28` completed successfully:
-  job `20261113-170643-440`, nine automated passes and M1.8's documentation inspection. Native,
-  fault and Chrome passes were reused by the script's source-file key from 15:55 UTC; the exact
-  verifier ran fresh for 928.12 seconds and passed both native matrices and all four Chrome sets.
-  Its covered-content proof key is `57788bc9592743b7f6c13f0e9dadaeccf8cf32e80baa89a6e6ea703b11ef3c83`.
-  The retained target logs in the compact evidence remain the underlying proof; this entry records
-  the final strengthened source's automatic verification. All ten items are now marked passed.
-  Full milestone check job `20261113-172340-10345` then passed at `23f3cf2f`: ten automated
-  passes including `./dev check`, plus M1.8's source inspection. The repository suite ran outside
-  the sandbox under the GPU lock and also reran the lease GPU tests. Integration follows through
-  the required merge command; M1's state remains `in_progress` for the lead's checks and review.
+- 2026-11-13 M1 resumed at `4f47db28`. Builder inspection confirmed the lease-only consumer, the per-mip
+  comparisons, the coupled-reader test, the staging probe and the public guide. The item check passed there
+  (job `20261113-170643-440`), and the full milestone check, `./dev check` included, passed at `23f3cf2f`
+  (job `20261113-172340-10345`). All ten items are marked passed; M1 stays `in_progress` for the lead's
+  checks and review. [Detail](../../evidence/CONTENT-LOOP/M1.md#resume-at-4f47db28-13-november).
 
 - 2026-11-13 M1 built and target-proved. The native lease and coupled-reader tests pass, including both
   profiles, all portable mips, BC4 quality, discarded recordings, capture invalidation, device loss and shared
@@ -122,3 +110,10 @@
   and all four Chrome sets passed in 908.23 seconds, with covered-content key
   `044f2d2a852963ef343c302e9e1087434b43755e7e829186c861390f13affbc3`.
   The public guide and generic lease surface still satisfy M1.8; no interface or retained image changed.
+- 2026-11-16 M4 planned, ahead of M2: the watcher scans its source tree on its own clock. The lead's task:
+  "Find whether it is a real defect in the cooker's watcher or a timing-dependent test, and get it fixed fast
+  ... Do not weaken what the test proves." It is a defect. With `fseventsd` at a full core, 12 of 240 runs
+  missed the test's ten seconds and 8 of those saves were unreported after 60, with no notice of loss; a 500 ms
+  scan missed none in 240 ([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)). No test-only fix was
+  made: a longer deadline leaves the store wrong. M1's checklist left the plan for its review link. The design
+  has not been reviewed since this change, and no builder starts M4 until a review returns Design Approved.

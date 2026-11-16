@@ -30,6 +30,17 @@ volumes as content-addressed products, and "placement, product identity and hist
 inputs". The module list's interface rules add two more: cooked meshes reach entities as mesh rows, and `SEA`,
 `CLOUDS` and later `RENDER-2D` take cooked products from this module.
 
+M4 answers the lead's task of 16 November 2026, about `thrum-cook`'s
+`the_watcher_publishes_an_edited_source`, which was failing the full check on a busy machine:
+
+> Find whether it is a real defect in the cooker's watcher or a timing-dependent test, and get it fixed fast: a
+> fix that lands as its own small commit on main, whether you make it yourself (if it is test-only and small) or
+> as the first item of the owning module. A test that only passes on an idle machine is a defect here, because
+> the fleet keeps the machine busy. Do not weaken what the test proves.
+
+It is a defect in the watcher ([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)), so it is this
+module's next milestone, and the test stays as it is.
+
 This design reconciles the code on main; it is not a blind study. Read for it: `thrum-asset`, `thrum-cook`,
 `thrum-asset-gpu` (`lib.rs`, `load.rs`, `staging.rs`), `thrum-render`'s `contribution.rs`, `synthetic.rs` and
 `synthetic/{mesh_arena,mesh_route,camera_culling}.rs`, `runtime.rs`, `examples/v1-game/src/cooked.rs`, the G5
@@ -118,6 +129,13 @@ streaming in a shipped open-world game such as Marvel's Spider-Man 2. It is judg
   ([release notes](https://developer.chrome.com/blog/new-in-webgpu-139)), with the fallback order ASTC, BC,
   uncompressed. Residency already selects by the capability record, so Chrome draws BC4 volumes where the record
   allows and R8 otherwise.
+- **A watcher that must not miss a change scans as well as listens.** Operating systems deliver change
+  notices for speed, not as a ledger: macOS, Linux and Windows can each drop them under load, and on this Mac
+  the loss came with no notice of it. Tools that must converge pair the notices with a scan of their own:
+  [Mutagen](https://mutagen.io/documentation/synchronization/watching/) polls beside its native watches, and
+  [Meteor's safe watcher](https://codeclimate.com/github/meteor/meteor/tools/fs/safe-watcher.ts/source) keeps a
+  polling safety net under them. kqueue would avoid `fseventsd` but holds a descriptor open for every watched
+  file and directory. M4 keeps the notices as the fast path and adds the scan.
 - **What would change the selection.** If a consumer's cost account needs many volumes in one pass and the
   portable limit of 16 sampled textures per stage binds, the answer is a cook-time atlas (one volume product), not
   a different lease. If Chrome loses frames on products of showcase size, the dev-server client moves its
@@ -275,6 +293,61 @@ pending set; the drawn and lent sets stay. wgpu cannot be made to fail a mapped 
 this path has no test. M1 adds a fault probe, compiled only on request as `draw-probe` is, at the point where a
 chunk is mapped or written, so the production branch is the code that runs.
 
+### The sweep (M4)
+
+**The defect.** `watch` re-reads a source only when a change notice names it. On 16 November macOS left saves
+unreported on this Mac, with no notice of loss, and those saves were never cooked: 12 of 240 runs of the test's
+steps missed its ten seconds, and 8 of those 12 were still unreported after 60
+([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)). The watcher has to reach every save by itself.
+
+**One loop, two ways to learn of a save.** The loop that `thrum-cook watch` runs starts a cook cycle for either
+of two reasons.
+
+1. **A notice**, as today. A batch closes after 8 ms of quiet, 250 ms at most, and the cycle re-reads only the
+   paths the batch names, or the whole tree when a notice says events were dropped. On a healthy machine every
+   edit arrives this way, as fast as before.
+2. **A sweep**, which is new. On its own clock the watcher scans the whole source tree through the stat cache:
+   it stats every file, hashes only those whose stamp changed, and drops those that are gone. Notices never
+   postpone a sweep, so a stream of them for other files cannot starve it. What a sweep finds goes through the
+   same cook cycle and the same publication as a batch of notices.
+
+A save is therefore published within about two sweep intervals of its last write, plus the cook, whether or not
+the machine ever reports it. Both ways end at the same store: once saves have settled, `HEAD` names what a fresh
+cook of the sources publishes.
+
+**A sweep waits for a save to settle.** A notice normally arrives when a writer closes its file; a sweep can
+arrive in the middle of a write. So a sweep leaves a file whose modification time is less than 250 ms old, the
+notice path's own batch limit, for the next sweep. A file whose stamp changes while it is hashed is already left
+for the next scan, and a sweep is now that scan. A modification time ahead of the clock holds nothing back. A
+one-shot `cook` and the watcher's first cook read every file at once, as they do today. A writer that pauses
+longer than 250 ms inside one save is the case [a save has no boundary](#what-a-publication-promises-m3) names.
+
+**An idle sweep leaves no trace.** A sweep that finds no change writes nothing to the store (no `HEAD`, no
+product, no stat-cache file) and does not call the cycle callback, which is where `thrum-cook watch` prints.
+The lines the command prints for a cycle that did something keep their form: `scripts/check_v1_browser.mjs` and
+`scripts/run_v1_showcase.py` read `serving http://…` and `generation N` from them.
+
+**What a sweep costs.** A warm scan of 10,000 unchanged files took 27 ms on this Mac
+([G5 evidence](../../evidence/integration/G5-CONTENT-ADDRESSED-LOOP-2026-11-06.md)), and the valley's source is
+a few dozen files. The wait before the next sweep is the larger of a floor and a fixed multiple of the time the
+last sweep took, so sweeping takes a set share of the time at most, however large the tree. The diagnosis ran a
+500 ms floor and missed nothing in 240 runs while notices were being lost. The builder sets the two constants
+and records the sweep's time at 1,000 and 10,000 files. They are baselines, not gates (brief decision 3).
+
+**Proved without the machine's help.** M4's new tests replace the notice source or switch the sweep off,
+through one seam the builder chooses, and nothing else differs from the loop the command runs. With a notice
+source that never reports, every save still publishes. With the sweep off, a notice still publishes at once.
+The settle rule is tested with times the test supplies. None of these waits on macOS, so none depends on the
+machine's load. `the_watcher_publishes_an_edited_source` stays word for word, on real notices and its
+ten-second deadline, and with the sweep under it the test holds whether or not a notice arrives. It cannot show
+the fix by itself, however often it runs: the loss comes in episodes, and 100 runs in a row of the loop on main
+passed between two of them. M4.1 is the proof.
+
+**Set aside.** A longer deadline in the test: most missed saves were still unreported after 60 seconds, and the
+store would stay wrong for a creator. Polling alone: it gives up the notice path's speed on a healthy machine.
+Restarting `fseventsd`: it probably helps on this Mac, needs an administrator, and leaves the watcher wrong on
+the next machine that drops a notice.
+
 ### What a publication promises (M3)
 
 G5 publications are **previews**: the watcher cooks working files, not an admitted source revision. Three
@@ -303,7 +376,8 @@ a changed glTF over its old buffer when the accessors still fit, or a file an ed
 on. The creator sees that intermediate content, whole in C3's sense, until the rest of the save lands. The next
 cook then publishes exactly what a fresh cook of the finished sources publishes, because a product is keyed by
 the bytes of every input. Refusing such a save needs source admission, which is cooking from T1's captured tree,
-and that is not built here. Readers confined to presentation, an atomic manifest and whole resident sets do not
+and that is not built here. M4's sweep holds back a file modified in the last 250 ms, which keeps it from making
+this worse and does not close it. Readers confined to presentation, an atomic manifest and whole resident sets do not
 supply it, and no item claims it.
 
 The limit is an assumption in [the plan](PLAN.md#open-for-the-owner) for the owner to overturn.
@@ -361,7 +435,8 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 | The view record, motion, reactive target and history acceptance | `APPLE-PRESENTATION` |
 | A lease's meaning: placement, extent, optics, the consumer's own history | The consumer (`SEA`, `CLOUDS`) and the game |
 
-**An edit, in order.** The watcher sees the save, the stat cache rehashes only that file, the cooker cooks only
+**An edit, in order.** The watcher learns of the save, from a notice or from its next
+[sweep](#the-sweep-m4), the stat cache rehashes only that file, the cooker cooks only
 the changed asset for each profile, and `HEAD` moves. The loader's next poll maps the new manifest, resolves
 every placement, lease and row by name, keeps each product whose hash is unchanged, and plans copies for the
 rest. It fills staging chunks off the render thread. Each frame records at most a budget of copies, and a changed
@@ -386,11 +461,14 @@ Each ask becomes a milestone here, planned with the module that needs it.
 
 `thrum-asset-gpu` is also edited by `APPLE-PRESENTATION` M2 (the reactive target in `draw.rs`), which is why M1
 waits for it. M2 edits `CULLING`'s route files and waits for `CULLING:M3`. `scripts/check_v1_browser.mjs` is
-shared with every module that has a Chrome case; add cases, change none.
+shared with every module that has a Chrome case; add cases, change none. `thrum-cook` is also edited by
+`REVIEW-ENGINE` M3 to M5 and, for new product kinds, by `RENDER-2D` M4 and `GAME-UI` M2. M4 keeps to the
+watcher, the stat cache, the cook cycle's idle path and `main.rs`.
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change to another module's exact images is
 caught. This module must move none: a scene with no lease and no cooked rows compiles to the same passes and
-draws the same bytes. Every milestone carries the verifier as its claim-time check. `CULLING`'s relative
+draws the same bytes. M1 to M3 each carry the verifier as a claim-time check. M4 draws nothing and carries none; main's
+`exact-images` check covers it. `CULLING`'s relative
 comparisons (each mode against its oracle) and `APPLE-PRESENTATION`'s temporal witness, which drives the cooked
 volume, belong to those modules and are not loosened.
 
@@ -403,6 +481,8 @@ volume, belong to those modules and are not loosened.
   1.9 ms on this Mac, so the row bound is set from that and recorded.
 - **Staging:** at most four chunks of one budget, whatever is loading.
 - **A switch frame:** bind groups for the changed placements and the row's table writes; no copy.
+- **A watching cooker with nothing to do (M4):** one stat pass over the source tree per sweep, and no write.
+  [The sweep](#the-sweep-m4) says how its interval is set.
 - **Latency:** an edit shows when its slowest reader is ready. Recorded per publication as frames from first
   copy to switch.
 - **Memory:** live products, plus old and new for a publication's changed products from its first copy until its
@@ -431,6 +511,8 @@ route with nothing attached.
    the next, decided here first.
 8. **A creator takes an intermediate preview for the result.** It lasts until the save finishes and is replaced
    without a restart. M3.9's documentation says so; source admission removes it.
+9. **A sweep reads a save that is still being written.** The 250 ms rule covers a writer that keeps writing.
+   Early sign: `failed` lines from `thrum-cook watch` for a file that cooks cleanly a moment later.
 
 ## Proof and builder handoff
 
@@ -444,6 +526,8 @@ route with nothing attached.
   fixture is generated. Nothing is lifted from Broadsides: its cloud library waits on the owner's licence.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/content-loop-<milestone>/`; selected
   evidence in `docs/evidence/CONTENT-LOOP/`.
+- **M4.** Proved on the CPU: no GPU lock, no browser launch and no capture. Its checks name tests by words in
+  their names, which the plan's note lists.
 - **Maturity.** The ledger's G5 row is brought up to date in M3, with implementation, correctness, visuals and
   device results kept apart.
 

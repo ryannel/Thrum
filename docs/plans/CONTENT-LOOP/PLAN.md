@@ -4,6 +4,8 @@ Closes gate G5 and serves sea, clouds and 2D: edited meshes, textures and volume
 without a stall. [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
+Milestones run in the order M1, M4, M2, M3.
+
 The loop itself was built before this plan; [the design](DESIGN.md#purpose-and-scope) lists what exists with its
 evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselines),
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
@@ -21,16 +23,15 @@ evidence. Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exa
 - Assumption: G5 closes with watcher publications as presentation-only previews, which the G5 decision put in force as the reading of C05. A save the cooker can tell is bad keeps the last good content, but an incomplete save that still validates (a changed glTF saved before its buffer) is shown until the save finishes, then replaced by the intended content. Refusing it needs source admission (T1), which also brings build provenance and is not built here.
 - Assumption: when the running game cannot take one product of a save (a mesh too large for the entity arena, a volume the device cannot hold), nothing from that save or a later one appears until it is fixed, and the reason is named. The other choice shows the rest of the save and holds back only that product.
 
-## M1 A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome
+## M1 A second engine module reads cooked volumes and textures in its own passes and follows edits to them, on Mac and in Chrome: done
 
-Criteria: M1.1–M1.10 in the done-when file.
+[review](../../evidence/CONTENT-LOOP/M1-review.md)
 
-- [x] Add leases to residency: names fixed in its configuration, made resident through the same loader, staging ring and budget as placements, and offered as a whole set only after the frame that recorded the last copy is submitted. Carry identity and a change serial per product, so a consumer keeps a change pending until a submitted frame that advances history has used it.
-- [x] Make the publication residency's, under [one publication, one switch](DESIGN.md#one-publication-one-switch-m1-m2), so that placements and leases switch in the same frame. A scene with only placements behaves as it does today.
-- [x] Build a diagnostic consumer in `examples/v1-game`, off by default, that holds only a lease and reads the twelve generated volumes and one texture in its own pass. Prove texels, the commit rule, an edit, both profiles, the shared budget and device replacement on the Mac.
-- [x] Add the fault probe to staging and the test of the fill-failure path; test a generation with a missing, invalid or refused leased product.
-- [x] Add the leased scenario to the `cooked_edit` bench and record it with its load class.
-- [x] Add the Chrome case; document the lease for `SEA`, `CLOUDS` and `RENDER-2D`.
+## M4 A saved source is always cooked and published, even when macOS reports the save late or never, so the full check stops failing on a busy Mac
+
+Criteria: M4.1–M4.6 in the done-when file. Built before M2: it waits on nothing.
+
+Read [the sweep](DESIGN.md#the-sweep-m4) and [the diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md) first. The loop is `crates/thrum-cook/src/watch.rs`. The scan it needs is the stat cache's `scan_all`, and today the cook cycle saves the stat cache on every call, which an idle sweep must not do. `crates/thrum-cook/tests/serve_and_watch.rs` is not edited: M4.3 runs `the_watcher_publishes_an_edited_source` as it stands, so `watch` keeps the signature that test calls. The checks pick the new tests by words in their names: `missed_notices` (M4.1), `notice_alone` (M4.2), `quiet_tree` (M4.4) and `settling_save` (M4.5). [The diagnostic](../../evidence/CONTENT-LOOP/M4/watch-diagnostic.rs) shows the loss on this Mac while `fseventsd` is busy, if you want to see it; no item depends on the host being in that state. The ledger's G5 row waits for M3 unless a sentence in it becomes false.
 
 ## M2 An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome
 
