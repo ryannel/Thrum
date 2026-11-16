@@ -4,19 +4,25 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/T2-CAPTURE/design-review.md",
-    "commit": "bce5a43206979da35aba1f1d432dc74f8e9da5a7",
-    "hash": "ae14ac7bb699e5a75f183b34c41ae4f4268b1f9b1f31af21900ca6334a71ad1e",
+    "commit": "352cd3e661bf317cd5f44b69c03e30fb118a0f2c",
+    "hash": "ee88258c7d8159002bd2658f8d4912725b3981904f1f084cae089d227ae317c2",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6.1-sol",
-    "effort": "medium",
+    "model": "gpt-6-astra",
+    "effort": "high",
     "observed": {
-      "model": "gpt-6.1-sol",
-      "effort": "medium"
+      "model": "gpt-6-astra",
+      "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.3.2",
-    "path": "visible",
-    "at": "2026-11-09T20:05:01Z"
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 106313,
+      "cached": 1263872,
+      "output": 7021,
+      "turns": 1
+    },
+    "at": "2026-11-16T17:26:52Z"
   },
   "milestones": {
     "M0": {
@@ -103,5 +109,24 @@
   "planner": {
     "host": "claude",
     "at": "2026-11-16T15:36:07Z"
-  }
+  },
+  "design_history": [
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/T2-CAPTURE/design-review-1.md",
+      "commit": "bce5a43206979da35aba1f1d432dc74f8e9da5a7",
+      "hash": "ae14ac7bb699e5a75f183b34c41ae4f4268b1f9b1f31af21900ca6334a71ad1e",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "observed": {
+        "model": "gpt-6.1-sol",
+        "effort": "medium"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "visible",
+      "at": "2026-11-09T20:05:01Z"
+    }
+  ]
 }
