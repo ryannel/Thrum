@@ -45,7 +45,12 @@ most of the GPU's time proving again what a rebase had just made stale.
 - **The exact images are not yours to prove.** An item whose check is `python3 scripts/exact_baselines.py verify`
   passes from one shared run on main after your merge. Set it `pass` with the evidence `main-branch check
   exact-images`. On your branch the command answers that the commit isn't on main yet, which is expected. If
-  it later says main fails at a commit that isn't yours, say so in your report and don't work around it.
+  it later says main fails at a commit that isn't yours, say so in your report and don't work around it. Don't
+  run `verify` before you merge, and never under `lock gpu`: it waits for the main-branch run, and a builder
+  holding a GPU share while it waits takes a share that run needs.
+- **Prove a milestone through `merge` and the main-branch checks, not a pipeline of your own.** Chains of jobs
+  that each assert the last one passed (a "qualified landing") rebuild the proof-before-merge this section
+  removes, and count every real failure twice.
 - **One capture pass for a visual milestone, after your last merge.** A capture from before a rebase shows a
   different build from the one under review.
 
@@ -74,7 +79,9 @@ gates only done-when items about pacing.
 - **Locks are about capacity.** `LOOP lock gpu -- <command>` shares the Mac's GPU between two runs, `lock chrome`
   gives Chrome to one run and `lock simulator` gives the iPhone simulator to one. Take the lock of the device the
   command loads most, around the part that needs it, and take only one: a command that holds one lock never
-  asks for another and never runs `merge`. Start a GPU run with the script's `background`, carry on with CPU
+  asks for another and never runs `merge`. Don't wrap `./dev check` or the script's own commands (`check`,
+  `merge`) in a lock: they are mostly compiling and CPU tests, their few GPU tests are brief, and a lock held
+  through a whole test run keeps the GPU from everyone for half an hour. Start a GPU run with the script's `background`, carry on with CPU
   work, and collect it with `wait`. Waiting for a lock is progress, not a blocker.
 - **`gpu.alone` is for a run that needs the whole GPU,** such as all its memory. It doesn't give a quiet machine,
   because other builders' builds and tests take no lock.
