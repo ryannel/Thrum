@@ -800,15 +800,23 @@ and in every exact test of the default.
   M3.11 holds the proof that the corrected image no longer varies, M3.12 has a reviewer see that only shared
   triangle edges moved, and `APPLE-TILE` M12 reruns its exact matrices on the refreshed references with its
   items unchanged. No other change of M3 may move a reference.
-- **Qualified before the push.** (15 November 2026.) A planned refresh needs a committed candidate, not a
-  pushed one. So M3.11's campaign, M3.12's difference images and `verify --full` all pass on a local candidate
-  before the merge pushes the output, the references and their pins together. If one fails, nothing is pushed
-  and the references on main stay as they are. Those two proofs therefore run on the candidate, not on the commit claimed, which rule 3
-  otherwise asks; [`CULLING`'s design](CULLING/DESIGN.md#qualified-before-it-lands) says when each stands for
-  a later commit and when a rebase repeats it.
-- **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, runs
-  `verify --full` at its new starting commit and regenerates from there. Each records its own old and new hashes,
-  so the two causes stay apart.
+- **Proved once, then merged.** (16 November 2026; replaces "Qualified before the push" of 15 November.) The
+  earlier text had M3.11's campaign, M3.12's difference images and `verify --full` pass on a local candidate
+  before the push, and had the campaign stand, path by path, for the commit pushed and the commit claimed.
+  The builder enforced that order with a chain of jobs, each asserting the one before, which rebuilt the proof
+  before the merge that [proofs run once, on main](#proofs-run-once-on-main) removed: a job audit of 16
+  November traced about 30% of all failed background jobs and five failed GPU holds to it. M3 now lands as
+  rule 2's planned refresh, like any other. The branch regenerates the references, runs `verify --full` once
+  and commits the pins, and `merge` lands the output, the references and the pins together. The campaign runs
+  once on the branch and is tied to main through the references: the verifier passed on the campaign's build
+  against the files main registers, a build that lost the output's effect draws the old bytes and fails every
+  run, and the main-branch check shows what main draws. No proof is made again for a rebase unless the rebase
+  changes a registered reference. If the refresh proves wrong after it lands, rule 2's course applies: the
+  module fixes it or the lead reverts the merge. [`CULLING`'s design](CULLING/DESIGN.md#how-it-lands) has the
+  order, and forbids the builder a landing pipeline of its own.
+- **Order with `ATMOSPHERE` M9.** Both landings regenerate references. Whichever lands second rebases, holds a
+  verifier pass at its new starting commit (the main-branch check's, or one `verify --full` of its own) and
+  regenerates from there. Each records its own old and new hashes, so the two causes stay apart.
 - **Other baselines.** `SHOWCASE`'s six route stops are compared within thresholds, which stay as they are.
   Any other module's exact test that the output moves is that module's under rule 1, and the builder ends
   `BLOCKED` with it.
@@ -2236,3 +2244,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   The rulings on `CULLING` M3 and `ATMOSPHERE` M9 say the same and gained anchors for a refresh to name,
   `ruling-on-culling-m3` and `ruling-on-atmosphere-m9`. `CULLING` M3.10 and `ATMOSPHERE` M9.5 are written
   again for it. Nothing of `BASELINE-GUARD` or `APPLE-TILE` changed.
+- 2026-11-16 The ruling on `CULLING` M3 lost "Qualified before the push" and gained "Proved once, then
+  merged", on the lead's task after a job audit traced about 30% of failed background jobs to the pipeline
+  that enforced the old order. M3 lands as rule 2's planned refresh; its campaign runs once and is tied to main
+  through the references. `CULLING` M3.10 and M3.11 are written again. The second of two refreshes may take
+  the main-branch check's pass as its starting record. No reference, comparison, registry rule or other
+  module's item changed.

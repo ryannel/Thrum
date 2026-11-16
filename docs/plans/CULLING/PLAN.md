@@ -16,6 +16,7 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 - Assumption: the culling mode is chosen when a scene is prepared, at launch or page load, and no control switches it while the game runs. The brief and gate G3c do not ask for a switch, and one that works needs a change across the frame runtime, the browser host and the contribution seam; the design says why and names the mechanism to cost if it is wanted.
 - Assumption: M1 starts as soon as this design passes and does not wait for `BASELINE-GUARD` M1. Until that gate exists, M1's own check covers the Mac baseline only and Chrome's is rechecked when the gate's builder first runs the verifier on main. The other choice is to add `BASELINE-GUARD:M1` to M1's `needs`, which holds M1 until the gate is built. M2 and M3 do wait for it.
 - Assumption: the forward pass's coverage output is on in every scene, with no switch, so that the game draws one image under GPU load. It changes pixels along shared triangle edges, so M3 refreshes `APPLE-TILE`'s reference sets once, in its own landing, and its cost in frame time is measured there, not known today. The other choice keeps today's output as the default behind a selection, and leaves the variation in every scene and every exact test that does not ask.
+- Assumption: `CULLING` takes no quiet-machine sitting. Gate G3c asks for costs "as tripwires", so M3.3's and M3.13's rows are paired, taken once while other builders work, and recorded with their load. The other choice is one sitting with the other builders paused at the end of M3, as `ORCHESTRATE.md` offers a module's last milestone; it gives uncontended figures and costs every builder that pause.
 
 ## M1 On the mixed-mesh field, Occlusion draws only what Direct shows, pixel for pixel: done
 [review](../../evidence/CULLING/M1-review.md)
@@ -25,44 +26,49 @@ Frustum, Occlusion on cubes, the bucket route and Sun-caster culling were built 
 
 ## M3 The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome
 
-Criteria: M3.1–M3.13 in the done-when file. Read [One image under load](DESIGN.md#m3-one-image-under-load) and
+Criteria: M3.1–M3.13 in the done-when file. Read [One image under load](DESIGN.md#m3-one-image-under-load),
+through [how it lands](DESIGN.md#how-it-lands), and
 [the module list's ruling on M3](../ARCHITECTURE.md#ruling-on-culling-m3) first.
 
-The work so far is on branch `build/culling` (`de69d9da`), unmerged, and the copy of
-`docs/evidence/CULLING/M3-handoff.md` on that branch says what is finished. A local candidate, `cfecd0c7`,
-passed M3.11's campaign and `verify --full`, and M3.12 is the one item with a builder's pass. Nothing has been
-pushed. After the branch was rebased onto main `160595c5`, the reference guard refused the five moved
-references for lack of pins, which M3.10 then forbade. M3.10 and
-[step 4 of the design's order](DESIGN.md#qualified-before-it-lands) now ask for them. The registry is
-`BASELINE-GUARD`'s: change only the `pin` and the `refresh` of the baselines whose references moved.
+The work is on branch `build/culling`, unmerged, and `docs/evidence/CULLING/M3-handoff.md` on that branch says
+what was finished. Where the handoff says a proof must follow a "qualified first landing", or be made again
+for the rebased build, this plan replaces it. The branch holds the coverage output, thirty regenerated native
+files and four Chrome manifests, their pins and refreshes (`8894b9e77`), the campaign and the `verify --full`
+that passed on `cfecd0c7` (`M3/coverage-qualification/passed-cfecd0c7/`), the starting verifier record on main
+`c2b16594`, and M3.12's inspected difference images with a builder's pass. All of that stands. When this note
+was written the branch's registered references were byte-equal to `cfecd0c7`'s, and main had moved none since
+the branch's base, so the next step is `merge` and nothing is proved first.
+
+Before merging, drop the landing pipeline; [the design](DESIGN.md#no-landing-pipeline) says why. Delete from
+the branch, under `docs/evidence/CULLING/M3/`, the whole of `landing-queue/` and, in
+`coverage-qualification/`, `resume_pipeline.py`, `after_jobs.py`, `after_landing.py`, `post_landing.py`,
+`qualified_landing.py` with its copies under `passed-cfecd0c7/`, `check_qualified_landing.py`,
+`qualify_after_refresh.py` and `refresh_after_captures.py`. Delete their scratch twins in `tmp/culling-m3/`
+too, with `session2_post.py`, `session3_post.py`, `session4_post.py`, `finish_landing.py`,
+`qualified_landing_chrome.py` and `queue_safe_loop.py`. If you keep `campaign.py`, take out its fetch, rebase and landing steps. Stop any
+background job that waits on one of these, and remove any pre-push hook you installed. The records and logs
+those jobs left are history and may stay.
+
+After the merge the script runs every check on main's tip. Run each remaining check once yourself, take
+M3.3's and M3.13's rows once, and make one capture pass for M3.7 and M3.8 after your last merge.
 [The failed review](../../evidence/CULLING/M3-review.md) found M3.3 open: star visibility selected Direct for
-the cooked valley, and the legacy cost benchmarks measured Direct twice.
+the cooked valley, and the legacy cost benchmarks measured Direct twice. `scripts/apple_tile_m0.py` made the
+Mac reference set, and the verifier archives each Chrome run's manifest. The registry is `BASELINE-GUARD`'s:
+change only the `pin` and the `refresh` of the baselines whose references moved.
 
-The order is part of this milestone, and [the design](DESIGN.md#qualified-before-it-lands) gives it: the
-verifier's record at the starting commit, the candidate, its qualification, the pins, then one push of the
-shader, the references and the pins as M3's first checkpoint. `scripts/apple_tile_m0.py` made the Mac set, and
-the verifier archives each Chrome run's manifest. If the claimed shader differs in the campaign, or a
-reference moves where M3.12 says none may, push nothing and end `BLOCKED` with the payloads. Every other proof
-of M3 has to be drawn by the corrected shader, so M3.3's rows and the captures follow the landing.
-`APPLE-TILE` M10 and `ATMOSPHERE` M9 also land covered changes; integrate on top of what has landed, and the
-design says what a rebase repeats.
+`APPLE-TILE` M10 and `ATMOSPHERE` M9 also land covered changes. If `merge`'s rebase changes or conflicts with
+a registered reference, [the design](DESIGN.md#how-it-lands) names what is repeated, once; otherwise nothing
+is. If the main-branch check then fails at your commit, fix it as your next task. If the build with the
+output differs in a campaign, or a reference moves where M3.12 says none may, merge nothing and end `BLOCKED`
+with the payloads.
 
-A campaign proves the build and workload it ran, not a shader text
-([what a campaign stands for](DESIGN.md#what-a-campaign-stands-for)). The rebase onto `160595c5` brought in
-paths under `crates/`, `scripts/` and `tools/`, which the handoff's record lists, so the campaign on
-`cfecd0c7` stands for the rebased commit only path by path, by that rule; otherwise run it again. The
-verifier's pass and M3.12's images stand while the reference files are as qualified. If the merge's rebase
-brings in a change to the campaign's inputs, run the campaign again before pushing. The claimed commit needs
-a campaign that stands for it too, so put M3's remaining changes to rendering code in the candidate where you
-can, and leave only rows, captures and records for after the landing; otherwise a second campaign precedes
-the claim.
-
-M3.13's rows never stop the milestone or the landing. If they cross a tripwire, investigate the cause and record
+M3.13's rows never stop the milestone or the merge. If they cross a tripwire, investigate the cause and record
 a disposition, as the design's Cost paragraph says, and keep building.
 
 Stop rules, for every milestone:
 - If a mode differs from its oracle in any pixel, stop and diagnose. Never widen a comparison, sample fewer frames or change the oracle to pass.
 - If your change fails an exact test or baseline another module owns, do not edit it. Write the proposal in the log and end `BLOCKED`. The one exception is the refresh the module list rules for M3's coverage output, with its pins.
-- Build every proof from the commit you claim. Prove a thing once on your branch and merge; the script's run on the merged tip is the proof of record, and no image run is repeated after a rebase unless the design says so. `verify` passes from the run on main: set it `pass` with the evidence `main-branch check exact-images`.
+- Prove a thing once on your branch and merge. The script's run on the merged tip is the proof of record; run again only the check it says failed, and repeat no proof for a rebase unless the design says so. `verify` passes from the run on main: set it `pass` with the evidence `main-branch check exact-images`, and never run plain `verify` yourself or under a lock.
+- Write no job that waits for, asserts or follows another job, a merge or a verifier run, and no hook or helper around `merge`. Start one command, collect it, and decide the next step yourself.
 - A default mode changes only on the recorded rows the design's rule names. No speed claim rests on one run or on an uncontended figure that does not exist.
 - Chrome and simulator checks need a browser or simulator launch outside the Codex sandbox. If a launch is refused, leave the item open and say so; do not substitute a Mac result.

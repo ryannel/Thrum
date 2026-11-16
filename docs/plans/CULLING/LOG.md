@@ -286,3 +286,11 @@
   and the campaign's helpers at `de69d9da`). The design and the plan's stop rules are corrected for the ruling
   of 15 November: no verifier run after a rebase, one `verify --full` for the planned refresh, `merge` for
   `land`. No GPU check was run for this revision; no item's `check` changed.
+
+- 2026-11-16 Planner, from the lead's task: "Re-plan CULLING M3 so its coverage items prove through `merge`
+  and the main-branch check `main-check exact-images`, under the proof regime." A job audit that day traced
+  about 30% of all failed background jobs and five failed GPU holds to M3's builder-made landing pipeline,
+  which enforced the design's order of 15 November. That order and "what a campaign stands for" are withdrawn:
+  the campaign runs once on the branch and is tied to main by the references, and M3 lands as rule 2's planned
+  refresh. M3.10 and M3.11 written again; M3.1 to M3.9, M3.12 and M3.13 unchanged; the pass on `cfecd0c7`
+  stands. [Design](DESIGN.md#how-it-lands). No check command changed, and no GPU check was run.
