@@ -161,7 +161,9 @@ pub fn solve(
     let mut updates = 0;
     let (level_rate, imbalance, discharge) = loop {
         let mut rate = 0.0_f64;
-        for _ in 0..profile.check_every {
+        // The last batch stops at the budget, so no step is ever taken beyond it.
+        let batch = profile.check_every.min(profile.step_budget - steps);
+        for _ in 0..batch {
             let s = stepper.step(&mut state);
             steps += 1;
             updates += s.updates;
@@ -171,7 +173,7 @@ pub fn solve(
         if rate < profile.level_rate && imbalance < profile.imbalance {
             break (rate, imbalance, discharge);
         }
-        if steps % 1000 < profile.check_every {
+        if steps / 1000 != (steps - batch) / 1000 {
             edge(grid, &setup.held, &state, profile, &declaration.name)?;
         }
         if steps >= profile.step_budget {

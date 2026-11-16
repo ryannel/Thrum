@@ -85,3 +85,7 @@
   By construction, not measured: the energy account closes because the face-based head loss telescopes;
   friction power is computed apart in the test. M1 limits: first order in space; a mouth must be one straight
   row or column. Suspected, not tested: the active-span cost stays flat for rectangles much larger than 2×.
+- 2026-11-16 M1 review fix (M1.5, the step budget): the solver's last batch now stops at the budget, so a
+  solve is refused at exactly its budget or converges inside it. Verified: `tests/report.rs` covers an
+  interval longer than the budget and partial final batches; the reviewer's probe now refuses budget 1 at
+  step 1 for intervals 10 and 10,000 ([output](../../evidence/RIVERS/M1-budget-probe-after-fix.txt)).

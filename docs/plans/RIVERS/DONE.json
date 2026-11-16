@@ -61,8 +61,8 @@
           "statement": "A solve stops when the level's rate and the imbalance of discharge between sections are under the profile's tolerances, and reports its steps, cell updates, seconds and residual. One that does not get there inside its step budget is refused by name and writes nothing. It works on wet cells and their neighbours: doubling the rectangle round the same valley changes its cell updates by under 5%. Two solves of one input give the same bytes, on one thread and on eight.",
           "check": "cargo test --locked --offline -p thrum-river-model --test report",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M1.md",
           "verdict": "fail",
           "review": "docs/evidence/RIVERS/M1-review.md"
         },

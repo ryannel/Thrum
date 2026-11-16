@@ -34,6 +34,43 @@ fn a_solve_that_runs_out_of_steps_is_refused_by_name_and_writes_nothing() {
     );
 }
 
+/// The budget is a hard limit: a final batch shorter than the check interval, or an interval
+/// longer than the whole budget, never steps past it. A solve either reaches its tolerances
+/// inside the budget or is refused at exactly the budget, and one that converges on its last
+/// allowed step still succeeds.
+#[test]
+fn no_step_is_taken_beyond_the_budget() {
+    let (grid, declaration) = valley::valley(0.25);
+    let run = |step_budget, check_every| {
+        let profile = Profile {
+            step_budget,
+            check_every,
+            ..Profile::default()
+        };
+        match solve(&grid, &declaration, &profile) {
+            Ok(s) => Ok(s.report.steps),
+            Err(RiverError::NotConverged { name, steps, .. }) if name == "valley" => Err(steps),
+            Err(e) => panic!("budget {step_budget}, interval {check_every}: {e}"),
+        }
+    };
+    assert_eq!(run(1, 10_000), Err(1));
+    assert_eq!(run(1, 10), Err(1));
+    assert_eq!(run(505, 10), Err(505));
+    let needed = run(400_000, 10).unwrap();
+    assert_eq!(run(needed / 2, 1_000_000), Err(needed / 2));
+    assert_eq!(run(needed / 2 + 3, 10), Err(needed / 2 + 3));
+    assert_eq!(run(needed, 10), Ok(needed));
+    // Around the converging step, every outcome stays inside its budget.
+    for budget in needed - 12..needed {
+        for interval in [7, 10, 1_000_000] {
+            match run(budget, interval) {
+                Ok(steps) => assert!(steps <= budget, "{steps} > {budget}"),
+                Err(steps) => assert_eq!(steps, budget),
+            }
+        }
+    }
+}
+
 #[test]
 fn doubling_the_rectangle_round_the_valley_barely_changes_its_work() {
     let (grid, declaration) = valley::valley_in(0.25, 0.0, 14.0);
