@@ -177,7 +177,7 @@
     {
       "id": "M13",
       "name": "Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -247,7 +247,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
         {
@@ -291,13 +291,6 @@
           "evidence": "main-branch check exact-images; docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-exact-baselines.json",
           "verdict": "pass",
           "review": "docs/evidence/CLOUDS/M13-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "sun_path_skips_column_form_erosion",
-          "item": "M13.6",
-          "repeat": false
         }
       ]
     },

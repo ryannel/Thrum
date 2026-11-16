@@ -385,7 +385,7 @@
         {
           "verdict": "fail",
           "commit": "373a4fc40e2d2ba4f90ba41e044acb353a346f89",
-          "review": "docs/evidence/CLOUDS/M13-review.md",
+          "review": "docs/evidence/CLOUDS/M13-review-2.md",
           "items": {
             "M13.1": "pass",
             "M13.2": "pass",
@@ -421,6 +421,39 @@
             "turns": 1
           },
           "at": "2026-11-16T00:25:29Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "7ac40b0f4f254210455ab2436daeb22d39dd9bb6",
+          "review": "docs/evidence/CLOUDS/M13-review.md",
+          "items": {
+            "M13.1": "pass",
+            "M13.2": "pass",
+            "M13.3": "pass",
+            "M13.4": "pass",
+            "M13.5": "pass",
+            "M13.6": "pass",
+            "M13.7": "pass",
+            "M13.8": "pass",
+            "M13.9": "pass",
+            "M13.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 124243,
+            "cached": 1339776,
+            "output": 7032,
+            "turns": 1
+          },
+          "at": "2026-11-16T03:49:05Z"
         }
       ],
       "authorised": {
@@ -463,7 +496,14 @@
           "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
           "at": "2026-11-15T22:19:37Z"
         }
-      ]
+      ],
+      "done": {
+        "by": "review",
+        "commit": "7ac40b0f4f254210455ab2436daeb22d39dd9bb6",
+        "review": "docs/evidence/CLOUDS/M13-review.md",
+        "checked": "160595c5a0996b235043bff5e7624f6b0df6464b",
+        "at": "2026-11-16T03:49:05Z"
+      }
     },
     "M14": {
       "definitions": "f4f61f87dbc7c60d8f91077fca316a4dae72e5c62d49b1e6910f72f6a7227a3d",
