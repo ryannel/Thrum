@@ -37,7 +37,8 @@ pub const MAX_BATCH: Duration = Duration::from_millis(250);
 // caches reuse unchanged hashes and products; no additional watcher thread or runtime work.
 const RECONCILE: Duration = Duration::from_secs(2);
 
-/// Run an initial full cook, then cook on every batch of source changes until `stop` is set.
+/// Run an initial full cook, then cook on source events and periodic reconciliation until
+/// `stop` is set. Reconciliation reuses the stat and action caches for unchanged sources.
 ///
 /// # Errors
 /// Watcher start-up failure or event-stream disconnection. Cook failures are delivered through

@@ -60,7 +60,7 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/baselines.json; docs/evidence/REVIEW-ENGINE/M1/checks/items.json",
+          "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M1/README.md; docs/evidence/REVIEW-ENGINE/M1/checks/baselines.json; docs/evidence/REVIEW-ENGINE/M1/checks/items.json",
           "verdict": "",
           "review": ""
         }

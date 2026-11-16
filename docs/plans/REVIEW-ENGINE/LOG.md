@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-16 M1 closes the watcher's event-only wait: periodic stat-cache reconciliation recovers silent
+  changes without altering the original test's assertions or deadline. On `1d57d92d6`, 12 cooker unit tests
+  and four server/watcher tests pass without TMPDIR; ten empty-environment repeats pass too. Restoring the
+  old wait makes the new regression fail at generation 1. [The recovery evidence](../../evidence/REVIEW-ENGINE/M1/watcher-recovery/README.md)
+  records the confirmed liveness defect; the OS event-delay cause remains unconfirmed. The full gate and
+  normal merge follow; M1's five builder passes and `in_progress` status are retained.
+
 - 2026-11-15 On `96f26c347`, the refreshed simulator route, M1.1, both rewind cases, 42 unchanged game
   simulation tests and all 1,966 native/Chrome exact comparisons pass. Verifier time is 947.88 seconds.
   Target proof is retained at `588c2185e`; all four retained simulator images match the inspected originals,
