@@ -72,7 +72,7 @@ the matching section before you write code that does one of these jobs.
 | Device request | Features from `DeviceCapabilities::requested_timing_features`; no shared request for limits and error handling yet | `crates/thrum-render/src/capabilities.rs` |
 | Modules | `foo.rs` plus a `foo/` folder; no `mod.rs` (lint-enforced) | any crate |
 | Unit tests | `#[cfg(test)] mod tests;` with the body in `foo/tests.rs` once it passes a screen or two | `crates/thrum-render/src/visibility.rs` and `visibility/tests.rs` |
-| GPU tests | No adopted gate yet; four coexist. Gate only the tests that need a GPU, never a whole file | — |
+| GPU tests | Ask the shared gate for admission; skips write a visible reason and fail when a GPU is required. Gate only GPU tests, never a whole file | `crates/thrum-test-support/src/lib.rs` |
 | Construction | `new(..) -> Result<Self, E>` that validates up front; a documented `*Config` struct for many settings | `CookConfig` in `crates/thrum-cook/src/cooker.rs` |
 | Names | Say what the thing does (`transmittance`, `PublicationPage`). Milestone and gate codes (`g2s_`, `G5`, `t2_`) stay in plans and evidence | — |
 | GPU labels | Spaced plain words: `"camera visibility"` | `crates/thrum-render/src/visibility.rs` |
