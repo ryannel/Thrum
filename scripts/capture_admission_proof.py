@@ -32,7 +32,7 @@ def prepare():
             cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120)
 
 
-def session(output, name, case='variants', recipe='portable', policy=None, hold=0, source='sdr'):
+def session(output, name, case='variants', recipe='portable', policy=None, hold=0, source='sdr', verify=True):
     directory = output / name
     command = [sys.executable, 'scripts/capture_v1_runtime.py', '--binary', 'target/release/v1-game',
                '--store', str(TASK / 'valley'), '--output', str(directory), '--case', case,
@@ -50,6 +50,7 @@ def session(output, name, case='variants', recipe='portable', policy=None, hold=
         result = subprocess.run(command, cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, timeout=120)
     runtime = json.loads((directory / 'runtime.json').read_text())
     manifest = json.loads((directory / 'manifest.json').read_text())
+    assert runtime['recipe'] == f"Ok({'AppleTile' if recipe == 'apple-tile' else 'Portable'})"
     omissions = [row for row in runtime['opportunities'] if row.get('ring_omissions')]
     assert all(row['admission_usage'][0] == 6 for row in omissions), 'omission with a free staging slot'
     submitted = sum(row['submitted'] for row in runtime['opportunities'])
@@ -57,10 +58,8 @@ def session(output, name, case='variants', recipe='portable', policy=None, hold=
         assert runtime['complete'] and len(runtime['images']) == submitted
         assert not runtime['ring_omissions'] and not runtime['writer_omissions']
         # Independent zstd CLI/XOR decode verifies every original image hash.
-        finalize(directory, manifest, runtime, verify_only=True)
-        save_manifest(directory, manifest)
-        assert manifest['complete'] and len(manifest['records']) == submitted
-        assert [row['submit_ns'] for row in manifest['records']] == [row['submit_ns'] for row in runtime['images']]
+        if verify:
+            verify_images(directory, manifest, runtime, submitted)
     else:
         assert result.returncode == 75 and not runtime['complete'] and manifest.get('could_not_judge'), manifest
     row = {'name': name, 'command': command, 'exit': result.returncode, 'submitted': submitted,
@@ -68,17 +67,29 @@ def session(output, name, case='variants', recipe='portable', policy=None, hold=
            'writer_omissions': runtime['writer_omissions'], 'all_omissions_at_full_ring': True,
            'policy': runtime['admission_policy'], 'waits': runtime['admission_waits'],
            'skipped_waiting': runtime['admission_skipped_opportunities'],
-           'diagnostic': runtime['admission_diagnostic'], 'source': source,
+           'diagnostic': runtime['admission_diagnostic'], 'source': source, 'verified': result.returncode == 0 and verify,
            'source_sha256': digest(directory / manifest['spool_file']),
            'source_retention': 'complete sources hash-verified then discarded; runtime and manifest retained',
            'runtime_sha256': digest(directory / 'runtime.json'), 'manifest_sha256': digest(directory / 'manifest.json')}
+    if verify:
+        retire_source(directory, manifest)
+    return row
+
+
+def verify_images(directory, manifest, runtime, submitted):
+    finalize(directory, manifest, runtime, verify_only=True)
+    save_manifest(directory, manifest)
+    assert manifest['complete'] and len(manifest['records']) == submitted
+    assert [row['submit_ns'] for row in manifest['records']] == [row['submit_ns'] for row in runtime['images']]
+
+
+def retire_source(directory, manifest):
     for filename in ['runtime.json', 'manifest.json']:
         path = directory / filename
         (directory / (filename + '.gz')).write_bytes(gzip.compress(path.read_bytes(), mtime=0))
     # No visual-inspection item: keep identities and original hashes, not
     # gigabytes of reconstructible pixels. Incomplete source hashes remain too.
     (directory / manifest['spool_file']).unlink()
-    return row
 
 
 def start_load(output):
@@ -116,7 +127,7 @@ def loaded(output, report):
         'pids': [p.pid for p in processes], 'scope': 'mixed CPU/GPU contention; no isolated GPU-causality or cadence claim'}
     try:
         for attempt in range(3):
-            row = session(output, f'omit-control-{attempt}')
+            row = session(output, f'omit-control-{attempt}', verify=False)
             report['sessions'].append(row)
             save(output / 'report.json', report)
             if row['ring_omissions']:
@@ -126,12 +137,25 @@ def loaded(output, report):
         for matrix, cases in [('m1', ['variants', 'route']), ('m2', ['render-stall', 'route'])]:
             for recipe in ['portable', 'apple-tile']:
                 for case in cases:
-                    row = session(output, f'{matrix}-{recipe}-{case}', case, recipe, 'wait')
+                    row = session(output, f'{matrix}-{recipe}-{case}', case, recipe, 'wait', verify=False)
                     report['sessions'].append(row)
                     save(output / 'report.json', report)
                     assert row['exit'] == 0, f'{row["name"]} did not complete under wait'
     finally:
         stop_load(processes)
+    # Deferred CPU decoding is outside the competing workload. Every measured
+    # capture interval above has the same load, without spending GPU lock time
+    # starving an unrelated postprocessor of CPU service.
+    for row in report['sessions']:
+        directory = output / row['name']
+        runtime = json.loads((directory / 'runtime.json').read_text())
+        manifest = json.loads((directory / 'manifest.json').read_text())
+        if row['exit'] == 0:
+            verify_images(directory, manifest, runtime, row['submitted'])
+            row['verified'] = True
+            row['manifest_sha256'] = digest(directory / 'manifest.json')
+        retire_source(directory, manifest)
+    report['verification_load'] = 'competing workers stopped after all capture intervals, before deferred decoding'
 
 
 def ring_full(output, report):
