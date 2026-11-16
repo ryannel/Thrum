@@ -296,10 +296,10 @@
       "id": "M4",
       "name": "A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one",
       "depends_on": [],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, and no step when a tick commits. Alpha stays the same function of the clock and the consumed target, and no frame without a lead changes.",
       "items": [
         {
@@ -310,8 +310,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -320,10 +320,10 @@
           "ask": "Does the test work each frame's expected display time out from its own observations and leads, state the precision it holds them to, and read the phase from the effect time a contribution received? Does any source of world time, in the engine, the apps or the test hosts, form its phase from an alpha already held at 1, or fall back to one?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -334,8 +334,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -344,8 +344,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -354,8 +354,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "zero_lead_frame_selection_changes",
+          "item": "M4.2",
+          "repeat": false
         }
       ]
     }

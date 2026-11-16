@@ -263,7 +263,43 @@
     },
     "M4": {
       "definitions": "452634afe76102cf07932973e70d87ee8be37b4457eadfd3e520353c04b4c1a0",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "38a04faa106062fdc582d5564e624bc6f8d140bc",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass",
+            "M4.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "zero_lead_frame_selection_changes",
+              "item": "M4.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 127182,
+            "cached": 2848384,
+            "output": 9350,
+            "turns": 1
+          },
+          "at": "2026-11-16T17:28:49Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, whic",
