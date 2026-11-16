@@ -15,7 +15,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.2",
@@ -26,7 +26,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.3",
@@ -37,7 +37,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.4",
@@ -48,7 +48,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.5",
@@ -59,7 +59,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.6",
@@ -70,7 +70,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.7",
@@ -80,7 +80,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.8",
@@ -90,7 +90,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.9",
@@ -101,7 +101,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.10",
@@ -111,7 +111,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.11",
@@ -121,7 +121,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M1.12",
@@ -131,7 +131,7 @@
           "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/TRANSPORT/M1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,

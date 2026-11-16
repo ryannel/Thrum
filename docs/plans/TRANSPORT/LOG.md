@@ -104,3 +104,8 @@
   [M1.md](../../evidence/TRANSPORT/M1.md). Verified: M1.1 to M1.11 target proofs at `2b8d0530a`; the exact-baseline
   verifier passed all five baselines at `ae375af3d` before the last rebase. Not yet verified: that pass on the merged
   tip, which the main-branch check `exact-images` supplies; transport touches no captured crate, so a change is unlikely.
+- 2026-11-16 Builder, after the first M1 review: fixed host-drop-leaves-open-links. A dropped native host now closes
+  every link it created as `Local(0)`, including retained clones, unaccepted links and failed or panicked I/O
+  threads. Verified: Mac conformance's new `host-drop` case passes at `30a795a13` and fails on the unfixed adapter
+  ([evidence](../../evidence/TRANSPORT/M1.md#host-teardown-after-the-first-review-commit-30a795a13)). Not verified
+  locally: the other targets' checks after this change; the script's post-merge run covers them.
