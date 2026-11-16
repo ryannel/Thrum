@@ -157,3 +157,9 @@
   before it started; current project rules require the official merge without an outer device lock.
   M3.8 now cites the shared main-branch exact-images check, as those rules require. Historical full
   verifier passes and both variation audits remain retained. No engine or fixture source changed.
+- 2026-11-16 The script's clean-checkout M3.5 run passed slab readback but lost one HTTP
+  frame upload. Added bounded replay of the same submitted bytes and strict receiver deduplication.
+  Four transport regression tests, 17 T2 tests and documentation checks pass. The affected Chrome
+  check passes all 127 fixed frames; its selected slab frame matches the retained image exactly.
+  [The failed and passing records](../../evidence/EFFECT-GRAPH/M3/upload-recovery/README.md) retain source identities;
+  the socket reset's origin is unestablished. Normal checked integration follows this correction.

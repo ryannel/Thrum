@@ -235,7 +235,7 @@
           "lock": "chrome",
           "inspect": "Capture a `fixed` still in Chrome with T2 engine capture, with the slab crossing terrain, a prop and open sky. Judge the whole frame and a native-size crop of each crossing.",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M3-proof.md",
+          "evidence": "docs/evidence/EFFECT-GRAPH/M3/upload-recovery/README.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

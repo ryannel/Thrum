@@ -5,9 +5,9 @@ import path from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
-import { gzip, gunzip } from 'node:zlib';
+import { gunzip } from 'node:zlib';
+import { captureReceiver } from './browser_capture_receiver.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, cleanup, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
-const compress = promisify(gzip);
 const decompress = promisify(gunzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': 'target/v1-game-web', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
@@ -42,7 +42,7 @@ if (args['route-file']) {
   captureRoute = await fs.readFile(path.resolve(args['route-file']));
   files.set('/capture-route.json', { bytes: captureRoute, type: 'application/json', sha256: sha(captureRoute) });
 }
-for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript']]) {
+for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript'], ['capture_upload.mjs', 'text/javascript']]) {
   const bytes = await fs.readFile(path.join(args['web-root'], name));
   const source = await fs.readFile(path.join('examples/v1-game/web', name));
   if (!bytes.equals(source)) throw new Error(`Stale capture driver ${name}`);
@@ -68,38 +68,8 @@ await fs.writeFile(path.join(bundle, 'Contents/Info.plist'), `<?xml version="1.0
 execFileSync('/usr/bin/swiftc', ['-module-cache-path', path.join(output, 'swift-cache'), 'scripts/capture_browser_launcher.swift', '-o', launcher]);
 execFileSync('/usr/bin/codesign', ['--force', '--sign', '-', bundle]);
 manifest.launcher = { sha256: sha(await fs.readFile(launcher)), scope: 'LaunchServices app identity, preflight must be false before starting Chrome; no permission request' };
-let child, cdp, server, cook, ended = false, failure, active = 0, outputBytes = 0;
-const pending = new Set();
-function receive(request, response) {
-  if (!request.url.startsWith('/capture?')) return false;
-  const work = (async () => {
-    if (request.method !== 'POST' || active >= 8) { request.resume(); response.writeHead(429).end(); return; }
-    active++; manifest.export_peak = Math.max(manifest.export_peak, active);
-    try {
-      const ordinal = Number(new URL(request.url, 'http://localhost').searchParams.get('ordinal'));
-      if (!Number.isSafeInteger(ordinal) || ordinal < 0 || ordinal >= 1024 || manifest.records[ordinal]) throw new Error('Invalid or duplicate record ordinal');
-      const metadata = JSON.parse(request.headers['x-frame']);
-      const chunks = []; let length = 0;
-      for await (const chunk of request) {
-        length += chunk.length;
-        if (length > frameBytes) throw new Error('Oversized frame');
-        chunks.push(chunk);
-      }
-      if (length !== frameBytes) throw new Error('Truncated frame');
-      if (args.control === 'slow') await new Promise(resolve => setTimeout(resolve, 500));
-      const raw = Buffer.concat(chunks);
-      const encoded = await compress(raw, { level: 1 });
-      outputBytes += encoded.length;
-      if (outputBytes > manifest.output_allowance) throw new Error('Output allowance exhausted');
-      const file = `frames/${String(ordinal).padStart(6, '0')}.rgba.gz`;
-      await fs.writeFile(path.join(output, file), encoded, { flag: 'wx' });
-      manifest.records[ordinal] = { ...metadata, ordinal, file, rgba_sha256: sha(raw), bytes: encoded.length };
-      response.writeHead(200).end();
-    } finally { active--; }
-  })().catch(error => { failure ??= error; response.writeHead(500).end(String(error)); });
-  pending.add(work); work.finally(() => pending.delete(work));
-  return true;
-}
+let child, cdp, server, cook, ended = false, failure;
+const { receive, pending, bytes: encodedBytes } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, args.control === 'slow');
 try {
   ({ server, origin: manifest.origin } = await serve(files, receive));
   const serving = await serveCooked(args, output); cook = serving.cook;
@@ -188,8 +158,8 @@ finally {
   if (manifest.permission_preflight?.screen_recording_before !== false) manifest.complete = false;
   manifest.console_after = execFileSync('/usr/sbin/ioreg', ['-n', 'Root', '-d1'], { encoding: 'utf8' }).split('\n').filter(line => /IOConsoleLocked|CGSSessionScreenIsLocked/.test(line)).join('\n');
   manifest.encoding = { stage: 'final SDR engine output after history/tone/engine overlay, before canvas presentation', channel_order: 'RGBA8', colour: 'sRGB', row_stride: route.render_extent[0] * 4, extent: route.render_extent };
-  manifest.encoded_bytes = outputBytes;
+  manifest.encoded_bytes = encodedBytes();
   await fs.writeFile(path.join(output, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }
 if (failure) throw failure;
-console.log(`PASS ${manifest.observer_only ? "capture-off observer arm;" : manifest.negative_control_pass ? "negative control, incomplete capture;" : "complete capture;"} ${manifest.records.length} exact submitted images, ${outputBytes} encoded bytes`);
+console.log(`PASS ${manifest.observer_only ? "capture-off observer arm;" : manifest.negative_control_pass ? "negative control, incomplete capture;" : "complete capture;"} ${manifest.records.length} exact submitted images, ${encodedBytes()} encoded bytes`);

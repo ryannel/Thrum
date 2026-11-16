@@ -38,6 +38,7 @@ cp crates/thrum-render/src/synthetic/temporal/witness.json "$build_root/$web/tem
 cp examples/v1-game/web/route.html "$build_root/$web/route.html"
 cp examples/v1-game/web/capture.html "$build_root/$web/capture.html"
 cp examples/v1-game/web/capture.mjs "$build_root/$web/capture.mjs"
+cp examples/v1-game/web/capture_upload.mjs "$build_root/$web/capture_upload.mjs"
 cp examples/v1-game/routes/*.json "$build_root/$web/"
 cp crates/thrum-controls/web/thrum-controls.js "$build_root/$web/thrum-controls.js"
 cp examples/v1-game/params/*.params.json "$build_root/$web/"

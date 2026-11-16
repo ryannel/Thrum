@@ -1,5 +1,6 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
 import init, { create_route_game, fetch_cooked_valley } from './v1_game.js';
+import { uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;
 const query = new URL(location.href).searchParams;
@@ -30,9 +31,7 @@ function drain() {
       continue;
     }
     record.images.push(metadata);
-    const task = fetch(`/capture?ordinal=${record.images.length - 1}`, {
-      signal: AbortSignal.timeout(10000), method: 'POST', headers: { 'X-Frame': image.metadata }, body: image.pixels,
-    }).then(response => { if (!response.ok) fail(`export HTTP ${response.status}`); })
+    const task = uploadCapture(record.images.length - 1, image, retry => (record.export_retries ??= []).push(retry))
       .catch(error => { exportError = String(error); }).finally(() => inflight.delete(task));
     inflight.add(task);
     record.export_peak = Math.max(record.export_peak, inflight.size);
@@ -156,8 +155,8 @@ try {
     }
     record.loss.replacement = JSON.parse(fresh.metadata);
     record.loss.replacement_bytes = fresh.pixels.length;
-    const saved = await fetch('/capture?ordinal=0', { method: 'POST', headers: { 'X-Frame': fresh.metadata }, body: fresh.pixels, signal: AbortSignal.timeout(10000) });
-    if (!saved.ok || fresh.pixels.length !== route.render_extent[0] * route.render_extent[1] * 4) fail('replacement pixels failed export');
+    await uploadCapture(0, fresh, retry => (record.export_retries ??= []).push(retry));
+    if (fresh.pixels.length !== route.render_extent[0] * route.render_extent[1] * 4) fail('replacement pixels failed export');
     record.images.push(record.loss.replacement);
     if (!/lost/.test(record.loss.pending_refusal) || !/lost/.test(record.loss.begin_refusal)
         || !record.loss.retired_refusal || record.loss.tick_after <= record.loss.tick_before
