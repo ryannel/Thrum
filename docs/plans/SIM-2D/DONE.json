@@ -151,8 +151,8 @@
           "ask": "Read the test. Does the brute-force side enumerate every body without using the index's cells or tables, and sort by the design's key? Is each scene kind in the statement generated?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -162,8 +162,8 @@
           "ask": "Are the expected answers written out from geometry in the test, and not computed by the predicates under test?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -172,8 +172,8 @@
           "check": "cargo test --locked --offline -p crowd-2d --test swept_hit",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -182,8 +182,8 @@
           "ask": "Does the index reuse its buffers from one build to the next by design? Were the counts measured by a counting allocator around warmed calls, and not asserted? Does any check or test fail on a count? None should.",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/costs-mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -193,8 +193,8 @@
           "ask": "Is the Crowd trace's retained file byte for byte the one M1 was accepted with, by git history? Does the Mixed run report oversize bodies indexed and capsule hits, each above zero?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/mac-metal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -203,8 +203,8 @@
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SIM-2D/M2/chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -213,8 +213,8 @@
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
           "evidence": "docs/evidence/SIM-2D/M2/ios-sim.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -224,8 +224,8 @@
           "ask": "Does the run report the crowd's steering rules dispatched in parallel chunks, with a count above zero?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/mac-parallel.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -234,20 +234,20 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Do the rows support the explanation given for each slower one? Is forced-parallel reported as measured, whichever way it came out?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M2.10",
           "statement": "In Chrome, for both traces at the three sizes, tick, index build and time per neighbour visited are on record from two separate runs with build and load. Any row about a quarter slower than M1's at the same neighbour count is explained.",
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SIM-2D/M2/performance.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M2.11",
@@ -255,8 +255,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -266,16 +266,28 @@
           "ask": "Does the wide query in the test cover so many cells, at the smallest cell size the index accepts, that walking them could not finish in the test's time?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one."
+      "status": "in_progress",
+      "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one.",
+      "findings": [
+        {
+          "name": "mac_cost_identity_stale",
+          "item": "M2.9",
+          "repeat": false
+        },
+        {
+          "name": "chrome_cost_identity_stale",
+          "item": "M2.10",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M3",

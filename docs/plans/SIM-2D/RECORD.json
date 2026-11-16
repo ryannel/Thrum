@@ -168,7 +168,55 @@
     },
     "M2": {
       "definitions": "98dc64aa57428259f6c07f61e0f8568b3c2ff2e8657c3691b787b8702d180a85",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "07fe891982906a064c141ab7419ab83b89376bb5",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "fail",
+            "M2.10": "fail",
+            "M2.11": "pass",
+            "M2.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "mac_cost_identity_stale",
+              "item": "M2.9",
+              "repeat": false
+            },
+            {
+              "name": "chrome_cost_identity_stale",
+              "item": "M2.10",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 114825,
+            "cached": 1516160,
+            "output": 6484,
+            "turns": 1
+          },
+          "at": "2026-11-16T16:54:56Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SIM-2D at docs/evidence/SIM-2D/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
