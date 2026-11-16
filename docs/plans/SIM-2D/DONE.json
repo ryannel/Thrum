@@ -12,30 +12,30 @@
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "ask": "Read the runner and the retained file. Were the retained digests made by a straight run that had the corrected inputs from the start and never rewound? Does the fold hold one digest per tick, that of the tick as last committed, with superseded digests left out? Does the crowd step through thrum_core::sim's registered runtime, with spawns and despawns as structural edits and rewinds through its history, and not through a private loop? Does the wire route pass every frame through thrum-network's own encode and decode? Does the run report slots reused, hits, rewinds, rewinds whose replay changed a digest, and axes the wire changed, each above zero at every size?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M1/mac-metal.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.2",
           "statement": "As Wasm in Chrome the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SIM-2D/M1/chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.3",
           "statement": "In the iPhone simulator the profile's retained vectors and the Crowd trace reproduce the same retained values the Mac does, at all three sizes, with the trace's rewinds replayed, and at 2,000 bodies by the wire route.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "evidence": "docs/evidence/SIM-2D/M1/ios-sim.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.4",
@@ -44,8 +44,8 @@
           "ask": "Does the control differ from the reference crowd by that one rule only, and run through the same runner and comparison as M1.2?",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SIM-2D/M1/control.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -54,8 +54,8 @@
           "ask": "Does the type expose anything outside mechanism 1's list: a sine, a power, a fused multiply-add, a sign-bit read, raw bits, a total ordering, or a conversion from a raw f32 other than the input conversion? Do the retained vectors include, for each operation that can produce them, subnormal results, rounding ties, both zeros, overflow to infinity and NaN operands?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -65,8 +65,8 @@
           "ask": "Read the test. Does it drive the refusal through a registered rule and the runtime's own commit, once for an infinity and once for a NaN?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -76,8 +76,8 @@
           "ask": "Read the test. Does it change, one at a time, each kind of value in the design's coverage list: tick, live flag, generation, stable identity, structural tick, free-list order, component presence, value and change tick, identity index, row directory and a game resource? Is any covered value hashed through std::hash or at the machine's width?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -86,10 +86,10 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target mac-metal",
           "ask": "Were both retained runs release builds of the claimed commit, timed through the engine's runtime and not a stand-in, with the load on the machine recorded? Does the record give the replay figure SESSION needs: eight ticks at each size? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M1/costs-mac-metal.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.9",
@@ -97,8 +97,8 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SIM-2D/M1/costs-chrome-webgpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -108,8 +108,8 @@
           "ask": "Does the test compare with the same retained file the conformance command reads, with no path that regenerates it? Do the V1 game's own simulation tests still pass unchanged?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -118,8 +118,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         },
         {
@@ -129,16 +129,38 @@
           "ask": "Read the test. Does the wire side go through thrum-network's public encode and decode of whole input batches, and not through a copy of its arithmetic? Does the slice hold axes the wire changes, counted above zero, and do they steer players? Does the test run inside ./dev check? Can a rule of the reference crowd turn a frame's axis into a profile number any other way than the engine's conversion?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M1/tests.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail."
+      "status": "in_progress",
+      "quality_bar": "As reproducible as Box2D 3.1, whose test suite pins one scene to one hash on every processor and compiler it supports, and as strict as Factorio's lockstep multiplayer, where any difference between peers is a bug. One recorded trace, one digest per tick, equal on all three targets, with a control that proves the comparison can fail.",
+      "findings": [
+        {
+          "name": "Retained profile vectors omit the input conversion at the wire boundaries",
+          "item": "M1.1",
+          "repeat": false
+        },
+        {
+          "name": "Chrome run does not check the input conversion at the wire boundaries",
+          "item": "M1.2",
+          "repeat": false
+        },
+        {
+          "name": "Simulator run does not check the input conversion at the wire boundaries",
+          "item": "M1.3",
+          "repeat": false
+        },
+        {
+          "name": "Quarter-slower tripwire compares only within one record",
+          "item": "M1.8",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M2",

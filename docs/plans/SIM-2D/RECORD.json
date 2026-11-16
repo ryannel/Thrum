@@ -26,7 +26,65 @@
   "milestones": {
     "M1": {
       "definitions": "d41c37333513166e5720a55fe98f93bd55485752e61fb11d939846440dc53a37",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "2aa357818ab5abcf130d46ab9d0dff0cc7d09024",
+          "review": "docs/evidence/SIM-2D/M1-review.md",
+          "items": {
+            "M1.1": "fail",
+            "M1.2": "fail",
+            "M1.3": "fail",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "fail",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "Retained profile vectors omit the input conversion at the wire boundaries",
+              "item": "M1.1",
+              "repeat": false
+            },
+            {
+              "name": "Chrome run does not check the input conversion at the wire boundaries",
+              "item": "M1.2",
+              "repeat": false
+            },
+            {
+              "name": "Simulator run does not check the input conversion at the wire boundaries",
+              "item": "M1.3",
+              "repeat": false
+            },
+            {
+              "name": "Quarter-slower tripwire compares only within one record",
+              "item": "M1.8",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 142905,
+            "cached": 3534783,
+            "output": 31351,
+            "cost_usd": 2.476913,
+            "turns": 1
+          },
+          "at": "2026-11-16T00:25:59Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Two tasks in one pass.",
