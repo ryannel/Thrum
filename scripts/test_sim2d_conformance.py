@@ -1,8 +1,37 @@
 """Cost regressions must survive record boundaries and retain their comparator."""
 import unittest
+from copy import deepcopy
 from unittest.mock import patch
 
-from sim2d_conformance import last_comparable, measure
+from sim2d_conformance import build_settings, last_comparable, measure
+
+
+class BuildIdentity(unittest.TestCase):
+    def test_unlinked_workspace_addition_preserves_identity(self):
+        manifest = {"workspace": {"members": ["runner"], "resolver": "3"}}
+        lock = {"version": 4, "package": [{"name": "runner", "version": "1"}]}
+        selected = {("runner", "1", None)}
+        before = build_settings(manifest, lock, selected)
+        manifest["workspace"]["members"].append("rain-model")
+        manifest["profile"] = {"test": {"package": {"rain-model": {"opt-level": 2}}}}
+        lock["package"].append({"name": "rain-model", "version": "1"})
+        self.assertEqual(before, build_settings(manifest, lock, selected))
+
+    def test_relevant_build_and_lock_changes_invalidate_identity(self):
+        manifest = {"workspace": {"members": ["runner"], "resolver": "3"},
+                    "profile": {"release": {"opt-level": 3}}}
+        lock = {"version": 4, "package": [{"name": "dep", "version": "1", "source": "registry", "checksum": "a"}]}
+        selected = {("dep", "1", "registry")}
+        before = build_settings(manifest, lock, selected)
+        changed = deepcopy(lock)
+        changed["package"][0]["checksum"] = "b"
+        self.assertNotEqual(before, build_settings(manifest, changed, selected))
+        changed = deepcopy(manifest)
+        changed["profile"]["release"]["opt-level"] = 2
+        self.assertNotEqual(before, build_settings(changed, lock, selected))
+        changed = deepcopy(manifest)
+        changed["profile"]["release"]["package"] = {"dep": {"opt-level": 1}}
+        self.assertNotEqual(before, build_settings(changed, lock, selected))
 
 
 class CostComparisons(unittest.TestCase):

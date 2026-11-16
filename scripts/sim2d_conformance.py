@@ -9,6 +9,8 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import tomllib
+from copy import deepcopy
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRATCH = ROOT / "tmp/sim2d"
@@ -29,12 +31,51 @@ def identity():
             "rustc": command(["rustup", "run", "1.99.1", "rustc", "--version"]).strip()}
 
 
+def build_settings(manifest, lock, packages):
+    """Keep shared settings and locked packages that can affect the runner build."""
+    manifest = deepcopy(manifest)
+    for key in ["members", "default-members", "exclude"]:
+        manifest["workspace"].pop(key, None)
+    names = {name for name, _, _ in packages}
+    for profile in manifest.get("profile", {}).values():
+        if "package" in profile:
+            profile["package"] = {name: value for name, value in profile["package"].items()
+                                  if name in names or name == "*"}
+            if not profile["package"]:
+                del profile["package"]
+    if "profile" in manifest:
+        manifest["profile"] = {name: value for name, value in manifest["profile"].items() if value}
+        if not manifest["profile"]:
+            del manifest["profile"]
+    selected = [entry for entry in lock["package"]
+                if (entry["name"], entry["version"], entry.get("source")) in packages]
+    return {"manifest": manifest, "lock_version": lock["version"], "packages": selected}
+
+
 def source_key():
-    """Identity of the measured rules, runtime, codec, runner and build settings."""
-    files = [ROOT / name for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "scripts/sim2d_conformance.py", "scripts/sim2d_browser.mjs"]]
-    for directory in ["crates/thrum-core", "crates/thrum-sim2d", "crates/thrum-network", "examples/crowd-2d", "examples/crowd-2d-run", ".cargo"]:
-        files.extend(path for path in (ROOT / directory).rglob("*") if path.is_file())
+    """Identity of the runner's normal/build dependency closure, on all targets."""
+    metadata = json.loads(command(["rustup", "run", "1.99.1", "cargo", "metadata", "--locked", "--offline", "--format-version", "1"]))
+    packages = {p["id"]: p for p in metadata["packages"]}
+    nodes = {n["id"]: n for n in metadata["resolve"]["nodes"]}
+    selected = set()
+    pending = [p["id"] for p in packages.values() if p["name"] == "crowd-2d-run"]
+    while pending:
+        package = pending.pop()
+        if package in selected:
+            continue
+        selected.add(package)
+        pending.extend(dep["pkg"] for dep in nodes[package]["deps"]
+                       if any(kind["kind"] in [None, "build"] for kind in dep["dep_kinds"]))
+    identities = {(packages[p]["name"], packages[p]["version"], packages[p]["source"]) for p in selected}
+    settings = build_settings(tomllib.loads((ROOT / "Cargo.toml").read_text()),
+                              tomllib.loads((ROOT / "Cargo.lock").read_text()), identities)
+    files = [ROOT / name for name in ["rust-toolchain.toml", "scripts/sim2d_conformance.py", "scripts/sim2d_browser.mjs"]]
+    directories = [ROOT / ".cargo"] + [Path(packages[p]["manifest_path"]).parent
+                                       for p in selected if packages[p]["source"] is None]
+    for directory in directories:
+        files.extend(path for path in directory.rglob("*") if path.is_file())
     digest = hashlib.sha256()
+    digest.update(json.dumps(settings, sort_keys=True).encode())
     for path in sorted(files):
         digest.update(str(path.relative_to(ROOT)).encode())
         digest.update(hashlib.sha256(path.read_bytes()).digest())
@@ -216,7 +257,7 @@ def measure(target):
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
-    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "rev-parse", "HEAD"]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
+    return {"runs": runs, "previous_record_sha256": previous_hash, "previous_record_commit": command(["git", "log", "-1", "--format=%H", "--", previous_path.relative_to(ROOT)]).strip() if previous else None, "artifact_sha256": runner.artifact_hash, "user_agent": runner.user_agent, "cross_origin_isolated": runner.isolated, "source_sha256": measured_source, "timings_are_baselines": True}
 
 
 def last_comparable(row, record, origin):
