@@ -1,7 +1,6 @@
 [package]
 name = "thrum-cook"
 autobenches = false
-autotests = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -33,21 +32,5 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
 
 [[bench]]
 name = "edit_to_visible"
-path = "tests/edit_bench.rs"
+path = "tests/edit_to_visible/bench.rs"
 harness = false
-
-[[test]]
-name = "edit_to_visible"
-path = "tests/edit_to_visible.rs"
-
-[[test]]
-name = "cook_loop"
-path = "tests/cook_loop.rs"
-
-[[test]]
-name = "serve_and_watch"
-path = "tests/serve_and_watch.rs"
-
-[[test]]
-name = "hostile_products"
-path = "tests/hostile_products.rs"

@@ -1,4 +1,4 @@
-//! G5 tripwire measurements: source scan latency, watcher-driven edit-to-visible stages, viewer
+//! G5 tripwire measurements: source scan latency, watcher-driven edit-to-visible stages, engine
 //! startup and frame hitch during product swaps.
 //!
 //! Short native run (about ten seconds, light GPU use). Figures are tripwires on a shared machine,

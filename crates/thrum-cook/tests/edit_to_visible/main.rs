@@ -1,4 +1,4 @@
-//! A source edit becomes visible in a running viewer without the render thread waiting.
+//! A source edit becomes visible through the shipping loader without the render thread waiting.
 //!
 //! Short GPU correctness run: cook, start the shipping-shaped viewer, edit the texture and the
 //! mesh, and check that each publication is swapped in, drawn, and changes the image while

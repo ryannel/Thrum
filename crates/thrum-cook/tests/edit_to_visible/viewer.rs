@@ -68,18 +68,20 @@ impl Records {
     }
 }
 
-struct World;
-fn identity() -> SourceTick {
+struct World {
+    tick: u64,
+}
+fn identity(tick: u64) -> SourceTick {
     SourceTick {
         epoch: 1,
-        tick: 0,
+        tick,
         timeline: 1,
     }
 }
 impl FrameWorld for World {
     type Page = SourceTick;
     fn source(&self) -> SourceTick {
-        identity()
+        identity(self.tick)
     }
     fn has_current_page(&self) -> bool {
         true
@@ -88,10 +90,11 @@ impl FrameWorld for World {
         false
     }
     fn advance(&mut self, _: Duration) -> Result<WorldAdvance, String> {
+        self.tick += 1;
         Ok(WorldAdvance {
-            tick: 0,
+            tick: self.tick,
             overload: None,
-            completed_ticks: 0,
+            completed_ticks: 1,
             queued_ticks: 0,
             projected_changes: 0,
             projection_lost_ticks: 0,
@@ -104,10 +107,10 @@ impl FrameWorld for World {
         Ok(WorldPublication {
             id: SnapshotId {
                 epoch: WorldEpoch(1),
-                tick: 0,
+                tick: self.tick,
             },
             timeline: 1,
-            page: identity(),
+            page: identity(self.tick),
         })
     }
     fn presentation_alpha_at(&self, _: Duration) -> f32 {
@@ -119,7 +122,9 @@ struct Scene {
 }
 impl SceneSource<SourceTick> for Scene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
-        into.extract(*page, [0.0; 3], |_| {})
+        into.extract(*page, [0.0; 3], |sink| {
+            sink.push(0, 1, 1, [1000.0; 3], 0);
+        })
     }
     fn frame(
         &self,
@@ -140,7 +145,10 @@ impl SceneSource<SourceTick> for Scene {
                 100.0,
             )
             .map_err(|e| format!("{e:?}"))?,
-            lighting: FrameLighting::Diagnostic(SyntheticLight::default()),
+            lighting: FrameLighting::Diagnostic(SyntheticLight {
+                direction_to_light: [0.4, 0.8, 0.3],
+                irradiance: [4.0; 3],
+            }),
         })
     }
 }
@@ -164,7 +172,10 @@ impl Viewer {
     ) -> Self {
         let capabilities = DeviceCapabilities::capture(adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
-        scene.instances.clear();
+        // The prepared renderer requires a nonempty scene table. Its one diagnostic instance
+        // stays outside the view; the visible geometry belongs to CookedAssets.
+        scene.instances[0].current[3] = [1000.0, 1000.0, 1000.0, 1.0];
+        scene.instances[0].previous = scene.instances[0].current;
         let mut host = pollster::block_on(FrameHost::new(
             &capabilities,
             &queue,
@@ -172,7 +183,7 @@ impl Viewer {
                 render_extent: config.extent,
                 surface: None,
             },
-            World,
+            World { tick: 0 },
             Scene { time: 0.0 },
             scene,
             1.0,
