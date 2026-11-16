@@ -310,3 +310,7 @@
   [Cost](../../evidence/WATERS/M12-preparation.md) records preparation bytes/time and six column probes.
   Earlier incomplete baseline captures remain diagnostic history; the current shared main-branch
   `exact-images` check supplies M12.10's proof after integration. GPU surf and its appearance remain for M13.
+- 2026-11-16 M12's post-merge gate exposed a watcher publication timeout. Added bounded stat-cache
+  reconciliation to recover delayed or absent notifications, retaining the original debounce and test deadline.
+  [Recovery proof](../../evidence/WATERS/M12-watch-recovery.md) records the native trace, no-notification
+  edit/add/remove/idle regression, cooker regressions and strict Clippy. The water model is unchanged.
