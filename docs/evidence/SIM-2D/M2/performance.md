@@ -42,6 +42,9 @@ At 10,000 bodies, serial tick medians are 9.706–9.935 ms and forced-parallel m
 the 60 Hz clock flag, and no row is a quarter slower than the preceding repeat at comparable
 neighbour count. These observations do not qualify a quiet-machine crossover or another device.
 
+At 10,000 bodies, eight-tick replay is 79.8–108.0 ms serial and 16.8–18.1 ms forced-parallel.
+The raw rows retain rewind and digest timings too, for SESSION's replay planning.
+
 The counting allocator observes zero allocations in warmed build, circle, box, capsule, wide
 circle and nearest-k calls at 10,000 bodies. First-use buffer growth is outside that scope. The
 test and record check completeness, never a zero-allocation threshold.
