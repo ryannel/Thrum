@@ -62,11 +62,14 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                         };
                         let offset = (layer * width * width + pixel) * 4;
                         for channel in 0..4 {
-                            let error = (base[offset + channel] - expected[channel]).abs();
-                            assert!(
-                                error <= 0.001 * expected[channel].abs() + 0.000_001,
-                                "base plane {layer} pixel {pixel}: {error}"
-                            );
+                            let mut actual = base[offset + channel];
+                            let mut budget = 0.001 * expected[channel].abs() + 0.000_001;
+                            if layer % 5 == 0 && channel < 3 {
+                                actual += base[offset + 4 * width * width * 4 + channel + 1];
+                                budget = 0.000_001 * expected[channel].abs() + 0.000_000_1;
+                            }
+                            let error = (actual - expected[channel]).abs();
+                            assert!(error <= budget, "base plane {layer} pixel {pixel}: {error}");
                         }
                     }
                 }
@@ -119,7 +122,14 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                                             + 4 * child_width * child_width * 4
                                             + channel
                                             + 1];
-                                        budget = f64::from(mip) * 0.000_002 + 0.000_000_1;
+                                        // The high/low encoding retains about twenty
+                                        // significant bits; bound each residual carry
+                                        // by parent magnitude, including cancellation.
+                                        let paired_rounding =
+                                            (1.0 + 0.000_002_5_f64).powf(f64::from(mip)) - 1.0;
+                                        budget = paired_rounding * magnitude[channel]
+                                            / (block * block) as f64
+                                            + f64::from(mip) * 0.000_000_1;
                                     }
                                     assert!(
                                         (actual - expected).abs() <= budget,
