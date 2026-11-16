@@ -42,7 +42,7 @@ pub struct Material {
     pub base_rgba: [f32; 4],
     /// Emissive colour and alpha cutoff.
     pub emissive_cutoff: [f32; 4],
-    /// Normal scale, roughness, metalness and occlusion.
+    /// Occlusion strength, roughness, metalness and normal scale.
     pub surface: [f32; 4],
     /// Semantic flags.
     pub flags: [u32; 4],

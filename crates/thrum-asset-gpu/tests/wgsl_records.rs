@@ -53,6 +53,16 @@ fn check(source: &str) -> usize {
     }
     let layouts = BTreeMap::from([
         (
+            "MaterialRecord",
+            pod::<Material>(vec![
+                ("base", offset_of!(Material, base_rgba)),
+                ("emissive_cutoff", offset_of!(Material, emissive_cutoff)),
+                ("surface", offset_of!(Material, surface)),
+                ("flags", offset_of!(Material, flags)),
+                ("texture_layers", offset_of!(Material, textures)),
+            ]),
+        ),
+        (
             "Cull",
             pod::<Cull>(vec![
                 ("view_proj", offset_of!(Cull, view_proj)),
@@ -146,6 +156,30 @@ fn a_new_bound_struct_is_discovered() {
     check(
         "struct Unknown { value: vec4<f32> }\n@group(7) @binding(0) var<uniform> unknown: Unknown;",
     );
+}
+
+#[test]
+fn material_upload_matches_the_renderers_actual_declaration() {
+    let declaration = thrum_render::abi::material_wgsl_declaration().expect("scene material ABI");
+    assert_eq!(
+        check(&format!(
+            "{declaration}\n@group(2) @binding(0) var<storage, read> materials: array<MaterialRecord>;"
+        )),
+        1
+    );
+}
+
+#[test]
+#[should_panic(expected = "MaterialRecord size")]
+fn changed_renderer_material_layout_is_refused() {
+    let declaration = thrum_render::abi::material_wgsl_declaration().expect("scene material ABI");
+    let changed = declaration.replace(
+        "texture_layers: vec4<u32>,",
+        "texture_layers: vec4<u32>, extra: vec4<f32>,",
+    );
+    check(&format!(
+        "{changed}\n@group(2) @binding(0) var<storage, read> materials: array<MaterialRecord>;"
+    ));
 }
 
 #[test]

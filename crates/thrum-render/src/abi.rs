@@ -10,6 +10,15 @@ pub const MATERIAL_BYTES: usize = 80;
 pub const INSTANCE_BYTES: usize = 192;
 /// Base colour, emissive, surface factors, semantic flags, texture-layer indices.
 pub const MATERIAL_OFFSETS: [usize; 5] = [0, 16, 32, 48, 64];
+
+/// The scene's actual material declaration, for consumers that reflect their upload ABI.
+/// Returns `None` if the renderer no longer declares this public material record.
+pub fn material_wgsl_declaration() -> Option<&'static str> {
+    let source = include_str!("synthetic.wgsl");
+    let start = source.find("struct MaterialRecord {")?;
+    let end = start + source[start..].find('}')? + 1;
+    source.get(start..end)
+}
 /// Current/previous model, padded normal columns and instance/material/skin/source IDs.
 pub const INSTANCE_OFFSETS: [usize; 6] = [0, 64, 128, 144, 160, 176];
 
