@@ -66,6 +66,17 @@ The complete APPLE-TILE M0 command, its fixed controls and retained sources are 
 
 Ordinary pan/running/off schedules contain no diagnostic actions.
 
+For Weather and Shade, `THRUM_CLOUDS=shade` selects the real game contribution.
+`THRUM_CLOUD_WIND` sets initial X wind in m/s and `THRUM_CLOUD_TIME_SCALE` sets
+weather speed (1–60), both validated before world construction. With the cooked
+valley, `THRUM_CAMERA_HEIGHT` selects the camera's absolute height in metres.
+`--case clouds-still --mode fixed` retains one held submitted checkpoint;
+`--case clouds-drift --mode realtime` holds the view, runs the ordinary world
+from one to 21 seconds, then pauses for a final hold. Its explicit 4,096-record
+writer/decoder limit admits twenty seconds at 120 opportunities/s. Other cases
+retain their 1,024-record limit. Pixel and encoded queues keep their existing
+bounds; only the finite per-record hash list grows.
+
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,
