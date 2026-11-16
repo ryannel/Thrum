@@ -304,6 +304,36 @@
         "by": "plan",
         "task": "EFFECT-GRAPH M4 is blocked on a contradiction in its done-when file. M4.2's consumed-target identity, with delayed obser",
         "at": "2026-11-16T19:42:17Z"
+      },
+      "ready_for_review": {
+        "commit": "7cccad0e571a3f461d669b337e9acdb10c3d72d7",
+        "checked": "7cccad0e571a3f461d669b337e9acdb10c3d72d7",
+        "at": "2026-11-16T23:45:35Z",
+        "reused": [
+          "Test command",
+          "M4.6"
+        ],
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 424577,
+          "cached": 45097600,
+          "output": 124061,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 679849,
+          "cached": 88911744,
+          "output": 343473,
+          "turns": 5
+        }
       }
     }
   },
