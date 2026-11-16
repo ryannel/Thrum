@@ -243,7 +243,6 @@ fn the_watcher_publishes_an_edited_source() {
         std::thread::spawn(move || {
             let mut cooker = Cooker::open(config).expect("open");
             watch(&mut cooker, &source, &stop, |event| {
-                eprintln!("watch cycle: {event:?}");
                 if let Ok(report) = &event.report
                     && let Some(head) = report.published
                 {
