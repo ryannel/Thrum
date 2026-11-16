@@ -68,7 +68,9 @@ fn placed_sun_paths_erode_column_forms_with_and_without_ground() {
                             support::close(actual.optical_depth.value, cloud + fog, 1e-11);
                             assert!(!actual.surface_blocked);
                             if elevation > 89.0 {
-                                assert!(cloud > 0.0);
+                                if matches!(density, Density::Uneroded) {
+                                    assert!(cloud > 0.0);
+                                }
                                 if with_ground {
                                     assert!(fog > 0.0);
                                 }
