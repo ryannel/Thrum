@@ -539,6 +539,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         |writer| writer.finish(Duration::from_secs(10)),
     );
     let interval_complete = mode == "still"
+        || scenario == "clouds-still"
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
             && if scenario == "route" {
