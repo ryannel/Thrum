@@ -209,7 +209,7 @@
         {
           "verdict": "fail",
           "commit": "b55c36b929f46358069de169bd7187ad26f2b948",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "review": "docs/evidence/PUDDLES/M2-review-2.md",
           "items": {
             "M2.1": "fail",
             "M2.2": "pass",
@@ -251,6 +251,45 @@
             "turns": 1
           },
           "at": "2026-11-16T15:07:18Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "ef9ea8b51541c4266d5ea0dc481be7156323f885",
+          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.11": "fail",
+            "M2.9": "pass",
+            "M2.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "uncovering-film-is-owed-instead-of-transferred",
+              "item": "M2.11",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 147514,
+            "cached": 2277376,
+            "output": 6662,
+            "turns": 1
+          },
+          "at": "2026-11-16T20:06:43Z"
         }
       ],
       "authorised": {

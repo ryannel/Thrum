@@ -156,9 +156,9 @@
     {
       "id": "M2",
       "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Wet ground and rain rings a physics text would accept: two stores that keep their water through a shower long enough to fill the pores, darkening that follows from the film's optics, and rings that follow from water's dispersion and outlive the rain that made them, each held to the test's own arithmetic as parts 3 to 5 and 8 to 10 of the design proofs hold them.",
@@ -171,7 +171,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/PUDDLES/M2-review.md"
         },
         {
@@ -233,10 +233,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
@@ -261,16 +261,9 @@
       ],
       "findings": [
         {
-          "name": "negative-ground-inventory-after-source-off",
-          "item": "M2.1",
-          "different": "The prior Account::unpaid source is removed; the replacement debt survives uncovering and drying and makes ground_held negative while sinks exceed received rain.",
-          "repeat": false
-        },
-        {
           "name": "uncovering-film-is-owed-instead-of-transferred",
           "item": "M2.11",
-          "different": "The prior reported covering overpayment is fixed; uncovering now records zero delivered film and debt, while the ground subsequently consumes the undelivered class film.",
-          "repeat": false
+          "repeat": true
         }
       ]
     },
