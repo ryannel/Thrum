@@ -138,7 +138,7 @@
     {
       "id": "M3",
       "name": "A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -152,8 +152,8 @@
           "lock": "gpu",
           "ask": "Does a load still allocate or scan in proportion to the index count? Did any cooked product's bytes change for the same source?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -164,8 +164,8 @@
           "lock": "gpu",
           "ask": "Did the diff change any assertion or reference in a test that existed before this milestone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -175,8 +175,8 @@
           "check": "sh -c 'test ! -e examples/asset-loop && ! grep -rqE \"asset[-_]loop|examples/\" crates/thrum-cook --include=Cargo.toml --include=*.rs && ! grep -q asset-loop .config/architecture.toml'",
           "ask": "Do `scripts/check_g5_tripwires.sh` and the edit-to-visible test now measure the engine's loader? Is the tripwire's history still comparable, or is a new baseline recorded with the reason and the old and new figures side by side?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -185,8 +185,8 @@
           "statement": "Every record a `thrum-asset-gpu` shader reads is a `Pod` struct written whole, held by a reflection test as the sea's are.",
           "check": "cargo test --locked --offline -p thrum-asset-gpu --test wgsl_records",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -195,8 +195,8 @@
           "statement": "The cost of loading the valley's meshes before and after is on record, as time and allocated bytes from the existing bench, with the load.",
           "ask": "Are both rows from the same bench on named commits? No figure decides this item; does the record say what changed and why?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -205,8 +205,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M3/README.md",
           "verdict": "",
           "review": ""
         }

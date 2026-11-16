@@ -1,5 +1,14 @@
 # REVIEW-ENGINE log
 
+- 2026-11-16 M3 uploads the mapped index section, derives meshlet ranges by prefix sum, writes
+  whole Pod drawing records and measures the engine loader in the cooker test and tripwire.
+  On `3408034a5`, the mapped Metal readback, unchanged asset-GPU tests, shader reflection and
+  edit-to-visible assertions pass. Fresh showcase cooks retain ten identical CAS files.
+  Terrain's owned index/range arrays fall from 711,784 to 5,224 bytes; paired preparation
+  medians are 95.000 and 14.458 us, under shared load, excluding staging and driver memory.
+  [M3 evidence](../../evidence/REVIEW-ENGINE/M3/README.md) keeps the old tripwire failures and
+  three replacement seeds. Exact images use the shared main-branch check.
+
 - 2026-11-16 M2 integration resolves the lockfile conflict with TEST-SUPPORT and adapts only the
   three new GPU tests to its optional harness admission. No assertion or bound changes. Focused
   `cargo clippy --locked --offline -p thrum-sea --all-targets -- -D warnings` passes on the Mac.

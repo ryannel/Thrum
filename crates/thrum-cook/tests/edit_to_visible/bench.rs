@@ -343,7 +343,7 @@ fn edit_loop(root: &Path, report: &mut String, metrics: &mut Metrics) -> bool {
         records.errors.len()
     )
     .ok();
-    writeln!(report, "| edit | kind | write->event | event->publish (cook) | publish->head seen | map+upload | ->swap | ->GPU done | write->visible | uploaded |").ok();
+    writeln!(report, "| edit | kind | write->event | event->publish (cook) | publish->head seen | map+stage | ->swap | ->GPU done | write->visible | uploaded |").ok();
     writeln!(report, "|---|---|---|---|---|---|---|---|---|---|").ok();
     let mut totals = Vec::new();
     for (index, (written, kind)) in writes.iter().enumerate() {
