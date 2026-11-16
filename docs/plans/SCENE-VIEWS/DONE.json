@@ -13,13 +13,13 @@
         "ATMOSPHERE:M5",
         "EFFECT-GRAPH:M3"
       ],
-      "quality_bar": "A reflection capture as a shipped engine makes one, as Unreal's planar reflection does: the same scene from another camera, in the same light, with nothing borrowed from the main view that belongs to a view. Held to something stricter and checkable: equality with the main view drawn from that camera.",
+      "quality_bar": "A reflection capture as a shipped engine makes one, as Unreal's planar reflection does: the same scene from another camera, in the same light, with nothing borrowed from the main view that belongs to a view. Held to something stricter and checkable: equality with the main view drawn from that camera, for every camera a request is taken from.",
       "items": [
         {
           "id": "M1.1",
-          "statement": "A secondary view of a camera on the main camera's vertical holds what the main view draws from that camera under the same shadow profile and frame lighting. The scene has entities on meshes, the Sun, the sky, local lights, and a hill whose shadow reaches receivers beyond the view's cascade reach, so that the caster height map alone decides their Sun visibility. At the main view's extent and at a quarter of it each side, with temporal sampling off, from a view camera at the main camera's position and from one 80 m from it along the vertical with another pitch, the reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. The view's colour and depth at every covered pixel equal the reference's to one step of each stored format. A larger difference is a defect whose cause is found; the bound is not widened to it.",
+          "statement": "A secondary view of a camera on the main camera's vertical holds what the main view draws from that camera under the same shadow profile and frame lighting, and no camera on the vertical is excepted. The scene has entities on meshes, the Sun, the sky, local lights, and a hill whose shadow reaches receivers beyond the view's cascade reach, so that the caster height map alone decides their Sun visibility. The reference is the scene's main view drawn from the view's camera at the view's extent, prepared with the view's own count and reach of cascades and no fog. At the main view's extent and at a quarter of it each side, with temporal sampling off, the view's colour and depth at every covered pixel equal the reference's to one step of each stored format, from three view cameras: one at the main camera's position; one 80 m from it along the vertical with another pitch; and, with the main camera standing on a texel's edge of the caster height map, its mirror image in a level plane, where the two cameras' view matrices recover horizontal positions in different texels, as (16, 10, 0) looking along (\u22122, \u22121.7, \u22121) and (16, 0, 0) looking along (\u22122, 1.7, \u22121) do. A larger difference is a defect whose cause is found; the bound is not widened to it.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_equal_gpu",
-          "ask": "Is the reference a main view drawn by the scene's ordinary path, in a scene whose own camera is the view's, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? From the displaced camera, are there covered pixels whose colour the hill's height-map shadow changes by more than the allowance, so that a view with no terrain shadow would fail? Is the allowance one step of the stored format and no more?",
+          "ask": "Is the reference a main view drawn by the scene's ordinary path, in a scene whose own camera is the view's, prepared with the view's shadow profile, and would a view that reused the main camera's cluster table, aerial volume or cascades fail? From the displaced camera, are there covered pixels whose colour the hill's height-map shadow changes by more than the allowance, so that a view with no terrain shadow would fail? For the mirror pair, does the test show that the two view matrices recover horizontal positions that snap to different texels of the height map, so that the pair is one a fit from the matrix would have given two maps? Is the allowance one step of the stored format and no more?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -29,10 +29,21 @@
         },
         {
           "id": "M1.13",
-          "statement": "A request is taken only from a camera on the main camera's vertical. One whose declared position differs from the frame's main camera's in either horizontal coordinate, by one step of a 32-bit float or by 40 km, is refused by name when it is asked for: the slot is idle in that frame, records no pass and creates nothing, and the frame's bytes are those of a frame that asked for nothing. A camera on the vertical is taken above and below the main camera, facing any way.",
+          "statement": "A request is taken from every camera on the main camera's vertical, and from no other. One whose declared position differs from the frame's main camera's in either horizontal coordinate, by one step of a 32-bit float or by 40 km, is refused by name when it is asked for: the slot is idle in that frame, records no pass and creates nothing, and the frame's bytes are those of a frame that asked for nothing. A camera on the vertical is taken above and below the main camera, facing any way, wherever the vertical stands: on a texel's edge of the caster height map as anywhere else.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_vertical_gpu",
           "ask": "Is the refusal decided from the two positions as they are declared, with no tolerance and no position recovered from a matrix? Does the seam's documentation tell an effect author to copy the main camera's two horizontal coordinates, and where the frame gives them?",
           "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M1.14",
+          "statement": "The scene's fit lays the caster height map out from the position a camera declares, never from one taken back out of its view matrix, in every scene. Cameras on one vertical therefore have one map, the same layout and address record value for value, at any height and facing any way; turning, tilting, raising or lowering a camera where it stands does not move its map. That holds on a texel's edge of the map: for (16, 10, 0) looking along (0, 0, \u22121) and along (\u22122, \u22121.7, \u22121), for (16, \u221270, 0) looking along (\u22122, \u22121.6, \u22121), and for (16, 0, 0) looking along (\u22122, 1.7, \u22121), whose view matrices recover horizontal positions that do not all snap to one texel. The air's shadow heights are reduced from that map and take no position of their own.",
+          "check": "cargo test --locked --offline -p thrum-render --features creation-counters --lib height_anchor 2>&1 | tee /dev/stderr | grep -qE \"test result: ok\\. [1-9][0-9]* passed\"",
+          "ask": "Does the test take each layout from the scene's own fit, as a frame uses it, and show that the four cameras' view matrices recover positions in more than one texel, so that a fit from the matrix would fail it? Does anything that lays out the height map, addresses it or reduces the air's shadow heights still take a camera's position from a matrix?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -111,7 +122,7 @@
         },
         {
           "id": "M1.7",
-          "statement": "Absent means absent. A scene that declares no view compiles to the same shader text, passes, pipelines and resources as before this module, and submits the same bytes. A declared slot that is idle in a frame records no pass, and its pass names are missing from that frame's timing. Asking for a slot, changing its camera and leaving it idle again create no pipeline and no resource.",
+          "statement": "Absent means absent. A scene that declares no view compiles to the same shader text, passes, pipelines and resources as before this module. Its frames are the ones it drew before, except where M1.14 moves the height map of a camera on a texel's edge, and a scene with a slot declared and idle submits the same bytes as one with none declared. A declared slot that is idle in a frame records no pass, and its pass names are missing from that frame's timing. Asking for a slot, changing its camera and leaving it idle again create no pipeline and no resource.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test scene_view_absent_gpu",
           "ask": "Is the comparison with a scene prepared with no declaration, and does it cover the compiled pass list and the creation counters as well as the frame?",
           "lock": "gpu",

@@ -162,3 +162,37 @@
 - 2026-11-16 The review made no suggestion. Not run by the planner: any GPU check, so the displaced case of
   M1.1 is unrun; equality at one shared position is the builder's Metal result, zero steps. A search for
   which far-shadow products shipped engines give a reflection capture found forum reports only.
+- 2026-11-16 Sixth design review asked for changes: the same Must Fix,
+  [`shared-height-map-camera-support`](../../evidence/SCENE-VIEWS/design-review.md), carried forward. The
+  design admitted every camera on the main camera's vertical and then excepted those whose matrix-recovered
+  positions snap to different texels, while M1.1, M2.1 and M1's quality bar promised equality without it.
+  The review's CPU probe showed a mirror pair in a level plane laying their maps 32 m apart. The lead's task:
+  "either remove the exception so every admitted camera really gets identical shadow products, or narrow the
+  admitted range and the equality claims to exactly where they hold ... Prefer the option that keeps water
+  reflections correct at the least cost."
+- 2026-11-16 Ruled: the exception is removed. The scene's fit lays the caster height map out from the
+  position a camera declares, in every scene, and no longer from one taken back out of its view matrix
+  ([design](DESIGN.md#where-the-height-map-is-laid-out)). Cameras on one vertical declare the same two
+  horizontal numbers, so they have one map whatever they face, and admission and the fit read the same
+  numbers. V1, V3, M1.1, M1.13 and M2.1 now hold for every admitted camera. It costs a frame nothing.
+- 2026-11-16 Measured for it, on the CPU with the fit's arithmetic in pinned glam
+  ([part G](../../evidence/SCENE-VIEWS/design-proof/README.md)): from the matrix, all 78 swept verticals
+  with a coordinate on a texel's edge hold cameras whose maps lie apart; from the declared position none of
+  90 does. A matrix moves a camera's map only within four float steps of an edge, 8 µm at 16 m and 6 mm at
+  20 km: 101 of 1,924,000 cameras at positions unrelated to the grid. This is the rounding the entry above
+  left unmeasured. The showcase valley's authored camera stands on an edge (`z = 16`); it and the moving
+  route's 721 half-tick poses recover positions in the declared texel, so no registered baseline is
+  expected to move.
+- 2026-11-16 Not chosen. Keeping the fit and promising equality only where two cameras snap alike: costs no
+  code, but the limit is a rounding no consumer can test for, V3 fails inside it, a moving camera meets it,
+  and its boundary has no reference to prove it against. Refusing a request whose camera snaps apart: drops
+  a reflection for a frame. Declared positions only in scenes that declare a slot: the ordinary main view
+  that M1.1 compares with would then be fitted another way.
+- 2026-11-16 Items. M1.1 is written again: it adds a mirror pair on a texel's edge whose matrices recover
+  positions in different texels. New M1.14, a CPU check of the fit at the review's cameras, which fails for
+  a fit from the matrix. M1.13 says a camera on the vertical is taken wherever the vertical stands. M1.7
+  names the one change to a scene with no view. M1's quality bar says "for every camera a request is taken
+  from". M2.1 and M3.1 keep their words and inherit. Ruling 3, risk 9 and one assumption follow.
+- 2026-11-16 The review made no suggestion beyond its resolution. Not run by the planner: any GPU check, so
+  M1.1's displaced and edge cases are unrun on a GPU, and the exact-baseline verifier, so that no retained
+  image moves is a reproduction's expectation until M1.10 runs.
