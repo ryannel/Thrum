@@ -1,5 +1,12 @@
 # REPO-RULES log
 
+- 2026-11-16 M2 removed 828 oversized evidence files (2,803,858,438 bytes), all recoverable through Git-backed
+  manifest entries; 55 registered reference files remain. Added the shared local store, restore/put, size rule
+  and fixtures, tracked-or-manifest links, and contributor instructions. At `1ce3cd4ac`, the item commands and
+  four recovery test groups passed, including clean-clone hashes and three original review links. The initial
+  full gate timed out after 600 seconds in GPU tests without an assertion failure; merge uses its longer budget.
+  Exact images cite the shared main check. [Measured results and retained logs](../../evidence/REPO-RULES/M2.md).
+
 - 2026-11-16 Refreshed M1.5 at `6fec2d24b`, after main `81138094a` landed EFFECT-GRAPH and WATERS:
   four path attributes were removed and two existing device requests moved. Every baseline entry equals its
   present file count; the retained recipe and difference record attribute all changes to main's commits.

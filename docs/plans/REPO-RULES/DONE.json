@@ -92,8 +92,8 @@
           "statement": "No tracked file under `docs/evidence/` is over 2 MiB except the registered exact-baseline references. Every history entry in the manifest matches its blob in the object store, every local entry the store holds matches its hash, and a new `evidence-size` rule, with its fixtures, refuses a new oversized file.",
           "check": "python3 scripts/evidence_store.py check",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -103,8 +103,8 @@
           "check": "python3 scripts/test_evidence_store.py",
           "ask": "Read the test. From a clean checkout, does it restore the largest file, a video and a sample of others, and compare hashes it computes itself? Does it make two worktrees of a scratch repository, put a file from one and restore it in the other? Does `restore` fail loudly for a path that is in neither history nor the local store, and does `check` name a local entry whose file is not on this machine without failing?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -114,8 +114,8 @@
           "check": "sh -c 'python3 scripts/evidence_store.py check && python3 scripts/repo_check.py'",
           "ask": "Does the milestone's diff change any file under `docs/plans/`, or the text of any review or record under `docs/evidence/`? Pick three links from reviews to files that left: does each resolve through the manifest, and does `restore` bring the file back?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/item-checks.json; docs/evidence/REPO-RULES/M2/audit.json; docs/evidence/REPO-RULES/M2/store-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -124,8 +124,8 @@
           "statement": "A builder with a new large capture knows what to do from the refusal and the storage rules: keep it in scratch with the record that reproduces it, or `put` it in the local store. `docs/ASSET-LIFECYCLE.md` and `CONTRIBUTING.md` say so.",
           "ask": "From the `evidence-size` refusal and the two documents alone, what does a builder do with a 60 MB real-time capture that a reviewer must see? Is any step missing, and is anything said about a remote copy that does not exist?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/ASSET-LIFECYCLE.md#bulk-review-evidence; CONTRIBUTING.md#review-and-evidence; scripts/shape_matchers.py",
           "verdict": "",
           "review": ""
         },
@@ -134,8 +134,8 @@
           "statement": "The tracked tree's size before and after is on record, with the count and bytes that left by file type, and what a cap of 1 MiB and of 0.5 MiB would remove.",
           "ask": "Are the figures taken from `git ls-files` at named commits? How large is `docs/evidence` in a fresh checkout after this milestone?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REPO-RULES/M2.md; docs/evidence/REPO-RULES/M2/size.json; docs/evidence/REPO-RULES/M2/audit.json; scripts/evidence_inventory.py",
           "verdict": "",
           "review": ""
         },
@@ -144,8 +144,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }
