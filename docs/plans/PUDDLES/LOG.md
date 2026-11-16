@@ -68,7 +68,7 @@
 - 2026-11-14 Dependency audit ([the dependency audit](../../evidence/dependency-audit-2026-11-14/README.md)). M6 now waits for `SHOWCASE:M5` in place of `SHOWCASE:M6`: it needs
   the exit scene and its props, which M5 delivers, and `SHOWCASE` M6 changes no pixel of it. No design text or
   item changed; one assumption names the new milestone.
-- 2026-11-16 M1 built (code 9955d3f4e). Verified: thrum-rain-model (tree of hollows, fill step, account, canopy,
+- 2026-11-16 M1 built (code 78c4af12b). Verified: thrum-rain-model (tree of hollows, fill step, account, canopy,
   rain state) and hollows bodies in thrum-water-model; all M1 tests pass, clippy clean, water-model tests unchanged.
   Cost record: 640,000 cells prepared in 0.082 s into 624 hollows; a fill step takes 71 µs on 1 thread. M1.12 is left
   to the main-branch check exact-images. Fixed in building: a component meeting the edge-joined one spills into the
