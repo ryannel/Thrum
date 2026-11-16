@@ -115,6 +115,7 @@ pub struct SceneSurface<'a> {
     /// The prepared light group and shader include the shared `cloud_factor`
     /// operation. Volume contributions apply it once per lit march sample.
     pub sun_optical_depth: bool,
+    pub(crate) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
     pub(crate) environment: Option<&'a crate::atmosphere::AtmospherePrepared>,
     pub(crate) directional: &'a wgpu::Buffer,
     pub(crate) exposure: &'a [wgpu::Buffer; 2],
@@ -152,6 +153,14 @@ pub struct SceneSurface<'a> {
 }
 
 impl SceneSurface<'_> {
+    /// Shared GPU Sun-path target declared by this scene's provider, with its
+    /// [`crate::atmosphere::GpuSunMapping`]. Absent for a CPU-fed diagnostic or no provider. A
+    /// contribution creates its bindings here at rebuild and declares the
+    /// target's actual writes and opaque reads in its effect graph.
+    pub fn sun_path_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
+        self.cloud
+            .and_then(crate::atmosphere::CloudPrepared::gpu_target)
+    }
     /// Borrow the atmosphere's physical lighting operations for an independent
     /// contribution pipeline. Creates read-only bindings on request, sharing
     /// the existing products. Scenes with authored or diagnostic light return

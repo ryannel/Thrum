@@ -16,7 +16,7 @@ mod reflection;
 mod spectrum;
 
 pub(crate) use cloud::CloudPrepared;
-pub use cloud::SunOpticalDepth;
+pub use cloud::{GpuSunMapping, SunOpticalDepth};
 pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
 pub(crate) use gpu::AtmospherePrepared;
 pub use products::EnvironmentProducts;

@@ -5,6 +5,7 @@ mod history;
 mod page;
 mod rules;
 mod types;
+mod weather;
 
 use std::mem::size_of;
 
@@ -34,6 +35,7 @@ const INPUT_HEALTH: SystemId = SystemId(4);
 const SIMULATE: SystemId = SystemId(1);
 const RESOLVE: SystemId = SystemId(2);
 const STRUCTURE: u64 = 7;
+const WEATHER: SystemId = SystemId(5);
 // V1 game policy: bound one axis of admitted player motion in metres/second.
 const MAX_CONTROL_SPEED: f64 = 1_000.0;
 
@@ -47,6 +49,7 @@ fn component(key: ComponentKey, mode: AccessMode) -> Access {
 fn setup(
     epoch: WorldEpoch,
     config: SimConfig,
+    clouds: bool,
 ) -> Result<(GameRuntime<Rules>, Rules, Candidate), SimError> {
     use AccessMode::{Read, Write};
     let mut registry = ComponentRegistry::default();
@@ -83,6 +86,11 @@ fn setup(
     registry
         .select_publication::<Visual>(false)
         .map_err(|_| SimError::InvalidConfig)?;
+    let weather_key = if clouds {
+        Some(weather::register(&mut registry)?)
+    } else {
+        None
+    };
     let systems = vec![
         SystemSpec {
             id: INPUT,
@@ -137,12 +145,23 @@ fn setup(
     ];
     let [input, input_health, simulate, resolve]: [SystemSpec; 4] =
         systems.try_into().map_err(|_| SimError::InvalidConfig)?;
-    let systems = vec![
+    let mut systems = vec![
         RegisteredSystem::direct(input, Rules::input_velocity),
         RegisteredSystem::direct(input_health, Rules::input_health),
         RegisteredSystem::direct(simulate, Rules::simulate),
         RegisteredSystem::parallel(resolve, Rules::resolve),
     ];
+    if let Some(key) = weather_key {
+        systems.push(RegisteredSystem::direct(
+            SystemSpec {
+                id: WEATHER,
+                stage: Stage::Simulate,
+                accesses: vec![component(key, Write)],
+                after: vec![],
+            },
+            Rules::weather,
+        ));
+    }
     let runtime = GameRuntime::new_published(epoch, config.entity_capacity, registry, systems)
         .map_err(map_runtime)?;
     let candidate = Candidate::new(
@@ -178,6 +197,11 @@ fn setup(
             structure: runtime
                 .structural_permit(RESOLVE, STRUCTURE)
                 .map_err(map_runtime)?,
+        },
+        weather: if clouds {
+            Some(Box::new(weather::Permits::new(&runtime)?))
+        } else {
+            None
         },
     };
     Ok((runtime, rules, candidate))
@@ -308,6 +332,14 @@ impl Simulation {
     ///
     /// Invalid capacity, movement speed or schedule declaration.
     pub fn new(epoch: WorldEpoch, config: SimConfig) -> Result<Self, SimError> {
+        Self::selected(epoch, config, false)
+    }
+
+    pub(crate) fn new_clouded(epoch: WorldEpoch, config: SimConfig) -> Result<Self, SimError> {
+        Self::selected(epoch, config, true)
+    }
+
+    fn selected(epoch: WorldEpoch, config: SimConfig, clouds: bool) -> Result<Self, SimError> {
         if config.entity_capacity > u32::MAX as usize
             || !config.movement_speed.is_finite()
             || config.movement_speed < 0.0
@@ -315,7 +347,7 @@ impl Simulation {
         {
             return Err(SimError::InvalidConfig);
         }
-        let (runtime, rules, candidate) = setup(epoch, config)?;
+        let (runtime, rules, candidate) = setup(epoch, config, clouds)?;
         Ok(Self {
             runtime,
             rules,
@@ -564,7 +596,11 @@ impl Simulation {
     ///
     /// Panics only if a game callback violates its validated commit invariant.
     pub fn step(&mut self, commands: &[Command]) -> Result<TickOutcome<'_>, SimError> {
-        validate_commands(&self.runtime, commands)?;
+        validate_commands(
+            &self.runtime,
+            commands,
+            self.rules.weather.as_ref().and_then(|p| p.handle),
+        )?;
         self.runtime
             .publish_initial(&mut self.rules, &mut self.candidate);
         let simulated_entities = self.runtime.len();
@@ -655,10 +691,17 @@ fn validate_frame(
     Ok(())
 }
 
-fn validate_commands(runtime: &GameRuntime<Rules>, commands: &[Command]) -> Result<(), SimError> {
+fn validate_commands(
+    runtime: &GameRuntime<Rules>,
+    commands: &[Command],
+    weather: Option<Handle>,
+) -> Result<(), SimError> {
     let mut free = runtime.free_count();
     let mut spawns = 0;
     for (index, command) in commands.iter().enumerate() {
+        if command_target(command).is_some_and(|(handle, _)| Some(handle) == weather) {
+            return Err(SimError::InvalidOwnership);
+        }
         match command {
             Command::Spawn(entity) => {
                 if !finite(entity.position.0) || !finite(entity.velocity.0) {

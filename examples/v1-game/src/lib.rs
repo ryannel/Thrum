@@ -5,6 +5,8 @@
 #[cfg(target_arch = "wasm32")]
 mod browser;
 mod camera;
+pub mod clouds;
+pub use clouds::CloudSelection;
 #[cfg(not(target_arch = "wasm32"))]
 mod content;
 pub mod controls;

@@ -9,7 +9,7 @@ def decoded_frames(path, encoding, expected, frame_bytes=None):
     frame_bytes = FRAME_BYTES if frame_bytes is None else frame_bytes
     if not 0 < frame_bytes <= 128 * 1024 * 1024:
         raise ValueError("invalid source frame size")
-    if len(expected) > 1024:
+    if len(expected) > 4096:
         raise ValueError('capture record limit exceeded')
     process = None
     if encoding == 'ZstdDelta':

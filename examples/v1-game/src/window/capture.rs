@@ -271,7 +271,7 @@ fn start_writer(
             .try_clone_to_owned()
             .map_err(|e| e.to_string())?,
     );
-    ImageWriter::start(
+    ImageWriter::start_with_frame_limit(
         std::io::BufWriter::with_capacity(
             4 * 1024 * 1024,
             ScenarioSink {
@@ -284,6 +284,11 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
+        if scenario == "clouds-drift" {
+            4096
+        } else {
+            1024
+        },
     )
 }
 
@@ -436,6 +441,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
     let mut stalled = false;
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
+    let (hard_end, soft_end, world_end) = scenario_bounds(scenario);
     loop {
         if mode == "still" {
             break;
@@ -446,12 +452,12 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             clock.next_opportunity()
         };
         let t = opportunity.scenario_time.as_secs_f64();
-        if mode == "realtime" && t >= if scenario == "route" { 8.4 } else { 6.0 } {
+        if mode == "realtime" && t >= hard_end {
             break;
         }
         if (mode == "fixed" && opportunity.index > 480)
             || (mode == "realtime"
-                && t >= if scenario == "route" { 8.0 } else { 4.0 }
+                && t >= soft_end
                 && if scenario == "route" {
                     trace.route_finished_at
                 } else {
@@ -464,12 +470,12 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
         let work = WorkClock::start().map_err(|e| e.to_string())?;
         let active_world = matches!(
             scenario,
-            "running" | "writer-slow" | "route" | "reconstruction-pan"
+            "running" | "writer-slow" | "route" | "reconstruction-pan" | "clouds-drift"
         );
-        if active_world && t >= 1.0 && (scenario == "route" || t < 3.0) && !running {
+        if active_world && t >= 1.0 && (scenario == "route" || t < world_end) && !running {
             trace.world_state(&mut driver, false, origin)?;
             running = true;
-        } else if active_world && scenario != "route" && t >= 3.0 && running {
+        } else if active_world && scenario != "route" && t >= world_end && running {
             trace.world_state(&mut driver, true, origin)?;
             running = false;
         }
@@ -511,19 +517,7 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()}));
         last_sample_time = opportunity.scenario_time;
         if mode == "fixed" {
-            let deadline = Instant::now() + Duration::from_secs(10);
-            let expected = trace
-                .opportunities
-                .iter()
-                .filter(|row| row["submitted"] == true)
-                .count();
-            while trace.images.len() < expected {
-                trace.drain(&mut driver, writer.as_ref(), origin)?;
-                if Instant::now() >= deadline {
-                    return Err("fixed sample readback deadline".to_owned());
-                }
-                std::thread::sleep(Duration::from_millis(1));
-            }
+            drain_fixed(&mut driver, &mut trace, writer.as_ref(), origin)?;
         }
     }
     let interval_end_ns = origin.elapsed().as_nanos();
@@ -637,6 +631,36 @@ fn lighting_edits<G: Game>(
         trace.controls.push(json!({"kind":if scenario == "variants" {"prepared-star-variant-switch"} else {"solar-scrub"},"scenario_ns":scenario_time.as_nanos(),"accepted_ns":origin.elapsed().as_nanos(),"solar_hours":solar}));
     }
     Ok(())
+}
+
+fn drain_fixed<G: Game>(
+    driver: &mut Offscreen<G>,
+    trace: &mut Trace,
+    writer: Option<&ImageWriter>,
+    origin: Instant,
+) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let expected = trace
+        .opportunities
+        .iter()
+        .filter(|row| row["submitted"] == true)
+        .count();
+    while trace.images.len() < expected {
+        trace.drain(driver, writer, origin)?;
+        if Instant::now() >= deadline {
+            return Err("fixed sample readback deadline".to_owned());
+        }
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    Ok(())
+}
+
+fn scenario_bounds(scenario: &str) -> (f64, f64, f64) {
+    match scenario {
+        "clouds-drift" => (22.5, 22.0, 21.0),
+        "route" => (8.4, 8.0, f64::INFINITY),
+        _ => (6.0, 4.0, 3.0),
+    }
 }
 
 fn capture_mode(scenario: &str) -> Result<String, String> {

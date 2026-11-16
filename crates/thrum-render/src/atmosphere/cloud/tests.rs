@@ -1,5 +1,43 @@
 use super::SunOpticalDepth;
 
+#[test]
+fn gpu_mapping_layout_matches_both_plain_and_atlas_shader() {
+    use super::GpuSunMapping;
+    use wgpu::naga;
+    let source = format!(
+        "@group(1) @binding(0) var aerial_sampler:sampler;\n{}\n@compute @workgroup_size(1) fn main() {{ let factor=cloud_factor(vec3<f32>(0.0)); }}",
+        include_str!("../cloud_gpu.wgsl")
+    );
+    let module = naga::front::wgsl::parse_str(&source).expect("GPU cloud-factor source");
+    naga::valid::Validator::new(
+        naga::valid::ValidationFlags::all(),
+        naga::valid::Capabilities::all(),
+    )
+    .validate(&module)
+    .expect("valid GPU cloud-factor operation");
+    let (_, ty) = module
+        .types
+        .iter()
+        .find(|(_, ty)| ty.name.as_deref() == Some("CloudField"))
+        .expect("mapping");
+    let naga::TypeInner::Struct { members, span } = &ty.inner else {
+        panic!("mapping struct")
+    };
+    assert_eq!(*span as usize, size_of::<GpuSunMapping>());
+    let offsets = [
+        std::mem::offset_of!(GpuSunMapping, region),
+        std::mem::offset_of!(GpuSunMapping, plane_drift),
+        std::mem::offset_of!(GpuSunMapping, path_border),
+        std::mem::offset_of!(GpuSunMapping, far),
+        std::mem::offset_of!(GpuSunMapping, near),
+        std::mem::offset_of!(GpuSunMapping, middle),
+    ];
+    assert_eq!(members.len(), offsets.len());
+    for (member, offset) in members.iter().zip(offsets) {
+        assert_eq!(member.offset as usize, offset);
+    }
+}
+
 fn field() -> SunOpticalDepth {
     SunOpticalDepth::new(
         [2, 2],

@@ -1,6 +1,32 @@
 //! Shared native devices and state-script runner for the effect diagnostics.
 use std::path::Path;
 
+/// Engine-owned presentation texture for submitted display-frame tests.
+pub fn presentation(
+    device: &wgpu::Device,
+    extent: [u32; 2],
+) -> (wgpu::TextureView, thrum_render::present::SurfaceProfile) {
+    let format = wgpu::TextureFormat::Bgra8Unorm;
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("test engine presentation"),
+        size: wgpu::Extent3d {
+            width: extent[0],
+            height: extent[1],
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+    (
+        texture.create_view(&wgpu::TextureViewDescriptor::default()),
+        thrum_render::present::SurfaceProfile { format, extent },
+    )
+}
+
 /// Prepare a real diagnostic device using the existing state-test request policy.
 /// # Panics
 /// Panics when the target adapter, device or selected recipe is unavailable.

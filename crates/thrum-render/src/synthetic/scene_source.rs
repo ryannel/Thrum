@@ -24,10 +24,18 @@ pub(super) fn prepare(
     device: &crate::runtime::DeviceSite,
     atmosphere: bool,
     air_shadow: bool,
-    cloud: bool,
+    cloud: Option<&crate::atmosphere::SunOpticalDepth>,
     shadowed: SunShadows,
 ) -> (String, wgpu::ShaderModule, &'static str) {
-    let source = compose_with_cloud(atmosphere, air_shadow, cloud, shadowed);
+    let source = compose_with_cloud(atmosphere, air_shadow, cloud.is_some(), shadowed);
+    let source = if cloud.is_some_and(crate::atmosphere::SunOpticalDepth::gpu_written) {
+        source.replace(
+            include_str!("../atmosphere/cloud.wgsl"),
+            include_str!("../atmosphere/cloud_gpu.wgsl"),
+        )
+    } else {
+        source
+    };
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("prepared synthetic shader ABI2"),
         source: wgpu::ShaderSource::Wgsl(source.as_str().into()),

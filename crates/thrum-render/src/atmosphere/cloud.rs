@@ -3,6 +3,26 @@ use std::sync::Arc;
 
 use crate::synthetic::RenderError;
 
+/// GPU provider mapping. Plain fields use `far[1] = 0`. An atlas uses
+/// `far[1] = 1`, with near, middle and outer windows in the top-left,
+/// top-right and bottom-left quadrants of the texture, respectively.
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct GpuSunMapping {
+    /// Outer world XZ rectangle, minimum then maximum.
+    pub region: [f32; 4],
+    /// Plane height, XZ displacement and validity (zero or one).
+    pub plane_drift: [f32; 4],
+    /// Unit path direction and outer border width in metres.
+    pub path_border: [f32; 4],
+    /// Far optical depth, atlas flag, and padding.
+    pub far: [f32; 4],
+    /// Near window minimum XZ, width in metres, and padding.
+    pub near: [f32; 4],
+    /// Middle window minimum XZ, width in metres, and padding.
+    pub middle: [f32; 4],
+}
+
 /// A provider's sampled optical depth along the current true Sun ray.
 ///
 /// The field applies below one horizontal plane. World XZ is projected along
@@ -13,6 +33,8 @@ use crate::synthetic::RenderError;
 /// Values are stored as filtered fp16 optical depth, independently of exposure.
 #[derive(Clone, Debug)]
 pub struct SunOpticalDepth {
+    gpu: Option<(wgpu::Texture, wgpu::Buffer)>,
+    allocate_gpu: bool,
     width: u32,
     height: u32,
     pixels: Arc<[u16]>,
@@ -26,6 +48,82 @@ pub struct SunOpticalDepth {
 }
 
 impl SunOpticalDepth {
+    /// Declare a GPU target prepared with each scene/device generation. Its
+    /// provider borrows the texture and [`GpuSunMapping`] through
+    /// [`crate::contribution::SceneSurface::sun_path_target`] during `rebuild`.
+    /// The scene allocates the shared target; only the provider writes it.
+    /// This keeps a replaced device from inheriting retired GPU handles.
+    /// # Errors
+    /// Rejects an empty extent; device limits are checked at preparation.
+    pub fn gpu_target(extent: [u32; 2], source_epoch: u64) -> Result<Self, RenderError> {
+        if extent.contains(&0) {
+            return Err(RenderError::InvalidLighting);
+        }
+        Ok(Self {
+            gpu: None,
+            allocate_gpu: true,
+            width: extent[0],
+            height: extent[1],
+            pixels: Arc::from([]),
+            plane_m: 0.0,
+            region: [0.0; 4],
+            displacement_m: [0.0; 2],
+            drift_metres_per_second: [0.0; 2],
+            minimum_sun_sine: 0.0,
+            source_epoch,
+            valid: true,
+        })
+    }
+    /// Register a provider's GPU-written field and [`GpuSunMapping`]. The provider records
+    /// all writes in the scene's encoder and declares them and opaque reads in
+    /// its effect graph. The true Sun and CPU-fed diagnostic are unchanged.
+    ///
+    /// # Errors
+    /// Rejects textures or buffers without the required sampled/uniform usage,
+    /// incompatible dimensions/formats, or an undersized mapping buffer.
+    pub fn from_gpu(
+        texture: wgpu::Texture,
+        mapping: wgpu::Buffer,
+        source_epoch: u64,
+    ) -> Result<Self, RenderError> {
+        if texture.dimension() != wgpu::TextureDimension::D2
+            || texture.depth_or_array_layers() != 1
+            || texture.mip_level_count() != 1
+            || texture.sample_count() != 1
+            || !matches!(
+                texture.format(),
+                wgpu::TextureFormat::R16Float | wgpu::TextureFormat::Rgba16Float
+            )
+            || !texture.usage().contains(
+                wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::STORAGE_BINDING,
+            )
+            || mapping.size() != size_of::<GpuSunMapping>() as u64
+            || !mapping
+                .usage()
+                .contains(wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE)
+        {
+            return Err(RenderError::InvalidLighting);
+        }
+        Ok(Self {
+            width: texture.width(),
+            height: texture.height(),
+            pixels: Arc::from([]),
+            plane_m: 0.0,
+            region: [0.0; 4],
+            displacement_m: [0.0; 2],
+            drift_metres_per_second: [0.0; 2],
+            minimum_sun_sine: 0.0,
+            source_epoch,
+            valid: true,
+            gpu: Some((texture, mapping)),
+            allocate_gpu: false,
+        })
+    }
+
+    pub(crate) fn gpu_written(&self) -> bool {
+        self.gpu.is_some() || self.allocate_gpu
+    }
+
     /// Admit a finite nonnegative row-major optical-depth field. Region is
     /// `[min_x, min_z, max_x, max_z]`, in metres. The minimum sine must be
     /// positive, making horizontal and below-horizon rays unsupported.
@@ -60,6 +158,8 @@ impl SunOpticalDepth {
             return Err(RenderError::InvalidLighting);
         }
         Ok(Self {
+            gpu: None,
+            allocate_gpu: false,
             width,
             height,
             pixels: optical_depth
@@ -155,6 +255,11 @@ pub(crate) struct CloudPrepared {
 }
 
 impl CloudPrepared {
+    pub(crate) fn gpu_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
+        self.field
+            .gpu_written()
+            .then(|| (self.texture.clone(), self.uniform.clone()))
+    }
     pub(crate) fn append_reads(
         &self,
         graph: &mut crate::graph::FrameGraph,
@@ -176,7 +281,7 @@ impl CloudPrepared {
         )?;
         let uniform = graph.resource(
             ResourceDescriptor::Buffer {
-                bytes: 48,
+                bytes: self.uniform.size(),
                 usage: wgpu::BufferUsages::UNIFORM,
             },
             ResourceScope::Imported { initialized: true },
@@ -192,7 +297,7 @@ impl CloudPrepared {
             Access {
                 view: None,
                 resource: uniform,
-                range: 0..48,
+                range: 0..self.uniform.size(),
                 kind: AccessKind::UniformRead,
                 store: true,
             },
@@ -206,6 +311,52 @@ impl CloudPrepared {
         field: &SunOpticalDepth,
         seconds: f64,
     ) -> Result<Self, RenderError> {
+        if field.width.max(field.height) > device.limits().max_texture_dimension_2d {
+            return Err(RenderError::SceneCapacity);
+        }
+        if field.allocate_gpu {
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("provider Sun-path optical depth"),
+                size: wgpu::Extent3d {
+                    width: field.width,
+                    height: field.height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Float,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("provider Sun-path mapping"),
+                size: size_of::<GpuSunMapping>() as u64,
+                usage: wgpu::BufferUsages::UNIFORM
+                    | wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
+            return Ok(Self {
+                packed: [0; 48],
+                field: field.clone(),
+                view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                texture,
+                uniform,
+            });
+        }
+        if let Some((texture, uniform)) = &field.gpu {
+            return Ok(Self {
+                packed: [0; 48],
+                field: field.clone(),
+                texture: texture.clone(),
+                view: texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                uniform: uniform.clone(),
+            });
+        }
         if field.width.max(field.height) > device.limits().max_texture_dimension_2d {
             return Err(RenderError::SceneCapacity);
         }
@@ -243,10 +394,20 @@ impl CloudPrepared {
     }
 
     pub(crate) fn accepts(&self, field: &SunOpticalDepth) -> bool {
-        self.field.width == field.width && self.field.height == field.height
+        self.field.width == field.width
+            && self.field.height == field.height
+            && self.field.gpu_written() == field.gpu_written()
+            && match (&self.field.gpu, &field.gpu) {
+                (Some((a, u)), Some((b, v))) => a == b && u == v,
+                (None, None) => true,
+                _ => false,
+            }
     }
 
     pub(crate) fn update(&mut self, queue: &wgpu::Queue, field: &SunOpticalDepth, seconds: f64) {
+        if field.gpu_written() {
+            return;
+        }
         if !Arc::ptr_eq(&self.field.pixels, &field.pixels) {
             self.write_pixels(queue, field);
         }

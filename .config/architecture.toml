@@ -41,6 +41,10 @@ allowed_workspace_dependencies = []
 manifest = "crates/thrum-sea/Cargo.toml"
 allowed_workspace_dependencies = ["thrum-sea-model", "thrum-render", "thrum-test-support"]
 
+[packages.thrum-clouds]
+manifest = "crates/thrum-clouds/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-cloud-model", "thrum-render"]
+
 [packages.thrum-water-model]
 manifest = "crates/thrum-water-model/Cargo.toml"
 # CPU water map, wave composition and query oracle; no graphics dependencies.
@@ -122,7 +126,7 @@ allowed_workspace_dependencies = []
 manifest = "examples/v1-game/Cargo.toml"
 # thrum-asset-gpu draws cooked products (a mapped store natively, a fetched generation on wasm32); thrum-cook is a dev-dependency
 # only, for the in-game G5 tests and bench.
-allowed_workspace_dependencies = ["thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-content-runtime", "thrum-controls", "thrum-cook", "thrum-core", "thrum-render", "thrum-cloud-model", "thrum-clouds"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen export expansion calls wasm_bindgen_futures" }
 
 [packages.thrum-starter]

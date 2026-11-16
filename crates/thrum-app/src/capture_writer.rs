@@ -33,7 +33,7 @@ pub struct WriterReport {
     pub io_time: Duration,
     /// Observed encoded buffer occupancy, bounded by 64 × 4 MiB buffers.
     pub encoded_queue_peak: usize,
-    /// SHA-256 of each original RGBA record in writer order, at most 1024.
+    /// SHA-256 of each original RGBA record in writer order, bounded by the session.
     pub frame_hashes: Vec<String>,
     /// Wall time inside writes, including downstream backpressure.
     pub write_time: Duration,
@@ -56,13 +56,14 @@ fn write_records<I: AsRef<[u8]>, W: Write>(
     output: W,
     byte_allowance: u64,
     encoding: SpoolEncoding,
+    frame_limit: u64,
 ) -> Result<WriterReport, String> {
     let mut output =
         spool::Spool::new(output, byte_allowance, encoding).map_err(|e| e.to_string())?;
     let mut report = WriterReport::default();
     while let Ok(image) = receive.recv() {
         let bytes = image.as_ref();
-        if report.frames >= 1024 || bytes.is_empty() {
+        if report.frames >= frame_limit || bytes.is_empty() {
             return Err("capture record limit or empty record".to_owned());
         }
         let begin = Instant::now();
@@ -96,6 +97,23 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         byte_allowance: u64,
         encoding: SpoolEncoding,
     ) -> Result<Self, String> {
+        Self::start_with_frame_limit(output, capacity, byte_allowance, encoding, 1024)
+    }
+
+    /// Start a longer bounded session without changing its pixel or encoded queues.
+    /// Only the retained per-frame hashes grow with the admitted record count.
+    /// # Errors
+    /// Rejects capacities outside 1..=256, record limits outside 1..=4096, or a thread failure.
+    pub fn start_with_frame_limit(
+        output: impl Write + Send + 'static,
+        capacity: usize,
+        byte_allowance: u64,
+        encoding: SpoolEncoding,
+        frame_limit: u64,
+    ) -> Result<Self, String> {
+        if !(1..=4096).contains(&frame_limit) {
+            return Err("writer frame limit must be in 1..=4096".to_owned());
+        }
         if !(1..=256).contains(&capacity) {
             return Err("writer capacity must be in 1..=256".to_owned());
         }
@@ -106,14 +124,25 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
             .name("thrum-lossless-spool".to_owned())
             .spawn(move || {
                 let result = match encoding {
-                    SpoolEncoding::Raw => {
-                        write_records(&receive, &recycle, output, byte_allowance, encoding)
-                    }
+                    SpoolEncoding::Raw => write_records(
+                        &receive,
+                        &recycle,
+                        output,
+                        byte_allowance,
+                        encoding,
+                        frame_limit,
+                    ),
                     SpoolEncoding::ZstdDelta => (|| {
                         let (output, worker) =
                             io_worker::Output::start(output).map_err(|e| e.to_string())?;
-                        let result =
-                            write_records(&receive, &recycle, output, byte_allowance, encoding);
+                        let result = write_records(
+                            &receive,
+                            &recycle,
+                            output,
+                            byte_allowance,
+                            encoding,
+                            frame_limit,
+                        );
                         let begin = Instant::now();
                         let io = worker.finish();
                         let tail = begin.elapsed();

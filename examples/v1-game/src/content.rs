@@ -41,6 +41,11 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
     Ok(crate::GameSetup {
+        clouds: match std::env::var("THRUM_CLOUDS").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
+            Ok("shade") => crate::CloudSelection::Shade,
+            _ => return Err("THRUM_CLOUDS must be off or shade".to_owned()),
+        },
         reconstruction: match std::env::var("THRUM_RECONSTRUCTION").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => {
                 thrum_render::synthetic::Reconstruction::Off
@@ -178,6 +183,16 @@ fn attach_selected(
     } else {
         host.set_scene_contribution(Box::new(assets))?;
     }
+    let camera = if let (Some(camera), Ok(height)) = (camera, std::env::var("THRUM_CAMERA_HEIGHT"))
+    {
+        let mut eye = camera.eye();
+        eye[1] = height
+            .parse()
+            .map_err(|_| "THRUM_CAMERA_HEIGHT must be metres")?;
+        Some(camera.at(eye)?)
+    } else {
+        camera
+    };
     if let Some(camera) = camera {
         host.set_scene_camera(camera)?;
     }

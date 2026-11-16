@@ -1237,7 +1237,19 @@ impl PreparedSynthetic {
                 },
                 count: None,
             });
-            light_entries.push(uniform_layout(14, 48, wgpu::ShaderStages::FRAGMENT));
+            light_entries.push(uniform_layout(
+                14,
+                if scene
+                    .sun_optical_depth
+                    .as_ref()
+                    .is_some_and(SunOpticalDepth::gpu_written)
+                {
+                    size_of::<crate::atmosphere::GpuSunMapping>() as u64
+                } else {
+                    48
+                },
+                wgpu::ShaderStages::FRAGMENT,
+            ));
         }
         let light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
@@ -1555,7 +1567,7 @@ impl PreparedSynthetic {
             device,
             atmosphere.is_some(),
             air_shadow.is_some(),
-            cloud.is_some(),
+            scene.sun_optical_depth.as_ref(),
             scene_source::SunShadows::from(shadow.is_some()),
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);

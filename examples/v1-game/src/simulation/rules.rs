@@ -226,6 +226,7 @@ pub(super) struct ResolvePermits {
 pub(super) const PARALLEL_MOVER_CROSSOVER: Option<usize> = None;
 
 pub(super) struct Rules {
+    pub(super) weather: Option<Box<super::weather::Permits>>,
     pub(super) config: SimConfig,
     pub(super) resource_revision: u64,
     pub(super) peers: Vec<PeerControl>,
@@ -241,6 +242,19 @@ pub(super) struct Rules {
 }
 
 impl Rules {
+    pub(super) fn weather(
+        &self,
+        world: &mut WorldTxn<'_>,
+        _executor: Executor,
+        tick: u64,
+        _candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
+    ) -> Result<(), SimError> {
+        if let Some(permits) = &self.weather {
+            permits.step(world, tick, 1.0 / f64::from(self.config.tick_hz.get()))?;
+        }
+        Ok(())
+    }
     fn kernel_executor(executor: Executor, live: usize) -> Executor {
         if executor.mode() == ExecutionMode::Rayon
             && PARALLEL_MOVER_CROSSOVER.is_none_or(|crossover| live < crossover)

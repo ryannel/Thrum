@@ -293,6 +293,7 @@ fn native_witness_selection() -> thrum_render::synthetic::NativeWitness {
 }
 
 pub(crate) struct GameScene {
+    pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
     valley_stars: bool,
@@ -379,6 +380,7 @@ impl GameScene {
                 .expect("checked-in temporal fixture")
             });
         Self {
+            cloud_input: None,
             content: setup.content,
             valley_stars: setup.content == GameContent::Grid && setup.valley_stars,
             day_phase_offset: 0.0,
@@ -433,7 +435,15 @@ impl GameScene {
             )
             .with_display_overlay(setup.display_overlay);
         scene.camera_culling = setup.camera_culling;
-        if setup.diagnostic_clouds {
+        if setup.clouds == crate::CloudSelection::Shade {
+            scene.sun_optical_depth = Some(
+                thrum_render::atmosphere::SunOpticalDepth::gpu_target(
+                    [crate::clouds::GROUND_SIZE; 2],
+                    1,
+                )
+                .map_err(|e| format!("cloud target: {e:?}"))?,
+            );
+        } else if setup.diagnostic_clouds {
             scene.sun_optical_depth = Some(cloud::diagnostic()?);
         }
         if setup.route_overlay != scene::RouteOverlay::Off {
@@ -558,6 +568,12 @@ impl SceneSource<PublishedPage> for GameScene {
         }
     }
     fn extract(&self, into: &mut RenderExtractor, page: &PublishedPage) -> ExtractReport {
+        if let Some(input) = &self.cloud_input
+            && let Some(state) = page.weather()
+            && let Err(error) = input.publish(state)
+        {
+            debug_assert!(false, "cloud publication: {error}");
+        }
         #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
         if self.omit_mirror {
             return scene::extract_without_mirror(into, page);
@@ -845,6 +861,7 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            cloud_input: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
             valley_stars: true,

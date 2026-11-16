@@ -142,6 +142,7 @@ impl PreparedSynthetic {
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
             sun_optical_depth: self.cloud.is_some(),
+            cloud: self.cloud.as_ref(),
             environment: self.atmosphere.as_ref(),
             directional: &self.directional_buffer,
             exposure: &self.exposure.samples,

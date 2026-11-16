@@ -31,6 +31,8 @@ thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 thrum-controls = { path = "../../crates/thrum-controls" }
 thrum-core = { path = "../../crates/thrum-core" }
 thrum-render = { path = "../../crates/thrum-render" }
+thrum-cloud-model = { path = "../../crates/thrum-cloud-model" }
+thrum-clouds = { path = "../../crates/thrum-clouds" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]

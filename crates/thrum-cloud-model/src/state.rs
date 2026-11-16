@@ -176,6 +176,10 @@ impl State {
         Ok(())
     }
 
+    /// Last committed weather tick.
+    pub fn tick(&self) -> u64 {
+        self.tick
+    }
     /// Current controls.
     pub fn parameters(&self) -> Parameters {
         self.parameters

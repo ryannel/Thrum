@@ -68,7 +68,11 @@ impl HistoryGame for Rules {
         tick: u64,
         record: &Self::HistoryRecord,
     ) -> Result<(), Self::Error> {
-        validate_commands(runtime, &record.commands)?;
+        validate_commands(
+            runtime,
+            &record.commands,
+            self.weather.as_ref().and_then(|p| p.handle),
+        )?;
         // Validate every input before replay admission changes any peer state.
         for frame in &record.inputs {
             if frame.tick != tick {

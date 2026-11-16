@@ -120,20 +120,33 @@ pub(crate) fn simulation(
     content: GameContent,
     route_overlay: RouteOverlay,
 ) -> Result<Simulation, String> {
+    selected_simulation(content, route_overlay, false)
+}
+
+pub(crate) fn selected_simulation(
+    content: GameContent,
+    route_overlay: RouteOverlay,
+    clouds: bool,
+) -> Result<Simulation, String> {
     let overlay = route_overlay != RouteOverlay::Off;
     match (content, overlay) {
-        (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay),
-        (GameContent::Field, false) => field_simulation(),
+        (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay, clouds),
+        (GameContent::Field, false) => field_simulation(clouds),
         (GameContent::Field, true) => Err("the route overlay needs grid content".to_owned()),
     }
 }
 
-fn new_simulation(entity_count: usize) -> Result<Simulation, String> {
-    Simulation::new(
+fn new_simulation(entity_count: usize, clouds: bool) -> Result<Simulation, String> {
+    let make = if clouds {
+        Simulation::new_clouded
+    } else {
+        Simulation::new
+    };
+    make(
         WorldEpoch(1),
         SimConfig {
             tick_hz: NonZeroU32::new(60).ok_or("invalid fixture tick rate")?,
-            entity_capacity: entity_count,
+            entity_capacity: entity_count + usize::from(clouds),
             peer_capacity: PEER_COUNT,
             actions_per_frame: 8,
             movement_speed: 6.0,
@@ -166,9 +179,9 @@ fn register_peers(sim: &mut Simulation, entity_count: usize) -> Result<(), Strin
     Ok(())
 }
 
-fn field_simulation() -> Result<Simulation, String> {
+fn field_simulation(clouds: bool) -> Result<Simulation, String> {
     let entity_count = crate::field::ENTITY_COUNT;
-    let mut sim = new_simulation(entity_count)?;
+    let mut sim = new_simulation(entity_count, clouds)?;
     for index in 0..entity_count {
         let entity = crate::field::entity(index);
         sim.seed(ComponentEntity {
@@ -181,6 +194,8 @@ fn field_simulation() -> Result<Simulation, String> {
         })
         .map_err(|error| format!("seed field entity {index}: {error:?}"))?;
     }
+    sim.seed_weather()
+        .map_err(|e| format!("weather seed: {e:?}"))?;
     register_peers(&mut sim, entity_count)?;
     Ok(sim)
 }
@@ -191,14 +206,18 @@ fn field_simulation() -> Result<Simulation, String> {
 ///
 /// Returns fixture setup or seeding failure.
 pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> {
-    grid_simulation(entity_count, RouteOverlay::Off)
+    grid_simulation(entity_count, RouteOverlay::Off, false)
 }
 
-fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<Simulation, String> {
+fn grid_simulation(
+    entity_count: usize,
+    route_overlay: RouteOverlay,
+    clouds: bool,
+) -> Result<Simulation, String> {
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
-    let mut sim = new_simulation(entity_count)?;
+    let mut sim = new_simulation(entity_count, clouds)?;
     let moving_count = entity_count / ENTITY_COUNT * MOVING_COUNT
         + entity_count % ENTITY_COUNT * MOVING_COUNT / ENTITY_COUNT;
     for index in 0..entity_count {
@@ -252,6 +271,8 @@ fn grid_simulation(entity_count: usize, route_overlay: RouteOverlay) -> Result<S
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
+    sim.seed_weather()
+        .map_err(|e| format!("weather seed: {e:?}"))?;
     register_peers(&mut sim, entity_count)?;
     Ok(sim)
 }

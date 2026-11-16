@@ -1,6 +1,33 @@
 use super::*;
 use std::{io, sync::mpsc};
 
+#[test]
+fn explicit_session_record_limit_is_validated_and_enforced() {
+    for limit in [0, 4097] {
+        assert!(
+            ImageWriter::<Vec<u8>>::start_with_frame_limit(
+                Vec::new(),
+                2,
+                1024,
+                SpoolEncoding::Raw,
+                limit
+            )
+            .is_err()
+        );
+    }
+    let writer =
+        ImageWriter::<Vec<u8>>::start_with_frame_limit(Vec::new(), 2, 1024, SpoolEncoding::Raw, 1)
+            .unwrap();
+    assert!(writer.submit(vec![1; 8]).is_none());
+    assert!(writer.submit(vec![2; 8]).is_none());
+    assert!(
+        writer
+            .finish(Duration::from_secs(2))
+            .unwrap_err()
+            .contains("record limit")
+    );
+}
+
 struct HeldSink {
     entered: mpsc::Sender<()>,
     release: Receiver<()>,

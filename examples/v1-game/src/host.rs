@@ -37,6 +37,8 @@ pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GameSetup {
+    /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
+    pub clouds: crate::CloudSelection,
     /// Admit portable temporal reconstruction at native scale.
     pub reconstruction: thrum_render::synthetic::Reconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
@@ -61,6 +63,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            clouds: crate::CloudSelection::Off,
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
@@ -94,6 +97,7 @@ impl GameSetup {
 /// Prepared V1 game, whose world clock and frame executor belong to the engine.
 pub struct FrameHost {
     inner: Runtime,
+    cloud_input: Option<thrum_clouds::WeatherInput>,
     #[cfg(not(target_arch = "wasm32"))]
     visual_product: Option<EnvironmentProduct>,
 }
@@ -418,6 +422,17 @@ impl ThreadedFrameHost {
 }
 
 impl FrameHost {
+    /// Current Weather and Shade product, for optional GPU inspection.
+    pub fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
+        self.cloud_input.as_ref()?.ground_product()
+    }
+
+    /// Prepared cloud resource payload bytes, excluding driver overhead.
+    pub fn cloud_resource_bytes(&self) -> Vec<(String, u64)> {
+        self.cloud_input
+            .as_ref()
+            .map_or_else(Vec::new, thrum_clouds::WeatherInput::resource_bytes)
+    }
     /// Reconstruction provider actually prepared for the live scene generation.
     pub fn reconstruction(&self) -> thrum_render::synthetic::Reconstruction {
         self.inner.reconstruction()
@@ -498,26 +513,43 @@ impl FrameHost {
             return Err("capability record does not match the host device".to_owned());
         }
         let scene = GameScene::scene(config.render_extent, setup)?;
-        let world = WorldPort::Inline(Box::new(WorldDriver::new(
-            setup.content,
-            setup.route_overlay,
-        )?));
+        let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Shade {
+            WorldDriver::selected(setup.content, setup.route_overlay, true)?
+        } else {
+            WorldDriver::new(setup.content, setup.route_overlay)?
+        }));
+        let shade = if setup.clouds == crate::CloudSelection::Shade {
+            Some(
+                thrum_clouds::Shade::new(crate::clouds::shade_config())
+                    .map_err(|e| e.to_string())?,
+            )
+        } else {
+            None
+        };
+        let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
+        let mut source = GameScene::new(setup);
+        source.cloud_input = cloud_input.clone();
         let inner = Runtime::new(
             capabilities,
             queue,
             config,
             world,
-            GameScene::new(setup),
+            source,
             scene,
             1.0 / 16_000.0,
         )
         .await
         .map_err(|error| error.to_string())?;
-        Ok(Self {
+        let mut host = Self {
             inner,
+            cloud_input,
             #[cfg(not(target_arch = "wasm32"))]
             visual_product: None,
-        })
+        };
+        if let Some(shade) = shade {
+            host.inner.set_scene_contribution(Box::new(shade))?;
+        }
+        Ok(host)
     }
     /// Move the existing clock/rules into the engine's resident world lane.
     /// # Errors
@@ -684,7 +716,19 @@ impl FrameHost {
         &mut self,
         contribution: Box<dyn thrum_render::contribution::SceneContribution>,
     ) -> Result<(), String> {
-        self.inner.set_scene_contribution(contribution)
+        if let Some(input) = &self.cloud_input {
+            let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
+                .map_err(|e| e.to_string())?
+                .with_input(input.clone());
+            self.inner.set_scene_contribution(Box::new(
+                thrum_render::contribution::SceneContributions::new(vec![
+                    contribution,
+                    Box::new(shade),
+                ]),
+            ))
+        } else {
+            self.inner.set_scene_contribution(contribution)
+        }
     }
     /// Drive authority and optional presentation through the engine.
     /// # Errors

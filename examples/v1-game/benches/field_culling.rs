@@ -150,6 +150,7 @@ fn main() {
                         surface: None,
                     },
                     GameSetup {
+                        clouds: v1_game::CloudSelection::Off,
                         reconstruction: thrum_render::synthetic::Reconstruction::Off,
                         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,
