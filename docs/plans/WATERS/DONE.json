@@ -296,7 +296,7 @@
     {
       "id": "M2",
       "name": "An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -408,7 +408,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "M2.2 needs a revised geometry/cache-to-shading approach that passes the existing visual bar.",
+        "work": {
+          "commit": "6af4ae744ff82e87d214ded60fc9d73d807cc6c4",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/WATERS/M2-handoff.md"
+      }
     },
     {
       "id": "M3",
