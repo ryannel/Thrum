@@ -461,3 +461,86 @@ fn quiet_tree_sweep_cost_baseline() {
         }
     }
 }
+
+struct Fixture(std::path::PathBuf);
+
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        std::fs::remove_dir_all(&self.0).expect("remove fixture");
+    }
+}
+
+#[test]
+fn missing_notifications_reconcile_edits_additions_and_removals_without_republishing_idle_sources()
+{
+    let fixture =
+        Fixture(std::env::temp_dir().join(format!("thrum-watch-reconcile-{}", std::process::id())));
+    let source = fixture.0.join("source");
+    std::fs::create_dir_all(&source).expect("source directory");
+    let original = source.join("cloud.tvol");
+    demo::write_cloud_volume(&original, 8, 1).expect("initial volume");
+    let config = CookConfig {
+        source: source.clone(),
+        store: fixture.0.join("store"),
+        profiles: vec![Profile::Portable],
+        quality: Quality::Fast,
+        durability: Durability::Process,
+    };
+    let mut cooker = Cooker::open(config).expect("cooker");
+    let store = cooker.store().clone();
+    // This live channel deliberately delivers no hints. The real cycle loop must recover anyway.
+    let (_events, receiver) = mpsc::channel();
+    let (finished, done) = mpsc::channel();
+    let stop = Arc::new(AtomicBool::new(false));
+    let worker_stop = Arc::clone(&stop);
+    let worker = std::thread::spawn(move || {
+        let mut old_product = None;
+        super::run_cycles(&mut cooker, &source, &worker_stop, &receiver, |event| {
+            let report = event.report.as_ref().expect("cook cycle");
+            assert!(report.failed.is_empty(), "{:?}", report.failed);
+            assert_eq!(event.paths, 0, "no filesystem hints were sent");
+            let head = store.read_head().expect("head").expect("published");
+            let manifest = store.load_manifest(&head).expect("manifest");
+            match report.published.map(|head| head.generation) {
+                Some(1) => {
+                    old_product = Some(
+                        manifest
+                            .resolve("cloud", &[Profile::Portable])
+                            .unwrap()
+                            .product,
+                    );
+                    demo::write_cloud_volume(&original, 8, 2).expect("edit without hint");
+                    demo::write_cloud_volume(&source.join("new.tvol"), 8, 3)
+                        .expect("add without hint");
+                }
+                Some(2) => {
+                    assert_ne!(
+                        manifest
+                            .resolve("cloud", &[Profile::Portable])
+                            .unwrap()
+                            .product,
+                        old_product.unwrap()
+                    );
+                    assert!(manifest.resolve("new", &[Profile::Portable]).is_some());
+                    std::fs::remove_file(&original).expect("remove without hint");
+                }
+                Some(3) => {
+                    assert!(manifest.resolve("cloud", &[Profile::Portable]).is_none());
+                    assert!(manifest.resolve("new", &[Profile::Portable]).is_some());
+                }
+                None => {
+                    assert_eq!(head.generation, 3);
+                    assert_eq!(report.cooked, 0, "idle reconciliation reuses products");
+                    worker_stop.store(true, Ordering::Relaxed);
+                    finished.send(()).expect("finish");
+                }
+                generation => panic!("unexpected generation {generation:?}"),
+            }
+        })
+        .expect("watch cycles");
+    });
+    let result = done.recv_timeout(Duration::from_secs(10));
+    stop.store(true, Ordering::Relaxed);
+    worker.join().expect("watch cycles");
+    result.expect("missing notifications must recover within the existing watch-test deadline");
+}
