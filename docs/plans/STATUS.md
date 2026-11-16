@@ -239,7 +239,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged (SCENE-VIEWS M1): Not Started · [plan](SCENE-VIEWS/PLAN.md)
 - Cloud shade crosses the valley in step with the weather, with no cloud drawn (CLOUDS M2): Not Started · [plan](CLOUDS/PLAN.md)
 - On the CPU alone, a spring's water runs down a valley, fills a pool to its sill, quickens through a narrows and reaches a lake, and the solved flow is a chart the water map takes (RIVERS M1): Ready for Review · [plan](RIVERS/PLAN.md) · [latest review](../evidence/RIVERS/M1-review.md)
-- On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry (PUDDLES M1): Ready for Review · [plan](PUDDLES/PLAN.md) · [latest review](../evidence/PUDDLES/M1-review.md)
+- On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do (PUDDLES M2): Not Started · [plan](PUDDLES/PLAN.md)
 - A crowd of 10,000, stepped from one recorded trace, holds the same state tick for tick on the Mac, in Chrome and on the iPhone simulator (SIM-2D M1): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M1-review.md)
 - A Mac program, a Chrome page and an iPhone-simulator program stay connected to one host through delay, jitter and 2% loss, and reconnect after a drop (TRANSPORT M1): In Progress · [plan](TRANSPORT/PLAN.md) · [latest review](../evidence/TRANSPORT/M1-review.md)
 - The checkout no longer carries bulk media: every file that left is listed, comes back by one command, and every link still resolves (REPO-RULES M2): In Progress · [plan](REPO-RULES/PLAN.md)
@@ -248,6 +248,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry (PUDDLES M1), 16 Nov · [review](../evidence/PUDDLES/M1-review.md)
 - On the CPU alone, a swell turns to face a beach, closes up, rises and breaks where the depth says, and an island calms its lee (WATERS M12), 16 Nov · [review](../evidence/WATERS/M12-review.md)
 - A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome (EFFECT-GRAPH M3), 16 Nov · [review](../evidence/EFFECT-GRAPH/M3-review.md)
 - The iPhone app gets compressed textures and enough storage buffers for the sea, and a rewound game no longer carries a patch that never ran (REVIEW-ENGINE M1), 16 Nov · [review](../evidence/REVIEW-ENGINE/M1-review.md)
@@ -302,7 +303,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M1 of 3 · Not Started |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | M2 of 16 · Not Started |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | M1 of 7 · Ready for Review |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M1 of 8 · Ready for Review |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | M2 of 8 · Not Started |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M1 of 3 · In Progress |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | M1 of 2 · In Progress |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
