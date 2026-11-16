@@ -195,3 +195,11 @@
   pair stalls in a run of delayed frames, so it also holds the refused pair. Bar, M4.2 and M4.4 rewritten;
   M4.6 added. [Design](DESIGN.md#the-frames-pair), with who meets a delayed frame ·
   [probe and the choice not taken](../../evidence/EFFECT-GRAPH/M4-replan/README.md).
+- 2026-11-16 The resumed builder reproduced the review's zero-lead selection change with the actual
+  clock on `8a72a0c0b`: tick 2/alpha 0 becomes tick 0/alpha 0.06 after a delayed observation.
+  Keeping tick 2 requires phase -1.94 to satisfy M4.2, contradicting M4.1's nonnegative phase.
+  Proposal for the planner: retain causal endpoint selection and explicitly settle its zero-lead
+  compatibility exception, affected threaded consumers and regression proof in the design and criteria.
+  No engine or criteria changed; M4.2 stays open. [Reproduction](../../evidence/EFFECT-GRAPH/M4-compatibility.md)
+  and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the conflict; no new GPU claim or merge.
+  The CPU probe and documentation checks pass; owned probe scratch was removed.
