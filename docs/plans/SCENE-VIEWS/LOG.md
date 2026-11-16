@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-16 M1 builder: added checked camera, clip-plane, extent and shadow-profile admission;
+  three public admission tests and `./dev check` pass. No slot transport or secondary draw is built.
+  Metal reproduction at `1960293fb`: sharing a height map centred 40 km from the requested camera
+  changes 283 pixels, by up to 2,904 stored steps, against M1.1's one-step allowance.
+  Proposed: permit per-view height-map ownership, or define an admitted camera/support bound;
+  the current design's unrestricted request and shared finite map cannot both meet that reference.
+  [The handoff](../../evidence/SCENE-VIEWS/M1-handoff.md) records the mechanism, limits and checks.
+
 - 2026-11-14 Owner, of water, through the lead: "Scenery reflections we must have, that's a main stay in high
   quality modern games. That's the standard we're after." `WATERS` settled a mirror view read by water and
   left the draw to this module, with [a brief](../ARCHITECTURE.md#scene-views).
