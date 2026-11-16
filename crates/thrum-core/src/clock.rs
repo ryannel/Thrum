@@ -5,7 +5,7 @@ use std::{num::NonZeroU32, time::Duration};
 
 const NANOS_PER_SECOND: u128 = 1_000_000_000;
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests;
 
 /// Fixed-step rate and finite work limits for one authoritative world.
@@ -98,6 +98,7 @@ pub struct ClockSample {
 impl ClockSample {
     /// An interpolating sample must not lend an endpoint from after the frame's
     /// observation. Stopped samples consume no target and show their endpoint.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn accepts_observation(self, observation: Duration) -> bool {
         !self.interpolate
             || observation >= self.last_time

@@ -45,7 +45,7 @@ fn delayed_observation_still_describes_the_consumed_target() {
     pollster::block_on(async {
         let (_, device, queue, _) = support::device("portable", false).await;
         let (view, profile) = support::presentation(&device, [96, 54]);
-        let host = FrameHost::new(
+        let mut host = FrameHost::new(
             &device,
             &queue,
             FrameConfig {
@@ -55,6 +55,9 @@ fn delayed_observation_still_describes_the_consumed_target() {
         )
         .await
         .expect("V1 game");
+        let (effect, handle) = DiagnosticEffect::new();
+        host.set_scene_contribution(Box::new(effect))
+            .expect("public effect seam");
         let origin = Instant::now();
         let (mut host, controls) = host.into_threaded(origin, || {}).expect("world lane");
         let observation = origin.elapsed();
@@ -89,6 +92,26 @@ fn delayed_observation_still_describes_the_consumed_target() {
             "the counterexample needs an active clock"
         );
         identity(&sample);
+        let time = handle.lock().expect("effect").time.expect("delivered time");
+        assert_eq!(time.tick, sample.tick);
+        assert_eq!(time.display_phase, sample.display_phase);
+        assert_eq!(time.alpha, sample.presentation_alpha);
+        assert_eq!(
+            time.tick, 0,
+            "the observation preceded the first tick's due time"
+        );
+        let authority_tick = controls
+            .check_health()
+            .expect("authority continues independently");
+        assert!(authority_tick >= 2);
+        let output =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/effect-graph-m4");
+        std::fs::create_dir_all(&output).expect("output");
+        std::fs::write(output.join("delayed-observation-fixed.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({"observation_ns":observation.as_nanos(),
+                "lead_ns":sample.presentation_lead.as_nanos(),"frame_tick":time.tick,"authority_tick":authority_tick,
+                "phase":time.display_phase,"alpha":time.alpha,"interpolating":sample.clock_interpolating,
+                "precision_ns":2000})).expect("JSON")).expect("record");
     });
 }
 

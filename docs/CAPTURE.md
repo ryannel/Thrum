@@ -52,6 +52,8 @@ the fraction since the committed tick at that consumed target, capped at one plu
 the phase held to one. When the clock is paused, overloaded, holding or queued, `clock_interpolating` is false
 and both are one; those frames do not describe a consumed target. Endpoint oracle captures likewise give one.
 Counts of lead statuses, bound phases and stopped clocks retain those frames rather than silently dropping them.
+Opportunity records also retain requests that produced no submitted frame, for example while an optional world
+publication is unavailable. Those requests are distinct from omissions in the submitted-image tap.
 This is an offscreen target policy, not a measured display target or a claim that its alpha equals a window's.
 
 Additional cases use the same binary:

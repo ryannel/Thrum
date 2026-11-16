@@ -21,6 +21,10 @@ to `1 + 50 ms / tick_duration`. Alpha remains the phase held to one. Endpoint-on
 one. Sampling never admits a tick. Predict presentation-only quantities from committed state a tick at a time
 by their own step; quantities known only at endpoints keep alpha. See
 [C02](design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world).
+The resident world lane keeps the clock sample and publication paired with the observation: it retains the
+previous pair if the newest interpolating endpoint lies after that observation. This enforces the design's
+`t_C <= observation` premise when the render owner is preempted. It adds no history or clock read, never
+stops authority, and changes neither alpha's arithmetic nor the consumed target.
 Use `EffectState::begin` against the committed state: equal ticks keep contents, forward ticks advance up to
 the declared bound, backwards ticks or another timeline reset. Captures run no state producer. First-epoch
 and reset recordings write every texel, including time-sliced resources. `effect_runs` skips work without
