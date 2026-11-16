@@ -52,6 +52,7 @@ impl Parameters {
         reset: bool,
         previous_level: f64,
         long_variances: [[f32; 4]; 8],
+        height_rms: f32,
         deep_scatter: [f32; 3],
     ) -> Self {
         Self {
@@ -77,8 +78,15 @@ impl Parameters {
                 deep_scatter[0],
                 deep_scatter[1],
                 deep_scatter[2],
-                spectrum.variance().sqrt() as f32,
+                height_rms,
             ],
         }
     }
+}
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the GPU crest mask uses the finite f32 RMS height, prepared once"
+)]
+pub(super) fn height_rms(spectrum: &Spectrum) -> f32 {
+    spectrum.variance().sqrt() as f32
 }

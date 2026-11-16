@@ -72,6 +72,7 @@ pub struct Water {
     body: usize,
     spectrum: Spectrum,
     long_variances: [[f32; 4]; 8],
+    height_rms: f32,
     profile: Profile,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,
@@ -128,6 +129,7 @@ impl Water {
             map,
             body,
             long_variances: records::long_variances(&spectrum),
+            height_rms: records::height_rms(&spectrum),
             spectrum,
             profile,
             prepared: None,
@@ -212,6 +214,7 @@ impl SceneContribution for Water {
             self.invalid,
             previous_level,
             self.long_variances,
+            self.height_rms,
             self.profile.deep_scatter,
         );
         p.queue
