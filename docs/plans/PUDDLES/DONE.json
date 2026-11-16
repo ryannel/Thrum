@@ -4,8 +4,8 @@
     {
       "id": "M1",
       "name": "On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -21,8 +21,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "crates/thrum-rain-model/tests/tree.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.2",
@@ -32,8 +32,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "crates/thrum-rain-model/tests/point_test.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.3",
@@ -43,8 +43,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "crates/thrum-rain-model/tests/fill.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.4",
@@ -52,7 +52,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test account",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/account.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
+          "evidence": "crates/thrum-rain-model/tests/account.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.5",
@@ -61,7 +63,9 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "crates/thrum-rain-model/tests/exposure.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "ask": "Would exposure taken from the lowest canopy alone fail the crown under the roof, as part 10 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows?"
+          "ask": "Would exposure taken from the lowest canopy alone fail the crown under the roof, as part 10 of `docs/evidence/PUDDLES/design-proof/revision_proof.py` shows?",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.13",
@@ -69,10 +73,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Does the test sum each receiver's cells by brute force from the bed, the levels and the shelters, without the model? Does it check each entry by itself and not only their sum?",
           "target": "mac-metal",
-          "evidence": "crates/thrum-rain-model/tests/receivers.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/PUDDLES/M1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M1.6",
@@ -82,8 +86,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "crates/thrum-rain-model/tests/map.rs and crates/thrum-water-model/tests (unchanged): passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.7",
@@ -91,7 +95,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test state",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/state.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
+          "evidence": "crates/thrum-rain-model/tests/state.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.8",
@@ -99,7 +105,9 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test conformance",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "crates/thrum-rain-model/tests/conformance.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md"
+          "evidence": "crates/thrum-rain-model/tests/conformance.rs: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.9",
@@ -109,8 +117,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/rain-cost.json from scripts/rain_cost.py record: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.10",
@@ -120,8 +128,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "cargo tree -p thrum-rain-model; .config/architecture.toml: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.11",
@@ -130,8 +138,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/PUDDLES/PROVENANCE.md: passed on 78c4af12bc0d6e72fae506f731f3c920d3532e33 (mac-metal); docs/evidence/PUDDLES/M1-evidence.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
         },
         {
           "id": "M1.12",
@@ -139,7 +147,16 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images"
+          "evidence": "main-branch check exact-images",
+          "verdict": "pass",
+          "review": "docs/evidence/PUDDLES/M1-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "water-receiver-uses-ground-exposure",
+          "item": "M1.13",
+          "repeat": false
         }
       ]
     },

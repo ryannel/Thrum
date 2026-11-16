@@ -26,7 +26,51 @@
   "milestones": {
     "M1": {
       "definitions": "1cc3064c5521c9b4a2721e7ba9d86ff394e94eab85c960ea689fff04d68a0796",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ae165194050e057721756969f150f36bbb5c1a25",
+          "review": "docs/evidence/PUDDLES/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.13": "fail",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.10": "pass",
+            "M1.11": "pass",
+            "M1.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "water-receiver-uses-ground-exposure",
+              "item": "M1.13",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 145312,
+            "cached": 1874944,
+            "output": 10186,
+            "turns": 1
+          },
+          "at": "2026-11-16T04:51:00Z"
+        }
+      ],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/PUDDLES/design-review.md",
