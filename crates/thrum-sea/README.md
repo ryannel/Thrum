@@ -52,9 +52,12 @@ texel's rest place, from its restricted long-wave model. No forces read this dis
 
 `filtered_views()` lends the cascade and long-cache textures, respectively. Each wave layer
 has five consecutive array planes: the three field vec4s above, `(sx², sx*sz, sz², dZ/dz)`,
-and `(J², 0, 0, 0)`. Mean J is in the displacement plane's fourth channel.
-The pixel reads only the derivative and second-moment planes; vertices read the first three.
-Every channel is averaged linearly through every mip. Cascades
+and `(J², displacement residual xyz)`. Mean J is in the displacement plane's fourth channel.
+The pixel reads only the derivative and second-moment planes; vertices read the first three
+and add the last plane's residual to displacement. Splitting the explicitly quantized high
+part and its residual keeps large waves inside the millimetre height bound without another
+texture. Reductions carry their new half-rounding error into the residual too. Every moment
+and decoded field is averaged linearly through every mip. Cascades
 repeat; cache levels clamp at their edges. Surface consumers use trilinear anisotropic
 sampling over their own rest-space pixel derivatives, and recover covariance as the
 second moments minus the outer product of the filtered mean. Levels omitted from a

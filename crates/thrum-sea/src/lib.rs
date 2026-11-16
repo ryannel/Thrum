@@ -316,7 +316,8 @@ impl Ambient {
     }
     /// Full LEAN mip chains, five array planes per cascade or long-cache level.
     /// Planes contain displacement/J, rest derivatives, velocity, slope second
-    /// moments/dZdz, and J squared. All channels are linearly filtered.
+    /// moments/dZdz, and J squared/displacement residual. Moments and decoded
+    /// displacements filter linearly, including through every mip.
     pub fn filtered_views(&self) -> &[wgpu::TextureView; 2] {
         &self.filtered.views
     }

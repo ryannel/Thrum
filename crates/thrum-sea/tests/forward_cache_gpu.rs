@@ -8,8 +8,8 @@ use std::{fmt::Write as _, sync::mpsc, time::Duration};
 
 #[test]
 fn forward_fields_and_full_lean_pyramids_match_the_model() {
-    for portable in [false, true] {
-        let spectrum = support::spectrum(8.0);
+    for (portable, wind) in [(false, 8.0), (true, 8.0), (false, 20.0), (true, 20.0)] {
+        let spectrum = support::spectrum(wind);
         let choppiness = (0.85
             / thrum_sea_model::contraction_bound(&spectrum.long, 1.0).expect("bound"))
         .min(4.0);
@@ -43,20 +43,28 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                 // Every plane, including rest derivatives, rates, J and J^2.
                 for layer in 0..layers {
                     for pixel in 0..width * width {
-                        let f = &fields[((layer / 5) * width * width + pixel) * 12..];
+                        let start = ((layer / 5) * width * width + pixel) * 12;
+                        let f: [f64; 12] = std::array::from_fn(|c| f64::from(fields[start + c]));
                         let expected = match layer % 5 {
                             0 => [f[0], f[1], f[2], f[3]],
                             1 => [f[4], f[5], f[6], f[7]],
                             2 => [f[8], f[9], f[10], f[11]],
                             3 => [f[4] * f[4], f[4] * f[5], f[5] * f[5], f[11]],
-                            _ => [f[3] * f[3], 0.0, 0.0, 0.0],
+                            _ => {
+                                let high = ((layer - 4) * width * width + pixel) * 4;
+                                [
+                                    f[3] * f[3],
+                                    f[0] - base[high],
+                                    f[1] - base[high + 1],
+                                    f[2] - base[high + 2],
+                                ]
+                            }
                         };
                         let offset = (layer * width * width + pixel) * 4;
                         for channel in 0..4 {
-                            let error =
-                                (base[offset + channel] - f64::from(expected[channel])).abs();
+                            let error = (base[offset + channel] - expected[channel]).abs();
                             assert!(
-                                error <= 0.001 * f64::from(expected[channel]).abs() + 0.000_001,
+                                error <= 0.001 * expected[channel].abs() + 0.000_001,
                                 "base plane {layer} pixel {pixel}: {error}"
                             );
                         }
@@ -80,25 +88,41 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
                                             + dx)
                                             * 4;
                                         for channel in 0..4 {
-                                            sum[channel] += base[offset + channel];
-                                            magnitude[channel] += base[offset + channel].abs();
+                                            let mut value = base[offset + channel];
+                                            if layer % 5 == 0 && channel < 3 {
+                                                value += base
+                                                    [offset + 4 * width * width * 4 + channel + 1];
+                                            }
+                                            sum[channel] += value;
+                                            magnitude[channel] += value.abs();
                                         }
                                     }
                                 }
                                 let offset =
                                     (layer * child_width * child_width + z * child_width + x) * 4;
                                 for channel in 0..4 {
+                                    if layer % 5 == 4 && channel > 0 {
+                                        continue;
+                                    }
                                     let expected = sum[channel] / (block * block) as f64;
                                     // Half storage can round each parent by one ULP.
                                     // Bound accumulated error by the mean absolute
                                     // input, since signed derivatives cancel to zero.
                                     let rounding =
                                         (1.0 + 1.0 / 1024.0_f64).powf(f64::from(mip)) - 1.0;
-                                    let budget = rounding * magnitude[channel]
+                                    let mut budget = rounding * magnitude[channel]
                                         / (block * block) as f64
                                         + f64::from(mip) * 0.000_000_1;
+                                    let mut actual = values[offset + channel];
+                                    if layer % 5 == 0 && channel < 3 {
+                                        actual += values[offset
+                                            + 4 * child_width * child_width * 4
+                                            + channel
+                                            + 1];
+                                        budget = f64::from(mip) * 0.000_002 + 0.000_000_1;
+                                    }
                                     assert!(
-                                        (values[offset + channel] - expected).abs() <= budget,
+                                        (actual - expected).abs() <= budget,
                                         "mip {mip} layer {layer} ({x},{z}) channel {channel}: {} vs {expected}",
                                         values[offset + channel]
                                     );
@@ -110,10 +134,11 @@ fn forward_fields_and_full_lean_pyramids_match_the_model() {
             }
         }
         h.record.push_str("All forward-cache texels and all five planes of every texture mip passed. Half-float storage checked against direct base-block means.\n");
-        h.save(if portable {
-            "forward-cache-portable"
-        } else {
-            "forward-cache-native"
+        h.save(match (portable, wind > 8.0) {
+            (false, false) => "forward-cache-native",
+            (true, false) => "forward-cache-portable",
+            (false, true) => "forward-cache-high-wind-native",
+            (true, true) => "forward-cache-high-wind-portable",
         });
     }
 }
@@ -145,7 +170,8 @@ fn check_cache(
             ];
             let cpu = model.forward(rest, time).expect("forward");
             let offset = (level * 5 * 128 * 128 + pixel) * 4;
-            height = height.max((base[offset + 1] - cpu.displacement[1]).abs());
+            let actual = base[offset + 1] + base[offset + 4 * 128 * 128 * 4 + 2];
+            height = height.max((actual - cpu.displacement[1]).abs());
             for axis in 0..2 {
                 slope = slope.max((base[offset + 128 * 128 * 4 + axis] - cpu.slope[axis]).abs());
             }

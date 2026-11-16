@@ -20,11 +20,15 @@ struct Moments { a:vec4<f32>, b:vec4<f32>, }
 fn add_field(a:Field,b:Field,w:f32)->Field {return Field(a.displacement+w*b.displacement,a.slope+w*b.slope,a.velocity+w*b.velocity);}
 fn cascade_at(point:vec2<f32>,band:u32)->Field {
     let uv=point/water.lengths[band];let layer=i32(band*5u);
-    return Field(textureSampleLevel(cascades,periodic,uv,layer,0.0),textureSampleLevel(cascades,periodic,uv,layer+1,0.0),textureSampleLevel(cascades,periodic,uv,layer+2,0.0));
+    let displacement=textureSampleLevel(cascades,periodic,uv,layer,0.0);
+    let residual=textureSampleLevel(cascades,periodic,uv,layer+4,0.0).yzw;
+    return Field(displacement+vec4(residual,0.0),textureSampleLevel(cascades,periodic,uv,layer+1,0.0),textureSampleLevel(cascades,periodic,uv,layer+2,0.0));
 }
 fn long_level(point:vec2<f32>,level:u32)->Field {
     let uv=(point-water.cache[level].xy)/(128.0*water.cache[level].z);let layer=i32(level*5u);
-    let result=Field(textureSampleLevel(long_field,bounded,uv,layer,0.0),textureSampleLevel(long_field,bounded,uv,layer+1,0.0),textureSampleLevel(long_field,bounded,uv,layer+2,0.0));
+    let displacement=textureSampleLevel(long_field,bounded,uv,layer,0.0);
+    let residual=textureSampleLevel(long_field,bounded,uv,layer+4,0.0).yzw;
+    let result=Field(displacement+vec4(residual,0.0),textureSampleLevel(long_field,bounded,uv,layer+1,0.0),textureSampleLevel(long_field,bounded,uv,layer+2,0.0));
     // The skirt closes at the mathematical horizon, beyond all resolved waves.
     let fade=1.0-smoothstep(4000.0,8000.0,length(point-view.camera_xyz_time.xz));
     return add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),result,fade);
