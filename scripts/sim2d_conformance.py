@@ -258,18 +258,18 @@ def run(target, parallel=False):
                 assert row["parallel_chunks"] > 0, "steering did not dispatch native chunks"
             row.pop("timeline")
             rows.append(row)
-    retained = references()
-    wire = runner.invoke("conformance", [2000, 3600, False, True, False])
-    compare(wire, retained)
-    wire.pop("timeline")
-    rows.append(wire)
+        wire = runner.invoke("trace", [2000, 3600, False, True, False, mixed, parallel])
+        compare(wire, retained)
+        wire.pop("timeline")
+        rows.append(wire)
     if target == "mac-metal":
         debug = Runner(target, debug=True)
-        row = debug.invoke("conformance", [2000, 3600, False, False, False])
-        compare(row, retained)
-        row.pop("timeline")
-        row["build"] = "debug"
-        rows.append(row)
+        for mixed in [False, True]:
+            row = debug.invoke("trace", [2000, 3600, False, False, False, mixed, False])
+            compare(row, references(MIXED if mixed else RETAINED))
+            row.pop("timeline")
+            row["build"] = "debug"
+            rows.append(row)
     return {"rows": rows, "artifact_sha256": runner.artifact_hash, "simulator": runner.device, "user_agent": runner.user_agent, "profile_vectors": "pass"}
 
 
