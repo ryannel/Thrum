@@ -1,7 +1,153 @@
 //! An independently interpolated 80 m / nine-height band, held to fixed ceilings.
 pub mod ground_support;
 pub mod support;
-use thrum_cloud_model::{Density, Weather};
+use thrum_cloud_model::{Density, Fidelity, Light, Sample, Weather};
+
+#[test]
+fn placed_sun_paths_erode_column_forms_with_and_without_ground() {
+    let shape = support::shape();
+    let surface = ground_support::flat(0.0);
+    let mut row = ground_support::row();
+    row.depth = 850.0;
+    let ground = ground_support::table(vec![row]);
+    for erosion in [0.0, 0.4, 1.0] {
+        let field = support::field(5, erosion);
+        for envelope in [0.35, 1.0] {
+            let mut state = support::state(0.0, 0.0);
+            let mut directed = support::directed(&shape, 1, [0.0; 2]);
+            directed.target = envelope;
+            state.add(directed).expect("placed shape");
+            state.step(1, 10.0).expect("form shape");
+            ground_support::controls(&mut state, vec![1.0], 0.0);
+            for resident in [false, true] {
+                let volume = |_| resident.then_some(&shape);
+                for with_ground in [false, true] {
+                    let weather = Weather {
+                        field: &field,
+                        surface: with_ground.then_some(&surface),
+                        ground: with_ground.then_some(&ground),
+                    };
+                    for elevation in [4.0_f64, 10.0, 30.0, 89.9] {
+                        for density in [Density::Full, Density::Coarse, Density::Uneroded] {
+                            let e = elevation.to_radians();
+                            let sample = Sample {
+                                tick: 1,
+                                origin: [0.0, 650.0, 3.0],
+                                direction: [e.cos(), e.sin(), 0.0],
+                                length: 250.0 / e.sin(),
+                                steps: 4000,
+                            };
+                            let cloud = field.optical_depth(&sample, &state, density, volume, 1.0);
+                            let step = sample.length / f64::from(sample.steps);
+                            let fog: f64 = (0..sample.steps)
+                                .map(|i| {
+                                    let distance = (f64::from(i) + 0.5) * step;
+                                    let p = std::array::from_fn(|j| {
+                                        sample.origin[j] + sample.direction[j] * distance
+                                    });
+                                    if with_ground {
+                                        ground.density(&surface, &field, p, &state, density) * step
+                                    } else {
+                                        0.0
+                                    }
+                                })
+                                .sum();
+                            let actual = weather
+                                .sun_path(
+                                    sample.origin,
+                                    &state,
+                                    elevation,
+                                    0.0,
+                                    2.0,
+                                    900.0,
+                                    sample.steps,
+                                    density,
+                                    volume,
+                                )
+                                .expect("placed Sun reference");
+                            support::close(actual.optical_depth.value, cloud + fog, 1e-11);
+                            assert!(!actual.surface_blocked);
+                            if elevation > 89.0 {
+                                assert!(cloud > 0.0);
+                                if with_ground {
+                                    assert!(fog > 0.0);
+                                }
+                                assert_eq!(
+                                    actual.optical_depth.fidelity,
+                                    if resident {
+                                        Fidelity::Exact
+                                    } else {
+                                        Fidelity::Footprint
+                                    }
+                                );
+                                println!(
+                                    "erosion {erosion}, envelope {envelope}, resident {resident}, ground {with_ground}, {density:?}: Sun tau {}, independent tau {}",
+                                    actual.optical_depth.value,
+                                    cloud + fog
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn placed_density_and_both_medium_entries_share_column_erosion() {
+    let shape = support::shape();
+    let surface = ground_support::flat(0.0);
+    let mut row = ground_support::row();
+    row.depth = 850.0;
+    let ground = ground_support::table(vec![row]);
+    let light = Light {
+        phases: [0.1, 0.2, 0.3, 0.4],
+        sun_depth: 2.0,
+        vertical_depths: [1.0, 3.0],
+        ambient: [0.2, 0.1],
+        mean_cosine: 0.8,
+    };
+    for erosion in [0.0, 0.4, 1.0] {
+        let field = support::field(5, erosion);
+        let mut state = support::formed(&shape);
+        ground_support::controls(&mut state, vec![1.0], 0.0);
+        for resident in [false, true] {
+            let volume = |_| resident.then_some(&shape);
+            for with_ground in [false, true] {
+                let weather = Weather {
+                    field: &field,
+                    surface: with_ground.then_some(&surface),
+                    ground: with_ground.then_some(&ground),
+                };
+                for x in -6..=6 {
+                    for y in 0..12 {
+                        let p = [f64::from(x) * 8.0, 700.0 + f64::from(y) * 10.0, 3.0];
+                        for density in [Density::Full, Density::Coarse, Density::Uneroded] {
+                            let cloud = field.density(p, &state, density, volume, 1.0);
+                            let fog = if with_ground {
+                                ground.density(&surface, &field, p, &state, density)
+                            } else {
+                                0.0
+                            };
+                            assert_eq!(weather.density(p, &state, density, volume), cloud + fog);
+                        }
+                        let a = weather.medium(p, &state, volume, light);
+                        let b = weather.medium_sources(p, &state, volume, light, |_| light);
+                        support::close(a.extinction, b.extinction, 1e-15);
+                        support::close(a.solar_kernel, b.solar_kernel, 1e-15);
+                        support::close(a.ambient_source, b.ambient_source, 1e-15);
+                        let expected =
+                            light.coefficients(weather.density(p, &state, Density::Coarse, volume));
+                        assert_eq!(a.extinction, expected.extinction);
+                        assert_eq!(a.solar_kernel, expected.solar_kernel);
+                        assert_eq!(a.ambient_source, expected.ambient_source);
+                    }
+                }
+            }
+        }
+    }
+}
 
 #[test]
 fn band_tracks_slant_paths_and_rejects_wrong_substitutes() {

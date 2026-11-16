@@ -117,8 +117,7 @@ impl Weather<'_> {
     }
 
     /// One density, with optional ground sources added before attenuation.
-    /// Missing placed volumes retain their footprint's uneroded column sum;
-    /// erosion cannot be inferred from a footprint's integral and bounds.
+    /// Missing placed volumes use the eroded column form, as in `Field::density`.
     pub fn density<'v>(
         &self,
         point: [f64; 3],
@@ -126,11 +125,30 @@ impl Weather<'_> {
         fidelity: Density,
         volume: impl Fn(u64) -> Option<&'v Shape>,
     ) -> f64 {
+        self.density_with_footprint(point, state, fidelity, volume, false)
+    }
+
+    // Only visibility queries preserve a footprint's integral. Lighting and
+    // Sun paths evaluate the full/coarse density, including column-form erosion.
+    fn density_with_footprint<'v>(
+        &self,
+        point: [f64; 3],
+        state: &State,
+        fidelity: Density,
+        volume: impl Fn(u64) -> Option<&'v Shape>,
+        preserve_footprint: bool,
+    ) -> f64 {
         let cloud = if state.parameters().coverage == 0.0 && state.shapes().is_empty() {
             0.0
         } else {
-            self.field
-                .density_with_footprint(point, state, fidelity, volume, 1.0, true)
+            self.field.density_with_footprint(
+                point,
+                state,
+                fidelity,
+                volume,
+                1.0,
+                preserve_footprint,
+            )
         };
         match (self.surface, self.ground) {
             (Some(s), Some(g)) => {
@@ -142,6 +160,7 @@ impl Weather<'_> {
     }
 
     /// Coarse condensate extinction at any height, and representation fidelity.
+    /// Footprint-only estimates preserve the uneroded column integral.
     pub fn extinction<'v>(
         &self,
         point: [f64; 3],
@@ -149,7 +168,7 @@ impl Weather<'_> {
         volume: impl Fn(u64) -> Option<&'v Shape>,
     ) -> Answer {
         Answer {
-            value: self.density(point, state, Density::Coarse, &volume),
+            value: self.density_with_footprint(point, state, Density::Coarse, &volume, true),
             fidelity: self.fidelity(point, state, volume),
         }
     }
@@ -179,6 +198,19 @@ impl Weather<'_> {
         density: Density,
         volume: impl Fn(u64) -> Option<&'v Shape>,
     ) -> Result<Answer, Error> {
+        self.integrate(from, to, state, steps, density, volume, true)
+    }
+
+    fn integrate<'v>(
+        &self,
+        from: [f64; 3],
+        to: [f64; 3],
+        state: &State,
+        steps: u32,
+        density: Density,
+        volume: impl Fn(u64) -> Option<&'v Shape>,
+        preserve_footprint: bool,
+    ) -> Result<Answer, Error> {
         if steps == 0 || !from.iter().chain(&to).all(|v| v.is_finite()) {
             return Err(Error::Invalid);
         }
@@ -194,7 +226,10 @@ impl Weather<'_> {
         for n in 0..steps {
             let t = (f64::from(n) + 0.5) / f64::from(steps);
             let p = std::array::from_fn(|i| from[i] + t * delta[i]);
-            answer.value += self.density(p, state, density, &volume) * length / f64::from(steps);
+            answer.value +=
+                self.density_with_footprint(p, state, density, &volume, preserve_footprint)
+                    * length
+                    / f64::from(steps);
             if self.fidelity(p, state, &volume) == Fidelity::Footprint {
                 answer.fidelity = Fidelity::Footprint;
             }
@@ -235,7 +270,7 @@ impl Weather<'_> {
             top,
             point[2] + length * e.cos() * azimuth.sin(),
         ];
-        let optical_depth = self.optical_depth(point, end, state, steps, density, volume)?;
+        let optical_depth = self.integrate(point, end, state, steps, density, volume, false)?;
         let mut surface_blocked = false;
         if let Some(s) = self.surface {
             for n in 0..steps {

@@ -105,7 +105,7 @@ impl Handover {
 }
 
 impl Weather<'_> {
-    /// f64 medium coefficients for the same coarse density as the point query.
+    /// f64 medium coefficients for the coarse density, including column erosion.
     /// Call `weighted` with the near share before supplying a view-volume cell.
     pub fn medium<'v>(
         &self,
@@ -114,7 +114,7 @@ impl Weather<'_> {
         volume: impl Fn(u64) -> Option<&'v Shape>,
         light: Light,
     ) -> Coefficients {
-        light.coefficients(self.extinction(point, state, volume).value)
+        light.coefficients(self.density(point, state, crate::Density::Coarse, volume))
     }
 
     /// Evaluate mixed droplets without assigning a fog row the cloud type's
