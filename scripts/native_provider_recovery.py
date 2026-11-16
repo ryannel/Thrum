@@ -35,6 +35,7 @@ def capture(args):
                           THRUM_CAPTURE_NATIVE_RECOVERY=args.arm)
         result = run_t2(args, args.output.parent, args.output.name,
                         {'mode': args.mode, 'case': 'pan', 'source': args.source,
+                         'overlay': expected_content['overlay'],
                          'admission': 'wait' if args.mode == 'realtime' else 'omit'})
         result.update(finish_t2(args.output, viewing=args.mode == 'realtime'))
         runtime = json.loads((args.output / 'runtime.json').read_text())
