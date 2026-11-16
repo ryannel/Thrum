@@ -53,7 +53,8 @@ allowed_workspace_dependencies = ["thrum-sea-model"]
 [packages.thrum-river-model]
 manifest = "crates/thrum-river-model/Cargo.toml"
 # Steady river flow solver, its energy account and the river file's writer; CPU only, no graphics dependencies.
-allowed_workspace_dependencies = ["thrum-water-model"]
+# thrum-sea-model only as a test dependency, for the wave field the tests read the surface through.
+allowed_workspace_dependencies = ["thrum-sea-model", "thrum-water-model"]
 
 [packages.thrum-rain-model]
 manifest = "crates/thrum-rain-model/Cargo.toml"

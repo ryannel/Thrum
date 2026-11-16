@@ -229,7 +229,8 @@ impl Surf {
         }
         sample.velocity[0] += row.row.current[0];
         sample.velocity[2] += row.row.current[1];
-        let gains = limit(row.row, row.depth, field.variances(), map.profile).gains;
+        let (limited, flow) = map.limited(field, point, row);
+        let gains = limited.gains;
         for (i, layer) in field.layers.iter().enumerate().skip(1) {
             let wave = layer
                 .scaled(gains[i])
@@ -244,6 +245,7 @@ impl Surf {
                 *a += b;
             }
         }
+        map.add_flow(flow, point, time, &mut sample);
         Ok(Surface {
             body: Some(row.body),
             sample,
@@ -271,13 +273,7 @@ impl Surf {
         let mut answer = (0.0, 1.0);
         if let BodyKind::Chart(chart) = &map.bodies[body].kind {
             let mut total = 1.0;
-            let own_level = map.bed.weights(point).map_or(
-                map.bodies[body].level + map.bodies[body].stage.value,
-                |w| {
-                    w.iter().map(|&(i, a)| chart.levels[i] * a).sum::<f64>()
-                        + map.bodies[body].stage.value
-                },
-            );
+            let own_level = map.own_level(body, point);
             for end in chart.ends.iter().filter(|e| !e.is_brink()) {
                 let other_row = map.row(end.body, point);
                 let w = map.join_weight(end, point, own_level, other_row.level);

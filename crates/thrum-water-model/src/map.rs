@@ -154,6 +154,10 @@ pub struct Map {
     /// levels in wet cells that touch.
     pub held_level_tables: u64,
     pub(crate) rain: Option<crate::RainBands>,
+    pub(crate) flow: Option<crate::FlowBands>,
+    pub(crate) rivers: Vec<crate::River>,
+    // Each body's river and chart index, for a river's chart.
+    pub(crate) sampled: Vec<Option<(usize, usize)>>,
 }
 
 impl Map {
@@ -192,8 +196,12 @@ impl Map {
             hollows_profile,
             held_level_tables: 0,
             rain: None,
+            flow: None,
+            rivers: Vec::new(),
+            sampled: Vec::new(),
         };
         map.generations = vec![0; map.bodies.len()];
+        map.sampled = vec![None; map.bodies.len()];
         map.validate_inputs()?;
         let stages: Vec<_> = map.bodies.iter().map(|b| b.stage.value).collect();
         for b in &mut map.bodies {
@@ -399,7 +407,11 @@ impl Map {
             gains: b.gains,
         };
         if let BodyKind::Chart(c) = &b.kind {
-            if let Some(w) = self.bed.weights(point) {
+            if let Some(m) = self.own_mixed(body, point) {
+                // A river's chart: the mix of its samples at the river's gauge.
+                row.level = m.level;
+                row.current = m.current;
+            } else if let Some(w) = self.bed.weights(point) {
                 row.level = b.stage.value + w.iter().map(|&(i, a)| c.levels[i] * a).sum::<f64>();
                 row.current = std::array::from_fn(|axis| {
                     w.iter().map(|&(i, a)| c.currents[i][axis] * a).sum()
@@ -504,7 +516,7 @@ impl Map {
         wet
     }
 
-    fn rebuild(&mut self) {
+    pub(crate) fn rebuild(&mut self) {
         self.support = (0..self.bodies.len())
             .map(|id| {
                 let wet = self.flood(id);
@@ -527,6 +539,7 @@ impl Map {
                                 .point(origins[i].expect("queued centre has origin")),
                         );
                         if origins[j].is_none()
+                            && !self.waits(id, j)
                             && h >= row.level
                             && self.bed.reaches(i, weights, row.level)
                             && h <= row.level + self.profile.margin_height
@@ -539,6 +552,25 @@ impl Map {
                 origins
             })
             .collect();
+    }
+
+    /// Every chart's banks hold its water over the stage ranges, as preparation checks them.
+    pub(crate) fn check_banks(&mut self) -> Result<(), WaterError> {
+        let stages: Vec<_> = self.bodies.iter().map(|b| b.stage.value).collect();
+        for b in &mut self.bodies {
+            b.stage.value = b.stage.min;
+        }
+        let minimum_fills: Vec<_> = (0..self.bodies.len()).map(|id| self.flood(id)).collect();
+        for b in &mut self.bodies {
+            b.stage.value = b.stage.max;
+        }
+        self.rebuild();
+        let held = self.validate_banks(&minimum_fills);
+        for (b, s) in self.bodies.iter_mut().zip(stages) {
+            b.stage.value = s;
+        }
+        self.rebuild();
+        held
     }
 
     fn validate_inputs(&self) -> Result<(), WaterError> {

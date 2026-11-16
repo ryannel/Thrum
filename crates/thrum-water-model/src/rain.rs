@@ -14,7 +14,7 @@
 //! ground on a shore shares its edge.
 //!
 //! [ruling 3 for `PUDDLES`]: ../../../docs/plans/ARCHITECTURE.md
-use crate::{Field, Map, MapSample, WaterError, limit};
+use crate::{Field, Map, MapSample, WaterError};
 use std::sync::Arc;
 use thrum_sea_model::Sample;
 
@@ -46,7 +46,7 @@ impl Map {
     /// A body's wave support at a point, from the same depth limit the surface reads.
     pub fn wave_support(&self, field: &Field, point: [f64; 2]) -> Option<Support> {
         let s = self.sample(point)?;
-        let lim = limit(s.row, s.depth, field.variances(), self.profile);
+        let lim = self.limited(field, point, s).0;
         Some(Support {
             body: s.body,
             depth: s.depth,
@@ -691,7 +691,7 @@ impl Map {
         if gain <= 0.0 {
             return 0.0;
         }
-        let swash = limit(map.row, map.depth, field.variances(), self.profile).swash_depth;
+        let swash = self.limited(field, point, map).0.swash_depth;
         let cap = 0.6 * (map.depth + swash).max(0.0);
         let hs = 4.0 * rain.variance(time).sqrt();
         if hs > 0.0 { gain.min(cap / hs) } else { gain }

@@ -4,11 +4,13 @@ mod bed;
 mod conformance;
 mod cut;
 mod fall;
+mod flow;
 mod hollows;
 mod map;
 mod pyramid;
 mod rain;
 mod river;
+mod samples;
 mod section;
 mod shore;
 mod surf;
@@ -21,6 +23,7 @@ pub use fall::{
     Below, Births, Fall, FallSegment, GRAVITY, Impulse, PathPoint, PatternLoop, Plunge,
     PlungeProfile, SheetPattern, SheetProfile, SheetSample, WATER_DENSITY, loop_ticks,
 };
+pub use flow::{FlowBands, FlowBandsProfile, flow_frequency};
 pub use hollows::{Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{BRINK, Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
 pub use pyramid::BedPyramid;
@@ -28,7 +31,10 @@ pub use rain::{
     Drop, Exposure, OpenSky, RainBands, RainBandsProfile, RateHistory, RingClass, RingTable,
     Support,
 };
-pub use river::{EndKind, RIVER_FORMAT, RIVER_MAGIC, RiverEnd, RiverFile, RiverReach};
+pub use river::{
+    EndKind, RIVER_FORMAT, RIVER_MAGIC, ReachSample, RiverEnd, RiverFile, RiverReach, UpperSample,
+};
+pub use samples::{ChartSamples, FlowSample, Gauge, River, mix_fall};
 pub use section::{BreakerSection, SectionPoint};
 pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};
 pub use surf::{SurfProfile, SurfSheet};

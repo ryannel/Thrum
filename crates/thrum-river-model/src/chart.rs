@@ -33,7 +33,9 @@ impl Solution {
     ///
     /// A reach ends at each run of its brinks in a brink end, through the centres of its lip
     /// cells along one row or column. No footprint crosses a brink or takes a cell on a cliff's
-    /// face, and no two footprints share a cell.
+    /// face, and no two footprints share a cell. A body the reach's water meets is joined over
+    /// the profile's join length; a body it borders only across a brink or dry ground, as a pool
+    /// at a cliff's foot, is joined within half a cell, a seam.
     /// # Errors
     /// Refuses an end whose cells do not lie along one row or column.
     pub fn reaches(&self) -> Result<Vec<RiverReach>, RiverError> {
@@ -47,7 +49,7 @@ impl Solution {
         let mut out = Vec::with_capacity(self.reach_names.len());
         for r in 0..self.reach_names.len() {
             let wet: Vec<bool> = (0..n).map(|i| self.reach_of[i] == Some(r)).collect();
-            let reach = self.one_reach(r, &wet, &claimed)?;
+            let reach = self.one_reach(r, &wet, &claimed, None)?;
             for (c, &f) in claimed.iter_mut().zip(&reach.footprint) {
                 *c |= f;
             }
@@ -68,11 +70,21 @@ impl Solution {
         }
     }
 
-    fn one_reach(
+    /// One reach's chart from this solve's wet cells of it. With `union`, the footprint (before
+    /// the bodies' rows) is its first part, the cells every sample of a river solves, and a cell
+    /// this solve leaves out of its own margin takes the wet level carried to it where that lies
+    /// under its bed, and otherwise the dry margin under its bed; its second part, the cells any
+    /// sample wets, decides whether the reach's water meets a body.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one footprint: its margin, the union's cells, the bodies' rows and the brink ends"
+    )]
+    pub(crate) fn one_reach(
         &self,
         r: usize,
         wet: &[bool],
         claimed: &[bool],
+        union: Option<(&[bool], &[bool])>,
     ) -> Result<RiverReach, RiverError> {
         let grid = &self.grid;
         let [nx, nz] = grid.size();
@@ -124,6 +136,27 @@ impl Solution {
                 queue.push_back((j, ring + 1));
             }
         }
+        let meets = union.map_or(wet, |(_, any)| any);
+        if let Some((union, _)) = union {
+            // Carry levels across the river's other cells, outward from this sample's own.
+            let mut queue: VecDeque<usize> = (0..n).filter(|&i| footprint[i]).collect();
+            while let Some(i) = queue.pop_front() {
+                for j in neighbours(i) {
+                    if footprint[j] || !union[j] || self.brink_between(i, j) {
+                        continue;
+                    }
+                    footprint[j] = true;
+                    carried[j] = carried[i];
+                    levels[j] = if carried[i] < z[j] {
+                        carried[i]
+                    } else {
+                        z[j] - p.dry_margin
+                    };
+                    queue.push_back(j);
+                }
+            }
+            footprint.copy_from_slice(union);
+        }
         let solved = footprint.clone();
         let mut ends = Vec::new();
         let mut currents = vec![[0.0; 2]; n];
@@ -173,10 +206,21 @@ impl Solution {
                     currents[i][1] += q[1] / (depth * grid.spacing());
                 }
             }
+            // The reach's water meets the body where a row cell lies beside a wet cell, not
+            // across a brink. Where it never does, as where the reach leaves over a cliff into
+            // the body and only dry ground on the cliff's top lies beside it, the end is a seam:
+            // a join within half a cell, so the chart's water is not drawn down the cliff.
+            let joined = row.iter().any(|&i| {
+                neighbours(i).any(|j| solved[j] && meets[j] && !self.brink_between(i, j))
+            });
             ends.push(RiverEnd {
                 body: name.into(),
                 segment: segment(self, &row, &solved, name)?,
-                length: p.join_length,
+                length: if joined {
+                    p.join_length
+                } else {
+                    0.5 * grid.spacing()
+                },
                 kind: if mouth {
                     EndKind::Mouth
                 } else {
@@ -188,7 +232,9 @@ impl Solution {
         let lips: Vec<&Brink> = self
             .brinks
             .iter()
-            .filter(|b| wet[b.cell] && self.brink_between(b.cell, b.below(grid)))
+            .filter(|b| {
+                self.reach_of[b.cell] == Some(r) && self.brink_between(b.cell, b.below(grid))
+            })
             .collect();
         for side in Side::ALL {
             let mut cells: Vec<usize> = lips
@@ -247,6 +293,9 @@ impl Solution {
         let loss = (0..n)
             .map(|i| if wet[i] { self.loss[i] } else { 0.0 })
             .collect();
+        let gains = (0..n)
+            .map(|i| if wet[i] { self.gains[i] } else { [0.0; 2] })
+            .collect();
         Ok(RiverReach {
             name: self.reach_names[r].clone(),
             origin: grid.origin(),
@@ -256,7 +305,9 @@ impl Solution {
             levels,
             currents,
             loss,
+            gains,
             footprint,
+            upper: Vec::new(),
             ends,
         })
     }
@@ -270,6 +321,7 @@ impl Solution {
             gauge_level: self.declaration.sources.first().map_or(0.0, |s| s.level),
             reaches: self.reaches()?,
             falls: self.falls.clone(),
+            upper: Vec::new(),
         })
     }
 

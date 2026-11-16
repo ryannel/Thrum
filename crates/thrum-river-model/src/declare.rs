@@ -201,6 +201,15 @@ pub struct Profile {
     pub steepest_slope: f64,
     /// Most path between two stored points of a fall's path, metres.
     pub path_spacing: f64,
+    /// Each flow band's own rms height, metres, as the map's flow bands hold it: a chart's gain
+    /// for a band is the band's share of the chop over this.
+    pub band_rms: [f64; 2],
+    /// The depths, metres, at and under which the chop is all in the short band, and at and over
+    /// which it is all in the long one; between, the long band's share of its variance follows
+    /// the logarithm of the depth.
+    pub band_depths: [f64; 2],
+    /// The most a source body's level moves between two flow samples, metres.
+    pub sample_spacing: f64,
     /// Worker threads; zero takes the machine's parallelism. Never changes a result.
     pub threads: usize,
 }
@@ -224,6 +233,9 @@ impl Default for Profile {
             least_fall: 0.75,
             steepest_slope: 1.5,
             path_spacing: 0.1,
+            band_rms: thrum_water_model::FlowBandsProfile::default().rms,
+            band_depths: [0.15, 1.0],
+            sample_spacing: 0.3,
             threads: 0,
         }
     }
@@ -233,5 +245,26 @@ impl Profile {
     /// The friction slope at which the chop meets the depth limit: `S_cap = limit / (4 c)`.
     pub fn slope_cap(&self) -> f64 {
         self.depth_limit / (4.0 * self.chop)
+    }
+
+    /// The flow's chop at a depth and speed under Manning's `n`, split between the two flow
+    /// bands: each band's rms height, metres. The whole is `c d min(S, S_cap)` with the friction
+    /// slope `S = n² u² / d^(4/3)`; none at rest or with no depth.
+    pub fn chop_heights(&self, depth: f64, speed: f64, manning: f64) -> [f64; 2] {
+        if depth <= 0.0 || speed == 0.0 {
+            return [0.0; 2];
+        }
+        let slope = manning * manning * speed * speed / depth.powf(4.0 / 3.0);
+        let eta = self.chop * depth * slope.min(self.slope_cap());
+        let [shallow, deep] = self.band_depths;
+        let long = ((depth / shallow).ln() / (deep / shallow).ln()).clamp(0.0, 1.0);
+        [eta * (1.0 - long).sqrt(), eta * long.sqrt()]
+    }
+
+    /// The flow bands' gains for the chop at a depth and speed: each band's height over its
+    /// own rms height.
+    pub fn chop_gains(&self, depth: f64, speed: f64, manning: f64) -> [f64; 2] {
+        let h = self.chop_heights(depth, speed, manning);
+        [h[0] / self.band_rms[0], h[1] / self.band_rms[1]]
     }
 }

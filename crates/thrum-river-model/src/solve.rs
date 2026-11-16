@@ -73,6 +73,8 @@ pub struct Solution {
     /// The power that breaks the surface, W/m²: head lost beyond friction, and friction's
     /// power beyond the chop's cap.
     pub loss: Vec<f64>,
+    /// The flow bands' gains in each wet cell: the chop over each band's own rms height.
+    pub gains: Vec<[f64; 2]>,
     /// The solve's report.
     pub report: Report,
     /// Stretches narrower than the profile's least width.
@@ -300,6 +302,7 @@ pub fn solve(
         lost: Vec::new(),
         friction: Vec::new(),
         loss: Vec::new(),
+        gains: Vec::new(),
         narrows: Vec::new(),
         brinks: all_brinks,
         falls,
@@ -670,9 +673,15 @@ fn account(s: &mut Solution, stepper: &Stepper) {
     let mut lost = vec![0.0; n];
     let mut friction = vec![0.0; n];
     let mut loss = vec![0.0; n];
+    let mut gains = vec![[0.0; 2]; n];
     for i in 0..n {
         if s.held[i].is_some() || s.state.depth[i] <= DRY {
             continue;
+        }
+        if s.wet[i] {
+            let h = s.state.depth[i];
+            let speed = s.state.qx[i].hypot(s.state.qz[i]) / h;
+            gains[i] = s.profile.chop_gains(h, speed, s.declaration.manning.at(i));
         }
         let (x, z) = (i % nx, i / nx);
         let hi = head(i);
@@ -704,6 +713,7 @@ fn account(s: &mut Solution, stepper: &Stepper) {
     s.lost = lost;
     s.friction = friction;
     s.loss = loss;
+    s.gains = gains;
 }
 
 /// Stretches of wet channel narrower than the profile's least width, measured across the
@@ -819,7 +829,7 @@ fn landing(
 }
 
 /// The wet cells' reaches: connected through faces that are not brinks, numbered in cell order.
-fn reaches(
+pub(crate) fn reaches(
     grid: &Grid,
     wet: &[bool],
     x_brink: &[bool],

@@ -12,6 +12,9 @@ blake3 = { version = "=1.8.7", default-features = false, features = ["std"] }
 rayon = "=1.12.0"
 thrum-water-model = { path = "../thrum-water-model" }
 
+[dev-dependencies]
+thrum-sea-model = { path = "../thrum-sea-model" }
+
 [lints]
 workspace = true
 
@@ -55,3 +58,24 @@ path = "tests/sheet.rs"
 [[test]]
 name = "plunge"
 path = "tests/plunge.rs"
+[[test]]
+name = "samples"
+path = "tests/samples.rs"
+[[test]]
+name = "gauge"
+path = "tests/gauge.rs"
+[[test]]
+name = "fall_gauge"
+path = "tests/fall_gauge.rs"
+[[test]]
+name = "wetting"
+path = "tests/wetting.rs"
+[[test]]
+name = "chop"
+path = "tests/chop.rs"
+[[test]]
+name = "flow_bands"
+path = "tests/flow_bands.rs"
+[[test]]
+name = "conformance"
+path = "tests/conformance.rs"

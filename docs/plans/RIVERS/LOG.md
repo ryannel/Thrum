@@ -98,3 +98,10 @@
 - 2026-11-16 M2 review fix (M2.5): a path running down dry rock into the pool now meets the water at the shoreline,
   bisected on the stored chord, not at the first point under water. Verified: a new test over three rock faces and five
   stages with the real map gives the surface's level exactly and the place within 5.1e-5 m of a scan; it fails on the old code.
+- 2026-11-16 M3 built ([evidence](../../evidence/RIVERS/M3.md)). Verified: the mix between samples is within 5.2 mm and 7.7% of a fresh solve;
+  the hollow and the terrace wait for their wetting gauges and rise from nothing; fall records are the samples' mix to 4e-15; the chop
+  follows the law to 2e-14; with no bands the water model's answers are identical in bits to before. Fixed: a reach falling into a body
+  also got a mouth across the cliff, and its 2 m join left the last 1.6 m above the lip dry in the map; such an end is now a half-cell seam.
+  Declared: flow bands have no choppiness; the surf model's long-wave swash does not count the flow bands. M1.1's riffle is
+  1.5%, half the design's: its chop is 28× the pool's on average but 19× by rms over each. Suspected, not tested: a landing between a wet
+  and a still-dry cell gives no plunge for the first millimetres of gauge (bilinear water under bilinear ground).

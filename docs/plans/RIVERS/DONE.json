@@ -220,7 +220,7 @@
     {
       "id": "M3",
       "name": "On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -232,8 +232,8 @@
           "statement": "A river with a source body is solved at levels across that body's stage range no more than 0.3 m apart, and a spring-fed one at the discharges declared. Each sample records its gauge level, and the river reports the range of its gauge. Below a basin with a sill the discharge rises with the level at every sample, and between the lowest and highest sample it grows as the head over the sill to a power between 1.3 and 2.",
           "check": "cargo test --locked --offline -p thrum-river-model --test samples",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (samples)",
           "verdict": "",
           "review": ""
         },
@@ -243,8 +243,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test gauge && cargo test --locked --offline -p thrum-water-model",
           "ask": "Does the test compare the mixed row with a fresh solve at the level between, in the cells both samples wet, as part 3 of `docs/evidence/RIVERS/design-proof/river_proof.py` does, and would a chart left at one sample with its level raised fail it? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (gauge, thrum-water-model tests)",
           "verdict": "",
           "review": ""
         },
@@ -253,8 +253,8 @@
           "statement": "A fall follows the gauge. Where both samples run a part of the lip, its record's discharge, launch speed and path are the mix of its samples', so the sheet's thickness and the plunge's power and impulses grow with the river. A part only the upper sample runs gives no sheet, no births and no impulses below its lip cell's wetting gauge, and from there its discharge and launch depth rise from nothing, with no step, to the upper sample's. At every gauge tried no running part of a fall lands on a dry cell of a reach, and a reach fed only by that fall is dry while its lip is dry.",
           "check": "cargo test --locked --offline -p thrum-river-model --test fall_gauge",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (fall_gauge)",
           "verdict": "",
           "review": ""
         },
@@ -264,8 +264,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test wetting && cargo test --locked --offline -p thrum-water-model",
           "ask": "Are the wet cells judged at gauges either side of each wetting, the ridge's and the lip's, as parts 8 and 10 of `docs/evidence/RIVERS/design-proof/` do? Would a dry cell at the nearest wet level fail the hollow, and a flood seeded only from the lower sample's wet cells fail the dry reach?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (wetting, thrum-water-model tests)",
           "verdict": "",
           "review": ""
         },
@@ -275,8 +275,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test chop",
           "ask": "Does the test work the expected heights out from Manning's relation at the solver's depths and speeds, with its own arithmetic?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (chop)",
           "verdict": "",
           "review": ""
         },
@@ -286,8 +286,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test flow_bands && cargo test --locked --offline -p thrum-water-model",
           "ask": "Do the flow bands hold any power that depends on the wind, the fetch or a swell? Is a body that is not a river given a flow gain anywhere?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (flow_bands, thrum-water-model tests); docs/evidence/RIVERS/M3-bits.md",
           "verdict": "",
           "review": ""
         },
@@ -296,8 +296,8 @@
           "statement": "`WATERS`' conformance harness, run over a river with three samples, a fall and both flow bands, reports nothing for the model against itself, and reports a provider that reads only the middle sample, by the points and the difference.",
           "check": "cargo test --locked --offline -p thrum-river-model --test conformance",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (conformance)",
           "verdict": "",
           "review": ""
         },
@@ -306,8 +306,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

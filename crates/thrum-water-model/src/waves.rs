@@ -139,7 +139,8 @@ impl Map {
         time: f64,
         map: MapSample,
     ) -> Result<Surface, WaterError> {
-        let gains = limit(map.row, map.depth, field.variances(), self.profile).gains;
+        let (limited, flow) = self.limited(field, point, map);
+        let gains = limited.gains;
         let mut sample = Sample {
             height: map.row.level,
             slope: self.level_slope(map.body, point),
@@ -160,6 +161,7 @@ impl Map {
                 *a += b;
             }
         }
+        self.add_flow(flow, point, time, &mut sample);
         self.add_rain(field, point, time, map, &mut sample);
         Ok(Surface {
             body: Some(map.body),
