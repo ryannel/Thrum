@@ -89,3 +89,9 @@
   solve is refused at exactly its budget or converges inside it. Verified: `tests/report.rs` covers an
   interval longer than the budget and partial final batches; the reviewer's probe now refuses budget 1 at
   step 1 for intervals 10 and 10,000 ([output](../../evidence/RIVERS/M1-budget-probe-after-fix.txt)).
+- 2026-11-16 M2 built ([evidence](../../evidence/RIVERS/M2.md)). Verified: the lip stands at 1.112 hc where the flow is slow and 1.017 of normal depth where it is fast;
+  discharge across the fall is equal to 5 digits; throw against the closed form within 1.5e-12; plunge rms equals the design's figure. Declared choices:
+  air share 0.5; a brink end is the `BRINK` body sentinel, because existing `End` literals can't gain a field; a brink is drowned where the body below
+  stands at or above the lip's bed; a path may travel over a receiver's box beyond the rectangle; RIVER_FORMAT and SOLVER_VERSION are 2.
+  The sheet pattern is a caller-supplied trait (`SheetPattern`), so the game owns its texture. Suspected, not tested: landing lag of
+  one step and per-check recomputation of landings could oscillate on a path that grazes a sill.

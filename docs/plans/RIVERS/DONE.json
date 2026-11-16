@@ -146,8 +146,8 @@
           "statement": "Brinks are found from the bed alone: runs of faces where the ground, followed downhill, drops at least the profile's least fall (0.75 m) at a slope steeper than the profile's steepest chart slope (1.5). On beds the test makes, a 3 m cliff is a brink along its whole lip; a 0.4 m ledge and a slope of 1 are not, and stay in the chart. The brinks are the same at every discharge.",
           "check": "cargo test --locked --offline -p thrum-river-model --test brinks",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (brinks)"
         },
         {
           "id": "M2.2",
@@ -155,8 +155,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test falls",
           "ask": "Does the test show a lower dry cell in place of the lip's face failing the lip's depth, as part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py` does?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (falls)",
           "verdict": "",
           "review": ""
         },
@@ -166,8 +166,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test brink_end && cargo test --locked --offline -p thrum-water-model",
           "ask": "Is the change to the map's preparation confined to a declared brink end, so that no chart an existing test or the example declares is prepared differently? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (brink_end, thrum-water-model tests)",
           "verdict": "",
           "review": ""
         },
@@ -177,8 +177,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test sheet",
           "ask": "Are the expected paths, speeds and thicknesses the closed forms of part 4 of `docs/evidence/RIVERS/design-proof/river_proof.py`, worked out in the test?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (sheet)",
           "verdict": "",
           "review": ""
         },
@@ -187,8 +187,8 @@
           "statement": "For a body below at any level in its stage's range, the plunge is where each path meets that level, and it moves as the level moves. Each segment's births follow the fall's power, `rho g q z` for each metre of lip, split between foam and submerged air by the profile's share. Each segment's impulse a tick is the wave share times its momentum flux into the surface times the sheet's pattern arriving there, with its mean over the pattern's loop removed: over that loop its mean is under 1% of its rms, its rms is the design's figure within 5%, and the same tick gives the same impulse on every run. A path that lands on bare ground gives no births and no impulses.",
           "check": "cargo test --locked --offline -p thrum-river-model --test plunge",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (plunge)"
         },
         {
           "id": "M2.6",
@@ -196,8 +196,8 @@
           "check": "cargo tree --locked --offline -p thrum-water-model -e normal | python3 -c 'import sys; t=sys.stdin.read(); sys.exit(1 if (\"wgpu\" in t or \"thrum-render\" in t or \"thrum-river-model\" in t or not t.strip()) else 0)'",
           "ask": "Does any new file or test name a place, a preset or a water type that belongs to a game?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M2.md#measured (cargo tree)",
           "verdict": "",
           "review": ""
         },
@@ -206,8 +206,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images"
         }
       ]
     },
