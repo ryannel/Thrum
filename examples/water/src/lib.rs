@@ -28,7 +28,7 @@ pub fn forcing() -> Forcing {
         wind_direction: 0.0,
         fetch: 100_000.0,
         swells: vec![Swell {
-            significant_height: 1.2,
+            significant_height: 2.5,
             wavelength: 90.0,
             direction: 0.25,
         }],
@@ -167,7 +167,7 @@ pub fn build_paired(
             game.with_meshes(vec![
                 MeshPlacement::new("meshes/float", "textures/white")
                     .at([CAMERA_ORIGIN[0] + 12.0, -0.4, CAMERA_ORIGIN[1]])
-                    .scale(2.0)
+                    .scale(3.0)
                     .material(CookedMaterial {
                         base_colour: [0.18, 0.18, 0.18, 1.0],
                         roughness: 0.8,
