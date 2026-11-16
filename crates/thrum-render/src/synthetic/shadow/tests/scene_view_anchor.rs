@@ -1,10 +1,71 @@
 //! Counterexample for sharing the main camera's finite height-map support
-//! with an unrestricted secondary camera (SCENE-VIEWS design).
+//! with an unrestricted secondary camera. Such a request is now refused;
+//! the declared-position test also holds every admitted vertical to one map.
 
 use super::*;
 use crate::synthetic::{
     CaptureSource, OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene,
 };
+
+#[test]
+fn height_anchor_uses_declared_position_on_a_texel_edge() {
+    let cameras = [
+        ([16.0, 10.0, 0.0], [0.0, 0.0, -1.0]),
+        ([16.0, 10.0, 0.0], [-2.0, -1.7, -1.0]),
+        ([16.0, -70.0, 0.0], [-2.0, -1.6, -1.0]),
+        ([16.0, 0.0, 0.0], [-2.0, 1.7, -1.0]),
+    ];
+    let casters = [instance(0, [100.0, 125.0, -3000.0], [125.0, 125.0, 400.0])];
+    let mut reference = None;
+    let mut recovered_layouts = Vec::new();
+    for (eye, direction) in cameras {
+        let view = SyntheticView::perspective(
+            eye,
+            (Vec3::from_array(eye) + Vec3::from_array(direction)).to_array(),
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            6000.0,
+        )
+        .expect("camera");
+        let inputs =
+            FitInputs::new(&view, (&casters, None), Vec3::ONE.normalize()).expect("scene inputs");
+        let fitted = inputs.fit(None).expect("scene fit");
+        let layout = (
+            fitted.matrices[2].to_cols_array(),
+            fitted.samples[192..272].to_vec(),
+        );
+        if let Some(expected) = &reference {
+            assert_eq!(
+                &layout, expected,
+                "same vertical, identical layout and address"
+            );
+        } else {
+            reference = Some(layout);
+        }
+        let Projection::Perspective { view: matrix, .. } = view.projection() else {
+            panic!("perspective")
+        };
+        let recovered = matrix.inverse().w_axis.truncate();
+        let old = height_matrix(recovered, inputs.caster_height)
+            .expect("old layout")
+            .0
+            .to_cols_array();
+        if !recovered_layouts.contains(&old) {
+            recovered_layouts.push(old);
+        }
+        eprintln!("height_anchor declared={eye:?}, recovered={recovered:?}");
+    }
+    assert!(
+        recovered_layouts.len() > 1,
+        "matrix-derived positions snap into different texels"
+    );
+    eprintln!(
+        "height_anchor: one declared layout; {} matrix-derived layouts",
+        recovered_layouts.len()
+    );
+}
 
 fn instance(slot: u32, center: [f32; 3], half: [f32; 3]) -> InstanceRecord {
     let mut instance = InstanceRecord::identity(slot, 0);

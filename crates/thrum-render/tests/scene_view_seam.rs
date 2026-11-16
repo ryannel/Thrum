@@ -46,7 +46,7 @@ fn a_contribution_reads_its_own_colour_depth_and_record_through_the_public_seam(
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(1).expect("scene");
-        scene.view = camera(0.0, 2.0);
+        scene.view = camera(0.0, -2.0);
         let mut host = host(&capabilities, &queue, scene).await;
         let (observer, control) = Observer::new(1);
         control.lock().expect("control").requests[0] = Some(

@@ -55,18 +55,38 @@ pub struct SecondaryView {
     pub(crate) colour_view: wgpu::TextureView,
     pub(crate) depth_view: wgpu::TextureView,
     pub(crate) record: wgpu::Buffer,
-    pub(crate) request: Arc<Mutex<Option<SecondaryViewRequest>>>,
+    pub(crate) request: Arc<Mutex<ViewRequestState>>,
     pub(crate) maximum_extent: [u32; 2],
     pub(crate) generation: u64,
+}
+
+pub(crate) struct ViewRequestState {
+    pub(crate) camera: [f32; 3],
+    pub(crate) asked: Option<SecondaryViewRequest>,
 }
 
 impl SecondaryView {
     /// Ask for this slot in the contribution's upload callback. The request
     /// lasts for that recording alone, including a discarded recording or capture.
     /// Each upload starts idle. A second ask in that upload replaces the first.
+    /// Copy the main camera's horizontal coordinates from [`super::ContributionFrame::camera`]
+    /// when constructing the camera. Any height, direction and field of view is accepted.
     /// # Errors
-    /// Refuses a viewport larger than the prepared slot, leaving the old ask intact.
+    /// Refuses a viewport larger than the prepared slot. A camera off the main
+    /// camera's vertical is refused by name and leaves the slot idle for this frame.
     pub fn request(&self, request: &SecondaryViewRequest) -> Result<(), SecondaryViewError> {
+        let mut state = self
+            .request
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let camera = request.camera.camera_position();
+        if [0, 2]
+            .into_iter()
+            .any(|axis| camera[axis].to_bits() != state.camera[axis].to_bits())
+        {
+            state.asked = None;
+            return Err(SecondaryViewError::CameraOffVertical);
+        }
         if request
             .extent
             .iter()
@@ -75,10 +95,7 @@ impl SecondaryView {
         {
             return Err(SecondaryViewError::InvalidExtent);
         }
-        *self
-            .request
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(*request);
+        state.asked = Some(*request);
         Ok(())
     }
 
@@ -122,17 +139,20 @@ impl SecondaryView {
     }
 
     pub(crate) fn asked(&self) -> Option<SecondaryViewRequest> {
-        *self
-            .request
+        self.request
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .asked
     }
 
-    pub(crate) fn begin(&self) {
+    pub(crate) fn begin(&self, camera: [f32; 3]) {
         *self
             .request
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = ViewRequestState {
+            camera,
+            asked: None,
+        };
     }
 }
 
@@ -345,6 +365,8 @@ pub enum SecondaryViewError {
     InvalidExtent,
     /// A request must use a checked rigid perspective camera.
     InvalidCamera,
+    /// The declared horizontal coordinates must exactly match the frame's main camera.
+    CameraOffVertical,
     /// The clip plane is nonfinite or degenerate.
     InvalidClipPlane,
     /// Air from a plane requires a level clip plane.
@@ -364,6 +386,7 @@ impl std::fmt::Display for SecondaryViewError {
             Self::ShaderLimit => "secondary view shader inputs exceed device stage limits",
             Self::InvalidExtent => "invalid secondary view extent",
             Self::InvalidCamera => "secondary view camera must be rigid and perspective",
+            Self::CameraOffVertical => "secondary view camera is off the main camera's vertical",
             Self::InvalidClipPlane => "invalid secondary view clip plane",
             Self::AirNeedsLevelPlane => "secondary view air from plane requires a level clip plane",
             Self::InvalidLeastSize => "invalid secondary view least size",

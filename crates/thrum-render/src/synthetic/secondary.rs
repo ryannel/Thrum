@@ -267,7 +267,10 @@ impl SecondaryPrepared {
             colour,
             depth,
             record: buffer("secondary view record", RECORD_BYTES),
-            request: Arc::new(Mutex::new(None)),
+            request: Arc::new(Mutex::new(crate::contribution::ViewRequestState {
+                camera: prepared.view_sample.camera_position(),
+                asked: None,
+            })),
             maximum_extent: extent,
             generation: prepared.key.device_generation,
         };

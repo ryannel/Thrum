@@ -25,7 +25,7 @@ fn each_view_matches_its_alone_bytes_in_either_request_order() {
             .expect("attach");
         let requests = [
             SecondaryViewRequest::new(
-                &camera(0.0, -2.0),
+                &aimed([100.0, 47.0, 997.5], [0.0, 3.5, 2.5]),
                 [64, 64],
                 Some(ViewClipPlane::new([1.0, 0.0, 0.0, 0.2]).expect("clip")),
                 ViewAir::Camera,

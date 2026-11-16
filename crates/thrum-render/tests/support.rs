@@ -259,7 +259,7 @@ pub(crate) fn selected_capabilities(capabilities: &DeviceCapabilities) -> Device
 
 pub(crate) fn lit_view_scene() -> (SyntheticScene, FrameLighting, SyntheticView) {
     let mut scene = SyntheticScene::grid(5).expect("scene");
-    scene.view = camera(0.0, 2.0);
+    scene.view = camera(100.0, 997.5);
     scene.sun_shadows = true;
     scene.camera_culling = thrum_render::synthetic::CullMode::Frustum;
     let toward = glam::Vec3::new(0.0, 1.0, 1.0).normalize();
@@ -333,6 +333,18 @@ pub(crate) fn camera(x: f32, z: f32) -> SyntheticView {
         5000.0,
     )
     .expect("camera")
+}
+pub(crate) fn aimed(eye: [f32; 3], direction: [f32; 3]) -> SyntheticView {
+    SyntheticView::perspective(
+        eye,
+        (glam::Vec3::from_array(eye) + glam::Vec3::from_array(direction)).to_array(),
+        [0.0, 1.0, 0.0],
+        1.0,
+        1.0,
+        0.1,
+        10000.0,
+    )
+    .expect("aimed camera")
 }
 pub(crate) async fn host(
     capabilities: &DeviceCapabilities,
@@ -422,6 +434,8 @@ pub(crate) struct Control {
     pub(crate) handles: Vec<SecondaryView>,
     pub(crate) main_shader: String,
     pub(crate) main_frame: Option<ContributionFrame>,
+    pub(crate) allow_refusal: bool,
+    pub(crate) results: Vec<Result<(), thrum_render::contribution::SecondaryViewError>>,
 }
 pub(crate) struct Observer {
     pub(crate) control: Arc<Mutex<Control>>,
@@ -629,11 +643,14 @@ impl SceneContribution for Observer {
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
         let mut control = self.control.lock().expect("control");
         control.main_frame = Some(*frame);
-        for &index in &control.order {
+        control.results.clear();
+        for index in control.order.clone() {
             if let Some(request) = control.requests[index] {
-                control.handles[index]
-                    .request(&request)
-                    .expect("public ask");
+                let result = control.handles[index].request(&request);
+                if !control.allow_refusal {
+                    result.expect("public ask");
+                }
+                control.results.push(result);
             }
         }
     }

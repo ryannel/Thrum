@@ -33,10 +33,10 @@ fn secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion() {
         let (adapter, device, queue) =
             crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
         let capabilities = crate::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
-        let camera = |z| {
+        let camera = |height: f32| {
             SyntheticView::perspective(
-                [0.0, 0.0, z],
-                [0.0, 0.0, z + 1.0],
+                [0.0, height, -2.0],
+                [0.0, height + 1.0, if height > 0.0 { -3.0 } else { -0.75 }],
                 [0.0, 1.0, 0.0],
                 1.0,
                 1.0,

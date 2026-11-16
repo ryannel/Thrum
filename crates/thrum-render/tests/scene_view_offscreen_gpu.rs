@@ -55,7 +55,7 @@ fn views_draw_behind_the_main_camera_and_its_occluding_wall_on_both_routes() {
                     };
                     scene.camera_culling = mode;
                     scene.instances = vec![
-                        instance(0, 0, [0.0, 0.0, 6.0], [0.5; 3]),
+                        instance(0, 0, [0.0, 0.0, 6.0], [1.0; 3]),
                         instance(1, 1, [0.0, 0.0, 3.0], [3.0, 3.0, 0.1]),
                     ];
                     scene.materials[0].base_rgba = [0.0, 0.0, 0.0, 1.0];
@@ -145,7 +145,7 @@ fn views_draw_behind_the_main_camera_and_its_occluding_wall_on_both_routes() {
                     );
                     control.lock().expect("control").requests[0] = Some(
                         SecondaryViewRequest::new(
-                            &camera(0.0, 4.0),
+                            &aimed([0.0, 8.0, 0.0], [0.0, -8.0, 6.0]),
                             [64, 64],
                             None,
                             ViewAir::Camera,

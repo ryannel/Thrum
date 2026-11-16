@@ -77,7 +77,7 @@ fn slot_asks_draw_a_camera_and_clip_without_touching_the_main_view() {
             crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
         let mut scene = SyntheticScene::grid(1).expect("scene");
         scene.view = SyntheticView::perspective(
-            [0.0, 0.0, 2.0],
+            [0.0, 0.0, -2.0],
             [0.0, 0.0, 0.5],
             [0.0, 1.0, 0.0],
             1.0,
@@ -259,8 +259,8 @@ fn slot_local_lights_match_the_ordinary_view_with_the_main_camera_away() {
             crate::synthetic::tests::support::device(wgpu::Backends::METAL).await;
         let camera = |x| {
             SyntheticView::perspective(
-                [x, 0.0, -2.0],
-                [x, 0.0, 0.5],
+                [0.0, x, -2.0],
+                [0.0, x, 0.5],
                 [0.0, 1.0, 0.0],
                 1.0,
                 1.0,

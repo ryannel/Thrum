@@ -462,6 +462,7 @@ fn matrix_bytes(matrix: Mat4) -> [u8; 64] {
 
 struct FitInputs {
     projection: Projection,
+    camera: Vec3,
     rotation: Mat4,
     caster_depth: Option<(f32, f32)>,
     caster_height: Option<(f32, f32)>,
@@ -482,6 +483,7 @@ impl FitInputs {
         let set = (instances, casters);
         Ok(Self {
             projection: view.projection(),
+            camera: Vec3::from_array(view.camera_position()),
             rotation,
             caster_depth: caster_depth_bounds(rotation, set),
             caster_height: caster_depth_bounds(light_rotation(Vec3::NEG_Y), set),
@@ -532,8 +534,7 @@ impl FitInputs {
                     .map_or(height, |(lo, hi)| (lo.min(height.0), hi.max(height.1))),
             )
         });
-        let eye = camera_view.inverse().w_axis.truncate();
-        let (heights, height_span) = height_matrix(eye, caster_height)?;
+        let (heights, height_span) = height_matrix(self.camera, caster_height)?;
         debug_assert!((heights.row(2).y * height_span - 1.0).abs() < 1e-3);
         let local = cascade_matrix(
             camera_view,

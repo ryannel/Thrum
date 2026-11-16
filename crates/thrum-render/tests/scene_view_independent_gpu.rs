@@ -22,7 +22,7 @@ fn turning_the_main_camera_does_not_change_the_held_view() {
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let (mut scene, lighting, view) = lit_view_scene();
-        scene.view = camera(0.0, 0.0);
+        scene.view = camera(100.0, 997.5);
         let receiver = glam::Vec3::new(100.0, 50.5, 1000.0);
         let lamp = glam::Vec3::from_array(scene.local_lights[0].position);
         let hill = glam::Vec3::from_array(
@@ -47,8 +47,8 @@ fn turning_the_main_camera_does_not_change_the_held_view() {
             &control.lock().expect("control").outputs[0],
         );
         let reverse = SyntheticView::perspective(
-            [0.0; 3],
-            [0.0, 0.0, -1.0],
+            [100.0, 0.0, 997.5],
+            [100.0, 0.0, 996.5],
             [0.0, 1.0, 0.0],
             1.0,
             1.0,

@@ -2252,7 +2252,12 @@ impl PreparedSynthetic {
             return Err(RenderError::StaleTarget);
         }
         for view in &self.secondary_handles {
-            view.begin();
+            view.begin(
+                self.pending_view
+                    .as_ref()
+                    .unwrap_or(&self.view_sample)
+                    .camera_position(),
+            );
         }
         let graph = target.graph(readback.is_some());
         if graph.plan().device_generation != generation {

@@ -285,7 +285,7 @@ fn the_first_asked_frame_is_whole_after_discard_capture_cut_resize_and_device_re
             }),
         ])))
         .expect("attach");
-        let request_camera = camera(0.0, -2.0)
+        let request_camera = aimed([0.0, -2.0, 2.0], [0.0, 2.0, -1.5])
             .with_exposure(16.0)
             .expect("ignored view exposure")
             .with_jitter_phase(31, [1, 1]);

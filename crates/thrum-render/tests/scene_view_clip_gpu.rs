@@ -37,7 +37,7 @@ fn clip_and_inverse_record_keep_the_world_point_at_twenty_metres_and_three_kilom
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         for distance in [20.0, 3000.0] {
             let mut scene = SyntheticScene::grid(1).expect("scene");
-            scene.view = camera(100.0, 0.0);
+            scene.view = camera(0.0, 0.0);
             scene.instances = vec![instance(
                 0,
                 [0.0, 0.0, distance],
@@ -138,7 +138,7 @@ fn clipping_discards_the_ground_over_the_camera_and_clamps_a_near_plane() {
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
         let mut scene = SyntheticScene::grid(2).expect("scene");
-        scene.view = camera(100.0, 0.0);
+        scene.view = camera(0.0, 0.0);
         scene.instances = vec![
             instance(0, [0.0, 1.0, 20.0], [5.0, 5.0, 0.01]),
             instance(1, [0.0, -1.0, 0.0], [1000.0, 0.2, 1000.0]),

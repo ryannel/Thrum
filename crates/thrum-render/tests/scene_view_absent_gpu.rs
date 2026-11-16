@@ -207,8 +207,13 @@ fn declarations_and_asks_leave_the_default_shader_and_main_frame_unchanged() {
         assert_eq!(base_shader, control.lock().expect("observer").main_shader);
         assert_eq!(base, host.capture_pixels().expect("declared idle pixels"));
         control.lock().expect("control").requests[0] = Some(
-            SecondaryViewRequest::new(&camera(0.0, -2.0), [64, 64], None, ViewAir::Camera)
-                .expect("ask"),
+            SecondaryViewRequest::new(
+                &aimed([0.0, -2.0, 2.0], [0.0, 2.0, -1.5]),
+                [64, 64],
+                None,
+                ViewAir::Camera,
+            )
+            .expect("ask"),
         );
         assert_eq!(base, host.capture_pixels().expect("asked pixels"));
         // Captures allocate their own detached targets. Use the prepared frame
@@ -221,7 +226,12 @@ fn declarations_and_asks_leave_the_default_shader_and_main_frame_unchanged() {
             "Metal counters must be live"
         );
         let pipelines = host.pipeline_creation_count().expect("pipeline count");
-        for request in [None, Some(camera(0.0, -2.0)), Some(camera(0.2, -3.0)), None] {
+        for request in [
+            None,
+            Some(aimed([0.0, -2.0, 2.0], [0.0, 2.0, -1.5])),
+            Some(aimed([0.0, -3.0, 2.0], [0.2, 3.0, -1.5])),
+            None,
+        ] {
             control.lock().expect("control").requests[0] = request.map(|view| {
                 SecondaryViewRequest::new(&view, [64, 64], None, ViewAir::Camera).expect("ask")
             });

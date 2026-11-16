@@ -60,6 +60,7 @@ pub use graph::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
+pub(crate) use views::ViewRequestState;
 pub use views::{
     SecondarySceneSurface, SecondaryView, SecondaryViewError, SecondaryViewFrame,
     SecondaryViewRecord, SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
@@ -247,7 +248,8 @@ pub struct ContributionFrame {
     /// Culling uses the same raster frustum as the forward vertices; motion uses
     /// the separately bound unjittered matrices.
     pub view_proj: [[f32; 4]; 4],
-    /// World-space camera position.
+    /// Declared world-space camera position, without matrix inversion. A secondary
+    /// camera must copy coordinates 0 and 2 exactly to stand on this camera's vertical.
     pub camera: [f32; 3],
     /// Device generation of the encoder.
     pub generation: u64,
