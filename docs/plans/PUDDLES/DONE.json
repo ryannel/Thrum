@@ -156,8 +156,8 @@
     {
       "id": "M2",
       "name": "On the CPU alone, ground wets and dries as ground does, sheen first and darkness last, and a raindrop's rings spread as water's own waves do",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -169,8 +169,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md"
         },
@@ -233,10 +233,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test receivers",
           "ask": "Would a model that passed all rain through the ground's stores leave the puddle still in the first case, and does the test show it? Is each transfer checked by itself?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/PUDDLES/M2-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M2.9",
@@ -261,13 +261,15 @@
       ],
       "findings": [
         {
-          "name": "unpaid-water-source",
+          "name": "negative-ground-inventory-after-source-off",
           "item": "M2.1",
+          "different": "The prior Account::unpaid source is removed; the replacement debt survives uncovering and drying and makes ground_held negative while sinks exceed received rain.",
           "repeat": false
         },
         {
-          "name": "cover-transfer-exceeds-puddle-water",
+          "name": "uncovering-film-is-owed-instead-of-transferred",
           "item": "M2.11",
+          "different": "The prior reported covering overpayment is fixed; uncovering now records zero delivered film and debt, while the ground subsequently consumes the undelivered class film.",
           "repeat": false
         }
       ]

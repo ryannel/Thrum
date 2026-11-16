@@ -165,7 +165,7 @@
         {
           "verdict": "fail",
           "commit": "1d63087e103fbcdc1b0756cd63e68ff86e90dd16",
-          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "review": "docs/evidence/PUDDLES/M2-review-1.md",
           "items": {
             "M2.1": "fail",
             "M2.2": "pass",
@@ -205,6 +205,52 @@
             "turns": 1
           },
           "at": "2026-11-16T11:56:45Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b55c36b929f46358069de169bd7187ad26f2b948",
+          "review": "docs/evidence/PUDDLES/M2-review.md",
+          "items": {
+            "M2.1": "fail",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.11": "fail",
+            "M2.9": "pass",
+            "M2.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "negative-ground-inventory-after-source-off",
+              "item": "M2.1",
+              "different": "The prior Account::unpaid source is removed; the replacement debt survives uncovering and drying and makes ground_held negative while sinks exceed received rain.",
+              "repeat": false
+            },
+            {
+              "name": "uncovering-film-is-owed-instead-of-transferred",
+              "item": "M2.11",
+              "different": "The prior reported covering overpayment is fixed; uncovering now records zero delivered film and debt, while the ground subsequently consumes the undelivered class film.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 143468,
+            "cached": 2705152,
+            "output": 7052,
+            "turns": 1
+          },
+          "at": "2026-11-16T15:07:18Z"
         }
       ],
       "authorised": {
