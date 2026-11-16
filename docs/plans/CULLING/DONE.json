@@ -286,7 +286,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
       "findings": [
         {
@@ -298,7 +298,17 @@
           "name": "Legacy culling cost benchmarks silently measure Direct twice",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "SCENE-VIEWS must update its independent comparison of shader text for the approved coverage output so the official merge can pass.",
+        "work": {
+          "commit": "d018ec37e00a336f46d3c58f5e9fab7cb17b6d51",
+          "branch": "build/culling",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CULLING/M3-handoff.md"
+      }
     }
   ]
 }
