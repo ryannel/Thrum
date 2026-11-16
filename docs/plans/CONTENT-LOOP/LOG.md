@@ -3,7 +3,9 @@
 - 2026-11-16 M4 review repair removes the added watcher-test logging. The complete integration-test
   file now matches `a7390265` byte for byte; all four native integration tests pass on this Mac.
   The earlier preservation claim was stale after integration and is superseded by this fresh proof.
-  Production cooker code is unchanged. [Evidence](../../evidence/CONTENT-LOOP/M4.md).
+  Production cooker code is unchanged. The first merge gate hit invalid GPU buffers; a focused rerun
+  passed all 13 cases without renderer or assertion changes. Both results are retained in the
+  [evidence](../../evidence/CONTENT-LOOP/M4.md).
 
 - 2026-11-16 M4 adds adaptive sweeps independent of notice traffic, with a 500 ms floor, ten-times-cost
   wait, recent-write deferral and a silent idle path. The notice fast path is unchanged; the test's
