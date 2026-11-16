@@ -3,7 +3,7 @@
 - 2026-11-16 M3 uploads the mapped index section, derives meshlet ranges by prefix sum, writes
   whole Pod drawing records and measures the engine loader in the cooker test and tripwire.
   On `3408034a5`, the mapped Metal readback, unchanged asset-GPU tests, shader reflection and
-  edit-to-visible assertions pass. Fresh showcase cooks retain ten identical CAS files.
+  edit-to-visible assertions pass; `82709e784` adds actual renderer-material reflection.
   Terrain's owned index/range arrays fall from 711,784 to 5,224 bytes; paired preparation
   medians are 95.000 and 14.458 us, under shared load, excluding staging and driver memory.
   [M3 evidence](../../evidence/REVIEW-ENGINE/M3/README.md) keeps the old tripwire failures and
