@@ -234,7 +234,7 @@
     }
   ],
   "previous_record_sha256": "3fe3715cff983d6d36e42c6fa6455087bae60c5d62000e3082e39a5ed1676efa",
-  "previous_record_commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+  "previous_record_commit": "050f996b9ac1e324c1ec6b20dfc1b2601d2fd2f7",
   "artifact_sha256": "78e43615509e3660e24267a8e177449b8129b013820262e9a7580d3f450bdcc6",
   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
   "cross_origin_isolated": true,

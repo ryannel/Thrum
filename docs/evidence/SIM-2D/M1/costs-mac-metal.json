@@ -234,7 +234,7 @@
     }
   ],
   "previous_record_sha256": "262dc2e29cea9ae672432723239c8e4915415b0464d064842cab731e765a59a2",
-  "previous_record_commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+  "previous_record_commit": "050f996b9ac1e324c1ec6b20dfc1b2601d2fd2f7",
   "artifact_sha256": "ee1a32a0188594783c9a58e03e28e75c3e84490cc8ee06f15c1b15845eadf94a",
   "user_agent": null,
   "cross_origin_isolated": null,
