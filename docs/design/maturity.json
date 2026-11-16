@@ -71,14 +71,14 @@
     },
     "EFFECT_GRAPH_seam": {
       "implementation": "M3_after_opaque_render_and_compute_requests_async_metadata_quality_controls_implemented; M4_consumed_target_display_phase_clock_world_lane_effect_time_completed_sample_and_single_read_offscreen_target_implemented",
-      "functional_validation": "8134e6973_M3_1_to_M3_5_and_affected_M2_Chrome_recovery_passed_on_targets;_official_milestone_check_and_dev_check_passed;_complete_exact_verifier_passed_38_plus_4_native_comparisons_and_four_481_record_Chrome_sets;_M3_9_historical_failures_have_all_four_ruling_tests; M4_clock_and_normal_submitted_target_scripts_passed_on_mac_metal; delayed_threaded_observation_counterexample_at_5a8f26002_fails_M4_2_so_general_consumed_target_identity_is_not_qualified",
+      "functional_validation": "8134e6973_M3_1_to_M3_5_and_affected_M2_Chrome_recovery_passed_on_targets;_official_milestone_check_and_dev_check_passed;_complete_exact_verifier_passed_38_plus_4_native_comparisons_and_four_481_record_Chrome_sets;_M3_9_historical_failures_have_all_four_ruling_tests; M4_core_clock_and_causal_lane_checks_passed; M4_2_and_M4_3_Mac_Metal_GPU_checks_passed_at_4c7130594_including_delayed_observation_and_internal_render_callback_preemption; shared_main_exact_images_check_owns_baselines",
       "experienced_quality": "8134e6973_builder_inspected_all_five_T2_fixed_whole_frames_and_native_size_sky_prop_terrain_crossings;_both_native_recipes_noon_and_night_and_Chrome_noon_clean_occlusion_refraction_and_single_attenuation;_independent_review_pending;_reconstructed_motion_not_claimed",
       "platform_performance": {
         "mac": "8134e6973_twelve_capture_OFF_paired_arms_with_load;_depth_boundary_1.075_to_1.130ms_copy_plus_boundary_1.147_to_1.154ms;_refraction_minus_depth_named_pass_sum_68.6_to_111.4us;_no_isolated_transfer_speedup_or_display_latency_claim",
         "browser": "8134e6973_submitted_inputs_and_T2_fixed_capture_passed;_whole_frame_and_native_size_crossings_inspected;_no_performance_claim",
         "ios": "not_targeted"
       },
-      "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate. M4 display phase is implemented with partial numerical Mac Metal evidence; delayed-observation correctness is blocked on the observation/endpoint policy. No complete M4 correctness claim is made. Window consumed-target/platform-target equality, effect consumer prediction quality, Chrome phase behavior and physical display cadence are unqualified.",
+      "scope": "Public scene-contribution seam for external engine effects; no sea, cloud integrator, reconstruction or actual asynchronous queue scheduling. Implementation, correctness, visual and device claims are separate. M4 display phase, causal lane sampling and consumed-target identities are numerically qualified on Mac Metal only, with implementation and correctness separate from visuals and device costs. Window target equality, consumer prediction quality, Chrome phase behavior and physical display cadence are not claimed.",
       "evidence": [
         "docs/EFFECTS.md",
         "docs/evidence/EFFECT-GRAPH/M3-proof.md",
@@ -3332,7 +3332,7 @@
     "ARCHITECTURE-DECISIONS.md",
     "BASELINE-SPEC.md"
   ],
-  "contract_sha256": "013d09d27aa5bdb71df43b0a5419c314a73366604f60113b782d1328af473bd7",
+  "contract_sha256": "c552c8883e277d4554aeb8ae07acba85ab60dd8fa49fe51d0b86424b83babfd6",
   "composition_supplement": {
     "design": "COMPOSITION.md",
     "decision": "selected",
@@ -4077,7 +4077,7 @@
     "record": "ARCHITECTURE-DECISIONS.md",
     "record_sha256": "53802e616018f1f3080a394a4178261ba228bd27c63e84962665c3b26428c46d",
     "contract_revision": "C4",
-    "contract_sha256": "013d09d27aa5bdb71df43b0a5419c314a73366604f60113b782d1328af473bd7",
+    "contract_sha256": "c552c8883e277d4554aeb8ae07acba85ab60dd8fa49fe51d0b86424b83babfd6",
     "specifications": {
       "BASELINE-SPEC.md": "79af35ffe0bf3db508aa4833b250667679b947f1d0ba88ac4d19be02f01f36a9",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
@@ -4458,7 +4458,7 @@
       "CAPABILITY-SURVEY.md": "6d04e99e2d9717091f5047bee86ceaf73892f9d8a43365512be9e76c98f2ed76",
       "COMPOSITION.md": "392c9254d576fe771ff98f0b4937c41f0ec7ef90079e77d7155b83c0a4b40d01",
       "CONSTRUCTION-PACKAGES.md": "9ea1d68812ae04250f6c5477e32a9e90d90c6bf31f811f0bea39ee1bde3d84df",
-      "CONTRACTS.md": "013d09d27aa5bdb71df43b0a5419c314a73366604f60113b782d1328af473bd7",
+      "CONTRACTS.md": "c552c8883e277d4554aeb8ae07acba85ab60dd8fa49fe51d0b86424b83babfd6",
       "DESIGN-PROGRAMME.md": "f33d149acdd44599c7b5900e4d52e64f403cf2d026d1275facc8954f29b029f9",
       "ENGINE-EXPERIENCE.md": "6ad8cc15761a3df523ea18912bd1922189b5acf3520480f7d7d06ce51070e510",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",

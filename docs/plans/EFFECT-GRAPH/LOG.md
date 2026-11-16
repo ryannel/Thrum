@@ -181,3 +181,10 @@
   Proposal: the planner must settle observation-coherent endpoint selection or a revised consumption policy;
   either changes more existing frame behavior than the current design permits. No merge was attempted.
   [Handoff and reproduction](../../evidence/EFFECT-GRAPH/M4-handoff.md) separate passing scope from the failure.
+- 2026-11-16 Resumed M4 after the owner's instruction to carry on. The lane now enforces the design's
+  existing `t_C <= observation` premise, retaining its previous pair if a preempted poll sees a future endpoint.
+  Sampling formulas, consumed target and authority are unchanged; no history or clock read is added.
+  Four core integration tests and both Mac GPU checks pass, including the old counterexample and a real
+  completion-callback stall inside the offscreen driver. All 32 captured frames satisfy the target identity.
+  [Updated proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains source identities and the historical failure.
+  Exact images use the shared main-branch run; visual prediction quality and physical cadence remain unclaimed.
