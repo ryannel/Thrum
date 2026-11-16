@@ -186,7 +186,7 @@
           "lock": "gpu",
           "inspect": "Make each mistake in a copy of the starter and capture the report line and the offscreen frame after it. Does each message name the object, the cause and a next step, and does the last good scene stay drawn?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CREATOR/M3.md; docs/evidence/CREATOR/m3/native/live-reload.json; docs/evidence/CREATOR/m3/native/capture.log; docs/evidence/CREATOR/m3/native/frames.json; docs/evidence/CREATOR/m3/native/missing-store.json; docs/evidence/CREATOR/m3/checks/check.json",
+          "evidence": "docs/evidence/CREATOR/M3.md; docs/evidence/CREATOR/m3/current-native/live-reload.json; docs/evidence/CREATOR/m3/current-native/capture.log; docs/evidence/CREATOR/m3/current-native/frames.json; docs/evidence/CREATOR/m3/current-native/missing-store.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

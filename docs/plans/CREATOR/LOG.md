@@ -4,8 +4,8 @@
   hardware Chrome using only the permitted creator documents. The current-source native
   mistake journey also passes its saved-file assertions and diagnostic audits. The README
   now explains shared cooker ownership when switching targets. Computer Use selected the
-  starter scene but did not expose its Sun panel; M3.4 remains unproved. The full check is
-  running. [Evidence](../../evidence/CREATOR/M3.md) separates these results from earlier runs.
+  starter scene but did not expose its Sun panel. The full check reached the outer GPU
+  lease's thirty-minute limit. [Evidence](../../evidence/CREATOR/M3.md) records the interruption.
 
 - 2026-11-15 Integration holds both leases on `bb593e23`. The first exact
   verifier refused a portable route capture with twelve omissions and a full
