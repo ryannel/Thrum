@@ -1,10 +1,39 @@
 """Cost regressions must survive record boundaries and retain their comparator."""
 import unittest
+from unittest.mock import patch
 
-from sim2d_conformance import last_comparable
+from sim2d_conformance import last_comparable, measure
 
 
 class CostComparisons(unittest.TestCase):
+    def test_measure_keeps_previous_record_for_both_repeats(self):
+        previous = {"commit": "previous", "runs": [{"repeat": 2, "rows": [
+            {"bodies": count, "neighbours_per_tick": count, "tick_median_ms": 1.0}
+            for count in (2000, 5000, 10000)
+        ]}]}
+
+        def timing(_method, args):
+            count = args[0]
+            ticks = 36000 if count == 10000 else 3600
+            return {"bodies": count, "ticks": ticks, "samples": ticks - 120,
+                    "neighbours_per_tick": count, "tick_ms_per_neighbour": 1.5 / count,
+                    **dict.fromkeys(["tick_median_ms", "index_median_ms", "digest_median_ms",
+                                     "rewind_eight_ms", "replay_eight_ms"], 1.5)}
+
+        with patch("sim2d_conformance.Runner") as runner, \
+                patch("sim2d_conformance.source_key", return_value="source"), \
+                patch("sim2d_conformance.command", return_value="current"), \
+                patch("sim2d_conformance.json.loads", return_value=previous):
+            runner.return_value.invoke.side_effect = timing
+            record = measure("mac-metal")
+        for run in record["runs"]:
+            for row in run["rows"]:
+                comparison = row["quarter_slower_comparisons"][0]
+                self.assertEqual(comparison["origin"], "previous_record")
+                self.assertEqual(comparison["commit"], "previous")
+                self.assertTrue(comparison["tripped"])
+        self.assertEqual(len(record["runs"][1]["rows"][0]["quarter_slower_comparisons"]), 2)
+
     def test_first_repeat_detects_review_regression_against_previous_record(self):
         record = {"commit": "previous", "runs": [
             {"repeat": 1, "rows": [{"bodies": 5000, "neighbours_per_tick": 65407, "tick_median_ms": 1.21}]},

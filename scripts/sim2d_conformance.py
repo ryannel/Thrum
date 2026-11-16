@@ -211,8 +211,8 @@ def measure(target):
                     comparisons.append(comparison)
             row["quarter_slower_comparisons"] = comparisons
             row["quarter_slower_tripwire"] = any(entry["tripped"] for entry in comparisons)
-        for previous, row in zip(rows, rows[1:]):
-            row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > previous["tick_ms_per_neighbour"]
+        for smaller, row in zip(rows, rows[1:]):
+            row["super_neighbour_scaling_tripwire"] = row["tick_ms_per_neighbour"] > smaller["tick_ms_per_neighbour"]
         rows[0]["super_neighbour_scaling_tripwire"] = False
         runs.append({"repeat": repeat + 1, "load": os.getloadavg(), "build": "release", "rows": rows})
     assert source_key() == measured_source, "simulation sources changed during measurement"
