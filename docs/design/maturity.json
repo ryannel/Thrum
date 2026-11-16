@@ -2799,10 +2799,10 @@
       "waters_open_sea": {
         "implementation": "partial",
         "functional_validation": "passed",
-        "experienced_quality": "below_bar_rounded_crests_and_elevated_horizon_belt",
+        "experienced_quality": "builder_inspected_with_limitations_review_owed",
         "scope": "WATERS M2: one open-sea contribution, shared sky lighting, displaced scene depth, temporal inputs and a ticking example. Shorelines, other bodies, wakes, foam and full optics remain in later milestones.",
-        "correctness": "Mac Metal submitted-depth, CPU-oracle motion, rebuild, multi-tick and stage probes; no Chrome or simulator claim.",
-        "visuals": "Fixed Metal views support shared lighting and haze. Repeated fresh builder opinions still reject crest readability and the smooth elevated horizon belt, including source ef259d1f1. No independent milestone review has run.",
+        "correctness": "Mac Metal forward cache and full LEAN texture-mip readbacks on native and portable profiles; submitted-depth, CPU-oracle motion with jittered TAAU, rebuild, multi-tick and stage probes. No Chrome or simulator claim.",
+        "visuals": "Forward-field Metal stills pass fresh builder opinions on crest/trough contrast, layered wind and swell, clean horizon and shared light. Rectangular near-field highlights remain visible. The independent milestone review and later full-optics/temporal polish are owed; no Chrome or simulator visual claim.",
         "device": "Apple M3 Max Metal only. Capture-off paired cost is a concurrent-load tripwire, not physical display cadence or quiet-machine qualification.",
         "evidence": "../evidence/WATERS/M2.md"
       },
@@ -4809,6 +4809,13 @@
     "device_evidence": []
   },
   "technique_register": [
+    {
+      "technique": "Forward rest-sheet fields with full LEAN moment pyramids and anisotropic footprint filtering",
+      "source": "../plans/WATERS/DESIGN.md#the-surface-and-the-frame-contract",
+      "owner": "thrum-sea field products and thrum-water surface",
+      "status": "Native and portable Metal readbacks check every cache and mip texel; filterable cache errors stay below 0.932 mm height and 0.000122 slope. Directional covariance retains omitted waves and far fades, and visible facets sample the lent sky above the horizon. Forward cache cost is about 0.354 ms under concurrent load, above the 0.2–0.3 ms estimate. No qualified speedup, browser output or physical cadence claim; near-field highlight polish and independent milestone review remain owed.",
+      "evidence": "../evidence/WATERS/M2-forward.md"
+    },
     {
       "technique": "Portable temporal accumulation with jitter-aware current-source reconstruction",
       "source": "https://alextardif.com/TAA.html",

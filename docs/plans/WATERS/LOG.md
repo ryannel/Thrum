@@ -382,3 +382,10 @@
   Stronger swell and delayed cache LOD still fail fresh opinions on crest shape and the elevated horizon belt.
   M2.2 remains open; proposing planner diagnosis of geometric/cache-to-statistical transition without lowering its bar.
   [Handoff](../../evidence/WATERS/M2-handoff.md) retains attempts, current proofs and the unmerged checkpoint.
+- 2026-11-16 Built the approved forward rest-sheet cache and full filterable LEAN pyramids, with 16x
+  anisotropic reads, omitted-wave covariance and sky-only facet reflection. Native/portable texture errors
+  stay below 0.932 mm height and 0.000122 slope; [proof](../../evidence/WATERS/M2-forward.md).
+  Fresh opinions pass the named crest/horizon/light cues after height/compression crest in-scatter;
+  rectangular near-field highlights remain a disclosed limitation. The motion proof selects jittered TAAU.
+  [Cost](../../evidence/WATERS/M2-cost.md): forward cache about 0.354 ms, above the 0.2–0.3 ms estimate;
+  qualified cadence and remaining optimization stay with M11. Integration runs the full project gate.
