@@ -66,6 +66,27 @@ struct Trace {
 }
 
 impl Trace {
+    fn display_phase_counts(&self) -> Value {
+        let mut statuses = [0_u64; 5];
+        let mut bound = 0;
+        let mut stopped = 0;
+        for image in &self.images {
+            let status = match image["lead_status"].as_str() {
+                Some("future") => 0,
+                Some("late") => 1,
+                Some("invalid") => 2,
+                Some("clamped") => 3,
+                _ => 4,
+            };
+            statuses[status] += 1;
+            stopped += u64::from(image["clock_interpolating"] == false);
+            // This game's authoritative recipe is 60 Hz: 1 + .050 * 60.
+            bound += u64::from(image["display_phase"].as_f64().is_some_and(|p| p >= 4.0));
+        }
+        json!({"future":statuses[0],"late":statuses[1],"invalid":statuses[2],
+            "clamped":statuses[3],"untargeted":statuses[4],"bound":bound,"stopped":stopped})
+    }
+
     fn for_route(route: Option<&Value>) -> Result<Self, String> {
         let route_last_tick = route
             .map(|route| {
@@ -558,7 +579,8 @@ async fn record(output: &Path, scenario: &str) -> Result<(), String> {
             || (trace.images.len() == submitted
                 && driver.omissions() == 0
                 && trace.writer_omissions == 0));
-    let mut result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
+    let phase_counts = trace.display_phase_counts();
+    let mut result = json!({"display_phase_counts":phase_counts,"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",

@@ -39,7 +39,7 @@ fn identity(sample: &FrameSample) {
 #[cfg(target_os = "macos")]
 fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
     pollster::block_on(async {
-        let (_, device, queue, caps) = support::device("portable", false).await;
+        let (instance, device, queue, caps) = support::device("portable", false).await;
         let (view, profile) = support::presentation(&device, [96, 54]);
         let surface = v1_game::SurfaceOutput {
             view: &view,
@@ -62,6 +62,8 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                 .expect("effect seam");
             let mut previous: Option<(f64, f64)> = None;
             let mut past_endpoint = 0;
+            let mut previous_field: Option<(u64, Vec<u32>)> = None;
+            let mut nonempty = false;
             for lead_ms in [0, 10, 20, 30, 40, 50] {
                 let lead = Duration::from_millis(lead_ms);
                 for i in 0..8_u64 {
@@ -77,6 +79,21 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                     assert_eq!(time.alpha, sample.presentation_alpha);
                     assert_eq!(time.display_phase, sample.display_phase);
                     assert!(!time.capture);
+                    let texture = handle.lock().expect("effect").textures[2][0].clone();
+                    let field =
+                        v1_game::effect::qualification::read_texture(&device, &queue, &texture, 0)
+                            .await
+                            .expect("consumer GPU contents");
+                    nonempty |= field.iter().any(|&value| value != 0);
+                    if let Some((old_tick, old_field)) = &previous_field {
+                        if *old_tick == time.tick {
+                            assert_eq!(
+                                *old_field, field,
+                                "repeated tick retains state with a different phase"
+                            );
+                        }
+                    }
+                    previous_field = Some((time.tick, field));
                     if time.display_phase > 2.0 {
                         past_endpoint += 1;
                     }
@@ -91,12 +108,19 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
                 }
             }
             assert!(past_endpoint > 0);
+            assert!(nonempty, "the kept field was not empty");
             host.pause().expect("pause inline world");
             host.drive(Duration::from_secs(1), Some(&surface))
                 .expect("paused");
             let paused = complete(&mut host, &device);
             identity(&paused);
             assert!(!paused.clock_interpolating);
+            let texture = handle.lock().expect("effect").textures[2][0].clone();
+            let paused_field =
+                v1_game::effect::qualification::read_texture(&device, &queue, &texture, 0)
+                    .await
+                    .expect("paused GPU contents");
+            assert_eq!(paused_field, previous_field.expect("running field").1);
             let committed = handle
                 .lock()
                 .expect("effect")
@@ -184,13 +208,11 @@ fn submitted_effects_consume_unclamped_clock_phase_inline_and_threaded() {
         .expect("record");
         // Existing literal state-table oracle also reads GPU contents through
         // repeated ticks, pause, rollback, discard, bounded hitch and replacement.
-        Box::pin(v1_game::effect::qualification::run(
-            &device,
-            &queue,
-            &caps,
-            &wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle()),
+        let state_record = Box::pin(v1_game::effect::qualification::run(
+            &device, &queue, &caps, &instance,
         ))
         .await
         .expect("diagnostic state-table regression");
+        std::fs::write(output.join("state-table.txt"), state_record).expect("state record");
     });
 }

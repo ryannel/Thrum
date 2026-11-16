@@ -9,7 +9,7 @@ fn time(tick: u64) -> EffectTime {
         tick,
         tick_duration: Duration::from_secs_f64(1.0 / 60.0),
         alpha: 0.5,
-        display_phase: 1.0,
+        display_phase: 0.5,
         capture: false,
     }
 }
