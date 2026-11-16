@@ -3113,7 +3113,6 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
- "pollster",
  "serde_json",
  "thrum-asset",
  "thrum-render",
@@ -3221,7 +3220,6 @@ dependencies = [
 name = "thrum-sea"
 version = "0.1.0"
 dependencies = [
- "pollster",
  "thrum-render",
  "thrum-sea-model",
  "thrum-test-support",
