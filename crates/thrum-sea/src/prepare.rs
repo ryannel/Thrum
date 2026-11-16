@@ -152,6 +152,11 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Stri
     let dynamic_size =
         usize::try_from(buffers[&spec::BufferKey::UploadStaging].size()).expect("bounded upload");
     Ok(Ambient {
+        filtered: crate::filtered::Filtered::new(
+            device,
+            &buffers[&spec::BufferKey::Cascades],
+            &buffers[&spec::BufferKey::LongField],
+        ),
         profile,
         buffers,
         passes,

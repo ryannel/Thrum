@@ -336,14 +336,18 @@ pub(super) fn check_long(
                 info.origin[1] + (f64::from(i / 128) + 0.5) * info.texel,
             ];
             let index = MAX_QUERIES as usize + level * 128 * 128 + i as usize;
-            compare_long(
-                &out.long[index * 12..],
-                oracle
-                    .evaluate(p, time)
-                    .expect("valid Metal qualification fixture"),
-                &mut height,
-                &mut slope,
-            );
+            let cpu = oracle.forward(p, time).expect("forward cache oracle");
+            let gpu = &out.long[index * 12..];
+            height = height.max((f64::from(gpu[1]) - cpu.displacement[1]).abs());
+            for axis in 0..2 {
+                slope = slope.max((f64::from(gpu[4 + axis]) - cpu.slope[axis]).abs());
+            }
+            for (actual, expected) in gpu[..3].iter().zip(cpu.displacement) {
+                assert!(
+                    (f64::from(*actual) - expected).abs() < 0.002,
+                    "forward displacement"
+                );
+            }
         }
     }
     writeln!(

@@ -137,5 +137,5 @@ fn long_waves(@builtin(global_invocation_id) id: vec3<u32>) {
     let cache=i-4096u; if cache>=8u*128u*128u { return; }
     let level=cache/(128u*128u); let xy=cache%(128u*128u); let info=p.levels[level];
     let point=info.xy+(vec2(f32(xy%128u),f32(xy/128u))+0.5)*info.z;
-    long_field[i]=sample_long(point,info.w);
+    long_field[i]=forward_long(point,info.w);
 }

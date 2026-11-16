@@ -1,6 +1,7 @@
 //! Reconstructible, every-frame wind waves. No clock, submission or ambient history is owned here.
 //! A water contribution can embed [`Ambient`], append [`Ambient::graph`], stage an upload,
 //! then forward each named simulate callback to [`Ambient::encode_pass`].
+mod filtered;
 mod prepare;
 /// Host record reflection metadata for shader tooling.
 pub mod records;
@@ -14,6 +15,8 @@ use spec::declaration;
 /// and `p.physical.x` (choppiness), plus the `Long` and `Field` layouts from the
 /// crate README. Phases must be reduced in f64 at the query's own time/anchor.
 pub const LONG_WAVE_EVALUATOR: &str = include_str!("long_waves.wgsl");
+/// Filtered-field packing and mip reduction source for reflection tooling.
+pub const FILTERED_SHADER: &str = filtered::SHADER;
 /// Uniform contraction bound admitted by the bounded GPU long-wave inversion.
 /// The CPU oracle admits sums below one; 0.9 leaves a convergence margin for
 /// the GPU's 256 iterations and metre-scale binary32 residual.
@@ -84,15 +87,16 @@ mod tests {
     }
     #[test]
     fn portable_shader_validates_without_a_device() {
-        let source = super::SHADER;
-        let module = wgpu::naga::front::wgsl::parse_str(source)
+        for source in [super::SHADER, super::FILTERED_SHADER] {
+            let module = wgpu::naga::front::wgsl::parse_str(source)
+                .unwrap_or_else(|e| panic!("{}", e.emit_to_string(source)));
+            wgpu::naga::valid::Validator::new(
+                wgpu::naga::valid::ValidationFlags::all(),
+                wgpu::naga::valid::Capabilities::empty(),
+            )
+            .validate(&module)
             .unwrap_or_else(|e| panic!("{}", e.emit_to_string(source)));
-        wgpu::naga::valid::Validator::new(
-            wgpu::naga::valid::ValidationFlags::all(),
-            wgpu::naga::valid::Capabilities::empty(),
-        )
-        .validate(&module)
-        .unwrap_or_else(|e| panic!("{}", e.emit_to_string(source)));
+        }
     }
 }
 
@@ -163,6 +167,7 @@ pub struct CacheLevel {
 
 /// Prepared generation resources. All products are overwritten, including on capture frames.
 pub struct Ambient {
+    filtered: filtered::Filtered,
     profile: Profile,
     buffers: BTreeMap<spec::BufferKey, wgpu::Buffer>,
     passes: BTreeMap<spec::PassKey, prepare::PreparedPass>,
@@ -222,7 +227,8 @@ impl Ambient {
             .enumerate()
             .map(|(i, r)| (r.key, i))
             .collect();
-        self.specs
+        let mut bindings: Vec<_> = self
+            .specs
             .iter()
             .flat_map(|p| {
                 p.bindings.iter().map(|b| BindingAccess {
@@ -234,7 +240,22 @@ impl Ambient {
                     access: b.access,
                 })
             })
-            .collect()
+            .collect();
+        for pass in self.graph().passes.iter().skip(self.specs.len()) {
+            let pack = pass.name == "sea filtered pack";
+            let slots = if pack { &[0, 1, 2, 3][..] } else { &[4, 5][..] };
+            for (access, &slot) in pass.accesses.iter().zip(slots) {
+                bindings.push(BindingAccess {
+                    pass: pass.name.clone(),
+                    entry: if pack { "pack" } else { "reduce_texture" },
+                    group: 0,
+                    binding: slot,
+                    resource: access.resource,
+                    access: access.kind,
+                });
+            }
+        }
+        bindings
     }
     /// Prepare against the actual device limits. No queue or submission authority is retained.
     /// # Errors
@@ -248,10 +269,12 @@ impl Ambient {
 
     /// Every GPU resource and its bytes, including staging and mip uniforms.
     pub fn resource_bytes(&self) -> Vec<(String, u64)> {
-        spec::resources()
+        let mut resources: Vec<_> = spec::resources()
             .into_iter()
             .map(|r| (r.name, self.buffers[&r.key].size()))
-            .collect()
+            .collect();
+        resources.extend(self.filtered.resource_bytes());
+        resources
     }
 
     /// Declare actual hazards. All resources are transient in content, even though allocation is reused.
@@ -260,11 +283,17 @@ impl Ambient {
             prepare::sizes().iter().sum::<u64>(),
             self.buffers.values().map(wgpu::Buffer::size).sum::<u64>()
         );
-        declaration(&prepare::sizes())
+        let mut graph = declaration(&prepare::sizes());
+        self.filtered.append_graph(&mut graph);
+        graph
     }
 
     /// Record one named graph pass, under the host's encoder and timing scope.
     pub fn encode_pass(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        if index >= self.specs.len() {
+            self.filtered.encode(index - self.specs.len(), pass);
+            return;
+        }
         // The contribution API supplies a graph ordinal; translate once, then use typed keys.
         let Some(spec) = self.specs.get(index) else {
             return;
@@ -282,6 +311,21 @@ impl Ambient {
     /// Each texel is three vec4<f32>, in that order; see the crate README for channels.
     pub fn cascade_buffer(&self) -> &wgpu::Buffer {
         &self.buffers[&spec::BufferKey::Cascades]
+    }
+    /// Full LEAN mip chains, five array planes per cascade or long-cache level.
+    /// Planes contain displacement/J, rest derivatives, velocity, slope second
+    /// moments/J, and J squared. All channels are linearly filtered.
+    pub fn filtered_views(&self) -> &[wgpu::TextureView; 2] {
+        &self.filtered.views
+    }
+    /// Read-only texture lending for forward-field readback and tooling.
+    /// Index zero is the three cascades; index one is the eight cache levels.
+    pub fn filtered_texture(&self, index: usize) -> Option<&wgpu::Texture> {
+        self.filtered.textures.get(index)
+    }
+    /// Sampled texture hazards for the complete forward field and moment ladder.
+    pub fn filtered_accesses(&self) -> Vec<thrum_render::contribution::EffectAccess> {
+        self.filtered.surface_accesses(spec::resources().len())
     }
     /// Exact graph accesses for a surface sampling the lent fields and selected moment mips.
     /// Returns `None` for a moment mip outside the prepared ladder.

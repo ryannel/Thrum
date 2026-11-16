@@ -71,7 +71,7 @@ pub struct Water {
     map: Arc<Mutex<Map>>,
     body: usize,
     spectrum: Spectrum,
-    long_variances: [f32; 8],
+    long_variances: [[f32; 4]; 8],
     profile: Profile,
     prepared: Option<prepare::Prepared>,
     previous: Option<(f64, u64, f64)>,

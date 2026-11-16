@@ -31,6 +31,10 @@ name = "upload_bytes"
 [lints]
 workspace = true
 
+[[test]]
+name = "forward_cache_gpu"
+path = "tests/forward_cache_gpu.rs"
+
 [dependencies]
 bytemuck = { version = "=1.25.2", features = ["derive"] }
 thrum-sea-model = { path = "../thrum-sea-model" }

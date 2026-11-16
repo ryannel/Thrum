@@ -1,0 +1,164 @@
+//! The drawn forward sheet and every filtered mip texel, on native and portable Metal.
+#[expect(
+    dead_code,
+    reason = "shared harness includes other independent sea oracles"
+)]
+mod support;
+use std::{sync::mpsc, time::Duration};
+
+#[test]
+fn forward_fields_and_full_lean_pyramids_match_the_model() {
+    for portable in [false, true] {
+        let Some(mut h) = support::Harness::new(portable) else {
+            return;
+        };
+        let spectrum = support::spectrum(8.0);
+        for time in [10.125, 86400.125] {
+            let output = h.frame(&spectrum, time, &[], true).expect("submitted");
+            support::check_long(&mut h, &output, &spectrum, time, &[], true);
+            for index in 0..2 {
+                let texture = h.sea.filtered_texture(index).expect("forward texture");
+                let width = texture.width() as usize;
+                let layers = texture.depth_or_array_layers() as usize;
+                let fields = if index == 0 {
+                    &output.cascades[..]
+                } else {
+                    &output.long[4096 * 12..]
+                };
+                let base = read(&h.device, &h.queue, texture, 0);
+                // Every plane, including rest derivatives, rates, J and J^2.
+                for layer in 0..layers {
+                    for pixel in 0..width * width {
+                        let f = &fields[((layer / 5) * width * width + pixel) * 12..];
+                        let expected = match layer % 5 {
+                            0 => [f[0], f[1], f[2], f[3]],
+                            1 => [f[4], f[5], f[6], f[7]],
+                            2 => [f[8], f[9], f[10], f[11]],
+                            3 => [f[4] * f[4], f[4] * f[5], f[5] * f[5], f[3]],
+                            _ => [f[3] * f[3], 0.0, 0.0, 0.0],
+                        };
+                        let offset = (layer * width * width + pixel) * 4;
+                        for channel in 0..4 {
+                            let error =
+                                (base[offset + channel] - f64::from(expected[channel])).abs();
+                            assert!(
+                                error <= 0.001 * f64::from(expected[channel]).abs() + 0.000_001,
+                                "base plane {layer} pixel {pixel}: {error}"
+                            );
+                        }
+                    }
+                }
+                // Direct base-block averages, rather than trusting the parent mip.
+                for mip in 1..texture.mip_level_count() {
+                    let values = read(&h.device, &h.queue, texture, mip);
+                    let block = 1_usize << mip;
+                    let child_width = width / block;
+                    for layer in 0..layers {
+                        for z in 0..child_width {
+                            for x in 0..child_width {
+                                let mut sum = [0.0; 4];
+                                for dz in 0..block {
+                                    for dx in 0..block {
+                                        let offset = (layer * width * width
+                                            + (z * block + dz) * width
+                                            + x * block
+                                            + dx)
+                                            * 4;
+                                        for channel in 0..4 {
+                                            sum[channel] += base[offset + channel];
+                                        }
+                                    }
+                                }
+                                let offset =
+                                    (layer * child_width * child_width + z * child_width + x) * 4;
+                                for channel in 0..4 {
+                                    let expected = sum[channel] / (block * block) as f64;
+                                    assert!(
+                                        (values[offset + channel] - expected).abs()
+                                            <= 0.004 * expected.abs() + 0.000_004,
+                                        "mip {mip} layer {layer} ({x},{z}) channel {channel}: {} vs {expected}",
+                                        values[offset + channel]
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        h.record.push_str("All forward-cache texels and all five planes of every texture mip passed. Half-float storage checked against direct base-block means.\n");
+        h.save(if portable {
+            "forward-cache-portable"
+        } else {
+            "forward-cache-native"
+        });
+    }
+}
+
+fn half(bits: u16) -> f64 {
+    let sign = if bits & 0x8000 == 0 { 1.0 } else { -1.0 };
+    let exponent = i32::from((bits >> 10) & 31);
+    let mantissa = f64::from(bits & 1023);
+    assert_ne!(exponent, 31, "nonfinite field moment");
+    sign * if exponent == 0 {
+        mantissa * 2.0_f64.powi(-24)
+    } else {
+        (1.0 + mantissa / 1024.0) * 2.0_f64.powi(exponent - 15)
+    }
+}
+fn read(device: &wgpu::Device, queue: &wgpu::Queue, texture: &wgpu::Texture, mip: u32) -> Vec<f64> {
+    let width = texture.width() >> mip;
+    let layers = texture.depth_or_array_layers();
+    let pitch = (width * 8).div_ceil(256) * 256;
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("forward LEAN readback"),
+        size: u64::from(pitch) * u64::from(width) * u64::from(layers),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture,
+            mip_level: mip,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(pitch),
+                rows_per_image: Some(width),
+            },
+        },
+        wgpu::Extent3d {
+            width,
+            height: width,
+            depth_or_array_layers: layers,
+        },
+    );
+    queue.submit([encoder.finish()]);
+    let (tx, rx) = mpsc::channel();
+    buffer.map_async(wgpu::MapMode::Read, .., move |r| {
+        tx.send(r).expect("map callback");
+    });
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(Duration::from_secs(120)),
+        })
+        .expect("GPU completion");
+    rx.recv().expect("callback").expect("map");
+    let bytes = buffer.get_mapped_range(..).expect("mapped bytes");
+    bytes
+        .chunks_exact(pitch as usize)
+        .flat_map(|row| {
+            row[..(width * 8) as usize]
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|b| half(u16::from_le_bytes(*b)))
+        })
+        .collect()
+}

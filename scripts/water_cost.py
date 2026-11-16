@@ -31,7 +31,7 @@ def measure():
     data['build'] = 'release; concurrent machine load, not qualified cadence'
     data['refresh_hz'] = 120
     data['view'] = 'camera at 2 m, bearing 90 degrees, noon; camera record gives origin and lens; identical calibration float and sky in both arms at identical world times'
-    data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'broadsides_surface_ms': 10.5}
+    data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'long_cache_gpu_ms': '0.2-0.3', 'previous_inverted_cache_gpu_ms': 3.6, 'broadsides_surface_ms': 10.5}
     data['summary'] = []
     for arm in data['arms']:
         for tick in [True, False]:

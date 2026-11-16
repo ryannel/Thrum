@@ -12,16 +12,21 @@ fn bound_resources_equal_declared_accesses_for_every_pass() {
     let Some(h) = support::Harness::new(false) else {
         return;
     };
-    let module = naga::front::wgsl::parse_str(thrum_sea::SHADER).expect("valid shader");
-    let info = naga::valid::Validator::new(
-        naga::valid::ValidationFlags::all(),
-        naga::valid::Capabilities::empty(),
-    )
-    .validate(&module)
-    .expect("valid shader");
     let bindings = h.sea.binding_accesses();
     let graph = h.sea.graph();
     for pass in &graph.passes {
+        let module = naga::front::wgsl::parse_str(if pass.name.starts_with("sea filtered") {
+            thrum_sea::FILTERED_SHADER
+        } else {
+            thrum_sea::SHADER
+        })
+        .expect("valid shader");
+        let info = naga::valid::Validator::new(
+            naga::valid::ValidationFlags::all(),
+            naga::valid::Capabilities::empty(),
+        )
+        .validate(&module)
+        .expect("valid shader");
         let actual: Vec<_> = bindings.iter().filter(|b| b.pass == pass.name).collect();
         assert_eq!(
             actual.len(),
@@ -49,7 +54,15 @@ fn bound_resources_equal_declared_accesses_for_every_pass() {
                 .iter()
                 .find(|b| b.group == slot.group && b.binding == slot.binding)
                 .expect("every shader resource is bound");
-            let expected = if global.space == naga::AddressSpace::Uniform {
+            let expected = if matches!(
+                module.types[global.ty].inner,
+                naga::TypeInner::Image {
+                    class: naga::ImageClass::Sampled { .. },
+                    ..
+                }
+            ) {
+                AccessKind::SampledRead
+            } else if global.space == naga::AddressSpace::Uniform {
                 AccessKind::UniformRead
             } else if usage.contains(GlobalUse::WRITE) {
                 if usage.contains(GlobalUse::READ) {
@@ -68,15 +81,14 @@ fn bound_resources_equal_declared_accesses_for_every_pass() {
             let declaration = pass
                 .accesses
                 .iter()
-                .find(|a| a.resource == binding.resource)
+                .find(|a| a.resource == binding.resource && a.kind == binding.access)
                 .expect("bound resource declared");
             assert_eq!(declaration.kind, binding.access);
-            let thrum_render::graph::ResourceDescriptor::Buffer { bytes, .. } =
+            if let thrum_render::graph::ResourceDescriptor::Buffer { bytes, .. } =
                 &graph.resources[binding.resource].0
-            else {
-                panic!("sea buffer")
-            };
-            assert_eq!(declaration.range, 0..*bytes);
+            {
+                assert_eq!(declaration.range, 0..*bytes);
+            }
         }
         assert_eq!(
             reflected,

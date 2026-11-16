@@ -61,6 +61,7 @@ fn check(source: &str) {
 #[test]
 fn every_bound_struct_has_equal_host_layout() {
     check(thrum_sea::SHADER);
+    check(thrum_sea::FILTERED_SHADER);
 }
 
 #[test]

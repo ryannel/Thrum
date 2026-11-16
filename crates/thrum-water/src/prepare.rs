@@ -30,10 +30,7 @@ impl Prepared {
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
         let mut surface = declaration();
-        surface.accesses = self
-            .ambient
-            .surface_accesses(&[4, 8, 0])
-            .expect("prepared water products");
+        surface.accesses = self.ambient.filtered_accesses();
         graph.opaque_reads.clear();
         graph.after_opaque.push(surface);
         graph
@@ -51,18 +48,24 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    let entries: Vec<_> = (0..6)
+    let entries: Vec<_> = (0..5)
         .map(|binding| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: if binding == 0 {
-                    wgpu::BufferBindingType::Uniform
-                } else {
-                    wgpu::BufferBindingType::Storage { read_only: true }
-                },
-                has_dynamic_offset: false,
-                min_binding_size: None,
+            ty: if binding == 0 {
+                wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                }
+            } else if binding <= 2 {
+                wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2Array,
+                    multisampled: false,
+                }
+            } else {
+                wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering)
             },
             count: None,
         })
@@ -71,24 +74,50 @@ pub(super) fn new(surface: &SceneSurface<'_>, profile: Profile) -> Result<Prepar
         label: Some("water field"),
         entries: &entries,
     });
-    let buffers = [
-        &parameters,
-        ambient.cascade_buffer(),
-        ambient.long_buffer(),
-        ambient.moments_buffer(4).ok_or("water moments")?,
-        ambient.moments_buffer(8).ok_or("water moments")?,
-        ambient.moments_buffer(0).ok_or("water moments")?,
-    ];
-    let bindings: Vec<_> = buffers
-        .iter()
-        .enumerate()
-        .map(|(i, b)| {
-            Ok(wgpu::BindGroupEntry {
-                binding: u32::try_from(i).map_err(|e| e.to_string())?,
-                resource: b.as_entire_binding(),
-            })
+    let sampler = |mode| {
+        device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("water anisotropic field"),
+            address_mode_u: mode,
+            address_mode_v: mode,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            anisotropy_clamp: if surface
+                .downlevel
+                .is_none_or(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
+            {
+                16
+            } else {
+                1
+            },
+            ..Default::default()
         })
-        .collect::<Result<_, String>>()?;
+    };
+    let repeat = sampler(wgpu::AddressMode::Repeat);
+    let clamp = sampler(wgpu::AddressMode::ClampToEdge);
+    let views = ambient.filtered_views();
+    let bindings = [
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: parameters.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: wgpu::BindingResource::TextureView(&views[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 2,
+            resource: wgpu::BindingResource::TextureView(&views[1]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 3,
+            resource: wgpu::BindingResource::Sampler(&repeat),
+        },
+        wgpu::BindGroupEntry {
+            binding: 4,
+            resource: wgpu::BindingResource::Sampler(&clamp),
+        },
+    ];
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("water field"),
         layout: &layout,

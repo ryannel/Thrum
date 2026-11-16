@@ -153,6 +153,36 @@ impl LongWaves {
         Self::new(components, self.choppiness)
     }
 
+    /// Evaluate the parametric sheet once at a rest place, without inversion.
+    /// Derivatives are with respect to that rest place, before the horizontal map.
+    /// # Errors
+    /// Rejects nonfinite coordinates or time.
+    pub fn forward(&self, rest: [f64; 2], time: f64) -> Result<crate::Differential, SeaError> {
+        if !time.is_finite() || rest.iter().any(|v| !v.is_finite()) {
+            return Err(SeaError::InvalidInput);
+        }
+        let mut result = crate::Differential::default();
+        for c in &self.components {
+            let (s, co) = c.anchored_phase(rest, time).sin_cos();
+            let k = c.wavenumber();
+            let q = self.choppiness;
+            let a = c.amplitude;
+            result.displacement[1] += a * co;
+            result.velocity[1] += a * c.frequency() * s;
+            for axis in 0..2 {
+                result.displacement[axis * 2] -= q * a * c.wave_vector[axis] / k * s;
+                result.slope[axis] -= a * c.wave_vector[axis] * s;
+                result.velocity[axis * 2] += q * a * c.frequency() * c.wave_vector[axis] / k * co;
+            }
+            result.horizontal_derivative[0] -= q * a * c.wave_vector[0] * c.wave_vector[0] / k * co;
+            result.horizontal_derivative[1] -= q * a * c.wave_vector[0] * c.wave_vector[1] / k * co;
+            result.horizontal_derivative[2] -= q * a * c.wave_vector[1] * c.wave_vector[1] / k * co;
+        }
+        let [x, c, z] = result.horizontal_derivative;
+        result.jacobian = (1.0 + x) * (1.0 + z) - c * c;
+        Ok(result)
+    }
+
     /// Evaluate at a world point, inverting horizontal displacement to 1e-11 m.
     /// `velocity` follows the material label; `height_dt` holds world x/z fixed.
     ///
