@@ -113,6 +113,12 @@ pub(super) struct CasterDraw {
     pub(super) instances: u32,
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum CasterContribution<'a> {
+    Main(&'a dyn SceneContribution),
+    Secondary(&'a dyn SceneContribution, usize),
+}
+
 struct FittedShadow {
     matrices: [Mat4; MAPS],
     samples: [u8; SAMPLE_BYTES],
@@ -169,8 +175,8 @@ pub(super) struct ShadowPrepared {
     pub(super) sample_buffer: wgpu::Buffer,
 }
 
-pub(super) struct ShadowTarget {
-    views: [wgpu::TextureView; MAPS],
+pub(super) struct ShadowTarget<const MAP_COUNT: usize = MAPS> {
+    views: [wgpu::TextureView; MAP_COUNT],
     pub(super) array_view: wgpu::TextureView,
 }
 
@@ -352,10 +358,10 @@ impl ShadowPrepared {
         cooked.is_some()
     }
 
-    pub(super) fn encode_cascade(
+    pub(super) fn encode_cascade<const MAP_COUNT: usize>(
         &self,
         encoder: &mut wgpu::CommandEncoder,
-        target: &ShadowTarget,
+        target: &ShadowTarget<MAP_COUNT>,
         instances: &wgpu::BindGroup,
         casters: &CasterDraws<'_>,
         generation: u64,
@@ -363,7 +369,7 @@ impl ShadowPrepared {
         compiled: &CompiledPass,
         resource: &ResourceId,
         timings: Option<&mut crate::timing::GpuTimings>,
-        contribution: Option<&dyn SceneContribution>,
+        contribution: Option<CasterContribution<'_>>,
     ) -> Result<(), RenderError> {
         let (cascade, view) = self
             .cascades
@@ -415,14 +421,18 @@ impl ShadowPrepared {
             }
             pass.draw_indexed(draw.indices.clone(), draw.base_vertex, 0..draw.instances);
         }
-        if let Some(contribution) = contribution {
-            contribution.draw_shadow(&mut pass);
+        match contribution {
+            Some(CasterContribution::Main(contribution)) => contribution.draw_shadow(&mut pass),
+            Some(CasterContribution::Secondary(contribution, index)) => {
+                contribution.draw_secondary_shadow(index, &mut pass);
+            }
+            None => (),
         }
         Ok(())
     }
 }
 
-impl ShadowTarget {
+impl<const MAP_COUNT: usize> ShadowTarget<MAP_COUNT> {
     pub(super) fn new(texture: &wgpu::Texture) -> Self {
         let views = std::array::from_fn(|index| {
             texture.create_view(&wgpu::TextureViewDescriptor {

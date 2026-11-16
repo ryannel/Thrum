@@ -769,7 +769,9 @@ impl SceneContext<'_> {
                 .ok_or(RenderError::GraphPassMismatch)?,
             self.timings.as_deref_mut(),
             if draw_contribution {
-                self.contribution.as_deref()
+                self.contribution
+                    .as_deref()
+                    .map(shadow::CasterContribution::Main)
             } else {
                 None
             },
@@ -790,6 +792,16 @@ impl SceneContext<'_> {
     fn contribution_upload(&mut self) {
         if let Some(contribution) = self.contribution.as_deref_mut() {
             contribution.encode_upload(self.encoder, &self.contribution_frame);
+            if !self.prepared.secondary.is_empty() {
+                let (views, count) = self.prepared.upload_secondary_views();
+                if contribution.secondary_views_enabled() {
+                    contribution.encode_secondary_upload(
+                        self.encoder,
+                        &self.contribution_frame,
+                        &views[..count],
+                    );
+                }
+            }
         }
     }
 

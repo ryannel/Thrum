@@ -80,6 +80,7 @@ pub(crate) struct Source {
     pub(crate) view: SyntheticView,
     pub(crate) lighting: FrameLighting,
     pub(crate) instances: Vec<([f64; 3], u32)>,
+    pub(crate) lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
 }
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -106,6 +107,14 @@ impl SceneSource<SourceTick> for Source {
             view: self.view,
             lighting: override_light.unwrap_or(self.lighting),
         })
+    }
+    fn sample_local_lights(
+        &self,
+        _: SourceTick,
+        _: f32,
+        lights: &mut [thrum_render::synthetic::SyntheticPointLight],
+    ) {
+        lights.copy_from_slice(&self.lights);
     }
 }
 pub(crate) type Host = FrameHost<World, Source>;
@@ -145,9 +154,19 @@ pub(crate) async fn host_with_lighting(
     scene: SyntheticScene,
     lighting: FrameLighting,
 ) -> Host {
+    host_with_extent(capabilities, queue, scene, lighting, [SIDE, SIDE]).await
+}
+pub(crate) async fn host_with_extent(
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    scene: SyntheticScene,
+    lighting: FrameLighting,
+    extent: [u32; 2],
+) -> Host {
     let source = Source {
         view: scene.view,
         lighting,
+        lights: scene.local_lights.clone(),
         instances: scene
             .instances
             .iter()
@@ -163,7 +182,7 @@ pub(crate) async fn host_with_lighting(
         capabilities,
         queue,
         FrameConfig {
-            render_extent: [SIDE, SIDE],
+            render_extent: extent,
             surface: None,
         },
         World,
@@ -432,4 +451,324 @@ pub(crate) fn pixel(bytes: &[u8], index: usize) -> ([f32; 4], f32) {
         )
     };
     (std::array::from_fn(|i| channel(i * 4)), channel(16))
+}
+
+/// Store raw aerial texels in the scene/view colour attachments, then use
+/// declared late compute reads to copy them. The ordinary main volume is
+/// observed through refraction; a slot is observed through its owner's handle.
+pub(crate) const AIR_TEXELS: u64 = 32 * 32 * 33 * 2;
+pub(crate) const AIR_BYTES: u64 = AIR_TEXELS * 16;
+pub(crate) const AIR_EXTENT: [u32; 2] = [256, 272];
+pub(crate) struct AirCapture {
+    pub(crate) outputs: Vec<wgpu::Buffer>,
+    pub(crate) request: Option<SecondaryViewRequest>,
+}
+pub(crate) struct AirProbe {
+    control: Arc<Mutex<AirCapture>>,
+    declared: bool,
+    render: Vec<wgpu::RenderPipeline>,
+    copy: Vec<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+    slot: Option<SecondaryView>,
+}
+fn air_late(index: usize) -> AfterOpaquePass {
+    AfterOpaquePass {
+        name: format!("aerial stored texels {index}"),
+        kind: AfterOpaqueKind::Compute,
+        cadence: EffectCadence::Skippable,
+        depth: false,
+        refraction: true,
+        accesses: vec![EffectAccess {
+            resource: index,
+            range: 0..AIR_BYTES,
+            kind: AccessKind::StorageWrite,
+            view: None,
+            history: None,
+        }],
+    }
+}
+impl AirProbe {
+    pub(crate) fn new(request: Option<&SecondaryViewRequest>) -> (Self, Arc<Mutex<AirCapture>>) {
+        let declared = request.is_some();
+        let control = Arc::new(Mutex::new(AirCapture {
+            outputs: Vec::new(),
+            request: request.copied(),
+        }));
+        (
+            Self {
+                control: Arc::clone(&control),
+                declared,
+                render: Vec::new(),
+                copy: Vec::new(),
+                slot: None,
+            },
+            control,
+        )
+    }
+}
+impl SceneContribution for AirProbe {
+    fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+        if self.declared {
+            vec![SecondaryViewSlot::new(1.0).expect("air slot")]
+        } else {
+            Vec::new()
+        }
+    }
+    fn secondary_views_enabled(&self) -> bool {
+        true
+    }
+    fn passes(&self) -> ContributionPasses {
+        ContributionPasses {
+            upload: self.declared,
+            compute: false,
+        }
+    }
+    fn effect_graph(&self) -> EffectGraph {
+        let count = 1 + usize::from(self.declared);
+        EffectGraph {
+            resources: (0..count)
+                .map(|index| {
+                    (
+                        ResourceDescriptor::Buffer {
+                            bytes: AIR_BYTES,
+                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                        },
+                        ResourceScope::Persistent {
+                            owner: 800 + index as u64,
+                            epoch: 1,
+                            initialized: false,
+                        },
+                    )
+                })
+                .collect(),
+            after_opaque: (0..count).map(air_late).collect(),
+            ..EffectGraph::default()
+        }
+    }
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        let device = surface.device;
+        self.slot = surface.secondary_views.first().cloned();
+        self.render.clear();
+        self.copy.clear();
+        let mut control = self.control.lock().expect("air control");
+        control.outputs.clear();
+        let descriptions = std::iter::once((
+            surface.shader_source,
+            surface.view_layout,
+            surface.light_layout,
+            surface.color_formats.to_vec(),
+            surface.depth_format,
+            "probe_main",
+        ))
+        .chain(surface.secondary_surfaces.iter().map(|view| {
+            (
+                view.shader_source,
+                view.view_layout,
+                view.light_layout,
+                vec![view.colour_format],
+                view.depth_format,
+                "probe_view",
+            )
+        }));
+        for (index, (shader, view, light, formats, depth, entry)) in descriptions.enumerate() {
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("aerial texel cards"),
+                bind_group_layouts: &[Some(view), Some(light)],
+                immediate_size: 0,
+            });
+            let source = format!(
+                "{shader}\n{}",
+                include_str!("support/scene_view/air_probe.wgsl")
+            );
+            let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("aerial texel cards"),
+                source: wgpu::ShaderSource::Wgsl(source.into()),
+            });
+            let targets = formats
+                .into_iter()
+                .map(|format| {
+                    Some(wgpu::ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })
+                })
+                .collect::<Vec<_>>();
+            self.render
+                .push(device.render(&wgpu::RenderPipelineDescriptor {
+                    label: Some("aerial texel cards"),
+                    layout: Some(&layout),
+                    vertex: wgpu::VertexState {
+                        module: &module,
+                        entry_point: Some("probe_vertex"),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        buffers: &[],
+                    },
+                    primitive: wgpu::PrimitiveState::default(),
+                    depth_stencil: Some(wgpu::DepthStencilState {
+                        format: depth,
+                        depth_write_enabled: Some(true),
+                        depth_compare: Some(wgpu::CompareFunction::Always),
+                        stencil: wgpu::StencilState::default(),
+                        bias: wgpu::DepthBiasState::default(),
+                    }),
+                    multisample: wgpu::MultisampleState::default(),
+                    fragment: Some(wgpu::FragmentState {
+                        module: &module,
+                        entry_point: Some(entry),
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        targets: &targets,
+                    }),
+                    multiview_mask: None,
+                    cache: None,
+                }));
+            let mut entries = vec![wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(AIR_BYTES),
+                },
+                count: None,
+            }];
+            if index > 0 {
+                entries.push(wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                });
+            }
+            let output_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("aerial texel readback"),
+                entries: &entries,
+            });
+            let input = air_late(index).input_layout(device);
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("aerial texel readback"),
+                bind_group_layouts: &[
+                    Some(surface.view_layout),
+                    Some(&input),
+                    Some(&output_layout),
+                ],
+                immediate_size: 0,
+            });
+            let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("aerial texel readback"),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("support/scene_view/air_copy.wgsl").into(),
+                ),
+            });
+            let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
+                label: Some("aerial texel readback"),
+                layout: Some(&layout),
+                module: &module,
+                entry_point: Some(if index == 0 { "copy_main" } else { "copy_view" }),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            });
+            let output = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("aerial stored texels"),
+                size: AIR_BYTES,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            });
+            let mut entries = vec![wgpu::BindGroupEntry {
+                binding: 0,
+                resource: output.as_entire_binding(),
+            }];
+            if index > 0 {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(
+                        self.slot.as_ref().expect("owned air slot").colour(),
+                    ),
+                });
+            }
+            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("aerial texel readback"),
+                layout: &output_layout,
+                entries: &entries,
+            });
+            self.copy.push((pipeline, group));
+            control.outputs.push(output);
+        }
+        Ok(())
+    }
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
+        let control = self.control.lock().expect("air control");
+        if let Some(request) = control.request {
+            self.slot
+                .as_ref()
+                .expect("air slot")
+                .request(&request)
+                .expect("air ask");
+        }
+    }
+    fn computes(&self, _: &ContributionFrame) -> bool {
+        false
+    }
+    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+    fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
+        pass.set_pipeline(&self.render[0]);
+        pass.draw(0..3, 0..1);
+    }
+    fn draw_secondary(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+        pass.set_pipeline(&self.render[index + 1]);
+        pass.draw(0..3, 0..1);
+    }
+    fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
+        index == 0 || self.control.lock().expect("air control").request.is_some()
+    }
+    fn encode_after_opaque(
+        &mut self,
+        index: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        _: &ContributionFrame,
+    ) {
+        let (pipeline, group) = &self.copy[index];
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(2, group, &[]);
+        pass.dispatch_workgroups(AIR_EXTENT[0] / 8, AIR_EXTENT[1] / 8, 1);
+    }
+    fn submitted(&mut self, _: bool) {}
+}
+
+pub(crate) fn air_output(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    buffer: &wgpu::Buffer,
+) -> Vec<f32> {
+    let staging = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("aerial observation readback"),
+        size: AIR_BYTES,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, AIR_BYTES);
+    encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
+        result.expect("air observation mapped");
+    });
+    let submitted = queue.submit([encoder.finish()]);
+    device
+        .poll(wgpu::PollType::Wait {
+            submission_index: Some(submitted),
+            timeout: Some(Duration::from_secs(30)),
+        })
+        .expect("air observation completion");
+    staging
+        .slice(..)
+        .get_mapped_range()
+        .expect("air observation bytes")
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|bytes| f32::from_le_bytes(*bytes))
+        .collect()
 }

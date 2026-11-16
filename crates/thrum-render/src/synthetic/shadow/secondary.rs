@@ -53,6 +53,7 @@ impl ShadowPrepared {
         profile: (u32, f32),
         bounds: Option<ShadowBounds>,
     ) -> Result<(), RenderError> {
+        let bounds = bounds.filter(|bounds| world.inputs.fit(Some(*bounds)).is_ok());
         let inputs = FitInputs {
             projection: camera.projection(),
             profile: Some(profile),

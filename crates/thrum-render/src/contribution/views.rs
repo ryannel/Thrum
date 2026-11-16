@@ -7,6 +7,45 @@ use std::sync::{Arc, Mutex};
 mod record;
 pub use record::SecondaryViewRecord;
 
+/// One asked camera, delivered after every contribution's ordinary upload.
+/// The index is stable until the scene surface is replaced. Producers use
+/// these exact raster matrices for their own frustum, clip and size tests.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SecondaryViewFrame {
+    /// Index of the matching [`SecondarySceneSurface`].
+    pub index: usize,
+    /// This frame's camera, viewport, effective clip and least size.
+    pub record: SecondaryViewRecord,
+    /// Requested finite Sun cascade count, from zero to two.
+    pub shadow_count: u32,
+    /// Requested cascade receiver reach in world metres.
+    pub shadow_reach: f32,
+}
+
+/// Pipeline inputs for an opted-in opaque producer. This lends no slot
+/// textures: only the contribution that declares a slot receives its handle.
+#[derive(Clone)]
+pub struct SecondarySceneSurface<'a> {
+    /// Stable index used by upload and draw callbacks.
+    pub index: usize,
+    /// The scene's shading, with the view fragment entries and clipping.
+    pub shader_source: &'a str,
+    /// View-local camera, shadow and reconstruction inputs at group 0.
+    pub view_layout: &'a wgpu::BindGroupLayout,
+    /// View-local light clusters and aerial product at group 1.
+    pub light_layout: &'a wgpu::BindGroupLayout,
+    /// Shared scene materials at group 2.
+    pub material_layout: &'a wgpu::BindGroupLayout,
+    /// The entry that calls the scene's shading and writes opaque coverage.
+    pub fragment_entry: &'static str,
+    /// Single scene-encoded colour attachment, with coverage in alpha.
+    pub colour_format: wgpu::TextureFormat,
+    /// Reverse-Z depth attachment, cleared to zero and compared with Greater.
+    pub depth_format: wgpu::TextureFormat,
+    /// This view's Sun caster pipeline inputs, if Sun shadows were prepared.
+    pub shadow: Option<super::SceneShadowSurface<'a>>,
+}
+
 /// A declared slot lent only to its owning contribution. Physical attachments
 /// are allocated at preparation; asking changes no pipeline or resource.
 #[derive(Clone)]

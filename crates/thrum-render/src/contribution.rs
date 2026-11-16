@@ -61,8 +61,8 @@ pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
 pub use state::{EffectState, EffectStep, EffectTime, HistoryBinding};
 pub use views::{
-    SecondaryView, SecondaryViewError, SecondaryViewRecord, SecondaryViewRequest,
-    SecondaryViewSlot, ViewAir, ViewClipPlane,
+    SecondarySceneSurface, SecondaryView, SecondaryViewError, SecondaryViewFrame,
+    SecondaryViewRecord, SecondaryViewRequest, SecondaryViewSlot, ViewAir, ViewClipPlane,
 };
 
 /// The scene forward shader's material hook point: the fragment's one read of its material
@@ -118,6 +118,9 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 /// Read-only description of a prepared scene's forward pass.
 #[derive(Clone)]
 pub struct SceneSurface<'a> {
+    /// Prepared pipeline surfaces for all slots, lent only to a contribution
+    /// that opts in through [`SceneContribution::secondary_views_enabled`].
+    pub secondary_surfaces: Vec<SecondarySceneSurface<'a>>,
     /// Only this contribution's declared slots, in declaration order. Clone a handle
     /// in `rebuild`, ask it in `encode_upload`, and bind its textures and record in
     /// the same frame's own passes. A handle from a replaced surface is obsolete.
@@ -264,6 +267,27 @@ pub struct ContributionPasses {
 
 /// An engine module drawing into the prepared scene. See the module documentation.
 pub trait SceneContribution: wgpu::WasmNotSend {
+    /// Opt opaque geometry into secondary views. The default receives no
+    /// pipeline surfaces and records no extra upload, caster or opaque draw.
+    fn secondary_views_enabled(&self) -> bool {
+        false
+    }
+    /// Camera inputs after all ordinary uploads have asked for their slots.
+    /// Stage per-view culling here; run it in the existing contribution compute
+    /// callback. The list is empty when every slot is idle.
+    fn encode_secondary_upload(
+        &mut self,
+        _encoder: &mut wgpu::CommandEncoder,
+        _frame: &ContributionFrame,
+        _views: &[SecondaryViewFrame],
+    ) {
+    }
+    /// Draw opaque geometry with the view's groups 0 and 1 already bound.
+    /// Build pipelines from the corresponding prepared secondary surface.
+    fn draw_secondary(&self, _index: usize, _pass: &mut wgpu::RenderPass<'_>) {}
+    /// Draw this view's Sun casters with its caster view at group 0 and the
+    /// scene's instance/history group 1 bound. Only opted-in producers run.
+    fn draw_secondary_shadow(&self, _index: usize, _pass: &mut wgpu::RenderPass<'_>) {}
     /// Fixed slot declarations for this contribution. These are admitted and
     /// prepared before `rebuild`; their handles are on `SceneSurface`.
     /// Returning no slots retains the original shaders, resources and graph.

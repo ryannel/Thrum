@@ -141,6 +141,7 @@ impl PreparedSynthetic {
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
+            secondary_surfaces: Vec::new(),
             secondary_views: &self.secondary_handles,
             sun_optical_depth: self.cloud.is_some(),
             cloud: self.cloud.as_ref(),
@@ -166,6 +167,23 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(super::shadow::ShadowPrepared::surface),
         }
+    }
+
+    pub(crate) fn scene_surface_with_views<'a>(
+        &'a self,
+        queue: &'a wgpu::Queue,
+        enabled: bool,
+    ) -> SceneSurface<'a> {
+        let mut surface = self.scene_surface(queue);
+        if enabled {
+            surface.secondary_surfaces = self
+                .secondary
+                .iter()
+                .enumerate()
+                .map(|(index, slot)| slot.surface(index, self))
+                .collect();
+        }
+        surface
     }
 
     /// Camera facts of the view the next encode draws.

@@ -22,6 +22,37 @@ impl SceneContributions {
 }
 
 impl SceneContribution for SceneContributions {
+    fn secondary_views_enabled(&self) -> bool {
+        self.entries
+            .iter()
+            .any(|entry| entry.secondary_views_enabled())
+    }
+    fn encode_secondary_upload(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        frame: &ContributionFrame,
+        views: &[super::SecondaryViewFrame],
+    ) {
+        for entry in &mut self.entries {
+            if entry.secondary_views_enabled() {
+                entry.encode_secondary_upload(encoder, frame, views);
+            }
+        }
+    }
+    fn draw_secondary(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+        for entry in &self.entries {
+            if entry.secondary_views_enabled() {
+                entry.draw_secondary(index, pass);
+            }
+        }
+    }
+    fn draw_secondary_shadow(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+        for entry in &self.entries {
+            if entry.secondary_views_enabled() {
+                entry.draw_secondary_shadow(index, pass);
+            }
+        }
+    }
     fn secondary_view_slots(&self) -> Vec<super::SecondaryViewSlot> {
         self.entries
             .iter()
@@ -180,6 +211,9 @@ impl SceneContribution for SceneContributions {
         for entry in &mut self.entries {
             let end = first + entry.secondary_view_slots().len();
             let mut member = surface.clone();
+            if !entry.secondary_views_enabled() {
+                member.secondary_surfaces.clear();
+            }
             member.secondary_views = surface
                 .secondary_views
                 .get(first..end)

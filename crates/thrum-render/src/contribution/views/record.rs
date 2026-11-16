@@ -3,7 +3,7 @@
 /// Column-major matrices and world-space clipping for a view of this frame.
 /// This is not a presented-frame contract and carries no motion or history.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Clone, Copy, Debug, Default, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct SecondaryViewRecord {
     /// Raster transform, with the presenting frame's jitter at this view's extent.
     pub view_proj: [[f32; 4]; 4],

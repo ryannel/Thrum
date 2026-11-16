@@ -68,6 +68,7 @@ pub(super) struct SecondaryPrepared {
     aux: wgpu::Buffer,
     layout: wgpu::BindGroupLayout,
     pipelines: [wgpu::RenderPipeline; 3],
+    source: String,
     key: PipelineKey,
     lighting: lighting::Lighting,
     aerial: Option<crate::atmosphere::SecondaryAerial>,
@@ -290,7 +291,7 @@ impl SecondaryPrepared {
         ));
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
+            source: wgpu::ShaderSource::Wgsl(source.as_str().into()),
         });
         let pipelines = [
             super::buckets::PipelineClass::Ordinary,
@@ -376,6 +377,7 @@ impl SecondaryPrepared {
             aux: buffer("secondary raster auxiliary", super::AUX_BYTES as u64),
             layout,
             pipelines,
+            source,
             key: PipelineKey {
                 role: ROLE_BASE + index * STAGES,
                 ..prepared.key
@@ -569,7 +571,12 @@ impl SecondaryPrepared {
         Ok((Resources { colour, depth, sun }, reads))
     }
 
-    fn upload(&self, request: &SecondaryViewRequest, view: &SyntheticView, exposure: f32) {
+    fn upload(
+        &self,
+        request: &SecondaryViewRequest,
+        view: &SyntheticView,
+        exposure: f32,
+    ) -> SecondaryViewRecord {
         let raster = view.raster_projection();
         let unjittered = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
         let [x, y, z] = view.camera_position();
@@ -604,10 +611,32 @@ impl SecondaryPrepared {
         );
         self.queue
             .write_buffer(&self.handle.record, 0, bytemuck::bytes_of(&record));
+        record
     }
 }
 
 impl SecondaryPrepared {
+    pub(super) fn surface<'a>(
+        &'a self,
+        index: usize,
+        prepared: &'a PreparedSynthetic,
+    ) -> crate::contribution::SecondarySceneSurface<'a> {
+        crate::contribution::SecondarySceneSurface {
+            index,
+            shader_source: &self.source,
+            view_layout: &self.layout,
+            light_layout: &prepared.surface.light_layout,
+            material_layout: &prepared.surface.material_layout,
+            fragment_entry: if self.sun.is_some() {
+                "secondary_shadowed_fragment"
+            } else {
+                "secondary_fragment"
+            },
+            colour_format: SCENE_FORMAT,
+            depth_format: DEPTH_FORMAT,
+            shadow: self.sun.as_ref().map(|sun| sun.prepared.surface()),
+        }
+    }
     pub(super) fn pass_count(&self) -> u32 {
         1 + u32::from(self.lighting.gpu)
             + u32::from(self.aerial.is_some())
@@ -631,6 +660,30 @@ impl SecondaryPrepared {
     }
 }
 
+impl PreparedSynthetic {
+    pub(super) fn upload_secondary_views(
+        &self,
+    ) -> ([crate::contribution::SecondaryViewFrame; 4], usize) {
+        let mut frames = [crate::contribution::SecondaryViewFrame::default(); 4];
+        let mut count = 0;
+        for (index, slot) in self.secondary.iter().enumerate() {
+            let Some(request) = slot.handle.asked() else {
+                continue;
+            };
+            let camera = SecondaryPrepared::camera(self, &request);
+            let record = slot.upload(&request, &camera, f32::from_bits(self.exposure_bits));
+            frames[count] = crate::contribution::SecondaryViewFrame {
+                index,
+                record,
+                shadow_count: request.cascades,
+                shadow_reach: request.shadow_reach,
+            };
+            count += 1;
+        }
+        (frames, count)
+    }
+}
+
 impl SceneContext<'_> {
     pub(super) fn secondary_stage(
         &mut self,
@@ -643,11 +696,9 @@ impl SceneContext<'_> {
             Stage::Visibility => {
                 let prepared = self.prepared;
                 let slot = &prepared.secondary[index];
-                let Some(request) = slot.handle.asked() else {
+                let Some(_) = slot.handle.asked() else {
                     return Ok(());
                 };
-                let view = SecondaryPrepared::camera(prepared, &request);
-                slot.upload(&request, &view, f32::from_bits(prepared.exposure_bits));
                 let (culling, target) = slot
                     .culling
                     .as_ref()
@@ -745,10 +796,11 @@ impl SceneContext<'_> {
                     .ok_or(RenderError::GraphPassMismatch)?,
                 &request.camera,
                 (request.cascades, request.shadow_reach),
-                None,
+                self.contribution
+                    .as_deref()
+                    .and_then(crate::contribution::SceneContribution::shadow_bounds),
             )?;
         }
-        slot.upload(&request, &view, f32::from_bits(prepared.exposure_bits));
         let ids = &self.target.ids.secondary[index];
         let mut pass = compiled
             .begin_render(
@@ -811,6 +863,19 @@ impl SceneContext<'_> {
                     0..prepared.instance_upload.active_count(),
                 );
             }
+        }
+        if let Some(contribution) = self
+            .contribution
+            .as_deref()
+            .filter(|entry| entry.secondary_views_enabled())
+        {
+            let offsets: &[u32] = if prepared.bucket_route.is_some() {
+                &[0, 0]
+            } else {
+                &[0]
+            };
+            pass.set_bind_group(0, &self.target.secondary[index], offsets);
+            contribution.draw_secondary(index, &mut pass);
         }
         Ok(())
     }

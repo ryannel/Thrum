@@ -9,7 +9,7 @@ use crate::synthetic::shadow;
 pub(super) const PASS: &str = "secondary view Sun cascade";
 pub(super) struct Sun {
     pub(super) prepared: shadow::ShadowPrepared,
-    pub(super) target: shadow::ShadowTarget,
+    pub(super) target: shadow::ShadowTarget<2>,
     texture: wgpu::Texture,
 }
 
@@ -20,7 +20,7 @@ impl Sun {
             size: wgpu::Extent3d {
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                depth_or_array_layers: shadow::LAYERS,
+                depth_or_array_layers: 2,
             },
             mip_level_count: 1,
             sample_count: 1,
@@ -51,7 +51,7 @@ impl Sun {
                 dimension: crate::graph::TextureKind::D2,
                 width: shadow::SIZE,
                 height: shadow::SIZE,
-                layers: shadow::LAYERS,
+                layers: 2,
                 mips: 1,
                 samples: 1,
                 format: shadow::FORMAT,
@@ -138,7 +138,9 @@ impl SceneContext<'_> {
             world,
             &request.camera,
             (request.cascades, request.shadow_reach),
-            None,
+            self.contribution
+                .as_deref()
+                .and_then(crate::contribution::SceneContribution::shadow_bounds),
         )?;
         let arena = prepared
             .mesh_arena
@@ -175,7 +177,10 @@ impl SceneContext<'_> {
                 .as_ref()
                 .ok_or(RenderError::GraphPassMismatch)?,
             self.timings.as_deref_mut(),
-            None,
+            self.contribution
+                .as_deref()
+                .filter(|entry| entry.secondary_views_enabled())
+                .map(|entry| shadow::CasterContribution::Secondary(entry, index)),
         )
     }
 }

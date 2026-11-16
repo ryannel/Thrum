@@ -468,7 +468,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             self.prepared.restore_secondary(previous_views);
             return Err(error.to_string());
         }
-        if let Err(error) = contribution.rebuild(&self.prepared.scene_surface(&self.queue)) {
+        if let Err(error) = contribution.rebuild(
+            &self
+                .prepared
+                .scene_surface_with_views(&self.queue, contribution.secondary_views_enabled()),
+        ) {
             self.prepared.restore_secondary(previous_views);
             return Err(error);
         }
@@ -510,7 +514,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     &self.scene.local_lights,
                 )
                 .map_err(|error| error.to_string())?;
-            contribution.rebuild(&self.prepared.scene_surface(&self.queue))?;
+            contribution.rebuild(
+                &self
+                    .prepared
+                    .scene_surface_with_views(&self.queue, contribution.secondary_views_enabled()),
+            )?;
             let graph = contribution.effect_graph();
             graph.validate()?;
             let mut passes = contribution.passes();
