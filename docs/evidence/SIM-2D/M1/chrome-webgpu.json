@@ -1,14 +1,14 @@
 {
   "action": "run",
   "target": "chrome-webgpu",
-  "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+  "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
   "dirty": false,
-  "utc": "2026-11-15T20:05:56.001431+00:00",
+  "utc": "2026-11-16T02:12:48.979769+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    16.04833984375,
-    10.916015625,
-    8.03466796875
+    22.21533203125,
+    21.0302734375,
+    16.2783203125
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "rows": [
@@ -1637,7 +1637,7 @@
       "wire": true
     }
   ],
-  "artifact_sha256": "f7d68ffe7d09306a085d99d0b60d9acd508e280dd05daa3a3457d25c211f1659",
+  "artifact_sha256": "78e43615509e3660e24267a8e177449b8129b013820262e9a7580d3f450bdcc6",
   "simulator": null,
   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
   "profile_vectors": "pass"

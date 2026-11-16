@@ -1,14 +1,14 @@
 {
   "action": "run",
   "target": "ios-sim",
-  "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+  "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
   "dirty": false,
-  "utc": "2026-11-15T20:05:56.649874+00:00",
+  "utc": "2026-11-16T02:19:04.826841+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    16.04833984375,
-    10.916015625,
-    8.03466796875
+    12.400390625,
+    17.46435546875,
+    16.5439453125
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "rows": [
@@ -1637,7 +1637,7 @@
       "wire": true
     }
   ],
-  "artifact_sha256": "399e02e13992cc5d90dc667d8127210a2195ef61f233c52ebf3eb2750d049ec3",
+  "artifact_sha256": "7322a3f178dd3af0b9c1b4088bebed1817eaad5d4173b286a26a2d3747d0ec31",
   "simulator": "47494973-E92C-4194-9DE7-3C557951B608",
   "user_agent": null,
   "profile_vectors": "pass"

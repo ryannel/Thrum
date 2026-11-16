@@ -1,71 +1,107 @@
 {
   "action": "measure",
   "target": "mac-metal",
-  "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+  "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
   "dirty": false,
-  "utc": "2026-11-15T20:05:41.288437+00:00",
+  "utc": "2026-11-16T02:05:24.018528+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    14.57373046875,
-    10.39501953125,
-    7.80419921875
+    17.7578125,
+    10.55224609375,
+    10.380859375
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "runs": [
     {
       "repeat": 1,
       "load": [
-        10.41552734375,
-        14.46240234375,
-        11.4833984375
+        22.21533203125,
+        21.0302734375,
+        16.2783203125
       ],
       "build": "release",
       "rows": [
         {
           "bodies": 2000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.255375,
-          "index_median_ms": 0.028666999999999998,
+          "digest_median_ms": 0.23441700000000001,
+          "index_median_ms": 0.026958,
           "neighbours_per_tick": 29596.382183908045,
-          "replay_eight_ms": 5.984083,
-          "rewind_eight_ms": 0.17325000000000002,
+          "replay_eight_ms": 5.767917,
+          "rewind_eight_ms": 0.106625,
           "samples": 3480,
-          "tick_median_ms": 0.619958,
-          "tick_ms_per_neighbour": 2.0947087253694122e-05,
+          "tick_median_ms": 0.54625,
+          "tick_ms_per_neighbour": 1.8456647728282263e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.529083,
+              "ratio": 1.0324467049593353,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         },
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.6895830000000001,
-          "index_median_ms": 0.09112500000000001,
+          "digest_median_ms": 0.628709,
+          "index_median_ms": 0.080125,
           "neighbours_per_tick": 65406.63103448276,
-          "replay_eight_ms": 33.99554199999999,
-          "rewind_eight_ms": 0.288416,
+          "replay_eight_ms": 19.8855,
+          "rewind_eight_ms": 0.278958,
           "samples": 3480,
-          "tick_median_ms": 1.750917,
-          "tick_ms_per_neighbour": 2.67697169584672e-05,
+          "tick_median_ms": 1.310291,
+          "tick_ms_per_neighbour": 2.0032999395874817e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.25725,
+              "ratio": 1.0421881089679859,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": true
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.229167,
-          "index_median_ms": 0.170792,
+          "digest_median_ms": 1.300458,
+          "index_median_ms": 0.176083,
           "neighbours_per_tick": 469267.6465440357,
-          "replay_eight_ms": 68.34287499999999,
-          "rewind_eight_ms": 0.5581670000000001,
+          "replay_eight_ms": 69.845792,
+          "rewind_eight_ms": 0.525375,
           "samples": 35880,
-          "tick_median_ms": 8.188958,
-          "tick_ms_per_neighbour": 1.7450506252259932e-05,
+          "tick_median_ms": 8.54325,
+          "tick_ms_per_neighbour": 1.8205495441498136e-05,
           "ticks": 36000,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.108459,
+              "ratio": 1.0536219027561218,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         }
@@ -74,66 +110,134 @@
     {
       "repeat": 2,
       "load": [
-        8.4287109375,
-        9.82177734375,
-        10.14208984375
+        11.73681640625,
+        17.63623046875,
+        16.58935546875
       ],
       "build": "release",
       "rows": [
         {
           "bodies": 2000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.224834,
-          "index_median_ms": 0.026167,
+          "digest_median_ms": 0.246292,
+          "index_median_ms": 0.028209,
           "neighbours_per_tick": 29596.382183908045,
-          "replay_eight_ms": 5.051375,
-          "rewind_eight_ms": 0.10562500000000001,
+          "replay_eight_ms": 5.563125,
+          "rewind_eight_ms": 0.1005,
           "samples": 3480,
-          "tick_median_ms": 0.529083,
-          "tick_ms_per_neighbour": 1.787661061789064e-05,
+          "tick_median_ms": 0.58675,
+          "tick_ms_per_neighbour": 1.9825058223468406e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.529083,
+              "ratio": 1.1089942409792037,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.54625,
+              "ratio": 1.074141876430206,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         },
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.5645,
-          "index_median_ms": 0.076167,
+          "digest_median_ms": 0.593125,
+          "index_median_ms": 0.079875,
           "neighbours_per_tick": 65406.63103448276,
-          "replay_eight_ms": 16.988542,
-          "rewind_eight_ms": 0.28412499999999996,
+          "replay_eight_ms": 19.155375,
+          "rewind_eight_ms": 0.28029200000000004,
           "samples": 3480,
-          "tick_median_ms": 1.25725,
-          "tick_ms_per_neighbour": 1.9222057154070058e-05,
+          "tick_median_ms": 1.315708,
+          "tick_ms_per_neighbour": 2.011581974473431e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.25725,
+              "ratio": 1.0464967190296282,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.310291,
+              "ratio": 1.0041341961442154,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": true
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.17625,
-          "index_median_ms": 0.167875,
+          "digest_median_ms": 1.1993749999999999,
+          "index_median_ms": 0.168917,
           "neighbours_per_tick": 469267.6465440357,
-          "replay_eight_ms": 68.601916,
-          "rewind_eight_ms": 0.526167,
+          "replay_eight_ms": 67.584,
+          "rewind_eight_ms": 0.517833,
           "samples": 35880,
-          "tick_median_ms": 8.108459,
-          "tick_ms_per_neighbour": 1.7278964487996315e-05,
+          "tick_median_ms": 8.167417,
+          "tick_ms_per_neighbour": 1.7404602810676777e-05,
           "ticks": 36000,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.108459,
+              "ratio": 1.00727117199458,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.54325,
+              "ratio": 0.9560081936031369,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         }
       ]
     }
   ],
-  "artifact_sha256": "66836528fcad2cfeaf487f29e483d8d432ae690635381aeba528a46f80eb618f",
+  "previous_record_sha256": "262dc2e29cea9ae672432723239c8e4915415b0464d064842cab731e765a59a2",
+  "previous_record_commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+  "artifact_sha256": "ee1a32a0188594783c9a58e03e28e75c3e84490cc8ee06f15c1b15845eadf94a",
   "user_agent": null,
   "cross_origin_isolated": null,
-  "source_sha256": "47238a6a2dacffd6f779f2a36d8c9865d0ea20af200d565583a92c0dec0aa4b4",
+  "source_sha256": "8887e51aec7b1db532a0a1af5c64e7c367ec4ea0466336fd82d20cc940fdbc1d",
   "timings_are_baselines": true
 }

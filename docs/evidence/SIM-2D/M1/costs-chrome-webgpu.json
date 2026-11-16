@@ -1,23 +1,23 @@
 {
   "action": "measure",
   "target": "chrome-webgpu",
-  "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+  "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
   "dirty": false,
-  "utc": "2026-11-15T20:05:41.617187+00:00",
+  "utc": "2026-11-16T02:06:25.790200+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    14.57373046875,
-    10.39501953125,
-    7.80419921875
+    24.83154296875,
+    13.9228515625,
+    11.650390625
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "runs": [
     {
       "repeat": 1,
       "load": [
-        12.3251953125,
-        15.3212890625,
-        11.62939453125
+        22.21533203125,
+        21.0302734375,
+        16.2783203125
       ],
       "build": "release",
       "rows": [
@@ -25,47 +25,83 @@
           "bodies": 2000,
           "clock_tripwire": false,
           "digest_median_ms": 0.25999999999999995,
-          "index_median_ms": 0.04,
+          "index_median_ms": 0.034999999999999996,
           "neighbours_per_tick": 29596.382183908045,
-          "replay_eight_ms": 7.055,
-          "rewind_eight_ms": 0.6,
+          "replay_eight_ms": 5.720000000000001,
+          "rewind_eight_ms": 0.49,
           "samples": 3480,
-          "tick_median_ms": 0.625,
-          "tick_ms_per_neighbour": 2.111744591336643e-05,
+          "tick_median_ms": 0.575,
+          "tick_ms_per_neighbour": 1.9428050240297116e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.585,
+              "ratio": 0.9829059829059829,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         },
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.675,
+          "digest_median_ms": 0.65,
           "index_median_ms": 0.1,
           "neighbours_per_tick": 65406.63103448276,
-          "replay_eight_ms": 19.625,
-          "rewind_eight_ms": 1.085,
+          "replay_eight_ms": 18.96,
+          "rewind_eight_ms": 0.9600000000000001,
           "samples": 3480,
-          "tick_median_ms": 1.495,
-          "tick_ms_per_neighbour": 2.2857009700007746e-05,
+          "tick_median_ms": 1.3699999999999999,
+          "tick_ms_per_neighbour": 2.0945888487632513e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.41,
+              "ratio": 0.9716312056737588,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": true
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.34,
-          "index_median_ms": 0.215,
+          "digest_median_ms": 1.385,
+          "index_median_ms": 0.22,
           "neighbours_per_tick": 469267.6465440357,
-          "replay_eight_ms": 72.92999999999999,
-          "rewind_eight_ms": 1.56,
+          "replay_eight_ms": 78.58500000000001,
+          "rewind_eight_ms": 1.82,
           "samples": 35880,
-          "tick_median_ms": 8.735,
-          "tick_ms_per_neighbour": 1.861411086898852e-05,
+          "tick_median_ms": 9.084999999999999,
+          "tick_ms_per_neighbour": 1.9359953891787145e-05,
           "ticks": 36000,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.685,
+              "ratio": 1.0460564191134138,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         }
@@ -74,66 +110,134 @@
     {
       "repeat": 2,
       "load": [
-        9.02685546875,
-        10.00244140625,
-        10.2109375
+        12.1494140625,
+        17.81591796875,
+        16.64599609375
       ],
       "build": "release",
       "rows": [
         {
           "bodies": 2000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.24000000000000002,
-          "index_median_ms": 0.034999999999999996,
+          "digest_median_ms": 0.25,
+          "index_median_ms": 0.04,
           "neighbours_per_tick": 29596.382183908045,
-          "replay_eight_ms": 5.545,
-          "rewind_eight_ms": 0.495,
+          "replay_eight_ms": 5.6899999999999995,
+          "rewind_eight_ms": 0.48500000000000004,
           "samples": 3480,
           "tick_median_ms": 0.585,
           "tick_ms_per_neighbour": 1.9765929374910978e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.585,
+              "ratio": 1.0,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.575,
+              "ratio": 1.0173913043478262,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         },
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.585,
-          "index_median_ms": 0.095,
+          "digest_median_ms": 0.61,
+          "index_median_ms": 0.1,
           "neighbours_per_tick": 65406.63103448276,
-          "replay_eight_ms": 18.535,
-          "rewind_eight_ms": 0.9,
+          "replay_eight_ms": 18.175,
+          "rewind_eight_ms": 0.9650000000000001,
           "samples": 3480,
           "tick_median_ms": 1.41,
           "tick_ms_per_neighbour": 2.1557447275592588e-05,
           "ticks": 3600,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.41,
+              "ratio": 1.0,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.3699999999999999,
+              "ratio": 1.0291970802919708,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": true
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.245,
+          "digest_median_ms": 1.27,
           "index_median_ms": 0.21000000000000002,
           "neighbours_per_tick": 469267.6465440357,
-          "replay_eight_ms": 72.66,
-          "rewind_eight_ms": 4.68,
+          "replay_eight_ms": 72.99,
+          "rewind_eight_ms": 1.5150000000000001,
           "samples": 35880,
-          "tick_median_ms": 8.685,
-          "tick_ms_per_neighbour": 1.8507561865731578e-05,
+          "tick_median_ms": 8.735,
+          "tick_ms_per_neighbour": 1.861411086898852e-05,
           "ticks": 36000,
           "warmup_ticks": 120,
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "371450716ccb28f08664917a9d2a65e2d684ea1a",
+              "repeat": 2,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.685,
+              "ratio": 1.0057570523891766,
+              "tripped": false
+            },
+            {
+              "origin": "current_record",
+              "commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+              "repeat": 1,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 9.084999999999999,
+              "ratio": 0.9614749587231701,
+              "tripped": false
+            }
+          ],
           "quarter_slower_tripwire": false,
           "super_neighbour_scaling_tripwire": false
         }
       ]
     }
   ],
-  "artifact_sha256": "f7d68ffe7d09306a085d99d0b60d9acd508e280dd05daa3a3457d25c211f1659",
+  "previous_record_sha256": "3fe3715cff983d6d36e42c6fa6455087bae60c5d62000e3082e39a5ed1676efa",
+  "previous_record_commit": "6ce949c394687d35b2d2d1e2032500c8f401a372",
+  "artifact_sha256": "78e43615509e3660e24267a8e177449b8129b013820262e9a7580d3f450bdcc6",
   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
   "cross_origin_isolated": true,
-  "source_sha256": "47238a6a2dacffd6f779f2a36d8c9865d0ea20af200d565583a92c0dec0aa4b4",
+  "source_sha256": "8887e51aec7b1db532a0a1af5c64e7c367ec4ea0466336fd82d20cc940fdbc1d",
   "timings_are_baselines": true
 }

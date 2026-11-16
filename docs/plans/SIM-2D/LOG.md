@@ -129,3 +129,12 @@ The Mac and Chrome artifact hashes equal their retained conformance receipts. Th
 simulator binary also matches, at SHA-256 `fd393785c4318ee309ac5f0f5ed0e8dc28fef6570e8a54d54a6db2bc959c3bd1`.
 The 5,000-body neighbour-scaling flags remain explained by the grid table growing fourfold;
 measured index growth is 2.8–2.9 times. Clock and chronological quarter-regression flags are false.
+
+## M1 review fixes, 16 November 2026
+
+Expanded retained profile vectors cover all wire values and rounding boundaries on all three targets.
+Preserved the previous cost record across both repeats; a regression test covers the review's slower row.
+Mac, Chrome and simulator conformance reproduce the unchanged folds and expanded vectors; the sine control diverges.
+Two release cost runs per target at `6ce949c39` pass source and completeness checks, with named prior comparators.
+Clock and quarter-regression flags are false; the 5,000-body scaling flags remain explained by grid growth.
+The six focused Rust checks pass. [Evidence and measured limits](../../evidence/SIM-2D/M1.md).
