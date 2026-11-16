@@ -165,7 +165,7 @@
         "examples/v1-game-ios/src/ios/cooked_view.rs": 3,
         "examples/v1-game-ios/src/ios/culling.rs": 1,
         "examples/v1-game-ios/src/ios/render.rs": 2,
-        "examples/v1-game/src/content.rs": 12,
+        "examples/v1-game/src/content.rs": 2,
         "examples/v1-game/src/host/scene_source.rs": 3,
         "examples/v1-game/src/window.rs": 1,
         "examples/v1-game/src/window/capture.rs": 8

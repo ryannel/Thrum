@@ -50,7 +50,7 @@ pub(super) fn run(
     sun.rebuild(1, 1);
     let mut record = String::new();
     let camera = [37.25, -89.75];
-    for elevation in [60.0_f64, 20.0, 2.0] {
+    for (angle_index, elevation) in [60.0_f64, 20.0, 2.0].into_iter().enumerate() {
         let tick = state.tick() + 1;
         state.step(tick, 1.0 / 60.0).expect("weather tick");
         let time = EffectTime {
@@ -110,44 +110,70 @@ pub(super) fn run(
             });
             for slice in [levels[level].slices / 2, levels[level].slices - 1] {
                 let height = 380.0 - f64::from(slice) * 280.0 / f64::from(levels[level].slices - 1);
-                for y in [32_u32, 64, 128, 192, 224] {
-                    for x in [32_u32, 64, 128, 192, 224] {
-                        let base = [
-                            origin[0] + (f64::from(x) + 0.5) * levels[level].texel,
-                            origin[1] + (f64::from(y) + 0.5) * levels[level].texel,
-                        ];
-                        let point = [
-                            base[0]
-                                + state.travel()[0]
-                                + direction[0] * (height - 100.0) / direction[1],
-                            height,
-                            base[1] + state.travel()[1],
-                        ];
-                        let reference = field.optical_depth(
-                            &Sample {
-                                tick,
-                                origin: point,
-                                direction,
-                                length: (380.0 - height) / direction[1],
-                                steps: 512,
-                            },
-                            state,
-                            Density::Coarse,
-                            |_| None,
-                            0.0,
-                        );
-                        let at = (((slice as usize / 4 * 256 + y as usize) * 256 + x as usize) * 4)
-                            + slice as usize % 4;
-                        let actual = f64::from(pixels[at]);
-                        let error = ((-actual).exp() - (-reference).exp()).abs();
-                        maximum = maximum.max(error);
-                        squared += error * error;
-                        count += 1;
-                        occupied += usize::from(reference > 0.01);
-                    }
+                let mut locations: Vec<_> = [32_u32, 64, 128, 192, 224]
+                    .into_iter()
+                    .flat_map(|y| [32_u32, 64, 128, 192, 224].into_iter().map(move |x| (x, y)))
+                    .collect();
+                let sample_offset = slice as usize / 4 * 256 * 256 * 4 + slice as usize % 4;
+                let mut ranked: Vec<_> = (0..256_u32 * 256).collect();
+                ranked.sort_by(|&a, &b| {
+                    pixels[sample_offset + b as usize * 4]
+                        .total_cmp(&pixels[sample_offset + a as usize * 4])
+                });
+                locations.extend(ranked.iter().take(8).map(|&i| (i % 256, i / 256)));
+                for (x, y) in locations {
+                    let base = [
+                        origin[0] + (f64::from(x) + 0.5) * levels[level].texel,
+                        origin[1] + (f64::from(y) + 0.5) * levels[level].texel,
+                    ];
+                    let point = [
+                        base[0]
+                            + state.travel()[0]
+                            + direction[0] * (height - 100.0) / direction[1],
+                        height,
+                        base[1] + state.travel()[1],
+                    ];
+                    let reference = field.optical_depth(
+                        &Sample {
+                            tick,
+                            origin: point,
+                            direction,
+                            length: (380.0 - height) / direction[1],
+                            steps: 512,
+                        },
+                        state,
+                        Density::Coarse,
+                        |_| None,
+                        0.0,
+                    );
+                    let at = (((slice as usize / 4 * 256 + y as usize) * 256 + x as usize) * 4)
+                        + slice as usize % 4;
+                    let actual = f64::from(pixels[at]);
+                    let error = ((-actual).exp() - (-reference).exp()).abs();
+                    maximum = maximum.max(error);
+                    squared += error * error;
+                    count += 1;
+                    occupied += usize::from(reference > 0.01);
                 }
             }
-            extrema.push((maximum, (squared / f64::from(count)).sqrt(), occupied));
+            assert!(
+                occupied > 0,
+                "occupied reference samples on every level: {level}, {elevation}"
+            );
+            let rms = (squared / f64::from(count)).sqrt();
+            // Measured first, with both recipes, before these margins were asserted.
+            let max_bound =
+                [[0.016, 0.22, 0.14], [0.08, 0.26, 0.35], [0.66, 0.43, 0.91]][angle_index][level];
+            let rms_bound = [
+                [0.0045, 0.05, 0.032],
+                [0.013, 0.076, 0.075],
+                [0.095, 0.09, 0.26],
+            ][angle_index][level];
+            assert!(
+                maximum <= max_bound && rms <= rms_bound,
+                "recorded Sun bound elevation={elevation} level={level}: max={maximum}, rms={rms}"
+            );
+            extrema.push((maximum, rms, occupied));
         }
         let outer = texture(device, queue, &sun.products()[2]);
         let last_layer = outer.len() - 256 * 256 * 4;
@@ -163,7 +189,88 @@ pub(super) fn run(
     }
     std::fs::create_dir_all("../../tmp/clouds-sun").expect("measurement directory");
     std::fs::write("../../tmp/clouds-sun/measurement.txt", record).expect("measurement record");
+    clear_sky(device, queue, site, &mut sun);
     continuity::run(device, queue, site, weather, state);
+}
+
+fn clear_sky(device: &wgpu::Device, queue: &wgpu::Queue, site: &DeviceSite, sun: &mut SunPath) {
+    let (model, types) = super::data();
+    let mut weather = WeatherMap::new(
+        site,
+        7,
+        model,
+        types,
+        thrum_clouds::WeatherProfile {
+            size: 256,
+            texels: vec![20.0, 80.0, 320.0, 1600.0],
+            maximum_age: 0.5,
+        },
+    )
+    .expect("clear map");
+    let mut sun =
+        SunPath::new(site, &weather, sun.profile().clone(), None).expect("clear Sun product");
+    let mut state = State::new(
+        thrum_cloud_model::Parameters {
+            coverage: 0.0,
+            kind: 0.4,
+            wind: [40.0, -13.0],
+            time_scale: 1.0,
+        },
+        5.0,
+        0,
+    )
+    .expect("clear weather");
+    state.step(1, 1.0 / 60.0).expect("clear tick");
+    let time = EffectTime {
+        epoch: 1,
+        timeline: 1,
+        tick: 1,
+        tick_duration: Duration::from_secs_f64(1.0 / 60.0),
+        alpha: 1.0,
+        capture: false,
+    };
+    weather.rebuild(50, 1);
+    sun.rebuild(50, 1);
+    weather
+        .upload(queue, time, &state, [37.25, -89.75])
+        .expect("clear upload");
+    sun.upload(
+        queue,
+        &weather,
+        time,
+        &state,
+        [37.25, -89.75],
+        [0.8, 0.6, 0.0],
+        false,
+    )
+    .expect("clear Sun upload");
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        weather.encode(&mut pass);
+    }
+    for i in 0..5 {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        sun.encode(i, &mut pass);
+    }
+    queue.submit([encoder.finish()]);
+    weather.submitted();
+    sun.submitted();
+    for product in sun.products().iter().chain(std::iter::once(sun.ground())) {
+        assert!(
+            texture(device, queue, product)
+                .iter()
+                .all(|&tau| tau.to_bits() == 0),
+            "clear optical depth is exactly zero"
+        );
+    }
+    let mapping = buffer(device, queue, sun.mapping());
+    let far = f32::from_le_bytes(mapping[48..52].try_into().expect("far word"));
+    assert_eq!(
+        (-far).exp().to_bits(),
+        1.0_f32.to_bits(),
+        "exactly unit clear far factor"
+    );
 }
 
 fn buffer(device: &wgpu::Device, queue: &wgpu::Queue, source: &wgpu::Buffer) -> Vec<u8> {

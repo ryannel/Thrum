@@ -151,6 +151,7 @@ fn main() {
                     },
                     GameSetup {
                         clouds: v1_game::CloudSelection::Off,
+                        cloud_weather: v1_game::clouds::initial_state().parameters(),
                         reconstruction: thrum_render::synthetic::Reconstruction::Off,
                         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,

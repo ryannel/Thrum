@@ -35,10 +35,12 @@ pub use world_thread::WorldControls;
 pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 
 /// Content and camera culling chosen when the host is prepared.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GameSetup {
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
     pub clouds: crate::CloudSelection,
+    /// Initial authoritative weather controls; ignored when clouds are off.
+    pub cloud_weather: thrum_cloud_model::Parameters,
     /// Admit portable temporal reconstruction at native scale.
     pub reconstruction: thrum_render::synthetic::Reconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
@@ -64,6 +66,7 @@ impl Default for GameSetup {
     fn default() -> Self {
         Self {
             clouds: crate::CloudSelection::Off,
+            cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
@@ -514,7 +517,11 @@ impl FrameHost {
         }
         let scene = GameScene::scene(config.render_extent, setup)?;
         let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Shade {
-            WorldDriver::selected(setup.content, setup.route_overlay, true)?
+            WorldDriver::selected(
+                setup.content,
+                setup.route_overlay,
+                Some(setup.cloud_weather),
+            )?
         } else {
             WorldDriver::new(setup.content, setup.route_overlay)?
         }));

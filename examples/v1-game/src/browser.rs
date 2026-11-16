@@ -120,6 +120,8 @@ pub async fn create_browser_game(
     create_game(
         canvas,
         crate::GameSetup {
+            clouds: crate::CloudSelection::Off,
+            cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: if reconstruction.unwrap_or(false) {
                 thrum_render::synthetic::Reconstruction::Taau
             } else {

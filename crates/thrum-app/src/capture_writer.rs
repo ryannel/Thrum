@@ -50,6 +50,17 @@ pub struct ImageWriter<I = SubmittedImage> {
     thread: Option<JoinHandle<()>>,
 }
 
+/// Rejected writer limits or failure to start its worker.
+#[derive(Debug)]
+pub struct WriterError(String);
+
+impl std::fmt::Display for WriterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+impl std::error::Error for WriterError {}
+
 fn write_records<I: AsRef<[u8]>, W: Write>(
     receive: &Receiver<I>,
     recycle: &SyncSender<I>,
@@ -97,7 +108,7 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
         byte_allowance: u64,
         encoding: SpoolEncoding,
     ) -> Result<Self, String> {
-        Self::start_with_frame_limit(output, capacity, byte_allowance, encoding, 1024)
+        Self::start_bounded(output, capacity, byte_allowance, encoding, 1024)
     }
 
     /// Start a longer bounded session without changing its pixel or encoded queues.
@@ -105,6 +116,17 @@ impl<I: AsRef<[u8]> + Send + 'static> ImageWriter<I> {
     /// # Errors
     /// Rejects capacities outside 1..=256, record limits outside 1..=4096, or a thread failure.
     pub fn start_with_frame_limit(
+        output: impl Write + Send + 'static,
+        capacity: usize,
+        byte_allowance: u64,
+        encoding: SpoolEncoding,
+        frame_limit: u64,
+    ) -> Result<Self, WriterError> {
+        Self::start_bounded(output, capacity, byte_allowance, encoding, frame_limit)
+            .map_err(WriterError)
+    }
+
+    fn start_bounded(
         output: impl Write + Send + 'static,
         capacity: usize,
         byte_allowance: u64,

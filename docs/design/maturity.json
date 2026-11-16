@@ -2623,6 +2623,17 @@
     },
     {
       "id": "E1.clouds",
+      "implementation": "partial",
+      "functional_validation": "partial",
+      "experienced_quality": "not_reviewed",
+      "platform_performance": "not_run",
+      "weather_shade_evidence": {
+        "implementation": "CLOUDS M1/M13 CPU model and M2 Weather/Shade contribution; no visible cloud layer",
+        "correctness": "Mac Metal weather, integer cell, Sun-path, continuity and game integration probes; measured approximation limits are recorded separately",
+        "visuals": "M2 valley capture inspection pending",
+        "device": "Apple M3 Max Metal, including WebGPU default limits; no Chrome or physical display cadence qualification",
+        "record": "../evidence/CLOUDS/M2-conformance.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

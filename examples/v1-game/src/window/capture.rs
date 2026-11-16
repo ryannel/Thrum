@@ -36,6 +36,7 @@ pub(super) fn run(output: &Path, scenario: &str) -> Result<(), String> {
             | "reconstruction-pan"
             | "reconstruction-stars"
             | "reconstruction-scrub"
+            | "clouds-drift"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -290,6 +291,7 @@ fn start_writer(
             1024
         },
     )
+    .map_err(|e| e.to_string())
 }
 
 fn warmup<G: Game>(driver: &mut Offscreen<G>) -> Result<(), String> {
@@ -671,7 +673,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
     if mode != "realtime"
         && matches!(
             scenario,
-            "running" | "writer-slow" | "render-stall" | "input-stall" | "route"
+            "running" | "writer-slow" | "render-stall" | "input-stall" | "route" | "clouds-drift"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());

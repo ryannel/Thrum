@@ -27,9 +27,11 @@ pub struct GpuSunMapping {
 ///
 /// The field applies below one horizontal plane. World XZ is projected along
 /// the Sun to that plane, then displaced into the field's declared region.
-/// Samples outside that region, at/above the plane, marked invalid, or below
-/// the minimum Sun elevation receive exactly unit transmission. The provider
-/// owns continuity at these limits and should fade its field to zero there.
+/// In the CPU-fed form, samples outside that region, at/above the plane,
+/// marked invalid, or below the minimum Sun elevation receive exactly unit
+/// transmission. Its provider should fade optical depth to zero at those limits.
+/// GPU-fed fields instead supply their own path direction and continuous border
+/// blend to a far transmittance; they remain sampled below their direction's floor.
 /// Values are stored as filtered fp16 optical depth, independently of exposure.
 #[derive(Clone, Debug)]
 pub struct SunOpticalDepth {

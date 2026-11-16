@@ -40,7 +40,7 @@ fn data() -> (Profile, Vec<Type>) {
 )]
 pub(super) fn conformance(portable: bool, sun_checks: bool) {
     pollster::block_on(async {
-        let (adapter, device, queue) = device(portable).await;
+        let (adapter, device, queue) = device(portable);
         let site = DeviceSite::untracked(device.clone());
         let (profile, types) = data();
         let field = Field::new(7, profile, types.clone()).expect("fixture");
@@ -150,6 +150,12 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
                         for j in 0..6 {
                             largest[j] = largest[j].max((f64::from(actual[j]) - values[j]).abs());
                         }
+                        if actual[4] > 0.0 && column.age > 0.0 {
+                            assert!(
+                                (f64::from(actual[4]) - column.age).abs() < 1e-5,
+                                "nonzero cell age"
+                            );
+                        }
                         let indices = air.map(|p| (p / profile.pitch).floor() as i64);
                         assert_eq!(words(2, 0), indices[0] as u32);
                         assert_eq!(words(2, 1), indices[1] as u32);
@@ -201,6 +207,7 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
             map.submitted();
             assert_eq!(outputs, read(&device, &queue, map.textures()));
         }
+        replacement(&device, &queue, &mut map, &state, portable);
         let record = format!(
             "adapter={:?}; portable={portable}; weather maximum errors [base,top,coverage,type,age,tau]={largest:?}",
             adapter.get_info()
@@ -209,12 +216,12 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
         std::fs::write("../../tmp/clouds-weather/measurement.txt", record)
             .expect("measurement record");
         assert!(
-            largest[0] <= 0.001
-                && largest[1] <= 0.02
-                && largest[2] <= 0.0002
-                && largest[3] <= 0.000_001
-                && largest[4] <= 1.0
-                && largest[5] <= 0.001,
+            largest[0] <= 0.000_01
+                && largest[1] <= 0.0016
+                && largest[2] <= 0.000_009
+                && largest[3] <= 0.000_01
+                && largest[4] <= 0.21
+                && largest[5] <= 3.5e-6,
             "measured weather conformance: {largest:?}"
         );
         if sun_checks {
@@ -225,28 +232,72 @@ pub(super) fn conformance(portable: bool, sun_checks: bool) {
     });
 }
 
-async fn device(portable: bool) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .expect("Metal adapter");
-    assert_eq!(adapter.get_info().backend, wgpu::Backend::Metal);
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_limits: if portable {
-                wgpu::Limits::default()
-            } else {
-                adapter.limits()
-            },
-            ..Default::default()
-        })
-        .await
-        .expect("Metal device");
-    (adapter, device, queue)
+fn filled(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    map: &mut WeatherMap,
+    state: &State,
+) -> Vec<Vec<u32>> {
+    map.rebuild(9, 1);
+    map.upload(
+        queue,
+        EffectTime {
+            epoch: 1,
+            timeline: 1,
+            tick: state.tick(),
+            tick_duration: Duration::from_secs_f64(1.0 / 60.0),
+            alpha: 0.5,
+            capture: false,
+        },
+        state,
+        [37.25, -89.75],
+    )
+    .expect("replacement upload");
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    {
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        map.encode(&mut pass);
+    }
+    queue.submit([encoder.finish()]);
+    map.submitted();
+    read(device, queue, map.textures())
+}
+
+fn replacement(
+    old_device: &wgpu::Device,
+    old_queue: &wgpu::Queue,
+    map: &mut WeatherMap,
+    state: &State,
+    portable: bool,
+) {
+    let expected = filled(old_device, old_queue, map, state);
+    let (_, device, queue) = device(portable);
+    let (profile, types) = data();
+    let mut fresh = WeatherMap::new(
+        &DeviceSite::untracked(device.clone()),
+        7,
+        profile,
+        types,
+        map.profile().clone(),
+    )
+    .expect("replacement resources");
+    assert_eq!(
+        expected,
+        filled(&device, &queue, &mut fresh, state),
+        "fresh physical device preserves every column and integer identity"
+    );
+}
+
+fn device(portable: bool) -> (wgpu::Adapter, wgpu::Device, wgpu::Queue) {
+    let gpu = thrum_test_support::gpu("cloud products", Some(wgpu::Backend::Metal))
+        .expect("mac-metal target");
+    let profile = if portable {
+        thrum_test_support::Profile::Portable
+    } else {
+        thrum_test_support::Profile::Native
+    };
+    let (device, queue) = gpu.device(profile, &thrum_test_support::Restriction::default());
+    (gpu.adapter, device, queue)
 }
 
 fn hash(i: u32, j: u32, g: u32, stream: u32, seed: u32) -> u32 {

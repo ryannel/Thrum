@@ -14,22 +14,13 @@ fn main() -> Result<(), String> {
     reason = "measurement executable emits its one machine-readable record"
 )]
 async fn measure() -> Result<(), String> {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::METAL,
-        ..wgpu::InstanceDescriptor::new_without_display_handle()
-    });
-    let adapter = instance
-        .request_adapter(&wgpu::RequestAdapterOptions::default())
-        .await
-        .map_err(|e| e.to_string())?;
-    let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor {
-            required_features:
-                thrum_render::capabilities::DeviceCapabilities::requested_timing_features(&adapter),
-            ..Default::default()
-        })
-        .await
-        .map_err(|e| e.to_string())?;
+    let gpu = thrum_test_support::gpu("cloud cost", Some(wgpu::Backend::Metal))
+        .ok_or("Metal unavailable")?;
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let adapter = gpu.adapter;
     let caps = thrum_render::capabilities::DeviceCapabilities::capture(&adapter, &device, 1);
     let mut host = FrameHost::new_with_setup(
         &device,

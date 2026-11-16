@@ -3133,6 +3133,7 @@ dependencies = [
  "pollster",
  "thrum-cloud-model",
  "thrum-render",
+ "thrum-test-support",
  "wgpu",
 ]
 
@@ -3541,6 +3542,7 @@ dependencies = [
  "thrum-cook",
  "thrum-core",
  "thrum-render",
+ "thrum-test-support",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

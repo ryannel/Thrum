@@ -128,6 +128,18 @@ pub(crate) fn selected_simulation(
     route_overlay: RouteOverlay,
     clouds: bool,
 ) -> Result<Simulation, String> {
+    weather_simulation(
+        content,
+        route_overlay,
+        clouds.then(|| crate::clouds::initial_state().parameters()),
+    )
+}
+
+pub(crate) fn weather_simulation(
+    content: GameContent,
+    route_overlay: RouteOverlay,
+    clouds: Option<thrum_cloud_model::Parameters>,
+) -> Result<Simulation, String> {
     let overlay = route_overlay != RouteOverlay::Off;
     match (content, overlay) {
         (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay, clouds),
@@ -179,9 +191,9 @@ fn register_peers(sim: &mut Simulation, entity_count: usize) -> Result<(), Strin
     Ok(())
 }
 
-fn field_simulation(clouds: bool) -> Result<Simulation, String> {
+fn field_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simulation, String> {
     let entity_count = crate::field::ENTITY_COUNT;
-    let mut sim = new_simulation(entity_count, clouds)?;
+    let mut sim = new_simulation(entity_count, clouds.is_some())?;
     for index in 0..entity_count {
         let entity = crate::field::entity(index);
         sim.seed(ComponentEntity {
@@ -194,7 +206,7 @@ fn field_simulation(clouds: bool) -> Result<Simulation, String> {
         })
         .map_err(|error| format!("seed field entity {index}: {error:?}"))?;
     }
-    sim.seed_weather()
+    sim.seed_weather(clouds)
         .map_err(|e| format!("weather seed: {e:?}"))?;
     register_peers(&mut sim, entity_count)?;
     Ok(sim)
@@ -206,18 +218,18 @@ fn field_simulation(clouds: bool) -> Result<Simulation, String> {
 ///
 /// Returns fixture setup or seeding failure.
 pub fn simulation_with_count(entity_count: usize) -> Result<Simulation, String> {
-    grid_simulation(entity_count, RouteOverlay::Off, false)
+    grid_simulation(entity_count, RouteOverlay::Off, None)
 }
 
 fn grid_simulation(
     entity_count: usize,
     route_overlay: RouteOverlay,
-    clouds: bool,
+    clouds: Option<thrum_cloud_model::Parameters>,
 ) -> Result<Simulation, String> {
     if entity_count < PEER_COUNT || entity_count > u32::MAX as usize {
         return Err("fixture entity count is outside the physical slot range".into());
     }
-    let mut sim = new_simulation(entity_count, clouds)?;
+    let mut sim = new_simulation(entity_count, clouds.is_some())?;
     let moving_count = entity_count / ENTITY_COUNT * MOVING_COUNT
         + entity_count % ENTITY_COUNT * MOVING_COUNT / ENTITY_COUNT;
     for index in 0..entity_count {
@@ -271,7 +283,7 @@ fn grid_simulation(
         })
         .map_err(|error| format!("seed entity {index}: {error:?}"))?;
     }
-    sim.seed_weather()
+    sim.seed_weather(clouds)
         .map_err(|e| format!("weather seed: {e:?}"))?;
     register_peers(&mut sim, entity_count)?;
     Ok(sim)

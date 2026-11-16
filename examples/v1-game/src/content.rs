@@ -5,6 +5,29 @@ use std::sync::{Arc, Mutex};
 use crate::FrameHost;
 use thrum_asset_gpu::CookedStats;
 
+// This cold launch boundary owns environment interpretation; world construction
+// receives checked typed controls and never reads process settings.
+fn launch_value(name: &str) -> Result<String, std::env::VarError> {
+    std::env::var(name)
+}
+
+fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
+    let number = |name: &str, fallback| match launch_value(name) {
+        Ok(value) => value
+            .parse::<f64>()
+            .map_err(|_| format!("{name} must be a number")),
+        Err(std::env::VarError::NotPresent) => Ok(fallback),
+        Err(error) => Err(error.to_string()),
+    };
+    let parameters = thrum_cloud_model::Parameters {
+        wind: [number("THRUM_CLOUD_WIND", 10.0)?, 0.0],
+        time_scale: number("THRUM_CLOUD_TIME_SCALE", 1.0)?,
+        ..crate::clouds::initial_state().parameters()
+    };
+    thrum_cloud_model::State::new(parameters, 5.0, 0).map_err(|e| e.to_string())?;
+    Ok(parameters)
+}
+
 /// Select the host for `THRUM_SCENE=valley|diagnostic|field` and
 /// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
 /// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
@@ -16,17 +39,17 @@ use thrum_asset_gpu::CookedStats;
 /// # Errors
 /// Refuses an unknown culling mode or route overlay.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
-    let scene = std::env::var("THRUM_SCENE");
+    let scene = launch_value("THRUM_SCENE");
     let content = if scene.as_deref() == Ok("field") {
         crate::GameContent::Field
     } else {
         crate::GameContent::Grid
     };
     let field_meshes = (content == crate::GameContent::Field
-        && std::env::var("THRUM_FIELD_MESHES").as_deref() == Ok("on"))
+        && launch_value("THRUM_FIELD_MESHES").as_deref() == Ok("on"))
         || (scene.as_deref() == Ok("valley")
-            && std::env::var("THRUM_VALLEY_MESHES").as_deref() == Ok("on"));
-    let camera_culling = match std::env::var("THRUM_CULLING").as_deref() {
+            && launch_value("THRUM_VALLEY_MESHES").as_deref() == Ok("on"));
+    let camera_culling = match launch_value("THRUM_CULLING").as_deref() {
         Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
             crate::GameSetup::field_default_culling(field_meshes)
         }
@@ -40,13 +63,19 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Ok("occlusion") => thrum_render::synthetic::CullMode::Occlusion,
         _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
+    let clouds = match launch_value("THRUM_CLOUDS").as_deref() {
+        Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
+        Ok("shade") => crate::CloudSelection::Shade,
+        _ => return Err("THRUM_CLOUDS must be off or shade".to_owned()),
+    };
     Ok(crate::GameSetup {
-        clouds: match std::env::var("THRUM_CLOUDS").as_deref() {
-            Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
-            Ok("shade") => crate::CloudSelection::Shade,
-            _ => return Err("THRUM_CLOUDS must be off or shade".to_owned()),
+        cloud_weather: if clouds == crate::CloudSelection::Shade {
+            cloud_weather()?
+        } else {
+            crate::clouds::initial_state().parameters()
         },
-        reconstruction: match std::env::var("THRUM_RECONSTRUCTION").as_deref() {
+        clouds,
+        reconstruction: match launch_value("THRUM_RECONSTRUCTION").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => {
                 thrum_render::synthetic::Reconstruction::Off
             }
@@ -55,14 +84,14 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             _ => return Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
         },
         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
-        diagnostic_clouds: std::env::var("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
+        diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
         camera_culling,
         valley_stars: scene.as_deref() == Ok("valley")
-            && std::env::var("THRUM_STARS").as_deref() != Ok("off"),
+            && launch_value("THRUM_STARS").as_deref() != Ok("off"),
         route_overlay: match (
             scene.as_deref(),
-            std::env::var("THRUM_ROUTE_OVERLAY").as_deref(),
+            launch_value("THRUM_ROUTE_OVERLAY").as_deref(),
         ) {
             (_, Err(std::env::VarError::NotPresent) | Ok("off")) => crate::RouteOverlay::Off,
             (Ok("valley"), Ok("proof")) => crate::RouteOverlay::Proof,
@@ -113,7 +142,7 @@ fn attach_selected(
         thrum_asset_gpu::CookedAssets,
     ) -> Result<thrum_asset_gpu::CookedAssets, String>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
-    let scene = std::env::var("THRUM_SCENE");
+    let scene = launch_value("THRUM_SCENE");
     if scene.as_deref() == Ok("field") {
         return Ok(None);
     }
@@ -132,7 +161,7 @@ fn attach_selected(
         Err(std::env::VarError::NotPresent) | Ok("diagnostic") => (
             None,
             thrum_asset_gpu::CookedAssets::new(
-                if std::env::var("THRUM_COOKED_DRAW_DIAGNOSTIC").as_deref() == Ok("1") {
+                if launch_value("THRUM_COOKED_DRAW_DIAGNOSTIC").as_deref() == Ok("1") {
                     crate::cooked::qualification_config(std::path::PathBuf::from(store))
                 } else {
                     crate::cooked::cooked_config(std::path::PathBuf::from(store))
@@ -144,7 +173,7 @@ fn attach_selected(
     };
     let assets = configure(assets)?;
     let stats = assets.stats();
-    if let Ok(selection) = std::env::var("THRUM_EFFECT_GRAPH") {
+    if let Ok(selection) = launch_value("THRUM_EFFECT_GRAPH") {
         if !matches!(
             selection.as_str(),
             "1" | "slab" | "depth-only" | "simulation-only" | "slab-empty" | "depth-only-empty"
@@ -183,8 +212,7 @@ fn attach_selected(
     } else {
         host.set_scene_contribution(Box::new(assets))?;
     }
-    let camera = if let (Some(camera), Ok(height)) = (camera, std::env::var("THRUM_CAMERA_HEIGHT"))
-    {
+    let camera = if let (Some(camera), Ok(height)) = (camera, launch_value("THRUM_CAMERA_HEIGHT")) {
         let mut eye = camera.eye();
         eye[1] = height
             .parse()

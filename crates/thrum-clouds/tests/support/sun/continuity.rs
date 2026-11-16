@@ -135,6 +135,35 @@ pub(super) fn run(
         border_records.push((region, f, c));
     }
     let far = (-f64::from(floor_map[12])).exp();
+    let width = f64::from(floor_map[2] - floor_map[0]);
+    let edge_trial = |abrupt| {
+        (0..=64)
+            .map(|i| {
+                let x = f64::from(floor_map[0]) + width * (-0.001 + 0.002 * f64::from(i) / 64.0);
+                (0..17)
+                    .map(|j| {
+                        factor_with_edge(
+                            &floor_map,
+                            &floor_pixels,
+                            [
+                                x - projection,
+                                0.0,
+                                f64::from(floor_map[1]) + width * (f64::from(j) + 0.5) / 17.0,
+                            ],
+                            abrupt,
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>()
+    };
+    let gradual = edge_trial(false);
+    let switched = edge_trial(true);
+    assert!(largest(&gradual, 1) <= 0.7 * largest(&gradual, 2) + 0.0001);
+    assert!(
+        largest(&switched, 1) > 0.7 * largest(&switched, 2) + 0.0001,
+        "an abrupt outside/far switch must fail at gap receivers"
+    );
     assert!((factor(&floor_map, &floor_pixels, [-1e9, 0.0, -1e9]) - far).abs() < 1e-12);
     // A constant floor replacement cannot match both receivers. An abrupt edge
     // replacement would keep its jump at both step sizes instead of halving it.
@@ -202,6 +231,10 @@ fn smooth(x: f64) -> f64 {
 }
 
 fn factor(m: &[f32; 24], pixels: &[f32], point: [f64; 3]) -> f64 {
+    factor_with_edge(m, pixels, point, false)
+}
+
+fn factor_with_edge(m: &[f32; 24], pixels: &[f32], point: [f64; 3], abrupt: bool) -> f64 {
     if point[1] >= f64::from(m[4]) {
         return 1.0;
     }
@@ -234,7 +267,11 @@ fn factor(m: &[f32; 24], pixels: &[f32], point: [f64; 3]) -> f64 {
     mix(
         (-f64::from(m[12])).exp(),
         (-tau).exp(),
-        smooth(edge(outer) / f64::from(m[11])),
+        if abrupt {
+            f64::from(u8::from(edge(outer) > 0.0))
+        } else {
+            smooth(edge(outer) / f64::from(m[11]))
+        },
     )
 }
 

@@ -73,9 +73,15 @@ fn path(@builtin(global_invocation_id) id:vec3<u32>) {
     var tau=0.0;var packed=vec4<f32>(0.0);
     for(var slice=0u;slice<p.rows.z;slice++) {
         if slice>0u {
-            let height=p.physical.y-(f32(slice)-0.5)*dh;
-            let offset=p.direction.xz*(height-p.physical.x)/p.direction.y;
-            tau+=density(vec3<f32>(xy.x+offset.x,height,xy.y+offset.y))*dh/p.direction.y;
+            // Stored height nodes are not integration steps. At low Sun their
+            // ray intervals are long enough to skip whole shape-noise lobes.
+            let steps=u32(ceil(dh/(p.direction.y*40.0)));
+            let sub=dh/f32(steps);
+            for(var j=0u;j<steps;j++) {
+                let height=p.physical.y-(f32(slice-1u)*dh+(f32(j)+0.5)*sub);
+                let offset=p.direction.xz*(height-p.physical.x)/p.direction.y;
+                tau+=density(vec3<f32>(xy.x+offset.x,height,xy.y+offset.y))*sub/p.direction.y;
+            }
         }
         packed[slice%4u]=min(65504.0,tau);
         if slice%4u==3u {textureStore(product,vec2<i32>(i32(id.x),i32(row)),i32(slice/4u),packed);}
@@ -96,13 +102,13 @@ fn ground(@builtin(global_invocation_id) id:vec3<u32>) {
     if level==0u {tau=ground_tau(near_path,point,0u);}else if level==1u {tau=ground_tau(middle_path,point,1u);}else{tau=ground_tau(far_path,point,2u);}
     textureStore(ground_field,vec2<i32>(id.xy),vec4<f32>(tau,0.0,0.0,0.0));
 }
-var<workgroup> sums:array<f32,64>;
-@compute @workgroup_size(64)
+var<workgroup> sums:array<f32,256>;
+@compute @workgroup_size(256)
 fn far(@builtin(local_invocation_index) lane:u32) {
     let size=textureDimensions(far_path);let layers=textureNumLayers(far_path);
     var sum=0.0;
-    for(var i=lane;i<size.x*size.y;i+=64u) {sum+=exp(-textureLoad(far_path,vec2<i32>(i32(i%size.x),i32(i/size.x)),i32(layers)-1,0).w);}
+    for(var i=lane;i<size.x*size.y;i+=256u) {sum+=exp(-textureLoad(far_path,vec2<i32>(i32(i%size.x),i32(i/size.x)),i32(layers)-1,0).w);}
     sums[lane]=sum;workgroupBarrier();
-    for(var step=32u;step>0u;step/=2u) {if lane<step {sums[lane]+=sums[lane+step];}workgroupBarrier();}
+    for(var step=128u;step>0u;step/=2u) {if lane<step {sums[lane]+=sums[lane+step];}workgroupBarrier();}
     if lane==0u {mapping.far_value.x=-log(max(1e-30,sums[0]/f32(size.x*size.y)));}
 }

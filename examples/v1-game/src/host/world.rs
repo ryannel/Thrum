@@ -277,19 +277,19 @@ impl WorldDriver {
         content: GameContent,
         route_overlay: scene::RouteOverlay,
     ) -> Result<Self, String> {
-        Self::selected(content, route_overlay, false)
+        Self::selected(content, route_overlay, None)
     }
 
     pub(super) fn selected(
         content: GameContent,
         route_overlay: scene::RouteOverlay,
-        clouds: bool,
+        clouds: Option<thrum_cloud_model::Parameters>,
     ) -> Result<Self, String> {
         let game = GameWorld {
             content,
             route_overlay,
-            sim: if clouds {
-                scene::selected_simulation(content, route_overlay, true)?
+            sim: if clouds.is_some() {
+                scene::weather_simulation(content, route_overlay, clouds)?
             } else {
                 scene::simulation(content, route_overlay)?
             },

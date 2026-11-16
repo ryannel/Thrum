@@ -1,0 +1,459 @@
+{
+  "commit": "d36d89513e431c936ae67beffcf17f05b8a6318f",
+  "dirty": true,
+  "load": {
+    "before": [
+      4.3896484375,
+      5.8525390625,
+      7.78369140625
+    ],
+    "after": [
+      6.6796875,
+      6.2900390625,
+      7.8759765625
+    ]
+  },
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "build": "release, capture off, named GPU passes",
+  "runs": [
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "frames": 80,
+      "maximum_sun_refill_ns": 0.0,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 91882.775,
+        "atmosphere diffuse irradiance": 248143.725,
+        "atmosphere reflection mip 0": 44129.675,
+        "atmosphere reflection mip 1": 152989.575,
+        "atmosphere reflection mip 2": 192201.05,
+        "atmosphere reflection mip 3": 96291.2,
+        "atmosphere reflection mip 4": 88793.2375,
+        "atmosphere reflection mip 5": 85794.225,
+        "atmosphere reflection mip 6": 79145.3125,
+        "atmosphere sky view": 66485.9,
+        "camera visibility": 21883.3,
+        "contribution compute": 14054.1625,
+        "synthetic Sun air shadow heights": 231155.3,
+        "synthetic Sun horizon heights": 66658.8125,
+        "synthetic Sun shadow far": 52005.75,
+        "synthetic Sun shadow near": 54508.8375,
+        "synthetic cluster build": 37456.25,
+        "synthetic exposure resolve": 4458.8625,
+        "synthetic forward opaque": 2074217.225,
+        "synthetic tone encode": 2139363.55,
+        "synthetic transform history": 31028.125,
+        "temporal exposure texture": 516219.275
+      },
+      "resources": [],
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 40, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 43, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 40, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 43, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 52, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 40, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 43, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 40, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 43, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 52, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 40, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 43, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 40, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 43, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 52, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 40, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 43, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 24, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 31, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 40, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 43, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 51, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 52, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        0.0,
+        244.92266845703125,
+        16.0
+      ],
+      "whole_frame_gpu_ns": 6388866.125,
+      "selection": "off",
+      "weather_speed": 1
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "frames": 80,
+      "maximum_sun_refill_ns": 2230125.0,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 289332.3,
+        "atmosphere diffuse irradiance": 255573.4625,
+        "atmosphere reflection mip 0": 30390.575,
+        "atmosphere reflection mip 1": 145215.1375,
+        "atmosphere reflection mip 2": 217881.2875,
+        "atmosphere reflection mip 3": 118584.9375,
+        "atmosphere reflection mip 4": 128557.8375,
+        "atmosphere reflection mip 5": 162046.45,
+        "atmosphere reflection mip 6": 79443.175,
+        "atmosphere sky view": 66085.3875,
+        "camera visibility": 275953.0375,
+        "contribution compute": 11264.9875,
+        "effect 0: effect 1: cloud weather map": 46305.225,
+        "effect 1: effect 1: cloud Sun path near": 521343.2375,
+        "effect 2: effect 1: cloud Sun path middle": 510384.4125,
+        "effect 3: effect 1: cloud Sun path far": 319575.0125,
+        "effect 4: effect 1: cloud ground field": 44378.6375,
+        "effect 5: effect 1: cloud far transmittance": 307594.7875,
+        "synthetic Sun air shadow heights": 397915.5,
+        "synthetic Sun horizon heights": 62977.65,
+        "synthetic Sun shadow far": 49414.05,
+        "synthetic Sun shadow near": 49572.9625,
+        "synthetic cluster build": 4643.7125,
+        "synthetic exposure resolve": 3758.8375,
+        "synthetic forward opaque": 2273144.7625,
+        "synthetic tone encode": 2117599.45,
+        "synthetic transform history": 323609.425,
+        "temporal exposure texture": 2053327.6625
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          6291456
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          4194304
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          2097152
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud buffer 0",
+          112
+        ],
+        [
+          "cloud buffer 1",
+          112
+        ],
+        [
+          "cloud buffer 2",
+          112
+        ],
+        [
+          "cloud buffer 3",
+          112
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          4096
+        ],
+        [
+          "cloud buffer 9",
+          4096
+        ],
+        [
+          "cloud buffer 10",
+          4096
+        ],
+        [
+          "cloud buffer 11",
+          4096
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ]
+      ],
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        0.0,
+        244.92266845703125,
+        16.0
+      ],
+      "whole_frame_gpu_ns": 10865873.9,
+      "selection": "shade",
+      "weather_speed": 1
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "frames": 80,
+      "maximum_sun_refill_ns": 2081376.0,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 343781.7875,
+        "atmosphere diffuse irradiance": 250435.55,
+        "atmosphere reflection mip 0": 197444.8,
+        "atmosphere reflection mip 1": 192302.1375,
+        "atmosphere reflection mip 2": 238028.1125,
+        "atmosphere reflection mip 3": 162256.8375,
+        "atmosphere reflection mip 4": 100923.8875,
+        "atmosphere reflection mip 5": 192285.475,
+        "atmosphere reflection mip 6": 85007.775,
+        "atmosphere sky view": 65772.95,
+        "camera visibility": 283083.85,
+        "contribution compute": 11233.3,
+        "effect 0: effect 1: cloud weather map": 111992.6625,
+        "effect 1: effect 1: cloud Sun path near": 780510.4875,
+        "effect 2: effect 1: cloud Sun path middle": 634211.95,
+        "effect 3: effect 1: cloud Sun path far": 307791.6625,
+        "effect 4: effect 1: cloud ground field": 43862.5375,
+        "effect 5: effect 1: cloud far transmittance": 309531.7625,
+        "synthetic Sun air shadow heights": 429727.65,
+        "synthetic Sun horizon heights": 124154.6625,
+        "synthetic Sun shadow far": 69949.425,
+        "synthetic Sun shadow near": 62854.6375,
+        "synthetic cluster build": 4353.6,
+        "synthetic exposure resolve": 3734.9625,
+        "synthetic forward opaque": 2375909.9375,
+        "synthetic tone encode": 2230818.7375,
+        "synthetic transform history": 694207.2875,
+        "temporal exposure texture": 2203890.6375
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          6291456
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          4194304
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          2097152
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud buffer 0",
+          112
+        ],
+        [
+          "cloud buffer 1",
+          112
+        ],
+        [
+          "cloud buffer 2",
+          112
+        ],
+        [
+          "cloud buffer 3",
+          112
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          4096
+        ],
+        [
+          "cloud buffer 9",
+          4096
+        ],
+        [
+          "cloud buffer 10",
+          4096
+        ],
+        [
+          "cloud buffer 11",
+          4096
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ]
+      ],
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        0.0,
+        244.92266845703125,
+        16.0
+      ],
+      "whole_frame_gpu_ns": 12510059.0625,
+      "selection": "shade",
+      "weather_speed": 8
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "frames": 80,
+      "maximum_sun_refill_ns": 2678792.0,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 110097.4875,
+        "atmosphere diffuse irradiance": 250901.1,
+        "atmosphere reflection mip 0": 93783.3,
+        "atmosphere reflection mip 1": 383922.95,
+        "atmosphere reflection mip 2": 333228.6375,
+        "atmosphere reflection mip 3": 132622.425,
+        "atmosphere reflection mip 4": 179453.1375,
+        "atmosphere reflection mip 5": 216292.7625,
+        "atmosphere reflection mip 6": 90243.2625,
+        "atmosphere sky view": 67080.1875,
+        "camera visibility": 283013.075,
+        "contribution compute": 23762.525,
+        "effect 0: effect 1: cloud weather map": 237546.3125,
+        "effect 1: effect 1: cloud Sun path near": 796786.45,
+        "effect 2: effect 1: cloud Sun path middle": 712080.85,
+        "effect 3: effect 1: cloud Sun path far": 475406.2375,
+        "effect 4: effect 1: cloud ground field": 44615.6125,
+        "effect 5: effect 1: cloud far transmittance": 335586.9875,
+        "synthetic Sun air shadow heights": 568914.0625,
+        "synthetic Sun horizon heights": 97950.525,
+        "synthetic Sun shadow far": 103447.3625,
+        "synthetic Sun shadow near": 89068.7625,
+        "synthetic cluster build": 23691.0875,
+        "synthetic exposure resolve": 3994.2875,
+        "synthetic forward opaque": 2522782.775,
+        "synthetic tone encode": 2410846.45,
+        "synthetic transform history": 365039.5625,
+        "temporal exposure texture": 2292609.4
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          6291456
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          4194304
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          2097152
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud buffer 0",
+          112
+        ],
+        [
+          "cloud buffer 1",
+          112
+        ],
+        [
+          "cloud buffer 2",
+          112
+        ],
+        [
+          "cloud buffer 3",
+          112
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          4096
+        ],
+        [
+          "cloud buffer 9",
+          4096
+        ],
+        [
+          "cloud buffer 10",
+          4096
+        ],
+        [
+          "cloud buffer 11",
+          4096
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ]
+      ],
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 74, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 46, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 62, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 63, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 64, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 65, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 73, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 74, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        0.0,
+        244.92266845703125,
+        16.0
+      ],
+      "whole_frame_gpu_ns": 13244767.575,
+      "selection": "shade",
+      "weather_speed": 60
+    }
+  ],
+  "investigation": "",
+  "estimates": "CLOUDS DESIGN cost account: weather <0.1 ms, Sun 0.1\u20130.2 ms, ground <0.05 ms; profiles and resource bytes recorded separately."
+}

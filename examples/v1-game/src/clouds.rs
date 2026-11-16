@@ -89,30 +89,3 @@ pub fn initial_state() -> State {
     )
     .expect("the game's weather defaults are finite and in range")
 }
-
-/// Checked game launch controls for the selected weather state.
-/// `THRUM_CLOUD_WIND` sets X wind in m/s and `THRUM_CLOUD_TIME_SCALE` sets weather speed.
-/// # Errors
-/// Rejects malformed, nonfinite or out-of-domain launch values.
-pub(crate) fn selected_state() -> Result<State, String> {
-    let initial = initial_state();
-    let number = |name: &str, fallback: f64| -> Result<f64, String> {
-        match std::env::var(name) {
-            Ok(value) => value
-                .parse()
-                .map_err(|_| format!("{name} must be a number")),
-            Err(std::env::VarError::NotPresent) => Ok(fallback),
-            Err(error) => Err(error.to_string()),
-        }
-    };
-    State::new(
-        Parameters {
-            wind: [number("THRUM_CLOUD_WIND", 10.0)?, 0.0],
-            time_scale: number("THRUM_CLOUD_TIME_SCALE", 1.0)?,
-            ..initial.parameters()
-        },
-        5.0,
-        0,
-    )
-    .map_err(|e| e.to_string())
-}

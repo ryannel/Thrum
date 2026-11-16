@@ -58,9 +58,14 @@ impl Permits {
 }
 
 impl Simulation {
-    pub(crate) fn seed_weather(&mut self) -> Result<(), SimError> {
+    pub(crate) fn seed_weather(
+        &mut self,
+        parameters: Option<thrum_cloud_model::Parameters>,
+    ) -> Result<(), SimError> {
         if let Some(permits) = &mut self.rules.weather {
-            let initial = crate::clouds::selected_state().map_err(|_| SimError::InvalidConfig)?;
+            let initial =
+                thrum_cloud_model::State::new(parameters.ok_or(SimError::InvalidConfig)?, 5.0, 0)
+                    .map_err(|_| SimError::InvalidConfig)?;
             let handle = self
                 .runtime
                 .seed(StableId(u128::MAX), |writer| {
