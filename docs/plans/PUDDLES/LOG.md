@@ -90,3 +90,9 @@
   dry flat floor (worst residual 3.7e-13 of the rain) and check every entry, donor and receiver per tick. All
   rain-model tests pass; clippy clean. Suspected: an owed hollow reads its ground as the class's (wetness ignores
   the debt); a planner may want the design to name the debt.
+- 2026-11-16 M2 second review fix (code 4fd75c5e8). Verified: an owing hollow's ground no longer spends water it
+  doesn't hold. Its drying and percolation take only the reading's real share, the debt fades by the rest, and
+  `hollow_ground` never goes below zero. The review's 12 short-shower cases pass through 3 h of drying, ending dry
+  with nothing owed, and so does an owing account under the crown through merges. Its probe gives min_ground 0.
+  Suspected: when an empty puddle uncovers ground, the film it couldn't leave is a debt, not water on that ground;
+  the design's text assumes the puddle has it. A planner may want the design to name the debt.
