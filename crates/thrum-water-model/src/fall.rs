@@ -15,6 +15,9 @@
 use crate::WaterError;
 use thrum_sea_model::LOOP_SECONDS;
 
+/// Halvings of a stored chord in finding where the path meets the water: to 2^-48 of it.
+const CROSSING_STEPS: usize = 48;
+
 /// Gravity, m/s².
 pub const GRAVITY: f64 = 9.81;
 /// Density of water, kg/m³.
@@ -272,51 +275,59 @@ impl FallSegment {
         )
     }
 
-    /// Where the path first meets the water below, if it does. `level` gives the water's level
-    /// at a world point, or none where there is no water; the lip's own water is not asked.
+    /// Where the path first meets the water below, if it does: the first place along the path
+    /// where there is water and the path is at or under its level. `level` gives the water's
+    /// level at a world point, or none where there is no water; the lip's own water is not asked.
+    /// Within the stored chord where that first happens, the place is found by bisection, so a
+    /// path that runs down dry rock into the water meets it at the shoreline, and one that falls
+    /// clear meets it where the chord crosses the level.
     pub fn plunge(
         &self,
         profile: &SheetProfile,
         level: impl Fn([f64; 2]) -> Option<f64>,
     ) -> Option<Plunge> {
-        let above = |p: &PathPoint| level(p.place).map(|l| p.height - l);
-        let mut last: Option<(usize, f64)> = None;
-        for k in 1..self.path.len() {
-            let Some(gap) = above(&self.path[k]) else {
-                last = None;
-                continue;
-            };
-            if gap <= 0.0 {
-                // Between the last point over water and this one, on the chord, where the
-                // height meets the level.
-                let (a, b) = (self.path[k - 1], self.path[k]);
-                let f = match last {
-                    Some((j, g)) if j == k - 1 && g > 0.0 => g / (g - gap),
-                    _ => 1.0,
-                };
-                let lerp = |x: f64, y: f64| x + (y - x) * f;
-                let place = [lerp(a.place[0], b.place[0]), lerp(a.place[1], b.place[1])];
-                let height = lerp(a.height, b.height);
-                let dt = b.time - a.time;
-                let horizontal = (b.place[0] - a.place[0]).hypot(b.place[1] - a.place[1]);
-                let drop = self.path[0].height - height;
-                let distance = lerp(a.distance, b.distance);
-                let sheet = profile.sample(self.discharge, self.launch_speed, drop, distance);
-                let along = if dt > 0.0 { horizontal / dt } else { 0.0 };
-                return Some(Plunge {
-                    segment: self.id,
-                    place,
-                    level: height,
-                    time: lerp(a.time, b.time),
-                    drop,
-                    distance,
-                    sheet,
-                    normal_speed: (sheet.speed * sheet.speed - along * along).max(0.0).sqrt(),
-                });
+        // The level at a point, where the path there is at or under it.
+        let under = |place: [f64; 2], height: f64| level(place).filter(|&l| height <= l);
+        let k = (1..self.path.len())
+            .find(|&k| under(self.path[k].place, self.path[k].height).is_some())?;
+        let (a, b) = (self.path[k - 1], self.path[k]);
+        let at = |f: f64| {
+            let lerp = |x: f64, y: f64| x + (y - x) * f;
+            (
+                [lerp(a.place[0], b.place[0]), lerp(a.place[1], b.place[1])],
+                lerp(a.height, b.height),
+            )
+        };
+        // The start of the chord is over dry ground or above the water; its end is under it.
+        let (mut low, mut high) = (0.0_f64, 1.0_f64);
+        for _ in 0..CROSSING_STEPS {
+            let mid = f64::midpoint(low, high);
+            let (place, height) = at(mid);
+            if under(place, height).is_some() {
+                high = mid;
+            } else {
+                low = mid;
             }
-            last = Some((k, gap));
         }
-        None
+        let (place, height) = at(high);
+        let water = under(place, height).unwrap_or(height);
+        let lerp = |x: f64, y: f64| x + (y - x) * high;
+        let dt = b.time - a.time;
+        let horizontal = (b.place[0] - a.place[0]).hypot(b.place[1] - a.place[1]);
+        let drop = self.path[0].height - water;
+        let distance = lerp(a.distance, b.distance);
+        let sheet = profile.sample(self.discharge, self.launch_speed, drop, distance);
+        let along = if dt > 0.0 { horizontal / dt } else { 0.0 };
+        Some(Plunge {
+            segment: self.id,
+            place,
+            level: water,
+            time: lerp(a.time, b.time),
+            drop,
+            distance,
+            sheet,
+            normal_speed: (sheet.speed * sheet.speed - along * along).max(0.0).sqrt(),
+        })
     }
 
     /// The segment's births each tick at a plunge: the fall's power, `rho g q z` for each metre

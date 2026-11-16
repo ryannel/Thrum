@@ -11,7 +11,7 @@
 )]
 mod support;
 use support::fall::{Channel, Cliff, Foot, channel};
-use thrum_river_model::{Profile, Solution, solve};
+use thrum_river_model::{Grid, Profile, Solution, solve};
 use thrum_water_model::{
     Bed, Body, BodyKind, FallSegment, Map, PlungeProfile, Profile as WaterProfile, SheetProfile,
     Stage, loop_ticks,
@@ -256,5 +256,127 @@ fn a_path_that_lands_on_bare_ground_gives_no_births_and_no_impulses() {
     println!(
         "{} segments land on bare ground: no plunge",
         s.falls[0].segments.len()
+    );
+}
+
+/// A 4 m face over eight cells into the pool: steady at slope 2, or steeper below or above.
+fn rock_face(variant: usize) -> Channel {
+    let mut c = channel(
+        DX,
+        40,
+        0.005,
+        0.15,
+        0.04,
+        Cliff {
+            height: 4.0,
+            face_cells: 7,
+        },
+        Foot::Pool {
+            cells: 24,
+            depth: 0.5,
+        },
+    );
+    let drops = match variant {
+        0 => return c,
+        1 => [0.4, 0.4, 0.4, 0.4, 0.6, 0.6, 0.6, 0.6],
+        _ => [0.6, 0.6, 0.6, 0.6, 0.4, 0.4, 0.4, 0.4],
+    };
+    let mut h = c.grid.heights().to_vec();
+    let mut y = h[c.cell(c.lip, c.rows().start)];
+    for (k, d) in drops.iter().enumerate() {
+        y -= d;
+        for z in c.rows() {
+            h[c.cell(c.lip + k + 1, z)] = y;
+        }
+    }
+    c.grid = Grid::new(c.grid.origin(), c.grid.spacing(), c.grid.size(), h).unwrap();
+    c
+}
+
+const SCAN: u32 = 1000;
+
+/// The first place along the stored path where the map has water and the path is at or under
+/// its level, found by stepping each chord in thousandths: (place, level).
+fn scanned(g: &FallSegment, map: &Map) -> Option<([f64; 2], f64)> {
+    for w in g.path.windows(2) {
+        let (a, b) = (w[0], w[1]);
+        // Stored chords are under 0.1 m, so a thousand steps are under 0.1 mm.
+        assert!((b.place[0] - a.place[0]).hypot(b.place[1] - a.place[1]) < 0.1);
+        for j in 1..=SCAN {
+            let f = f64::from(j) / f64::from(SCAN);
+            let p = [
+                a.place[0] + f * (b.place[0] - a.place[0]),
+                a.place[1] + f * (b.place[1] - a.place[1]),
+            ];
+            let y = a.height + f * (b.height - a.height);
+            if let Some(l) = water(map)(p).filter(|&l| y <= l) {
+                return Some((p, l));
+            }
+        }
+    }
+    None
+}
+
+#[test]
+fn a_path_down_the_rock_meets_the_water_at_the_shoreline_at_every_stage() {
+    let sheet = SheetProfile::default();
+    let profile = PlungeProfile::default();
+    let mut worst = (0.0_f64, 0.0_f64);
+    let mut on_rock = 0;
+    for variant in 0..3 {
+        let c = rock_face(variant);
+        let s = solve(&c.grid, &c.declaration, &Profile::default()).unwrap();
+        let bed = bed(&c);
+        let pool = Body {
+            name: "pool".into(),
+            kind: BodyKind::Basin {
+                seed: c.declaration.receivers[0].seed,
+            },
+            level: c.level,
+            stage: Stage {
+                min: 0.0,
+                max: 2.5,
+                value: 0.0,
+            },
+            fetch: 1e6,
+            gains: [0.0; 4],
+        };
+        let mut map = Map::prepare(bed.clone(), vec![pool], WATER).unwrap();
+        for stage in [0.0, 0.4, 1.0, 2.0, 2.5] {
+            map.set_stage(0, stage).unwrap();
+            let surface = c.level + stage;
+            for g in &s.falls[0].segments {
+                let plunge = g.plunge(&sheet, water(&map)).unwrap();
+                let (place, level) = scanned(g, &map).unwrap();
+                // The water's own level, the same as the scan's, and the place to the scan's step.
+                assert!(
+                    (plunge.level - surface).abs() < 1e-9,
+                    "level {} against {surface}",
+                    plunge.level
+                );
+                assert!((plunge.level - level).abs() < 1e-9);
+                let off = (plunge.place[0] - place[0]).hypot(plunge.place[1] - place[1]);
+                assert!(off < 1e-3, "plunge {off} m from the first wet point");
+                assert!((plunge.drop - (g.path[0].height - surface)).abs() < 1e-9);
+                let b = g.births(&profile, &plunge);
+                let power = RHO * G * g.discharge * (g.path[0].height - surface) * g.width();
+                assert!(((b.foam + b.air) / power - 1.0).abs() < 1e-12);
+                // Where the impact is on the rock, the path there lies on the bed at the level.
+                let ground = bed.height(plunge.place).unwrap();
+                if (ground - surface).abs() < 1e-3 {
+                    on_rock += 1;
+                }
+                worst = (
+                    worst.0.max((plunge.level - surface).abs()),
+                    worst.1.max(off),
+                );
+            }
+        }
+    }
+    assert!(on_rock > 0, "some paths reach the water down the rock");
+    println!(
+        "{on_rock} plunges at the shoreline on the rock; worst level error {:.1e} m, \
+         worst place {:.1e} m from the scanned first wet point",
+        worst.0, worst.1
     );
 }
