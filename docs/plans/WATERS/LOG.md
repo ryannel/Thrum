@@ -318,3 +318,21 @@
   sweep API after the merge gate found duplicate helper types. The original ten-second watchdog remains.
   [Integration proof](../../evidence/WATERS/M12-watch-recovery.md#integration-with-the-creators-sweep)
   records eight watcher tests, four server/watch tests and strict cooker Clippy passing on the Mac.
+
+- 2026-11-16 M2 stopped on M2.2: from 40 m up the crests were round and a smooth belt lay under the horizon, after
+  eight tuning attempts ([handoff](../../evidence/WATERS/M2-handoff.md)). The lead's task was to settle the approach
+  at the same bar, preferring what current engines ship. The planner read the branch's shaders and found two causes
+  in the representation, not the tuning. The long-wave cache stores the map inverted onto a fixed world grid, and
+  vertices move only vertically, so a crest turns over a texel. Every layer is read from storage buffers at mips
+  0, 4 and 8, chosen by the footprint's longest side, which collapses the sea to one variance about 600 m out.
+- 2026-11-16 Parts Y and Z of [the design proof](../../evidence/WATERS/design-proof/README.md) measure both. Part Y
+  predicts the belt 61 rows under the horizon, where the opinions saw 50 to 70. In part Z, the forward form draws
+  a 53 m crest within 1.3 to 2.3 times its width, where the world grid draws it 8 to 28 times too wide.
+  Decided, in [the surface](DESIGN.md#the-surface-and-the-frame-contract): layers are drawn forward from the rest
+  place, read as mipped LEAN textures through anisotropic filtering, keep everything they drop as covariance, take
+  far light from the slope distribution's BRDF with no ground-side sky, and carry the thin-crest term from M2.
+- 2026-11-16 The bar stands. Its "band" now has the meaning M2.2's inspection gives: a strip with an edge or a tone
+  step, which excludes the last rows, where only statistics are physical. M2.10 is added, and `SEA`'s cache test
+  changes its oracle to the forward evaluation, under the same bounds. M2's other items are unchanged, word for word.
+  Risk 30 covers devices that admit less anisotropy. Not chosen: moving the long waves into FFT cascades, because
+  the analytic layer is not what failed.

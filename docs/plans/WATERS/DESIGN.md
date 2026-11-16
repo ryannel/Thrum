@@ -171,6 +171,17 @@ read them; the sources for water as a whole follow.
   whole). Wave components are drawn into camera-centred levels of detail that the surface samples. Its dynamic
   waves run a separate simulation in each level, whose wave speed comes from a gravity multiplier and a Courant
   number. Foam is deposited where waves pinch and in shallows, and fades at a set rate.
+- **Crest's system notes** ([4.23](https://crest.readthedocs.io/en/4.23.0/user/system-notes.html), as summarised
+  by fetch). Its shape lives in "cascaded textures that are centered at the viewer". Each vertex is snapped to a
+  stable grid, samples the levels and is displaced, and the data "is carried with the waves away from its rest
+  position". The fragment shader combines a normal map with normals computed from the displacement texture.
+  Evidence that the drawn surface reads displacement forward at the rest place.
+- **Ocean lighting from geometry to BRDF** ([Bruneton, Neyret and Holzschuch 2010](https://artis.inrialpes.fr/Publications/2010/BNH10/index.php),
+  abstract and a lecture summary read; the paper itself not read). Waves from kilometres to millimetres are geometry
+  near the viewer, then normals, then a BRDF of the slope distribution toward the horizon, with seamless
+  transitions between them. LEAN mapping (Olano and Baker 2010, from memory) keeps the mean slope and the slopes'
+  second moments in mips. These are linear, so any texture filter averages them correctly, anisotropic filtering
+  included.
 - **Broadsides**, as what was tried. Its accepted calm and trade-wind sea (W1), its wake and query milestones M1
   and M2, and the foam spike's five changes with blind verdicts are evidence that mechanisms of this kind make
   their cues. Its timings are evidence of where cost went: a fused full-rate surface shader at about 2.35 ns a
@@ -805,6 +816,49 @@ A vertex is displaced from its level by the long waves (the field cache) and the
 at its body's gains, and by the interaction waves. A pixel takes its normal from the same layers down to its
 footprint and its roughness from the slope covariance of everything smaller (Bruneton's geometry-to-BRDF
 transition, through the LEAN moments).
+
+**How the surface reads the wave field.** Every layer is kept at the rest place and drawn forward, as the seas
+that ship are: Tessendorf's choppy FFT in Sea of Thieves, HDRP and Crest, whose camera-centred levels move each
+vertex by the displacement found where it rests. Five rules settle it:
+
+- *Forward, never inverted, for drawing.* Each level of the field cache holds the long waves' displacement in all
+  three axes, its derivatives with respect to the rest place and its rate of change, evaluated at rest places
+  snapped to that level's texels, as the cascades are. A vertex resting at `r` stands at its level plus the summed
+  displacement at `r`, horizontal part included, so the rest grid crowds into each crest and spreads over each
+  trough. A pixel reads every layer at its interpolated rest place and carries the summed slope and covariance
+  through the inverse of the summed horizontal Jacobian. Finding which rest place lies under a world point is the
+  query's work and the highest-surface cut's, and never the drawn surface's. On a fixed world grid a compressed
+  crest turns over about a texel. At the 4 to 8 m spacings seen from 40 m up, a 53 m wind sea's crests are then
+  drawn 8 to 28 times rounder than they are. The forward form draws them within 1.3 to 2.3 times their true width
+  (part Z). The forward cache also costs one evaluation a texel, where the inversion iterated. The inverted
+  cache took 3.6 ms a frame in M2's captures, against the sea design's estimate of 0.2–0.3 ms.
+- *Filtered over the pixel's footprint, not its longest side.* Each layer a pixel reads, the cascades and every
+  cache level, is a filterable texture with a full mip chain. Its texels hold the LEAN moments: the mean slope,
+  the slopes' second moments and the Jacobian's mean and square. The pixel reads it with trilinear anisotropic
+  filtering, at the highest anisotropy the capability record admits, which is 16 on both first targets. The
+  moments are linear, so the hardware's average over the footprint's ellipse gives the right mean and covariance
+  at any anisotropy (Olano and Baker's LEAN mapping). Under a grazing view the footprint's long side is the
+  distance over the height times its short side. Choosing detail by the long side turns every wave under 20 m
+  into one mean slope and one variance about 600 m out from 40 m up, 60 pixels under the horizon, and every wave
+  under 160 m by 2.4 km. That is the smooth belt of M2's first build. Read over the ellipse, waves under 20 m stay resolved to about 1.7 km, and the
+  wind sea to the rows where it is under a pixel tall (part Y).
+- *Nothing is dropped.* Whatever a layer stops resolving joins the covariance, whether by its level, its mip or a
+  fade with distance. A fade that removes resolved slope and adds no variance leaves the far sea smoother than
+  the sea.
+- *The far sea is its statistics, lit as such.* Where no texel resolves a wave, the pixel's light is the BRDF of
+  the slope distribution (Bruneton, Neyret and Holzschuch 2010). That is the mean Fresnel over the visible slopes,
+  the Sun's lobe, and the sky round the reflected direction at the covariance's roughness. A visible facet that
+  reflects below the horizon sees another wave, not the ground the sky model holds there. So the environment's
+  lobe is taken from the sky at and above the horizon. The far sea's tone then meets the resolved water below it
+  and the sky above it with no step.
+- *Crests read by their light as well as their shape.* The [optics](#optics)' thin-crest term is part of the
+  surface from its first frame. In-scatter grows where the surface stands high and is compressed, lit only by
+  the lent Sun and sky, as Sea of Thieves' wave-peak mask does from the same displacement. M8 judges its glow
+  against a low Sun.
+
+The horizon these rules give is physical. From 40 m up, a wave is under a pixel tall within a few pixels of the
+horizon, so the last rows are statistics and carry no resolved texture. M2.2's "band" is something else: a strip
+whose texture stops at an edge, or whose tone steps from the water below it or the sky above.
 
 The water draws in `EFFECT-GRAPH`'s `after-opaque` stage, once for all its bodies, and writes the frame contract for its pixels:
 
@@ -1584,7 +1638,14 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   type and no hull. The look, and noise under reconstruction, are unrun; M16 and M10 are the first.
 - **W12.** Part T: the light at the lens by depth for three water types, and how far the picture darkens
   for each share. Arithmetic; the descent is unrun.
-- **Cost.** Unrun. M2 is the first measurement.
+- **The surface's read of the field.** Part Y finds where resolved waves become statistics, for a camera 2 m
+  and 40 m up under the example's 75° view: by the footprint's longest side, and through a 16x anisotropic
+  footprint over full mip chains. The longest-side rule places the change about 600 m out and 61 pixels under the
+  horizon from 40 m up, where M2's first build showed a smooth belt of 50 to 70 pixels. Part Z measures how wide
+  a crest's turn is drawn on one trochoid at the example's contraction of 0.85, from a fixed world grid and from
+  rest places moved forward, at texels and vertex spacings of 1 to 8 m. Both are f64 arithmetic on a flat sea in
+  `surface_read_proof.py`. How the sea then looks is unrun, and M2.2 is the first look.
+- **Cost.** M2's first record measured the inverted cache. The forward cache is unmeasured, and M2 records it.
 
 ## The system as it runs
 
@@ -1653,7 +1714,13 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built 
 every scene composes the shader text and draws the bytes it does today.
 
 `SEA` is asked for nothing. The shore transform extends `thrum-sea`'s field cache and `thrum-sea-model`
-after `SEA`'s last milestone, when both crates are this module's, with `SEA`'s tests kept passing.
+after `SEA`'s last milestone, when both crates are this module's, with `SEA`'s tests kept passing. One change
+reaches a `SEA` test, and M2 makes it: [the forward cache](#the-surface-and-the-frame-contract). `SEA`'s
+`ambient_gpu` test compares each cache texel with the model's evaluation at a world point, which inverts the
+map, so it pins the inverted form. The cache's oracle becomes the model's forward evaluation at the texel's rest
+place, held to the same 2 mm in height and 0.002 in slope. The query's oracle, its test and every other `SEA`
+bound are unchanged. The cascades and the cache become filterable textures with mips, in place of storage
+buffers, so the sea needs fewer storage buffers a stage.
 
 If `EFFECT-GRAPH` M3 as built already allows 1 or 2, nothing is added. Everything else is used as built: the
 lease of one linear 2D texture, the lent environment products and cloud factor, the temporal contribution, the
@@ -1795,6 +1862,10 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 29. **The picture pumps or steps as the lens crosses the surface**, because the light at the lens changes
     faster than a viewer's eye would. Early sign: M16's crossing. The designed remedies are the mix by the
     lens's share and the adaptation share; the wrong fix is a gain taken from the picture.
+30. **A device admits less anisotropy than 16.** The smooth belt then comes nearer the camera, where part Y's
+    rule puts it for that anisotropy. Early sign: the capability record, and M3's Chrome stills from 40 m up. The
+    designed answer is more taps along the footprint's long side in the shader, counted against the record. The
+    wrong fix is lowering the moments' variance, which makes the far sea shimmer.
 
 ## Proof and builder handoff
 

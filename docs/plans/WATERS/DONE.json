@@ -324,7 +324,7 @@
         {
           "id": "M2.2",
           "statement": "At noon in a trade wind, from 2 m and from 40 m above the water, the sea reads as open water from the waterline to the horizon: wind waves ride a longer swell, crests are sharper than troughs, the horizon is one clean line with no gap or band under it, and no patch of waves repeats.",
-          "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near water, the middle distance and the horizon.",
+          "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -402,6 +402,18 @@
           "id": "M2.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M2.10",
+          "statement": "The drawn sea reads the wave field forward from each rest place. Every field-cache level holds the long waves' displacement in three axes, its derivatives and its rate of change at its texels' rest places, and matches the model's forward evaluation there within 2 mm in height and 0.002 in slope. The cascades and every cache level are textures with full mip chains whose every texel holds the LEAN moments of the texels below it, and the surface reads them through a sampler with anisotropic filtering.",
+          "check": "cargo test --locked --offline -p thrum-sea --test forward_cache_gpu",
+          "ask": "Does any vertex or pixel path invert the wave map, or choose a mip or cache level by the footprint's longest side? Does whatever a layer stops resolving, by level, mip or fade, join the covariance? Does a reflected lobe from a visible facet read the sky's ground side under the horizon?",
+          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
