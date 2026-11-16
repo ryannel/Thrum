@@ -29,7 +29,45 @@ struct HostState {
     accepted: VecDeque<Link>,
     failed: bool,
 }
-/// A host owns one network thread. Dropping it closes all links without joining that thread.
+/// Every link a host's I/O thread created. When that thread ends, whether its host was dropped, its runtime
+/// failed or it panicked, each link not yet closed closes as `Local(0)`, so a retained handle can't stay open
+/// after the tasks that drove it were cancelled.
+#[derive(Default)]
+struct Links(Mutex<Vec<Link>>);
+impl Links {
+    fn add(&self, link: &Link) {
+        let mut links = self.0.lock().expect("host links poisoned");
+        links.retain(|l| {
+            l.state
+                .lock()
+                .expect("link state poisoned")
+                .closed
+                .is_none()
+        });
+        links.push(link.clone());
+    }
+    fn close_all(&self) {
+        let links = std::mem::take(
+            &mut *self
+                .0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        );
+        for link in links {
+            if let Ok(mut state) = link.state.lock() {
+                state.close(CloseReason::Local(0));
+            }
+        }
+    }
+}
+impl Drop for Links {
+    fn drop(&mut self) {
+        self.close_all();
+    }
+}
+
+/// A host owns one network thread. Dropping it closes all links without joining that thread: each retained
+/// link reports `Closed(Local(0))` once the thread stops, within about 10 ms.
 #[derive(Debug)]
 pub struct Host {
     state: Arc<Mutex<HostState>>,
@@ -54,8 +92,11 @@ impl Host {
         std::thread::Builder::new()
             .name("transport host".into())
             .spawn(move || {
-                let result =
-                    runtime().and_then(|rt| rt.block_on(serve(address, profile, &shared, stopped)));
+                // Declared before the runtime, so it drops after the runtime has cancelled the link tasks.
+                let links = Links::default();
+                let result = runtime()
+                    .and_then(|rt| rt.block_on(serve(address, profile, &shared, &links, stopped)));
+                drop(links);
                 if result.is_err() {
                     shared.lock().expect("host state poisoned").failed = true;
                 }
@@ -163,6 +204,7 @@ async fn serve(
     address: SocketAddr,
     profile: Profile,
     shared: &Arc<Mutex<HostState>>,
+    links: &Links,
     stop: Arc<AtomicBool>,
 ) -> IoResult<()> {
     let key = rcgen::KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256)?;
@@ -199,9 +241,10 @@ async fn serve(
                 let active = Arc::clone(&active);
                 let shared = Arc::clone(shared);
                 let profile = profile.clone();
+                let link = Link::new(profile.clone());
+                link.state.lock().expect("link state poisoned").clock = Some(Instant::now());
+                links.add(&link);
                 tokio::spawn(async move {
-                    let link = Link::new(profile.clone());
-                    link.state.lock().expect("link state poisoned").clock = Some(Instant::now());
                     let result = async {
                         let connection = incoming.await?;
                         let session = if connection.handshake_data().and_then(|d| d.downcast::<quinn::crypto::rustls::HandshakeData>().ok()).and_then(|d| d.protocol).as_deref() == Some(b"h3") {
@@ -232,7 +275,11 @@ async fn serve(
             () = tokio::time::sleep(Duration::from_millis(10)) => { if stop.load(Ordering::Relaxed) { break; } }
         }
     }
+    // The game sees its links close first; the peers are then told, for a bounded flush, before the runtime
+    // and its link tasks go.
+    links.close_all();
     endpoint.close(0_u32.into(), b"host dropped");
+    let _ = tokio::time::timeout(Duration::from_millis(100), endpoint.wait_idle()).await;
     Ok(())
 }
 #[derive(Debug)]

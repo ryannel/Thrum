@@ -1,5 +1,7 @@
 //! Explicit socket runner; default tests never execute this program.
 #[cfg(not(target_arch = "wasm32"))]
+mod host_drop;
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use link_proof::Actor;
     use std::{
@@ -9,6 +11,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     use thrum_transport::{Controller, Link, Profile, native};
     let args: Vec<_> = std::env::args().collect();
     let role = args.get(1).ok_or("host or client required")?;
+    if role == "host-drop" {
+        let record = host_drop::run()?;
+        writeln!(io::stdout(), "{record}")?;
+        return if record["pass"] == true {
+            Ok(())
+        } else {
+            Err("host-drop expectations failed".into())
+        };
+    }
     let seconds: u64 = args.get(3).map_or("32", String::as_str).parse()?;
     let case = args.get(5).map_or("exchange", String::as_str);
     let control = args.get(6);

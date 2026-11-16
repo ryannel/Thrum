@@ -280,6 +280,16 @@ def reconnect(target, output):
                 shutil.rmtree(profile)
 
 
+def host_drop(output):
+    """Drop a native host that has accepted, retained and loaded links; the program checks each handle."""
+    output.mkdir()
+    result = subprocess.run([str(ROOT / "target/release/link-proof"), "host-drop"], cwd=ROOT, env=ENV, capture_output=True, text=True, timeout=60)
+    (output / "host-drop.jsonl").write_text(result.stdout + result.stderr)
+    record = json.loads(result.stdout.strip().splitlines()[-1])
+    assert result.returncode == 0 and record["pass"] is True, result.stdout + result.stderr
+    return record
+
+
 def session(output):
     """Ten wall-clock minutes, with live sends interrupted by each fault."""
     for target in ["mac-metal","chrome-webgpu","ios-sim"]:
@@ -534,6 +544,9 @@ def main():
         record["startup-cut"] = exchange(args.target, output / "startup-cut", True, seconds=7, case="startup-cut")
         record["kill-peer"] = exchange(args.target, output / "kill-peer", True, seconds=7, case="kill-peer")
         record["reconnect"] = reconnect(args.target, output / "reconnect")
+        if args.target == "mac-metal":
+            # The native host runs on the Mac for every target; its teardown is proved once, here.
+            record["host-drop"] = host_drop(output / "host-drop")
     (output / "record.json").write_text(json.dumps(record, indent=2) + "\n")
     print(output / "record.json")
 
