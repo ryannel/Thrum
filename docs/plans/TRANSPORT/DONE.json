@@ -151,8 +151,8 @@
           "ask": "Read the test. Does it drive the same decoders the adapters use, with each input kind in the statement generated? Is there a stdin target for each parser, in the style of thrum-network's?",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.1, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -162,8 +162,8 @@
           "ask": "Does the run include every case the statement lists, one at a time? For each, does the record show what the host reported for the offender and the healthy links' reliable counts? Do the host's queued bytes stay within its caps throughout?",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.2, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -173,8 +173,8 @@
           "ask": "Does the host in this run make its sends from one thread, as a session's tick would, so that a blocked send to the stalled link would have shown as a stall on the others?",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.3, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -183,8 +183,8 @@
           "check": "python3 scripts/transport_link.py suspend --target mac-metal",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.4, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -193,8 +193,8 @@
           "check": "python3 scripts/transport_link.py suspend --target ios-sim",
           "target": "ios-sim",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.5, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -203,8 +203,8 @@
           "check": "python3 scripts/transport_link.py suspend --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.6, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -213,8 +213,8 @@
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it state both size limits, every close reason, that a ticket dies with its host, that a datagram can arrive long after it was sent, and that a close can cut off the last reliable messages? Does the networking design's transport section still describe anything as selected that this module decided not to build, without saying so?",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.7, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -223,8 +223,8 @@
           "ask": "Do the ledger's N1 and F1 rows keep implementation, correctness and device results apart? Do they name as not run a second machine, any path that is not loopback, a physical iPhone, Safari, Firefox, a public host and the WebSocket fallback, and claim no speed for the simulator?",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.8, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -233,8 +233,8 @@
           "check": "python3 scripts/transport_link.py session",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.9, commit 2e3abfd4a; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -243,8 +243,8 @@
           "check": "python3 scripts/transport_link.py closure",
           "target": "mac-metal",
           "evidence": "docs/evidence/TRANSPORT/M2.md (M2.10, commit 137ba77ca; records docs/evidence/TRANSPORT/M2-records.json.gz)",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -253,15 +253,15 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
           "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "As hard to knock over as the network layer of a public game server. Quinn and Cloudflare's quiche are fuzzed, and a peer's mistake costs that peer its connection and nobody else anything. One hostile, stalled or frozen client costs the host a bounded amount of memory and the other players no reliable message; and, as with Godot's or Unreal's networking, a single-player build carries no socket code."
     }
   ]

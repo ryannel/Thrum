@@ -154,7 +154,42 @@
     },
     "M2": {
       "definitions": "b3c35b5247ba9f8dd71a590029c2d98952bbe96804436482b7f5db15740c0151",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+          "review": "docs/evidence/TRANSPORT/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass",
+            "M2.10": "pass",
+            "M2.11": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 174071,
+            "cached": 3480320,
+            "output": 8155,
+            "turns": 1
+          },
+          "at": "2026-11-16T19:17:04Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of TRANSPORT at docs/evidence/TRANSPORT/design-review.md asked for changes. Resolve its 3 Must Fix fin",
@@ -193,6 +228,13 @@
           "cost_usd": 33.867132,
           "turns": 7
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "8a72a0c0b8d6c241b4f5f4302f6e8add73a75157",
+        "review": "docs/evidence/TRANSPORT/M2-review.md",
+        "checked": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+        "at": "2026-11-16T19:17:04Z"
       }
     }
   },
