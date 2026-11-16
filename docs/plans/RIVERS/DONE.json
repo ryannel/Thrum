@@ -397,7 +397,7 @@
         },
         {
           "id": "M4.8",
-          "statement": "With the rivers in view the paired cost record is taken at 2560×1440, beside the channel's record, with the bytes of each river file and the island's solve time for each sample. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the rivers in view the paired cost record is taken at 2560\u00d71440, beside the channel's record, with the bytes of each river file and the island's solve time for each sample. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene river",
           "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
@@ -475,7 +475,7 @@
         {
           "id": "M5.4",
           "statement": "In a dead calm the stream reads as running water: the riffle and the narrows are rough and glitter, the pool lies glassy and mirrors its banks, ripples travel downstream and faster through the narrows, and the water piled in front of a rock stays put while ripples pass over it. There is no sheet sliding at one speed, no pulse at the carriage's period, and no look of a small sea.",
-          "inspect": "`realtime` sequences in a dead calm from the bank at 2 m, across and along the riffle, the pool and the narrows, and one from 40 m above the stream, at noon and with the Sun at 15°; the same views in a trade wind.",
+          "inspect": "`realtime` sequences in a dead calm from the bank at 2 m, across and along the riffle, the pool and the narrows, and one from 40 m above the stream, at noon and with the Sun at 15\u00b0; the same views in a trade wind.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -512,7 +512,7 @@
         },
         {
           "id": "M5.8",
-          "statement": "With the flow bands and the river's foam in view the paired cost record is taken again at 2560×1440, beside M4's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the flow bands and the river's foam in view the paired cost record is taken again at 2560\u00d71440, beside M4's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene river-calm",
           "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
@@ -621,7 +621,7 @@
         },
         {
           "id": "M6.8",
-          "statement": "With the fall filling a third of the view the paired cost record is taken again at 2560×1440, beside M5's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "With the fall filling a third of the view the paired cost record is taken again at 2560\u00d71440, beside M5's. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene fall",
           "ask": "Is the record paired, taken on this milestone's work, with the load on the machine? Does each tripped wire's investigation say what was measured to find the cause and what was fixed or logged?",
           "lock": "gpu",
@@ -704,7 +704,7 @@
         {
           "id": "M7.4",
           "statement": "In a gorge's shadow at a low Sun the fall, its foam and the stream are lit by the sky alone and sit in the scene's light, and where the Sun reaches them they brighten along the shadow's own edge.",
-          "inspect": "`fixed` stills of the fall and the stream below it with the Sun at 10° and 25°, the valley wall's shadow lying across them, from 5 m and from 60 m.",
+          "inspect": "`fixed` stills of the fall and the stream below it with the Sun at 10\u00b0 and 25\u00b0, the valley wall's shadow lying across them, from 5 m and from 60 m.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -755,7 +755,7 @@
         },
         {
           "id": "M7.9",
-          "statement": "With everything this module adds in view the paired cost record is taken at 2560×1440 on tick frames and repeat frames, beside M6's, and the island's solve is recorded again with `scripts/river_cost.py`. Each tripwire tripped has its investigation beside it. No figure decides this item.",
+          "statement": "With everything this module adds in view the paired cost record is taken at 2560\u00d71440 on tick frames and repeat frames, beside M6's, and the island's solve is recorded again with `scripts/river_cost.py`. Each tripwire tripped has its investigation beside it. No figure decides this item.",
           "check": "python3 scripts/water_cost.py check --scene river-all && python3 scripts/river_cost.py check --scene island",
           "ask": "Are both records taken on this milestone's work with the load on the machine, and does each tripped wire's investigation say what was measured and what was fixed or logged?",
           "lock": "gpu",
