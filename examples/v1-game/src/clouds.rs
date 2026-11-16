@@ -17,7 +17,7 @@ pub enum CloudSelection {
 /// Game-authored Weather and Shade configuration, with no visible cloud layer.
 pub fn shade_config() -> ShadeConfig {
     ShadeConfig {
-        seed: 7,
+        seed: 39,
         model: Profile {
             pitch: 3000.0,
             period: 1800.0,
@@ -34,7 +34,7 @@ pub fn shade_config() -> ShadeConfig {
                 profile: [0.2, 0.2],
             },
             Type {
-                base: 1400.0,
+                base: 1600.0,
                 depth: [700.0, 1800.0],
                 liquid_water: 0.0004,
                 droplet_radius: 0.000_012,
