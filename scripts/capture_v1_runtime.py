@@ -101,8 +101,8 @@ def read_exact(stream, length):
 
 
 def finalize(output, manifest, runtime, verify_only=False):
+    records = validate_source(output, manifest, runtime)
     if runtime["scenario"] == "off":
-        validate_runtime(runtime, 0)
         manifest.update(complete=True, packaging_pending=False, records=[])
         return
     frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
@@ -112,7 +112,6 @@ def finalize(output, manifest, runtime, verify_only=False):
     source = output / manifest['spool_file']
     if source.stat().st_size != report['encoded_bytes']:
         raise ValueError('encoded byte count differs from writer')
-    records = validate_runtime(runtime, report['bytes'], frame_bytes)
     if len(records) != len(report['frame_sha256']):
         raise ValueError('missing original frame hashes')
     frame_dir = output / 'png'
@@ -215,6 +214,21 @@ def validate_runtime(runtime, spool_bytes, frame_bytes=FRAME_BYTES):
         raise ValueError("incomplete runtime/record join")
     return [{"submission_id": identity, "offset": index * frame_bytes}
             for index, identity in enumerate(image_ids)]
+
+
+def validate_source(output, manifest, runtime):
+    """A corrupt retained source is a failure even in an incomplete interval."""
+    frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
+    report = runtime['writer_result'].get('Ok', {})
+    if 'Ok' in runtime['writer_result']:
+        source = output / manifest['spool_file']
+        if source.stat().st_size != report['encoded_bytes']:
+            raise ValueError('encoded byte count differs from writer')
+        if not runtime['complete'] and runtime['scenario'] != 'off':
+            for _ in decoded_frames(source, runtime['spool_encoding'], report['frame_sha256'],
+                                    frame_bytes, manifest.get('record_limit', 1024)):
+                pass
+    return validate_runtime(runtime, report.get('bytes', 0), frame_bytes)
 
 
 def run(args):
@@ -379,14 +393,7 @@ def run(args):
         expected_source = {'sdr': 'Sdr', 'scene-linear': 'SceneLinear', 'native-output': 'NativeOutput', 'native-history': 'NativeHistory'}[args.source]
         if runtime.get('pixel_source', 'Sdr') != expected_source:
             raise ValueError('engine capture source differs from requested source')
-        if 'Ok' in runtime.get('writer_result', {}):
-            if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
-                raise ValueError('encoded byte count differs from writer')
-            if not runtime['complete'] and runtime['scenario'] != 'off':
-                for _ in decoded_frames(output / manifest['spool_file'], runtime['spool_encoding'],
-                        report['frame_sha256'], frame_bytes, manifest['record_limit']):
-                    pass
-        validate_runtime(runtime, report.get('bytes', 0), frame_bytes)
+        validate_source(output, manifest, runtime)
         if (output / manifest['spool_file']).stat().st_size != report['encoded_bytes']:
             raise ValueError('encoded byte count differs from writer')
         manifest.update(capture_complete=True, packaging_pending=True)
