@@ -6,7 +6,8 @@
 `9d06e07c731bfbc7253a9ea04b6de2cd2ca9b189`, source key
 `b2ae5a08c3585081315bcbecb8368247cf69afacd37868c310f0f8660cf9f613`.
 Every row runs the full trace, records its load bracket, and retains its M1 and chronological
-comparators. These are shared-host baselines. No time or allocation count gates success.
+comparators. These are shared-host baselines; one-minute load brackets range from 8.97 to 21.43.
+No time or allocation count gates success.
 
 The four quarter-slower flags are the serial Crowd rows at 2,000 and 5,000 bodies in both repeats.
 Their accepted neighbour counts equal M1's. Against M1's latest repeat:
@@ -15,6 +16,8 @@ Their accepted neighbour counts equal M1's. Against M1's latest repeat:
 |---|---:|---:|---:|
 | 2,000 | 0.5234 / 0.0260 | 0.7363 / 0.0905 | 0.7110 / 0.0900 |
 | 5,000 | 1.2322 / 0.0757 | 1.6590 / 0.2409 | 1.6134 / 0.2373 |
+
+The serial medians agree within 4% between repeats, with the same flags in both.
 
 The tick increases are 31–41%. The separate index measurement increases by 64–165 microseconds,
 compared with total tick increases of 188–427 microseconds. M2 constructs a canonical wide-query
