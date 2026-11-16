@@ -262,6 +262,36 @@ fn modified(path: &Path, time: SystemTime) {
 }
 
 #[test]
+fn quiet_tree_with_a_bad_save_does_not_repeat_the_error_or_write() {
+    let fixture = Fixture::new("quiet-bad");
+    fixture.write("a.tvol", 1);
+    let mut cooker = fixture.cooker("store");
+    cooker.cook_all().expect("initial");
+    std::fs::write(fixture.source.join("a.tvol"), b"invalid volume").expect("bad save");
+    let now = SystemTime::now() + Duration::from_secs(2);
+    let bad = cooker
+        .sweep(now)
+        .expect("sweep")
+        .expect("report bad save once");
+    assert_eq!(bad.failed.len(), 1);
+    assert!(bad.published.is_none());
+    let before = snapshot(cooker.store().root());
+    for _ in 0..4 {
+        assert!(cooker.sweep(now).expect("idle sweep").is_none());
+    }
+    assert_eq!(snapshot(cooker.store().root()), before);
+    fixture.write("a.tvol", 2);
+    assert!(
+        cooker
+            .sweep(SystemTime::now() + Duration::from_secs(2))
+            .expect("fixed save")
+            .expect("cycle")
+            .published
+            .is_some()
+    );
+}
+
+#[test]
 fn settling_save_uses_supplied_time_and_never_delays_startup_or_one_shot() {
     let fixture = Fixture::new("settling");
     fixture.write("a.tvol", 1);

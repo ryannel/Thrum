@@ -284,7 +284,13 @@ impl Cooker {
                     refused.insert((job.name, job.profile), reason);
                 }
                 Err(error) => {
-                    retry = true;
+                    // A deterministic import failure has already been reported. Only unfinished
+                    // I/O or inputs that moved during the import need another unchanged sweep.
+                    retry |= matches!(&error, CookError::Io(_))
+                        || job.inputs.iter().any(|(path, hash)| {
+                            std::fs::read(self.config.source.join(path))
+                                .map_or(true, |bytes| ContentHash::of(&bytes) != *hash)
+                        });
                     failed.push((job.name, error.to_string()));
                 }
             }
@@ -464,7 +470,10 @@ impl Cooker {
         // poison the persistent action cache. Single-file sources are cooked from bytes checked
         // against their hash; multi-file meshes are re-verified after the importer reads them.
         let changed = || {
-            CookError::Source("source changed during cook; it is retried on the next change".into())
+            CookError::Io(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "source changed during cook; it is retried on the next sweep",
+            ))
         };
         let read_verified = || -> Result<Vec<u8>, CookError> {
             let bytes = std::fs::read(&job.source)?;
