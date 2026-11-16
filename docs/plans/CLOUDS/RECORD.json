@@ -340,7 +340,7 @@
         {
           "verdict": "fail",
           "commit": "497bd188324313ec25ae4cb3d5ad7378ea1a3d07",
-          "review": "docs/evidence/CLOUDS/M13-review.md",
+          "review": "docs/evidence/CLOUDS/M13-review-1.md",
           "items": {
             "M13.1": "pass",
             "M13.2": "pass",
@@ -381,6 +381,46 @@
             "turns": 1
           },
           "at": "2026-11-15T19:40:46Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "373a4fc40e2d2ba4f90ba41e044acb353a346f89",
+          "review": "docs/evidence/CLOUDS/M13-review.md",
+          "items": {
+            "M13.1": "pass",
+            "M13.2": "pass",
+            "M13.3": "pass",
+            "M13.4": "pass",
+            "M13.5": "pass",
+            "M13.6": "fail",
+            "M13.7": "pass",
+            "M13.8": "pass",
+            "M13.9": "pass",
+            "M13.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "sun_path_skips_column_form_erosion",
+              "item": "M13.6",
+              "repeat": false
+            }
+          ],
+          "host": "claude",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "observed": {
+            "model": "claude-opus-5-5"
+          },
+          "cli": "2.1.319 (Claude Code)",
+          "path": "headless",
+          "usage": {
+            "input": 114577,
+            "cached": 2652491,
+            "output": 22774,
+            "cost_usd": 1.90233,
+            "turns": 1
+          },
+          "at": "2026-11-16T00:25:29Z"
         }
       ],
       "authorised": {

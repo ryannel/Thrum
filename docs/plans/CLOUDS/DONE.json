@@ -177,8 +177,8 @@
     {
       "id": "M13",
       "name": "Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -225,7 +225,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
         {
@@ -236,7 +236,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-review-fixes-probe.txt",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
         {
@@ -245,9 +245,9 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test ground_sun_path",
           "ask": "Is the ceiling the design's, unchanged, with no bound taken from this milestone's own measurement? Do the probe points include the ground beside the bank on its far side from the Sun at 10\u00b0 and at 4\u00b0, where a level-layer rule gives no shade, and does the test show each wrong substitute fail there?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/CLOUDS/M13.md; docs/evidence/CLOUDS/M13-verification.json",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": "docs/evidence/CLOUDS/M13-review.md"
         },
         {
@@ -295,13 +295,8 @@
       ],
       "findings": [
         {
-          "name": "footprint_column_sum_eroded",
-          "item": "M13.5",
-          "repeat": false
-        },
-        {
-          "name": "saturated_radiative_day_does_not_clear",
-          "item": "M13.4",
+          "name": "sun_path_skips_column_form_erosion",
+          "item": "M13.6",
           "repeat": false
         }
       ]
