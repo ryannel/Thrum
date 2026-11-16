@@ -262,7 +262,7 @@
       }
     },
     "M4": {
-      "definitions": "452634afe76102cf07932973e70d87ee8be37b4457eadfd3e520353c04b4c1a0",
+      "definitions": "4869af7651e19a1b3b38fa47445db6ec7958aef66dca60064aeb7d5c263edbb6",
       "reviews": [
         {
           "verdict": "fail",
@@ -302,34 +302,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, whic",
-        "at": "2026-11-16T12:56:12Z"
-      },
-      "ready_for_review": {
-        "commit": "be60925b7b50428d08e06ac253a5485122f62721",
-        "checked": "f98e1882bf61b8a22bd3a97c32cf297ba992c8cf",
-        "at": "2026-11-16T16:21:32Z",
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 255272,
-          "cached": 43814144,
-          "output": 219412,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 255272,
-          "cached": 43814144,
-          "output": 219412,
-          "turns": 2
-        }
+        "task": "EFFECT-GRAPH M4 is blocked on a contradiction in its done-when file. M4.2's consumed-target identity, with delayed obser",
+        "at": "2026-11-16T19:42:17Z"
       }
     }
   },
@@ -357,11 +331,15 @@
     {
       "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, which CLOUDS M2 now depends on). Their latest design reviews in docs/evidence/CLOUDS/ and docs/evidence/EFFECT-GRAPH/ on origin/main each have 1 Must Fix finding. Resolve both in the designs and plans, together since they come from one interface change. Their Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-16T12:56:12Z"
+    },
+    {
+      "task": "EFFECT-GRAPH M4 is blocked on a contradiction in its done-when file. M4.2's consumed-target identity, with delayed observation and zero lead, needs either negative phase (M4.1 forbids it) or the causal endpoint selection the builder added, which changes a delayed zero-lead frame and so breaks the quality bar 'no frame without a lead changes'. The handoff, docs/evidence/EFFECT-GRAPH/M4-handoff.md, with M4-compatibility.md and M4-review.md, has the reproduction and the builder's proposal: keep the causal fix and scope compatibility to observations that can adopt the same endpoint. Decide the policy, update the design and done-when file so they agree, and name the affected consumers.",
+      "at": "2026-11-16T19:42:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T12:56:12Z"
+    "at": "2026-11-16T19:42:17Z"
   },
   "design_history": [
     {
