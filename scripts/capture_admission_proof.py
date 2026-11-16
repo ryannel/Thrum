@@ -95,7 +95,7 @@ def retire_source(directory, manifest):
 def start_load(output):
     processes = []
     try:
-        for _ in range(48):
+        for _ in range(24):
             processes.append(subprocess.Popen([sys.executable, '-c', 'while True: pass'], start_new_session=True))
         for index in range(8):
             directory = output / f'competing-engine-{index}'
@@ -122,12 +122,12 @@ def stop_load(processes):
 
 def loaded(output, report):
     processes = start_load(output)
-    report['competing_load'] = {'cpu_workers': 48, 'engine_workers': 8,
+    report['competing_load'] = {'cpu_workers': 24, 'engine_workers': 8,
         'engine_workload': 'repeated ordinary 1080p realtime variants, default omit; independent processes, full scene and readbacks',
         'pids': [p.pid for p in processes], 'scope': 'mixed CPU/GPU contention; no isolated GPU-causality or cadence claim'}
     try:
         for attempt in range(3):
-            row = session(output, f'omit-control-{attempt}', verify=False)
+            row = session(output, f'omit-control-{attempt}', case='route', verify=False)
             report['sessions'].append(row)
             save(output / 'report.json', report)
             if row['ring_omissions']:
