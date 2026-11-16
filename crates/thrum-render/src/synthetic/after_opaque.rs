@@ -272,7 +272,13 @@ impl SceneContext<'_> {
             .ok_or(RenderError::GraphPassMismatch)?;
         let view_offset =
             self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
-        pass.set_bind_group(0, &self.target.view_bind_group, &[view_offset]);
+        let offsets = [view_offset, 0];
+        let count = if self.prepared.bucket_route.is_some() {
+            2
+        } else {
+            1
+        };
+        pass.set_bind_group(0, &self.target.view_bind_group, &offsets[..count]);
         pass.set_bind_group(1, &self.target.effects.groups[index], &[]);
         if let Some(contribution) = self.contribution.as_deref() {
             contribution.draw_after_opaque(index, &mut pass, &self.contribution_frame);
@@ -291,7 +297,13 @@ impl SceneContext<'_> {
                 .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
                 .ok_or(RenderError::GraphPassMismatch)?;
             let offset = self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
-            pass.set_bind_group(0, &self.target.view_bind_group, &[offset]);
+            let offsets = [offset, 0];
+            let count = if self.prepared.bucket_route.is_some() {
+                2
+            } else {
+                1
+            };
+            pass.set_bind_group(0, &self.target.view_bind_group, &offsets[..count]);
             pass.set_bind_group(1, &self.target.effects.groups[index], &[]);
             contribution.encode_after_opaque(index, &mut pass, &self.contribution_frame);
         }

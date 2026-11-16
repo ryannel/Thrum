@@ -89,9 +89,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.presenter_generation += 1;
         self.visual_owner = std::sync::Arc::new(());
         self.reset_replacement_history();
-        // SceneSurface has only size-independent device/layout inputs. Contributions
-        // receive the new matrix and history reset through ContributionFrame.
-        // Rebuilding here would compile identical cooked pipelines on every rotation.
+        if self.prepared.secondary_view_count() != 0 {
+            // A declared scale resolves against the new scene extent. Owners
+            // must receive the replacement attachments before the next ask.
+            self.rebuild_contribution();
+        }
+        // With no declared slot, SceneSurface has size-independent inputs;
+        // ordinary contributions keep their pipelines through a rotation.
         Ok(true)
     }
 }

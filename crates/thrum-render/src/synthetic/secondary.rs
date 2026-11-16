@@ -28,6 +28,16 @@ const RECORD_BYTES: u64 = size_of::<SecondaryViewRecord>() as u64;
 mod lighting;
 mod sun;
 
+fn shader_input_counts(atmosphere: bool, shadows: bool, cloud: bool) -> [u32; 2] {
+    let atmosphere = u32::from(atmosphere);
+    let shadows = u32::from(shadows);
+    let cloud = u32::from(cloud);
+    [
+        5 + shadows + atmosphere + cloud,
+        4 + 5 * atmosphere + shadows * (2 + atmosphere) + cloud,
+    ]
+}
+
 #[derive(Clone, Copy)]
 pub(super) enum Stage {
     Opaque,
@@ -119,10 +129,11 @@ impl PreparedSynthetic {
         {
             return Err(SecondaryViewError::RecordLimit);
         }
-        let uniforms = 5
-            + u32::from(self.shadow.is_some())
-            + u32::from(self.atmosphere.is_some())
-            + u32::from(self.cloud.is_some());
+        let [uniforms, textures] = shader_input_counts(
+            self.atmosphere.is_some(),
+            self.shadow.is_some(),
+            self.cloud.is_some(),
+        );
         if !slots.is_empty()
             && self
                 .capabilities
@@ -131,6 +142,17 @@ impl PreparedSynthetic {
                 < uniforms
         {
             return Err(SecondaryViewError::RecordLimit);
+        }
+        // Material arrays (4), atmosphere products (5), own cascades and the
+        // shared height field (2), atmospheric Sun visibility (1), and cloud.
+        if !slots.is_empty()
+            && self
+                .capabilities
+                .limits()
+                .max_sampled_textures_per_shader_stage
+                < textures
+        {
+            return Err(SecondaryViewError::ShaderLimit);
         }
         let prepared = slots
             .iter()
@@ -663,8 +685,12 @@ impl SecondaryPrepared {
 impl PreparedSynthetic {
     pub(super) fn upload_secondary_views(
         &self,
-    ) -> ([crate::contribution::SecondaryViewFrame; 4], usize) {
-        let mut frames = [crate::contribution::SecondaryViewFrame::default(); 4];
+    ) -> (
+        [crate::contribution::SecondaryViewFrame; SecondaryViewSlot::MAX_COUNT],
+        usize,
+    ) {
+        let mut frames =
+            [crate::contribution::SecondaryViewFrame::default(); SecondaryViewSlot::MAX_COUNT];
         let mut count = 0;
         for (index, slot) in self.secondary.iter().enumerate() {
             let Some(request) = slot.handle.asked() else {

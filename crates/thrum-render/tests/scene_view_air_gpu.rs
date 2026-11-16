@@ -97,8 +97,9 @@ fn every_stored_plane_column_matches_the_ordinary_aerial_pass() {
                         let step = (half::f16::from_bits(stored.to_bits() + 1).to_f32() - e).abs();
                         let difference = (a - e).abs();
                         maximum = maximum.max(difference / step);
+                        let adjacent = half::f16::from_f32(a).to_bits().abs_diff(stored.to_bits());
                         assert!(
-                            difference <= step,
+                            difference.to_bits() == 0 || adjacent <= 1,
                             "height={height} below={below} pitch={pitch} channel={index}: actual={a} reference={e} difference={difference} step={step}"
                         );
                     }

@@ -13,6 +13,7 @@ use thrum_core::{
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 use thrum_render::{
+    atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
     contribution::{
         AfterOpaqueKind, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectAccess,
@@ -22,8 +23,136 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     graph::{AccessKind, ResourceDescriptor, ResourceScope},
     runtime::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource},
-    synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
+    synthetic::{
+        FrameLighting, SyntheticLight, SyntheticPointLight, SyntheticScene, SyntheticView,
+    },
 };
+// Ordinary main-view colour and depth through the public late-effect inputs.
+
+pub(crate) struct MainObserver {
+    extent: [u32; 2],
+    control: Arc<Mutex<Control>>,
+    prepared: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+}
+impl MainObserver {
+    pub(crate) fn new(extent: [u32; 2]) -> (Self, Arc<Mutex<Control>>) {
+        let control = Arc::new(Mutex::new(Control::default()));
+        (
+            Self {
+                extent,
+                control: Arc::clone(&control),
+                prepared: None,
+            },
+            control,
+        )
+    }
+    fn pass(&self) -> AfterOpaquePass {
+        let mut pass = late(
+            0,
+            RECORD_BYTES as u64 + u64::from(self.extent[0]) * u64::from(self.extent[1]) * 32,
+        );
+        pass.name = "ordinary main observer".into();
+        pass.depth = true;
+        pass.refraction = true;
+        pass
+    }
+}
+impl SceneContribution for MainObserver {
+    fn passes(&self) -> ContributionPasses {
+        ContributionPasses {
+            upload: false,
+            compute: false,
+        }
+    }
+    fn effect_graph(&self) -> EffectGraph {
+        EffectGraph {
+            resources: vec![(
+                ResourceDescriptor::Buffer {
+                    bytes: RECORD_BYTES as u64
+                        + u64::from(self.extent[0]) * u64::from(self.extent[1]) * 32,
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                },
+                ResourceScope::Persistent {
+                    owner: 900,
+                    epoch: 1,
+                    initialized: false,
+                },
+            )],
+            after_opaque: vec![self.pass()],
+            ..EffectGraph::default()
+        }
+    }
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        let device = surface.device;
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("ordinary main observer"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(RECORD_BYTES as u64 + 32),
+                },
+                count: None,
+            }],
+        });
+        let input = self.pass().input_layout(device);
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("ordinary main observer"),
+            bind_group_layouts: &[Some(surface.view_layout), Some(&input), Some(&layout)],
+            immediate_size: 0,
+        });
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("ordinary main observer"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("support/scene_view/main.wgsl").into()),
+        });
+        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
+            label: Some("ordinary main observer"),
+            layout: Some(&pipeline_layout),
+            module: &module,
+            entry_point: Some("observe"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            cache: None,
+        });
+        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("ordinary main observation"),
+            size: RECORD_BYTES as u64 + u64::from(self.extent[0]) * u64::from(self.extent[1]) * 32,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("ordinary main observer"),
+            layout: &layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: buffer.as_entire_binding(),
+            }],
+        });
+        self.control.lock().expect("main control").outputs = vec![buffer];
+        self.prepared = Some((pipeline, group));
+        Ok(())
+    }
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+    fn computes(&self, _: &ContributionFrame) -> bool {
+        false
+    }
+    fn encode_compute(&mut self, _: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {}
+    fn encode_after_compute(&mut self, _: &mut wgpu::CommandEncoder) {}
+    fn draw(&self, _: &mut wgpu::RenderPass<'_>) {}
+    fn encode_after_opaque(
+        &mut self,
+        _: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        _: &ContributionFrame,
+    ) {
+        let (pipeline, group) = self.prepared.as_ref().expect("main observer prepared");
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(2, group, &[]);
+        pass.dispatch_workgroups(self.extent[0].div_ceil(8), self.extent[1].div_ceil(8), 1);
+    }
+    fn submitted(&mut self, _: bool) {}
+}
 
 pub(crate) const SIDE: u32 = 64;
 pub(crate) const RECORD_BYTES: usize = 320;
@@ -80,7 +209,7 @@ pub(crate) struct Source {
     pub(crate) view: SyntheticView,
     pub(crate) lighting: FrameLighting,
     pub(crate) instances: Vec<([f64; 3], u32)>,
-    pub(crate) lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
+    pub(crate) lights: Vec<SyntheticPointLight>,
 }
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -108,16 +237,85 @@ impl SceneSource<SourceTick> for Source {
             lighting: override_light.unwrap_or(self.lighting),
         })
     }
-    fn sample_local_lights(
-        &self,
-        _: SourceTick,
-        _: f32,
-        lights: &mut [thrum_render::synthetic::SyntheticPointLight],
-    ) {
+    fn sample_local_lights(&self, _: SourceTick, _: f32, lights: &mut [SyntheticPointLight]) {
         lights.copy_from_slice(&self.lights);
     }
 }
 pub(crate) type Host = FrameHost<World, Source>;
+
+pub(crate) fn selected_capabilities(capabilities: &DeviceCapabilities) -> DeviceCapabilities {
+    let recipe = std::env::var("THRUM_VIEW_RECIPE").unwrap_or_else(|_| "portable".into());
+    capabilities
+        .clone()
+        .with_recipe_override(&recipe)
+        .expect("requested view test recipe must be admitted")
+}
+
+pub(crate) fn lit_view_scene() -> (SyntheticScene, FrameLighting, SyntheticView) {
+    let mut scene = SyntheticScene::grid(5).expect("scene");
+    scene.view = camera(0.0, 2.0);
+    scene.sun_shadows = true;
+    scene.camera_culling = thrum_render::synthetic::CullMode::Frustum;
+    let toward = glam::Vec3::new(0.0, 1.0, 1.0).normalize();
+    let eye = glam::Vec3::new(100.0, 48.0, 997.5);
+    let far = eye + toward * 3000.0;
+    for (instance, center) in scene.instances.iter_mut().zip([
+        [0.0, 0.0, 0.5],
+        [100.0, 50.5, 1000.0],
+        [0.35, 0.35, 0.45],
+        [100.35, 50.85, 999.95],
+        far.to_array(),
+    ]) {
+        instance.current[3] = [center[0], center[1], center[2], 1.0];
+        instance.previous = instance.current;
+    }
+    for (index, instance) in scene.instances.iter_mut().enumerate() {
+        let half = match index {
+            0 | 1 => [0.9, 0.9, 0.02],
+            2 | 3 => [0.2; 3],
+            _ => [500.0; 3],
+        };
+        for (axis, extent) in half.into_iter().enumerate() {
+            for row in 0..3 {
+                instance.current[axis][row] = if axis == row { extent } else { 0.0 };
+                instance.normal[axis][row] = if axis == row { extent.recip() } else { 0.0 };
+            }
+        }
+        instance.previous = instance.current;
+    }
+    scene.local_lights = vec![SyntheticPointLight {
+        position: [100.0, 50.5, 999.5],
+        radius: 1.0,
+        candela: [10_000.0, 1000.0, 100.0],
+    }];
+    scene.materials.push(thrum_render::abi::MaterialRecord {
+        base_rgba: [0.0, 0.0, 0.0, 1.0],
+        emissive_cutoff: [1024.0, 256.0, 64.0, 0.0],
+        ..thrum_render::abi::MaterialRecord::default()
+    });
+    let mut lamp = thrum_render::abi::InstanceRecord::identity(5, 2);
+    for axis in 0..3 {
+        lamp.current[axis][axis] = 0.03;
+        lamp.normal[axis][axis] = 0.03_f32.recip();
+        lamp.current[3][axis] = scene.local_lights[0].position[axis];
+    }
+    lamp.previous = lamp.current;
+    scene.instances.push(lamp);
+    let lighting = FrameLighting::Atmosphere(
+        AtmosphereFrame::new([0.7, 0.7, -0.1], 100_000.0, [1.0; 3], 0.0, 1).expect("air"),
+    );
+    let camera = SyntheticView::perspective(
+        eye.to_array(),
+        (eye + toward).to_array(),
+        [0.0, 1.0, 0.0],
+        1.0,
+        1.0,
+        0.1,
+        5000.0,
+    )
+    .expect("second camera");
+    (scene, lighting, camera)
+}
 pub(crate) fn camera(x: f32, z: f32) -> SyntheticView {
     SyntheticView::perspective(
         [x, 0.0, z],
@@ -163,6 +361,25 @@ pub(crate) async fn host_with_extent(
     lighting: FrameLighting,
     extent: [u32; 2],
 ) -> Host {
+    host_with_config(
+        capabilities,
+        queue,
+        scene,
+        lighting,
+        FrameConfig {
+            render_extent: extent,
+            surface: None,
+        },
+    )
+    .await
+}
+pub(crate) async fn host_with_config(
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    scene: SyntheticScene,
+    lighting: FrameLighting,
+    config: FrameConfig,
+) -> Host {
     let source = Source {
         view: scene.view,
         lighting,
@@ -179,12 +396,9 @@ pub(crate) async fn host_with_extent(
             .collect(),
     };
     FrameHost::new(
-        capabilities,
+        &selected_capabilities(capabilities),
         queue,
-        FrameConfig {
-            render_extent: extent,
-            surface: None,
-        },
+        config,
         World,
         source,
         scene,
@@ -200,11 +414,13 @@ pub(crate) struct Control {
     pub(crate) order: Vec<usize>,
     pub(crate) outputs: Vec<wgpu::Buffer>,
     pub(crate) handles: Vec<SecondaryView>,
+    pub(crate) main_shader: String,
+    pub(crate) main_frame: Option<ContributionFrame>,
 }
 pub(crate) struct Observer {
     pub(crate) control: Arc<Mutex<Control>>,
     pub(crate) slots: usize,
-    prepared: Vec<(wgpu::ComputePipeline, wgpu::BindGroup)>,
+    prepared: Vec<(wgpu::ComputePipeline, wgpu::BindGroup, [u32; 2])>,
 }
 impl Observer {
     pub(crate) fn new(slots: usize) -> (Self, Arc<Mutex<Control>>) {
@@ -223,14 +439,14 @@ impl Observer {
         )
     }
 }
-fn late(index: usize) -> AfterOpaquePass {
+fn late(index: usize, bytes: u64) -> AfterOpaquePass {
     AfterOpaquePass {
         name: format!("view observer {index}"),
         kind: AfterOpaqueKind::Compute,
         cadence: EffectCadence::Skippable,
         accesses: vec![EffectAccess {
             resource: index,
-            range: 0..OUTPUT_BYTES,
+            range: 0..bytes,
             kind: AccessKind::StorageWrite,
             view: None,
             history: None,
@@ -245,17 +461,21 @@ impl SceneContribution for Observer {
     }
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
-            upload: true,
+            upload: self.slots != 0,
             compute: false,
         }
     }
     fn effect_graph(&self) -> EffectGraph {
+        let control = self.control.lock().expect("control");
         EffectGraph {
-            resources: (0..self.slots)
-                .map(|index| {
+            resources: control
+                .outputs
+                .iter()
+                .enumerate()
+                .map(|(index, output)| {
                     (
                         ResourceDescriptor::Buffer {
-                            bytes: OUTPUT_BYTES,
+                            bytes: output.size(),
                             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                         },
                         ResourceScope::Persistent {
@@ -266,16 +486,31 @@ impl SceneContribution for Observer {
                     )
                 })
                 .collect(),
-            after_opaque: (0..self.slots).map(late).collect(),
+            after_opaque: control
+                .outputs
+                .iter()
+                .enumerate()
+                .map(|(index, output)| late(index, output.size()))
+                .collect(),
             ..EffectGraph::default()
         }
     }
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), String> {
+        assert!(
+            surface.secondary_surfaces.is_empty(),
+            "an observer has not opted its geometry into views"
+        );
+        surface
+            .shader_source
+            .clone_into(&mut self.control.lock().expect("control").main_shader);
         assert_eq!(
             surface.secondary_views.len(),
             self.slots,
             "only owned slots are lent"
         );
+        if self.slots == 0 {
+            return Ok(());
+        }
         let device = surface.device;
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("view observer"),
@@ -316,13 +551,13 @@ impl SceneContribution for Observer {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Storage { read_only: false },
                         has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(OUTPUT_BYTES),
+                        min_binding_size: wgpu::BufferSize::new(RECORD_BYTES as u64 + 32),
                     },
                     count: None,
                 },
             ],
         });
-        let input = late(0).input_layout(device);
+        let input = late(0, 1).input_layout(device);
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("view observer"),
             bind_group_layouts: &[Some(surface.view_layout), Some(&input), Some(&layout)],
@@ -350,9 +585,11 @@ impl SceneContribution for Observer {
         control.outputs.clear();
         self.prepared.clear();
         for slot in surface.secondary_views {
+            let extent = slot.maximum_extent();
+            let bytes = RECORD_BYTES as u64 + u64::from(extent[0]) * u64::from(extent[1]) * 32;
             let output = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("view observer output"),
-                size: OUTPUT_BYTES,
+                size: bytes,
                 usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                 mapped_at_creation: false,
             });
@@ -378,13 +615,14 @@ impl SceneContribution for Observer {
                     },
                 ],
             });
-            self.prepared.push((pipeline.clone(), group));
+            self.prepared.push((pipeline.clone(), group, extent));
             control.outputs.push(output);
         }
         Ok(())
     }
-    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {
-        let control = self.control.lock().expect("control");
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
+        let mut control = self.control.lock().expect("control");
+        control.main_frame = Some(*frame);
         for &index in &control.order {
             if let Some(request) = control.requests[index] {
                 control.handles[index]
@@ -402,10 +640,10 @@ impl SceneContribution for Observer {
         pass: &mut wgpu::ComputePass<'_>,
         _: &ContributionFrame,
     ) {
-        let (pipeline, group) = &self.prepared[index];
+        let (pipeline, group, extent) = &self.prepared[index];
         pass.set_pipeline(pipeline);
         pass.set_bind_group(2, group, &[]);
-        pass.dispatch_workgroups(SIDE / 8, SIDE / 8, 1);
+        pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
     }
     fn computes(&self, _: &ContributionFrame) -> bool {
         false
@@ -419,12 +657,12 @@ impl SceneContribution for Observer {
 pub(crate) fn output(device: &wgpu::Device, queue: &wgpu::Queue, buffer: &wgpu::Buffer) -> Vec<u8> {
     let staging = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("view observer readback"),
-        size: OUTPUT_BYTES,
+        size: buffer.size(),
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, OUTPUT_BYTES);
+    encoder.copy_buffer_to_buffer(buffer, 0, &staging, 0, buffer.size());
     encoder.map_buffer_on_submit(&staging, wgpu::MapMode::Read, .., |result| {
         result.expect("observer mapped");
     });

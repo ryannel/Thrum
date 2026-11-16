@@ -2,10 +2,8 @@
 mod support;
 use support::*;
 use thrum_render::{
-    atmosphere::AtmosphereFrame,
     capabilities::DeviceCapabilities,
     contribution::{SecondaryViewRequest, ViewAir, ViewClipPlane},
-    synthetic::{FrameLighting, SyntheticPointLight, SyntheticScene},
 };
 
 #[test]
@@ -20,45 +18,7 @@ fn each_view_matches_its_alone_bytes_in_either_request_order() {
     );
     pollster::block_on(async {
         let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
-        let mut scene = SyntheticScene::grid(5).expect("scene");
-        scene.view = camera(0.0, 2.0);
-        scene.sun_shadows = true;
-        scene.camera_culling = thrum_render::synthetic::CullMode::Frustum;
-        let toward = glam::Vec3::new(0.0, 1.0, 1.0).normalize();
-        let eye = glam::Vec3::new(100.0, 48.0, 997.5);
-        let far = eye + toward * 3000.0;
-        for (instance, center) in scene.instances.iter_mut().zip([
-            [0.0, 0.0, 0.5],
-            [100.0, 50.5, 1000.0],
-            [0.35, 0.35, 0.45],
-            [100.35, 50.85, 999.95],
-            far.to_array(),
-        ]) {
-            instance.current[3] = [center[0], center[1], center[2], 1.0];
-            instance.previous = instance.current;
-        }
-        for (index, instance) in scene.instances.iter_mut().enumerate() {
-            let half = match index {
-                0 | 1 => [0.9, 0.9, 0.02],
-                2 | 3 => [0.2; 3],
-                _ => [500.0; 3],
-            };
-            for (axis, extent) in half.into_iter().enumerate() {
-                for row in 0..3 {
-                    instance.current[axis][row] = if axis == row { extent } else { 0.0 };
-                    instance.normal[axis][row] = if axis == row { extent.recip() } else { 0.0 };
-                }
-            }
-            instance.previous = instance.current;
-        }
-        scene.local_lights = vec![SyntheticPointLight {
-            position: [100.0, 50.5, 999.5],
-            radius: 1.0,
-            candela: [10_000.0, 1000.0, 100.0],
-        }];
-        let lighting = FrameLighting::Atmosphere(
-            AtmosphereFrame::new([0.7, 0.7, -0.1], 100_000.0, [1.0; 3], 0.0, 1).expect("air"),
-        );
+        let (scene, lighting, second_camera) = lit_view_scene();
         let mut host = host_with_lighting(&capabilities, &queue, scene, lighting).await;
         let (observer, control) = Observer::new(2);
         host.set_scene_contribution(Box::new(observer))
@@ -74,16 +34,7 @@ fn each_view_matches_its_alone_bytes_in_either_request_order() {
             .with_shadows(2, 64.0)
             .expect("Sun"),
             SecondaryViewRequest::new(
-                &thrum_render::synthetic::SyntheticView::perspective(
-                    eye.to_array(),
-                    (eye + toward).to_array(),
-                    [0.0, 1.0, 0.0],
-                    1.0,
-                    1.0,
-                    0.1,
-                    5000.0,
-                )
-                .expect("second camera"),
+                &second_camera,
                 [16, 16],
                 Some(ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane")),
                 ViewAir::Plane,
@@ -136,16 +87,7 @@ fn each_view_matches_its_alone_bytes_in_either_request_order() {
             );
         }
         let camera_air = SecondaryViewRequest::new(
-            &thrum_render::synthetic::SyntheticView::perspective(
-                eye.to_array(),
-                (eye + toward).to_array(),
-                [0.0, 1.0, 0.0],
-                1.0,
-                1.0,
-                0.1,
-                5000.0,
-            )
-            .expect("second camera"),
+            &second_camera,
             [16, 16],
             Some(ViewClipPlane::new([0.0, 1.0, 0.0, -50.0]).expect("plane")),
             ViewAir::Camera,

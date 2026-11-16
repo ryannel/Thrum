@@ -200,6 +200,8 @@ pub struct SecondaryViewSlot {
 }
 
 impl SecondaryViewSlot {
+    /// Maximum declarations across the whole scene in the current profile.
+    pub const MAX_COUNT: usize = 4;
     /// Declare a slot between one quarter and all of each render side.
     /// # Errors
     /// Refuses a nonfinite scale or one outside `0.25..=1.0`.
@@ -229,7 +231,7 @@ impl SecondaryViewSlot {
         render_extent: [u32; 2],
         limits: &wgpu::Limits,
     ) -> Result<(), SecondaryViewError> {
-        if slots.len() > 4 {
+        if slots.len() > Self::MAX_COUNT {
             return Err(SecondaryViewError::SlotLimit);
         }
         if !slots.is_empty()
@@ -337,6 +339,8 @@ pub enum SecondaryViewError {
     RecordLimit,
     /// The per-view local-light table cannot be prepared within the device profile.
     LightingLimit,
+    /// The view's extra stage bindings exceed the device's shader profile.
+    ShaderLimit,
     /// A scale, viewport or device texture extent is invalid.
     InvalidExtent,
     /// A request must use a checked rigid perspective camera.
@@ -357,6 +361,7 @@ impl std::fmt::Display for SecondaryViewError {
             Self::SlotLimit => "secondary view slot limit (four) exceeded",
             Self::RecordLimit => "secondary view record exceeds device binding limits",
             Self::LightingLimit => "secondary view local-light table exceeds its profile",
+            Self::ShaderLimit => "secondary view shader inputs exceed device stage limits",
             Self::InvalidExtent => "invalid secondary view extent",
             Self::InvalidCamera => "secondary view camera must be rigid and perspective",
             Self::InvalidClipPlane => "invalid secondary view clip plane",
