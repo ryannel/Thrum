@@ -1,11 +1,12 @@
 # MESH-SHADING plan
 
 Cooked meshes culled and drawn a meshlet at a time by the Mac GPU's object and mesh stages, through wgpu's
-mesh pipelines, with the indirect path as fallback and reference. [Design](DESIGN.md) ·
+mesh pipelines, with the path they replace as fallback and reference. [Design](DESIGN.md) ·
 [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac)
 
-Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
+Before any milestone, read [What is proved, and how hard](DESIGN.md#what-is-proved-and-how-hard),
+[Proof and builder handoff](DESIGN.md#proof-and-builder-handoff),
 [the seam rulings for track 5](../ARCHITECTURE.md#seam-rulings-for-track-5),
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) and
 [the planning probe](../../evidence/RAY-TRACING/planning-probe/README.md), whose source shows the wgpu calls
@@ -15,19 +16,20 @@ that work on this Mac.
 
 - Assumption: mesh shaders are planned for cooked placements, which are the terrain and the cooked meshes placed in a scene, in the main view and in the Sun's shadow maps. The exit scene's 10,000 entities keep the path they have. Drawing them a meshlet at a time may be the larger saving, but it changes culling code that is held byte-equal to a reference, so it is planned only if M3's record shows the stages are faster on this GPU. The owner can ask for it now.
 - Assumption: nothing here is on the road to the V1 exit, and no piece earns a place on it. The path is off unless asked for, the exit's three rows are not touched, and the last milestone waits for `SHOWCASE` M8.
-- Assumption: promotion is strict. The stages become what the Apple recipe uses by default only if they measure faster. If they do not, the path stays in the engine as a named choice and the record says so.
+- Assumption: promotion is strict and narrow. The stages become the default only if they measure faster, and then only on the Mac GPU that was measured, on the Apple recipe, with the Sun's shadows drawn as maps. Any other Mac, and a scene with ray-traced Sun shadows, keeps today's path until it is measured too. If the stages do not measure faster, the path stays in the engine as a named choice and the record says so.
+- Assumption: under the owner's bar of 17 November the picture is judged by eye in the valley, and timing is a tripwire until M3's sitting. Three comparisons stay automated. Culling on must equal culling off to the byte. The new path's frame outputs must match the old path's, and so must its shadow maps, because other modules read both and a fault there is silent.
 - Assumption: meshlets are not tested against what hides them, and there are no levels of detail. The engine has neither for cooked meshes today.
 - Assumption: these milestones take a builder only when no V1 milestone can start. Their order among the other work that is off the exit is the lead's to choose.
 - Assumption: wgpu's mesh shading is marked experimental. A fault in wgpu that Thrum cannot work around stops the milestone until `APPLE-PRESENTATION` M10 brings a pinned copy of wgpu's Metal backend, and nothing is reported upstream without the owner.
 
 ## M1 On the Mac, one cooked mesh is culled and drawn a meshlet at a time by the GPU's object and mesh stages, and the picture matches the path it replaces
 
-Rulings 1, 2, 4 and 8 are built here. The indirect path is `thrum-asset-gpu`'s `cull.wgsl`, `cooked.wgsl` and `draw.rs`, and `COOKED-DRAW`'s `CookedDrawPath` selects between it and the direct path. `load.rs` uploads a mesh; the cooked product's meshlet table and its meshlet-vertex and meshlet-triangle sections are in `thrum-asset`'s `layout.rs` and are not uploaded today. `scripts/cooked_draw_parity.py` shows how two cooked paths are compared from a script. This creates `scripts/mesh_stage_proof.py`. Do M1.3 before M1.4, because its record is the bound M1.4 holds. If `RAY-TRACING` M1 has landed the launch list first, add `mesh-stages` to it.
+Rulings 1, 2, 4 and 8 are built here. The indirect path is `thrum-asset-gpu`'s `cull.wgsl`, `cooked.wgsl` and `draw.rs`, and `COOKED-DRAW`'s `CookedDrawPath` selects between it and the direct path. `load.rs` stages a mesh and makes its buffers; the cooked product's meshlet table and its meshlet-vertex and meshlet-triangle sections are in `thrum-asset`'s `layout.rs` and are not uploaded today. A material reload lives in `material.rs` (`combine`, `Target`, the candidate) and is drawn and installed in `lib.rs` (`mesh_override`, `submitted`); it holds one pipeline today. `scripts/cooked_draw_parity.py` shows how two cooked paths are compared from a script, and keeps difference images. This creates `scripts/mesh_stage_proof.py`. If `RAY-TRACING` M1 has landed the launch list first, add `mesh-stages` to it.
 
 ## M2 The valley's terrain and cooked meshes draw through the object and mesh stages in the main view and the Sun's shadow maps, through edits and device loss, with the cost of both paths on record
 
-`draw_shadow` in `draw.rs` draws a cooked mesh whole into each shadow pass. `scripts/content_loop_proof.py` shows how an edit is driven and `scripts/cooked_draw_cost.py` how the cooked paths are timed. This creates `scripts/mesh_stage_cost.py`. `RAY-TRACING` M2 and `SCENE-VIEWS` M2 add to the same files.
+`draw_shadow` in `draw.rs` draws a cooked mesh whole into each of the Sun's map passes, and `shadow_pipeline` there holds the caster's raster state with the reason both faces are drawn. `thrum-render`'s `synthetic/shadow.rs` owns the three maps and is not changed. `scripts/content_loop_proof.py` shows how an edit is driven and `scripts/cooked_draw_cost.py` how the cooked paths are timed. This creates `scripts/mesh_stage_cost.py`. `RAY-TRACING` M2 and `SCENE-VIEWS` M2 add to the same files.
 
-## M3 The record says whether the object and mesh stages measured faster on this Mac, and the Apple recipe selects them by default only if they did
+## M3 The record says whether the object and mesh stages measured faster on this Mac, and the Mac window uses them by default only where they did
 
-`docs/evidence/APPLE-TILE/M12` is the model for a paired sitting. Finish every other item first, then end `BLOCKED` asking the lead for the sitting.
+`docs/evidence/APPLE-TILE/M12` is the model for a paired sitting. The sitting comes before every item that reads its record, which is all of them but M3.3 and M3.8. So build what does not need it first: the run and its record, the rule as `mesh_stage_cost.py decide` applies it, and the registry's qualified list with the window's request and `Auto` (M3.3, proved with a test entry whatever the record will say). Then end `BLOCKED` asking the lead for the sitting, take M3.1 when it is granted, and finish the rest from its record. `mesh_stage_cost.py check` and `decide` read the retained record and measure nothing, so they pass on a busy machine.

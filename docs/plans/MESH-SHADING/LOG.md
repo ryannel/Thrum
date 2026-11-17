@@ -7,3 +7,15 @@
   are left until that record shows whether the stages are faster on this GPU.
   [The planning probe](../../evidence/RAY-TRACING/planning-probe/README.md) showed that wgpu 30.0.1 runs both
   stages on this Mac. The design review is owed.
+- 2026-11-18 [The design review](../../evidence/MESH-SHADING/design-review.md) asked for changes: five Must Fix.
+  Resolved in the design and items. (1) The default is keyed to the measured adapter, the Apple recipe and map
+  shadows, and the window's own request is never refused (M3.3). (2) A material reload is one candidate for the
+  indexed and the stage pipeline (M1.7; M1.5 allows its off-frame preparation). (3) Each Sun map is compared
+  with the existing caster at a low Sun (M2.3). (4) Eligibility is decided for each mesh at staging and at
+  publication, by storage-binding and dispatch limits (M1.6, M2.5). (5) The promotion rule names its two
+  figures, the median and the spread, and the sitting precedes the items that read it (M3.1, M3.2). The
+  suggestion was taken: triangles rejected, terrain apart (M2.7, M3.5). Items were renumbered.
+- 2026-11-18 Human, 17 November: "Ok let's lower the bar." Applied here. The measured parity record and the item
+  held to it (old M1.3, M1.4) became one contract comparison at a tolerance the test states (M1.3). The cost
+  record's reviewer question was dropped (M2.7), and the final-build inspection runs only if the path is
+  promoted (M3.4). Meshlet storage follows the scene's resolved path, not the device. The design review is owed.

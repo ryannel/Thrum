@@ -2028,7 +2028,9 @@ belongs to its owner: later work there keeps its tests passing.
    `mesh-stages`) and the adapter into the features, limits and experimental token of the device request, or
    refuses by name. With no list the request is today's. Whichever milestone lands first builds the function
    and the other adds its name. `HOST` M1 gathers the device requests into its recipe when it is built, and the
-   recipe carries the list.
+   recipe carries the list. A host adds `mesh-stages` to its own request, unasked, only when the registry says
+   the adapter is in a qualified configuration for it and offers it (`MESH-SHADING` M3), so an ordinary launch
+   is never refused.
 2. **Mesh pipelines in the creation ledger** (`MESH-SHADING` M1; `runtime/creation.rs`). The creation authority
    gains an entry for mesh pipelines beside `render` and `compute`, counted as they are.
 3. **A mesh structure for each arena row** (`RAY-TRACING` M1; `synthetic/mesh_arena.rs`, `mesh_route.rs`). On a
@@ -2036,11 +2038,15 @@ belongs to its owner: later work there keeps its tests passing.
    is built with the row's write, switched with the row and retired with it. `CULLING`'s route and
    `CONTENT-LOOP`'s row replacement behave as before.
 4. **Cooked residency** (`RAY-TRACING` M2 and `MESH-SHADING` M1 and M2; `thrum-asset-gpu`'s `load.rs`, `lib.rs`,
-   `draw.rs` and `placement.rs`). On a generation that enabled the feature, a resident cooked mesh's buffers
-   carry the usages a structure build and the stages read, its mesh structure and its meshlet storage are part
-   of its residency, and `CookedDrawPath` gains `MeshStages`. A content publication keeps its three kinds of
-   reader and its eight rules: a mesh's structure and meshlet storage are prepared, shown and retired with the
-   mesh. C05 is unchanged. `COOKED-DRAW`'s selection between the direct and indirect paths is unchanged.
+   `draw.rs`, `placement.rs` and `material.rs`). On a generation that enabled ray queries, a resident cooked
+   mesh's buffers carry the usages a structure build reads and its mesh structure is part of its residency.
+   `CookedDrawPath` gains `MeshStages`. In a contribution that resolved to the mesh stages, each mesh the
+   device's limits can bind and dispatch also carries the usages the stages read and its meshlet storage; any
+   other mesh draws by the path `COOKED-DRAW` selects, and a contribution on any other path uploads nothing
+   more. A material reload prepares, draws and installs its hook for the indexed and the stage pipeline as one
+   candidate, and is otherwise unchanged. A content publication keeps its three kinds of reader and its eight
+   rules: a mesh's structure and meshlet storage are prepared, shown and retired with the mesh. C05 is
+   unchanged. `COOKED-DRAW`'s selection between the direct and indirect paths is unchanged.
 5. **Ray instances on the contribution seam** (`RAY-TRACING` M2; `contribution.rs`). `SceneContribution` gains
    one optional method through which a contribution offers the instances it draws that frame. The default
    offers none. `thrum-render` gains no dependency on `thrum-asset-gpu`.
@@ -2063,8 +2069,9 @@ belongs to its owner: later work there keeps its tests passing.
    in a view are proposals for that module's next plan.
 10. **Resolved selections** (`RAY-TRACING` M3, `MESH-SHADING` M1). The report that names the culling mode also
     names the hardware features the device enabled, the Sun shadow method, the penumbra, lamp shadows, ambient
-    occlusion and the cooked draw path, each as resolved. `SHOWCASE`'s exit report prints what it reads; no
-    item of `SHOWCASE` changes.
+    occlusion and the cooked draw path, each as resolved. The cooked draw path's `Auto` reads the resolved Sun
+    shadow method: `RAY-TRACING` M3 supplies it where it adds the method, and until then the method is maps.
+    `SHOWCASE`'s exit report prints what it reads; no item of `SHOWCASE` changes.
 11. **Pipeline preparation** (no build). A scene with a ray or mesh-stage request creates its pipelines
     through the creation authority before it is ready, from WGSL. `APPLE-PRESENTATION` M10's shaders compiled
     ahead of time and M12's pipeline archive cover a launch with no hardware request, which is what their
@@ -2078,7 +2085,7 @@ belongs to its owner: later work there keeps its tests passing.
 | **Hardware features at launch**: a launch names the hardware features it wants; the device enables them or the launch is refused by name; the registry records what was enabled. Default: none | `RAY-TRACING:M1`, `MESH-SHADING:M1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
 | **Ray instances**: a contribution offers, for each opaque thing it draws in a frame, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:M2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-m1-m2) |
 | **Traced visibility**: a scene's preparation takes the Sun shadow method (`Auto`, `Maps`, `Traced`), the penumbra, lamp shadows, and ambient occlusion with a radius; each is resolved from the registry, refused by name where it cannot be met, and reported. `Auto` is `Maps` until promotion | `RAY-TRACING:M3` (Sun, lamps), `M4` (penumbra), `M5` (ambient occlusion) → games, the proving ground | C04, C08, [RAY-TRACING](RAY-TRACING/DESIGN.md#selection-fallback-and-promotion) |
-| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry and reported. `Auto` is `COOKED-DRAW`'s selection until promotion | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-promotion) |
+| **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported. `Auto` is `COOKED-DRAW`'s selection outside a qualified configuration: the measured adapter, the Apple tile recipe and the Sun's shadows as maps | `MESH-SHADING:M1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-promotion) |
 
 
 ## Owner decisions
@@ -2166,7 +2173,8 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
 32. **What the mesh stages draw.** Cooked placements. The exit scene's 10,000 entities are planned only if
     `MESH-SHADING` M3's record shows the stages are faster on this GPU. The owner can ask for them now.
 33. **Promotion is strict.** A path becomes the Apple recipe's default only if it measures no slower (ray-traced
-    Sun shadows) or faster (the mesh stages). A path that looks better and costs more stays a scene's choice.
+    Sun shadows) or faster (the mesh stages). The mesh stages become the default only on the Mac GPU and with
+    the map shadows they were measured with. A path that looks better and costs more stays a scene's choice.
     Turning one on by default for its look, in the showcase too, would change the V1 exit.
 34. **Effects with no portable version.** Lamp shadows and ambient occlusion appear only on a device that
     traces rays. No screen-space stand-in is planned for Chrome or the portable recipe.
@@ -2577,3 +2585,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   interfaces and owner decisions 31 to 36 were added, and the hardware-native decision's Apple tile row and
   sequencing were brought into step. No V1 module's design, plan or done-when item changed, nothing was added
   to a `SHOWCASE` dependency, and no contract or exact baseline changed. Both design reviews are owed.
+- 2026-11-18 Track 5 rulings 1, 4 and 10, the cooked draw path interface and owner decision 33 were amended
+  after [MESH-SHADING's design review](../evidence/MESH-SHADING/design-review.md): the window asks for
+  `mesh-stages` unasked only in a qualified configuration, meshlet storage follows the contribution's resolved
+  path and each mesh's eligibility, a material reload covers both forward pipelines, and `Auto` reads the Sun
+  shadow method. `RAY-TRACING`'s half of ruling 4 keeps its meaning. No contract or exact baseline changed.
