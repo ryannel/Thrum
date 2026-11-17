@@ -165,8 +165,8 @@
           "inspect": "The fresh agent is a separate session the lead commissioned for this item, never the builder and not you; you need not be fresh. Its record is the lead-commissioned folder the builder cites, docs/evidence/CREATOR/m3/fresh-lead/ or a later fresh-lead-<date>/. From the record: did the agent stay within the three documents and what they tell a creator to run, copy or edit, and did any step need crates/ or another design document? Such a step fails the item. Does the retained scene meet the statement, counting game lines by the starter README's method, and does it name an engine item that the three documents and the starter folder don't show? Then run that scene yourself from the reviewed checkout, offscreen on the Mac and in Chrome, at two values of its slider: does each frame draw the ground, sky and mesh, and does the slider change the view? If a command, file or key the agent used has changed in the three documents or the scene commands since the record's commit, give could_not_judge and name it, so the lead commissions a new run.",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/m3/fresh-lead/README.md; docs/evidence/CREATOR/m3/reclaim/README.md#ziggurat",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -175,8 +175,8 @@
           "ask": "Read only those three documents. Is any step missing, out of date against the commands as they run today, or dependent on reading engine source?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/m3/reclaim/README.md#creator-documentation",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -187,8 +187,8 @@
           "inspect": "Make each mistake in a copy of the starter and capture the report line and the offscreen frame after it. Does each message name the object, the cause and a next step, and does the last good scene stay drawn?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/m3/reclaim/README.md#native-diagnostics; docs/evidence/CREATOR/m3/reclaim/native-check.json; docs/evidence/CREATOR/m3/reclaim/native-inspection.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M3-review.md",
           "builder_result": "pass"
         },
         {
@@ -197,8 +197,8 @@
           "inspect": "If the console is unlocked, run the journey yourself on the reviewed checkout with the window driver, docs/evidence/CREATOR/m3/window_journey.py. Read it and window_ui.swift first: the drag must be real pointer events on the slider, with no key press and no value set directly, and each capture an OS capture of the scene or panel window by its id. Computer Use is not a route: it cannot select the unbundled starter or see its panel window. If the console is locked, judge the newest attended run's window captures and records instead, and say so. Did the drag, the parameter save and the asset save each change the visible scene, in order, with no key press? An offscreen frame does not count.",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/m3/window-attended/README.md; docs/evidence/CREATOR/m3/window-attended/run.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M3-review.md",
           "needs": {
             "type": "access",
             "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
@@ -211,28 +211,16 @@
           "ask": "Do the ledger rows and the build plan line match what this module's evidence shows, with nothing claimed for iOS or a physical device?",
           "target": "mac-metal",
           "evidence": "docs/evidence/CREATOR/M3.md; docs/design/maturity.json; docs/plans/BRIEF.md#active-gate-order-and-budgets",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CREATOR/M3-review.md",
           "builder_result": "pass"
         }
       ],
       "failed_reviews": 4,
       "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
-      "findings": [
-        {
-          "name": "fresh-review reading order was violated",
-          "item": "M3.1",
-          "repeat": true
-        },
-        {
-          "name": "native panel drag was not reachable through the review UI tool",
-          "item": "M3.4",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step."
     }
   ]
 }

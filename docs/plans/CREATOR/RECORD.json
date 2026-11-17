@@ -299,7 +299,7 @@
         {
           "verdict": "fail",
           "commit": "059e7f1a168c371371221413052428fcecb199a5",
-          "review": "docs/evidence/CREATOR/M3-review.md",
+          "review": "docs/evidence/CREATOR/M3-review-4.md",
           "items": {
             "M3.1": "could_not_judge",
             "M3.2": "pass",
@@ -335,6 +335,34 @@
             "turns": 1
           },
           "at": "2026-11-17T19:19:52Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "0e5d5fcdf4f7fc9308cc165a0aa06d9861a7b984",
+          "review": "docs/evidence/CREATOR/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 148939,
+            "cached": 5342592,
+            "output": 11352,
+            "turns": 1
+          },
+          "at": "2026-11-17T23:23:38Z"
         }
       ],
       "authorised": {
@@ -367,6 +395,13 @@
           "output": 53520,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "0e5d5fcdf4f7fc9308cc165a0aa06d9861a7b984",
+        "review": "docs/evidence/CREATOR/M3-review.md",
+        "checked": "978c0a639ab5ec14543dd6f0da033f53f3f3eb2e",
+        "at": "2026-11-17T23:23:38Z"
       }
     }
   },
