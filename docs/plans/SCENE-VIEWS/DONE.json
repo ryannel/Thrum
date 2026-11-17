@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -175,12 +175,6 @@
           "evidence": "main-branch check exact-images",
           "verdict": "pass",
           "review": "docs/evidence/SCENE-VIEWS/M1-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "secondary-cascades-submit-unculled-casters",
-          "repeat": false
         }
       ]
     },
