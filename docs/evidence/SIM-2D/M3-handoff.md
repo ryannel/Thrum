@@ -1,5 +1,14 @@
 # SIM-2D M3 resource repair continuation
 
+Current update: all nine builder results are now `pass`, with fresh clean Mac,
+Chrome and simulator receipts at `f64eade89`; all 26 rows independently match the
+unchanged retained folds/checkpoints. The simulator retry job has finished successfully
+for M3.7; its only failure is the expected pre-merge M3.9 `NOT_ON_MAIN` query.
+The repository gate in job `20261117-162103-57552` is still progressing through Rust
+workspace tests. Collect its final result, retain the passing test-command output,
+finish the evidence/log, and merge canonically. The work is not merged yet.
+The earlier account below is historical and its remaining-items list is superseded.
+
 The repair code is committed at `f64eade89b3547715f4bb5d7176c89c709f27d06`.
 `TickGame::profile_resources` exposes the complete staged aggregate through
 `StateEncode`; runtime preflight refuses non-finite resources inside the existing

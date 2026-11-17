@@ -318,10 +318,10 @@
           "statement": "A guide linked from the creator guide tells a game maker how to write rules under the profile: every operation of the profile number, each refused class with its reason, the random function, the queries with their order, and how to record a trace and run it on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it list every operation mechanism 1 names and every class mechanism 6 names, and say that the cell size is part of the rule set?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SIM-2D/M3-resource-repair.md",
           "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M3.5",
@@ -348,8 +348,8 @@
           "statement": "In the iPhone simulator both retained traces reproduce the same digests at the closing commit.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": "docs/evidence/SIM-2D/M3-resource-repair.md",
+          "builder_result": "pass",
           "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M3-review.md"
         },

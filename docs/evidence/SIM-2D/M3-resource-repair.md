@@ -38,15 +38,20 @@ rows in retained Crowd exactly. Both retained files remain unchanged.
 | M3.1 | Read all eleven fixtures against the common baseline: each changes only its named source operation, dependency or configuration. The control command requires refusal and the named diagnostic, and also requires its positive control to pass. The retained control output passes. |
 | M3.2 | The retained registered-package check passes without suppressions. The guard discovers `rule_package` entries, compares configuration bytes against the canonical file and checks all dependency kinds. Both profile commands are invoked by `tools/xtask/src/main.rs` in `check`. |
 | M3.3 | A fresh case-insensitive crowd-name search in both engine crates has no matches. `--package` selects the registry's runner, sizes, vectors and references; the real sine control uses the same adapter and diverges in Chrome. Fifteen adapter tests passed. |
-| M3.4 | The creator guide links the portable rules guide; operations, refused classes/reasons, random, query ordering/domain and fixed rule-set cell size are present. The record exercise passes. Current simulator command completion is still pending. |
+| M3.4 | The creator guide links the portable rules guide; operations, refused classes/reasons, random, query ordering/domain and fixed rule-set cell size are present. The record exercise and all three target commands pass. |
 | M3.5 | Mac: ten rows, both complete retained traces at all three sizes, local/wire routes, debug rows and profile vectors pass at the source checkpoint. |
 | M3.6 | Chrome Wasm: eight rows, both complete retained traces, local/wire routes and profile vectors pass with the same source hash as Mac. |
-| M3.7 | Open pending a complete current simulator receipt; the prior failed attempt is not counted. |
+| M3.7 | The [fresh simulator receipt](M3-resource/ios-sim.json) passes eight complete rows and profile vectors, with the same source hash as Mac/Chrome and a clean source checkpoint. Function only. |
 | M3.8 | Read W1/P3 `sim2d` ledger entries: implementation, correctness, visuals, devices and historical costs are separated. Physical iPhone, x86, Android and other browsers are explicitly not run; simulator speed is explicitly not claimed. |
 | M3.9 | Uses `main-branch check exact-images`, as required by ORCHESTRATE.md; no retained image/reference changed. |
 
 The [first simulator attempt](M3-resource/simulator-first-attempt.stderr) was
 stopped at the 30-minute resource hold limit on the 10,000-body Crowd run.
-It is not a passing simulator proof. An unchanged retry with idle system sleep
-prevented is running; the repository gate is also still running. See the
-[handoff](M3-handoff.md) for job identities and remaining work.
+It is not counted as a passing simulator proof. An unchanged retry with idle system sleep
+prevented passed. The cause of the first delay remains undiagnosed; the host was heavily
+loaded, and neither sleep nor contention is proved to be the cause.
+[Item-check receipt](M3-resource/checks-items.json) records five passing executable items
+and M3.9's expected pre-merge `NOT_ON_MAIN`. An
+[independent comparison](M3-resource/retained-comparison.json) matches all 26 saved target
+rows to the complete retained folds/checkpoints and checks replay/wire witnesses.
+The repository gate is still running; see the [handoff](M3-handoff.md).
