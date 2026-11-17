@@ -211,7 +211,48 @@
     },
     "M2": {
       "definitions": "714557e42f8e6a519de83b78f510d762334077af648cb743595bba119a4f7ba3",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "0c97361d6bc381d17e91424e295fe105b4ce0c7b",
+          "review": "docs/evidence/WATERS/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "fail",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass",
+            "M2.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "rectangular_near_water_highlights",
+              "item": "M2.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 185620,
+            "cached": 6562560,
+            "output": 17229,
+            "turns": 1
+          },
+          "at": "2026-11-17T02:32:29Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "WATERS M2 is blocked: the builder says M2.2 needs a revised geometry/cache-to-shading approach that passes the existing ",
