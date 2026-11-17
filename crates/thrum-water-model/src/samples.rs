@@ -7,7 +7,9 @@
 //! runs linearly from its bed to the upper sample's, and its current, loss and gains from nothing
 //! to the upper sample's. The gauge is the source body's level, its stage included, where the
 //! river has one, and the river's own stage where it has none; every chart of a river takes the
-//! same gauge. A river with one sample answers as a chart always did.
+//! same gauge. A source body is a sea, a basin or another river's chart: a chart's level is its
+//! own at the place the river leaves it, so a river below follows the river above through the
+//! one map. A river with one sample answers as a chart always did.
 use crate::fall::{Fall, FallSegment, PathPoint};
 use crate::{BodyKind, Map, Stage, WaterError};
 
@@ -42,6 +44,15 @@ pub struct ChartSamples {
 pub enum Gauge {
     /// A source body's level, its stage included: a sea or a basin declared before the charts.
     Body(usize),
+    /// A source body that is a chart: its own level, before its joins, at the place this river
+    /// leaves it. The chart is another river's, already in the map, or a chart with no river,
+    /// whose stage then adds to its level; it cannot be one of this river's own.
+    Chart {
+        /// The chart's body.
+        body: usize,
+        /// World x/z of a place in the chart's footprint, at this river's source end.
+        place: [f64; 2],
+    },
     /// The river's own stage, for a river fed by springs.
     Stage(Stage),
 }
@@ -164,8 +175,10 @@ impl Map {
     /// Returns the river's index.
     /// # Errors
     /// Refuses, naming the river, gauge levels that are not finite and rising, a gauge body that
-    /// is not a sea or a basin or whose stage reaches outside the samples, a stage outside them,
-    /// a chart that is not a chart, already in a river, staged, or whose declared grids are not
+    /// is not a sea or a basin or whose stage reaches outside the samples, a gauge chart that is
+    /// not a chart, is one of the river's own, or whose level at a place outside its footprint
+    /// or outside the samples is asked for, a stage outside them, a chart that is not a chart,
+    /// already in a river, the gauge of an earlier river, staged, or whose declared grids are not
     /// its first sample's, grids of the wrong size or with nonfinite or negative values, wetting
     /// gauges outside their samples, and any sample whose banks do not hold its water.
     pub fn add_river(&mut self, river: River) -> Result<usize, WaterError> {
@@ -184,11 +197,37 @@ impl Map {
                 let Some(b) = self.bodies.get(id) else {
                     return fail("gauge body is unknown");
                 };
+                if matches!(b.kind, BodyKind::Chart(_)) {
+                    return fail("gauge body is a chart, whose level needs a place");
+                }
                 if !matches!(b.kind, BodyKind::Sea | BodyKind::Basin { .. }) {
                     return fail("gauge body is not a sea or a basin");
                 }
                 if b.level + b.stage.min < lo || b.level + b.stage.max > hi {
                     return fail("gauge body's stage reaches outside the samples");
+                }
+            }
+            Gauge::Chart { body, place } => {
+                let Some(b) = self.bodies.get(body) else {
+                    return fail("gauge chart is unknown");
+                };
+                let BodyKind::Chart(chart) = &b.kind else {
+                    return fail("gauge chart is not a chart");
+                };
+                if river.charts.iter().any(|c| c.body == body) {
+                    return fail("gauge chart is one of the river's own");
+                }
+                let inside = place.iter().all(|v| v.is_finite())
+                    && self
+                        .bed
+                        .weights(place)
+                        .is_some_and(|w| w.iter().all(|&(i, a)| a <= 1e-12 || chart.footprint[i]));
+                if !inside {
+                    return fail("gauge place is not in the gauge chart's footprint");
+                }
+                let [min, max] = self.chart_level_range(body, place);
+                if min < lo || max > hi {
+                    return fail("gauge chart's level reaches outside the samples");
                 }
             }
             Gauge::Stage(s) => {
@@ -216,6 +255,14 @@ impl Map {
             if self.sampled[c.body].is_some() || river.charts[..k].iter().any(|o| o.body == c.body)
             {
                 return fail("chart is already in a river");
+            }
+            // A gauge reads only what was in the map before its river, so no gauge reads itself.
+            if self
+                .rivers
+                .iter()
+                .any(|r| matches!(r.gauge, Gauge::Chart { body, .. } if body == c.body))
+            {
+                return fail("chart is the gauge of an earlier river");
             }
             if body.stage.min != 0.0 || body.stage.max != 0.0 {
                 return fail("a river's chart has a stage");
@@ -289,7 +336,7 @@ impl Map {
         let Gauge::Stage(s) = &mut r.gauge else {
             return Err(WaterError::new(
                 &r.name,
-                "the gauge follows its source body's stage",
+                "the gauge follows its source body's level",
             ));
         };
         if !value.is_finite() {
@@ -310,8 +357,59 @@ impl Map {
         let r = &self.rivers[river];
         match r.gauge {
             Gauge::Body(id) => self.bodies[id].level + self.bodies[id].stage.value,
+            Gauge::Chart { body, place } => self.own_level(body, place),
             Gauge::Stage(s) => s.value,
         }
+    }
+
+    /// The lowest and highest values a river's gauge may take.
+    fn gauge_range(&self, river: usize) -> [f64; 2] {
+        match self.rivers[river].gauge {
+            Gauge::Body(id) => {
+                let b = &self.bodies[id];
+                [b.level + b.stage.min, b.level + b.stage.max]
+            }
+            Gauge::Chart { body, place } => self.chart_level_range(body, place),
+            Gauge::Stage(s) => [s.min, s.max],
+        }
+    }
+
+    /// The lowest and highest own levels a chart may take at a place on the bed: over its
+    /// river's gauge range for a river's chart, else over its stage's range. A river chart's
+    /// level is linear in the gauge between its samples' gauges and its cells' wetting gauges,
+    /// so its extremes lie at those and at the range's ends.
+    fn chart_level_range(&self, body: usize, place: [f64; 2]) -> [f64; 2] {
+        let b = &self.bodies[body];
+        let (BodyKind::Chart(chart), Some(w)) = (&b.kind, self.bed.weights(place)) else {
+            return [b.level + b.stage.min, b.level + b.stage.max];
+        };
+        let Some((r, k)) = self.sampled[body] else {
+            let grid: f64 = w.iter().map(|&(i, a)| chart.levels[i] * a).sum();
+            return [grid + b.stage.min, grid + b.stage.max];
+        };
+        let river = &self.rivers[r];
+        let c = &river.charts[k];
+        let g = &river.gauges;
+        let [lo, hi] = self.gauge_range(r);
+        let (lo, hi) = (lo.max(g[0]), hi.min(g[g.len() - 1]).max(lo.max(g[0])));
+        let knots = g.iter().copied().chain(
+            c.wetting
+                .iter()
+                .flat_map(|cells| w.iter().filter_map(|&(i, _)| cells[i])),
+        );
+        let mut range = [f64::INFINITY, f64::NEG_INFINITY];
+        for gauge in [lo, hi]
+            .into_iter()
+            .chain(knots.filter(|v| (lo..=hi).contains(v)))
+        {
+            let at = bracket(g, gauge);
+            let level: f64 = w
+                .iter()
+                .map(|&(i, a)| c.cell(g, at, i, self.bed.heights[i]).level * a)
+                .sum();
+            range = [range[0].min(level), range[1].max(level)];
+        }
+        range
     }
 
     /// A river's declaration.
