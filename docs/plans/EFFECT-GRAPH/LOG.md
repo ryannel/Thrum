@@ -225,3 +225,8 @@
   Proposal: the planner must define a clock-origin mapping, preserve raw target records, and revise the
   identity and its record semantics together. [Evidence](../../evidence/EFFECT-GRAPH/M4-resume/README.md)
   and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the contradiction and affected producers.
+- 2026-11-17 Resumed at `605cc0329` and checked origin/main `a590c33b3`; M4's design, plan, criteria
+  and C02 have no intervening planner changes. The retained actual-clock probe again confirms a 1 s
+  M4.2 identity error after resume for leads 0, 10 and 50 ms. No GPU qualification was repeated.
+  No implementation or criteria changed; M4.2 remains open pending the time-origin contract decision.
+  [Rewritten handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) records the reproduction and next action.
