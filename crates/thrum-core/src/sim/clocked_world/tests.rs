@@ -135,7 +135,7 @@ fn failed_tick_remains_queued_and_prior_commits_are_not_repeated() {
         (2, 2, 1)
     );
     world.game_mut().fail_next = true;
-    let fault = advance(&mut world).err().expect("tick refusal");
+    let fault = advance(&mut world).expect_err("tick refusal");
     assert!(matches!(
         fault.downcast_ref::<ClockedWorldError<TestError>>(),
         Some(ClockedWorldError::Game(TestError("retry tick")))

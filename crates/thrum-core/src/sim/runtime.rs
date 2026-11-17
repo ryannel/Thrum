@@ -303,8 +303,8 @@ impl std::fmt::Display for RuntimeError {
     }
 }
 
-impl std::error::Error for RuntimeError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for RuntimeError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::World(error) => Some(error),
             Self::Schedule(error) => Some(error),
