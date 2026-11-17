@@ -400,9 +400,10 @@
   [Every moved reference's old/new SHA-256 and cause](../../evidence/CULLING/M3/replan/reference-refresh.json)
   are the shared refresh record. Coverage, references and pins enter the official merge together.
 
-- 2026-11-16 M11 adds detached provider extent preparation, prepared rejection fallback,
-  generation-tagged native error recovery and completion-gated Metal segment timing.
-  [Six focused Metal tests](../../evidence/APPLE-TILE/M11/README.md) pass, including exact twin
-  output/history, retained generation resources, stale refusal and explicit clock domains.
-  Scoped Clippy, Wasm checks and the pinned iOS simulator build pass. Final game capture
-  and the merged repository gate are still owed; no speed or physical-device claim follows.
+- 2026-11-17 M11 prepares extent replacements with a ready twin, gates native errors by
+  generation and exposes completion-only Metal timing. Natural surface/rejection resets pass.
+  [Seven Metal tests and both-recipe game proof](../../evidence/APPLE-TILE/M11/README.md)
+  pass: 9,620 fixed frames, twelve exact 481-frame comparisons and eight complete realtime arms.
+  Sources, 1× movies, reset tiles, event order and explicit missing timing are retained.
+  The implementation merge gate passed; final evidence integration follows. Capture-only
+  admission/overlay/record-bound fixes change no renderer bytes. No speed or device promotion.

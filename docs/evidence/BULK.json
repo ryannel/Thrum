@@ -898,6 +898,246 @@
       "commit": "c845020524bf1c5283e1e8f610969d1747ec3dcc"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile-metadata.tar.gz",
+      "size": 4193459,
+      "sha256": "9871a7be7227ce57e093b8cb0898272bcd199f9c9789ddb41fb5d5f5a4f00b9d",
+      "date": "2026-11-17T00:19:07.434011+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-history-metal-control.tar",
+      "size": 918292480,
+      "sha256": "4bf048f9ade21f1db25078378e73b61ce27717769ffa8ed06061e6b08100128a",
+      "date": "2026-11-17T00:00:41.273997+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-history-metal-faults.tar",
+      "size": 918292480,
+      "sha256": "0511509c8be61f1eacc974bf1ec4fc5663c29c02588f2f8a11e1ade437b51005",
+      "date": "2026-11-17T00:00:48.350117+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-history-wgsl-faults.tar",
+      "size": 918282240,
+      "sha256": "2308d944b8759f3a97c2420c22f063b5ac5c66169472948a4463bd66ebea0770",
+      "date": "2026-11-17T00:00:51.742055+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-output-metal-control.tar",
+      "size": 918292480,
+      "sha256": "71284cea28e4caa228be4a3df85f9e2ea2555856f462f87a82414d0fa8d43a53",
+      "date": "2026-11-17T00:00:57.309491+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-output-metal-faults.tar",
+      "size": 918292480,
+      "sha256": "ba8c1c3c45dc28fbe075b3a08601a5d8f995d9d5eb2f2bda997b4637dbcfe79a",
+      "date": "2026-11-16T23:59:27.683300+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-native-output-wgsl-faults.tar",
+      "size": 918282240,
+      "sha256": "bacb968efbdb27d48f42d5f79a05dff8c7fce16092c77f67d179187f21ee3d4d",
+      "date": "2026-11-17T00:01:04.471139+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-scene-linear-off-control.tar",
+      "size": 917524480,
+      "sha256": "5279908fa0f95ed2f633bfbd2d230aa472d310cf65218fa3e3d38ed8cc5b2713",
+      "date": "2026-11-17T00:01:10.690591+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-scene-linear-off-faults.tar",
+      "size": 917524480,
+      "sha256": "adf7004b57740045decdf607a4a3cfe1d1e39bf3bebdc722df6261683057b8a2",
+      "date": "2026-11-17T00:01:16.167415+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-sdr-off-control.tar",
+      "size": 323020800,
+      "sha256": "b7e1b5f8f3fdd456d27ef990c2924c03c8065410e07b8edf38cef7c700c2b9fc",
+      "date": "2026-11-17T00:01:19.365279+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/fixed-sdr-off-faults.tar",
+      "size": 323020800,
+      "sha256": "c5eb952f0f4a0081aa77eeab8dff18ebfc052ea889f12e3e9eec40be881c4db4",
+      "date": "2026-11-17T00:01:20.759623+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/realtime-sdr-metal-control.tar",
+      "size": 1339125760,
+      "sha256": "0aa284d892e066ab96bd3c16bda1f8b2a73a2ae89ec0ddb0e581a77cee4b809c",
+      "date": "2026-11-17T00:15:14.952108+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/realtime-sdr-metal-faults.tar",
+      "size": 799160320,
+      "sha256": "5918bfda0350f9bca1b09eb73709741e7838a3705a1769f64429e9951dd2e2b9",
+      "date": "2026-11-17T00:15:20.734254+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/realtime-sdr-off-control.tar",
+      "size": 1401190400,
+      "sha256": "80c31e77a76adbcc0a869aced259007f121f88fb60c247421f51f5739c374125",
+      "date": "2026-11-17T00:10:29.255702+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/apple-tile/realtime-sdr-off-faults.tar",
+      "size": 1060884480,
+      "sha256": "6a3f48bd0bc44fda6a80cc6c4b20d1be4f084e796036fa4edb3b51fe78b503fb",
+      "date": "2026-11-17T00:10:35.788476+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable-metadata.tar.gz",
+      "size": 4188482,
+      "sha256": "eff3aed499760f0d3a640cea2bfea30fe5d12dbbfff88bd22cc5b3ec85f38e01",
+      "date": "2026-11-17T00:19:07.942597+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-history-metal-control.tar",
+      "size": 918292480,
+      "sha256": "880cb074ee44d47b2954fe4de22828e16027ee45fcd415362ad5728f65ba7780",
+      "date": "2026-11-17T00:01:25.098102+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-history-metal-faults.tar",
+      "size": 918292480,
+      "sha256": "f249520f123e075dd994c5b514545829ef1f0aeb0327ea23550800ec82313e7f",
+      "date": "2026-11-17T00:01:30.705063+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-history-wgsl-faults.tar",
+      "size": 918282240,
+      "sha256": "e488a40319f452d470b0450ffbc86e25cc4083166e1b6c7b135438ba7805069e",
+      "date": "2026-11-17T00:01:36.887477+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-output-metal-control.tar",
+      "size": 918292480,
+      "sha256": "c5347337895b9856f6b11511391c03bfda0be4b32454741faf5a50aaba3bb555",
+      "date": "2026-11-17T00:01:42.833504+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-output-metal-faults.tar",
+      "size": 918292480,
+      "sha256": "0b1e601b1ffb1402c1c6c2d62190c3d3db5bff391d80dd5d1d89bd4a5fca1f35",
+      "date": "2026-11-17T00:03:31.038438+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-native-output-wgsl-faults.tar",
+      "size": 918282240,
+      "sha256": "d2319bfa5fb7f1037afb96f1f83c69d0c14a2a299bc7e55cc47c48e0daee05ec",
+      "date": "2026-11-17T00:01:50.508713+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-scene-linear-off-control.tar",
+      "size": 917524480,
+      "sha256": "746c3a0fda5b711f44f88644b37244a3daa56b750e24391d314def56626f6d6e",
+      "date": "2026-11-17T00:01:56.251917+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-scene-linear-off-faults.tar",
+      "size": 917524480,
+      "sha256": "1ee3009841a76ddbeb6d891204c6f0b1e832e05d32eeba8ddc1f5e0f141f23c0",
+      "date": "2026-11-17T00:02:04.109585+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-sdr-off-control.tar",
+      "size": 323020800,
+      "sha256": "6a58d6d1ced185d19932880142d597c8d5693362c800358999be1815899a9d9e",
+      "date": "2026-11-17T00:02:07.911116+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/fixed-sdr-off-faults.tar",
+      "size": 323020800,
+      "sha256": "7fcb8228050417cf04765cdac39425c342295ba34e2460e516f8e963814fb7e9",
+      "date": "2026-11-17T00:02:08.997977+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/realtime-sdr-metal-control.tar",
+      "size": 1328128000,
+      "sha256": "b483b2add64b54fa3cd7ec5e5dda35efbbc861020bdc8a814f96600ca3fc5743",
+      "date": "2026-11-17T00:15:26.108138+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/realtime-sdr-metal-faults.tar",
+      "size": 797440000,
+      "sha256": "6fa8e0e5c46ad4f95f200c10dcd020c959752488b461a16038c3dd963d1733fc",
+      "date": "2026-11-17T00:15:29.746145+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/realtime-sdr-off-control.tar",
+      "size": 1401262080,
+      "sha256": "56b911546d19833f3ee9854c333aa8f13a93998bc55e7a24b2101053dd02e1a5",
+      "date": "2026-11-17T00:10:41.061757+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M11/captures/portable/realtime-sdr-off-faults.tar",
+      "size": 1057986560,
+      "sha256": "68145178d59efb344ed8bad4f8903d067f762cfc92e945742a40ec7890c6da48",
+      "date": "2026-11-17T00:10:45.482842+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/APPLE-TILE/M3-resume/apple-tile-render-stall/png/000255.png",
       "size": 2606027,

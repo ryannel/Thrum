@@ -335,31 +335,31 @@
           "id": "D11.1",
           "statement": "Provider extent/generation replacements prepare off the render critical path with a ready twin, publish through existing generation admission and retire only on completion; no pipeline/native-object creation occurs in play.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
           "ask": "Use bounded provider extent fixtures and existing replacement runtime, without waiting for G4 real scale transitions. Confirm old/new overlap is accounted, failed preparation leaves the live provider intact and stale completion cannot publish.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.2",
           "statement": "Forced provider rejection, surface replacement, command-buffer error and device loss select the correct prepared fallback/rebuild and reset history without old-generation queue work. Ordinary scene-linear and submitted SDR bytes remain exact under the same-target comparison contract; the labelled diagnostic is exact to its own twin.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
           "inspect": "Use T2 still/fixed exact checkpoints and separate realtime host-time failure/recovery sequences against uninterrupted same-build controls. Ordinary inputs/output remain exact under the comparison contract; labelled copy/select output/history matches its own exact twin after reset. Verify event order: device-loss errors reach the platform generation owner; provider rejection alone is not loss.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.3",
           "statement": "Native segment GPU start/end appears under the matching pass identity only after completion, is nonzero and correctly related to its submission; missing timing is explicit.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
           "ask": "Run timing/completion tests and inspect one actual native segment row. Distinguish Metal and wgpu clock domains; compare spans only with a documented correlation, never assume absolute clocks coincide.",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,

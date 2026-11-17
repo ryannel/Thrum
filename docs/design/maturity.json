@@ -731,6 +731,17 @@
           "ios": "simulator app build, target lint and actual encoded-native background-race function pass; no submitted temporal, speed or physical-device qualification"
         },
         "evidence": "../evidence/APPLE-TILE/M10/README.md"
+      },
+      "M11": {
+        "implementation": "detached bounded provider extent preparation with ready WGSL twin, generation admission/completion retention, natural surface and rejection resets, generation-tagged native failure recovery and completion-only named Metal segment outcomes",
+        "functional_validation": "seven focused actual Metal tests pass; merged d24ded771 implementation gate passes; both recipes pass twenty fixed arms with 9620 verified images and twelve exact 481-frame comparisons; eight realtime arms retain 15415 images with zero ring/writer omissions; complete source archives and reset/event/timing audits are retained",
+        "experienced_quality": "builder inspected full-resolution ordinary and labelled diagnostic recovery frames, full-interval host-time sequences and reset-adjacent binary tiles on both recipes; independent milestone review is owed",
+        "platform_performance": {
+          "mac": "positive completion-gated native spans and explicit missing/Unmeasured outcomes; shared-load capture-ON diagnostic only, no speed, MetalFX, panel or physical-loss qualification",
+          "browser": "no new target qualification; prior scoped Wasm compilation remains scoped to its checkpoint",
+          "ios": "no new target qualification; prior pinned simulator compilation remains function/build evidence only"
+        },
+        "evidence": "../evidence/APPLE-TILE/M11/README.md"
       }
     },
     "G4_apple_presentation": {
