@@ -154,3 +154,4 @@
   Direct, Frustum and Occlusion, later shrink edits, and stale-device refusal/recovery. The detached-extent
   regression and scoped Clippy passed. The varied-normal conversion oracle was strengthened as suggested.
   [Repair evidence and logs](../../evidence/CONTENT-LOOP/M2/repair/README.md); no reference or comparison was loosened.
+  The merge size gate required moving the unchanged host methods into the mesh-row module; repo checks and Clippy passed.
