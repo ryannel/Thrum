@@ -215,8 +215,8 @@
     {
       "id": "M4",
       "name": "A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -230,7 +230,9 @@
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-core crates/thrum-network crates/thrum-sea crates/thrum-sea-model crates/thrum-asset crates/thrum-asset-gpu crates/thrum-cook crates/thrum-controls",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md"
+          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -238,10 +240,10 @@
           "check": "cargo test --locked --offline -p thrum-core -p thrum-network -p thrum-sea -p thrum-sea-model -p thrum-asset -p thrum-asset-gpu -p thrum-cook -p thrum-controls --test error_types",
           "ask": "Does each of the eight crates have the test, and does its list hold every error type the crate exports? Do variants name what the caller should do, or where the error happened?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -250,8 +252,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -259,7 +261,16 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M4/README.md"
+          "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M4/README.md",
+          "verdict": "pass",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "wrapped errors are still erased",
+          "item": "M4.2",
+          "repeat": false
         }
       ]
     },

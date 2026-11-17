@@ -270,7 +270,42 @@
     },
     "M4": {
       "definitions": "d8732f548e3c56dc0f607b1db9fdafedfcfd3b2e10438fffcc0de31f0fd23c47",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "21407fd749fa32880bfbe1792767a4445a33101c",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "wrapped errors are still erased",
+              "item": "M4.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 113163,
+            "cached": 1468928,
+            "output": 5746,
+            "turns": 1
+          },
+          "at": "2026-11-17T13:29:00Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan two pieces of work from the owner's requests of 14 Nov 2026. The owner then said: \"can you not just plan and drive ",
