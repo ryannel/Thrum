@@ -345,11 +345,11 @@
           "id": "D11.2",
           "statement": "Forced provider rejection, surface replacement, command-buffer error and device loss select the correct prepared fallback/rebuild and reset history without old-generation queue work. Ordinary scene-linear and submitted SDR bytes remain exact under the same-target comparison contract; the labelled diagnostic is exact to its own twin.",
           "target": "mac-metal",
-        "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
+          "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
           "inspect": "Use T2 still/fixed exact checkpoints and separate realtime host-time failure/recovery sequences against uninterrupted same-build controls. Ordinary inputs/output remain exact under the comparison contract; labelled copy/select output/history matches its own exact twin after reset. Verify event order: device-loss errors reach the platform generation owner; provider rejection alone is not loss.",
           "verdict": "fail",
           "review": "docs/evidence/APPLE-TILE/M11-review.md",
-        "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "D11.3",
@@ -365,7 +365,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "findings": [
         {
