@@ -1,5 +1,11 @@
 # REVIEW-ENGINE log
 
+- 2026-11-17 M4 requires reportable errors at the tick, replay and inline clock boundaries.
+  On `ac95a0a10`, 14 core integration and 12 clocked-world tests passed on mac-metal.
+  The refusal tests recover the original game value and confirm tick and replay retries.
+  Game implementations must supply `Error + Send + 'static`. V1 already does.
+  [M4 evidence](../../evidence/REVIEW-ENGINE/M4/README.md) records the contract and proofs.
+
 - 2026-11-17 M4 follow-up incorporates ATMOSPHERE's `5facc6d4b` link repair.
   Its plan assumption was copied into STATUS with a relative link rooted one folder
   too high. On `0eba66a4d`, `./dev check-docs` passes all 9,872 local links.

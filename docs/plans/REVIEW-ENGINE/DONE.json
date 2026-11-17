@@ -240,8 +240,8 @@
           "check": "cargo test --locked --offline -p thrum-core -p thrum-network -p thrum-sea -p thrum-sea-model -p thrum-asset -p thrum-asset-gpu -p thrum-cook -p thrum-controls --test error_types",
           "ask": "Does each of the eight crates have the test, and does its list hold every error type the crate exports? Do variants name what the caller should do, or where the error happened?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
           "verdict": "fail",
           "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
