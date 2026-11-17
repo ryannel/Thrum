@@ -105,3 +105,8 @@
   Declared: flow bands have no choppiness; the surf model's long-wave swash does not count the flow bands. M1.1's riffle is
   1.5%, half the design's: its chop is 28× the pool's on average but 19× by rms over each. Suspected, not tested: a landing between a wet
   and a still-dry cell gives no plunge for the first millimetres of gauge (bilinear water under bilinear ground).
+- 2026-11-17 M3 after its first review ([evidence](../../evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32)).
+  Built: `Gauge::Chart { body, place }`, a source body that is another river's chart, read as that chart's own level at the place.
+  Verified: a lake moves the river above and, through its pool's level, the gauge, charts and falls of a solved river below it in the one
+  map; that river's mix is within 2.2 mm and 4.6% of a fresh solve. Not shown: the two rivers joined in space, which needs the river
+  above solved with the branch as a way out (a scene for M6). For M4: the GPU must read this gauge too.

@@ -243,8 +243,8 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test gauge && cargo test --locked --offline -p thrum-water-model",
           "ask": "Does the test compare the mixed row with a fresh solve at the level between, in the cells both samples wet, as part 3 of `docs/evidence/RIVERS/design-proof/river_proof.py` does, and would a chart left at one sample with its level raised fail it? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/RIVERS/M3.md#measured (gauge, thrum-water-model tests); docs/evidence/RIVERS/M3.md#after-the-first-review-a-chart-as-the-source-body-m32; docs/evidence/RIVERS/M3-gauge-chart.txt",
           "verdict": "fail",
           "review": "docs/evidence/RIVERS/M3-review.md"
         },
