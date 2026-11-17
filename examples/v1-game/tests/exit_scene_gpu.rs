@@ -17,7 +17,11 @@ use thrum_render::{
 use thrum_test_support::{Profile as TestProfile, Restriction, gpu};
 use v1_game::{FrameConfig, FrameHost, GameContent, GameSetup, MeshRowSource, SurfaceOutput};
 
-#[allow(dead_code, unreachable_pub)]
+#[expect(
+    dead_code,
+    unreachable_pub,
+    reason = "this test only needs the common surface helper"
+)]
 mod support;
 
 const EXTENT: [u32; 2] = [1280, 720];
@@ -84,7 +88,7 @@ fn bounds(store: &AssetStore, limit: u64) -> [(Vec3, Vec3); 5] {
         let mesh =
             MeshProduct::open(store.map(&product.product).expect("product bytes")).expect("mesh");
         let row = mesh_row(&mesh, limit).expect("whole mesh row");
-        assert!(!row.mesh().indices.is_empty());
+        assert_ne!(row.mesh().indices.len(), 0);
         row.mesh().vertices.iter().fold(
             (Vec3::splat(f32::INFINITY), Vec3::splat(f32::NEG_INFINITY)),
             |(min, max), vertex| {
@@ -204,7 +208,7 @@ fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
         };
         let ready = std::time::Instant::now() + Duration::from_secs(30);
         loop {
-            let _ = sample(&mut host);
+            drop(sample(&mut host));
             let stats = stats.lock().expect("scene stats");
             assert!(stats.errors.is_empty(), "{:?}", stats.errors);
             if stats.drawn == Some(1) {
@@ -231,13 +235,14 @@ fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
                 .join(format!("showcase-{name}.params.json"));
             let text = fs::read_to_string(path).expect("unchanged preset");
             let mut controls = v1_game::controls::GameControls::new().expect("controls");
-            assert!(
+            assert_eq!(
                 controls
                     .model_mut()
                     .apply_file(&text)
                     .expect("apply")
                     .problems
-                    .is_empty()
+                    .len(),
+                0
             );
             let knobs = controls.replay();
             host.set_time_of_day(knobs.time_of_day.expect("time"))

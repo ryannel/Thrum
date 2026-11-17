@@ -1,5 +1,5 @@
 //! Capture-off 1080p sizing sweep on the normal exit frame host.
-use std::time::Duration;
+use std::{io::Write, time::Duration};
 
 use thrum_render::{
     capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::CullMode,
@@ -40,6 +40,7 @@ fn main() {
 }
 
 async fn run() {
+    let mut output = std::io::stdout().lock();
     let recipe = std::env::args()
         .nth(1)
         .expect("pass the recipe as the first argument");
@@ -101,13 +102,15 @@ async fn run() {
         }
         assert!(std::time::Instant::now() < deadline, "resources never drew");
     }
-    println!(
+    writeln!(
+        output,
         "{}",
         serde_json::json!({
             "recipe": format!("{:?}", caps.recipe().expect("resolved recipe")),
             "extent": EXTENT, "culling": "frustum", "capture": "off",
         })
-    );
+    )
+    .expect("sweep header");
     let presets = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("params");
     let mut heaviest = None;
     let apply = |host: &mut FrameHost, stop: &str| {
@@ -116,15 +119,15 @@ async fn run() {
         let mut controls = v1_game::controls::GameControls::new().expect("controls");
         let report = controls
             .model_mut()
-            .apply_file(std::str::from_utf8(&data).unwrap())
+            .apply_file(std::str::from_utf8(&data).expect("UTF-8 preset"))
             .expect("preset");
-        assert!(report.problems.is_empty());
+        assert_eq!(report.problems.len(), 0, "preset refused values");
         let state = controls.replay();
-        host.set_time_of_day(state.time_of_day.unwrap())
+        host.set_time_of_day(state.time_of_day.expect("solar parameter"))
             .expect("solar edit");
-        host.set_camera_yaw(state.camera_yaw.unwrap())
+        host.set_camera_yaw(state.camera_yaw.expect("yaw parameter"))
             .expect("yaw edit");
-        host.set_camera_pitch(state.camera_pitch.unwrap())
+        host.set_camera_pitch(state.camera_pitch.expect("pitch parameter"))
             .expect("pitch edit");
     };
     for stop in STOPS {
@@ -132,10 +135,12 @@ async fn run() {
         let sample = frame(&mut host, &device, &surface);
         let counts = sample.camera_culling.expect("GPU culling readback");
         assert_eq!(counts.active, 10_000);
-        println!(
+        writeln!(
+            output,
             "{}",
             serde_json::json!({"stop":stop,"in_view":counts.drawn})
-        );
+        )
+        .expect("stop count");
         if heaviest.is_none_or(|(_, drawn)| counts.drawn > drawn) {
             heaviest = Some((stop, counts.drawn));
         }
@@ -151,9 +156,11 @@ async fn run() {
         assert!(gpu.shadow_near() > 0.0 && gpu.shadow_far() > 0.0);
         assert!(sample.surface_presented && !sample.timing_fault);
         let gpu_ns = SceneGpuTimings::sum(gpu) + sample.gpu_present_ns.expect("present timing");
-        println!(
+        writeln!(
+            output,
             "{}",
             serde_json::json!({"measured_stop":stop,"in_view":drawn,"gpu_ns":gpu_ns})
-        );
+        )
+        .expect("timed sample");
     }
 }

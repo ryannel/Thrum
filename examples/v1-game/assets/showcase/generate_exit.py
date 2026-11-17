@@ -131,23 +131,35 @@ def layout_bytes(layout):
 def verify_layout(layout, terrain, keys):
     entities, loops = layout['entities'], layout['loops']
     assert (len(entities), len(loops)) == COUNTS
-    min_clearance = math.inf
+    max_slope = 0.
+    for triangle in terrain.triangles:
+        a, b, c = (terrain.positions[index] for index in triangle)
+        normal = generate.cross(generate.sub(b, a), generate.sub(c, a))
+        max_slope = max(max_slope, math.hypot(normal[0], normal[2]) / abs(normal[1]))
+    min_sampled, min_guaranteed = math.inf, math.inf
     for index, (mesh, _, x, y, z, _, scale) in enumerate(entities):
         if index < len(loops):
             assert mesh == 4
             authored = loops[index]
+            center, extent, _, _ = authored
+            assert abs(center[0]) + extent[0] < 7000
+            assert -7000 < center[2] - extent[2] and center[2] + extent[2] < 3200
+            # Bound height and surface variation from a sample to the midpoint
+            # of its one-degree interval. Terrain is continuous and piecewise planar.
+            variation = math.pi / 360 * (extent[1] + max_slope * math.hypot(extent[0], extent[2]))
             assert math.dist((x, y, z), loop_position(*authored, 0)) < .0001
             for step in range(360):
                 position = loop_position(*authored, step * authored[2] / 360)
                 px, py, pz = position
                 assert -7000 < px < 7000 and -7000 < pz < 3200
                 clearance = py - scale * 2 - terrain.height(px, pz)
-                min_clearance = min(min_clearance, clearance)
-                assert clearance > 12, (index, step, clearance)
+                min_sampled = min(min_sampled, clearance)
+                min_guaranteed = min(min_guaranteed, clearance - variation)
+                assert clearance - variation > 12, (index, step, clearance)
         else:
             assert mesh < 4 and abs(y - terrain.height(x, z)) <= .000051
             assert path_distance(x, z, keys) >= 10 + 2 * scale
-    return min_clearance
+    return min_sampled, min_guaranteed
 
 
 def write_stand_ins(output, tier):
@@ -182,9 +194,10 @@ def main():
     if args.write_layout:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(layout_bytes(layout))
-    clearance = verify_layout(json.loads(destination.read_bytes()), terrain, keys)
+    sampled, bounded = verify_layout(json.loads(destination.read_bytes()), terrain, keys)
     assert destination.read_bytes() == layout_bytes(layout), 'exit layout does not regenerate byte for byte'
-    print(f'{COUNTS[0]} entities, {COUNTS[1]} loops, minimum sampled terrain clearance {clearance:.2f} m')
+    print(f'{COUNTS[0]} entities, {COUNTS[1]} loops, minimum sampled terrain clearance {sampled:.2f} m, '
+          f'continuous lower bound {bounded:.2f} m')
 
 
 if __name__ == '__main__':

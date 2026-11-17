@@ -157,6 +157,7 @@ fn main() {
                         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
                         diagnostic_clouds: false,
                         content: GameContent::Field,
+                        exit_entities: v1_game::ExitEntities::Draw,
                         camera_culling,
                         valley_stars: false,
                         route_overlay: v1_game::RouteOverlay::Off,

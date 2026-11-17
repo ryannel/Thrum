@@ -97,6 +97,16 @@ fn corrected_exit_replays_complete_authority() {
             straight.get(right).unwrap(),
             "{id:?}"
         );
+        let left_value = predicted.get(left).unwrap();
+        let right_value = straight.get(right).unwrap();
+        assert_eq!(
+            left_value.position.0.map(f64::to_bits),
+            right_value.position.0.map(f64::to_bits)
+        );
+        assert_eq!(
+            left_value.velocity.0.map(f64::to_bits),
+            right_value.velocity.0.map(f64::to_bits)
+        );
         assert_eq!(
             predicted.authored_drift(left),
             straight.authored_drift(right),

@@ -1378,6 +1378,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
         }
         exit = { loaded, ...data };
       } else {
+        await waitFor(async () => (await poll()).status === 'Running 10,000 exit entities on cooked mesh rows',
+          timeout, 'page reports its activated entity population');
         const advanced = await waitFor(async () => {
           const next = await observe();
           return next?.tick > loaded.tick && JSON.stringify(next.mover) !== JSON.stringify(loaded.mover) && next;

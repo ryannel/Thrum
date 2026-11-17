@@ -473,6 +473,15 @@ def bounded(command, log, seconds, **options):
         raise Failure(f'{Path(command[0]).name} exceeded {seconds} s') from None
 
 
+def solid_texture(rgb):
+    def chunk(kind, payload):
+        return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload))
+
+    header = struct.pack('>IIBBBBB', 4, 4, 8, 2, 0, 0, 0)
+    rows = (b'\0' + bytes(rgb) * 4) * 4
+    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', header) + chunk(b'IDAT', zlib.compress(rows)) + chunk(b'IEND', b'')
+
+
 def check(args):
     if args.exit:
         return check_exit(args)
@@ -671,7 +680,18 @@ def check_exit(args):
         env.pop('THRUM_EXIT_NO_ENTITIES', None)
         execute([str(GAME)], 'native', env=dict(env, THRUM_CAPTURE_SCENE=str(run / 'native')))
         execute([str(GAME)], 'empty', env=dict(env, THRUM_CAPTURE_SCENE=str(run / 'empty'), THRUM_EXIT_NO_ENTITIES='1'))
-        for case, name in [('exit-stops', 'chrome'), ('valley', 'texture'), ('sky-reflections', 'diagnostic')]:
+        retinted_source = run / 'retinted-source'
+        shutil.copytree(source, retinted_source)
+        (retinted_source / 'white.png').write_bytes(solid_texture([214, 150, 96]))
+        retinted_store = run / 'retinted-store'
+        execute([str(COOK), 'cook', str(retinted_source), str(retinted_store)], 'retinted-cook')
+        report['retinted_root'] = store_root(retinted_store)
+        if report['retinted_root'] == root:
+            raise Failure('the retinted texture did not change the publication')
+        execute([str(GAME)], 'retinted', env=dict(env, THRUM_ASSET_STORE=str(retinted_store),
+                THRUM_CAPTURE_SCENE=str(run / 'retinted'),
+                THRUM_CAPTURE_PARAMS=str(PARAMS / 'showcase-noon.params.json')))
+        for case, name in [('exit-stops', 'chrome'), ('sky-reflections', 'diagnostic')]:
             execute(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
                      '--assets-source', str(source), '--output', str(run / name)], name, seconds=900)
             results = json.loads((run / name / 'run.json').read_text())['results']
@@ -701,13 +721,8 @@ def check_exit(args):
             if stop in DIAGNOSTIC_PHASE:
                 diagnostic = run / 'diagnostic' / f'sky-reflections-{DIAGNOSTIC_PHASE[stop]}.png'
                 row['diagnostic'] = difference(grid(diagnostic), native)
-        phases = json.loads((run / 'texture/run.json').read_text())['results'][0]['sky']['phases']
-        noon = next(phase for phase in phases if phase['name'] == DIAGNOSTIC_PHASE['noon'])
-        clip = noon['images'][0]['clip']
-        crop = (round(clip['x']), round(clip['y']), round(clip['x'] + clip['width']), round(clip['y'] + clip['height']))
-        edit = report['positive_control'] = difference(
-            grid(run / 'texture/valley-before-edit-final.png', crop=crop),
-            grid(run / 'texture/valley-edited-final.png', crop=crop))
+        edit = report['positive_control'] = difference(grids['native']['noon'],
+            grid(run / 'retinted/route/showcase-noon.ppm'))
         worst = [max(row['parity'][i] for row in stats.values()) for i in range(3)]
         identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
                     'route': {path.stem.removeprefix('showcase-').removesuffix('.params'): sha256(path)
