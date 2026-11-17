@@ -363,9 +363,12 @@
         }
       ],
       "ready_for_review": {
-        "commit": "70c695e0c2724cc05af1ca27d02f9167f89a47bd",
-        "checked": "70c695e0c2724cc05af1ca27d02f9167f89a47bd",
-        "at": "2026-11-17T03:04:04Z",
+        "commit": "387d5a69d87339474a7896921200198da9e03e2b",
+        "checked": "43b7f007fa938d3751fd1c7d7524f4a3dd3640de",
+        "at": "2026-11-17T05:49:24Z",
+        "reused": [
+          "Test command"
+        ],
         "host": "claude",
         "model": "claude-fable-5-2",
         "effort": "medium",
@@ -375,18 +378,17 @@
         "cli": "2.1.319 (Claude Code)",
         "path": "headless",
         "usage": {
-          "input": 151496,
-          "cached": 3876913,
-          "output": 40165,
-          "cost_usd": 9.202691,
-          "turns": 2
+          "input": 171872,
+          "cached": 2820720,
+          "output": 9291,
+          "turns": 1
         },
         "session_usage": {
-          "input": 192885,
-          "cached": 4529131,
-          "output": 44891,
+          "input": 364757,
+          "cached": 7349851,
+          "output": 54182,
           "cost_usd": 11.085958,
-          "turns": 4
+          "turns": 5
         }
       }
     },
