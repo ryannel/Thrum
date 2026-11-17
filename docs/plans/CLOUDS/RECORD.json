@@ -238,20 +238,13 @@
       }
     },
     "M3": {
-      "definitions": "68646e27135a996407bf40b4b65f59c66d345f53654d3d4ce62507d5298b2a67",
+      "definitions": "74491914f1ea06c6d7705a934a32cd1f38907d01976617d6280ddbd8bcb450a6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
+        "at": "2026-11-17T21:47:34Z"
+      }
     },
     "M4": {
       "definitions": "46c2a08db2a17729ef555e19e88c5aa7994a3151e5fb051c0f739a48a00a7563",
@@ -270,20 +263,13 @@
       ]
     },
     "M5": {
-      "definitions": "32bd03cadb65f1b8bf9c0f5043e998f0af6b9ce570a7c597cc1aaee0791a09fd",
+      "definitions": "9130a8d5c4a8946f82fe3fb5e0ed5b83d966190e97e0887509bd3b0ff40cce1a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T02:31:18Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
+        "at": "2026-11-17T21:47:34Z"
+      }
     },
     "M6": {
       "definitions": "33694e805e171b53cc09f975137df599585158362bf45274b8ac4e7a15f59ec0",
@@ -569,20 +555,13 @@
       }
     },
     "M14": {
-      "definitions": "f4f61f87dbc7c60d8f91077fca316a4dae72e5c62d49b1e6910f72f6a7227a3d",
+      "definitions": "83a0b85b9fc2bbc110a8a50d2242f64a8085b084bd9ca8fb4734ff2e9b3fb535",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
+        "at": "2026-11-17T21:47:34Z"
+      }
     },
     "M15": {
       "definitions": "23e436a6a721eac3dff27b72634a0381c10bdd2d704250baeba639044e2beebe",
@@ -662,11 +641,15 @@
     {
       "task": "Settle one design question for ATMOSPHERE before M7 is built. M7 makes haze a weather input, but only its amount: the aerosol is grey with one fixed phase lobe, so haze can only thicken and can't turn bluish when dry or whitish when humid. A review of three recent theses (tmp/theses/atmos-theses-review.md in this worktree, recommendation 1) proposes a second input, such as an Angstrom exponent or an aerosol type, defaulting to today's values so existing scenes don't change. It also touches CLOUDS' ruling 8. First check whether the colour change is visible in the existing reference sky at about 20 km and 3 km visual range; if it isn't, drop the idea and record why. If it is, decide whether and how ATMOSPHERE's design and M7 should change, resolve it with CLOUDS and any contract it touches, and route the change through design review as the orchestrate skills require. The owner asked for this check; the rest of the theses review needs no action now.",
       "at": "2026-11-17T17:59:05Z"
+    },
+    {
+      "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another physical candidate. Its independent f64 slab transport reflects 84.46% at valley noon against the planned formula's 5.49%, and the cache correction cut maximum Sun-transmittance error from 0.288 to only 0.180, so M3.3 still fails. Read the handoff (docs/evidence/CLOUDS/M3-handoff.md) and the work on build/clouds at fa4eabb9d. Decide the multiple-scattering model from first principles and current state of the art, update the CLOUDS design and M3 plan and done-when to match, and say whether the change needs a design review. Done when the builder can resume M3 with a model it can verify against its reference.",
+      "at": "2026-11-17T21:47:34Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T17:59:05Z"
+    "at": "2026-11-17T21:47:34Z"
   },
   "design_history": [
     {
