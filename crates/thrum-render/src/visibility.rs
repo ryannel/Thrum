@@ -185,6 +185,11 @@ pub(crate) struct OcclusionTarget {
 }
 
 impl VisibilityPrepared {
+    pub(crate) fn update_meshes(&self, queue: &wgpu::Queue, meshes: &[MeshRecord]) {
+        let bytes: Vec<u8> = meshes.iter().flat_map(|mesh| mesh.pack()).collect();
+        queue.write_buffer(&self.meshes, 0, &bytes);
+    }
+
     /// Prepare for at most `capacity` instance slots and a stable mesh table.
     pub(crate) fn new(
         device: &crate::runtime::DeviceSite,

@@ -55,6 +55,7 @@ fn secondary_visibility_is_its_own_frustum_even_when_main_uses_occlusion() {
         {
             scene.meshes = bucket.then(|| {
                 Arc::new(crate::synthetic::SyntheticMeshes {
+                    updates: None,
                     meshes: Vec::new(),
                     slots: vec![crate::synthetic::SyntheticMeshChoice::Cube],
                 })

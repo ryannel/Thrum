@@ -93,6 +93,30 @@ pub(super) struct BucketRoute {
 }
 
 impl BucketRoute {
+    pub(super) fn refresh_rows(
+        &mut self,
+        arena: &MeshArena,
+    ) -> Result<Vec<super::shadow::CasterBox>, RenderError> {
+        for (key, range) in self.buckets.keys().iter().zip(&mut self.ranges) {
+            let row = arena.row(key.mesh).ok_or(RenderError::SceneCapacity)?;
+            *range = (
+                row.first_index..row.first_index + row.index_count,
+                row.draw_base_vertex()
+                    .map_err(|_| RenderError::SceneCapacity)?,
+            );
+        }
+        self.lay_out_casters();
+        self.slot_meshes
+            .iter()
+            .map(|&mesh| {
+                arena
+                    .row(mesh)
+                    .map(|row| super::shadow::CasterBox::from_bounds(row.bounds))
+                    .ok_or(RenderError::SceneCapacity)
+            })
+            .collect()
+    }
+
     /// Check the selection against the arena and the scene, fix its buckets
     /// (every class of every selected mesh, so a class change never needs a
     /// new segment) and lay out the first frame's members.

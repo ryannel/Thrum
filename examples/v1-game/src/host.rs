@@ -35,8 +35,26 @@ pub use world_thread::WorldControls;
 pub(crate) type Runtime = runtime::FrameHost<WorldPort, GameScene>;
 
 /// Content and camera culling chosen when the host is prepared.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum MeshRowSource {
+    /// Meshes authored directly in game code.
+    #[default]
+    Code,
+    /// Named mesh products participating in cooked publications.
+    Cooked,
+}
+
+impl From<bool> for MeshRowSource {
+    fn from(cooked: bool) -> Self {
+        if cooked { Self::Cooked } else { Self::Code }
+    }
+}
+
+/// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct GameSetup {
+    /// Valley entity meshes follow cooked publications instead of code-authored props.
+    pub cooked_mesh_rows: MeshRowSource,
     /// Opt-in CPU Weather and GPU Shade, with no cloud layer. Off by default.
     pub clouds: crate::CloudSelection,
     /// Initial authoritative weather controls; ignored when clouds are off.
@@ -65,6 +83,7 @@ pub struct GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
@@ -99,6 +118,7 @@ impl GameSetup {
 
 /// Prepared V1 game, whose world clock and frame executor belong to the engine.
 pub struct FrameHost {
+    cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     inner: Runtime,
     cloud_input: Option<thrum_clouds::WeatherInput>,
     #[cfg(not(target_arch = "wasm32"))]
@@ -519,10 +539,46 @@ impl FrameHost {
         config: FrameConfig,
         setup: GameSetup,
     ) -> Result<Self, String> {
+        Self::new_with_rows(device, queue, capabilities, config, setup, None)
+            .await
+            .map_err(|error| error.to_string())
+    }
+
+    /// Prepare entity geometry from cooked rows with stable slot choices.
+    /// # Errors
+    /// Returns the ordinary scene or device preparation failure.
+    pub async fn new_with_rows(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        setup: GameSetup,
+        rows: Option<thrum_asset_gpu::rows::CookedRows>,
+    ) -> Result<Self, runtime::FrameError> {
         if !capabilities.matches(device) {
-            return Err("capability record does not match the host device".to_owned());
+            return Err(runtime::FrameError::InvalidState(
+                "capability record does not match the host device",
+            ));
         }
-        let scene = GameScene::scene(config.render_extent, setup)?;
+        let mut scene = GameScene::scene(config.render_extent, setup)?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let rows = if rows.is_none() && setup.cooked_mesh_rows == MeshRowSource::Cooked {
+            Some(
+                crate::content::selected_rows(device.limits().max_storage_buffer_binding_size)
+                    .map_err(|error| error.to_string())?,
+            )
+        } else {
+            rows
+        };
+        if let Some(rows) = &rows {
+            let slots = scene
+                .meshes
+                .as_ref()
+                .ok_or("cooked rows require a mesh selection")?
+                .slots
+                .clone();
+            scene.meshes = Some(rows.selection(slots));
+        }
         let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Shade {
             WorldDriver::selected(
                 setup.content,
@@ -555,6 +611,7 @@ impl FrameHost {
         .await
         .map_err(|error| error.to_string())?;
         let mut host = Self {
+            cooked_rows: rows,
             inner,
             cloud_input,
             #[cfg(not(target_arch = "wasm32"))]
@@ -564,6 +621,11 @@ impl FrameHost {
             host.inner.set_scene_contribution(Box::new(shade))?;
         }
         Ok(host)
+    }
+
+    /// Cooked entity rows selected at preparation, shared with residency.
+    pub fn cooked_rows(&self) -> Option<thrum_asset_gpu::rows::CookedRows> {
+        self.cooked_rows.clone()
     }
     /// Move the existing clock/rules into the engine's resident world lane.
     /// # Errors

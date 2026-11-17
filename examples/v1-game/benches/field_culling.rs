@@ -150,6 +150,7 @@ fn main() {
                         surface: None,
                     },
                     GameSetup {
+                        cooked_mesh_rows: v1_game::MeshRowSource::Code,
                         clouds: v1_game::CloudSelection::Off,
                         cloud_weather: v1_game::clouds::initial_state().parameters(),
                         reconstruction: thrum_render::synthetic::Reconstruction::Off,

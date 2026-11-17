@@ -198,6 +198,7 @@ fn field() -> SyntheticScene {
         [-0.45, 0.0, 0.0],
     );
     scene.meshes = Some(Arc::new(SyntheticMeshes {
+        updates: None,
         meshes: vec![plane()],
         slots: (0..900)
             .map(|slot| {
@@ -311,6 +312,7 @@ fn mesh_face_on_its_bounds_keeps_flush_ties_at_rounded_far_poses() {
                     vertex.position = [cos * x - sin * y, sin * x + cos * y, z];
                 }
                 scene.meshes = Some(Arc::new(SyntheticMeshes {
+                    updates: None,
                     meshes: vec![mesh, bounded_face(0.0)],
                     slots: vec![SyntheticMeshChoice::Mesh(0), SyntheticMeshChoice::Mesh(1)],
                 }));

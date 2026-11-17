@@ -37,6 +37,7 @@ pub(crate) struct CasterList {
 }
 
 pub(crate) struct CasterCulling {
+    meshes: wgpu::Buffer,
     count: wgpu::ComputePipeline,
     offsets: wgpu::ComputePipeline,
     scatter: wgpu::ComputePipeline,
@@ -52,6 +53,10 @@ pub(crate) struct CasterIds {
 }
 
 impl CasterCulling {
+    pub(crate) fn update_meshes(&self, queue: &wgpu::Queue, meshes: &[MeshRecord]) {
+        let bytes: Vec<u8> = meshes.iter().flat_map(|mesh| mesh.pack()).collect();
+        queue.write_buffer(&self.meshes, 0, &bytes);
+    }
     /// Prepare one list per caster view over the route's member list.
     pub(crate) fn new(
         device: &crate::runtime::DeviceSite,
@@ -171,6 +176,7 @@ impl CasterCulling {
             })
             .collect();
         Self {
+            meshes: mesh_table,
             count: pipeline("count_casters"),
             offsets: pipeline("offsets_members"),
             scatter: pipeline("scatter_members"),

@@ -40,6 +40,7 @@ pub(crate) fn selection_for(count: usize, keep_walls: bool) -> Arc<SyntheticMesh
         })
         .collect();
     Arc::new(SyntheticMeshes {
+        updates: None,
         meshes: vec![rock(), column(), spruce()],
         slots,
     })

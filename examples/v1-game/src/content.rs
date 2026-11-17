@@ -11,6 +11,19 @@ fn launch_value(name: &str) -> Result<String, std::env::VarError> {
     std::env::var(name)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn selected_rows(
+    max_binding: u64,
+) -> Result<thrum_asset_gpu::rows::CookedRows, thrum_asset_gpu::rows::CookedRowError> {
+    let store = launch_value("THRUM_ASSET_STORE")
+        .map_err(|_| thrum_asset_gpu::rows::CookedRowError::Missing("THRUM_ASSET_STORE".into()))?;
+    thrum_asset_gpu::rows::CookedRows::from_store(
+        &thrum_asset::AssetStore::new(store),
+        crate::showcase::entity_mesh_names(),
+        max_binding,
+    )
+}
+
 fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
     let number = |name: &str, fallback| match launch_value(name) {
         Ok(value) => value
@@ -107,6 +120,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             }
         },
         field_meshes,
+        cooked_mesh_rows: (field_meshes && scene.as_deref() == Ok("valley")).into(),
     })
 }
 
@@ -170,6 +184,11 @@ fn attach_selected(
             .map_err(|error| error.to_string())?,
         ),
         _ => return Err("THRUM_SCENE must be valley, diagnostic or field".to_owned()),
+    };
+    let assets = if let Some(rows) = host.cooked_rows() {
+        assets.with_rows(rows).map_err(|error| error.to_string())?
+    } else {
+        assets
     };
     let assets = configure(assets)?;
     let stats = assets.stats();

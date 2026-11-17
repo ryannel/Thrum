@@ -46,6 +46,7 @@ impl Gpu {
     ) -> PreparedSynthetic {
         let mut scene = scene.clone();
         scene.meshes = Some(Arc::new(SyntheticMeshes {
+            updates: None,
             meshes: vec![super::casters::pyramid()],
             slots,
         }));

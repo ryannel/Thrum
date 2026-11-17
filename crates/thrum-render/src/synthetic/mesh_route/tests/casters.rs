@@ -73,6 +73,7 @@ impl Gpu {
         let mut scene = scene.clone();
         scene.meshes = slots.map(|slots| {
             Arc::new(SyntheticMeshes {
+                updates: None,
                 meshes: vec![pyramid()],
                 slots,
             })

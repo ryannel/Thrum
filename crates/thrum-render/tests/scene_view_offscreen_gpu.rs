@@ -64,6 +64,7 @@ fn views_draw_behind_the_main_camera_and_its_occluding_wall_on_both_routes() {
                     scene.materials[1].emissive_cutoff = [0.0, 1024.0, 0.0, 0.0];
                     scene.meshes = bucket.then(|| {
                         Arc::new(SyntheticMeshes {
+                            updates: None,
                             meshes: Vec::new(),
                             slots: vec![SyntheticMeshChoice::Cube; 2],
                         })

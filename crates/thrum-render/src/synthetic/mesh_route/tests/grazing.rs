@@ -64,6 +64,7 @@ fn mirrored_meshes_repair_grazing_normals_like_ordinary_ones() {
     )
     .expect("view");
     scene.meshes = Some(Arc::new(SyntheticMeshes {
+        updates: None,
         meshes: vec![sheet()],
         slots: vec![SyntheticMeshChoice::Mesh(0)],
     }));

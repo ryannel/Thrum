@@ -40,7 +40,7 @@ pub use content::{attach_cooked_scene, selected_setup};
 pub use host::field_in_view_share;
 pub use host::{
     AdvancedFrame, DriveReport, EncodedFrame, FrameConfig, FrameHost, FrameSample, GameSetup,
-    SurfaceOutput,
+    MeshRowSource, SurfaceOutput,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::{ThreadedFrameHost, WorldControls};

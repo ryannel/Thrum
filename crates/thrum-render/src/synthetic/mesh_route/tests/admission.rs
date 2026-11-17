@@ -44,7 +44,11 @@ fn invalid_selections_are_refused_and_a_valid_one_prepares() {
     let base = SyntheticScene::grid(3).expect("grid");
     let with = |meshes: Vec<SyntheticMesh>, slots: Vec<SyntheticMeshChoice>| {
         let mut scene = base.clone();
-        scene.meshes = Some(Arc::new(SyntheticMeshes { meshes, slots }));
+        scene.meshes = Some(Arc::new(SyntheticMeshes {
+            meshes,
+            slots,
+            updates: None,
+        }));
         scene
     };
     let mut out_of_range = triangle();

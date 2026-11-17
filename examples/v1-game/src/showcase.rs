@@ -5,6 +5,11 @@ use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement,
 
 use crate::SceneCamera;
 
+/// The valley's three stable entity rows; repeated products share publication identity.
+pub(crate) fn entity_mesh_names() -> Vec<String> {
+    ["rock", "sphere", "rock"].map(str::to_owned).to_vec()
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Recipe {

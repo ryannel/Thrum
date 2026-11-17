@@ -40,6 +40,7 @@ mod material;
 pub mod mesh_upload;
 mod placement;
 pub mod records;
+pub mod rows;
 mod staging;
 
 use std::path::PathBuf;
@@ -116,6 +117,10 @@ pub enum CookedSource {
 pub struct RemoteFeed(Arc<Mutex<(u64, Arc<RemoteGeneration>)>>);
 
 impl RemoteFeed {
+    /// Newest verified generation, for initial scene row preparation.
+    pub fn generation(&self) -> Option<Arc<RemoteGeneration>> {
+        self.latest().map(|(_, generation)| generation)
+    }
     /// A feed starting at `generation`.
     pub fn new(generation: RemoteGeneration) -> Self {
         Self(Arc::new(Mutex::new((0, Arc::new(generation)))))
@@ -182,6 +187,8 @@ impl From<PathBuf> for CookedSource {
 /// What to load and how fast to upload it. [`CookedConfig::new`] fills in the defaults.
 #[derive(Clone, Debug)]
 pub struct CookedConfig {
+    /// Entity mesh rows participating in the same publication as every other reader.
+    pub rows: Option<rows::CookedRows>,
     /// Opt-in one-shot staging fill fault, absent from ordinary builds.
     #[cfg(feature = "fault-probe")]
     pub fault: Option<FaultProbe>,
@@ -215,6 +222,7 @@ impl CookedConfig {
     /// interval and texture profiles.
     pub fn new(source: impl Into<CookedSource>, meshes: Vec<MeshPlacement>) -> Self {
         Self {
+            rows: None,
             #[cfg(feature = "fault-probe")]
             fault: None,
             leased: Vec::new(),
@@ -534,6 +542,19 @@ pub struct CookedAssets {
 }
 
 impl CookedAssets {
+    /// Connect cooked entity rows before attaching the contribution to a host.
+    /// # Errors
+    /// Refuses a row reader attached after GPU preparation began.
+    pub fn with_rows(mut self, rows: rows::CookedRows) -> Result<Self, rows::CookedRowError> {
+        if self.live.is_some() {
+            return Err(rows::CookedRowError::Missing(
+                "rows must precede preparation".into(),
+            ));
+        }
+        self.config.rows = Some(rows);
+        Ok(self)
+    }
+
     /// Prepare; nothing runs until the frame host first rebuilds it for a scene.
     ///
     /// # Errors
@@ -714,6 +735,9 @@ impl CookedAssets {
             // New device generation: products are mapped and staged again for it.
             _ => {
                 self.lease.clear();
+                if let Some(rows) = &self.config.rows {
+                    rows.updates.invalidate_device();
+                }
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.drawn = None;
                     stats.drawn_device_generation = None;
@@ -788,6 +812,9 @@ impl SceneContribution for CookedAssets {
         if !live.pending.as_ref().is_some_and(|pending| pending.ready)
             && let Some(set) = live.mailbox.take()
         {
+            if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending) {
+                rows.updates.cancel(pending.set.set.generation);
+            }
             // A publication prepared behind a ready switch may reuse an older drawn
             // set. Never record its redundant destinations: the loader replans it
             // when the switch is submitted, on both native and remote feeds.
@@ -801,6 +828,47 @@ impl SceneContribution for CookedAssets {
                     frames: 0,
                     bound: None,
                 });
+            if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending) {
+                let current = live
+                    .current
+                    .as_ref()
+                    .map_or(&[][..], |(set, _)| set.rows.as_slice());
+                let changed = pending
+                    .set
+                    .set
+                    .rows
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, (hash, _))| {
+                        current
+                            .get(*index)
+                            .is_none_or(|(previous, _)| hash != previous)
+                    })
+                    .map(|(index, (_, geometry))| (index, geometry.clone()))
+                    .collect();
+                if let Err(error) = rows.updates.prepare(pending.set.set.generation, changed) {
+                    if let Ok(mut stats) = self.stats.lock() {
+                        stats.errors.push(format!("mesh rows: {error}"));
+                        stats.failures += 1;
+                    }
+                    live.pending = None;
+                }
+            }
+        }
+        if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending)
+            && let Some(thrum_render::synthetic::mesh_rows::MeshRowStatus::Refused { row, reason }) =
+                rows.updates.status(pending.set.set.generation)
+        {
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.errors.push(format!(
+                    "mesh row {} generation {}: {reason}",
+                    rows.names.get(row).map_or("unknown", String::as_str),
+                    pending.set.set.generation
+                ));
+                stats.failures += 1;
+            }
+            rows.updates.cancel(pending.set.set.generation);
+            live.pending = None;
         }
         // A set whose staging could not be filled never completes; the loader reported why.
         if live
@@ -808,6 +876,9 @@ impl SceneContribution for CookedAssets {
             .as_ref()
             .is_some_and(|pending| pending.set.upload.failed())
         {
+            if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending) {
+                rows.updates.cancel(pending.set.set.generation);
+            }
             live.pending = None;
         }
         let mut tentative = Tentative {
@@ -819,8 +890,9 @@ impl SceneContribution for CookedAssets {
                 tentative.swap = true;
             } else {
                 let recorded = pending.set.upload.encode(encoder, budget);
-                tentative.swap =
-                    self.config.leased.is_empty() && pending.set.upload.completes(recorded);
+                tentative.swap = self.config.leased.is_empty()
+                    && self.config.rows.is_none()
+                    && pending.set.upload.completes(recorded);
                 tentative.recorded = Some(recorded);
             }
             if tentative.swap && pending.bound.is_none() {
@@ -933,7 +1005,14 @@ impl SceneContribution for CookedAssets {
         let now = Instant::now();
         if let (Some(recorded), Some(pending)) = (tentative.recorded, live.pending.as_mut()) {
             pending.set.upload.commit(recorded);
-            if !self.config.leased.is_empty() && pending.set.upload.completes(recorded) {
+            if (!self.config.leased.is_empty() || self.config.rows.is_some())
+                && pending.set.upload.completes(recorded)
+                && self
+                    .config
+                    .rows
+                    .as_ref()
+                    .is_none_or(|rows| rows.updates.offer(pending.set.set.generation))
+            {
                 pending.ready = true;
                 let products = pending
                     .set
@@ -1003,6 +1082,11 @@ impl SceneContribution for CookedAssets {
                     texture_profile: set.texture_profile,
                     volume_profile: set.volume_profile,
                 });
+            }
+            if let Some(rows) = &self.config.rows
+                && let Ok(mut shown) = rows.shown.lock()
+            {
+                shown.clone_from(&set.rows);
             }
             live.current = Some((set, bound));
         }

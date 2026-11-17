@@ -1,7 +1,7 @@
 //! Bounded committed-world presentation using the prepared V1 renderer.
 
 #[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
+pub(crate) use std::time::Instant;
 use std::{
     collections::VecDeque,
     sync::{
@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 #[cfg(target_arch = "wasm32")]
-use web_time::Instant;
+pub(crate) use web_time::Instant;
 
 use crate::contribution::{ContributionPasses, SceneContribution};
 use crate::{
@@ -447,6 +447,17 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Optional entity-row reader retained with the scene through reconstruction.
+    pub fn mesh_rows(&self) -> Option<crate::synthetic::mesh_rows::MeshRows> {
+        self.scene
+            .meshes
+            .as_ref()
+            .and_then(|selection| selection.updates.clone())
+    }
+    /// Maximum admitted byte size of one entity arena buffer on this device.
+    pub fn mesh_row_binding_limit(&self) -> u64 {
+        self.device.limits().max_storage_buffer_binding_size
+    }
     /// Request timestamps for subsequently encoded frames. In-flight frames finish as
     /// encoded; prepared query resources are retained. Survives device replacement.
     pub fn set_timing_requested(&mut self, requested: bool) {
@@ -1422,6 +1433,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }) {
             self.history_reset_pending = true;
         }
+        self.history_reset_pending |= self
+            .prepared
+            .record_mesh_rows(&self.queue)
+            .map_err(|error| FrameError::Gpu(format!("mesh row update: {error:?}")))?;
         self.scene.view = self.view_with_history_reset(&frame_scene.view);
         self.prepared
             .synchronize_history(&self.queue, authority.epoch, authority.timeline);
@@ -1728,6 +1743,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             sample.native_segment = Some(segment);
             completion
         });
+        self.prepared.submit_mesh_rows();
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(true);
         }
@@ -1850,6 +1866,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             )
             .map_err(FrameError::Scene)?;
         let lighting = frame_scene.lighting;
+        self.history_reset_pending |= self
+            .prepared
+            .record_mesh_rows(&self.queue)
+            .map_err(|error| FrameError::Gpu(format!("capture mesh row update: {error:?}")))?;
         self.scene.view = self
             .view_with_history_reset(&frame_scene.view)
             .without_jitter();
@@ -1934,6 +1954,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             )
             .map_err(|error| format!("capture render/readback: {error:?}"))?;
         let submitted = self.queue.submit([encoder.finish()]);
+        self.prepared.submit_mesh_rows();
         if let Some(contribution) = self.contribution.as_mut() {
             contribution.submitted(false);
         }

@@ -43,6 +43,7 @@ pub(crate) mod frame_stats;
 mod history_gpu;
 mod mesh_arena;
 mod mesh_route;
+pub mod mesh_rows;
 mod native_witness;
 mod readback;
 mod scene_apply;
@@ -124,9 +125,8 @@ pub struct SyntheticScene {
     pub camera_culling: CullMode,
     /// Optional immutable unit equatorial directions with incident lux in w.
     pub star_catalogue: Option<&'static [[f32; 4]]>,
-    /// Each instance slot's mesh, fixed for every preparation of this scene:
-    /// the initial one, resizes, visual replacement and device reconstruction
-    /// all prepare from the same selection. `None` draws the unit cube.
+    /// Each instance slot's stable mesh choice. A live selection prepares the
+    /// newest committed geometry on reconstruction. `None` draws the unit cube.
     pub meshes: Option<Arc<SyntheticMeshes>>,
 }
 
@@ -173,6 +173,8 @@ pub struct SyntheticMeshes {
     pub meshes: Vec<SyntheticMesh>,
     /// One choice per scene instance, in logical-slot order.
     pub slots: Vec<SyntheticMeshChoice>,
+    /// Optional publication handshake for bounded live replacement of these rows.
+    pub updates: Option<mesh_rows::MeshRows>,
 }
 
 /// The largest admitted mesh coordinate magnitude. Upload admits transform
@@ -185,8 +187,18 @@ const MESH_COORDINATE_LIMIT: f32 = 1e30;
 /// names only rows the arena holds. CPU-only, before any GPU work.
 fn admit_meshes(
     scene: &SyntheticScene,
-    limits: ArenaLimits,
+    mut limits: ArenaLimits,
 ) -> Result<(MeshArena, Option<MeshSelection>), RenderError> {
+    if let Some(binding) = scene
+        .meshes
+        .as_ref()
+        .and_then(|meshes| meshes.updates.as_ref())
+        .and_then(|updates| updates.0.lock().ok().and_then(|state| state.binding_limit))
+    {
+        let selected = ArenaLimits::for_binding(binding);
+        limits.vertices = limits.vertices.min(selected.vertices);
+        limits.indices = limits.indices.min(selected.indices);
+    }
     let mut arena = MeshArena::new(limits).map_err(|_| RenderError::SceneCapacity)?;
     let Some(meshes) = scene.meshes.as_deref() else {
         return Ok((arena, None));
@@ -194,8 +206,18 @@ fn admit_meshes(
     if meshes.slots.len() != scene.instances.len() {
         return Err(RenderError::SceneCapacity);
     }
-    let rows = meshes
-        .meshes
+    let current = meshes
+        .updates
+        .as_ref()
+        .and_then(|updates| updates.0.lock().ok().map(|state| state.current.clone()));
+    let geometry: Vec<&SyntheticMesh> = current.as_ref().map_or_else(
+        || meshes.meshes.iter().collect(),
+        |rows| rows.iter().map(AsRef::as_ref).collect(),
+    );
+    if meshes.updates.is_some() {
+        arena.enable_live();
+    }
+    let rows = geometry
         .iter()
         .map(|mesh| {
             let id = arena
@@ -223,6 +245,7 @@ fn admit_meshes(
         })
         .collect::<Option<Vec<_>>>()
         .ok_or(RenderError::SceneCapacity)?;
+    arena.retain_geometry(current.unwrap_or_default());
     Ok((arena, Some(MeshSelection { slots })))
 }
 impl SyntheticScene {
@@ -581,6 +604,7 @@ pub struct PreparedSynthetic {
     /// it holds the cube (row 0) and its orthographic winding (row 1) over
     /// shared vertices.
     mesh_arena: MeshArena,
+    row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
     bucket_route: Option<BucketRoute>,
@@ -903,6 +927,36 @@ impl SceneContext<'_> {
 }
 
 impl PreparedSynthetic {
+    pub(crate) fn record_mesh_rows(&mut self, queue: &wgpu::Queue) -> Result<bool, RenderError> {
+        let Some(rows) = self.row_updates.as_mut() else {
+            return Ok(false);
+        };
+        let start = crate::runtime::Instant::now();
+        let switched = rows
+            .record(&mut self.mesh_arena, queue)
+            .map_err(|_| RenderError::SceneCapacity)?;
+        rows.observe(start.elapsed());
+        if switched {
+            if let Some(route) = self.bucket_route.as_mut() {
+                self.caster_boxes = Some(route.refresh_rows(&self.mesh_arena)?);
+            }
+            let records = camera_culling::mesh_records(&self.mesh_arena)?;
+            if let Some(visibility) = self.visibility.as_ref() {
+                visibility.update_meshes(queue, &records);
+            }
+            if let Some((culling, _)) = self.caster_culling.as_ref() {
+                culling.update_meshes(queue, &records);
+            }
+        }
+        Ok(switched)
+    }
+
+    pub(crate) fn submit_mesh_rows(&mut self) {
+        if let Some(rows) = self.row_updates.as_mut() {
+            rows.submitted();
+        }
+    }
+
     /// The prepared, generation-bound SDR stage for graph composition. G4 may
     /// declare and prepare a reconstruction output through this same stage.
     pub(crate) fn sdr_tone_stage(&self) -> &SdrToneStage {
@@ -1689,6 +1743,11 @@ impl PreparedSynthetic {
             pipeline,
             pipeline_two_sided,
             depth_prepass,
+            row_updates: scene
+                .meshes
+                .as_ref()
+                .and_then(|meshes| meshes.updates.clone())
+                .map(|updates| mesh_rows::LiveRows::new(updates, &mut mesh_arena)),
             mesh_arena,
             bucket_route,
             caster_boxes,

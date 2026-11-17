@@ -4,10 +4,9 @@
 //! [`MeshId`] names a row giving the mesh's index range, base vertex and local
 //! bounds. Identity rules:
 //! - a `MeshId` never changes once allocated;
-//! - each preparation builds its arena once, from the scene's authored
-//!   meshes, and uploads it before any frame: rows never change under a
-//!   prepared generation, so no in-flight or discarded frame, and no
-//!   replacement device, sees another generation's rows;
+//! - preparation uploads the initial geometry. An opted-in live row route writes
+//!   replacements into unused space, switches all readers tentatively through
+//!   the frame host, and retires old space only when that frame is submitted;
 //! - culling never touches the arena. Bucket draws and the culling table
 //!   address rows by `MeshId`; logical slots keep their mesh through
 //!   compaction and activity churn.
@@ -21,7 +20,8 @@ use std::ops::Range;
 
 /// One mesh vertex in local space, packed as the 48 bytes the camera and
 /// Sun caster shaders fetch.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MeshVertex {
     /// Local position.
     pub position: [f32; 3],
@@ -76,6 +76,14 @@ impl MeshId {
     pub(super) fn row(self) -> u32 {
         self.0
     }
+
+    pub(super) fn selected(index: usize) -> Result<Self, ArenaError> {
+        u32::try_from(index)
+            .ok()
+            .and_then(|v| v.checked_add(2))
+            .map(Self)
+            .ok_or(ArenaError::UnknownMesh)
+    }
 }
 
 /// Where a mesh lives in the arena, in draw-argument terms.
@@ -112,18 +120,34 @@ impl MeshRow {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum ArenaError {
+/// A mesh failed admission before any geometry was written or drawn.
+pub enum ArenaError {
     /// No triangles, or an index count that is not a multiple of three.
     NotTriangles,
     /// An index at or past the mesh's own vertex count.
-    IndexOutOfRange { index: u32, vertex_count: u32 },
+    IndexOutOfRange {
+        /// The first invalid index.
+        index: u32,
+        /// Number of available vertices.
+        vertex_count: u32,
+    },
     /// A non-finite vertex component.
     NonFinite,
+    /// A referenced position exceeds the supported coordinate range.
+    CoordinateLimit,
     /// The arena's vertex or index limit would be exceeded.
     Capacity,
     /// A `MeshId` this arena never allocated.
     UnknownMesh,
 }
+
+impl std::fmt::Display for ArenaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "mesh arena: {self:?}")
+    }
+}
+
+impl std::error::Error for ArenaError {}
 
 /// Vertex and index limits, in elements.
 #[derive(Clone, Copy, Debug)]
@@ -167,6 +191,8 @@ pub(super) struct MeshArena {
     dirty_vertices: Vec<Range<usize>>,
     dirty_indices: Vec<Range<usize>>,
     gpu: Option<ArenaBuffers>,
+    live: bool,
+    live_geometry: Vec<std::sync::Arc<super::SyntheticMesh>>,
 }
 
 impl MeshArena {
@@ -180,6 +206,8 @@ impl MeshArena {
             dirty_vertices: Vec::new(),
             dirty_indices: Vec::new(),
             gpu: None,
+            live: false,
+            live_geometry: Vec::new(),
         };
         let (vertices, indices) = cube();
         let cube = arena.insert(&vertices, &indices)?;
@@ -200,6 +228,37 @@ impl MeshArena {
 
     pub(super) fn rows(&self) -> &[MeshRow] {
         &self.rows
+    }
+
+    pub(super) fn enable_live(&mut self) {
+        self.live = true;
+    }
+
+    pub(super) fn retain_geometry(&mut self, geometry: Vec<std::sync::Arc<super::SyntheticMesh>>) {
+        self.live_geometry = geometry;
+    }
+    pub(super) fn take_geometry(&mut self) -> Vec<std::sync::Arc<super::SyntheticMesh>> {
+        std::mem::take(&mut self.live_geometry)
+    }
+
+    pub(super) fn extents(&self) -> (u32, u32, ArenaLimits) {
+        (
+            u32::try_from(self.vertices.len()).unwrap_or(u32::MAX),
+            u32::try_from(self.indices.len()).unwrap_or(u32::MAX),
+            self.limits,
+        )
+    }
+
+    pub(super) fn switch(
+        &mut self,
+        mesh: MeshId,
+        replacement: MeshRow,
+    ) -> Result<MeshRow, ArenaError> {
+        let row = self
+            .rows
+            .get_mut(mesh.0 as usize)
+            .ok_or(ArenaError::UnknownMesh)?;
+        Ok(std::mem::replace(row, replacement))
     }
 
     /// Add a mesh at the end of the arena.
@@ -304,16 +363,24 @@ impl MeshArena {
                 .clamp(4, limit.max(4))
         };
         let current = self.gpu.as_ref();
-        let vertex_size = grown(
-            current.map(|gpu| gpu.vertices.size()),
-            vertex_bytes,
-            u64::from(self.limits.vertices) * VERTEX_BYTES,
-        );
-        let index_size = grown(
-            current.map(|gpu| gpu.indices.size()),
-            index_bytes,
-            u64::from(self.limits.indices) * INDEX_BYTES,
-        );
+        let vertex_size = if self.live {
+            u64::from(self.limits.vertices) * VERTEX_BYTES
+        } else {
+            grown(
+                current.map(|gpu| gpu.vertices.size()),
+                vertex_bytes,
+                u64::from(self.limits.vertices) * VERTEX_BYTES,
+            )
+        };
+        let index_size = if self.live {
+            u64::from(self.limits.indices) * INDEX_BYTES
+        } else {
+            grown(
+                current.map(|gpu| gpu.indices.size()),
+                index_bytes,
+                u64::from(self.limits.indices) * INDEX_BYTES,
+            )
+        };
         let usage = wgpu::BufferUsages::STORAGE
             | wgpu::BufferUsages::COPY_DST
             | wgpu::BufferUsages::COPY_SRC;
@@ -371,7 +438,7 @@ fn counts(vertices: &[MeshVertex], indices: &[u32]) -> Result<(u32, u32), ArenaE
 }
 
 /// Check a mesh and return its local bounds.
-fn check(vertices: &[MeshVertex], indices: &[u32]) -> Result<[[f32; 3]; 2], ArenaError> {
+pub(super) fn check(vertices: &[MeshVertex], indices: &[u32]) -> Result<[[f32; 3]; 2], ArenaError> {
     if indices.is_empty() || !indices.len().is_multiple_of(3) {
         return Err(ArenaError::NotTriangles);
     }
@@ -389,6 +456,12 @@ fn check(vertices: &[MeshVertex], indices: &[u32]) -> Result<[[f32; 3]; 2], Aren
     // Only referenced vertices bound the mesh.
     for &index in indices {
         let position = vertices[index as usize].position;
+        if position
+            .iter()
+            .any(|value| value.abs() > super::MESH_COORDINATE_LIMIT)
+        {
+            return Err(ArenaError::CoordinateLimit);
+        }
         for axis in 0..3 {
             bounds[0][axis] = bounds[0][axis].min(position[axis]);
             bounds[1][axis] = bounds[1][axis].max(position[axis]);

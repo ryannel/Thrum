@@ -99,6 +99,10 @@ pub(crate) struct GpuTexture {
 
 /// Every product one publication draws.
 pub(crate) struct ResidentSet {
+    pub(crate) rows: Vec<(
+        ContentHash,
+        thrum_render::synthetic::mesh_rows::MeshRowGeometry,
+    )>,
     pub(crate) head: Head,
     pub(crate) leased: Vec<(ContentHash, ContentHash, Profile, Arc<GpuTexture>)>,
     pub(crate) generation: u64,
@@ -122,6 +126,7 @@ pub(crate) struct PendingSet {
 /// Resources by product hash, only for sets the render thread has confirmed resident.
 #[derive(Default)]
 pub(crate) struct Confirmed {
+    rows: HashMap<ContentHash, thrum_render::synthetic::mesh_rows::MeshRowGeometry>,
     pub(crate) head: Option<Head>,
     meshes: HashMap<ContentHash, Arc<GpuMesh>>,
     textures: HashMap<ContentHash, Arc<GpuTexture>>,
@@ -324,6 +329,7 @@ impl Loader {
     /// render thread drops its last reference after their final submission.
     pub(crate) fn confirm(set: &ResidentSet) -> Confirmed {
         let mut next = Confirmed {
+            rows: set.rows.iter().cloned().collect(),
             head: Some(set.head),
             ..Confirmed::default()
         };
@@ -485,6 +491,7 @@ impl Loader {
             .map_err(|error| error.to_string())?;
         let mut plan = StagingPlan::default();
         let mut set = ResidentSet {
+            rows: Vec::new(),
             head: *head,
             leased: Vec::new(),
             generation: head.generation,
@@ -494,6 +501,41 @@ impl Loader {
             volume_profile,
             products: Vec::new(),
         };
+        if let Some(rows) = &self.config.rows {
+            let retained: HashMap<_, _> = rows
+                .shown
+                .lock()
+                .map(|shown| shown.iter().cloned().collect())
+                .unwrap_or_default();
+            for name in &rows.names {
+                let hash = source
+                    .resolve(name, &[Profile::Portable])
+                    .ok_or_else(|| format!("mesh row {name}: missing product"))?
+                    .product;
+                let geometry = if let Some(geometry) =
+                    confirmed.rows.get(&hash).or_else(|| retained.get(&hash))
+                {
+                    geometry.clone()
+                } else if let Some((_, geometry)) =
+                    rows.initial.iter().find(|(initial, _)| *initial == hash)
+                {
+                    geometry.clone()
+                } else {
+                    let product = MeshProduct::open(
+                        source
+                            .map(&hash)
+                            .map_err(|error| format!("mesh row {name}: {error}"))?,
+                    )
+                    .map_err(|error| format!("mesh row {name}: {error}"))?;
+                    crate::rows::mesh_row(
+                        &product,
+                        self.device.limits().max_storage_buffer_binding_size,
+                    )
+                    .map_err(|error| format!("mesh row {name}: {error}"))?
+                };
+                set.rows.push((hash, geometry));
+            }
+        }
         for (mesh_hash, mesh, texture_hash, texture) in opened.meshes {
             let gpu_mesh = match mesh {
                 Some(mesh) => Arc::new(

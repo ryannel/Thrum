@@ -1,5 +1,12 @@
 # CONTENT-LOOP log
 
+- 2026-11-17 M2 adds cooked entity rows through residency's loader and shared publication, bounded
+  host-owned writes, tentative switches of every row reader and submit-only retirement. The retained
+  scene follows committed geometry through resize and device reconstruction. Metal trial tests passed
+  exact fresh-scene equality in all three culling modes, refusal/recovery, discard, supersession and reuse.
+  The write bound is 1 MiB; contended timings and the reserved capacity are in [the proof](../../evidence/CONTENT-LOOP/M2.md).
+  Chrome's visible-entity fixture and the merged-build realtime inspection are being verified separately.
+
 - 2026-11-16 M4 review repair removes the added watcher-test logging. The complete integration-test
   file now matches `a7390265` byte for byte; all four native integration tests pass on this Mac.
   The earlier preservation claim was stale after integration and is superseded by this fresh proof.

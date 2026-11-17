@@ -433,6 +433,14 @@ impl GameScene {
             }
             GameContent::Field => field_scene(extent, setup.field_meshes)?,
         };
+        if setup.cooked_mesh_rows == super::MeshRowSource::Cooked
+            && let Some(selection) = scene.meshes.as_mut()
+        {
+            let selection = std::sync::Arc::make_mut(selection);
+            selection.updates = Some(thrum_render::synthetic::mesh_rows::MeshRows::new(
+                selection.meshes.clone(),
+            ));
+        }
         scene.view = scene
             .view
             .with_native_witness(native_witness_selection())

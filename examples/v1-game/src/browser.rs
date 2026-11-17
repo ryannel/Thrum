@@ -139,6 +139,7 @@ pub async fn create_browser_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
+            cooked_mesh_rows: (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)).into(),
             camera_culling: valley_culling(culling.as_deref(), cooked_valley.unwrap_or(false))?,
             ..crate::GameSetup::default()
         },
@@ -175,6 +176,7 @@ pub async fn create_field_game(
             cloud_weather: crate::clouds::initial_state().parameters(),
             reconstruction: thrum_render::synthetic::Reconstruction::Off,
             content: crate::GameContent::Field,
+            cooked_mesh_rows: crate::host::MeshRowSource::Code,
             diagnostic_clouds: false,
             camera_culling,
             valley_stars: false,
@@ -355,6 +357,7 @@ pub async fn create_route_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
+            cooked_mesh_rows: meshes.unwrap_or(false).into(),
             ..crate::GameSetup::default()
         },
     )
@@ -454,6 +457,22 @@ impl BrowserGame {
             crate::showcase::prepare_showcase(source)
         }
         .map_err(js_error)?;
+        let assets = if let Some(reader) = self.shell.host().mesh_rows() {
+            let generation = valley
+                .feed
+                .generation()
+                .ok_or_else(|| js_error("missing fetched generation"))?;
+            let rows = thrum_asset_gpu::rows::CookedRows::from_generation(
+                &generation,
+                crate::showcase::entity_mesh_names(),
+                self.shell.host().mesh_row_binding_limit(),
+            )
+            .map_err(js_error)?
+            .with_reader(reader);
+            assets.with_rows(rows).map_err(js_error)?
+        } else {
+            assets
+        };
         let stats = assets.stats();
         #[cfg(feature = "dev-material")]
         let material = assets.material();
@@ -489,6 +508,8 @@ impl BrowserGame {
         Some(
             serde_json::json!({
                 "drawn": stats.drawn,
+                "rowGeneration": self.shell.host().mesh_rows().and_then(|rows| rows.report().generation),
+                "rowWrittenBytes": self.shell.host().mesh_rows().map(|rows| rows.report().submitted_bytes),
                 "drawPath": format!("{:?}", stats.draw_path),
                 "initialDownlevel": self.initial_downlevel,
                 "visibleMeshlets": stats.visible_meshlets,
