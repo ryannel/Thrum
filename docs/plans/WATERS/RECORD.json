@@ -216,6 +216,32 @@
         "by": "plan",
         "task": "WATERS M2 is blocked: the builder says M2.2 needs a revised geometry/cache-to-shading approach that passes the existing ",
         "at": "2026-11-16T17:59:30Z"
+      },
+      "ready_for_review": {
+        "commit": "b26e0930fbe8d13945c5fc601d14e47538cbfa7f",
+        "checked": "24e6ad7ca037ebe459becee00cd445118eaa6cbc",
+        "at": "2026-11-17T02:01:25Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 1669620,
+          "cached": 184827904,
+          "output": 570444,
+          "turns": 5
+        },
+        "session_usage": {
+          "input": 1669620,
+          "cached": 184827904,
+          "output": 570444,
+          "turns": 5
+        }
       }
     },
     "M3": {
