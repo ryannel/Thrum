@@ -26,7 +26,36 @@
   "milestones": {
     "M1": {
       "definitions": "e8e22fde9bfde2917562964e6e7c4f7e8d3a80f924223ef949f1c6a1ed74404a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "0fd6a9de0a9872d4e923c94666a3b717584206f2",
+          "review": "docs/evidence/GAME-SPLIT/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 74868,
+            "cached": 938496,
+            "output": 5645,
+            "turns": 1
+          },
+          "at": "2026-11-17T08:43:58Z"
+        }
+      ],
       "authorised": {
         "by": "design review",
         "review": "docs/evidence/GAME-SPLIT/design-review.md",
@@ -68,6 +97,13 @@
           "output": 66180,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "0fd6a9de0a9872d4e923c94666a3b717584206f2",
+        "review": "docs/evidence/GAME-SPLIT/M1-review.md",
+        "checked": "40de2f151a22598b4a79ab2a788d2c1dcf890abd",
+        "at": "2026-11-17T08:43:58Z"
       }
     },
     "M2": {
