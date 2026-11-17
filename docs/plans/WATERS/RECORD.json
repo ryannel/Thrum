@@ -327,7 +327,43 @@
     },
     "M3": {
       "definitions": "33e317facbfc82fd33f5b8a3f60ae82dafedeb3180e38ddf16c45c65723cf376",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "9364759b57ae4bb6e456747b2d380acec8997923",
+          "review": "docs/evidence/WATERS/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "fail",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "resume-clock-contract",
+              "item": "M3.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 206366,
+            "cached": 8647936,
+            "output": 16703,
+            "turns": 1
+          },
+          "at": "2026-11-17T12:28:26Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner, 14 Nov 2026, about the SEA module: \"Please make sure the sea work is actually thinking about water as a whole",
