@@ -235,7 +235,7 @@
           "ask": "Do the rows support the explanation given for each slower one? Is forced-parallel reported as measured, whichever way it came out?",
           "target": "mac-metal",
           "evidence": "docs/evidence/SIM-2D/M2/costs-mac-metal.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
@@ -245,7 +245,7 @@
           "check": "python3 scripts/sim2d_conformance.py costs --target chrome-webgpu",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/SIM-2D/M2/costs-chrome-webgpu.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/SIM-2D/M2-review.md",
           "builder_result": "pass"
         },
@@ -274,20 +274,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one.",
-      "findings": [
-        {
-          "name": "mac_cost_identity_stale",
-          "item": "M2.9",
-          "repeat": true
-        },
-        {
-          "name": "chrome_cost_identity_stale",
-          "item": "M2.10",
-          "repeat": true
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Queries as dependable as Box2D's world queries: the right bodies, every time, in an order a game can rely on. Cheap enough for the crowd sizes Vampire Survivors and Halls of Torment put on screen, with the cost of a dense crowd on record and not hidden behind a sparse one."
     },
     {
       "id": "M3",

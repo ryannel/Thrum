@@ -219,7 +219,7 @@
         {
           "verdict": "fail",
           "commit": "8176afb5083a87eaa032d98bf9c5d24ab4588373",
-          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "review": "docs/evidence/SIM-2D/M2-review-2.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -262,6 +262,41 @@
             "turns": 1
           },
           "at": "2026-11-17T04:49:12Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "pass",
+            "M2.10": "pass",
+            "M2.11": "pass",
+            "M2.12": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 122211,
+            "cached": 1666944,
+            "output": 6739,
+            "turns": 1
+          },
+          "at": "2026-11-17T08:22:04Z"
         }
       ],
       "authorised": {
@@ -304,6 +339,13 @@
           "output": 561393,
           "turns": 6
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "511927183f158ef5c3fa16ca668c0c0afbe1f6fc",
+        "review": "docs/evidence/SIM-2D/M2-review.md",
+        "checked": "6c9d5f2cea36d09b90c0d3a583fe3b89d43720e6",
+        "at": "2026-11-17T08:22:04Z"
       }
     },
     "M3": {
