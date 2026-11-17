@@ -17,7 +17,7 @@ Closes gate G3s at M6; M7 and M8 are track 2. Milestones run in the order M5, M9
 - Assumption: M7 and M8 wait for M6, so fog's first frame waits for TAAU and for G3s to close.
 - Assumption: lamps and other local lights do not light haze or fog; the Sun, the sky and the ground's light do.
 - Assumption: the weather sets the haze, so `ATMOSPHERE`'s fixed air (a visual range of about 244 km) becomes an input with that value as its default. Every scene that sets nothing draws as before.
-- Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. [The check of 17 November](../../evidence/ATMOSPHERE/haze-kind-check.md) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
+- Assumption: the haze's kind is one Ångström exponent, defaulting to 0, today's grey aerosol; its single-scattering albedo and phase stay fixed. The check of 17 November (`docs/evidence/ATMOSPHERE/haze-kind-check.md`) found the exponent's colour visible at a low Sun and small at noon. Which exponent a weather sets, and whether moisture drives it, is the game's.
 - Assumption: the terrain lip on the shipped Ground E pan is judged in M6.1 as a brightness step, and the held 17.4 h stop is judged; only the moving spur edge of the parked M3 crossing is left out.
 
 ## M1 The valley remains legible at moonless midnight: done
