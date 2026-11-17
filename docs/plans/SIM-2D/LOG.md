@@ -187,3 +187,12 @@ Records retain input manifests. Seven tests and the actual clean-checkout compar
 Both historical workspace/lockfile changes preserve the key; runtime source changes invalidate it.
 Fresh two-run records at `8d59950fc` pass both cost validators, with unchanged native/Wasm hashes.
 [Evidence and current measurements](../../evidence/SIM-2D/M1.md) retain the known scaling flags.
+
+## M3 portable rule authoring, 17 November 2026
+
+Added the registered rule-package guard, canonical Clippy configuration and single-violation fixtures.
+The guard pins configuration, forbids lowering profile lints and runs with its controls in `./dev check`.
+One passing fixture, eleven refusals and fifteen conformance adapter tests pass on the Mac.
+Crowd and Mixed reproduce retained digests and profile vectors on Mac, Chrome and iPhone simulator.
+The guide's straight recording matches Crowd; the registered sine control diverges at tick 1 in Chrome.
+[Evidence and limits](../../evidence/SIM-2D/M3.md) record unchanged references and simulator function only.
