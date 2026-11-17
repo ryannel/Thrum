@@ -220,8 +220,8 @@
     {
       "id": "M3",
       "name": "On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -234,8 +234,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (samples)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.2",
@@ -243,10 +243,10 @@
           "check": "cargo test --locked --offline -p thrum-river-model --test gauge && cargo test --locked --offline -p thrum-water-model",
           "ask": "Does the test compare the mixed row with a fresh solve at the level between, in the cells both samples wet, as part 3 of `docs/evidence/RIVERS/design-proof/river_proof.py` does, and would a chart left at one sample with its level raised fail it? Was any existing test of `thrum-water-model` edited?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/RIVERS/M3.md#measured (gauge, thrum-water-model tests)",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.3",
@@ -255,8 +255,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (fall_gauge)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.8",
@@ -266,8 +266,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (wetting, thrum-water-model tests)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.4",
@@ -277,8 +277,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (chop)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.5",
@@ -288,8 +288,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (flow_bands, thrum-water-model tests); docs/evidence/RIVERS/M3-bits.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.6",
@@ -298,8 +298,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/RIVERS/M3.md#measured (conformance)",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
         },
         {
           "id": "M3.7",
@@ -308,8 +308,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/RIVERS/M3-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "chart source gauge is refused",
+          "item": "M3.2",
+          "repeat": false
         }
       ]
     },

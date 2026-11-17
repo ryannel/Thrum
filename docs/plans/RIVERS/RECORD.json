@@ -273,7 +273,46 @@
     },
     "M3": {
       "definitions": "e7e8bb7bef311903d14219273122920582e407d07b02ff613ede60f49daacbd5",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "0543f431045ef08bea38da3754b2a133b3e9564d",
+          "review": "docs/evidence/RIVERS/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "fail",
+            "M3.3": "pass",
+            "M3.8": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "chart source gauge is refused",
+              "item": "M3.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 158213,
+            "cached": 3759872,
+            "output": 9366,
+            "turns": 1
+          },
+          "at": "2026-11-17T00:20:04Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
