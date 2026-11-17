@@ -160,7 +160,7 @@
       }
     },
     "M2": {
-      "definitions": "8dbb7d86fc456e330b620892eff74aac07a83748fe9241fd588df003f45df29b",
+      "definitions": "d18e71316eb89cb761adc10e7753ddf0f47f53dab0907fe398b9cdb734aa65db",
       "reviews": [
         {
           "verdict": "fail",
@@ -294,8 +294,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "PUDDLES M2 has failed review three times on M2.11, and the builder now says the rule is under-specified: the design's co",
-        "at": "2026-11-16T23:09:33Z"
+        "task": "The design review of PUDDLES at docs/evidence/PUDDLES/design-review.md asked for changes. Resolve its 1 Must Fix finding",
+        "at": "2026-11-17T01:24:34Z"
       }
     },
     "M3": {
@@ -415,11 +415,15 @@
     {
       "task": "PUDDLES M2 has failed review three times on M2.11, and the builder now says the rule is under-specified: the design's covering and uncovering rule and M2.11 don't say what happens when a puddle holds less water than the pores it rises over or the film it must leave behind. Read docs/evidence/PUDDLES/M2-review.md on main and the handoff docs/evidence/PUDDLES/M2-handoff.md on build/puddles (0edf93802ec4). Settle a conserving rule (water is never invented or silently owed), rewrite the design section and M2.11 to match, and say which existing tests change.",
       "at": "2026-11-16T23:09:33Z"
+    },
+    {
+      "task": "The design review of PUDDLES at docs/evidence/PUDDLES/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
+      "at": "2026-11-17T01:24:34Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T23:09:33Z"
+    "at": "2026-11-17T01:24:34Z"
   },
   "design_history": [
     {
