@@ -358,3 +358,11 @@
   [Proposal](../../evidence/CLOUDS/M2-temporal-blocker.md): the planner should assign a shared
   display-time policy to HOST/EFFECT-GRAPH that preserves unclipped target information;
   CLOUDS cannot recover it from the existing alpha. Other possible pop causes remain unisolated.
+
+- 2026-11-17 M2 consumes EFFECT-GRAPH's display phase and predicts travel by the model's own
+  tick arithmetic; ramps, target changes, cuts and repeated-tick GPU dispatch behavior pass.
+  Source `05ca24a7d` merged with the workspace gate passing. The merged fixed views and
+  selected 1×/60× motion pair pass builder inspection and a fresh visual opinion; a zero-wind
+  control adds local formation/dissolution evidence. The loaded first pair and its steps remain
+  retained. [Evidence](../../evidence/CLOUDS/M2-display-phase-captures/README.md) keeps complete
+  sources, per-frame target/travel tables and sampled-image limits; no physical cadence claim.

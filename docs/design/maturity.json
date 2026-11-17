@@ -2692,10 +2692,10 @@
       "platform_performance": "not_run",
       "weather_shade_evidence": {
         "implementation": "CLOUDS M1/M13 CPU model and M2 Weather/Shade contribution; no visible cloud layer",
-        "correctness": "Mac Metal weather, integer cell, Sun-path, continuity and game integration probes; measured approximation limits are recorded separately",
-        "visuals": "M2.6 Mac fixed valley stills and receiver agreement inspected by builder and fresh agent; M2.7 realtime 60x motion fails even-step inspection (M2-temporal-blocker.md)",
+        "correctness": "Mac Metal weather, integer cell, Sun-path, continuity and game integration probes; display-phase prediction through ramps matches real ticks, and submitted GPU mapping follows consumed targets without repeated-tick product writes; measured approximation limits are recorded separately",
+        "visuals": "M2.6 merged-build fixed valley views and receiver agreement; M2.7 selected 1x/60x realtime edge passages and a zero-wind evolution control inspected by builder and fresh agent with no concrete motion correction identified; sampled-image scope and earlier loaded-attempt steps retained",
         "device": "Apple M3 Max Metal, including WebGPU default limits; no Chrome or physical display cadence qualification",
-        "record": "../evidence/CLOUDS/M2-conformance.md"
+        "record": "../evidence/CLOUDS/M2.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",
