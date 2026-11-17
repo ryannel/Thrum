@@ -27,7 +27,8 @@ pub(super) fn run(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
         format!(
             "{:?}\nRecipe: {:?}\nExtent: {EXTENT:?}\nTemporal sampling: off\n",
             caps.adapter(),
-            caps.recipe()?
+            caps.recipe()
+                .map_err(|error| format!("inspection recipe: {error:?}"))?
         ),
     )?;
     let mut game = mirror_scene::build()?;
@@ -144,7 +145,10 @@ fn realtime(
             "pan" => (25.0 - 50.0 * t, 9.0, 0.0, 51.0, 130.0),
             "tilt" => (0.0, 9.0 + 22.0 * t, 0.0, 51.0, 130.0),
             "orbit" => (0.0, 9.0, -25.0 + 50.0 * t, 51.0, 130.0),
-            "sun" => (0.0, 9.0, 0.0, 14.0 - 12.0 * t, 240.0 + 15.0 * t),
+            "sun" => {
+                let (sun, azimuth) = solar_hour(t);
+                (0.0, 9.0, 0.0, sun, azimuth)
+            }
             _ => (0.0, 9.0, 0.0, 5.0, 262.0),
         };
         scene.parameters(&format!(r#"{{"camera.height":1.5,"camera.pan":{pan},"camera.tilt":{tilt},"camera.orbit":{orbit},"sun.elevation":{sun},"sun.azimuth":{azimuth}}}"#))?;
@@ -170,6 +174,16 @@ fn realtime(
         return Err(format!("{name} submitted only {count} frames").into());
     }
     Ok(())
+}
+
+fn solar_hour(phase: f64) -> (f64, f64) {
+    // One equinoctial afternoon hour at latitude 45° north.
+    let (west, equatorial) = (65.0 + 15.0 * phase).to_radians().sin_cos();
+    let south = std::f64::consts::FRAC_1_SQRT_2 * equatorial;
+    (
+        south.asin().to_degrees(),
+        (-west).atan2(-south).to_degrees().rem_euclid(360.0),
+    )
 }
 
 fn ledger(output: &Path) -> std::io::Result<BufWriter<File>> {
