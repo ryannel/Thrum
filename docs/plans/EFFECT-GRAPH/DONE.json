@@ -299,7 +299,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: while the world's clock runs, equal steps of display time from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Display time is the world's time and never shows the time its clock was stopped: after a pause or an overload it goes on from the committed tick and does not go back, and it steps only where the design's table of a span's edges says, by no more than it says. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
@@ -310,8 +310,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.7",
@@ -321,8 +321,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.6",
@@ -332,8 +332,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.8",
@@ -343,8 +343,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.2",
@@ -355,8 +355,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.9",
@@ -367,8 +367,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.3",
@@ -379,8 +379,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.10",
@@ -390,8 +390,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.4",
@@ -400,8 +400,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         },
         {
           "id": "M4.5",
@@ -410,16 +410,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "resumed_clock_time_identity",
-          "item": "M4.2",
-          "different": "Previous finding concerned delayed zero-lead pair selection; this concerns the time-coordinate offset after ordinary pause/resume on a synchronous clock.",
-          "repeat": false
+          "verdict": "pass",
+          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
         }
       ]
     }
