@@ -430,3 +430,8 @@
   Metal fixed pixels exactly. All 53 consecutive Chrome pan crops were inspected, with zero capture omissions.
   A 99.9 ms page callback gap and 116.6 ms submission gap are recorded separately from field continuity;
   neither this capture-ON run nor its page clock qualifies physical cadence.
+- 2026-11-17 Diagnosed M3.5's shared-check wait: Chrome capture failed before rendering because the
+  repository-wide source listing exceeded Node's output buffer. The driver's owner already merged
+  `8c6dc8847`; a CPU check confirms its scoped list preserves every hashed path at both historical commits.
+  [Follow-up](../../evidence/WATERS/M3-exact-check-followup.md) separates that verified cause and fix from
+  the shared runner's still-pending coverage proof. No baseline, comparison or WATERS runtime changed.
