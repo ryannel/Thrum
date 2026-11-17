@@ -10,6 +10,7 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 // An acknowledgement may be lost after storage. Replays must match both the
 // original submitted bytes and metadata, and never create a second frame.
 export function captureReceiver(output, frameBytes, manifest, failed, slow = false) {
+  const recordLimit = manifest.record_limit ?? 1024;
   let active = 0, outputBytes = 0;
   const pending = new Set(), writing = new Map(), headers = new Map();
   function receive(request, response) {
@@ -20,7 +21,7 @@ export function captureReceiver(output, frameBytes, manifest, failed, slow = fal
       active++; manifest.export_peak = Math.max(manifest.export_peak, active);
       try {
         ordinal = Number(new URL(request.url, 'http://localhost').searchParams.get('ordinal'));
-        if (!Number.isSafeInteger(ordinal) || ordinal < 0 || ordinal >= 1024) throw new Error('Invalid record ordinal');
+        if (!Number.isSafeInteger(ordinal) || ordinal < 0 || ordinal >= recordLimit) throw new Error('Invalid record ordinal');
         const header = request.headers['x-frame'];
         const metadata = JSON.parse(header);
         const chunks = []; let length = 0;
