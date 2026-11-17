@@ -1905,7 +1905,7 @@
       "id": "W1",
       "sim2d": {
         "implementation": "Portable profile number, fixed-width state encoding, digest, counter-based random and rule-package guard implemented; registered runtime preflight validates opted-in staged profile resources as well as components before commit. Existing runtime and history remain authoritative.",
-        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim; negative profile fixtures reject each prohibited class. Evidence: docs/evidence/SIM-2D/M3.md.",
+        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim; negative profile fixtures reject each prohibited class. Native public-API tests refuse nested non-finite authority resources atomically and recover with finite input. Evidence: docs/evidence/SIM-2D/M3-resource-repair.md.",
         "visual": "Not claimed; this module draws nothing.",
         "device": "ARM64 M3 Max native, Chrome Wasm and iPhone 18 Pro simulator function. Physical iPhone, x86 processor, Android and browsers other than Chrome not run. Simulator speed is not claimed.",
         "performance": "M1 and M2 retain shared-host cost baselines, not qualified hardware budgets; no M3 speed claim."

@@ -54,4 +54,13 @@ loaded, and neither sleep nor contention is proved to be the cause.
 and M3.9's expected pre-merge `NOT_ON_MAIN`. An
 [independent comparison](M3-resource/retained-comparison.json) matches all 26 saved target
 rows to the complete retained folds/checkpoints and checks replay/wire witnesses.
-The repository gate is still running; see the [handoff](M3-handoff.md).
+The [first full-check receipt](M3-resource/checks-first-attempt.json) records the
+original simulator timeout (superseded above), expected pre-merge M3.9 query and
+the repository gate's 3,600-second timeout late in V1 GPU tests. Its
+[stdout](M3-resource/test-command-first.stdout) and
+[stderr](M3-resource/test-command-first.stderr) are retained. The selected stderr copy
+trims trailing spaces; the receipt names the original log. Both new resource tests
+and the unchanged component-refusal test pass; no test assertion failure was reported
+before timeout. This is not a passing whole-repository gate. The canonical merge
+runs the complete gate on the integrated tree, and the lead's checks on main are the
+proof of record. See the [pre-integration checkpoint](M3-handoff.md).

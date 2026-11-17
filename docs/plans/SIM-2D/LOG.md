@@ -5,6 +5,8 @@
   Crowd exposes its complete staged resource aggregate; its finite check visits fields without digest hashing.
   Native tests reject nested NaN and both infinities after parallel merges with queued and tentative edits.
   Refusal preserves the endpoint, digest, resources, publication and prior delta; finite retry succeeds.
+  Clean Mac, Chrome and simulator runs reproduce both unchanged retained traces and profile vectors.
+  The local full gate timed out late in V1 GPU tests; canonical integration reruns the whole gate.
   [Repair evidence](../../evidence/SIM-2D/M3-resource-repair.md) records verification and target limits.
 
 - 2026-11-17 M2 second-review repair: fresh full two-run release campaigns at `768636def`.
