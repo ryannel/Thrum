@@ -45,6 +45,6 @@ The first large browser batch at `7ee85d580` used about nineteen minutes of
 renderer CPU, then its connection was absent while the harness waited. A large
 reply causing that disconnect is only an inference. Reply reduction plus explicit
 disconnect failure passed the complete subsequent target run. Details and limits
-are in the repair notes. The abandoned profile `tmp/sim2d/chrome-lDXcy3` belongs to
-this session and has no live process; remove it during closeout. Preserve other
-scratch and other builders' worktrees.
+are in the repair notes. The abandoned profile `tmp/sim2d/chrome-lDXcy3` was removed
+after confirming that no process used it. Preserve other scratch and other
+builders' worktrees.
