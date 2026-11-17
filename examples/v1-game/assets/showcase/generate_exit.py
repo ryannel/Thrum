@@ -69,6 +69,17 @@ def path_distance(x, z, keys):
     return distance
 
 
+def lookout_distance(x, z):
+    # The flat top in the valley author's shelf definition ends at these edges.
+    return math.hypot(max(abs(x) - 55, 0), max(-45 - z, z - 60, 0))
+
+
+def clear_still_position(x, z, scale, keys):
+    return (abs(x) <= 8000 and abs(z) <= 8000 and path_distance(x, z, keys) >= 10 + 2 * scale
+            and not any(math.hypot(x - px, z - pz) < 3 + 2 * scale
+                        for px, pz in [(-3.4, -5), (3.8, -7)]))
+
+
 def route_eyes():
     return [key['eye'] for key in json.loads(ROUTE.read_text())['keys']]
 
@@ -111,14 +122,31 @@ def generate_layout(terrain, keys):
             sigma = reach * uniform(.35, 1.1)
             x = round(rng.gauss(key[0], sigma), 4)
             z = round(rng.gauss(key[2], sigma), 4)
-            if abs(x) > 8000 or abs(z) > 8000 or path_distance(x, z, keys) < 10 + 2 * scale:
-                continue
-            if any(math.hypot(x - px, z - pz) < 3 + 2 * scale for px, pz in [(-3.4, -5), (3.8, -7)]):
+            if not clear_still_position(x, z, scale, keys):
                 continue
             if rng.random() < .48 + .46 * generate.noise(x, z, reach * .28):
                 break
         y = round(terrain.height(x, z), 4)
         entities.append([mesh, rng.randrange(4), x, y, z, round(uniform(-math.pi, math.pi), 6), scale])
+
+    # Relocate the candidates on the lookout without changing the identity,
+    # appearance or positions of the rest of the measured population.
+    relocation = random.Random(0xC1EA2)
+    for prop in entities[COUNTS[1]:]:
+        mesh, _, x, _, z, _, scale = prop
+        if lookout_distance(x, z) >= 2 * scale:
+            continue
+        spacing = 2 * scale + relocation.uniform(1, 17)
+        reach = (1200, 125, 240, 1800)[mesh]
+        while True:
+            key = relocation.choice(keys)
+            sigma = reach * relocation.uniform(.35, 1.1)
+            x = round(relocation.gauss(key[0], sigma), 4)
+            z = round(relocation.gauss(key[2], sigma), 4)
+            if (lookout_distance(x, z) >= spacing and clear_still_position(x, z, scale, keys)
+                    and relocation.random() < .48 + .46 * generate.noise(x, z, reach * .28)):
+                prop[2:5] = x, round(terrain.height(x, z), 4), z
+                break
     return {'entities': entities, 'loops': loops}
 
 
@@ -160,6 +188,7 @@ def verify_layout(layout, terrain, keys):
         else:
             assert mesh < 4 and abs(y - terrain.height(x, z)) <= .000051
             assert path_distance(x, z, keys) >= 10 + 2 * scale
+            assert lookout_distance(x, z) >= 2 * scale
     return min_sampled, min_guaranteed
 
 
