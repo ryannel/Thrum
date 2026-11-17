@@ -8,7 +8,10 @@ rename the cooker accepts but the starter's placements cannot draw must be repor
 previous content keeps drawing. It exercises the window's shared reload body offscreen, not the
 window's event path, and needs Metal.
 
-Usage: python3 scripts/check_starter_live_reload.py <output folder>
+Each invocation retains a fresh run directory under the requested output root, so
+rechecking a checkout never overwrites earlier evidence or refuses its existing folder.
+
+Usage: python3 scripts/check_starter_live_reload.py <output root>
 """
 
 import hashlib
@@ -18,6 +21,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import zlib
@@ -166,8 +170,9 @@ def missing_store_checks(out, binary):
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
-    out = Path(sys.argv[1]).resolve()
-    out.mkdir(parents=True, exist_ok=False)
+    output_root = Path(sys.argv[1]).resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+    out = Path(tempfile.mkdtemp(prefix="run-", dir=output_root))
     params = out / "starter.params.json"
     material = out / "material.wgsl"
     params.write_text((STARTER / "starter.params.json").read_text())
