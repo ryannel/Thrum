@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Enforce the deterministic rule-package boundary and exercise refusal controls."""
 import argparse
+from itertools import product
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / ".config/sim2d-profile/clippy.toml"
 LINTS = ["float_arithmetic", "disallowed_methods", "disallowed_types"]
+TARGETS = ("native", "wasm32-unknown-unknown", "aarch64-apple-ios-sim")
+PROFILES = ("dev", "release")
 
 
 def packages(root=ROOT):
@@ -49,10 +52,17 @@ def configuration_errors(directory, manifest, allowed):
     return errors
 
 
-def clippy(manifest):
-    environment = dict(os.environ, RUSTC_WRAPPER="", CLIPPY_CONF_DIR=str(manifest.parent))
+def clippy(manifest, target, profile):
+    rustc = Path(subprocess.check_output(
+        ["rustup", "which", "--toolchain", "1.99.1", "rustc"], text=True).strip())
+    # Match ./dev when a standalone compiler or Clippy is ahead of the rustup shims.
+    environment = dict(os.environ, RUSTC=str(rustc), RUSTC_WRAPPER="",
+                       PATH=os.pathsep.join([str(rustc.parent), os.environ["PATH"]]),
+                       CLIPPY_CONF_DIR=str(manifest.parent))
+    triple = "host-tuple" if target == "native" else target
     result = subprocess.run(["rustup", "run", "1.99.1", "cargo", "clippy", "--offline",
-                             "--manifest-path", str(manifest), "--all-targets", "--no-deps", "--",
+                             "--manifest-path", str(manifest), "--target", triple, "--profile", profile,
+                             "--all-targets", "--no-deps", "--",
                              *[flag for lint in LINTS for flag in ["-F", f"clippy::{lint}"]]],
                             cwd=ROOT, env=environment, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return result.returncode, result.stdout
@@ -70,10 +80,12 @@ def check():
         errors = configuration_errors(manifest.parent, tomllib.loads(manifest.read_text()), allowed)
         if errors:
             raise RuntimeError(f"{name}: " + "; ".join(errors))
-        code, output = clippy(manifest)
-        if code:
-            raise RuntimeError(f"{name}: profile Clippy failed\n{output}")
-        results.append({"package": name, "result": "pass", "output": output})
+        for target, profile in product(TARGETS, PROFILES):
+            code, output = clippy(manifest, target, profile)
+            if code:
+                raise RuntimeError(f"{name} [{target}, {profile}]: profile Clippy failed\n{output}")
+            results.append({"package": name, "target": target, "profile": profile,
+                            "result": "pass", "output": output})
     return results
 
 
@@ -99,17 +111,23 @@ def controls():
         if name == "configuration":
             config.unlink()
         errors = configuration_errors(directory, tomllib.loads(manifest), {"thrum-core", "thrum-sim2d"})
-        if errors:
-            code, output = 1, "\n".join(errors)
-        else:
-            code, output = clippy(path)
-        expected = case.get("diagnostic")
-        if name == "passing":
-            if code:
-                raise RuntimeError(f"passing fixture refused:\n{output}")
-        elif not code or expected not in output:
-            raise RuntimeError(f"{name}: expected refusal naming {expected!r}, got {code}:\n{output}")
-        rows.append({"class": name, "result": "pass", "diagnostic": expected, "output": output})
+        refusal_target = case.get("target", "native")
+        refusal_profile = case.get("profile")
+        if refusal_target not in TARGETS or refusal_profile not in (*PROFILES, None):
+            raise RuntimeError(f"{name}: fixture requires an unchecked target or profile")
+        builds = product(TARGETS, PROFILES) if name == "passing" or "target" in case else [("native", "dev")]
+        for target, profile in builds:
+            code, output = (1, "\n".join(errors)) if errors else clippy(path, target, profile)
+            should_refuse = target == refusal_target and refusal_profile in (None, profile)
+            expected = case.get("diagnostic") if should_refuse else None
+            label = f"{name} [{target}, {profile}]"
+            if expected is None:
+                if code:
+                    raise RuntimeError(f"{label}: passing fixture refused:\n{output}")
+            elif not code or expected not in output:
+                raise RuntimeError(f"{label}: expected refusal naming {expected!r}, got {code}:\n{output}")
+            rows.append({"class": name, "target": target, "profile": profile, "result": "pass",
+                         "diagnostic": expected, "output": output})
     return rows
 
 

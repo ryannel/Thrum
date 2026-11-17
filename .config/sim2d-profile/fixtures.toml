@@ -40,6 +40,39 @@ pub fn rule(value: Number) -> Number { let _map = std::collections::HashMap::<u3
 '''
 diagnostic = "unordered container"
 
+[cases.wasm_method]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number {
+    #[cfg(target_arch = "wasm32")]
+    let _raw = 1.0_f32.sin();
+    value + Number::ONE
+}
+'''
+target = "wasm32-unknown-unknown"
+diagnostic = "raw float method"
+
+[cases.simulator_method]
+source = '''
+use thrum_core::profile::{Digest, Number, StateEncode};
+pub struct Component(pub Number);
+impl StateEncode for Component {
+    fn encode(&self, digest: &mut Digest) { self.0.encode(digest); }
+}
+pub fn rule(value: Number) -> Number {
+    #[cfg(all(target_os = "ios", target_env = "sim", not(debug_assertions)))]
+    let _raw = 1.0_f32.sin();
+    value + Number::ONE
+}
+'''
+target = "aarch64-apple-ios-sim"
+profile = "release"
+diagnostic = "raw float method"
+
 [cases.clock]
 source = '''
 use thrum_core::profile::{Digest, Number, StateEncode};

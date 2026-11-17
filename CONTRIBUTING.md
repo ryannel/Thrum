@@ -22,7 +22,9 @@ fingerprints after revision changes; the gate therefore does not reuse that quer
 | `./dev scene <folder>` | The same for any scene package, such as your copy of the starter (macOS) |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
-Before the web compile check, install `rustup target add --toolchain 1.99.1 wasm32-unknown-unknown`.
+Before `./dev check`, run
+`rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim`
+to install the rule guard's cross-compilation targets.
 For actual Chrome function: build with `sh examples/v1-game/web/build.sh`, then run
 `node scripts/check_v1_browser.mjs --case all --output tmp/browser-check` (new output directory, Node 24, this M3 Max).
 The material hook reload is compiled only into the development page: build it with `build.sh --dev`, then run

@@ -33,6 +33,7 @@ Install Rust 1.99.1 through rustup (with rustfmt and Clippy) and Python 3.11 or 
 
 ```sh
 rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim
 rustup run 1.99.1 cargo fetch --locked
 ./dev check
 ```

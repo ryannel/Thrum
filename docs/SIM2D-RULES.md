@@ -47,14 +47,18 @@ fields and lints. Keep platform runners in separate ordinary packages.
 From the repository root:
 
 ```sh
+rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim
 python3 scripts/sim2d_profile.py sync
 python3 scripts/sim2d_profile.py check
 python3 scripts/sim2d_profile.py controls
 ```
 
 `sync` copies `.config/sim2d-profile/clippy.toml`, the single source, into rule packages.
-`check` compares its bytes and runs profile Clippy lints, including tests. Both checks
-run inside `./dev check`; the repository guard checks configuration and dependencies too.
+`check` compares its bytes and runs profile Clippy lints on native, browser Wasm and
+ARM64 iPhone simulator builds in both development and release profiles, including tests.
+`controls` verifies that a violation compiled only for one target or profile is still
+refused there. Both checks run inside `./dev check`; the repository guard checks
+configuration and dependencies too.
 
 | Refused class | Reason |
 | --- | --- |

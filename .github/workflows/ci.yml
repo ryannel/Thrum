@@ -25,7 +25,7 @@ jobs:
       - name: Install pinned contributor toolchain
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
-          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown
+          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown aarch64-apple-ios-sim
       - name: Fetch locked dependencies for offline checks
         run: rustup run 1.99.1 cargo fetch --locked
       - name: Check repository, game Wasm build and native tests
