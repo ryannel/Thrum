@@ -525,7 +525,7 @@
         },
         {
           "id": "M3.6",
-          "statement": "The march conserves energy and composes once. A slab of known optical depth under a known Sun returns the retained reference's radiance and transmittance at a coarse and at a fine step length. A composed pixel equals `colour\u00b7T + T_air\u00b7S + (1 \u2212 T)\u00b7S_air`, with air applied once.",
+          "statement": "The march conserves energy and composes once. A slab of known optical depth and a known source returns the retained reference's radiance and transmittance at a coarse and at a fine step length. A composed pixel equals `colour\u00b7T + T_air\u00b7S + (1 \u2212 T)\u00b7S_air`, with air applied once.",
           "check": "cargo test --locked --offline -p thrum-clouds --test transport_gpu",
           "ask": "Do the expected values come from the retained Python references, and is the bound set from the step lengths the test uses?",
           "lock": "gpu",
@@ -593,6 +593,29 @@
           "id": "M3.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.13",
+          "statement": "The model's Sun term is the design's, and it returns the light a cloud does. At the design proof's sixteen probes `thrum-cloud-model` gives the beam and the diffuse source within one part in 10\u2079, and the droplet's four numbers within one part in 10\u2076. For a level layer at Sun elevations of 10\u00b0, 20\u00b0, 45\u00b0, 60\u00b0 and 90\u00b0 and optical depths of 2, 8, 32 and 128, the share of the Sun's flux its column returns is within 0.025 of a retained photon reference at 45\u00b0 and above and within 0.06 at 10\u00b0 and 20\u00b0. The four fixed orders, a lit plane taken square to the Sun and a column without the forward share fail the same assertion.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test sun_term",
+          "ask": "Are the probes' expected values the ones `docs/evidence/CLOUDS/design-proof/multiple-scattering-proof.txt` prints? Do the photon figures come from a reference in `scripts/reference/cloud/` that follows at least 100,000 photons a case until each has left, reads no engine code and is recorded with the command that printed it? Does the test show each of the three substitutes fail?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M3.14",
+          "statement": "The trace lights a sample with the model's Sun term. At probes that cover the design proof's cases the trace's kernel gives the model's beam and diffuse source, and a level slab marched by the trace's own kernels gives the model's radiance toward the eye from above and from below at Sun elevations of 15\u00b0 and 45\u00b0, each within the bound this milestone measured first. The four fixed orders fail the slab's assertion.",
+          "check": "cargo test --locked --offline -p thrum-clouds --test sun_term_gpu",
+          "ask": "Do the expected values come from `thrum-cloud-model` in f64 and never from the shader under test? Is the bound the measured one in `docs/evidence/CLOUDS/M3-numerical.md`, and tight enough that a term without the view boundary fails a probe? Does the trace take the column's whole depth, the depth above and the view depth from what it already reads plus one read of the Sun column's last slice, with no density read added for the term?",
+          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -687,9 +710,9 @@
       "items": [
         {
           "id": "M5.1",
-          "statement": "A sample's light follows the design: four orders with the retained reference's weights and extinction scales; the first order's phase the type's droplet phase averaged over the Sun's disc, read from the model's table, and the later orders the reference's lobes, all evaluated once a ray; a Sun optical depth made of a local part and the product's part, each counted once; ambient from the clear sky's radiance through the two-stream diffuse transmittance. For slabs and a sphere of known optical depth, radiance at scattering angles of 0\u00b0, 0.25\u00b0, 2\u00b0, 10\u00b0, 45\u00b0, 90\u00b0 and 180\u00b0 is within the bound this milestone measured first against the model's references.",
+          "statement": "A sample's light follows the design through the day: the beam with the type's droplet phase averaged over the Sun's disc, read from the model's table, and its middle lobe, both evaluated once a ray; the diffuse light with its lit plane and view boundary; a Sun optical depth made of a local part and the product's part, each counted once; ambient from the clear sky's radiance through the two-stream diffuse transmittance. For slabs and a sphere of known optical depth, radiance at scattering angles of 0\u00b0, 0.25\u00b0, 2\u00b0, 10\u00b0, 45\u00b0, 90\u00b0 and 180\u00b0 is within the bound this milestone measured first against the model's references.",
           "check": "cargo test --locked --offline -p thrum-clouds --test light_gpu",
-          "ask": "Do the expected values come from the retained Python references and, for the first order, from the model's disc-averaged phase that M1.14 holds to its integral? On a fixture with no detail erosion, where the full and the coarse density are the same, does the test show that doubling the local reach leaves the summed optical depth unchanged within its quadrature, so that no part is counted twice?",
+          "ask": "Do the expected values come from the model's Sun term that M3.13 holds to photons and, for the beam's phase, from the model's disc-averaged phase that M1.14 holds to its integral? On a fixture with no detail erosion, where the full and the coarse density are the same, does the test show that doubling the local reach leaves the summed optical depth unchanged within its quadrature, so that no part is counted twice?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1478,6 +1501,17 @@
           "id": "M14.12",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "M14.13",
+          "statement": "The model has one Sun term. The solar kernel of its medium coefficients is cloud light's Sun term without the Sun and with no view boundary, from the function M3.13 holds, with the three depths it needs taken at the point by the model's own marches. The four fixed orders are gone from the model, its tests and the renderer, and M13.7's handover cases still pass inside the design's ceiling.",
+          "check": "cargo test --locked --offline -p thrum-cloud-model --test sun_kernel",
+          "ask": "Is the kernel a call of the Sun term M3.13 tests and not a second copy of it? Are `Orders` and every assertion on its constants gone from the workspace?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

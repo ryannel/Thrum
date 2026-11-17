@@ -18,6 +18,7 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 - Assumption: a scene with no visible sky that wants the shade of cooked shapes keeps their volumes loaded (27 MiB).
 - Assumption: a game may place up to 16 shapes itself, so a demo can compose its sky. The owner did not ask for this; it costs M1.12, M6.9 and M6.10.
 - Assumption: cloud light takes its first-order phase from the droplets, so the sky will differ from Broadsides' accepted stills near the Sun.
+- Assumption: for light scattered many times, "state of the art" means the most accurate method that runs in a frame, a flux solution held to photon transport, not the octaves shipped engines tune by eye. No gain exists to brighten or dim a cloud.
 - Assumption: the owner's words of 14 November are the licence for what Broadsides' authors wrote, the cloud library included; its terms if Thrum's source is published are the owner's. Third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: "bring that across when it makes sense" (13 November) means milestones start when their dependencies are Done, which can be before G7.
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
@@ -32,30 +33,23 @@ Before any milestone, read [Proof and builder handoff](DESIGN.md#proof-and-build
 ## M13 Mist, fog and low cloud over any ground are computed on the CPU alone, and a game can ask how far it can see: done
 [review](../../evidence/CLOUDS/M13-review.md)
 
-## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn
-
-Weather and Shade are built and merged through `5ec67bed`: `thrum-clouds` on `EFFECT-GRAPH`'s seam, ruling 1 in
-`ATMOSPHERE`'s shade path (`crates/thrum-render/src/atmosphere/cloud.rs`, `cloud.wgsl`), the selection in
-`examples/v1-game` and `scripts/cloud_cost.py`. The handoff is `docs/evidence/CLOUDS/M2-handoff.md`; the
-captures, visual opinion and timing diagnosis are on branch `build/clouds` at `0756d0adce44`, not merged. Two
-plans rewrote M2.7 and M2.11 and added M2.13 and a dependency, so every item's proof was reset. The other ten
-items ask for no change, and their evidence there describes `5ec67bed`.
-
-What is left is [drift at the display phase](DESIGN.md#time-drift-at-the-displays-time-evolution-on-the-tick).
-`EFFECT-GRAPH` M4 puts the phase in the frame's effect time. `sun_path.rs` forms the mapping's travel from
-`State::display_travel` in `thrum-cloud-model`, which takes alpha and stops at the committed tick; M2.13 asks
-for what replaces it. M2.11's check names a new test; the one it replaces,
-`examples/v1-game/tests/clouds_display_time_gpu.rs`, takes its expected travel from the frame's own alpha. The
-clock, the frame host and the capture record are `EFFECT-GRAPH`'s: a defect in the phase goes to that module's
-log. Even drift does not by itself pass M2.7: not every change between 60× frames was traced, so inspect what
-remains.
+## M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn: done
+[review](../../evidence/CLOUDS/M2-review.md)
 
 ## M3 Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh
 
 Ruling 2 is built in `ATMOSPHERE`'s aerial lookup. Write the trace over
-[the interval a ray marches](DESIGN.md#the-visible-layer), though here that interval is the cloud band. After
-three looks that fail the same cue of M3.1 to M3.3, record them in the log and end `BLOCKED`. A frame over the refresh interval is investigated with the design's first risk's remedies and does not stop
-the milestone.
+[the interval a ray marches](DESIGN.md#the-visible-layer), though here that interval is the cloud band. The
+work so far is on branch `build/clouds` at `fa4eabb9d`, with
+[its handoff](../../evidence/CLOUDS/M3-handoff.md). Its trace, Sun-path reconstruction, capture routes and
+photon reference stand. Its light is the four fixed orders, which [cloud light](DESIGN.md#cloud-light) now
+replaces, held as [numerical acceptance](DESIGN.md#numerical-acceptance-for-cloud-light) says. Pass M3.13 and
+then M3.14 before taking a look, so that a look judges the design's term. In `thrum-cloud-model` leave
+`Orders` and `medium.rs` as they are: M14.13 moves them. A type's droplet and water are the game's to tune for
+the look; the term has nothing to tune. After three looks under the new term that fail the same cue of M3.1
+to M3.3, record them in the log and end `BLOCKED`; looks taken under the four orders do not count. A frame
+over the refresh interval is investigated with the design's first risk's remedies and does not stop the
+milestone.
 
 ## M4 The same sky and the same shade draw in Chrome
 
@@ -95,7 +89,8 @@ are not this milestone's to fix.
 
 `ATMOSPHERE` owns the view volume, its history and the lent aerial operation; this milestone writes the medium
 coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
-in the volume itself goes to `ATMOSPHERE`'s log. After three looks that fail
+in the volume itself goes to `ATMOSPHERE`'s log. M13 built the model's solar kernel from the four fixed
+orders; M14.13 moves it to cloud light's Sun term. After three looks that fail
 the same cue of M14.5 or M14.6, record them in the log and end `BLOCKED`.
 
 ## M15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it

@@ -411,3 +411,12 @@
   Metal cumulative-depth and native route-admission tests pass; a bounded
   native capture route admits M3's ten-second pan. Visual and quality/cost
   acceptance remain separate from this numerical correction.
+
+- 2026-11-17 Plan, answering M3's block (`needs_context`: a ruling on the multiple-scattering model). [Cloud light](DESIGN.md#cloud-light)'s
+  Sun term is now a beam (the droplet's phase thinned at its broad lobe's rate, and one middle lobe) and a diffuse two-stream
+  solution along the Sun column, with a lit plane from two depths and a view boundary, in place of four fixed orders whose weights sum to one.
+  [Parts XII to XVI](../../evidence/CLOUDS/design-proof/multiple-scattering-proof.txt) hold it to photon transport: a level layer's returned flux within
+  0.017 from a 45° Sun up; box faces typically a factor of 1.35 out, where the four orders are 40 and octaves 14. M3.6 and M5.1 are
+  written again; M3.13, M3.14 and M14.13 are new; M2's note shrinks to its review. M1.8's and M13.7's clauses on the orders stand as
+  built until M14.13 removes `Orders`: rewording them would send two Done milestones back through build and review for no change
+  in what is built. The design needs a review before M3 resumes.

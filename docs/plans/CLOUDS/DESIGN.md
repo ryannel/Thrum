@@ -18,6 +18,9 @@ of a ground row and the headless query, and
 `EFFECT-GRAPH` M4 provides. Revised again that day after that revision's review (finding MF1;
 `git show f1076615a:docs/evidence/CLOUDS/design-review.md`): past the committed tick the travel is carried a
 tick at a time by the step's own arithmetic, and the phase describes the target the clock consumes.
+Revised 17 November 2026 after [M3's handoff](../../evidence/CLOUDS/M3-handoff.md): the Sun term of
+[cloud light](#cloud-light) is a beam and a diffuse solution held to photon transport, in place of four fixed
+orders.
 
 ## The request
 
@@ -182,8 +185,26 @@ What each source was read for, and how far.
   time-sliced frames.
 - **The retained references** in [`scripts/reference/cloud/`](../../../scripts/reference/cloud/optical_reference.py):
   Beer segments and their composition, and a four-order liquid phase model (`WEIGHTS`, `BRANCH_B`, `LIQUID_G`).
-  They are the octave model above with fixed numbers, and they are this design's optical oracle for Beer
-  segments, their composition and the later orders. The first order's phase has its own closed form.
+  They are the octave model above with fixed numbers. They are this design's optical oracle for Beer segments
+  and their composition, and no longer for light: the four orders' weights sum to one, so they return less than
+  single scattering alone, and M3's photon transport measured what that costs (below).
+- **Multiple scattering, looked at again on 17 November** after M3 found no bright side at any density, Sun
+  grid or shadow setting. M3's builder traced photons through a level layer that scatters without absorbing
+  ([its record](../../evidence/CLOUDS/M3-handoff.md)): at an optical depth of 64 under a 45° Sun the layer
+  reflects 84% of the Sun's flux and the four orders 5%. Shipped practice is Wrenninge's octaves (Frostbite's
+  equations 19–20; Unreal's
+  [volumetric cloud material](https://dev.epicgames.com/documentation/en-us/unreal-engine/volumetric-cloud-component-in-unreal-engine),
+  whose page says the octaves "can result in some energy being lost" and leaves the brightness to the artist).
+  At Unreal's defaults they reflect 15% in the same layer and do not change with its depth (part XII). Decima's
+  clouds (Nubis) add terms an artist tunes by depth and height. Searches for a published real-time method from
+  2023 to 2026 that conserves energy in cloud found none: the newer work is path tracing and learned encodings,
+  which do not run in a browser's limits. What does conserve it is the atmospheric sciences' own method for
+  exactly this medium: the two-stream solution with delta scaling (Joseph, Wiscombe and Weinman 1976; Meador and
+  Weaver 1980), radiance taken from its source function (Toon and others 1989), the escape function of a thick
+  layer, `(3/7)·(1 + 2μ)` (Chandrasekhar's H-function to first order, as cloud retrievals use it), and the
+  tilted column for a Sun off the vertical (Várnai and Davies 1999). None of those papers was opened for this
+  revision. The closed forms were derived again, and they rest on the photon transport of parts XII to XV, not
+  on the papers.
 - **Broadsides**, as what was tried. Its cost model counts 141.7 density evaluations a ray: 19.7 on the view ray,
   39.8 in a six-tap Sun cone and 82.2 in direct ambient. Lighting was 86% of the work, and removing both lighting
   terms still left 21 ms. Its accepted results are the twelve volumes, the growth track's blind motion review,
@@ -226,7 +247,8 @@ What each source was read for, and how far.
   talks, and the Broadsides cloud shaders beyond their names and sizes. Nothing below rests on them.
 
 Five reproductions were run for this design, the second for its revision, the third for the first-principles
-judgement, the fourth after its second review and the fifth for mist, fog and low cloud, and are kept with their output in
+judgement, the fourth after its second review and the fifth for mist, fog and low cloud; a sixth followed that
+addition's review and a seventh, of cloud light against photon transport, M3's handoff. They are kept with their output in
 [the evidence folder](../../evidence/CLOUDS/design-proof/). [Check that it can work](#check-that-it-can-work)
 reports them.
 
@@ -253,6 +275,7 @@ against the users and cues above. "Keep" means it would be chosen again with Bro
 | 2D fields with a vertical profile and noise, not a voxel sky | **Keep** | Every commissioned camera is below the cloud base, which is where the method shipped. Nubis³ measured a dense voxel sky at over 30 ms and built voxels for flying through cloud. A shape gives a true volume where one is wanted |
 | Light from one summed Sun-path product and a few local samples | **Keep** | Already a departure from Broadsides, whose cone taps and ambient rays were 86% of its work. One product also gives ground shade and long-distance shadow |
 | The first scattering order's phase is the retained reference's Henyey–Greenstein lobe, g = 0.86 | **Change** | The design already takes extinction from droplet radius; the phase now comes from the same droplet. Against the droplet's own phase the lobe is three to four times too bright from 5° to 10° off the Sun, 60 times too dim inside the aureole, and two to three times too dim looking away from the Sun (parts E and G). The first is a wide glow where a silver lining should be a rim; the last is the brightness of a cloud with the Sun behind the viewer. The angle is one value a ray, so the better phase costs the march nothing. See [cloud light](#cloud-light) |
+| Light scattered more than once is three more orders with fixed weights, extinction scales and lobes (the retained reference) | **Change** | A cloud is bright because it scatters without absorbing: what does not pass through a thick cloud comes back out, 58% to 92% of the Sun's flux for the layers of part XII. Fixed orders whose weights sum to one can return only what single scattering does, 4% to 22%, at any depth. The Sun's light is instead a beam, which keeps the Sun's direction, and diffuse light, which is solved as a flux that leaves nothing out. See [cloud light](#cloud-light) |
 | Drift taken at the committed tick | **Change** | A 60 Hz tick is shown twice on a 120 Hz display. At a 60× time-lapse in a 40 m/s wind a near cloud would stand still for one frame and jump 37 pixels the next (part F). Travel is a function of time, so each frame takes it at the display's time. See [time](#time-drift-at-the-displays-time-evolution-on-the-tick) |
 | A placed volume stands for one cell of the field | **Keep** | It is why the query, the picture and the shade agree on a shape's outline at any distance, and why a shape forms, drifts and thins like any cloud. It does not rest on the library existing |
 | Shapes are placed only by the field's hash | **Change** | A demo composes its sky: a tower beside the Sun at sunset. A profile places shapes by the hash or by the game's own list of [directed shapes](#placed-volumes), which are cells whose place, shape and life the game sets |
@@ -298,7 +321,7 @@ the planner opened `scatter.rs`, `phase.rs`, the library's licence record and ha
 | Integer hashes and noise | `bw_core::noise`; `shaders/cloud_noise.wesl` | May fit. The noise here must come from the same integer hash on every target |
 | The twelve accepted volumes, their records and the growth track's keys | At `79637f789`: `assets/clouds/heaped-fair/` (Git LFS; density is the PNG's red channel, 128³), `factory/clouds/heaped-fair/B3-HANDOFF.md` for axes, extents, placement and hashes, and `factory/clouds/heaped-fair/review/m2-authored-growth-v2/` for the track's manifest of eleven keys. The key volumes themselves are outside Git, in the Broadsides folder under `tmp/evidence-store/cloud-route-2026-11-08/m2-authored-growth-v2/`, and `factory/clouds/heaped-fair/coherent_growth.py` makes them again | The example's library, unchanged. Its licence record comes with it |
 | The shape record and its parser | `crates/core/bw_data/src/cloud_shape.rs` | Game-side, for reading the library's sidecars into the example's placement data |
-| Octave light, the density operators, the resolve's reprojection and clamp | `shaders/cloud_lighting.wesl`, `cloud_density.wesl`, `cloud_resolve.wesl`, `cloud_reconstruction.wesl`; CPU twins in `src/twin/` | Take functions where they state what this design states. The cone taps and ambient rays in the lighting are where the 289 ms went and are not copied |
+| Octave light, the density operators, the resolve's reprojection and clamp | `shaders/cloud_lighting.wesl`, `cloud_density.wesl`, `cloud_resolve.wesl`, `cloud_reconstruction.wesl`; CPU twins in `src/twin/` | Take functions where they state what this design states. The octave light does not: [cloud light](#cloud-light)'s Sun term replaces it. The cone taps and ambient rays in the lighting are where the 289 ms went and are not copied |
 | The weather operator and presets | `crates/core/bw_core/src/weather.rs`, `crates/sim/bw_world/src/weather.rs`, `cloud_weather.ron` | Reading matter. The field here is the cell process and the deck of this design |
 | The packed Beer shadow, the atlas and pager, parcel and ambient caches, sky capture, the Bevy host, `module.rs` | | Not used. The Sun's path is a different product, slabs replace the atlas, and Thrum has one owner for the rest |
 
@@ -309,7 +332,9 @@ modules; its algorithm is left as it is. [The handoff](#proof-and-builder-handof
 interval there, M3 tries the remedies in [risk 1](#risks) that its record points at and records what each did,
 and building goes on; whether the layer's extent or the light model should then change is a planner's decision
 from that record, never a stop for a builder. If M5 shows the summed Sun-path product cannot carry low-Sun
-relief, its near level is refined or the local samples grow, here first. If a game needs hashed shapes and
+relief, its near level is refined or the local samples grow, here first. If stills show the diffuse light
+wrong in a cloud in a way the box of part XV did not, the lit plane and the view boundary are where a planner
+corrects it, from the record; a gain, a second light and fixed orders are never the correction. If a game needs hashed shapes and
 directed ones in one sky, the map's texel gains a second slot; nothing else moves. If a game wants the shade of
 shapes with no volume in memory, a profile that shades every placed cell through its column form is the path
 already built for a lease that is not resident: a different, approximate shade (part H), and a choice a game
@@ -565,14 +590,19 @@ frame.
 
 A sample's scattered radiance, integrated over its step with Frostbite's equation 17:
 
-`L = σ · [ Σₙ wₙ · E_sun(point) · exp(−bₙ·tau_sun) · Pₙ(θ) + L_ambient ]`
+`L = σ · [ E_sun(point) · (S_beam + S_diffuse) + L_ambient ]`
+
+The Sun's light at a sample is in two parts that between them hold it all, once. The **beam** still travels
+nearly as the Sun's rays do. The **diffuse** light has been scattered until it has forgotten them. Both are
+closed forms of optical depths the trace already holds, so multiple scattering costs no density read, and
+photon transport is the oracle for both (parts XII to XVI of [the proofs](#check-that-it-can-work)). Nothing
+in the term is a weight, a gain or a look: a game changes how its clouds are lit through a type's droplet and
+its water, which are the phase and the density.
 
 - **Sun.** `E_sun` is the lent Sun light at a world position: the true Sun through the air, with no cloud factor.
   It is evaluated at the layer's base and top on each ray and interpolated by height, so a tall cloud's top
   stays lit after its base has gone into the Earth's shadow, and sunset colour comes from the sky's own
   transmittance.
-- **Orders.** Four, with the retained reference's `WEIGHTS` and `BRANCH_B`. Each order reuses the same `tau_sun`,
-  so multiple scattering costs no density read. `Pₙ` is the order's phase.
 - **The first order's phase is the droplet's own**: a Henyey–Greenstein lobe plus a Draine lobe (Jendersie and
   d'Eon 2023), `(1 − w)·HG(θ, g_HG) + w·Draine(θ, g_D, α)`. Its four parameters are type data.
   `thrum-cloud-model` gives the published fit from a droplet diameter of 5 to 50 µm, so a type takes its phase
@@ -597,11 +627,82 @@ A sample's scattered radiance, integrated over its step with Frostbite's equatio
   type between two rows blends their tables by weight, and a blend of phases that each integrate to 1 does too.
   The renderer reads the model's table and computes none of its own. Its size is the builder's, held to the
   bound M1 measures: 1,025 entries hold the integral to 1.0001 for a 50 µm droplet, and 257 to 1.002.
-- **The later orders** keep the reference's Henyey–Greenstein lobes, `LIQUID_G[1..3]`: light scattered many times
-  has forgotten the droplet.
-- **Once a ray.** A ray has one angle `θ` to the Sun's centre, so all four phases are one evaluation a ray: a
-  read of the table and three closed forms, in f32 from `sin²(θ/2)` so the forward peak keeps its digits. No
-  sample pays for the phase.
+- **What the droplet gives the Sun term.** Four numbers, which `thrum-cloud-model` works out from a type's
+  phase at preparation and gives with its table: the mean cosine `g`; the **forward share** `f`, the phase's
+  second Legendre moment; the broad lobe's weight `w`, which is the Draine lobe's; and that lobe's mean cosine
+  `g_B`. For a 24 µm droplet they are 0.882, 0.807, 0.501 and 0.770. A type between two rows blends them by
+  weight, as it blends the tables.
+- **What a sample knows.** `tau_sun`, the optical depth toward the Sun, as
+  [self-shadow](#the-suns-path-one-optical-depth-product) reads it. `tau_col`, the whole depth of that Sun
+  column through the layer: the product's last slice at the same column, and never less than `tau_sun`.
+  `tau_up`, the vertical optical depth of the coarse density above the sample, from the weather map's column.
+  `tau_view`, the optical depth of condensate the view ray has crossed before the sample, which the march
+  holds as its transmittance. `μ₀` and `c₀`, the sine and cosine of the path direction's elevation, with `c₀`
+  never under 0.3. `ω`, the unit vector from the sample toward the eye.
+- **The beam.**
+  `S_beam = P₁(θ)·exp(−b₁·tau_sun) + HG(θ, g·g_B)·max(0, exp(−(1 − f)·tau_sun) − exp(−b₁·tau_sun))`, with
+  `b₁ = max(w, 1 − f)`. The droplet's narrow lobe turns light by under a degree, so light that has met only
+  that lobe is still the Sun's beam: it thins at the broad lobe's rate alone and scatters toward the eye with
+  the droplet's own phase `P₁`. Light the broad lobe has turned once or twice is still forward. It is the
+  share between that and `exp(−(1 − f)·tau_sun)`, and it scatters toward the eye through one wider
+  Henyey–Greenstein lobe, whose asymmetry is the mean cosine after one broad scattering and the scattering
+  toward the eye. Every lobe integrates to one, so the beam scatters exactly the light it holds. What it no
+  longer holds, `1 − exp(−(1 − f)·tau_sun)` of the Sun, is the diffuse light's source. Through cloud of optical
+  depth 1 to 16 this is within 0.73 to 1.26 of transport from 2° to 90° off the Sun, where the first order
+  alone is 0.20 to 1.00 (part XIV).
+- **The diffuse light** is the two-stream solution for a layer that scatters without absorbing, with delta
+  scaling and the escape function of a thick layer, taken along the sample's Sun column:
+
+  ```
+  r   = (tau_up + 2) / (tau_sun + 2/μ₀)
+  cot = (r − μ₀) / c₀            s = 1/√(1 + cot²)
+  μ   = min(1, r·s)              n = cot·s·(level, toward the Sun) + s·(up)
+  x   = (1 − g)·μ·tau_sun        X = (1 − g)·μ·tau_col
+  E   = exp(−(1 − f)·tau_sun)    E_col = exp(−(1 − f)·tau_col)
+  K   = (3/7)·(1 + 2μ)
+  T   = min(1, (K + (1 − K)·E_col) / (1 + ¾·X))
+  I₀  = max(0, μ/(2π) · (1 − T·(1 + 1.5·x) + (2K − 1)·(1 − E)))
+  I₁  = 3μ/(4π) · (T − E)
+  c   = ω · n                    ℓ = (X + 4/3)/π             v = (1 − g)·tau_view
+  d   = x if c > 0, else X − x
+  q   = clamp(1 − v·|c|/d, 0, 1), and 0 where d is 0
+  a   = q·exp(−(2/3)·v/ℓ)
+  S_diffuse = max(0, (1 − a·ℓ/(2/3 + ℓ))·(I₀ − g·I₁·c) + g·I₀·a·(2/3)/(2/3 + ℓ))
+  ```
+
+  `T` is the share of the Sun's flux the column passes and `1 − T` the share it returns, so the column gives
+  back exactly what it does not pass: 0.844 at a depth of 64 under a 45° Sun, where photons give 0.845. `I₀` is
+  the diffuse light's mean radiance at the sample, falling in a straight line from the lit side to the far
+  side, which is why a base is darker and never black. `I₁` is its net flow, and `−g·I₁·c` is why a face seen
+  square on is brighter than one seen at a graze.
+- **The lit plane.** A column knows how deep it is, not which way its surface faces, and the Sun's flux on a
+  surface goes as the cosine between them. `r` compares the cloud above the sample with the cloud between it
+  and the Sun, and `μ` and `n` are the plane both depths would have. In a level layer `r` is `μ₀`, the plane
+  is level and `μ` is the layer's own cosine, exactly. Where the Sun reaches the sample through the cloud's
+  side, `r` is larger, the plane turns toward the Sun, and `μ` reaches 1 where it faces it: the side of a
+  cumulus at a 15° Sun takes nearly four times the light of a level top. Where the Sun's path is longer than the
+  cloud above would give, the plane turns away and darkens. The 2 is an optical depth: nearer a boundary than
+  that the two depths are too small to compare, so the plane is level there. The floor on `c₀` keeps a plane
+  under a Sun near the zenith, where the two depths lie along one line and tell nothing apart.
+- **The view boundary.** A column is unbounded sideways and a cloud is not. Every surface the eye sees is a
+  boundary, and at a boundary diffuse light falls and flows outward. Where the view ray entered through the
+  lit plane or the far one, the column's own solution already ends there, and `q` is 0: in a level layer seen
+  from above or below it is 0 at every sample. Where it entered anywhere else, `q` rises to 1, and the light
+  is lowered toward its value at a free boundary, over a depth `ℓ` that the column's own depth sets, with the
+  outward flow toward the eye added at a mean cosine of 2/3. Without it the flanks of the three larger boxes
+  of part XV are 1.4 to 3.3 times transport; with it, 0.9 to 1.2.
+- **How far it holds.** In a level layer the reflected share is within 0.017 of transport from a 45° Sun up
+  and within 0.05 from 4° to 20° at depths of 2 and more, and low wherever it is more than 0.01 out (part XII). Radiance by direction is
+  within 0.62 to 1.18 of transport at 45° and 90° from a depth of 8, and 0.47 to 1.34 at a depth of 2; the
+  top of a layer under a 10° Sun, seen at a graze, is 0.56 to 0.58, and face on 1.6 to 2.7. The flux of the radiance
+  the term renders is 0.91 to 1.10 of the Sun's (part XIII). Over the faces of uniform boxes 12 to 120 optical
+  depths across, at a Sun of 6° to 70°, it is 0.62 to 2.35 of transport and typically a factor of 1.35 out;
+  the four orders this replaces are typically 40 times too dark there, and octaves at halves 14 (part XV).
+  Inside 2° of the Sun through cloud of depth 8 it is 1.5 times too bright, because the narrow lobe's own
+  widening is left out.
+- **Once a ray.** A ray has one angle `θ` to the Sun's centre, so both phases are one evaluation a ray: a read
+  of the table and one closed form, in f32 from `sin²(θ/2)` so the forward peak keeps its digits. No sample
+  pays for a phase.
 - **Ambient.** Sky light from above and ground light from below, each dimmed by the diffuse transmittance of the
   cloud between: `1 / (1 + ¾(1 − g)·tau)`, the two-stream result for a layer that scatters without absorbing,
   with `tau` above and below the sample taken from the column already read. Bases darken and never go black. The
@@ -877,8 +978,10 @@ near the camera and this module's trace beyond it.
   itself, and overlaps the air, which C08 requires to be integrated jointly. `ATMOSPHERE`'s view volume does
   that ([rulings 6 and 7](#what-clouds-asks-of-other-modules)). Each frame this module writes, for every cell
   of that volume, at the jittered point the volume names, three **medium coefficients**: the extinction `σ`;
-  the solar kernel `σ · Σₙ wₙ · exp(−bₙ·tau_sun) · Pₙ(θ)`, which is [cloud light](#cloud-light)'s Sun term
-  without the Sun; and the ambient source, cloud light's ambient term. Each is multiplied by the **near
+  the solar kernel `σ · (S_beam + S_diffuse)`, which is [cloud light](#cloud-light)'s Sun term without the
+  Sun, taken with no view boundary (`q` is 0), because the camera stands in the medium the volume holds, and
+  with its depths from the ground band, which holds the whole path, and from the condensate above the point;
+  and the ambient source, cloud light's ambient term. Each is multiplied by the **near
   weight**. `ATMOSPHERE` multiplies the kernel by its Sun light at the point and by the scene's shadow there,
   adds the air's own coefficients and integrates once. This module never integrates the near field, and
   `ATMOSPHERE` never evaluates a density, a phase or a self-shadow.
@@ -978,10 +1081,41 @@ and the ceiling has that module's form, so the two integrators of one medium are
 | M13.7, the handover on the CPU | One integration of the whole ray | Both shares taken whole; the far share not dimmed by the near | Transmittance 0.12 out against 0.012. In-scatter 0.39 out against 0.047 under uniform light and 0.12 against 0.036 with a shadow edge in the ramp, where the design's is 0.011 |
 | M14.2, ground condensate on the GPU | The model at world points after a travel, with a node's allowance | A shore mask that the map holds and drifts | The row's whole extinction inland of the margin, where zero is expected (part VIII) |
 | M14.3, the ground band on the GPU | As M13.6 | The cloud band's value added again; a level-layer rule | An upper cloud of optical depth ln 2 gives 0.25 for 0.5 (`ATMOSPHERE`'s part I); the level rule as in M13.6 |
-| M14.4, the medium coefficients | The model's references at the volume's sample points | A kernel without the medium's own optical depth toward the Sun; an extinction without the near weight | In a bank whose Sun path is 1 or more, the first order is 2.7 times out; inside the ramp the extinction is out by the far share |
+| M14.4, the medium coefficients | The model's references at the volume's sample points | A kernel without the medium's own optical depth toward the Sun; an extinction without the near weight | In a bank whose Sun path is 1 or more, the beam is 1.6 times out; inside the ramp the extinction is out by the far share |
 | M15.1, the stops | The model's pair at each pixel's own depth | The nearest and farthest stops blended to the pixel's depth, as pairs and as optical depth | Transmittance 0.77 and 0.67 where the two banks give 0.30 and 1.00 (part VII) |
 | M15.2, the handover on the GPU | The model for the whole ray | The far share not dimmed by the near | As M13.7 |
 | M15.3, the far air | A joint integration of air, haze and condensate | The segment as one part; the segment with no air in front of it | One part: 2.6 times the ceiling at 8 km for two banks with the near one in shadow. No air: 3 to 6 times at 8 km. At 60 km and clearer both are inside, so those hazes prove nothing |
+
+### Numerical acceptance for cloud light
+
+M3.13, M3.14 and M5.1 hold [cloud light](#cloud-light)'s Sun term in three steps, each against something
+written apart from what it tests. What decides and what is recorded are kept apart, as above.
+
+- **The model is the design's term.** `thrum-cloud-model` gives the beam and the diffuse source in f64. At the
+  sixteen probes of part XVI, which
+  [`multiple_scattering_proof.py`](../../evidence/CLOUDS/design-proof/multiple_scattering_proof.py) prints from
+  its own statement of the term, each is within one part in 10⁹ of the printed value, and the droplet's four
+  numbers are within one part in 10⁶. A term that differs from the design anywhere the probes reach fails
+  here, whatever it looks like.
+- **The term is held to photons.** For a level layer at Sun elevations of 10°, 20°, 45°, 60° and 90° and
+  optical depths of 2, 8, 32 and 128, the share of the Sun's flux the model's column returns, `1 − T`, is
+  within 0.025 of photon transport at 45° and above and within 0.06 at 10° and 20°. Part XII measured at most
+  0.017 and 0.043 there, with a standard error under 0.002. The photon reference is retained in
+  `scripts/reference/cloud/`, follows at least 100,000 photons a case until every one has left, reads no
+  engine kernel, and is held to its own single-scattering integral.
+- **A wrong substitute fails in the same test.** The four fixed orders, as the flux of their radiance: 0.05
+  where 0.58 is expected at 45° and a depth of 16. A lit plane taken square to the Sun in a level layer: 0.38
+  for 0.51 at 10° and a depth of 2, and 0.37 for 0.41 at 45° and 8. The column's exponent without the forward
+  share: 0.02 for 0.09 at 60° and a depth of 2.
+- **The GPU is held to the model.** The trace's kernel gives the model's beam and diffuse source at probes
+  that cover part XVI's cases, and a level slab marched by the trace's own kernels gives the model's radiance
+  toward the eye from above and from below, each within a bound M3 measures first in f32 and then asserts. The
+  four fixed orders fail the slab's assertion.
+- **What is recorded decides nothing.** Radiance by direction (part XIII), the light near the Sun (part XIV)
+  and the faces of a box (part XV) are the planner's figures for how far the term is from transport where no
+  closed form constrains it. No item asserts them, and a build does not tune toward them.
+- **A miss is a plan change.** If a term the builder believes is the design's misses the probes or the
+  ceiling, the builder records where and by how much and ends `BLOCKED`. Neither is widened in a build.
 
 ### Check that it can work
 
@@ -1125,6 +1259,40 @@ From `ground_revision_proof.py`, run on 14 November after
 - **Unrun:** the stop tolerance, and how many texels a pan through far mist traces out of turn; M15 records
   both.
 
+From `multiple_scattering_proof.py`, run on 17 November after
+[M3's handoff](../../evidence/CLOUDS/M3-handoff.md). Its oracle is photon transport: exponential free paths,
+no absorption, the 24 µm droplet's phase sampled exactly, a point Sun, every photon followed until it leaves.
+The model in it is [cloud light](#cloud-light)'s Sun term, written apart from any engine code.
+
+- **XII, a level layer's flux.** Over Sun elevations of 4° to 90° and optical depths of 1 to 128, 100,000
+  photons a case, the column's returned share `1 − T` is within 0.017 of the photons' at 45° and above, 0.043
+  at 20°, 0.050 at 4°, and 0.041 at 10° from a depth of 2 (0.073 at a depth of 1). It is low wherever it is
+  out. With Eddington's own escape function in place of the thick layer's it is up to 0.11 low at 4° and 10°.
+  At M3's six cases the four fixed orders return 0.04 to 0.22 and octaves at halves 0.12 to 0.58, where
+  photons return 0.53 to 0.92; from a depth of 16 to 64 neither changes by 0.04, where the photons' share
+  rises by 0.14 to 0.30.
+- **XIII, a level layer's radiance.** Averaged round the azimuth in five bands of exit direction, at Suns of
+  10°, 45° and 90° and depths of 2, 8 and 32: the figures in [cloud light](#cloud-light). The flux of the
+  radiance the term renders, which the closed form does not constrain, is 0.91 to 1.10 of the Sun's, and 0.97
+  to 1.05 at a depth of 32.
+- **XIV, light through thin cloud.** Under an overhead Sun at depths of 1 to 16, transmitted radiance in seven
+  rings from the Sun: the term is 0.73 to 1.26 of the photons' beyond 2° and 1.06 to 1.51 inside it. Without
+  the middle lobe it is 0.45 to 1.01 beyond 2°, and with the beam as the first order alone 0.20 to 1.00.
+- **XV, a cloud of finite size.** Uniform boxes of 12, 48 and 100 optical depths a side and one of 120 by 120
+  by 24, at Suns of 70°, 45°, 15° and 6°: the mean radiance of the Sun-facing side, a flank, the far side and
+  the base toward a camera 15° below level, and the base from straight below. Over the 64 faces the term is
+  0.62 to 2.35 of the photons' and typically a factor of 1.35 out. Without the view boundary it is 0.69 to
+  3.25 and 1.65; with the lit plane held level, 0.09 to 3.51 and 2.31, the Sun-facing side at a 6° Sun being
+  a tenth to a quarter of transport. The four fixed orders are at most 0.23 and typically 40 times too dark; octaves at
+  halves at most 0.68 and typically 14. The largest excess left is the far side at a 6° Sun and the base under
+  a 70° Sun, both dim faces, at about twice transport.
+- **XVI, probes.** The term's value at sixteen stated inputs, for an implementation to reproduce, and the
+  level layer's identities: the lit plane is level and its cosine is the sine of the Sun's elevation, to nine
+  places.
+- **Unrun:** the term in a cloud whose density is not uniform, where the map's column and the eroded cloud
+  disagree; a droplet other than 24 µm; the disc-averaged phase in place of the point Sun's; ground
+  condensate, whose three depths M14 takes from the ground band. M3's and M5's stills see the first.
+
 ## The system as it runs
 
 | State | Owner |
@@ -1208,13 +1376,13 @@ there, not here.
 | Work | Rate | Size | Estimate | Broadsides |
 |---|---|---|---|---|
 | Weather step | Tick, CPU | One record and at most 16 directed shapes | Microseconds | |
-| Phases | Frame, once a ray; the tables at preparation | One table read and three closed forms; a table for each row of the type table, about 4 KiB each at 1,025 entries | None in the march | |
+| Phases | Frame, once a ray; the tables at preparation | One table read and one closed form; a table for each row of the type table, about 4 KiB each at 1,025 entries, with the Sun term's four numbers | None in the march | |
 | Weather map | Half a second of weather, in parts: 2 Hz at 1× | 4 levels × 256², two textures | Under 0.1 ms a frame at 1× | 2 ms an update |
 | Noise | Preparation | 128³ and 32³ | None in a frame | |
 | Sun's path | At 1×, near level over 8 frames, mid 32, far 128 | 3 × 256² columns (80 m, 320 m and 1.6 km wide, the last reaching the horizon), 48, 32 and 16 slices of the coarse density, which reads the map and the shape noise, and a placed cell's slab where its volume form has weight: 6.3 M stored slices to fill, about 0.5 M a frame. A stored slice is one or more density reads: part H's accuracy figures took four | 0.1–0.2 ms | 2.2 ms shadow |
 | Ground field and far value | With the Sun's path; the far value each frame | 1024², and a mean over the outermost level's ground slice | Under 0.05 ms | |
 | Time-lapse | Ages are held in weather time | At 60×, the whole map (262 k texels) and up to the Sun path's whole fill each frame | Unestimated beyond those counts; M2 records 1×, 8× and 60× | |
-| Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples | The largest term; M3 measures it | 268 ms; 33 M density evaluations |
+| Trace | Frame | 640×360 rays, three quarters sky: 3–7 M reads, up to 16 M with three local light samples; the Sun term adds one read of the Sun column's last slice and four exponentials a lit sample, and no density read | The largest term; M3 measures it | 268 ms; 33 M density evaluations |
 | Resolve | Frame | 1280×720 texels | 0.1–0.2 ms | 0.9 ms |
 | Compose | Frame | Sky pixels at render extent; a pass that loads scene colour | 0.2–0.4 ms and a tile pass break | |
 | Sky overlay | An eighth a frame | 6 × 48² rays, coarse density | Under 0.05 ms | 15 ms capture |
@@ -1278,7 +1446,13 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 11. **Far mist in thick haze takes its air wrongly**, as a bank too bright or too blue against the land behind
    it. Early sign: M15.3's record against the ceiling. The fix is a smaller part bound, never one part for the
    ray.
-12. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
+12. **The lit plane mottles or the view boundary shows.** The plane compares the map's column above a sample
+   with the eroded cloud toward the Sun, and the two disagree at an eroded edge; the boundary term turns on
+   where a view ray enters between the lit plane and the far one. Early sign: M3's stills, as blotches on a
+   sunlit top or a seam along a cloud's shoulder, and M5's at a low Sun, where the plane's cosine ranges
+   furthest. The fixes, in order: a deeper level margin than 2; a `tau_up` taken from the same coarse density
+   as the product. A planner makes either from the record. Never a gain, a second light or fixed orders.
+13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. The verifier and the off-parity
    check run in every milestone.
 
 ## Proof and builder handoff
@@ -1308,6 +1482,9 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 - **Ceilings.** The items of M13 to M15 that name the design's ceiling are held to
   [numerical acceptance for ground condensate](#numerical-acceptance-for-ground-condensate). A miss ends
   `BLOCKED`; a build never widens the ceiling or measures its own.
+- **Cloud light.** M3.13, M3.14 and M5.1 are held to
+  [numerical acceptance for cloud light](#numerical-acceptance-for-cloud-light). The Sun term has no weight or
+  gain to tune: a look is tuned through a type's droplet and water, in the game's type table.
 
 ## Open questions
 
@@ -1319,6 +1496,8 @@ beside it. Presented cadence on the built-in panel is measured once, attended, i
 | What tolerance does the GPU weather map meet against the CPU field on Metal and in Chrome? | M2 and M4 measure first, then assert the recorded bound |
 | How many sampled textures does the lent environment group use in the trace? | M3 counts against the record |
 | Does the summed Sun-path product carry low-Sun relief with three local samples? | M5 |
+| How far is the GPU's Sun term from the model's in f32, and the march of a lit slab from the model's radiance? | M3 measures first, then asserts the recorded bound |
+| Does the lit plane hold steady where the map's column and the eroded cloud disagree? | M3's stills, then M5's at a low Sun |
 | Does the droplet's forward peak hold steady in the part-extent trace? | M5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | M1 measures first, beside part G's 1,025 |
 | How far is the product over a placed shape from the volume's own Sun path, at its edges and inside it, on the GPU? | M6 measures first, beside part H's figures |
