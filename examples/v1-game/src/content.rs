@@ -164,6 +164,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
+        hide_exit_entities: content == crate::GameContent::Exit
+            && launch_value("THRUM_EXIT_NO_ENTITIES").as_deref() == Ok("1"),
         camera_culling,
         valley_stars: matches!(scene.as_deref(), Ok("valley" | "exit"))
             && launch_value("THRUM_STARS").as_deref() != Ok("off"),

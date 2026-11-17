@@ -50,7 +50,7 @@ pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};
 #[doc(hidden)]
-pub use showcase::prepare_showcase as prepare_cooked_valley;
+pub use showcase::{CookedValleyError, prepare_cooked_valley};
 #[cfg(target_os = "macos")]
 pub use window::{
     NATIVE_RECOVERY_VARIABLE, NativeRecovery, capture_game, run_runtime_capture, run_window,

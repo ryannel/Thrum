@@ -58,8 +58,33 @@ struct Material {
 ///
 /// # Errors
 /// Returns an invalid embedded recipe or camera description.
-pub fn prepare_showcase(source: CookedSource) -> Result<(SceneCamera, CookedAssets), String> {
+pub(crate) fn prepare_showcase(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), String> {
     prepare_showcase_with_volume(source, None)
+}
+
+/// The authored valley recipe or contribution could not be prepared.
+#[derive(Debug)]
+pub struct CookedValleyError(String);
+
+impl std::fmt::Display for CookedValleyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for CookedValleyError {}
+
+/// Prepare the embedded valley recipe from a checked cooked source.
+///
+/// # Errors
+/// Returns the recipe or contribution preparation refusal.
+#[doc(hidden)]
+pub fn prepare_cooked_valley(
+    source: CookedSource,
+) -> Result<(SceneCamera, CookedAssets), CookedValleyError> {
+    prepare_showcase(source).map_err(CookedValleyError)
 }
 
 /// Opt-in M2 fixture; the ordinary authored valley keeps no volume.

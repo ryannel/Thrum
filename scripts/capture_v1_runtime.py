@@ -148,7 +148,7 @@ def preview(output, manifest, runtime, records):
         for index, record in enumerate(ordered):
             end = ordered[index + 1][pts_key] if index + 1 < len(ordered) else max(
                 runtime["interval_end_ns"] if mode == "realtime" else
-                record[pts_key] + 8_333_333 if runtime["scenario"] == "exit-stop" else 4_000_000_000,
+                record[pts_key] + 8_333_333 if runtime.get("scenario") == "exit-stop" else 4_000_000_000,
                 record[pts_key] + 8_333_333)
             # Quantize absolute endpoints before differencing. Flooring
             # each duration independently accumulates ~0.5 us/frame drift.

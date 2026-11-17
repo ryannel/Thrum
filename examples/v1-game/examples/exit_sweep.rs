@@ -1,12 +1,12 @@
 //! Capture-off 1080p sizing sweep on the normal exit frame host.
 use std::time::Duration;
 
-use thrum_render::{synthetic::CullMode, timing::SceneGpuTimings};
+use thrum_render::{
+    capabilities::DeviceCapabilities, present::SurfaceProfile, synthetic::CullMode,
+    timing::SceneGpuTimings,
+};
+use thrum_test_support::{Profile, Restriction, gpu};
 use v1_game::{FrameConfig, FrameHost, FrameSample, GameContent, SurfaceOutput};
-
-#[path = "../tests/support.rs"]
-#[allow(dead_code, unreachable_pub)]
-mod support;
 
 const EXTENT: [u32; 2] = [1920, 1080];
 const STOPS: [&str; 6] = [
@@ -40,9 +40,34 @@ fn main() {
 }
 
 async fn run() {
-    let recipe = std::env::var("THRUM_RECIPE").expect("explicit recipe");
-    let (_, device, queue, caps) = support::device(&recipe, true).await;
-    let (view, profile) = support::presentation(&device, EXTENT);
+    let recipe = std::env::args()
+        .nth(1)
+        .expect("pass the recipe as the first argument");
+    let gpu = gpu("exit sizing sweep", Some(wgpu::Backend::Metal)).expect("real Metal adapter");
+    let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, FrameHost::DEVICE_GENERATION)
+        .with_recipe_override(&recipe)
+        .expect("resolve recipe");
+    let format = wgpu::TextureFormat::Bgra8Unorm;
+    let target = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("exit sizing presentation"),
+        size: wgpu::Extent3d {
+            width: EXTENT[0],
+            height: EXTENT[1],
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+    let profile = SurfaceProfile {
+        format,
+        extent: EXTENT,
+    };
     let surface = SurfaceOutput {
         view: &view,
         extent: EXTENT,
@@ -68,7 +93,7 @@ async fn run() {
     host.pause().expect("hold");
     let deadline = std::time::Instant::now() + Duration::from_secs(30);
     loop {
-        let _ = frame(&mut host, &device, &surface);
+        drop(frame(&mut host, &device, &surface));
         let stats = stats.lock().expect("cook stats");
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
         if stats.drawn == Some(1) {
@@ -118,7 +143,7 @@ async fn run() {
     let (stop, drawn) = heaviest.expect("route stops");
     apply(&mut host, stop);
     for _ in 0..24 {
-        let _ = frame(&mut host, &device, &surface);
+        drop(frame(&mut host, &device, &surface));
     }
     for _ in 0..120 {
         let sample = frame(&mut host, &device, &surface);

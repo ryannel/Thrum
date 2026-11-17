@@ -45,7 +45,7 @@ def trials(target, run, web_root):
             log_path = output / f'{stem}.log'
             load_start = os.getloadavg()
             if target == 'mac-metal':
-                command = [str(EXAMPLE)]
+                command = [str(EXAMPLE), recipe]
                 env = dict(os.environ, THRUM_SCENE='exit', THRUM_ASSET_STORE=str(store), THRUM_RECIPE=recipe)
             else:
                 mac = json.loads((SCRATCH / f'mac-metal-{run}' / 'result.json').read_text())

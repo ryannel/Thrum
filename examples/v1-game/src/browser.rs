@@ -831,8 +831,8 @@ impl BrowserGame {
                 if counts.active != 10_000
                     || sample.timing_fault
                     || !sample.surface_presented
-                    || timings.shadow_near() <= 0.0
-                    || timings.shadow_far() <= 0.0
+                    || timings.get("synthetic Sun shadow near").is_none()
+                    || timings.get("synthetic Sun shadow far").is_none()
                 {
                     return None;
                 }

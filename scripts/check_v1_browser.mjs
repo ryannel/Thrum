@@ -1949,7 +1949,7 @@ async function main() {
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
   mixedOracle = args.mixedOracle === true;
-  if (args.case.startsWith('environment-')) await routeStops(files, directory);
+  if (args.case.startsWith('environment-') || args.case === 'exit-sweep') await routeStops(files, directory);
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
   const caseParams = Buffer.from('{"world.paused": true, "sky.solar_time": 17.9, "camera.yw": 10}');
   files.set('/case.params.json', { bytes: caseParams, type: 'application/json', sha256: sha(caseParams) });

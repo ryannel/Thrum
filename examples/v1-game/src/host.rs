@@ -67,6 +67,8 @@ pub struct GameSetup {
     pub diagnostic_clouds: bool,
     /// The grid or the dense flythrough field.
     pub content: GameContent,
+    /// Draw the exit terrain and sample objects with its entity population suppressed.
+    pub hide_exit_entities: bool,
     /// How the camera's opaque draw is culled; Direct draws every instance.
     pub camera_culling: CullMode,
     /// Prepare the authored valley's star field. Ignored for the flythrough field.
@@ -90,6 +92,7 @@ impl Default for GameSetup {
             display_overlay: DisplayOverlay::Off,
             diagnostic_clouds: false,
             content: GameContent::Grid,
+            hide_exit_entities: false,
             camera_culling: CullMode::Direct,
             valley_stars: false,
             route_overlay: RouteOverlay::Off,

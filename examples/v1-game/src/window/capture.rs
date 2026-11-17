@@ -438,6 +438,14 @@ fn world_moves(scenario: &str) -> bool {
         )
 }
 
+fn applies_yaw(scenario: &str, active_world: bool) -> bool {
+    (!active_world || scenario == "reconstruction-pan")
+        && !matches!(
+            scenario,
+            "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
+        )
+}
+
 fn prepare_parameters<G: Game>(
     driver: &mut Offscreen<G>,
     scenario: &str,
@@ -575,11 +583,7 @@ async fn record(
             )
             .await?;
         let yaw = native_recovery::yaw(t, recovery_mode);
-        let control_dispatched = (!active_world || scenario == "reconstruction-pan")
-            && !matches!(
-                scenario,
-                "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
-            )
+        let control_dispatched = applies_yaw(scenario, active_world)
             && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
         let accepted = origin.elapsed();
         let accepted_yaw = accepted_yaw(&driver)?;
@@ -873,16 +877,13 @@ pub(super) fn prepare_route(
     let camera = host
         .scene_camera()
         .ok_or("routed capture needs the cooked valley camera")?;
-    let parse = if cloud_capture {
-        crate::CameraRoute::parse_long_capture
+    let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
+    let route = if cloud_capture {
+        crate::CameraRoute::parse_long_capture(text, camera, tick_hz)
+            .map_err(|error| error.to_string())
     } else {
-        crate::CameraRoute::parse
-    };
-    let route = parse(
-        text,
-        camera,
-        thrum_core::ClockConfig::default().tick_hz.get(),
-    )?;
+        crate::CameraRoute::parse(text, camera, tick_hz)
+    }?;
     if route.render_extent != render_extent {
         return Err("runtime route extent differs from the prepared game grid".to_owned());
     }

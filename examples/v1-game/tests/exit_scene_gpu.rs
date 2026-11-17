@@ -1,5 +1,4 @@
 //! Metal witness for the cooked scene's visible bucket counts at the six presets.
-#![cfg(target_os = "macos")]
 
 use std::{fs, path::Path, time::Duration};
 
@@ -136,6 +135,9 @@ fn visible(layout: &Layout, bounds: &[(Vec3, Vec3); 5], eye: Vec3, pitch: f32, y
 
 #[test]
 fn exit_scene_uses_cooked_rows_and_matches_the_cpu_frustum() {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
     let Some(gpu) = gpu("exit_scene_gpu", Some(wgpu::Backend::Metal)) else {
         return;
     };

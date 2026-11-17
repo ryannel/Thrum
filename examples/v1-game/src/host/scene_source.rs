@@ -397,8 +397,7 @@ impl GameScene {
         Self {
             cloud_input: None,
             content: setup.content,
-            omit_exit_props: setup.content == GameContent::Exit
-                && std::env::var_os("THRUM_EXIT_NO_ENTITIES").is_some(),
+            omit_exit_props: setup.content == GameContent::Exit && setup.hide_exit_entities,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,

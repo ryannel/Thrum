@@ -152,7 +152,7 @@ pub(crate) fn weather_simulation(
     match (content, overlay) {
         (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay, clouds),
         (GameContent::Field, false) => field_simulation(clouds),
-        (GameContent::Exit, false) => exit_simulation(clouds),
+        (GameContent::Exit, false) => exit_simulation(clouds).map_err(|error| error.to_string()),
         (_, true) => Err("the route overlay needs grid content".to_owned()),
     }
 }
@@ -176,7 +176,9 @@ fn new_simulation(entity_count: usize, clouds: bool) -> Result<Simulation, Strin
     .map_err(|error| format!("simulation setup: {error:?}"))
 }
 
-fn exit_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simulation, String> {
+fn exit_simulation(
+    clouds: Option<thrum_cloud_model::Parameters>,
+) -> Result<Simulation, crate::simulation::SimError> {
     let fixture = crate::exit_scene::layout();
     let mut sim = Simulation::new_exit(
         WorldEpoch(1),
@@ -188,8 +190,7 @@ fn exit_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simu
             movement_speed: 6.0,
         },
         clouds.is_some(),
-    )
-    .map_err(|error| error.to_string())?;
+    )?;
     for (index, prop) in fixture.entities.iter().copied().enumerate() {
         let drift = fixture.loops.get(index).copied();
         sim.seed_drift(
@@ -198,16 +199,16 @@ fn exit_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simu
                 position: drift.map_or(Position(prop.position()), |path| path.at(0)),
                 velocity: Velocity::default(),
                 health: 100,
-                ownership: peer_ownership(ENTITY_COUNT, index)?,
+                ownership: peer_ownership(ENTITY_COUNT, index)
+                    .map_err(|_| crate::simulation::SimError::InvalidConfig)?,
                 visual: Some(prop.material()),
             },
             drift,
-        )
-        .map_err(|error| format!("seed exit entity {index}: {error}"))?;
+        )?;
     }
-    sim.seed_weather(clouds)
-        .map_err(|error| error.to_string())?;
-    register_peers(&mut sim, ENTITY_COUNT)?;
+    sim.seed_weather(clouds)?;
+    register_peers(&mut sim, ENTITY_COUNT)
+        .map_err(|_| crate::simulation::SimError::InvalidOwnership)?;
     Ok(sim)
 }
 
@@ -216,7 +217,7 @@ fn exit_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simu
 /// # Errors
 /// Returns setup or seeding failure.
 #[doc(hidden)]
-pub fn exit_authority() -> Result<Simulation, String> {
+pub fn exit_authority() -> Result<Simulation, crate::simulation::SimError> {
     exit_simulation(None)
 }
 

@@ -148,6 +148,7 @@ pub(crate) fn install_route(
     let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
     let route = if shell.host().source().is_exit() {
         crate::CameraRoute::parse_long_capture(text, camera, tick_hz)
+            .map_err(|error| error.to_string())
     } else {
         crate::CameraRoute::parse(text, camera, tick_hz)
     }?;

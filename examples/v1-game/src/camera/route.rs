@@ -15,6 +15,18 @@ pub(crate) const ROUTE_VERSION: u32 = 1;
 /// Whole-run frame cap (pre-origin, routed and drain frames), below the web shell's
 /// 600 retained samples per generation.
 pub(crate) const ROUTE_FRAME_CAP: u64 = 560;
+
+/// A long inspection route failed the camera route's admission checks.
+#[derive(Debug)]
+pub struct LongRouteError(String);
+
+impl std::fmt::Display for LongRouteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for LongRouteError {}
 /// Drain steps after the last routed tick (`IN_FLIGHT` + 2).
 pub(crate) const ROUTE_DRAIN_STEPS: u64 = 4;
 /// Checkpoints must sit at least this many ticks after the origin and after each cut.
@@ -142,8 +154,8 @@ impl CameraRoute {
         text: &str,
         camera: SceneCamera,
         tick_hz: u32,
-    ) -> Result<Self, String> {
-        Self::parse_bounded(text, camera, tick_hz, 1800)
+    ) -> Result<Self, LongRouteError> {
+        Self::parse_bounded(text, camera, tick_hz, 1800).map_err(LongRouteError)
     }
 
     fn parse_bounded(

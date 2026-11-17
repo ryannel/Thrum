@@ -70,7 +70,7 @@ pub(super) fn record(
         .ok_or("the moving route needs THRUM_SCENE=valley")?;
     let tick_hz = ClockConfig::default().tick_hz.get();
     let route = if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
-        CameraRoute::parse_long_capture(text, camera, tick_hz)
+        CameraRoute::parse_long_capture(text, camera, tick_hz).map_err(|error| error.to_string())
     } else {
         CameraRoute::parse(text, camera, tick_hz)
     }?;
