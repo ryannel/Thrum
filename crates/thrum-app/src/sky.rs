@@ -253,6 +253,9 @@ pub struct StillWorld {
 
 impl StillWorld {
     /// Stop the clock, discarding its partial tick and holding the committed endpoint.
+    ///
+    /// # Panics
+    /// Panics if the partial tick exceeds a `u64` nanosecond count.
     pub fn pause(&mut self) {
         self.paused = true;
         self.presentation_hold = true;
