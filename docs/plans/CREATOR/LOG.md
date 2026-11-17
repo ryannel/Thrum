@@ -1,5 +1,11 @@
 # CREATOR log
 
+- 2026-11-17 Refreshed the unchanged fresh author's scene on merged main `0f1dc1556`
+  on Mac and hardware Chrome, and inspected native mistake and real-window states.
+  The Sun drag and both saves pass in stable windows with zero keys. Both missing-store
+  cases now join M3.3's command; two successive checks pass without changing earlier
+  artifacts. Independent fresh review remains the lead's. [Evidence](../../evidence/CREATOR/m3/r1-refresh/README.md).
+
 - 2026-11-17 Restored M3.1's fresh builder proof after the reviewer's reading-order
   error; its independent review verdict stays unchanged. Added unset/nonexistent-store
   refusals to M3.3's automated command, including exact causes, recovery advice and

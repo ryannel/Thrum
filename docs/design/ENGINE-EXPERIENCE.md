@@ -65,8 +65,10 @@ budgets above:
   - a lighthouse with its own generated mesh and material in 74.
 
   The last two used only the sky kit and `Config`. Their friction was fixed or recorded; the evidence lists which.
-  These historical exercises were Mac-only. CREATOR M3's new two-target exercise still needs its fresh reviewer.
-  Saved-file reload is proved offscreen; visible-window slider and reload qualification remains open.
+  These historical exercises were Mac-only. [CREATOR M3](../evidence/CREATOR/M3.md) retains a fresh builder's
+  34-line folded-sail scene on Mac and hardware Chrome; its independent fresh review remains open.
+  Saved-file reload is proved offscreen and in the visible starter window, with a real Sun drag and saved
+  parameter/mesh changes in the same windows, without a key press. This proves creator function only.
   An agent on a locked screen reviews through the offscreen capture, which does not prove the window event path.
 
 - **Profiler.** Every sky-kit scene includes a Frame profiler toggle and read-only table on Mac and Chrome.

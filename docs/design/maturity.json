@@ -646,13 +646,13 @@
       "current_target_evidence": {
         "mac-metal": {
           "implementation": "Sky kit, AppKit controls, cooked placements and ground, saved parameter/material/asset reload, exposure zones and shared completed-frame profiler implemented. Clipping/cascade overlays and cooked parameter products unbuilt.",
-          "functional_validation": "CREATOR M1 and M2 independently passed; M2 covers timing demand with frames in flight and replacement, report compatibility and current row reasons. M3 builder proof repeats native mistake handling and a fresh agent's 34-line folded-sail scene on current source. M3 also witnesses the visible Sun drag and sequential saved parameter/mesh updates in the same native windows.",
+          "functional_validation": "CREATOR M1 and M2 independently passed; M2 covers timing demand with frames in flight and replacement, report compatibility and current row reasons. M3 retains the fresh author's 34-line folded-sail scene and refreshes it on merged main 0f1dc1556. The same-source native mistake journey includes unset/nonexistent stores. The visible Sun drag and sequential saved parameter/mesh updates pass in stable windows with zero keys. Two successive automated reload checks preserve earlier artifacts. Independent fresh M3 review remains open.",
           "experienced_quality": "agent_reviewed M2 native profiler panels and repeated world/material changes, plus M3's fresh folded-sail offscreen image. M3 real-window scene/panel pairs inspected for the Sun drag and saved parameter/mesh changes on the built-in display. Historical render findings below remain outside this UI gate.",
           "device": "Apple M3 Max Metal function and offscreen paired cost observations only; no physical cadence or stable profiler overhead budget claimed."
         },
         "chrome-webgpu": {
           "implementation": "Same game source, controls model, DOM view, live cooked assets and profiler implemented. Parameter JSON copied at web command startup and applied via ?params. Kit material hooks unsupported.",
-          "functional_validation": "CREATOR M1 and M2 independently passed on hardware Chrome 157: live mesh/texture and refusal recovery; load change after frame 600, real timestamp-work off/on counters, unavailable/stale/lost reasons and fresh windows. M3 builder proof runs the same fresh folded-sail scene on hardware WebGPU with cooked generation 1 drawn.",
+          "functional_validation": "CREATOR M1 and M2 independently passed on hardware Chrome 157: live mesh/texture and refusal recovery; load change after frame 600, real timestamp-work off/on counters, unavailable/stale/lost reasons and fresh windows. M3 refreshes the unchanged fresh author's folded-sail scene on merged main 0f1dc1556, with an Apple metal-3 hardware adapter, fallback false and cooked generation 1 drawn. Independent fresh M3 review remains open.",
           "experienced_quality": "agent_reviewed M1 journey and M2 default/480px/off profiler screenshots, plus M3's fresh folded-sail canvas and page with one Sun slider.",
           "device": "Chrome 157 Apple Metal hardware WebGPU on M3 Max, function only; no browser performance budget or physical display claim."
         },
@@ -4494,7 +4494,7 @@
       "CONSTRUCTION-PACKAGES.md": "9ea1d68812ae04250f6c5477e32a9e90d90c6bf31f811f0bea39ee1bde3d84df",
       "CONTRACTS.md": "1a9fa474a8e338f4313e38bb81701b7562651206232dbc600ee69347239e0d54",
       "DESIGN-PROGRAMME.md": "f33d149acdd44599c7b5900e4d52e64f403cf2d026d1275facc8954f29b029f9",
-      "ENGINE-EXPERIENCE.md": "6ad8cc15761a3df523ea18912bd1922189b5acf3520480f7d7d06ce51070e510",
+      "ENGINE-EXPERIENCE.md": "8cb76c1758058025c77e3f09508fd640232f537df1f6b95f368cae5d89d5a93b",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
       "FIRST-USE-WALKTHROUGHS.md": "23e1f618e871f8e3814664b3ef55282b599fc31f2afa7906c1393cf534ac9427",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",
