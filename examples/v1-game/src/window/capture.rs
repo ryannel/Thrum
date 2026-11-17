@@ -48,6 +48,9 @@ pub(super) fn run(
             | "clouds-drift"
             | "clouds-still"
             | "clouds-route"
+            | "exit-route"
+            | "exit-drift"
+            | "exit-stop"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -340,8 +343,10 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
-        if matches!(scenario, "clouds-drift" | "clouds-route")
-            || recovery != super::NativeRecovery::Disabled
+        if matches!(
+            scenario,
+            "clouds-drift" | "clouds-route" | "exit-route" | "exit-drift"
+        ) || recovery != super::NativeRecovery::Disabled
         {
             4096
         } else {
@@ -422,14 +427,14 @@ fn requested_route(scenario: &str) -> Result<Option<Value>, String> {
 }
 
 fn is_route(scenario: &str) -> bool {
-    matches!(scenario, "route" | "clouds-route")
+    matches!(scenario, "route" | "clouds-route" | "exit-route")
 }
 
 fn world_moves(scenario: &str) -> bool {
     is_route(scenario)
         || matches!(
             scenario,
-            "running" | "writer-slow" | "reconstruction-pan" | "clouds-drift"
+            "running" | "writer-slow" | "reconstruction-pan" | "clouds-drift" | "exit-drift"
         )
 }
 
@@ -481,7 +486,7 @@ async fn record(
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1).await?;
     let mut driver = Offscreen::new(
-        super::capture_game_with_route_limit(scenario == "clouds-route")?,
+        super::capture_game_with_route_limit(matches!(scenario, "clouds-route" | "exit-route"))?,
         &device,
         &capabilities,
         &queue,
@@ -528,7 +533,8 @@ async fn record(
         if mode == "realtime" && t >= hard_end {
             break;
         }
-        if (mode == "fixed" && opportunity.index > 480)
+        let fixed_end = if scenario == "exit-stop" { 24 } else { 480 };
+        if (mode == "fixed" && opportunity.index > fixed_end)
             || (mode == "realtime"
                 && t >= soft_end
                 && if is_route(scenario) {
@@ -570,7 +576,10 @@ async fn record(
             .await?;
         let yaw = native_recovery::yaw(t, recovery_mode);
         let control_dispatched = (!active_world || scenario == "reconstruction-pan")
-            && !matches!(scenario, "reconstruction-stars" | "reconstruction-scrub")
+            && !matches!(
+                scenario,
+                "reconstruction-stars" | "reconstruction-scrub" | "exit-stop"
+            )
             && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
         let accepted = origin.elapsed();
         let accepted_yaw = accepted_yaw(&driver)?;
@@ -622,6 +631,7 @@ async fn record(
     );
     let interval_complete = mode == "still"
         || scenario == "clouds-still"
+        || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
             && if is_route(scenario) {
@@ -795,6 +805,8 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     match scenario {
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
+        "exit-route" => (32.0, 0.0, f64::INFINITY),
+        "exit-drift" => (25.0, 23.0, 23.0),
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
     }
@@ -822,6 +834,9 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
     if !matches!(mode.as_str(), "realtime" | "fixed" | "still") {
         return Err("invalid capture mode".to_owned());
     }
+    if scenario == "exit-stop" && mode != "fixed" {
+        return Err("an exit-stop capture uses fixed mode".to_owned());
+    }
     if mode != "realtime"
         && matches!(
             scenario,
@@ -832,6 +847,8 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                 | "route"
                 | "clouds-route"
                 | "clouds-drift"
+                | "exit-route"
+                | "exit-drift"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());
@@ -857,7 +874,7 @@ pub(super) fn prepare_route(
         .scene_camera()
         .ok_or("routed capture needs the cooked valley camera")?;
     let parse = if cloud_capture {
-        crate::CameraRoute::parse_cloud_capture
+        crate::CameraRoute::parse_long_capture
     } else {
         crate::CameraRoute::parse
     };

@@ -12,11 +12,11 @@ fn native_cloud_capture_admits_ten_second_motion_without_widening_the_browser_ro
         &[(700, "end")],
     );
     assert!(CameraRoute::parse(&text, camera(), 60).is_err());
-    assert!(CameraRoute::parse_cloud_capture(&text, camera(), 60).is_ok());
+    assert!(CameraRoute::parse_long_capture(&text, camera(), 60).is_ok());
     let too_long = file(&[key(0, 0.0, 0.0), key(1800, 40.0, 36.0)], &[], &[]);
-    assert!(CameraRoute::parse_cloud_capture(&too_long, camera(), 60).is_err());
+    assert!(CameraRoute::parse_long_capture(&too_long, camera(), 60).is_err());
     let invalid_cut = file(&[key(0, 0.0, 0.0), key(720, 40.0, 36.0)], &[600], &[]);
-    assert!(CameraRoute::parse_cloud_capture(&invalid_cut, camera(), 60).is_err());
+    assert!(CameraRoute::parse_long_capture(&invalid_cut, camera(), 60).is_err());
 }
 
 fn camera() -> SceneCamera {

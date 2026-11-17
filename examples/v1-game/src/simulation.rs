@@ -18,6 +18,7 @@ use thrum_core::{
     },
 };
 
+use crate::exit_scene::Drift;
 pub use history::SimulationHistory;
 use page::Page;
 pub use page::{DirtySlots, PublishedPage};
@@ -36,6 +37,7 @@ const SIMULATE: SystemId = SystemId(1);
 const RESOLVE: SystemId = SystemId(2);
 const STRUCTURE: u64 = 7;
 const WEATHER: SystemId = SystemId(5);
+const DRIFT: SystemId = SystemId(6);
 // V1 game policy: bound one axis of admitted player motion in metres/second.
 const MAX_CONTROL_SPEED: f64 = 1_000.0;
 
@@ -50,6 +52,7 @@ fn setup(
     epoch: WorldEpoch,
     config: SimConfig,
     clouds: bool,
+    exit: bool,
 ) -> Result<(GameRuntime<Rules>, Rules, Candidate), SimError> {
     use AccessMode::{Read, Write};
     let mut registry = ComponentRegistry::default();
@@ -88,6 +91,15 @@ fn setup(
         .map_err(|_| SimError::InvalidConfig)?;
     let weather_key = if clouds {
         Some(weather::register(&mut registry)?)
+    } else {
+        None
+    };
+    let drift_key = if exit {
+        Some(
+            registry
+                .register_indexed::<Drift>(ComponentSchemaId(7), |_| true)
+                .map_err(|_| SimError::InvalidConfig)?,
+        )
     } else {
         None
     };
@@ -162,6 +174,17 @@ fn setup(
             Rules::weather,
         ));
     }
+    if let Some(key) = drift_key {
+        systems.push(RegisteredSystem::direct(
+            SystemSpec {
+                id: DRIFT,
+                stage: Stage::Simulate,
+                accesses: vec![component(key, Read), component(position, Write)],
+                after: vec![SIMULATE],
+            },
+            Rules::drift,
+        ));
+    }
     let runtime = GameRuntime::new_published(epoch, config.entity_capacity, registry, systems)
         .map_err(map_runtime)?;
     let candidate = Candidate::new(
@@ -171,6 +194,20 @@ fn setup(
             .map_err(map_runtime)?,
     );
     let rules = Rules {
+        drift: if exit {
+            Some(
+                runtime
+                    .write_read2_indexed::<Position, Drift>(DRIFT)
+                    .map_err(map_runtime)?,
+            )
+        } else {
+            None
+        },
+        drift_read: if exit {
+            Some(runtime.read_permit::<Drift>(DRIFT).map_err(map_runtime)?)
+        } else {
+            None
+        },
         config,
         resource_revision: 0,
         peers: Vec::with_capacity(config.peer_capacity),
@@ -332,14 +369,27 @@ impl Simulation {
     ///
     /// Invalid capacity, movement speed or schedule declaration.
     pub fn new(epoch: WorldEpoch, config: SimConfig) -> Result<Self, SimError> {
-        Self::selected(epoch, config, false)
+        Self::selected(epoch, config, false, false)
     }
 
     pub(crate) fn new_clouded(epoch: WorldEpoch, config: SimConfig) -> Result<Self, SimError> {
-        Self::selected(epoch, config, true)
+        Self::selected(epoch, config, true, false)
     }
 
-    fn selected(epoch: WorldEpoch, config: SimConfig, clouds: bool) -> Result<Self, SimError> {
+    pub(crate) fn new_exit(
+        epoch: WorldEpoch,
+        config: SimConfig,
+        clouds: bool,
+    ) -> Result<Self, SimError> {
+        Self::selected(epoch, config, clouds, true)
+    }
+
+    fn selected(
+        epoch: WorldEpoch,
+        config: SimConfig,
+        clouds: bool,
+        exit: bool,
+    ) -> Result<Self, SimError> {
         if config.entity_capacity > u32::MAX as usize
             || !config.movement_speed.is_finite()
             || config.movement_speed < 0.0
@@ -347,7 +397,7 @@ impl Simulation {
         {
             return Err(SimError::InvalidConfig);
         }
-        let (runtime, rules, candidate) = setup(epoch, config, clouds)?;
+        let (runtime, rules, candidate) = setup(epoch, config, clouds, exit)?;
         Ok(Self {
             runtime,
             rules,
@@ -414,6 +464,14 @@ impl Simulation {
     ///
     /// Setup has started, the ID repeats, capacity is full or values are nonfinite.
     pub fn seed(&mut self, entity: ComponentEntity) -> Result<Handle, SimError> {
+        self.seed_drift(entity, None)
+    }
+
+    pub(crate) fn seed_drift(
+        &mut self,
+        entity: ComponentEntity,
+        drift: Option<Drift>,
+    ) -> Result<Handle, SimError> {
         if !self.rules.peers.is_empty() {
             return Err(SimError::AlreadyStarted);
         }
@@ -433,6 +491,9 @@ impl Simulation {
                 }
                 if let Some(visual) = entity.visual {
                     writer.add(Visual(visual))?;
+                }
+                if let Some(path) = drift {
+                    writer.add(path)?;
                 }
                 Ok(())
             })
@@ -471,6 +532,17 @@ impl Simulation {
                 .with(&self.rules.resolve.visual_read, handle, |value| value.0)
                 .ok(),
         })
+    }
+
+    /// Authored loop component for an admitted exit mover.
+    #[doc(hidden)]
+    #[must_use]
+    pub fn authored_drift(&self, handle: Handle) -> Option<([f64; 3], [f64; 3], u32, u32)> {
+        let world = self.runtime.read();
+        let Drift(center, extent, period, offset) = world
+            .with(self.rules.drift_read.as_ref()?, handle, |path| *path)
+            .ok()?;
+        Some((center, extent, period, offset))
     }
 
     /// Lease the latest complete V1 game page, sealing tick zero if needed.

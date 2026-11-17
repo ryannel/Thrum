@@ -602,8 +602,11 @@ impl FrameHost {
         #[cfg(not(target_arch = "wasm32"))]
         let rows = if rows.is_none() && setup.cooked_mesh_rows == MeshRowSource::Cooked {
             Some(
-                crate::content::selected_rows(device.limits().max_storage_buffer_binding_size)
-                    .map_err(|error| error.to_string())?,
+                crate::content::selected_rows(
+                    setup.content,
+                    device.limits().max_storage_buffer_binding_size,
+                )
+                .map_err(|error| error.to_string())?,
             )
         } else {
             rows

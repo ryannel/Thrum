@@ -133,11 +133,12 @@ impl CameraRoute {
         Self::parse_bounded(text, camera, tick_hz, ROUTE_FRAME_CAP)
     }
 
-    /// Parse an elapsed-time native cloud inspection route of at most 1800 ticks.
-    /// This has no browser retained-frame consumer; the capture writer separately
-    /// bounds its submitted records. All pose, cut and checkpoint checks apply.
-    #[cfg(target_os = "macos")]
-    pub(crate) fn parse_cloud_capture(
+    /// Parse an inspection route of at most 1800 ticks. The capture writer
+    /// separately bounds its submitted records.
+    /// # Errors
+    /// All of the pose, cut and checkpoint refusals of [Self::parse] still apply.
+    #[doc(hidden)]
+    pub fn parse_long_capture(
         text: &str,
         camera: SceneCamera,
         tick_hz: u32,

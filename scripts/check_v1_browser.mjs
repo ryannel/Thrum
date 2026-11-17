@@ -19,6 +19,7 @@ const configureFailureSentinel = 'THRUM_G3B_CONFIGURE_ONCE';
 cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque');
+cases.push('exit-scene', 'exit-sweep', 'exit-stops');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let interrupted;
@@ -142,6 +143,12 @@ async function serveCooked(args, output, temporal = false) {
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
   await fs.cp(path.resolve(repo, args['assets-source']), source, { recursive: true });
+  if (args.case === 'exit-scene' || args.case === 'exit-stops') {
+    const exit = path.join(repo, 'examples/v1-game/assets/exit');
+    for (const name of await fs.readdir(exit)) {
+      if (/^exit-.*\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(exit, name), path.join(source, name));
+    }
+  }
   if (temporal) {
     const fixture=JSON.parse(await fs.readFile(path.join(repo,'crates/thrum-render/src/synthetic/temporal/witness.json'),'utf8'));
     const v=fixture.volume, bytes=Buffer.alloc(16+v.extent.reduce((a,b)=>a*b,1),v.density);
@@ -1182,15 +1189,20 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const materialDisabled = mode === 'material-disabled';
   const tabCase = mode === 'tabs';
   const oracleCase = mode.startsWith('field-oracle-');
-  const routeCase = mode.startsWith('route-');
+  const exitStop = mode.startsWith('exit-stop-');
+  const routeCase = mode.startsWith('route-') || exitStop;
+  const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
+  const sweep = mode === 'exit-sweep';
   const movingCase = mode === 'moving-route' || mode.startsWith('moving-route-');
   const movingControl = movingCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
-  const routeFile = routeCase ? `showcase-${mode.slice('route-'.length)}.params.json` : undefined;
+  const routeFile = routeCase ? `showcase-${mode.replace(/^(route|exit-stop)-/, '')}.params.json` : undefined;
   const skyCase = mode === 'sky-reflections' || valleyCase;
   const faults = [], timeline = [];
-  let loss, recovery, sky, material, oracle, route, intentionalDestroys = 0;
+  let loss, recovery, sky, material, oracle, route, exit, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
-  const url = movingCase ? `${origin}/route.html?route=${movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
+  const url = exitCase
+    ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
+    : movingCase ? `${origin}/route.html?route=${movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   const cullingQuery = movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
@@ -1225,7 +1237,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
-    await cdp.call('Page.navigate', { url: url + cullingQuery + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
+    await cdp.call('Page.navigate', { url: url + cullingQuery + (exitStop ? '&scene=exit' : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
       if (interrupted) throw interrupted;
@@ -1346,6 +1358,43 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       route = await qualifyRoute(cdp, sessionId, poll, timeout, output, mode, routeFile, files);
       if (timeline.some(line => /params|refused/.test(line))) throw new Error(`Parameter problem reached #status: ${JSON.stringify(timeline)}`);
     }
+    else if (exitCase) {
+      await waitFor(async () => /^Running|^adapter=/.test((await poll()).status ?? ''), timeout, 'exit scene startup');
+      game = await existingGame(cdp, sessionId);
+      const observe = async () => {
+        await poll();
+        const row = await game.invoke('return JSON.parse(game.exit_status());');
+        const store = await game.invoke('return JSON.parse(game.cooked_status());');
+        if (store.errors.length) throw new Error(JSON.stringify(store.errors));
+        return store.drawn === 1 && row.row_generation === 1 && row.active === 10000 && row.culling === 'Frustum'
+          ? { ...row, store } : undefined;
+      };
+      const loaded = await waitFor(observe, timeout, '10,000 active slots on published cooked rows');
+      if (sweep) {
+        await waitFor(async () => /^adapter=/.test((await poll()).status ?? ''), timeout, 'timed exit samples');
+        const data = await game.invoke('return JSON.parse(game.exit_sweep_samples());');
+        if (state.width !== 1920 || state.height !== 1080 || data.samples.length < 120 || data.samples.some(row => row.tick !== 0)) {
+          throw new Error(`Incomplete held 1080p GPU timing: ${state.width}x${state.height}, ${data.samples.length} rows`);
+        }
+        exit = { loaded, ...data };
+      } else {
+        const advanced = await waitFor(async () => {
+          const next = await observe();
+          return next?.tick > loaded.tick && JSON.stringify(next.mover) !== JSON.stringify(loaded.mover) && next;
+        }, timeout, 'mover follows committed ticks');
+        await game.invoke('document.querySelector("#pause-world").click();');
+        const paused = await observe();
+        await sleep(700);
+        const held = await observe();
+        if (!paused || !held || held.tick !== paused.tick || JSON.stringify(held.mover) !== JSON.stringify(paused.mover)) {
+          throw new Error(`Exit movers did not hold when paused: ${JSON.stringify({ paused, held })}`);
+        }
+        exit = { loaded, advanced, paused, held };
+      }
+      if (!assetRequests.some(request => request.includes('manifest')) && !assetRequests.some(request => request.includes('cas'))) {
+        throw new Error('Missing cooked publication fetches');
+      }
+    }
     else if (mode === 'params') {
       params = await qualifyParams(cdp, sessionId, poll, timeout, files, output);
       // Parameter problems belong under the controls, never in the game status line.
@@ -1381,7 +1430,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       return /^adapter=/.test(state.status ?? '');
     }, timeout, `${mode} 600 completed GPU samples`);
     const report = material?.final.report ?? sky?.final.report ?? recovery?.snapshots.final.report ?? loss?.snapshots.final.report ?? controls?.snapshots.complete.report ?? state.status;
-    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !routeCase && !movingCase && !tabCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
+    if (!destroyCase && !skyCase && !materialCase && !materialDisabled && !oracleCase && !routeCase && !movingCase && !tabCase && !exitCase && mode !== 'params' && (field(report, 'samples') !== 600 || !(field(report, 'presented') >= 600))) throw new Error('Qualification requires 600 GPU-complete samples and at least 600 present calls');
     if (state.hidden) throw new Error('Qualification target finished hidden');
     // The field pages must run the mode they were asked for, and Occlusion must hide: Frustum draws at least 21.6%
     // of the field at every tick of the native flythrough, so Occlusion's median stays under a fifth of active.
@@ -1408,7 +1457,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await screenshot(cdp, sessionId, output, mode);
     if (faults.length) throw new Error(`Runtime faults: ${JSON.stringify(faults)}`);
     const scope = route?.scope ?? material?.scope ?? sky?.scope ?? recovery?.scope ?? (lossCase ? loss.scope : tabCase ? 'Actual Chrome tab activation, document visibility, input release and manual pause; no display cadence claim' : mode === 'params' ? 'Parameter file applied and reloaded through the page; no timing claim' : mode === 'controls' ? 'Manual pause with ongoing RAF and explicit visibility-hook composition; not actual tab visibility' : mode === 'pause' ? 'Explicit set_visible(false/true) hook; not actual tab visibility' : 'Headless WebGPU function; not display/cadence qualification');
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, timeline, scope: oracle?.scope ?? scope };
+    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
@@ -1640,13 +1689,36 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   // The page may drain already accepted ticks as it pauses; record how far the clock moved.
   if (!(drawn.value.time >= expected.hours / 24 - 1e-6 && drawn.value.time < expected.hours / 24 + 30 / 18000)) throw new Error(`${mode}: game clock ignored the preset: ${drawn.value.time}`);
   const settled = await until(async () => { await poll(); const value = await read(); return field(value.report, 'presented') >= field(drawn.value.report, 'presented') + 3 ? value : undefined; }, `${mode} three presents after the cooked valley drew`);
+  const exit = mode.startsWith('exit-stop-') ? await game.invoke('return JSON.parse(game.exit_status());') : undefined;
+  if (exit && (exit.row_generation !== 1 || exit.active !== 10000 || exit.culling !== 'Frustum' || exit.in_view < 1)) {
+    throw new Error(`${mode}: exit scene did not draw the cooked rows: ${JSON.stringify(exit)}`);
+  }
   const clip = await game.invoke(`const r=document.querySelector('canvas').getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};`);
   if (![clip.x, clip.y, clip.width, clip.height].every(Number.isFinite) || clip.width <= 0 || clip.height <= 0) throw new Error(`${mode}: canvas screenshot clip unavailable`);
   const image = await screenshot(cdp, sessionId, output, mode, { file: `${mode}.png`, clip });
   const after = await read();
   const cooked = await cookedStatus();
   if (!(cooked?.drawn >= drawn.cooked.drawn)) throw new Error(`${mode}: cooked valley stopped drawing: ${JSON.stringify(cooked)}`);
-  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, image: { ...image, clip },
+  let submitted;
+  if (exit) {
+    await game.invoke('game.begin_submitted_capture(1);');
+    const frame = await until(() => game.invoke(`
+      const frame = game.next_submitted_image();
+      if (frame) {
+        game.end_submitted_capture();
+        return { metadata: JSON.parse(frame.metadata), bytes: frame.pixels.toBase64(),
+          width: document.querySelector('canvas').width, height: document.querySelector('canvas').height };
+      }
+    `), `${mode} fixed submitted image`);
+    const pixels = Buffer.from(frame.bytes, 'base64');
+    if (!frame.metadata.surface_presented || frame.metadata.source_tick !== exit.tick || pixels.length !== frame.width * frame.height * 4) {
+      throw new Error(`${mode}: wrong submitted frame identity ${JSON.stringify(frame.metadata)}`);
+    }
+    const name = `${mode}.rgba8`;
+    await fs.writeFile(path.join(output, name), pixels);
+    submitted = { file: name, sha256: sha(pixels), mode: 'fixed', width: frame.width, height: frame.height, ...frame.metadata };
+  }
+  return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, exit, submitted, image: { ...image, clip },
     scope: 'Fresh page launched with ?assets and ?params; preset applied with nothing refused, world paused at one tick and the cooked valley drawn before a canvas capture; startup records a polled bracket for navigation to the first cooked draw, not first-paint latency; no frame-time claim' };
 }
 
@@ -1871,6 +1943,9 @@ async function main() {
   if (args['web-root'] === 'target/v1-game-web') {
     execFileSync('sh', ['examples/v1-game/web/build.sh'], { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
+  if (args.case === 'exit-scene' && args.cook === 'target/debug/thrum-cook') {
+    execFileSync('rustup', ['run', '1.99.1', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+  }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
   mixedOracle = args.mixedOracle === true;
@@ -1925,13 +2000,13 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && !mode.startsWith('moving-route') && !mode.startsWith('environment-')) : [args.case]) {
-      modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' ? await routeStops(files, directory) : [mode]));
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+      modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode.startsWith('moving-route'))) await movingRouteFiles(files, directory);
     let assetsOrigin;
     let assetsSource;
-    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
+    if (modes.some(mode => mode.startsWith('environment-') || ['temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || mode.startsWith('route-') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, modes.includes('temporal')));
     for (const mode of modes) {
       if (mode === 'lent-products') results.push(await lent.qualify(cdp, serving.origin, output, waitFor));
       else if (mode === 'mesh-rows') results.push(await rows.qualify(cdp, serving.origin, output, waitFor));

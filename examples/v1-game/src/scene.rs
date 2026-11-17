@@ -80,6 +80,8 @@ pub enum GameContent {
     Grid,
     /// The dense flythrough field (about 100k instances, walls and a ground).
     Field,
+    /// The populated showcase valley, with authored still props and closed drifts.
+    Exit,
 }
 
 /// The moving-route proof overlay and its controls. Grid content only.
@@ -111,7 +113,7 @@ impl GameContent {
     #[must_use]
     pub fn entity_count(self) -> usize {
         match self {
-            Self::Grid => ENTITY_COUNT,
+            Self::Grid | Self::Exit => ENTITY_COUNT,
             Self::Field => crate::field::ENTITY_COUNT,
         }
     }
@@ -150,7 +152,8 @@ pub(crate) fn weather_simulation(
     match (content, overlay) {
         (GameContent::Grid, _) => grid_simulation(ENTITY_COUNT, route_overlay, clouds),
         (GameContent::Field, false) => field_simulation(clouds),
-        (GameContent::Field, true) => Err("the route overlay needs grid content".to_owned()),
+        (GameContent::Exit, false) => exit_simulation(clouds),
+        (_, true) => Err("the route overlay needs grid content".to_owned()),
     }
 }
 
@@ -171,6 +174,50 @@ fn new_simulation(entity_count: usize, clouds: bool) -> Result<Simulation, Strin
         },
     )
     .map_err(|error| format!("simulation setup: {error:?}"))
+}
+
+fn exit_simulation(clouds: Option<thrum_cloud_model::Parameters>) -> Result<Simulation, String> {
+    let fixture = crate::exit_scene::layout();
+    let mut sim = Simulation::new_exit(
+        WorldEpoch(1),
+        SimConfig {
+            tick_hz: NonZeroU32::new(60).expect("exit tick rate"),
+            entity_capacity: ENTITY_COUNT + usize::from(clouds.is_some()),
+            peer_capacity: PEER_COUNT,
+            actions_per_frame: 8,
+            movement_speed: 6.0,
+        },
+        clouds.is_some(),
+    )
+    .map_err(|error| error.to_string())?;
+    for (index, prop) in fixture.entities.iter().copied().enumerate() {
+        let drift = fixture.loops.get(index).copied();
+        sim.seed_drift(
+            ComponentEntity {
+                id: StableId(index as u128),
+                position: drift.map_or(Position(prop.position()), |path| path.at(0)),
+                velocity: Velocity::default(),
+                health: 100,
+                ownership: peer_ownership(ENTITY_COUNT, index)?,
+                visual: Some(prop.material()),
+            },
+            drift,
+        )
+        .map_err(|error| format!("seed exit entity {index}: {error}"))?;
+    }
+    sim.seed_weather(clouds)
+        .map_err(|error| error.to_string())?;
+    register_peers(&mut sim, ENTITY_COUNT)?;
+    Ok(sim)
+}
+
+/// The exit scene's normal authority, without a renderer or optional weather.
+///
+/// # Errors
+/// Returns setup or seeding failure.
+#[doc(hidden)]
+pub fn exit_authority() -> Result<Simulation, String> {
+    exit_simulation(None)
 }
 
 /// The last `PEER_COUNT` slots are owned by, and registered to, the peers.

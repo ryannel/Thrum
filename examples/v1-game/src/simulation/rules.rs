@@ -226,6 +226,8 @@ pub(super) struct ResolvePermits {
 pub(super) const PARALLEL_MOVER_CROSSOVER: Option<usize> = None;
 
 pub(super) struct Rules {
+    pub(super) drift: Option<WriteRead2<Position, crate::exit_scene::Drift>>,
+    pub(super) drift_read: Option<ReadPermit<crate::exit_scene::Drift>>,
     pub(super) weather: Option<Box<super::weather::Permits>>,
     pub(super) config: SimConfig,
     pub(super) resource_revision: u64,
@@ -368,6 +370,39 @@ impl Rules {
         )?;
         candidate.direct_positions = visit.changed;
         candidate.kernel_chunks = visit.dispatched_chunks;
+        Ok(())
+    }
+
+    /// Set authored drift endpoints from the committed tick, independent of elapsed wall time.
+    pub(super) fn drift(
+        &self,
+        world: &mut WorldTxn<'_>,
+        _executor: Executor,
+        tick: u64,
+        candidate: &mut Candidate,
+        _edits: &mut EditWriter<'_, Candidate>,
+    ) -> Result<(), SimError> {
+        let route = self.drift.as_ref().expect("registered drift rule");
+        let moved = world.visit_chunked_indexed(
+            route,
+            Executor::serial(),
+            &self.commands,
+            |commands, mark| {
+                for command in commands {
+                    if let Command::Despawn(handle) | Command::SetPosition(handle, _) = command {
+                        mark(handle.slot as usize);
+                    }
+                }
+            },
+            |_, _, _, _, _| true,
+            |_, _, _, position, path| {
+                let next = path.at(tick);
+                let changed = next != *position;
+                *position = next;
+                Ok::<_, SimError>(changed)
+            },
+        )?;
+        candidate.direct_positions += moved.changed;
         Ok(())
     }
 

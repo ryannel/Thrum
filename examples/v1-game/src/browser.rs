@@ -86,6 +86,7 @@ impl CookedValley {
 /// One browser canvas running the V1 game through the engine's web shell.
 #[wasm_bindgen]
 pub struct BrowserGame {
+    content: crate::GameContent,
     temporal_inputs: bool,
     shell: Shell,
     cooked: Option<Arc<Mutex<CookedStats>>>,
@@ -122,10 +123,17 @@ pub async fn create_browser_game(
     meshes: Option<bool>,
     reconstruction: Option<bool>,
     cooked_valley: Option<bool>,
+    exit: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
+    let exit = exit.unwrap_or(false);
     create_game(
         canvas,
         crate::GameSetup {
+            content: if exit {
+                crate::GameContent::Exit
+            } else {
+                crate::GameContent::Grid
+            },
             reconstruction: if reconstruction.unwrap_or(false) {
                 thrum_render::synthetic::Reconstruction::Taau
             } else {
@@ -139,8 +147,12 @@ pub async fn create_browser_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             valley_stars: valley_stars.unwrap_or(false),
             field_meshes: meshes.unwrap_or(false),
-            cooked_mesh_rows: (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)).into(),
-            camera_culling: valley_culling(culling.as_deref(), cooked_valley.unwrap_or(false))?,
+            cooked_mesh_rows: (exit || (meshes.unwrap_or(false) && cooked_valley.unwrap_or(false)))
+                .into(),
+            camera_culling: valley_culling(
+                culling.as_deref(),
+                exit || cooked_valley.unwrap_or(false),
+            )?,
             ..crate::GameSetup::default()
         },
     )
@@ -205,6 +217,7 @@ async fn create_game(
     demo.observe_camera(game::camera_orientation(&shell));
     demo.observe_time(game::time_of_day(&shell));
     Ok(BrowserGame {
+        content: setup.content,
         temporal_inputs: setup.display_overlay
             == thrum_render::synthetic::DisplayOverlay::TemporalInputs,
         shell,
@@ -336,7 +349,9 @@ pub async fn create_route_game(
     culling: Option<String>,
     meshes: Option<bool>,
     reconstruction: Option<bool>,
+    exit: Option<bool>,
 ) -> Result<BrowserGame, JsValue> {
+    let exit = exit.unwrap_or(false);
     let (extent, overlay) = crate::CameraRoute::declared(&route).map_err(js_error)?;
     #[cfg(not(feature = "draw-probe"))]
     let valley_stars = true;
@@ -347,6 +362,11 @@ pub async fn create_route_game(
     create_game(
         canvas,
         crate::GameSetup {
+            content: if exit {
+                crate::GameContent::Exit
+            } else {
+                crate::GameContent::Grid
+            },
             valley_stars,
             reconstruction: if reconstruction.unwrap_or(false) {
                 thrum_render::synthetic::Reconstruction::Taau
@@ -357,7 +377,7 @@ pub async fn create_route_game(
             diagnostic_clouds: diagnostic_clouds.unwrap_or(false),
             camera_culling: valley_culling(culling.as_deref(), true)?,
             field_meshes: meshes.unwrap_or(false),
-            cooked_mesh_rows: meshes.unwrap_or(false).into(),
+            cooked_mesh_rows: (exit || meshes.unwrap_or(false)).into(),
             ..crate::GameSetup::default()
         },
     )
@@ -464,7 +484,7 @@ impl BrowserGame {
                 .ok_or_else(|| js_error("missing fetched generation"))?;
             let rows = thrum_asset_gpu::rows::CookedRows::from_generation(
                 &generation,
-                crate::showcase::entity_mesh_names(),
+                crate::showcase::entity_mesh_names(self.content),
                 self.shell.host().mesh_row_binding_limit(),
             )
             .map_err(js_error)?
@@ -765,6 +785,64 @@ impl BrowserGame {
     #[must_use]
     pub fn complete(&self) -> bool {
         self.shell.samples().len() == SAMPLES
+    }
+
+    /// Committed mover and submitted row observations for the exit scene.
+    #[must_use]
+    pub fn exit_status(&self) -> Option<String> {
+        if self.content != crate::GameContent::Exit {
+            return None;
+        }
+        let samples = self.shell.samples();
+        let counts = samples
+            .iter()
+            .rev()
+            .find_map(|sample| sample.camera_culling);
+        let row_generation = self
+            .shell
+            .host()
+            .mesh_rows()
+            .and_then(|rows| rows.report().generation);
+        Some(
+            serde_json::json!({
+                "tick": game::committed_tick(&self.shell),
+                "mover": game::exit_mover_position(&self.shell),
+                "row_generation": row_generation,
+                "active": counts.map(|counts| counts.active),
+                "in_view": counts.map(|counts| counts.drawn),
+                "culling": counts.map(|counts| format!("{:?}", counts.mode)),
+            })
+            .to_string(),
+        )
+    }
+
+    /// Per-frame GPU pass sum plus surface blit from the held exit stop.
+    #[must_use]
+    pub fn exit_sweep_samples(&self) -> String {
+        let rows = self
+            .shell
+            .samples()
+            .iter()
+            .skip(100)
+            .filter_map(|sample| {
+                let timings = sample.gpu_pass_ns.as_ref()?;
+                let present = sample.gpu_present_ns?;
+                let counts = sample.camera_culling?;
+                if counts.active != 10_000
+                    || sample.timing_fault
+                    || !sample.surface_presented
+                    || timings.shadow_near() <= 0.0
+                    || timings.shadow_far() <= 0.0
+                {
+                    return None;
+                }
+                Some(serde_json::json!({
+                    "tick": sample.tick, "submission": sample.submission_order,
+                    "gpu_ns": timings.sum() + present, "in_view": counts.drawn,
+                }))
+            })
+            .collect::<Vec<_>>();
+        serde_json::json!({"recipe":"Portable","samples":rows}).to_string()
     }
 
     /// Final callback, world and GPU report after 600 completed frames.

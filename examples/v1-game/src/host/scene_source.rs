@@ -306,6 +306,7 @@ pub(crate) struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
+    omit_exit_props: bool,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
@@ -322,6 +323,10 @@ pub(crate) struct GameScene {
     omit_mirror: bool,
 }
 impl GameScene {
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn is_exit(&self) -> bool {
+        self.content == GameContent::Exit
+    }
     /// Select a checked authored camera and its orientation.
     /// # Errors
     /// Refuses while a moving route is installed.
@@ -392,7 +397,9 @@ impl GameScene {
         Self {
             cloud_input: None,
             content: setup.content,
-            valley_stars: setup.content == GameContent::Grid && setup.valley_stars,
+            omit_exit_props: setup.content == GameContent::Exit
+                && std::env::var_os("THRUM_EXIT_NO_ENTITIES").is_some(),
+            valley_stars: setup.content != GameContent::Field && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
@@ -432,6 +439,13 @@ impl GameScene {
                 scene
             }
             GameContent::Field => field_scene(extent, setup.field_meshes)?,
+            GameContent::Exit => {
+                let mut scene = crate::exit_scene::scene()?;
+                if setup.valley_stars {
+                    scene.star_catalogue = Some(&star_catalogue::HARVARD);
+                }
+                scene
+            }
         };
         if setup.cooked_mesh_rows == super::MeshRowSource::Cooked
             && let Some(selection) = scene.meshes.as_mut()
@@ -591,6 +605,17 @@ impl SceneSource<PublishedPage> for GameScene {
             && let Err(error) = input.publish(state)
         {
             debug_assert!(false, "cloud publication: {error}");
+        }
+        if self.omit_exit_props {
+            return into.extract(
+                SourceTick {
+                    epoch: page.id().epoch.0,
+                    timeline: page.timeline(),
+                    tick: page.id().tick,
+                },
+                [0.0; 3],
+                |_| {},
+            );
         }
         #[cfg(feature = "draw-probe")]
         if self.omit_mirror {
@@ -882,6 +907,7 @@ mod tests {
             cloud_input: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
+            omit_exit_props: false,
             valley_stars: true,
             day_phase_offset: 0.1,
             camera_pitch,

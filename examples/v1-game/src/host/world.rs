@@ -218,6 +218,11 @@ impl WorldPort {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn exit_mover_position(&self) -> Option<[f64; 3]> {
+        self.inline().exit_mover_position()
+    }
+
     pub(super) fn enable_projection(&mut self) -> Result<(), String> {
         self.inline_mut().enable_projection()
     }
@@ -426,6 +431,14 @@ impl WorldDriver {
         sim.handle(game.content.controlled_id())
             .and_then(|handle| sim.get(handle).ok())
             .map(|entity| entity.position.0)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn exit_mover_position(&self) -> Option<[f64; 3]> {
+        let game = self.world.game();
+        let sim = &game.sim;
+        let handle = sim.handle(thrum_core::StableId(0))?;
+        sim.get(handle).ok().map(|entity| entity.position.0)
     }
 
     pub(super) fn enable_projection(&mut self) -> Result<(), String> {

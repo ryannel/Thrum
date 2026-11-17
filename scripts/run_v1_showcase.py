@@ -35,6 +35,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 PARAMS = REPO / 'examples/v1-game/params'
 SOURCE = REPO / 'examples/v1-game/assets/showcase'
+EXIT_SOURCE = SOURCE.with_name('exit')
 RUNS = REPO / 'tmp/g7-showcase/runs'
 COOK = REPO / 'target/release/thrum-cook'
 GAME = REPO / 'target/release/v1-game'
@@ -42,6 +43,7 @@ WEB = REPO / 'target/v1-game-web'
 WASM = WEB / 'v1_game_bg.wasm'
 CHECKER = REPO / 'scripts/check_v1_browser.mjs'
 BASELINE = REPO / 'docs/evidence/v1-workload/g7-showcase-baseline.json'
+EXIT_BASELINE = REPO / 'docs/evidence/SHOWCASE/M5-exit-baseline.json'
 TOOLCHAIN = '1.99.1'
 
 # Route order. Each stop's frame on both targets comes from applying its preset: native capture with
@@ -155,10 +157,20 @@ def identities(web, built):
     return found
 
 
-def copy_source(run, origin=SOURCE):
+def copy_source(run, origin=SOURCE, exit_assets=None):
     source = run / 'source'
     shutil.copytree(origin, source)
+    if exit_assets is not None:
+        for mesh in sorted(exit_assets.glob('exit-*.*')):
+            if mesh.suffix in ('.bin', '.gltf'):
+                shutil.copyfile(mesh, source / mesh.name)
     return source
+
+
+def layout(_args):
+    command = [sys.executable, str(SOURCE / 'generate_exit.py')]
+    if subprocess.run(command, cwd=REPO).returncode:
+        raise Failure('exit layout did not verify against the shipped terrain')
 
 
 def store_root(store):
@@ -207,10 +219,10 @@ def mac(args):
     seconds = None if args.no_build else build(run, web=False)
     record = {'command': 'mac', 'stop': args.stop, 'frames': args.frames, 'build_seconds': seconds,
               'builds': identities(web=False, built=not args.no_build), 'preset': stops[args.stop],
-              'store': str(run / 'store'), 'scene': 'valley'}
+              'store': str(run / 'store'), 'scene': 'exit' if args.exit else 'valley'}
     write_json(run / 'run.json', record)
-    watcher, _ = watch(run, copy_source(run), serve=False)
-    env = dict(os.environ, THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE='valley',
+    watcher, _ = watch(run, copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None), serve=False)
+    env = dict(os.environ, THRUM_ASSET_STORE=str(run / 'store'), THRUM_SCENE=record['scene'],
                THRUM_PARAMS=str(PARAMS / f'showcase-{args.stop}.params.json'))
     if args.frames:
         env['THRUM_V1_FRAMES'] = str(args.frames)
@@ -251,12 +263,15 @@ def chrome(args):
     web_presets()
     watcher = server = None
     try:
-        watcher, assets = watch(run, copy_source(run), serve=True)
+        watcher, assets = watch(run, copy_source(run, exit_assets=EXIT_SOURCE if args.exit else None), serve=True)
         # build.sh copies the presets into the web root, so the page fetches them beside index.html.
         handler = type('Handler', (Logged,), {'log_path': run / 'requests.log'})
         server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), lambda *a: handler(*a, directory=str(WEB)))
         threading.Thread(target=server.serve_forever, daemon=True).start()
-        query = urllib.parse.urlencode({'assets': assets, 'params': f'showcase-{args.stop}.params.json'})
+        inputs = {'assets': assets, 'params': f'showcase-{args.stop}.params.json'}
+        if args.exit:
+            inputs['scene'] = 'exit'
+        query = urllib.parse.urlencode(inputs)
         url = f'http://127.0.0.1:{server.server_address[1]}/index.html?{query}'
         record['url'] = url
         write_json(run / 'run.json', record)
@@ -459,6 +474,8 @@ def bounded(command, log, seconds, **options):
 
 
 def check(args):
+    if args.exit:
+        return check_exit(args)
     stops = route()
     origin = Path(args.source).resolve()
     baseline_path = Path(args.baseline).resolve()
@@ -623,6 +640,113 @@ def check(args):
         print(f'  {failure}')
     if failures:
         raise SystemExit(1)
+
+
+def check_exit(args):
+    stops = route()
+    if args.source != str(SOURCE) or args.baseline != str(BASELINE) or args.recalibrate:
+        raise Failure('exit parity uses its own pinned source and baseline')
+    if args.save_baseline == EXIT_BASELINE.exists():
+        raise Failure('use --save-baseline exactly once to calibrate the exit check')
+    run = new_run('exit-check')
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    report = {'passed': False, 'failures': [], 'load_start': os.getloadavg()}
+    print(f'exit route parity: {run}', flush=True)
+    try:
+        if not args.no_build:
+            build(run, web=True)
+        report['builds'] = identities(web=True, built=not args.no_build)
+
+        def execute(command, label, seconds=300, **options):
+            with open(run / f'{label}.log', 'w') as log:
+                if bounded(command, log, seconds, cwd=REPO, **options):
+                    raise Failure(f'{label} failed (see {run / f"{label}.log"})')
+
+        store = run / 'store'
+        execute([str(COOK), 'cook', str(source), str(store)], 'cook')
+        root = report['source_root'] = store_root(store)
+        presets = [PARAMS / f'showcase-{stop}.params.json' for stop in ROUTE]
+        env = dict(os.environ, THRUM_ASSET_STORE=str(store), THRUM_SCENE='exit', THRUM_RECIPE='portable',
+                   THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
+        env.pop('THRUM_EXIT_NO_ENTITIES', None)
+        execute([str(GAME)], 'native', env=dict(env, THRUM_CAPTURE_SCENE=str(run / 'native')))
+        execute([str(GAME)], 'empty', env=dict(env, THRUM_CAPTURE_SCENE=str(run / 'empty'), THRUM_EXIT_NO_ENTITIES='1'))
+        for case, name in [('exit-stops', 'chrome'), ('valley', 'texture'), ('sky-reflections', 'diagnostic')]:
+            execute(['node', str(CHECKER), '--case', case, '--cook', str(COOK), '--web-root', str(WEB),
+                     '--assets-source', str(source), '--output', str(run / name)], name, seconds=900)
+            results = json.loads((run / name / 'run.json').read_text())['results']
+            if any(result['actualWasmSha256'] != report['builds']['wasm_sha256'] for result in results):
+                raise Failure(f'{name}: stale Wasm')
+        if root != store_root(run / 'chrome/store'):
+            raise Failure('Chrome and native cooked roots differ')
+        chrome = json.loads((run / 'chrome/run.json').read_text())['results']
+        chrome = {result['case'].removeprefix('exit-stop-'): result['route'] for result in chrome}
+        poses = json.loads((run / 'native/captures.json').read_text())['route']
+        poses = {pose['file']: pose for pose in poses}
+        for stop, preset in stops.items():
+            pose = poses[f'showcase-{stop}.ppm']
+            if not (close(pose['hours'], preset['sky.solar_time'], 0.0051)
+                    and close(pose['yaw_degrees'], preset['camera.yaw'], 1e-3)
+                    and close(pose['pitch_degrees'], preset['camera.pitch'], 1e-3)):
+                raise Failure(f'native pose differs from the preset at {stop}')
+            if chrome[stop]['exit']['in_view'] < 1:
+                raise Failure(f'Chrome saw no entities at {stop}')
+        grids = {'native': {stop: grid(run / 'native/route' / f'showcase-{stop}.ppm') for stop in ROUTE},
+                 'chrome': {stop: grid(run / 'chrome' / f'exit-stop-{stop}.png') for stop in ROUTE}}
+        stats = report['statistics'] = {}
+        for stop, native in grids['native'].items():
+            row = stats[stop] = {'parity': difference(grids['chrome'][stop], native),
+                                 'empty': difference(grid(run / 'empty/route' / f'showcase-{stop}.ppm'), native),
+                                 'in_view': chrome[stop]['exit']['in_view']}
+            if stop in DIAGNOSTIC_PHASE:
+                diagnostic = run / 'diagnostic' / f'sky-reflections-{DIAGNOSTIC_PHASE[stop]}.png'
+                row['diagnostic'] = difference(grid(diagnostic), native)
+        phases = json.loads((run / 'texture/run.json').read_text())['results'][0]['sky']['phases']
+        noon = next(phase for phase in phases if phase['name'] == DIAGNOSTIC_PHASE['noon'])
+        clip = noon['images'][0]['clip']
+        crop = (round(clip['x']), round(clip['y']), round(clip['x'] + clip['width']), round(clip['y'] + clip['height']))
+        edit = report['positive_control'] = difference(
+            grid(run / 'texture/valley-before-edit-final.png', crop=crop),
+            grid(run / 'texture/valley-edited-final.png', crop=crop))
+        worst = [max(row['parity'][i] for row in stats.values()) for i in range(3)]
+        identity = {'comparator': COMPARATOR, 'frames': FRAMES, 'source_root': root,
+                    'route': {path.stem.removeprefix('showcase-').removesuffix('.params'): sha256(path)
+                              for path in presets}}
+        if args.save_baseline:
+            thresholds = [max(1.0, 3 * value) for value in worst]
+        else:
+            fixed = json.loads(EXIT_BASELINE.read_text())
+            if fixed['identity'] != identity:
+                raise Failure('exit baseline identity changed')
+            thresholds = fixed['thresholds']
+        report['thresholds'] = thresholds
+        report['worst_parity'] = worst
+        failures = report['failures']
+        for stop, row in stats.items():
+            if any(value > limit for value, limit in zip(row['parity'], thresholds)):
+                failures.append(f'{stop}: Chrome/native parity exceeded the threshold')
+            if not any(value > limit for value, limit in zip(row['empty'], thresholds)):
+                failures.append(f'{stop}: the scene without entities passed the comparison')
+            if 'diagnostic' in row and not any(value >= CONTROL_RATIO * limit
+                                              for value, limit in zip(row['diagnostic'], thresholds)):
+                failures.append(f'{stop}: diagnostic comparison did not reach {CONTROL_RATIO} times the threshold')
+        if not any(value > limit for value, limit in zip(edit, thresholds)):
+            failures.append('retinted texture passed the comparison')
+        if args.save_baseline and not failures:
+            save_baseline(EXIT_BASELINE, grids, identity, report, run)
+        elif not args.save_baseline:
+            baseline = report['baseline'] = compare_baseline(EXIT_BASELINE, grids, identity, thresholds)
+            if baseline['status'] != 'compared' or baseline['over']:
+                failures.append('exit baseline failed')
+    except (Failure, OSError, ValueError, KeyError) as error:
+        report['failures'].append(str(error))
+    finally:
+        report['load_end'] = os.getloadavg()
+        report['passed'] = not report['failures']
+        write_json(run / 'run.json', report)
+    if not report['passed']:
+        raise Failure(f'{", ".join(report["failures"])} (see {run / "run.json"})')
+    print(f'PASS: {run / "run.json"}')
 
 
 def spread(values):
@@ -1060,11 +1184,13 @@ def reconstruction(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('layout', help='verify the reproducible exit layout against the shipped terrain')
     for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling', 'reconstruction'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
         if name in ('mac', 'chrome'):
             command.add_argument('--stop', choices=ROUTE, default=ROUTE[0])
+            command.add_argument('--exit', action='store_true', help='launch the populated exit scene')
     commands.choices['mac'].add_argument('--frames', type=int, help='bound the run (THRUM_V1_FRAMES)')
     commands.choices['culling'].add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
     commands.choices['culling'].add_argument('--meshes', action='store_true')
@@ -1073,6 +1199,7 @@ def main():
     commands.choices['check'].add_argument('--save-baseline', action='store_true',
                                            help='write the baseline after a passing run (a reviewed, recorded act); '
                                                 'drift from the old baseline alone does not block it')
+    commands.choices['check'].add_argument('--exit', action='store_true', help='check the populated exit scene')
     commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
                                            help='baseline file to compare with or save, relative to the current directory '
                                                 '(default: the checked-in one)')
@@ -1088,7 +1215,7 @@ def main():
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
         {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling,
-         'reconstruction': reconstruction}[args.command](args)
+         'reconstruction': reconstruction, 'layout': layout}[args.command](args)
     except Failure as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)

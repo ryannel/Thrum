@@ -69,7 +69,11 @@ pub(super) fn record(
         .scene_camera()
         .ok_or("the moving route needs THRUM_SCENE=valley")?;
     let tick_hz = ClockConfig::default().tick_hz.get();
-    let route = CameraRoute::parse(text, camera, tick_hz)?;
+    let route = if std::env::var("THRUM_SCENE").as_deref() == Ok("exit") {
+        CameraRoute::parse_long_capture(text, camera, tick_hz)
+    } else {
+        CameraRoute::parse(text, camera, tick_hz)
+    }?;
     if cooked_generation != Some(route.cooked_generation) {
         return Err(format!(
             "cooked generation {cooked_generation:?} is not the route's {}",

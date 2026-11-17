@@ -13,6 +13,7 @@ pub mod controls;
 pub mod cooked;
 pub mod effect;
 mod environment;
+mod exit_scene;
 mod field;
 mod field_meshes;
 mod host;
@@ -45,9 +46,11 @@ pub use host::{
 #[cfg(not(target_arch = "wasm32"))]
 pub use host::{ThreadedFrameHost, WorldControls};
 pub use projection::{GameProjection, ProjectionGap};
-#[doc(hidden)]
-pub use scene::simulation_with_count;
 pub use scene::{GameContent, RouteOverlay};
+#[doc(hidden)]
+pub use scene::{exit_authority, simulation_with_count};
+#[doc(hidden)]
+pub use showcase::prepare_showcase as prepare_cooked_valley;
 #[cfg(target_os = "macos")]
 pub use window::{
     NATIVE_RECOVERY_VARIABLE, NativeRecovery, capture_game, run_runtime_capture, run_window,

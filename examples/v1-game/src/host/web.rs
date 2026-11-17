@@ -111,6 +111,10 @@ pub(crate) fn controlled_position(shell: &Shell) -> Option<[f64; 3]> {
     shell.host().world().controlled_position()
 }
 
+pub(crate) fn exit_mover_position(shell: &Shell) -> Option<[f64; 3]> {
+    shell.host().world().exit_mover_position()
+}
+
 /// Latest committed authority tick.
 pub(crate) fn tick(shell: &Shell) -> u64 {
     shell.host().world().tick()
@@ -142,7 +146,11 @@ pub(crate) fn install_route(
         .authored_camera()
         .ok_or("the moving route needs the cooked valley's authored camera")?;
     let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
-    let route = crate::CameraRoute::parse(text, camera, tick_hz)?;
+    let route = if shell.host().source().is_exit() {
+        crate::CameraRoute::parse_long_capture(text, camera, tick_hz)
+    } else {
+        crate::CameraRoute::parse(text, camera, tick_hz)
+    }?;
     if drawn_generation != Some(route.cooked_generation) {
         return Err(format!(
             "cooked generation {drawn_generation:?} has not drawn as the route's {}",

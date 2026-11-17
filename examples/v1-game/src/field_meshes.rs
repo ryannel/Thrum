@@ -26,6 +26,15 @@ pub(crate) fn selection() -> Arc<SyntheticMeshes> {
     selection_for(field::ENTITY_COUNT, true)
 }
 
+pub(crate) fn exit_loading_meshes() -> SyntheticMeshes {
+    let mesh = rock();
+    SyntheticMeshes {
+        updates: None,
+        meshes: vec![mesh; crate::exit_scene::MESH_NAMES.len()],
+        slots: Vec::new(),
+    }
+}
+
 /// Reuse the bounded prop arena for the valley's entity count as well.
 pub(crate) fn selection_for(count: usize, keep_walls: bool) -> Arc<SyntheticMeshes> {
     let slots = (0..count)

@@ -52,7 +52,7 @@ try {
   record.effective_route = route;
   record.scene = scene;
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau');
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit');
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
   if (!['off','slab','depth-only'].includes(effect)) fail('Unknown effect diagnostic');
@@ -204,7 +204,7 @@ try {
       record.hold_release = { page_ms: performance.now(), frame_ms: timestamp };
       released = true;
     }
-    if (performance.now() - start > (mode === 'fixed' ? 120000 : 20000)) fail('scenario deadline');
+    if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     record.opportunities.push({ ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() });
     ordinal++;

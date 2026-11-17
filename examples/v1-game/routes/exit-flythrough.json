@@ -1,0 +1,29 @@
+{
+  "format": "thrum-v1-moving-route",
+  "version": 1,
+  "cooked_root": "pending",
+  "cooked_generation": 1,
+  "tick_hz": 60,
+  "phase": [1, 2],
+  "origin_tick": 31,
+  "start": {"solar_hours": 13.5},
+  "render_extent": [1280, 720],
+  "keys": [
+    {"tick": 0, "eye": [0, 244.9226672381398, 16], "yaw_degrees": 0, "pitch_degrees": -3.0127875},
+    {"tick": 240, "eye": [-12, 249, -42], "yaw_degrees": -13, "pitch_degrees": -9},
+    {"tick": 510, "eye": [-48, 247, -175], "yaw_degrees": -19, "pitch_degrees": -12},
+    {"tick": 780, "eye": [-142, 211, -394], "yaw_degrees": -5, "pitch_degrees": -8},
+    {"tick": 1050, "eye": [-180, 177, -603], "yaw_degrees": 16, "pitch_degrees": -5},
+    {"tick": 1350, "eye": [-108, 160, -774], "yaw_degrees": 22, "pitch_degrees": -3}
+  ],
+  "cuts": [],
+  "checkpoints": [
+    {"tick": 120, "name": "lookout"},
+    {"tick": 360, "name": "shelf"},
+    {"tick": 600, "name": "valley-edge"},
+    {"tick": 840, "name": "slope"},
+    {"tick": 1080, "name": "balloons"},
+    {"tick": 1320, "name": "valley-floor"}
+  ],
+  "overlay": "off"
+}

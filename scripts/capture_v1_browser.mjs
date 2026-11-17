@@ -19,7 +19,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
-if (!['day', 'night', 'noon'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');

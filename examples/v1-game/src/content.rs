@@ -13,13 +13,14 @@ pub(crate) fn launch_value(name: &str) -> Result<String, std::env::VarError> {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn selected_rows(
+    content: crate::GameContent,
     max_binding: u64,
 ) -> Result<thrum_asset_gpu::rows::CookedRows, thrum_asset_gpu::rows::CookedRowError> {
     let store = launch_value("THRUM_ASSET_STORE")
         .map_err(|_| thrum_asset_gpu::rows::CookedRowError::Missing("THRUM_ASSET_STORE".into()))?;
     thrum_asset_gpu::rows::CookedRows::from_store(
         &thrum_asset::AssetStore::new(store),
-        crate::showcase::entity_mesh_names(),
+        crate::showcase::entity_mesh_names(content),
         max_binding,
     )
 }
@@ -114,10 +115,10 @@ impl std::error::Error for CloudQualityError {
 /// Refuses unsupported launch settings.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
-    let content = if scene.as_deref() == Ok("field") {
-        crate::GameContent::Field
-    } else {
-        crate::GameContent::Grid
+    let content = match scene.as_deref() {
+        Ok("field") => crate::GameContent::Field,
+        Ok("exit") => crate::GameContent::Exit,
+        _ => crate::GameContent::Grid,
     };
     let field_meshes = (content == crate::GameContent::Field
         && launch_value("THRUM_FIELD_MESHES").as_deref() == Ok("on"))
@@ -127,7 +128,9 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Err(std::env::VarError::NotPresent) if content == crate::GameContent::Field => {
             crate::GameSetup::field_default_culling(field_meshes)
         }
-        Err(std::env::VarError::NotPresent) if scene.as_deref() == Ok("valley") => {
+        Err(std::env::VarError::NotPresent)
+            if matches!(scene.as_deref(), Ok("valley" | "exit")) =>
+        {
             crate::GameSetup::valley_default_culling()
         }
         Err(std::env::VarError::NotPresent) | Ok("direct") => {
@@ -162,7 +165,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),
         content,
         camera_culling,
-        valley_stars: scene.as_deref() == Ok("valley")
+        valley_stars: matches!(scene.as_deref(), Ok("valley" | "exit"))
             && launch_value("THRUM_STARS").as_deref() != Ok("off"),
         route_overlay: match (
             scene.as_deref(),
@@ -182,7 +185,9 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
             }
         },
         field_meshes,
-        cooked_mesh_rows: (field_meshes && scene.as_deref() == Ok("valley")).into(),
+        cooked_mesh_rows: (content == crate::GameContent::Exit
+            || (field_meshes && scene.as_deref() == Ok("valley")))
+        .into(),
     })
 }
 
@@ -231,7 +236,7 @@ fn attach_selected(
         return Ok(None);
     };
     let (camera, assets) = match scene.as_deref() {
-        Ok("valley") => {
+        Ok("valley" | "exit") => {
             let (camera, assets) =
                 crate::showcase::prepare_showcase(std::path::PathBuf::from(store).into())?;
             (Some(camera), assets)
@@ -247,7 +252,7 @@ fn attach_selected(
             )
             .map_err(|error| error.to_string())?,
         ),
-        _ => return Err("THRUM_SCENE must be valley, diagnostic or field".to_owned()),
+        _ => return Err("THRUM_SCENE must be valley, exit, diagnostic or field".to_owned()),
     };
     let assets = if let Some(rows) = host.cooked_rows() {
         assets.with_rows(rows).map_err(|error| error.to_string())?

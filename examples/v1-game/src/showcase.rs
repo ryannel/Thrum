@@ -6,8 +6,12 @@ use thrum_asset_gpu::{CookedAssets, CookedMaterial, CookedSource, MeshPlacement,
 use crate::SceneCamera;
 
 /// The valley's three stable entity rows; repeated products share publication identity.
-pub(crate) fn entity_mesh_names() -> Vec<String> {
-    ["rock", "sphere", "rock"].map(str::to_owned).to_vec()
+pub(crate) fn entity_mesh_names(content: crate::GameContent) -> Vec<String> {
+    let names = match content {
+        crate::GameContent::Exit => crate::exit_scene::MESH_NAMES.as_slice(),
+        _ => &["rock", "sphere", "rock"],
+    };
+    names.iter().map(|name| (*name).to_owned()).collect()
 }
 
 #[derive(Deserialize)]
@@ -54,9 +58,7 @@ struct Material {
 ///
 /// # Errors
 /// Returns an invalid embedded recipe or camera description.
-pub(crate) fn prepare_showcase(
-    source: CookedSource,
-) -> Result<(SceneCamera, CookedAssets), String> {
+pub fn prepare_showcase(source: CookedSource) -> Result<(SceneCamera, CookedAssets), String> {
     prepare_showcase_with_volume(source, None)
 }
 
