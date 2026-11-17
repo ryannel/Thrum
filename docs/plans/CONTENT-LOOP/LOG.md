@@ -147,3 +147,10 @@
   Inspected consecutive whole frames and native crops show each visible rock and its shadow switching
   together, without missing or mixed meshes. Bulk preview/source recovery was hash-verified locally.
   No display cadence or TAAU qualification is claimed; exact images use the shared main-branch check.
+- 2026-11-17 M2 review repair in `8a5fcd792`: visual publication now retains the live arena together
+  with its writer, allocator and offered switch, and refreshes the replacement's bindings and culling tables.
+  A replacement-device candidate whose row snapshot predates a commit is refused without replacing the host.
+  Verified on Metal: all eight game tests passed, including twelve exact fresh-scene rebuild cases across
+  Direct, Frustum and Occlusion, later shrink edits, and stale-device refusal/recovery. The detached-extent
+  regression and scoped Clippy passed. The varied-normal conversion oracle was strengthened as suggested.
+  [Repair evidence and logs](../../evidence/CONTENT-LOOP/M2/repair/README.md); no reference or comparison was loosened.
