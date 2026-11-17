@@ -242,7 +242,7 @@
       }
     },
     "M3": {
-      "definitions": "14bceefc8fc64db22a32711fd74feb2eb791830feeae89201b7cfd4fed5b5b10",
+      "definitions": "ece94e53f2ef6bd682fdca98e59afa5fc9943ae78f1a8202633e515c7bc27259",
       "reviews": [
         {
           "verdict": "fail",
@@ -339,37 +339,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CULLING at docs/evidence/CULLING/design-review.md asked for changes. Resolve its 1 Must Fix finding",
-        "at": "2026-11-16T11:51:09Z"
-      },
-      "ready_for_review": {
-        "commit": "d24ded771f37d99b188fc652aceaf1b5a82b7dae",
-        "checked": "0543f431045ef08bea38da3754b2a133b3e9564d",
-        "at": "2026-11-17T00:33:05Z",
-        "reused": [
-          "Test command"
-        ],
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 2084805,
-          "cached": 341877376,
-          "output": 892086,
-          "turns": 13
-        },
-        "session_usage": {
-          "input": 2084805,
-          "cached": 341877376,
-          "output": 892086,
-          "turns": 13
-        }
+        "task": "CULLING M3 review (docs/evidence/CULLING/M3-review.md) failed M3.7 and M3.8 as 'full-refresh smoothness unjudged', citin",
+        "at": "2026-11-17T02:56:04Z"
       }
     }
   },
@@ -405,11 +376,15 @@
     {
       "task": "The design review of CULLING at docs/evidence/CULLING/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-16T11:51:09Z"
+    },
+    {
+      "task": "CULLING M3 review (docs/evidence/CULLING/M3-review.md) failed M3.7 and M3.8 as 'full-refresh smoothness unjudged', citing frame-submission cadence under load (p95 20.6 ms) and DESIGN.md:442-443's 'smooth at the display's full refresh'. The builder now asks for a paused-builder quiet sitting. But M3.7 and M3.8 judge popping, flicker and missing geometry at frame edges and silhouettes; the plan says CULLING takes no quiet-machine sitting (costs are tripwires recorded with load); and the build rules say presentation cadence is a separate measurement in the owner's window that gates only items about pacing. Settle which module owns frame cadence for the culled valley (APPLE-PRESENTATION or SHOWCASE as the plan already implies, or CULLING if you find a real reason), and make DESIGN.md and M3.7/M3.8 say plainly what they judge, so a reviewer can't read cadence into them unless it's meant.",
+      "at": "2026-11-17T02:56:04Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T11:51:09Z"
+    "at": "2026-11-17T02:56:04Z"
   },
   "design_history": [
     {
