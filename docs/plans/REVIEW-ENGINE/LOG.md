@@ -1,5 +1,14 @@
 # REVIEW-ENGINE log
 
+- 2026-11-17 M4 gives public string-error boundaries domain enums, completes Error/Display
+  implementations and wrapped sources, and renames core's input error to InputFrameError.
+  On `e5011dd13`, the zero-string rule and all eight error inventories pass on the Mac;
+  the draw-probe inventory and workspace Clippy pass too. `c953c4692` converts the final
+  feature-gated game caller; `051b220c6` preserves the renderer's clock label and its test passes.
+  Classification checks use variants and fields; no numeric bound, shader or reference changes.
+  [M4 evidence](../../evidence/REVIEW-ENGINE/M4/README.md)
+  retains the checks; the shared main-branch check supplies exact-image proof after merge.
+
 - 2026-11-17 M3 continuation confirmed the shared exact-images pass on `40de2f151a22`,
   which contains all final M3 source. The run took two attempts and is marked flaky:
   Chrome identity ordinal 107 failed first; the full verifier passed on the second.

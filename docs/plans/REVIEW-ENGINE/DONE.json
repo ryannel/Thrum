@@ -229,8 +229,8 @@
           "statement": "No public function in `thrum-core`, `thrum-network`, `thrum-sea`, `thrum-sea-model`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` or `thrum-controls` returns a string as its error.",
           "check": "python3 scripts/shape_rules.py check --rule string-errors --zero crates/thrum-core crates/thrum-network crates/thrum-sea crates/thrum-sea-model crates/thrum-asset crates/thrum-asset-gpu crates/thrum-cook crates/thrum-controls",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md"
         },
         {
           "id": "M4.2",
@@ -238,8 +238,8 @@
           "check": "cargo test --locked --offline -p thrum-core -p thrum-network -p thrum-sea -p thrum-sea-model -p thrum-asset -p thrum-asset-gpu -p thrum-cook -p thrum-controls --test error_types",
           "ask": "Does each of the eight crates have the test, and does its list hold every error type the crate exports? Do variants name what the caller should do, or where the error happened?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
           "verdict": "",
           "review": ""
         },
@@ -248,8 +248,8 @@
           "statement": "The two unrelated types named `FrameError` have different names, and no caller or test in these crates decides anything from an error's `Debug` or `Display` text.",
           "ask": "Which of the two was renamed, and does every use follow? Does any test or caller compare an error with a string?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
           "verdict": "",
           "review": ""
         },
@@ -258,8 +258,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images; docs/evidence/REVIEW-ENGINE/M4/README.md"
         }
       ]
     },
