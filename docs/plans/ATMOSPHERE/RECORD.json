@@ -103,46 +103,31 @@
       }
     },
     "M6": {
-      "definitions": "5926128ef79b6c06e4f3d0a8cdb11772b2416043cb0c8dbec0f5711734524b72",
+      "definitions": "f2db8f4422f39ff81c19a442bf8e90574148c80afc119382fd2c8c1524960d25",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revise ATMOSPHERE's design and plan as docs/evidence/ATMOSPHERE/design-review.md asks",
-        "at": "2026-11-10T22:38:33Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M7": {
-      "definitions": "2633735a9a99d6447ceabf5fae987aa9f25a09ae77a34614e725576641050f82",
+      "definitions": "3321c400d0f557fff259922088106ba97efc538f58a24401b0b08a750370359d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Settle one design question for ATMOSPHERE before M7 is built. M7 makes haze a weather input, but only its amount: the ae",
-        "at": "2026-11-17T17:59:05Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M8": {
-      "definitions": "02e501da21ad18f85ff8d5ab4baa783a6f872eea6b7f6e341cfae68db4a5f1f3",
+      "definitions": "5a813518a76724db71de52ff50f08d8e3ceef1530e4b379550e63d00f0bd848e",
       "reviews": [],
       "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/ATMOSPHERE/design-review.md",
-        "commit": "bce49d8ad50ee154991e0539c148605ff0ce9d11",
-        "at": "2026-11-14T13:18:35Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "by": "plan",
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M9": {
       "definitions": "b9924c1944b9fdbd9d8b2f03cb847e297f0b4c24411a986a2946083c93f63983",
@@ -263,11 +248,15 @@
     {
       "task": "Settle one design question for ATMOSPHERE before M7 is built. M7 makes haze a weather input, but only its amount: the aerosol is grey with one fixed phase lobe, so haze can only thicken and can't turn bluish when dry or whitish when humid. A review of three recent theses (tmp/theses/atmos-theses-review.md in this worktree, recommendation 1) proposes a second input, such as an Angstrom exponent or an aerosol type, defaulting to today's values so existing scenes don't change. It also touches CLOUDS' ruling 8. First check whether the colour change is visible in the existing reference sky at about 20 km and 3 km visual range; if it isn't, drop the idea and record why. If it is, decide whether and how ATMOSPHERE's design and M7 should change, resolve it with CLOUDS and any contract it touches, and route the change through design review as the orchestrate skills require. The owner asked for this check; the rest of the theses review needs no action now.",
       "at": "2026-11-17T17:59:05Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T17:59:05Z"
+    "at": "2026-11-17T23:05:22Z"
   },
   "design_history": [
     {

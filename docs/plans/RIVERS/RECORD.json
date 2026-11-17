@@ -431,68 +431,40 @@
       }
     },
     "M4": {
-      "definitions": "90929fdc5f867ce45f8e6c41697b936aa25ef5ec0df848fdcf1a7ee11440e479",
+      "definitions": "da37b19257c7ee794a9a0516e6efb0d90ae26a5ee27d6cffd1d992d7d03a178b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
-        "at": "2026-11-14T13:57:36Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M5": {
-      "definitions": "d07910fbf33aafb5b0b4aad70a0b683665aaf2bfc09c81ca03b86bb04abc0a83",
+      "definitions": "544a6a8904c3f9b7591375562ae90743d2a500bdf6c3900a3cfdd5db1b32f08d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan module RIVERS from its brief in docs/plans/ARCHITECTURE.md and WATERS' design: streams, rivers and waterfalls as pa",
-        "at": "2026-11-14T11:06:55Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M6": {
-      "definitions": "da02511cc25b2a07d53a671fc1e14d866330b804f950153fc8aa4f6015e79d1f",
+      "definitions": "d9c39d80aa1fb028018e6725ce404de4e4b1048ebdd92890dd55c7915f28daf6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
-        "at": "2026-11-14T13:57:36Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M7": {
-      "definitions": "1df6b5053a083da1fa17077b094f768097363b018251da673200584ae5911a22",
+      "definitions": "8641c7d17ff7397051804a57ed0a77b6b37dd57224df0cf8df41fa36f169503a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The second design reviews of SCENE-VIEWS and RIVERS (docs/evidence/SCENE-VIEWS/design-review.md, docs/evidence/RIVERS/de",
-        "at": "2026-11-14T13:57:36Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     }
   },
   "briefs": [
@@ -507,11 +479,15 @@
     {
       "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.\n\nWhy: delivery stalled under proofs. In the last 24h, 4 milestones reached Ready for Review against 419 commits, and 163 of 288 background jobs failed. The single GPU lock was 92-94% busy, mostly with rebase, re-prove and merge attempts that failed. The design is in /private/tmp/claude-501/-Users-ryannel-Workspace-thrum/e5ff9d25-dfb5-4b37-a169-158dbdac268c/scratchpad/proof-regime.md; section 4 has the steps T1a-T9. The script now does much of what it proposed: shared resources, lock hold limits, `reads`, a merge queue and main-branch checks with retry and bisect. Read ~/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.1/skills/orchestration/build/SKILL.md, build-milestone/SKILL.md and plan-module/references/proofs.md before you change anything.\n\nThe owner's words, to quote wherever a change is the human's decision: \"Ok, let's get the script and skill changes done then once we've got orchestrate to where it needs to be, let's get the lead on Thrum working.\" and \"We want all these fixes in place before I head to bed tonight.\" The owner also confirmed \"Go ahead\" in the lead session on 15 Nov. That covered: a warning-only gate, an hourly verifier on main, `gpu: 2, chrome: 1`, BASELINE-GUARD re-planned, the rule and skill text updated, and accepting that an unintended image change can sit on main for about 2 hours.\n\nCarry out, adjusted for 2.3.0:\n- **T1a.** The exact-baselines gate in `./dev check` warns instead of refusing. Declare the verifier as a `Main-branch check` in ORCHESTRATE.md (every 1h; lock gpu; a timeout that fits the ~16 min run). Record a dated ruling in ARCHITECTURE.md's Exact baselines.\n- **T1b.** The script now does the sentinel's shared run, retry, bisect and naming the culprit. Re-plan BASELINE-GUARD down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what happens to its in-flight M2 on branch build/baseline-guard.\n- **Verifier items.** Open milestones carry about 116 items whose check runs `exact_baselines.py verify`. Changing `check` text resets progress, which `lock` and `reads` don't. Weigh repointing them at `python3 \"$ORCHESTRATE_SCRIPT\" main-check <name>` (no lock of its own) against having the verifier read the shared result. Pick the option that disturbs open branches least, and say why.\n- **T2-T5,** as the report says. In T4, never nest gpu inside merge, and never hold a lock while waiting for a person.\n- **T6.** Declare `Shared resources: gpu: 2, chrome: 1`; that capacity change is what ends most of the queueing. Give each item the lock its device needs for capacity. Use `gpu.alone` only for a run that needs the whole GPU, such as all its memory. It does not make timings trustworthy, because builders compiling elsewhere take no lock.\n- **T9's timing policy is the timing fix.** Within a milestone, a timing item becomes a loose benchmark tripwire that catches a collapse. Precise numbers move to the module's last milestone, measured in one sitting with builders paused. Sweep the timing items to that line.\n- **Fold T7-T8 in** where they're cheap; otherwise record them as later work.\n\nConstraints:\n- Don't edit the orchestrate skills or agent_loop.py. If the script blocks a step, stop that step and write down what happened.\n- Keep open branches mergeable.\n- Work in the lead worktree or your own; never touch the main checkout's tmp/.\n\nDone when:\n- the changes are merged to main, `./dev check-docs` passes and the plan checks pass;\n- an open branch can merge without a fresh exact-image proof;\n- the main-branch check is declared and `main-check --due` lists it;\n- your report names the commits, every module whose design review is now owed, and anything you held back because it goes beyond what the owner approved.",
       "at": "2026-11-15T22:19:38Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-15T22:19:38Z"
+    "at": "2026-11-17T23:05:22Z"
   },
   "design_history": [
     {

@@ -25,48 +25,48 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "523693ffff4c1a82316f4e79cfaa33b252d8b83a1918fe405e2cfa75f384b83a",
+      "definitions": "0a2d88dd5587d5d0b61b2f30b44b9213493cbdd2d5311b406d825ef1f639b3e2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M2": {
-      "definitions": "600488df306f2b78808d0110a43d7961908c469f3ad1c2cdbaad1d00babe429d",
+      "definitions": "28440813f77a72321f41a7ebe3a566c4909c5a580665b6de7e481e434a0cdcf3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M3": {
-      "definitions": "c709f5e7f1ce05c1aadd3e3da22cdc3441350a38bf40b7de928c6699c5463423",
+      "definitions": "0e6409f7c9d5b9cd9732446c8369756001eb0b56710d12ee0b3b5b1b906f5447",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M4": {
-      "definitions": "0a069f589e73761064d80a8a948a8509084214e525bca43af1628c3c6c7bc530",
+      "definitions": "da8c92b84dd70649ba9045c58ededbcf7ddc5fc35ea0612efe8d8da9a1eb9bb6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M5": {
-      "definitions": "4e88896c2b6fbf85336d5c251a6d11d8352eff9307ccf2145026f221b185bc3b",
+      "definitions": "7edc411c3a06507bb6734a4e9dece6fea4f8e6047b8216acf7d5080f0d8fb46c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M6": {
@@ -83,10 +83,14 @@
     {
       "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Metal ray queries / intersection) and mesh shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the hardware-native decision (docs/design/decisions/HARDWARE-NATIVE-ENGINE.md): registry-selected accelerated paths, the portable path stays as fallback and reference, and each path is promoted only by a measured win. Decide from first principles and current state of the art which rendering problems in Thrum they should serve (for example GPU-driven geometry and culling, shadows, reflections, occlusion or GI) and whether this is a new module or milestones added to an existing one, following the module-decomposition rules. It must not delay V1 (SHOWCASE M8): schedule it off the critical path unless a piece clearly earns a place on it, and say which. Desktop high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing. Done when the module list, a design and milestones with done-when files exist and are ready for design review.",
       "at": "2026-11-17T22:30:25Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T22:30:25Z"
+    "at": "2026-11-17T23:05:22Z"
   }
 }

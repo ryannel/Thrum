@@ -407,20 +407,13 @@
       }
     },
     "M4": {
-      "definitions": "46add3d604b43a6f2e29772a0e663d7ae6018f0a4a5716f015b6f98a6502a026",
+      "definitions": "185b802f8410ecd281a19b3675f06f8c78bad46cdb96019c53e3c142442a8e98",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T04:10:30Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M5": {
       "definitions": "980d296c452b418933e7d8c10c1c9519230be5578fac24462f63e2a6ade488d2",
@@ -439,100 +432,58 @@
       ]
     },
     "M6": {
-      "definitions": "d1650d1f3421a7005047f4c1f3eb4145db9708cbad1430209f34aeeaf7320485",
+      "definitions": "06dea1716ac4ad94b789c7009defcd82bd74fd99404d23f9af76da7616228582",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-14T03:29:28Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M7": {
-      "definitions": "6932c2679c3d6552d060cddafdd5bdb5b814d9baa3efffd764e72a872d5de87d",
+      "definitions": "b87dff0f4d49c874ef1c23e5096f39260cbfd03bae569563809d12f5b3e71027",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T04:10:30Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M8": {
-      "definitions": "86fd65adfedf94959477786fad12fcabebec3b8d6eb0beb3ed480a4ac70c4a7a",
+      "definitions": "3ecc3a74e925eac18602e8b7c304d4cd04d911962b5adabcae1f24fb7cbcbce6",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026, overturning three WATERS assumptions: \"Scenery reflections we must have, that's a main stay in h",
-        "at": "2026-11-14T08:35:24Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M9": {
-      "definitions": "f5e313980998e2840d884d3d966a8f5506ad195b29bbfb15b981b9316dafc970",
+      "definitions": "ee6c9cc08ae60db796ec5437e13ff86da749416511b7ae484faae6be5f8eab5e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at docs/evidence/WATERS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T04:10:30Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M10": {
-      "definitions": "b3ae218b5725b2fffb445ccc5869f8e0a12c9739b3934dc6fda42900fca78aa4",
+      "definitions": "e5fd3e394c87736b8a83cba805a26c9dd9bc53814904d4fef89ce6f84230f55e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M11": {
-      "definitions": "5384d150d0635518966e366ad27f09290c34eac31ed0927a5bf102b9d847a299",
+      "definitions": "d9e4551cb62718492e741905340d3d1b19081e3b0f05349330c72aff6de5116e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M12": {
       "definitions": "791f4bb9101f66609520c1592ade85fc3820a19ce2d1bc28285c6d72f9b892d3",
@@ -623,68 +574,40 @@
       }
     },
     "M13": {
-      "definitions": "ff0d4e0a075032122273bee9c6c7f3ea33c48f7d03f848dfc810caa04c5d36c7",
+      "definitions": "03ed8017ca3e30395ac2bd11c798e678503c04b507f2b88844d80bbbc502524f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
-        "at": "2026-11-14T17:36:17Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M15": {
-      "definitions": "6e7b7d5555079027419c39a1a3b8f94cc88f4de70d5e985682ab5bb247d21a2b",
+      "definitions": "8e04bf0fe03666ede7af26fe013713ceee5e2c9ddf2762622449eaa4b1173368",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two fixes. 1) CLOUDS M1 is blocked on a contradiction between its items: M1.2 makes a clear column's answers exactly zer",
-        "at": "2026-11-14T17:36:17Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M14": {
-      "definitions": "83b7e8ea91bc570979e28584f1cc0d8a51865f3286e14201d268edb4e0f46a0c",
+      "definitions": "87e4180d73a9a125c4bda1b27fb4f9ca43f5b710abb14373ac79ee5a18c61453",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Act on the proposal in docs/plans/ATMOSPHERE/LOG.md (2026-11-14, from SCENE-VIEWS' planner): the aerial pass stops a des",
-        "at": "2026-11-14T15:25:42Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M16": {
-      "definitions": "b7e425bab76a437c2fe74ade865dd734296aa51e740f92757b7927389a6f72be",
+      "definitions": "3fb90fb466b3b834a1e41d6fceff57664e935cf2458fdfdb9743a0979e9798e0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner set the water bar on 14 Nov 2026 as shipped high-end games: \"Scenery reflections we must have, that's a main s",
-        "at": "2026-11-14T10:11:12Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:38Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     }
   },
   "briefs": [
@@ -731,11 +654,15 @@
     {
       "task": "WATERS M2 is blocked: the builder says M2.2 needs a revised geometry/cache-to-shading approach that passes the existing visual bar. Its handoff, docs/evidence/WATERS/M2-handoff.md in the waters worktree (branch build/waters), says what was tried and what failed. Settle the approach in the design and plan so M2.2 is buildable at the same visual bar; prefer the modern technique current engines ship, not an older one just because code for it exists. If the bar itself is wrong, say why rather than lowering it quietly.",
       "at": "2026-11-16T17:59:30Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T17:59:30Z"
+    "at": "2026-11-17T23:05:22Z"
   },
   "design_history": [
     {

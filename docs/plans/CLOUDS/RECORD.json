@@ -238,150 +238,94 @@
       }
     },
     "M3": {
-      "definitions": "74491914f1ea06c6d7705a934a32cd1f38907d01976617d6280ddbd8bcb450a6",
+      "definitions": "33c8f1e4a96494ab37022ff90b34372cb8f1809cc5d02f4c91c6d4d3dc5ea631",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
-        "at": "2026-11-17T21:47:34Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M4": {
-      "definitions": "46c2a08db2a17729ef555e19e88c5aa7994a3151e5fb051c0f739a48a00a7563",
+      "definitions": "922d89de4226be98366e38ed3433eefd030394aeb5a8b34297bbdc323d76f9da",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 4 Must Fix findings ",
-        "at": "2026-11-13T23:34:13Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M5": {
-      "definitions": "9130a8d5c4a8946f82fe3fb5e0ed5b83d966190e97e0887509bd3b0ff40cce1a",
+      "definitions": "380248ecd97dfddcd48caa17c62644815f8901d6b084116deb200c8899a473d0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
-        "at": "2026-11-17T21:47:34Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M6": {
-      "definitions": "33694e805e171b53cc09f975137df599585158362bf45274b8ac4e7a15f59ec0",
+      "definitions": "f7fe68f926a0a38f7f95c021278f54b22ec1dc30e9a8f96948b327c96cf9bae2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at docs/evidence/CLOUDS/design-review.md asked for changes. Resolve its 2 Must Fix findings ",
-        "at": "2026-11-14T02:31:18Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M7": {
-      "definitions": "48ed531b1eb10d1487ae5461ea42ae034c303b6841423696aeea3e32688c24fe",
+      "definitions": "ca9d034f87f9ff64a58851108f91cdc0bac500c488e7c5b10940508aa952b0bb",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M8": {
-      "definitions": "541f81940c86f95939051cf2cd9d4f55db06f285763984544c503b6488a0b8ae",
+      "definitions": "419d2c5b09a2013533d533f22185e3dac4fdbbb604fa073b4833c83898422f5e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner, 14 Nov 2026: \"Oh and for clouds we also need to be taking into account mist / fog. We want a plan that's able",
-        "at": "2026-11-14T09:13:54Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M9": {
-      "definitions": "c649dc2758bb98877e3277d59dc4848c535a4e7fc65d76cdc63d4d7240a539f0",
+      "definitions": "8d9804ea7c18cf78dabb7b2b93e794ec8fafc82d5a458fc4e133f49414672cd7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M10": {
-      "definitions": "911b55f054de348368551ed068dcc2525e4a7f5e17d88c55473f03d4bf4f7cb1",
+      "definitions": "c71caa23df5be7efbdda50bc3439f02478a8c1be126b8463ded029c195915613",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Revisit the CLOUDS design from first principles. The owner, 14 Nov 2026: \"You can fully use everything in broadsides. Bu",
-        "at": "2026-11-14T00:31:29Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M11": {
-      "definitions": "b4422281057d70cce0e76c829ae2fb3b5742c36b2c17f94a8008eced7b3cb2c7",
+      "definitions": "c08fb5c2e747c13fb46fadf29e6821c5e117d35247ab01fde7e65a034a7e3769",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M12": {
-      "definitions": "f5b2c3f3bf4b480ba90779912264d675db214e746bb073da98c55a3d7d9bacc8",
+      "definitions": "bae24830beb088654934067d192b2753befee5512ff8a0e2917311b399b0c59c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T21:26:25Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M13": {
       "definitions": "a3fc5c654fbd40807cdf1e4a31c1b959f165c8b39bc6fc1c202ba6fb8783e151",
@@ -555,37 +499,30 @@
       }
     },
     "M14": {
-      "definitions": "83a0b85b9fc2bbc110a8a50d2242f64a8085b084bd9ca8fb4734ff2e9b3fb535",
+      "definitions": "65c2ae65d938802b9d1c88e579b9e64ab06d2277d31413b83483216139b15ae0",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another ph",
-        "at": "2026-11-17T21:47:34Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     },
     "M15": {
-      "definitions": "23e436a6a721eac3dff27b72634a0381c10bdd2d704250baeba639044e2beebe",
+      "definitions": "ed98cd76cd08c3ed3957d239ea91e2b6096c179e0b7f4125762683d6516592c2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design reviews of CLOUDS (docs/evidence/CLOUDS/design-review.md, 4 Must Fix) and WATERS (docs/evidence/WATERS/design",
-        "at": "2026-11-14T16:17:06Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M16": {
-      "definitions": "73227c71b2b802b8ecffa57ce84d3fd0f417b642043d3e83a68f8e4ab5b9fa2f",
+      "definitions": "ae8f8838e6cd7e4d283c9b6f0c06845cec9da20ef4a05de284ba51ae2a7af582",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Settle one design question for ATMOSPHERE before M7 is built. M7 makes haze a weather input, but only its amount: the ae",
-        "at": "2026-11-17T17:59:05Z"
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
       }
     }
   },
@@ -645,11 +582,15 @@
     {
       "task": "CLOUDS M3 is blocked on a design question: the builder needs a ruling on the multiple-scattering model before another physical candidate. Its independent f64 slab transport reflects 84.46% at valley noon against the planned formula's 5.49%, and the cache correction cut maximum Sun-transmittance error from 0.288 to only 0.180, so M3.3 still fails. Read the handoff (docs/evidence/CLOUDS/M3-handoff.md) and the work on build/clouds at fa4eabb9d. Decide the multiple-scattering model from first principles and current state of the art, update the CLOUDS design and M3 plan and done-when to match, and say whether the change needs a design review. Done when the builder can resume M3 with a model it can verify against its reference.",
       "at": "2026-11-17T21:47:34Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T21:47:34Z"
+    "at": "2026-11-17T23:05:22Z"
   },
   "design_history": [
     {

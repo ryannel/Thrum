@@ -371,71 +371,40 @@
       }
     },
     "M3": {
-      "definitions": "d235cd1951441188f9178178e01734d02f122b0305ab4648d8ef86f5e62094c9",
-      "reviews": [],
-      "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/PUDDLES/design-review.md",
-        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
-        "at": "2026-11-14T13:32:41Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
-    },
-    "M4": {
-      "definitions": "3c18f49b27872c740c150149f2ad18c6a1420994efd6d864a8e8e7b55257d649",
-      "reviews": [],
-      "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/PUDDLES/design-review.md",
-        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
-        "at": "2026-11-14T13:32:41Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
-    },
-    "M5": {
-      "definitions": "8096e21d1703d18c94baa6b55bf1b5a27af925a707a1830a062082496939a5e9",
-      "reviews": [],
-      "authorised": {
-        "by": "design review",
-        "review": "docs/evidence/PUDDLES/design-review.md",
-        "commit": "de1820452ddeb2f4746e50533960f587643aab0a",
-        "at": "2026-11-14T13:32:41Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
-    },
-    "M6": {
-      "definitions": "06b75a60de442f71c68b666a16d5d27014d646a18f4b6a53c44bb0fffc30be2f",
+      "definitions": "4a1b23ba3a30bad97454815cd1cb06c93cb977fffd72448b499e8f95c17101a3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T16:54:40Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
+    },
+    "M4": {
+      "definitions": "e329fd5eb0118de7b44c34b479a6dff65394508f717fd849354457a1b62db135",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
+    },
+    "M5": {
+      "definitions": "d7c459bf31d5169fd0acec1e290a944adc4e1a0995f56f6795a4979684af31e6",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
+    },
+    "M6": {
+      "definitions": "805835f2556a7d69f0fad82963defe1a854fae7ecf31033f450edba7b997c1d1",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     },
     "M7": {
       "definitions": "4f5a27df7b225c46779e835ef6ff1aaddea6b23b6fab3fa8ff9cfb377f7534bb",
@@ -455,20 +424,13 @@
       ]
     },
     "M8": {
-      "definitions": "0aaef8aa771d4b98529a5ca3c7f92ac7d06122f7cc542a9dc04cc888828ea2ee",
+      "definitions": "283111a5f34fc2107b6cb86d699e829d6e1d9091b4849beeeb9f33a70187d87a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Two tasks in one pass.",
-        "at": "2026-11-14T16:54:40Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ]
+        "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as f",
+        "at": "2026-11-17T23:05:22Z"
+      }
     }
   },
   "briefs": [
@@ -491,11 +453,15 @@
     {
       "task": "The design review of PUDDLES at docs/evidence/PUDDLES/design-review.md asked for changes. Resolve its 1 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-17T01:24:34Z"
+    },
+    {
+      "task": "Owner decision, 17 Nov 2026: 'Ok let's lower the bar.' Thrum is a game engine; the aim is the most plausible result as fast as possible, not physical accuracy. New bar for rendering and visual work: it looks as good as shipped high-end games, judged against an agent-written visual inspection list, and it runs fast, with performance as tripwires (no invented budgets). Physical or f64 references stop being pass/fail gates: they stay as diagnostic tools used when output looks wrong, to find the cause. Exact image baselines stay only where they guard against unintended regressions, not to block deliberate shader changes. Correctness proofs stay where failures are silent and costly: networking and transport, simulation determinism, asset and cooked formats, contracts between modules. Also make proof proportional to risk: small fix rounds and tripwire records shouldn't get the same review weight as new rendering work, and cut evidence items that cost more than the risk they cover. Apply this to ORCHESTRATE.md, the thrum-engineering skill (.agents/skills/thrum-engineering), docs/design/AI-DEVELOPMENT.md and AI-PERFORMANCE.md where they set the bar, and every open module's DESIGN, PLAN and DONE.json for milestones not yet Done (CLOUDS's M3 two-stream model, ATMOSPHERE, WATERS, APPLE-PRESENTATION and so on): rewrite or drop items that gate on accuracy rather than look and speed. Milestones currently being built or Ready for Review keep their items unless an item is now clearly pointless; say which you changed in flight. Record the owner's decision and date where the settings record decisions. Don't change modules' scope or the V1 exit beyond the bar. Done when the settings, skill, design docs and done-when files say the new bar consistently, ./dev check-docs passes, and your report lists each module's dropped or rewritten items and an estimate of reviews and fix rounds saved.",
+      "at": "2026-11-17T23:05:22Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T01:24:34Z"
+    "at": "2026-11-17T23:05:22Z"
   },
   "design_history": [
     {
