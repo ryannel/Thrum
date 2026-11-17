@@ -5,7 +5,7 @@
   Debugger disconnects now fail instead of retaining the resource while waiting forever.
   Eleven harness tests and JavaScript syntax pass; the full gate passed before rebase.
   Integrated two-run Mac and Chrome costs at `119bd20ab` pass both source validators.
-  Warmed calls allocate zero; all tripwires remain explained. Documentation checks pass.
+  Zero warmed allocations; all tripwires retained; legacy CULLING links repaired; docs gate passes.
   [Proof, failed attempt and limits](../../evidence/SIM-2D/M2/chrome-queue-repair.md).
   [Current measurements](../../evidence/SIM-2D/M2/performance.md) and [recovery note](../../evidence/SIM-2D/M2-handoff.md).
 

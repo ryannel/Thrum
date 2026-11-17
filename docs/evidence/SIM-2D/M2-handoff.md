@@ -6,6 +6,17 @@ starting one: a merge may already be queued or completed after this snapshot.
 Leave M2 `in_progress`, and end with `DONE` only after the script prints `MERGED`.
 The lead runs the merged item checks and starts review.
 
+The first merge job, `20261117-024637-98776`, failed because seven historical
+CULLING review media links had no retained files or bulk registrations. The review
+now labels those references unavailable, preserving its observations and selection
+hashes. Documentation checks pass, and both cost source keys still match the
+rebased work. Retry the canonical merge; no target measurements need repeating.
+
+The next merge job, `20261117-025243-16952`, reported a conflict because a preceding
+integration had independently repaired the same CULLING references. Rebase resolved
+that conflict by retaining main's completed repair. Both cost source keys still
+match after this rebase; the next step remains the canonical merge.
+
 The repair batches all nine Chrome conformance requests into one browser and one
 resource queue turn, after compilation. It omits unused returned timelines and
 rejects outstanding debugger requests on disconnect. No engine or retained trace
