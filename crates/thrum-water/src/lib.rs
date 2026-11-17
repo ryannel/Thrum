@@ -3,6 +3,8 @@
 mod fresnel_tests;
 mod prepare;
 mod records;
+#[cfg(test)]
+mod sampling_tests;
 use std::sync::{Arc, Mutex};
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, EffectGraph, SceneContribution, SceneSurface,
