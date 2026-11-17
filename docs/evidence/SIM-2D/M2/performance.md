@@ -1,5 +1,10 @@
 # SIM-2D M2 cost investigation
 
+Engine timings exclude browser startup and resource queue waits. Chrome's `utc`
+and `load_before` are sampled before acquiring the lock; `load_after` is sampled
+when the invocation returns. Those brackets can span a queue wait and are coarse
+shared-host context, not an isolated measure of contention during each timed call.
+
 ## Refreshed Mac CPU measurements
 
 The [current Mac record](costs-mac-metal.json) contains two complete release runs at
