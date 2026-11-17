@@ -110,14 +110,7 @@ impl State {
             return Err(Error::Invalid);
         }
         let rate = dt * self.parameters.time_scale / self.response;
-        let p = self.parameters;
-        let t = self.target;
-        let parameters = Parameters {
-            coverage: approach(p.coverage, t.coverage, rate),
-            kind: approach(p.kind, t.kind, rate),
-            wind: std::array::from_fn(|i| approach(p.wind[i], t.wind[i], 40.0 * rate)),
-            time_scale: approach(p.time_scale, t.time_scale, 59.0 * rate),
-        };
+        let parameters = self.parameters_toward_target(self.parameters, dt);
         let elapsed = dt * parameters.time_scale;
         let travel = std::array::from_fn(|i| self.travel[i] + parameters.wind[i] * elapsed);
         if !travel.iter().all(|x| x.is_finite()) || !(self.time + elapsed).is_finite() {
@@ -196,14 +189,47 @@ impl State {
     pub fn previous_travel(&self) -> [f64; 2] {
         self.previous
     }
-    /// Presentation travel; a cut uses the committed tick.
-    pub fn display_travel(&self, alpha: f64, cut: bool) -> [f64; 2] {
-        if cut {
+    /// Presentation travel at the consumed-target phase, with at most 50 ms
+    /// of prediction. Each predicted tick uses the committed control targets
+    /// and the same arithmetic as `step`, without copying shapes or committing.
+    /// A cut or an invalid duration uses the committed tick.
+    pub fn display_travel(&self, phase: f64, dt: f64, cut: bool) -> [f64; 2] {
+        if cut || !dt.is_finite() || dt <= 0.0 || !phase.is_finite() {
             return self.travel;
         }
-        std::array::from_fn(|i| {
-            self.travel[i] - (1.0 - alpha.clamp(0.0, 1.0)) * (self.travel[i] - self.previous[i])
-        })
+        let phase = phase.clamp(0.0, 1.0 + 0.05 / dt);
+        if phase <= 1.0 {
+            return std::array::from_fn(|i| {
+                self.travel[i] - (1.0 - phase) * (self.travel[i] - self.previous[i])
+            });
+        }
+        let mut remaining = phase - 1.0;
+        let mut travel = self.travel;
+        let mut parameters = self.parameters;
+        while remaining > 0.0 {
+            parameters = self.parameters_toward_target(parameters, dt);
+            let elapsed = dt * parameters.time_scale;
+            let next = std::array::from_fn::<_, 2, _>(|i| travel[i] + parameters.wind[i] * elapsed);
+            let fraction = remaining.min(1.0);
+            travel = if fraction >= 1.0 {
+                next
+            } else {
+                std::array::from_fn(|i| travel[i] + fraction * (next[i] - travel[i]))
+            };
+            remaining -= fraction;
+        }
+        travel
+    }
+
+    fn parameters_toward_target(&self, p: Parameters, dt: f64) -> Parameters {
+        let rate = dt * p.time_scale / self.response;
+        let t = self.target;
+        Parameters {
+            coverage: approach(p.coverage, t.coverage, rate),
+            kind: approach(p.kind, t.kind, rate),
+            wind: std::array::from_fn(|i| approach(p.wind[i], t.wind[i], 40.0 * rate)),
+            time_scale: approach(p.time_scale, t.time_scale, 59.0 * rate),
+        }
     }
     /// World horizontal point to the current air frame.
     pub fn to_air(&self, world: [f64; 2]) -> [f64; 2] {

@@ -428,8 +428,8 @@
           "ask": "Is the expected travel worked out in the test from the wind, its ramp and the frames' observations and leads, and not read back from the effect, from the model's own prediction or from the frame's alpha or phase? Does the run include a frame whose alpha is 1 with its consumed target past the tick, the first frame of the next tick, and a continuing wind ramp with a frame more than one tick past the committed tick, where the test states how far one tick's travel carried across the whole prediction would miss?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+      "builder_result": "pass",
+      "evidence": "docs/evidence/CLOUDS/M2-display-phase.md",
           "verdict": "",
           "review": ""
         },
@@ -449,8 +449,8 @@
           "check": "cargo test --locked --offline -p thrum-cloud-model --test display_travel",
           "ask": "Does the test make the later ticks with the model's own `step` on a copy of the state, and work the steady wind and the changed target out in its own arithmetic? Would the next tick's travel carried across several ticks fail it during a ramp, by an amount the test states?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+      "builder_result": "pass",
+      "evidence": "docs/evidence/CLOUDS/M2-display-phase.md",
           "verdict": "",
           "review": ""
         }

@@ -69,7 +69,7 @@ fn ticks_integrate_wind_and_replay_exactly() {
                 close(a.parameters().wind[i], expected_wind[i], 1e-11);
                 wide_add(&mut sums[i], expected_wind[i] * dt * scale);
                 close(
-                    a.display_travel(0.25, false)[i],
+                    a.display_travel(0.25, 1.0 / 60.0, false)[i],
                     a.travel()[i] - 0.75 * (a.travel()[i] - previous[i]),
                     0.0,
                 );
@@ -88,7 +88,7 @@ fn ticks_integrate_wind_and_replay_exactly() {
         assert_eq!(a, before);
         assert_eq!(a.step(5_184_001, f64::NAN), Err(Error::Invalid));
         assert_eq!(a, before);
-        assert_eq!(a.display_travel(0.0, true), a.travel());
+        assert_eq!(a.display_travel(0.0, 1.0 / 60.0, true), a.travel());
     }
 }
 

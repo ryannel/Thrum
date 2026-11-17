@@ -468,7 +468,11 @@ impl SunPath {
         } else {
             self.direction
         };
-        let travel = state.display_travel(f64::from(time.alpha), cut);
+        let travel = state.display_travel(
+            f64::from(time.display_phase),
+            time.tick_duration.as_secs_f64(),
+            cut,
+        );
         let width = self.profile.levels[2].texel * f64::from(self.profile.size);
         let metadata = GpuSunMapping {
             region: [
