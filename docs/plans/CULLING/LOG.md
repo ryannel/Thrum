@@ -384,6 +384,7 @@
   All thirteen items now have target evidence.
   The G3c clause audit and ledger separate implementation, correctness, content and contended costs.
 
+<<<<<<< HEAD
 - 2026-11-17 Re-plan on the lead's task, after [the second review](../../evidence/CULLING/M3-review.md) left
   M3.7 and M3.8 unjudged for "full-refresh smoothness" and the builder asked for a paused-builder sitting.
   Cadence is not this module's: `SHOWCASE` judges it on the culled exit scene
@@ -391,3 +392,11 @@
   Cost paragraph and M3's quality bar had said "smooth at the display's full refresh", which the review followed;
   both, and M3.7 and M3.8, now say they judge which geometry each submitted frame holds. No check changed. The
   script clears M3's claims; [what each item had](../../evidence/CULLING/M3-replan/claims-before-2026-11-17.md).
+=======
+- 2026-11-17 The second review passes eleven items and leaves M3.7/M3.8 unjudged for full-refresh motion.
+  The initial display query found an awake 120 Hz panel; the recorded preflight then found it asleep/inactive.
+  Source inspection confirms the headless Chrome recorder is capped at 60 Hz; the ordinary page uses rAF.
+  No cause for the review's native/Chrome gaps is established, and no new capture or trace is claimed.
+  [Follow-up and setup request](../../evidence/CULLING/M3/motion-followup/README.md) retain the limits.
+  Resume with an awake active panel and ORCHESTRATE's lead-arranged final cadence sitting.
+>>>>>>> 83165972e (Record CULLING motion review gaps and attended setup blocker)
