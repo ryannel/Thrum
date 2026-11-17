@@ -169,8 +169,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test stores",
           "ask": "Are the expected times and fills worked out in the test from the rates, as parts 5 and 8 of the design proofs do, and not read from the model? Does the shower run on past the time the pores fill?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m21",
           "verdict": "",
           "review": ""
         },
@@ -190,8 +190,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test margins",
           "ask": "Does the shore's case read the wave support from `thrum-water-model`'s own function, so that it is the support `WATERS`' film reads?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m23",
           "verdict": "",
           "review": ""
         },
@@ -233,10 +233,10 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
           "ask": "Does the test sum each receiver's cells from the bed, the shelters and the level at the tick's start, reading the mark only to tell held ground from open ground? Would a model that gave the puddle the rain on held ground fail it, at the rain under the percolation rate, though that model's total closes? Would one that passed a puddle's rain through the ground's stores?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m211",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M2.12",
@@ -244,8 +244,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
           "ask": "Does the test take each donor's water from the state before the entry, and check that the donor lost what the receiver gained? Does the held case show ground kept for more than one tick and then handed over? Does the rain state keep any quantity that stands for water not yet delivered?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m212",
           "verdict": "",
           "review": ""
         },
@@ -255,8 +255,8 @@
           "check": "cargo test --locked --offline -p thrum-rain-model --test marks",
           "ask": "Does the test work each figure from the cells, the stores and the puddle's water at the tick's start, without the model? Would a model that filled the pores under a puddle at once fail it, and one that took the lesser of the two rates over full pores?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/PUDDLES/M2-evidence.md#m213",
           "verdict": "",
           "review": ""
         },

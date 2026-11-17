@@ -150,3 +150,9 @@
   so the puddle can't fill the pores it rises over and holds nothing when it uncovers. Proposal for a planner:
   the design's covering rule must say what happens when a puddle holds less than a transfer. Suspected: no
   shortfall arises without unfilled pores (three no-pore showers showed none).
+- 2026-11-17 M2 rebuilt to the mark (code 849ae9cf1). Verified: `tests/marks.rs` works every entry of every tick
+  from the cells, the stores and the state before it, and the model matches on the review's twelve floors, a
+  dish that holds ground for 1,645 ticks, a floor held in the rain and two hollows through a merge and a parting;
+  the account closes to 1.7e-13 on the design's bed. `owed` is gone, and a class may percolate faster than it
+  soaks. All rain-model tests pass; clippy clean. [Evidence](../../evidence/PUDDLES/M2-evidence.md). Suspected:
+  nothing else reads the saved rain state, whose format changed (`THRRAIN3`).
