@@ -94,7 +94,8 @@ shared contracts are [docs/design/CONTRACTS.md](docs/design/CONTRACTS.md), and c
 [docs/design/maturity.json](docs/design/maturity.json) (implementation, correctness, visuals and device kept apart).
 Scratch goes in `tmp/<task>/`, under [the storage rules](docs/ASSET-LIFECYCLE.md).
 
-Some items need a fresh reader, for example CREATOR's M3.1, which may only be judged by a reviewer who has not yet
-opened the module's design, `crates/` or other design documents. A reviewer of such a milestone does that item first,
-reading only what the item allows, and opens the rest of this guidance afterwards. Two reviews of CREATOR M3 read the
-design first and could not judge the item.
+Some items need a fresh reader, for example CREATOR's M3.1: an agent that has opened only the documents the item
+names. A reviewer cannot be that reader, because the review skill and these settings load engineering guidance
+before any item is read. The lead commissions the fresh reader as a separate new session, never the builder or the
+reviewer, from the brief the module's design names. The builder retains its record as evidence, and the reviewer
+judges the record and reruns what it retains.

@@ -10,44 +10,32 @@ Closes gate G6. [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.
 - Assumption: the profiler is built after `APPLE-TILE:M3` and not beside it, so it waits on that module's attended items. The other order has the readouts built now on the positional GPU slots, with the switch added later.
 - Assumption: the profiler shows encode and submit as one row, and the frame-callback interval in place of a display interval, because those are what the engine measures. Physical cadence stays with the Mac qualification.
 - Assumption: the profiler toggle is off by default, so a kit scene and the V1 window run untimed unless the profiler is on or a frames report was asked for.
-- Assumption: the fresh-agent proof is run by the milestone's reviewer, who builds the scene before reading engine source.
+- Assumption: a fresh agent's record stays valid after the public documents are edited to remove friction it reported, so the 17 November ziggurat run on `e5de7027e70b` stands for M3.1; a changed command, file or key on the creator path needs a new run.
 - Assumption: G6 closes without the clipping overlay, the shadow-cascade overlay and parameter files as a cooked product, which the G6 decision holds or parks.
 
-## M1 The starter scene runs in Chrome from one command, with its controls and live asset edits
+## M1 The starter scene runs in Chrome from one command, with its controls and live asset edits: done
 
-- [x] The kit's web runner, facade and page on `thrum_app::web`, with the Mac-only kit pieces gated by target.
-- [x] The web form of `./dev scene <folder>` and `./dev starter`: build for wasm32, cook, watch, serve, print the
-      URL.
-- [x] `scripts/check_starter_browser.mjs` with `scene`, `controls`, `edit` and `journey` cases, on hardware
-      WebGPU only, reading pixels.
-- [x] `./dev check-web` also compiles and lints the starter for wasm32.
-- [x] The Must Fix findings F1 and F2 of [review 1](../../evidence/CREATOR/M1-review.md) and its suggestions S3–S5,
-      as [the work list after review 1](../../evidence/CREATOR/M1-review-1-work.md) records.
+[review](../../evidence/CREATOR/M1-review.md)
 
-## M2 The demo UI shows where a frame's time goes on Mac and in Chrome
+## M2 The demo UI shows where a frame's time goes on Mac and in Chrome: done
 
-Read [the frame timing feed](DESIGN.md#the-frame-timing-feed) first. Merge after `APPLE-TILE:M3` and, if
-`PLATFORM-RUNTIME-MAC:M3` is open, one after the other with it: both touch the Mac shell.
-
-- [ ] The read-only table kind in `thrum-controls`, drawn by the AppKit panel and the DOM view.
-- [ ] The profile window in `thrum-app`, fed at each shell's completion drain; the web shell's first-600 report
-      buffer and the Mac run history keep their meaning.
-- [ ] The timing-demand switch on the frame host and the "not requested" reason, with device tests in
-      `./dev check` for both directions, frames in flight and a device replacement.
-- [ ] The profiler group: the toggle, the rows by source, each unavailable reason, the Chrome step size.
-- [ ] The shells set demand from the toggle; report and qualification runs stay timed.
-- [ ] The browser check gains `profiler` (a load change after frame 600) and `profiler-switch` cases.
-- [ ] The V1 game declares the group; the paired on/off run and the two known changes on the Mac.
+[review](../../evidence/CREATOR/M2-review.md)
 
 ## M3 A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes
 
-- [ ] The README, creator guide and starter README cover the web form and the profiler, and stand alone.
-- [ ] The Mac mistake journey still explains each case; fix what the M1 and M2 reviews recorded.
-- [ ] The on-glass check of the panel and saved-file reload: attended setup, then the agent drives and captures
-      the real window. Batch the setup with the Mac qualification session.
-- [ ] Maturity rows and the brief's G6 line brought up to date.
+The product, the documents and evidence for all five items exist, and no review found a defect in them
+([review 4](../../evidence/CREATOR/M3-review.md)). The 17 November re-plan changed only how M3.1 and M3.4 are
+proved. It also cleared every item's proof, so claim each item again on the current tip, and change the product
+or the documents only where an item is untrue.
 
-**For the lead, when M3 is Ready for Review.** The reviewer is the fresh agent of M3.1 and must do that exercise
-before it reads this plan, the design or any engine source. Start the review in a new session and change nothing
-else: the item tells the reviewer the order. A review whose reviewer says it was not fresh comes back Could Not
-Judge on M3.1; start another.
+M3.1's fresh agent is the lead's, never you or a subagent of yours. Cite the lead-commissioned ziggurat record in
+`docs/evidence/CREATOR/m3/fresh-lead/` and leave its files as they are. `fresh-session/` and `fresh-refresh/`
+beside it hold the folded-sail exercise an earlier builder arranged, which does not count for this item. If you
+change a command, file or key on the creator path, end `BLOCKED needs_context` and ask the lead for a new run
+from [the brief](../../evidence/CREATOR/M3-fresh-agent-brief.md).
+
+M3.4 runs through the window driver in `docs/evidence/CREATOR/m3/`, on the unlocked, awake built-in display.
+Batch its setup with the Mac qualification session.
+
+**For the lead.** M3's reviewer no longer has to be fresh, so start its review like any other. Commission a new
+fresh run only when the builder or a review asks for one.

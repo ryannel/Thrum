@@ -238,3 +238,13 @@
 - 2026-11-11 Plan reshaped for orchestrate 1.7.0: status lines removed, `Ownership` moved to the design,
   the review 1 work list moved to [evidence](../../evidence/CREATOR/M1-review-1-work.md), and the open
   assumptions moved from this log to the plan's `Open for the owner`. No item or scope changed.
+
+- 2026-11-17 Re-plan of M3 after four failed reviews, three on "fresh-review reading order was violated". The
+  plan was at fault: M3.1 made the reviewer the fresh agent, and the review skill and project settings load
+  engineering guidance before any item is read. M3.1 keeps its statement; its fresh agent is now commissioned by
+  the lead, never the builder, and the reviewer judges the record and reruns the retained scene. The lead's
+  ziggurat run on `e5de7027e70b` is admissible. No product defect was found.
+- 2026-11-17 M3.4 keeps its statement and the starter stays unbundled. Review 4 could not drive the panel with
+  Computer Use, which cannot select the unbundled starter and, given a bundle, shows the scene window but not the
+  panel. Reviews 1 and 3 passed the item with the retained window driver, so the item now names that route. The
+  owner assumption that the reviewer runs the fresh proof is withdrawn, at the owner's direction in the re-plan task.

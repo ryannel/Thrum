@@ -1,7 +1,7 @@
 # Creator experience: closing G6
 
 10 November 2026, revised 11 November after
-[the design review](../../evidence/CREATOR/design-review.md). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
+[the design review](../../evidence/CREATOR/design-review.md) and 17 November for M3's proofs ([log](LOG.md)). Design for the `CREATOR` module in [the module list](../ARCHITECTURE.md).
 [Plan](PLAN.md) · [Done when](DONE.json) ·
 [G6 decision](../../design/decisions/G6-CREATOR-EXPERIENCE.md) · [Creator guide](../../design/ENGINE-EXPERIENCE.md) ·
 [C11](../../design/CONTRACTS.md#c11-input-audio-and-ui-lifecycle--p1a1u1-with-f1) ·
@@ -185,20 +185,46 @@ adds fragment work raises the pass that draws the cooked mesh.
 
 ### The fresh-agent proof
 
-The reviewer of M3 is the fresh agent, and the exercise comes before the rest of its review. Until its scene runs
-on both targets it may have read only the review skill, the project settings, the graded examples, M3's items,
-and the three public documents (the README, the creator guide and the starter's README) with whatever those tell
-a creator to run or copy. It logs every file it opens, in order. This design, the plan, engine source and other
-design documents come after. This puts the proof with an agent that has not seen the work, which a builder cannot
-arrange for itself. A reviewer that read those first is not fresh: it says so and gives Could Not Judge, and the
-next review starts with a new agent. Blocking friction (a step that needs engine source) fails the item. Other
-friction is recorded and either fixed or listed as a known limit.
+The fresh agent is a separate new session that the lead commissions for M3.1 from
+[the brief](../../evidence/CREATOR/M3-fresh-agent-brief.md). It is never the milestone's builder or reviewer, nor a
+subagent of either. The builder has seen the work. The reviewer cannot be fresh either: the review skill and the
+project's instruction files load engineering guidance before a reviewer reads any item.
+
+The fresh agent works in a scratch clone of a named commit. It reads only the three public documents (the README,
+the creator guide and the starter's README) with whatever those tell a creator to run, copy or edit, which
+includes the starter folder and the two root files the starter README has a creator edit. The instruction file
+its host loads by itself (`AGENTS.md`) is allowed, because a creator's own agent gets it too and it names no
+engine item; the agent follows none of its links. It leaves a record: every file it opened, in order; every
+command; the scene source and its registration diff; the game-line count; every engine item the scene names; its
+friction; and captures from both targets.
+
+The builder retains that record unchanged under `docs/evidence/CREATOR/m3/fresh-lead/` (a later run beside it as
+`fresh-lead-<date>/`) and cites it. The reviewer judges the record and need not be fresh: it reads the read log
+and friction against the limits above, checks the retained scene against the item, and runs that scene itself on
+the reviewed checkout, offscreen on the Mac and in Chrome, so the frames it judges are its own. Blocking friction
+(a step that needs engine source) fails the item. Other friction is recorded and either fixed or listed as a
+known limit.
+
+A record stays valid while no step its agent used has changed. An edit to the three documents that removes
+friction the record names does not void it. A changed command, file name or key on the creator path does: the
+builder then ends `BLOCKED needs_context` and the lead commissions a new run.
+
+That the agent was fresh rests on the lead's commission and the agent's own read log; no later reader can observe
+it. The sign that it was not is a scene that names an engine item the three documents and the starter folder
+don't show, and the reviewer looks for that.
 
 **The on-glass check** (M3.4) needs a person only for setup: the built-in display unlocked and awake, with Screen
 Recording and Accessibility permission already granted to the process the agent runs. The agent then launches the
 starter, drags the slider with synthetic pointer events, saves the files, and captures the real window and panel
 by window id. An offscreen frame does not stand in for the window. Without the Accessibility grant a person does
 the drag and nothing else. Agents never change a grant.
+
+The route is the module's window driver, `docs/evidence/CREATOR/m3/window_journey.py` with `window_ui.swift`
+beside it, for the builder and the reviewer alike. A reviewer reads both first, because the builder wrote them,
+then runs the driver on the reviewed checkout and judges its captures. Computer Use is not a route. It cannot
+select the starter, which `./dev starter` runs as an unbundled executable, and with the same executable wrapped in
+an app bundle it shows the scene window but not the panel. The starter stays unbundled: that is how a creator runs
+it, and a bundle would not have made the panel reachable.
 
 ## The system as it runs
 
@@ -234,7 +260,7 @@ see what an edit cost.
 | A switch mid-run strands a frame | A frame slot never frees after a toggle | Draining or waiting on the GPU at the switch; frames in flight finish as encoded |
 | An interval row is read as display cadence | A label says "display", "refresh" or "fps" | Renaming the callback interval; the row names its source |
 | Coarse browser timestamps read as zero | GPU rows show 0.0 ms in Chrome | Showing zero; the row states resolution or unavailable |
-| The fresh run passes because the reviewer already knows the engine | The friction log is empty | Reading `crates/` first; the item forbids it and the log must name what was read |
+| The fresh run passes because its agent already knew the engine | The friction log is empty, or the scene names an engine item the three documents don't show | A run by the builder or the reviewer standing in for the commissioned agent |
 
 ## Performance
 
