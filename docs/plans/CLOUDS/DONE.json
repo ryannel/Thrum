@@ -506,8 +506,8 @@
           "ask": "Is the motion compared with a displacement worked out from the CPU model and the wind, with temporal sampling selected, for two frames of one tick as well as for frames a tick apart?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/CLOUDS/M3-resume.md",
           "verdict": "",
           "review": ""
         },

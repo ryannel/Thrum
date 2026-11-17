@@ -378,3 +378,11 @@
   the phase, ambient integration and temporal pipeline remain provisional or absent.
   [Attempts](../../evidence/CLOUDS/M3-attempts/README.md) and
   [handoff](../../evidence/CLOUDS/M3-handoff.md) distinguish confirmed runs from open work.
+
+- 2026-11-17 M3 resumes at `b911eb4a5` with uncommitted lighting and temporal work,
+  retained in checkpoint `8f7f15c55`. Scoped Clippy, formatting, the Metal slab
+  test and all three submitted-frame tests pass; M3.4 has builder proof.
+  [Evidence](../../evidence/CLOUDS/M3-resume.md) distinguishes those tests from
+  unproved lighting, far-air accuracy, motion quality and cost. The plan's recorded
+  three-look stop still needs the lead's direction; no fourth look was taken.
+  [The rewritten handoff](../../evidence/CLOUDS/M3-handoff.md) names the remaining work.
