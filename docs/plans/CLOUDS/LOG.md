@@ -403,3 +403,11 @@
   Noon RGB pixels differ by at most 1.1%; no production lighting fix or fresh
   visual look is claimed. A planner ruling on lighting/exposure and that cache
   approximation is requested; [handoff](../../evidence/CLOUDS/M3-handoff.md) records checks and limits.
+
+- 2026-11-17 M3 resumes with a cumulative Sun-depth interpolant at `851a7a126`.
+  [The independent reconstruction](../../evidence/CLOUDS/M3-sun-reconstruction/README.md)
+  reproduces the old cache error; the selected height cubic reduces maximum T
+  error from 0.2882 to 0.1802 without a light gain or added resources.
+  Metal cumulative-depth and native route-admission tests pass; a bounded
+  native capture route admits M3's ten-second pan. Visual and quality/cost
+  acceptance remain separate from this numerical correction.

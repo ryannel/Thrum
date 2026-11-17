@@ -114,6 +114,15 @@ writer/decoder limit admits twenty seconds at 120 opportunities/s. Other cases
 retain their 1,024-record limit. Pixel and encoded queues keep their existing
 bounds; only the finite per-record hash list grows.
 
+`--case clouds-route --route PATH --mode realtime` records a cloud inspection
+route in the same versioned route format. It admits at most 1,800 simulation
+ticks including preparation and drain, with 4,096 submitted records and a
+34.5-second host deadline. The existing `route` case keeps its 560-frame
+admission and timing. This native inspection case supports the ten-second pan,
+40 m walk and cut required by CLOUDS M3; pose, cut, cooked-root and checkpoint
+validation still apply. The route sets solar time and camera, and the ordinary
+world runs at 1x unless the selected parameters explicitly change it.
+
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,

@@ -4,6 +4,7 @@ use crate::{RouteOverlay, SceneCamera};
 const EYE: [f32; 3] = [0.0, 244.92, 16.0];
 
 #[test]
+#[cfg(target_os = "macos")]
 fn native_cloud_capture_admits_ten_second_motion_without_widening_the_browser_route() {
     let text = file(
         &[key(0, 0.0, 0.0), key(720, 40.0, 36.0)],

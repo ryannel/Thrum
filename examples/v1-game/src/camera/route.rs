@@ -136,6 +136,7 @@ impl CameraRoute {
     /// Parse an elapsed-time native cloud inspection route of at most 1800 ticks.
     /// This has no browser retained-frame consumer; the capture writer separately
     /// bounds its submitted records. All pose, cut and checkpoint checks apply.
+    #[cfg(target_os = "macos")]
     pub(crate) fn parse_cloud_capture(
         text: &str,
         camera: SceneCamera,
