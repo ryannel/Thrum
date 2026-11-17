@@ -177,8 +177,6 @@ impl Layer {
         );
         let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
         Ok(Self {
-            #[cfg(test)]
-            diagnostic: None,
             profile,
             environment,
             lighting,

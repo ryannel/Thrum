@@ -5,6 +5,7 @@ use std::{path::Path, time::Duration};
 use thrum_render::contribution::EffectTime;
 
 struct Observed {
+    probe: Option<crate::layer::diagnostic::Probe>,
     shade: Shade,
     output: Arc<Mutex<Option<Vec<wgpu::Texture>>>>,
     buffers: Arc<Mutex<Option<Vec<wgpu::Buffer>>>>,
@@ -30,7 +31,7 @@ impl SceneContribution for Observed {
         let mut textures = gpu.weather.textures()[..2].to_vec();
         textures.push(sky.products().fresh_transport);
         *self.output.lock().expect("textures") = Some(textures);
-        sky.diagnostic = Some(probe);
+        self.probe = Some(probe);
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
@@ -57,6 +58,9 @@ impl SceneContribution for Observed {
         frame: &ContributionFrame,
     ) {
         self.shade.encode_after_opaque(index, pass, frame);
+        if index == 1 {
+            self.probe.as_ref().expect("prepared observer").encode(pass);
+        }
     }
     fn after_opaque_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
         self.shade.after_opaque_runs(index, frame)
@@ -202,6 +206,7 @@ fn lighting_stage_snapshots() {
             let textures = Arc::new(Mutex::new(None));
             let buffers = Arc::new(Mutex::new(None));
             let observed = Observed {
+                probe: None,
                 shade,
                 output: Arc::clone(&textures),
                 buffers: Arc::clone(&buffers),
