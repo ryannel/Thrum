@@ -1,10 +1,14 @@
 //! Submitted effect times across inline and resident-world lifecycle boundaries.
-#![cfg(target_os = "macos")]
 pub mod support;
+#[cfg(target_os = "macos")]
 use std::time::{Duration, Instant};
+#[cfg(target_os = "macos")]
 use thrum_core::sim::{WorldLifecycle, WorldLifecycleReply};
+#[cfg(target_os = "macos")]
 use v1_game::{FrameConfig, FrameHost, FrameSample, WorldControls, effect::DiagnosticEffect};
 
+#[track_caller]
+#[cfg(target_os = "macos")]
 fn complete(mut poll: impl FnMut() -> Option<FrameSample>, device: &wgpu::Device) -> FrameSample {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
@@ -18,6 +22,7 @@ fn complete(mut poll: impl FnMut() -> Option<FrameSample>, device: &wgpu::Device
     }
 }
 
+#[cfg(target_os = "macos")]
 fn lifecycle(
     controls: &WorldControls,
     request: WorldLifecycle,
@@ -35,6 +40,7 @@ fn lifecycle(
     }
 }
 
+#[cfg(target_os = "macos")]
 fn display(sample: &FrameSample) -> f64 {
     assert_eq!(
         sample.presentation_alpha.to_bits(),
@@ -61,6 +67,7 @@ fn display(sample: &FrameSample) -> f64 {
 }
 
 #[test]
+#[cfg(target_os = "macos")]
 fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
     pollster::block_on(async {
         let (_, device, queue, _) = support::device("portable", false).await;
@@ -85,14 +92,18 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             host.set_scene_contribution(Box::new(effect))
                 .expect("effect");
             host.set_presentation_lead(Duration::from_millis(lead_ms));
-            host.drive(Duration::from_millis(58), Some(&surface))
+            let report = host
+                .drive(Duration::from_millis(58), Some(&surface))
                 .expect("partial tick");
+            assert!(report.submitted, "initial partial tick: {report:?}");
             let before = complete(|| host.poll_completed().expect("completion"), &device);
             assert_eq!(before.tick, 3);
             host.pause().expect("pause");
             for ms in [58, 958, 1058] {
-                host.drive(Duration::from_millis(ms), Some(&surface))
+                let report = host
+                    .drive(Duration::from_millis(ms), Some(&surface))
                     .expect("paused");
+                assert!(report.submitted, "inline paused: {report:?}");
                 let s = complete(|| host.poll_completed().expect("completion"), &device);
                 assert_eq!(s.tick, 3);
                 assert!(!s.clock_interpolating);
@@ -107,8 +118,10 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             host.resume(resume).expect("resume");
             for after_ms in [0, 5, 16, 25, 40, 55, 75] {
                 let observation = resume + Duration::from_millis(after_ms);
-                host.drive(observation, Some(&surface))
+                let report = host
+                    .drive(observation, Some(&surface))
                     .expect("resumed frame");
+                assert!(report.submitted, "inline resumed: {report:?}");
                 let s = complete(|| host.poll_completed().expect("completion"), &device);
                 let time = handle.lock().expect("effect").time.expect("time");
                 assert_eq!(
@@ -157,8 +170,10 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             let origin = Instant::now();
             let (mut host, controls) = host.into_threaded(origin, || {}).expect("resident world");
             let (_, paused, _) = lifecycle(&controls, WorldLifecycle::Pause, origin);
-            host.drive(origin.elapsed(), Some(&surface))
+            let report = host
+                .drive(origin.elapsed(), Some(&surface))
                 .expect("paused");
+            assert!(report.submitted, "resident paused: {report:?}");
             let s = complete(|| host.poll_completed().expect("completion"), &device);
             assert_eq!(s.tick, paused.id.tick);
             assert!(!s.clock_interpolating);
@@ -171,8 +186,10 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
                 let observation = origin.elapsed();
                 std::thread::sleep(Duration::from_millis(gap_ms));
                 host.set_presentation_lead(Duration::from_millis([0, 10, 50][i % 3]));
-                host.drive(observation, Some(&surface))
+                let report = host
+                    .drive(observation, Some(&surface))
                     .expect("resumed resident frame");
+                assert!(report.submitted, "resident resumed: {report:?}");
                 let s = complete(|| host.poll_completed().expect("completion"), &device);
                 let time = handle.lock().expect("effect").time.expect("time");
                 assert_eq!(

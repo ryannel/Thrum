@@ -13,6 +13,10 @@ use thrum_asset_gpu::CookedStats;
 const CAMERA: Camera = Camera::look_at([0.0, 1.7, 6.0], [0.0, 1.0, 0.0], 40.0);
 
 #[test]
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "compare the exact pre-change f64 to f32 alpha expression"
+)]
 fn a_ticking_sky_world_states_its_clock() {
     use std::time::Duration;
     use thrum_render::runtime::FrameWorld;

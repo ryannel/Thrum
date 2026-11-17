@@ -5,6 +5,30 @@ use std::time::{Duration, Instant};
 #[cfg(target_os = "macos")]
 use thrum_render::frame::TargetLeadStatus;
 
+#[cfg(target_os = "macos")]
+fn check_status(
+    status: TargetLeadStatus,
+    consumed: Duration,
+    target: Duration,
+    observation: Duration,
+    counts: &mut [usize; 6],
+) {
+    match status {
+        TargetLeadStatus::Future => {
+            counts[0] += 1;
+            // f64 seconds subtraction/Duration conversion may round by one ns.
+            assert!(consumed.abs_diff(target) <= Duration::from_nanos(2));
+        }
+        TargetLeadStatus::Late => {
+            counts[1] += 1;
+            assert_eq!(consumed, observation);
+            assert!(observation >= target);
+        }
+        TargetLeadStatus::Invalid => counts[2] += 1,
+        TargetLeadStatus::Clamped => counts[3] += 1,
+    }
+}
+
 #[test]
 #[cfg(target_os = "macos")]
 fn realtime_records_consumed_targets_including_expired_opportunity() {
@@ -118,24 +142,7 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 assert!(origin + interval[1] <= image.submitted_at);
                 preemption_seen = true;
             }
-            match status {
-                TargetLeadStatus::Future => {
-                    counts[0] += 1;
-                    // f64 seconds subtraction/Duration conversion may round by one ns.
-                    assert!(consumed.abs_diff(target) <= Duration::from_nanos(2));
-                }
-                TargetLeadStatus::Late => {
-                    counts[1] += 1;
-                    assert_eq!(consumed, sample.observation);
-                    assert!(sample.observation >= target);
-                }
-                TargetLeadStatus::Invalid => {
-                    counts[2] += 1;
-                }
-                TargetLeadStatus::Clamped => {
-                    counts[3] += 1;
-                }
-            }
+            check_status(status, consumed, target, sample.observation, &mut counts);
             if held {
                 assert_eq!(status, TargetLeadStatus::Late);
                 held_seen = true;

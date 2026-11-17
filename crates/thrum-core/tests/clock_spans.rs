@@ -35,15 +35,15 @@ struct Run {
 impl Run {
     fn new(hz: u32, start: Duration, tick: u64) -> Self {
         let config = ClockConfig {
-            tick_hz: NonZeroU32::new(hz).unwrap(),
+            tick_hz: NonZeroU32::new(hz).expect("valid scripted clock operation"),
             ..ClockConfig::default()
         };
         Self {
             hz,
-            clock: TickClock::new(config, start).unwrap(),
+            clock: TickClock::new(config, start).expect("valid scripted clock operation"),
             tick,
             anchor: Anchor {
-                due_hz: start.as_nanos() as i128 * hz as i128,
+                due_hz: i128::try_from(start.as_nanos()).expect("short script") * i128::from(hz),
                 tick,
             },
             running: true,
@@ -63,7 +63,7 @@ impl Run {
         1.0 + 0.05 * f64::from(self.hz)
     }
     fn origin_ms(&self) -> f64 {
-        (self.anchor.due_hz - self.anchor.tick as i128 * E9) as f64 / f64::from(self.hz) / 1e6
+        (self.anchor.due_hz - i128::from(self.anchor.tick) * E9) as f64 / f64::from(self.hz) / 1e6
     }
     /// Advance the inline world to `o` and return the ticks it committed.
     fn advance(&mut self, o: Duration, budget: u32) -> u32 {
@@ -74,7 +74,7 @@ impl Run {
                 *tick += 1;
                 Ok::<_, ()>(())
             })
-            .unwrap();
+            .expect("valid scripted clock operation");
         if report.completed > 0 {
             self.held = false;
         }
@@ -105,14 +105,15 @@ impl Run {
             return None;
         }
         // The model: p = (T - t_C) / d, with t_C from the script's anchor alone.
-        let target_hz = (o + lead).as_nanos() as i128 * self.hz as i128;
-        let due_hz = self.anchor.due_hz + (self.tick - self.anchor.tick) as i128 * E9;
+        let target_hz =
+            i128::try_from((o + lead).as_nanos()).expect("short script") * i128::from(self.hz);
+        let due_hz = self.anchor.due_hz + i128::from(self.tick - self.anchor.tick) * E9;
         assert!(
-            due_hz <= o.as_nanos() as i128 * self.hz as i128,
+            due_hz <= i128::try_from(o.as_nanos()).expect("short script") * i128::from(self.hz),
             "tick due by its observation"
         );
         let expected_due_ns = u128::try_from(due_hz)
-            .unwrap()
+            .expect("valid scripted clock operation")
             .div_ceil(u128::from(self.hz));
         let due = sample.tick_due_time().expect("interpolating due time");
         assert_eq!(
@@ -145,9 +146,11 @@ impl Run {
         Some(now)
     }
     fn resume(&mut self, at: Duration) {
-        self.clock.resume(at).unwrap();
+        self.clock
+            .resume(at)
+            .expect("valid scripted clock operation");
         self.anchor = Anchor {
-            due_hz: at.as_nanos() as i128 * self.hz as i128,
+            due_hz: i128::try_from(at.as_nanos()).expect("short script") * i128::from(self.hz),
             tick: self.tick,
         };
         self.running = true;
@@ -174,6 +177,7 @@ fn steady(run: &mut Run, mut o: Duration, frames: u32, step: Duration) -> Durati
     o
 }
 
+#[expect(clippy::print_stdout, reason = "retained timing model evidence")]
 fn lifecycle(hz: u32) {
     let frame = Duration::from_nanos(1_000_000_000 / 120);
     let start = Duration::from_nanos(7_300_000_123);
@@ -214,9 +218,9 @@ fn lifecycle(hz: u32) {
         "  after pause and resume     {:>14.6} ms   moved {:.6} ms; the clock was stopped {:.6} ms",
         run.origin_ms(),
         run.origin_ms() - old_origin,
-        (resume - o).as_secs_f64() * 1e3
+        resume.saturating_sub(o).as_secs_f64() * 1e3
     );
-    assert!(run.origin_ms() - old_origin >= (resume - o).as_secs_f64() * 1e3 - 1e-6);
+    assert!(run.origin_ms() - old_origin >= resume.saturating_sub(o).as_secs_f64() * 1e3 - 1e-6);
     // The hold: no target is consumed until the first tick after the resume commits,
     // however far a lead reaches past that tick's due time.
     let tick_ns = 1_000_000_000 / u64::from(hz);
@@ -282,7 +286,7 @@ fn lifecycle(hz: u32) {
     //    time of the tick it left, and the frames after it follow the new numbering.
     let old_origin = run.origin_ms();
     run.anchor = Anchor {
-        due_hz: run.anchor.due_hz + (run.tick - run.anchor.tick) as i128 * E9,
+        due_hz: run.anchor.due_hz + i128::from(run.tick - run.anchor.tick) * E9,
         tick: run.tick - 10,
     };
     run.tick -= 10;
@@ -302,7 +306,8 @@ fn lifecycle(hz: u32) {
 fn copy(run: &Run) -> Run {
     Run {
         hz: run.hz,
-        clock: TickClock::new(ClockConfig::default(), Duration::ZERO).unwrap(),
+        clock: TickClock::new(ClockConfig::default(), Duration::ZERO)
+            .expect("valid scripted clock operation"),
         tick: run.tick,
         anchor: run.anchor,
         running: run.running,
@@ -320,16 +325,19 @@ fn copy(run: &Run) -> Run {
 /// must not disturb the run.
 fn clone(_: &TickClock, hz: u32, resume: Duration) -> TickClock {
     let config = ClockConfig {
-        tick_hz: NonZeroU32::new(hz).unwrap(),
+        tick_hz: NonZeroU32::new(hz).expect("valid scripted clock operation"),
         ..ClockConfig::default()
     };
-    let mut clock = TickClock::new(config, Duration::ZERO).unwrap();
+    let mut clock = TickClock::new(config, Duration::ZERO).expect("valid scripted clock operation");
     clock.pause();
-    clock.resume(resume).unwrap();
+    clock
+        .resume(resume)
+        .expect("valid scripted clock operation");
     clock
 }
 
 /// The review's two arms, on a clock that starts at host time zero on tick zero.
+#[expect(clippy::print_stdout, reason = "retained timing model evidence")]
 fn review_arms() {
     println!("the review's frames (60 Hz, started at zero on tick 0)");
     for pause_ms in [50_u64, 58] {

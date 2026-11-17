@@ -333,11 +333,10 @@ impl FrameWorld for StillWorld {
     }
     fn tick_due_time(&self) -> Option<Duration> {
         self.tick_duration.map(|step| {
-            self.now
-                - Duration::from_nanos(
-                    u64::try_from(self.now.as_nanos() % step.as_nanos())
-                        .expect("a sub-tick fraction fits in u64 nanoseconds"),
-                )
+            self.now.saturating_sub(Duration::from_nanos(
+                u64::try_from(self.now.as_nanos() % step.as_nanos())
+                    .expect("a sub-tick fraction fits in u64 nanoseconds"),
+            ))
         })
     }
 }
