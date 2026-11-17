@@ -1,8 +1,10 @@
 //! GPU weather products. The game supplies the field's type data and committed state.
+mod layer;
 mod shade;
 mod sun_path;
 mod weather;
 
+pub use layer::SkyProfile;
 pub use shade::{Shade, ShadeConfig, WeatherInput};
 pub use sun_path::{SunLevel, SunPath, SunProfile};
 pub use weather::{RowStamp, WeatherMap, WeatherProfile};

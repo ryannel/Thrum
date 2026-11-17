@@ -12,6 +12,8 @@ pub enum CloudSelection {
     Off,
     /// Weather and ground shade, with no visible cloud layer.
     Shade,
+    /// Weather, shade and the visible cloud layer.
+    Sky,
 }
 
 /// Game-authored Weather and Shade configuration, with no visible cloud layer.

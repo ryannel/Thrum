@@ -181,8 +181,14 @@ impl SceneSurface<'_> {
     /// `None`. Rebuild the result when this surface is replaced.
     #[must_use]
     pub fn environment_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment
-            .map(|environment| environment.products(self.device, self.directional, self.exposure))
+        self.environment.map(|environment| {
+            environment.products(
+                self.device,
+                self.directional,
+                self.exposure,
+                self.cloud.is_some(),
+            )
+        })
     }
 }
 

@@ -14,7 +14,10 @@ use super::gpu::AtmospherePrepared;
 /// RGB radiance and the dimensionless split-sum pair.
 ///
 /// Sky, diffuse and reflection belong to the active camera. Aerial starts at
-/// that camera and clamps to 32 km, with top-left normalized screen coordinates.
+/// that camera, with top-left normalized screen coordinates. Without a cloud
+/// provider it clamps to 32 km. With one, sky-ending rays extend to the air's
+/// boundary using chart-ratio transmission and optical-depth-apportioned sky
+/// in-scatter. Points at 32 km and nearer retain the finite-volume arithmetic.
 /// Reflection clamps roughness to 0.045–1 and view cosine to 0–1. Night support
 /// is 0–15 km camera altitude, with the existing Sun-only fallback outside it.
 /// Sun light supports arbitrary world points, clamps below the first 6.15 m
@@ -47,6 +50,7 @@ pub(super) fn create(
     device: &wgpu::Device,
     directional: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
+    far_aerial: bool,
 ) -> EnvironmentProducts {
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;
     let buffer = |binding, bytes| wgpu::BindGroupLayoutEntry {
@@ -140,7 +144,10 @@ pub(super) fn create(
     });
     EnvironmentProducts {
         layout,
-        shader_source: library(),
+        shader_source: format!(
+            "const ENVIRONMENT_FAR_AERIAL: bool = {far_aerial};\n{}",
+            library()
+        ),
         groups,
     }
 }

@@ -79,13 +79,14 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let clouds = match launch_value("THRUM_CLOUDS").as_deref() {
         Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
         Ok("shade") => crate::CloudSelection::Shade,
-        _ => return Err("THRUM_CLOUDS must be off or shade".to_owned()),
+        Ok("sky") => crate::CloudSelection::Sky,
+        _ => return Err("THRUM_CLOUDS must be off, shade or sky".to_owned()),
     };
     Ok(crate::GameSetup {
-        cloud_weather: if clouds == crate::CloudSelection::Shade {
-            cloud_weather()?
-        } else {
+        cloud_weather: if clouds == crate::CloudSelection::Off {
             crate::clouds::initial_state().parameters()
+        } else {
+            cloud_weather()?
         },
         clouds,
         reconstruction: match launch_value("THRUM_RECONSTRUCTION").as_deref() {

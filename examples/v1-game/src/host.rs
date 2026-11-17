@@ -121,6 +121,7 @@ pub struct FrameHost {
     cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     inner: Runtime,
     cloud_input: Option<thrum_clouds::WeatherInput>,
+    cloud_sky: Option<thrum_clouds::SkyProfile>,
     #[cfg(not(target_arch = "wasm32"))]
     visual_product: Option<EnvironmentProduct>,
 }
@@ -579,22 +580,31 @@ impl FrameHost {
                 .clone();
             scene.meshes = Some(rows.selection(slots));
         }
-        let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Shade {
+        let cloud_sky =
+            (setup.clouds == crate::CloudSelection::Sky).then_some(thrum_clouds::SkyProfile {
+                extent: config.render_extent,
+                step: 30.0,
+                light_samples: 3,
+            });
+        let world = WorldPort::Inline(Box::new(if setup.clouds == crate::CloudSelection::Off {
+            WorldDriver::new(setup.content, setup.route_overlay)?
+        } else {
             WorldDriver::selected(
                 setup.content,
                 setup.route_overlay,
                 Some(setup.cloud_weather),
             )?
-        } else {
-            WorldDriver::new(setup.content, setup.route_overlay)?
         }));
-        let shade = if setup.clouds == crate::CloudSelection::Shade {
-            Some(
-                thrum_clouds::Shade::new(crate::clouds::shade_config())
-                    .map_err(|e| e.to_string())?,
-            )
-        } else {
+        let shade = if setup.clouds == crate::CloudSelection::Off {
             None
+        } else {
+            let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
+                .map_err(|e| e.to_string())?;
+            Some(if let Some(profile) = cloud_sky {
+                shade.with_sky(profile)
+            } else {
+                shade
+            })
         };
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
@@ -614,6 +624,7 @@ impl FrameHost {
             cooked_rows: rows,
             inner,
             cloud_input,
+            cloud_sky,
             #[cfg(not(target_arch = "wasm32"))]
             visual_product: None,
         };
@@ -796,6 +807,11 @@ impl FrameHost {
             let shade = thrum_clouds::Shade::new(crate::clouds::shade_config())
                 .map_err(|e| e.to_string())?
                 .with_input(input.clone());
+            let shade = if let Some(profile) = self.cloud_sky {
+                shade.with_sky(profile)
+            } else {
+                shade
+            };
             self.inner.set_scene_contribution(Box::new(
                 thrum_render::contribution::SceneContributions::new(vec![
                     contribution,

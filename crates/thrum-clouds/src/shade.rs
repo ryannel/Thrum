@@ -63,6 +63,7 @@ impl WeatherInput {
 
 /// A shadow-only cloud effect. It draws no geometry or layer and owns no clock.
 pub struct Shade {
+    sky: Option<crate::SkyProfile>,
     config: ShadeConfig,
     input: WeatherInput,
     gpu: Option<Prepared>,
@@ -72,6 +73,7 @@ pub struct Shade {
 }
 
 struct Prepared {
+    sky: Option<crate::layer::Layer>,
     weather: WeatherMap,
     sun: SunPath,
     queue: wgpu::Queue,
@@ -84,6 +86,7 @@ impl Shade {
     pub fn new(config: ShadeConfig) -> Result<Self, Error> {
         Field::new(config.seed, config.model, config.types.clone()).map_err(Error::Model)?;
         Ok(Self {
+            sky: None,
             config,
             input: WeatherInput::default(),
             gpu: None,
@@ -95,6 +98,12 @@ impl Shade {
     /// Clone the mailbox the game's extractor publishes into.
     pub fn input(&self) -> WeatherInput {
         self.input.clone()
+    }
+    /// Add the visible Sky capability. Shadow-only scenes allocate none of it.
+    #[must_use]
+    pub fn with_sky(mut self, profile: crate::SkyProfile) -> Self {
+        self.sky = Some(profile);
+        self
     }
     /// Share the extractor mailbox when composing this effect with another contribution.
     #[must_use]
@@ -200,7 +209,13 @@ impl SceneContribution for Shade {
             .map_err(|_| "cloud mailbox unavailable")?
             .ground = Some((sun.ground().clone(), sun.mapping().clone()));
         self.generation = surface.generation;
+        let sky = self
+            .sky
+            .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
+            .transpose()
+            .map_err(|e| e.to_string())?;
         self.gpu = Some(Prepared {
+            sky,
             weather,
             sun,
             queue: surface.queue.clone(),
@@ -209,7 +224,11 @@ impl SceneContribution for Shade {
     }
     fn effect_graph(&self) -> EffectGraph {
         self.gpu.as_ref().map_or_else(EffectGraph::default, |gpu| {
-            graph::declaration(gpu, self.generation)
+            let mut graph = graph::declaration(gpu, self.generation);
+            if let Some(sky) = &gpu.sky {
+                sky.append_graph(&mut graph, self.generation);
+            }
+            graph
         })
     }
     fn encode_upload(&mut self, _encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
@@ -256,6 +275,9 @@ impl SceneContribution for Shade {
             self.dropped += 1;
         } else {
             self.valid_recording = true;
+            if let Some(sky) = &gpu.sky {
+                sky.upload(&gpu.weather, &state, frame);
+            }
         }
     }
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
@@ -290,6 +312,30 @@ impl SceneContribution for Shade {
     fn encode_compute(&mut self, _pass: &mut wgpu::ComputePass<'_>, _frame: &ContributionFrame) {}
     fn encode_after_compute(&mut self, _encoder: &mut wgpu::CommandEncoder) {}
     fn draw(&self, _pass: &mut wgpu::RenderPass<'_>) {}
+    fn encode_after_opaque(
+        &mut self,
+        _index: usize,
+        pass: &mut wgpu::ComputePass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        if self.valid_recording
+            && let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref())
+        {
+            sky.encode(pass, frame);
+        }
+    }
+    fn draw_after_opaque(
+        &self,
+        _index: usize,
+        pass: &mut wgpu::RenderPass<'_>,
+        _frame: &ContributionFrame,
+    ) {
+        if self.valid_recording
+            && let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref())
+        {
+            sky.draw(pass);
+        }
+    }
     fn submitted(&mut self, _history_advanced: bool) {
         if self.valid_recording
             && let Some(gpu) = &mut self.gpu

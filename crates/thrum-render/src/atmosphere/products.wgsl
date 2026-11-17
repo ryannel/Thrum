@@ -37,8 +37,40 @@ struct EnvironmentAerial {
 }
 // uv is the point's normalized position in the active view, top-left origin.
 fn environment_aerial(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAerial {
+    if ENVIRONMENT_FAR_AERIAL && length(world_point-atmosphere.camera_altitude.xyz)>32000.0 {
+        return environment_aerial_far(world_point,uv);
+    }
+    return environment_aerial_volume(world_point,uv);
+}
+
+fn environment_aerial_volume(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAerial {
     let sample=aerial_sample(length(world_point-atmosphere.camera_altitude.xyz),clamp(uv,vec2(0.0),vec2(1.0)));
     return EnvironmentAerial(sample.transmission,aerial_radiance(sample.scatter.rgb)+vec3(sample.night));
+}
+
+// Cloud-provider scenes extend sky-ending rays past the finite camera volume.
+fn environment_aerial_far(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAerial {
+    let offset=world_point-atmosphere.camera_altitude.xyz;
+    let distance=length(offset);
+    let direction=offset/distance;
+    let origin=vec3(0.0,atmosphere.camera_altitude.w,0.0);
+    let height=origin.y;
+    // The caller promises a sky-ending ray. Retain the finite operation for
+    // below-horizon rays rather than dividing a planet-blocked chart sample.
+    if blocked(height,direction.y) { return environment_aerial_volume(world_point,uv); }
+    let end=origin+direction*min(distance,top_distance(height,direction.y));
+    let end_height=min(H,altitude(end));
+    let end_mu=dot(normalize(end+vec3(0.0,R,0.0)),direction);
+    let infinity=sample_sun_transmittance(height,direction.y,surface_transmittance,aerial_sampler);
+    let remaining=sample_sun_transmittance(end_height,end_mu,surface_transmittance,aerial_sampler);
+    let transmission=clamp(infinity/max(remaining,vec3(1e-20)),vec3(0.0),vec3(1.0));
+    let boundary=environment_aerial_volume(atmosphere.camera_altitude.xyz+direction*32000.0,uv);
+    let at_boundary=origin+direction*32000.0;
+    let boundary_mu=dot(normalize(at_boundary+vec3(0.0,R,0.0)),direction);
+    let boundary_remaining=sample_sun_transmittance(altitude(at_boundary),boundary_mu,surface_transmittance,aerial_sampler);
+    let boundary_transmission=clamp(infinity/max(boundary_remaining,vec3(1e-20)),vec3(0.0),vec3(1.0));
+    let weight=clamp((boundary_transmission-transmission)/max(boundary_transmission-infinity,vec3(1e-8)),vec3(0.0),vec3(1.0));
+    return EnvironmentAerial(transmission,mix(boundary.scatter,environment_sky_radiance(direction),weight));
 }
 
 struct EnvironmentReflection {

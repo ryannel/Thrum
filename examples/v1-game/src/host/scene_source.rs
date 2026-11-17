@@ -453,7 +453,7 @@ impl GameScene {
             )
             .with_display_overlay(setup.display_overlay);
         scene.camera_culling = setup.camera_culling;
-        if setup.clouds == crate::CloudSelection::Shade {
+        if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(
                 thrum_render::atmosphere::SunOpticalDepth::gpu_target(
                     [crate::clouds::GROUND_SIZE; 2],
