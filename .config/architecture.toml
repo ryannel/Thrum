@@ -112,7 +112,7 @@ allowed_workspace_dependencies = []
 [packages.thrum-asset-gpu]
 manifest = "crates/thrum-asset-gpu/Cargo.toml"
 # Shipping GPU residency for cooked products, drawn through thrum-render's scene-contribution seam.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-render", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-core", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-cook]
 manifest = "crates/thrum-cook/Cargo.toml"
@@ -159,6 +159,10 @@ allowed_workspace_dependencies = ["thrum-app"]
 manifest = "examples/lighthouse/Cargo.toml"
 # G6 creator trial: the third fresh-agent scene (a lighthouse), kept compiling against the kit.
 allowed_workspace_dependencies = ["thrum-app"]
+
+[packages.mirror-scene]
+manifest = "examples/mirror/Cargo.toml"
+allowed_workspace_dependencies = ["thrum-app", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-stones]
 manifest = "examples/stones/Cargo.toml"

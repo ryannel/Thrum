@@ -7,12 +7,15 @@ use thrum_render::contribution::{
 use std::cell::Cell;
 
 use crate::load::ResidentSet;
-use crate::material::{self, Target};
+use crate::material::{MeshPipelines, Target};
 use crate::{CookedDrawPath, CookedMaterial, MeshPlacement, VolumePlacement};
 
 const CULL_BYTES: usize = size_of::<crate::records::Cull>();
 const VOLUME_BYTES: usize = size_of::<crate::records::CookedVolume>();
 const DRAW_ARGS_BYTES: u64 = 20;
+
+mod secondary;
+use secondary::SecondaryCull;
 
 /// Pipelines and fixed resources for one scene surface.
 pub(crate) struct Pipelines {
@@ -20,8 +23,10 @@ pub(crate) struct Pipelines {
     probe: Option<crate::draw_probe::Probe>,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    mesh: wgpu::RenderPipeline,
+    mesh: MeshPipelines,
     shadow: Option<wgpu::RenderPipeline>,
+    secondary_shadows: Vec<Option<wgpu::RenderPipeline>>,
+    secondary_cull: Option<SecondaryCull>,
     volume: wgpu::RenderPipeline,
     volume_layout: wgpu::BindGroupLayout,
     material_layout: wgpu::BindGroupLayout,
@@ -112,6 +117,7 @@ struct BoundMesh {
     probe: Option<crate::draw_probe::Bound>,
     material: wgpu::BindGroup,
     indirect: Option<IndirectMesh>,
+    secondary: Vec<IndirectMesh>,
     index_count: u32,
     instance: wgpu::Buffer,
     model: glam::Mat4,
@@ -241,7 +247,11 @@ impl Pipelines {
                 bias: wgpu::DepthBiasState::default(),
             })
         };
-        let mesh = material::mesh_pipeline(target, &module);
+        let secondary_source = target
+            .secondary_source
+            .as_ref()
+            .map(|source| format!("{source}\n{cooked}"));
+        let mesh = target.meshes(&module, secondary_source.as_deref());
         let volume_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("cooked volume"),
             entries: &[
@@ -360,12 +370,28 @@ impl Pipelines {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+        let secondary_count = surface.secondary_surfaces.len();
+        let secondary_cull = if cull.is_some() && secondary_count != 0 {
+            SecondaryCull::new(surface, secondary_count)
+        } else {
+            None
+        };
         Self {
             #[cfg(feature = "draw-probe")]
             probe: None,
             device: wgpu::Device::clone(device),
             queue: surface.queue.clone(),
             mesh,
+            secondary_shadows: surface
+                .secondary_surfaces
+                .iter()
+                .map(|view| {
+                    view.shadow
+                        .as_ref()
+                        .map(|shadow| shadow_pipeline(device, shadow))
+                })
+                .collect(),
+            secondary_cull,
             shadow: surface
                 .shadow
                 .as_ref()
@@ -386,7 +412,7 @@ impl Pipelines {
     }
 
     /// Draw cooked meshes with a promoted replacement from now on.
-    pub(crate) fn install_mesh(&mut self, mesh: wgpu::RenderPipeline) {
+    pub(crate) fn install_mesh(&mut self, mesh: MeshPipelines) {
         self.mesh = mesh;
     }
 
@@ -414,6 +440,7 @@ impl Pipelines {
             )
         });
         let mut shadow_bounds: Option<ShadowBounds> = None;
+        let secondary_cull = self.secondary_cull.as_ref().filter(|cull| cull.admits(set));
         let meshes = set
             .meshes
             .iter()
@@ -481,61 +508,19 @@ impl Pipelines {
                         history: [0; 4],
                     }),
                 );
-                let indirect =
-                    self.cull
-                        .as_ref()
-                        .zip(visible.as_ref())
-                        .map(|((_, layout), visible)| {
-                            let cull_uniform = self.buffer(
-                                "cooked cull",
-                                CULL_BYTES as u64,
-                                wgpu::BufferUsages::UNIFORM,
-                            );
-                            let draws = self.buffer(
-                                "cooked meshlet draws",
-                                u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES,
-                                wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
-                            );
-                            let cull = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some("cooked meshlet cull"),
-                                layout,
-                                entries: &[
-                                    wgpu::BindGroupEntry {
-                                        binding: 0,
-                                        resource: cull_uniform.as_entire_binding(),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 1,
-                                        resource: mesh
-                                            .bounds
-                                            .as_ref()
-                                            .expect("indirect loader stages meshlet bounds")
-                                            .as_entire_binding(),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 2,
-                                        resource: mesh
-                                            .ranges
-                                            .as_ref()
-                                            .expect("indirect loader stages meshlet ranges")
-                                            .as_entire_binding(),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 3,
-                                        resource: draws.as_entire_binding(),
-                                    },
-                                    wgpu::BindGroupEntry {
-                                        binding: 4,
-                                        resource: visible.as_entire_binding(),
-                                    },
-                                ],
-                            });
-                            IndirectMesh {
-                                cull,
-                                cull_uniform,
-                                draws,
-                            }
-                        });
+                let indirect = self
+                    .cull
+                    .as_ref()
+                    .zip(visible.as_ref())
+                    .map(|((_, layout), visible)| self.bind_cull(mesh, layout, 4, visible));
+                let secondary = secondary_cull
+                    .into_iter()
+                    .flat_map(|cull| {
+                        cull.records
+                            .iter()
+                            .map(|record| self.bind_cull(mesh, &cull.layout, 5, record))
+                    })
+                    .collect();
                 let (scale, _, _) = model.to_scale_rotation_translation();
                 let shadow_indices = if self.shadow.is_some()
                     && mesh.index_count != 0
@@ -554,6 +539,7 @@ impl Pipelines {
                     }),
                     material,
                     indirect,
+                    secondary,
                     index_count: mesh.index_count,
                     instance,
                     model,
@@ -577,6 +563,51 @@ impl Pipelines {
             volume,
             visible,
             continued: Cell::new(false),
+        }
+    }
+
+    fn bind_cull(
+        &self,
+        mesh: &crate::load::GpuMesh,
+        layout: &wgpu::BindGroupLayout,
+        extra_binding: u32,
+        extra: &wgpu::Buffer,
+    ) -> IndirectMesh {
+        let cull_uniform = self.buffer(
+            "cooked cull",
+            CULL_BYTES as u64,
+            wgpu::BufferUsages::UNIFORM,
+        );
+        let draws = self.buffer(
+            "cooked meshlet draws",
+            u64::from(mesh.meshlet_count.max(1)) * DRAW_ARGS_BYTES,
+            wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::INDIRECT,
+        );
+        let inputs = [
+            &cull_uniform,
+            mesh.bounds
+                .as_ref()
+                .expect("indirect loader stages meshlet bounds"),
+            mesh.ranges
+                .as_ref()
+                .expect("indirect loader stages meshlet ranges"),
+            &draws,
+            extra,
+        ];
+        let bindings = [0, 1, 2, 3, extra_binding];
+        let entries: [_; 5] = std::array::from_fn(|i| wgpu::BindGroupEntry {
+            binding: bindings[i],
+            resource: inputs[i].as_entire_binding(),
+        });
+        let cull = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("cooked meshlet cull"),
+            layout,
+            entries: &entries,
+        });
+        IndirectMesh {
+            cull,
+            cull_uniform,
+            draws,
         }
     }
 
@@ -662,26 +693,43 @@ impl Pipelines {
             let Some(indirect) = &mesh.indirect else {
                 continue;
             };
-            let record = crate::records::Cull {
-                view_proj: frame.view_proj,
-                model: mesh.model.to_cols_array_2d(),
-                camera_scale: [
-                    frame.camera[0],
-                    frame.camera[1],
-                    frame.camera[2],
-                    mesh.max_scale,
-                ],
-                counts: [mesh.meshlets, 0, 0, 0],
-            };
-            self.queue
-                .write_buffer(&indirect.cull_uniform, 0, bytemuck::bytes_of(&record));
-            pass.set_bind_group(0, &indirect.cull, &[]);
-            pass.dispatch_workgroups(mesh.meshlets.div_ceil(64), 1, 1);
+            self.cull_mesh(pass, mesh, indirect, frame.view_proj, frame.camera);
         }
     }
 
+    fn cull_mesh(
+        &self,
+        pass: &mut wgpu::ComputePass<'_>,
+        mesh: &BoundMesh,
+        indirect: &IndirectMesh,
+        view_proj: [[f32; 4]; 4],
+        [x, y, z]: [f32; 3],
+    ) {
+        if mesh.meshlets == 0 {
+            return;
+        }
+        let record = crate::records::Cull {
+            view_proj,
+            model: mesh.model.to_cols_array_2d(),
+            camera_scale: [x, y, z, mesh.max_scale],
+            counts: [mesh.meshlets, 0, 0, 0],
+        };
+        self.queue
+            .write_buffer(&indirect.cull_uniform, 0, bytemuck::bytes_of(&record));
+        pass.set_bind_group(0, &indirect.cull, &[]);
+        pass.dispatch_workgroups(mesh.meshlets.div_ceil(64), 1, 1);
+    }
+
     pub(crate) fn draw_shadow(&self, bound: &Bound, pass: &mut wgpu::RenderPass<'_>) {
-        let Some(pipeline) = &self.shadow else { return };
+        Self::draw_casters(bound, pass, self.shadow.as_ref());
+    }
+
+    fn draw_casters(
+        bound: &Bound,
+        pass: &mut wgpu::RenderPass<'_>,
+        pipeline: Option<&wgpu::RenderPipeline>,
+    ) {
+        let Some(pipeline) = pipeline else { return };
         pass.set_pipeline(pipeline);
         for mesh in &bound.meshes {
             if mesh.shadow_indices == 0 {
@@ -701,32 +749,42 @@ impl Pipelines {
         &self,
         bound: &Bound,
         pass: &mut wgpu::RenderPass<'_>,
-        mesh: Option<&wgpu::RenderPipeline>,
+        mesh: Option<&MeshPipelines>,
     ) {
         if !bound.meshes.is_empty() {
-            pass.set_pipeline(mesh.unwrap_or(&self.mesh));
+            pass.set_pipeline(&mesh.unwrap_or(&self.mesh).main);
         }
         for mesh in &bound.meshes {
-            pass.set_bind_group(2, &mesh.material, &[]);
-            pass.set_vertex_buffer(0, mesh.vertex[0].slice(..));
-            pass.set_vertex_buffer(1, mesh.vertex[1].slice(..));
-            pass.set_vertex_buffer(2, mesh.instance.slice(..));
-            pass.set_index_buffer(mesh.indices.slice(..), wgpu::IndexFormat::Uint32);
+            mesh.bind_draw(pass);
             #[cfg(feature = "draw-probe")]
             if let Some(probe) = &mesh.probe {
                 probe.draw(pass);
                 continue;
             }
-            if let Some(indirect) = &mesh.indirect {
-                pass.multi_draw_indexed_indirect(&indirect.draws, 0, mesh.meshlets);
-            } else {
-                pass.draw_indexed(0..mesh.index_count, 0, 0..1);
-            }
+            mesh.draw(pass, mesh.indirect.as_ref());
         }
         if let Some((group, _)) = &bound.volume {
             pass.set_pipeline(&self.volume);
             pass.set_bind_group(2, group, &[]);
             pass.draw(0..36, 0..1);
+        }
+    }
+}
+
+impl BoundMesh {
+    fn bind_draw(&self, pass: &mut wgpu::RenderPass<'_>) {
+        pass.set_bind_group(2, &self.material, &[]);
+        pass.set_vertex_buffer(0, self.vertex[0].slice(..));
+        pass.set_vertex_buffer(1, self.vertex[1].slice(..));
+        pass.set_vertex_buffer(2, self.instance.slice(..));
+        pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint32);
+    }
+
+    fn draw(&self, pass: &mut wgpu::RenderPass<'_>, indirect: Option<&IndirectMesh>) {
+        if let Some(indirect) = indirect {
+            pass.multi_draw_indexed_indirect(&indirect.draws, 0, self.meshlets);
+        } else {
+            pass.draw_indexed(0..self.index_count, 0, 0..1);
         }
     }
 }

@@ -35,6 +35,8 @@ mod browser;
 #[cfg(target_os = "macos")]
 mod capture;
 #[cfg(target_os = "macos")]
+pub use capture::{HeadlessDeviceError, headless_device};
+#[cfg(target_os = "macos")]
 mod live_capture;
 
 use std::{
@@ -486,6 +488,7 @@ pub struct SkyGame {
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     update: Update,
     ground: Option<[f32; 3]>,
+    local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -537,6 +540,7 @@ impl SkyGame {
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             update: Box::new(update),
             ground: Some(DEFAULT_GROUND),
+            local_lights: Vec::new(),
             contribution: None,
             status: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -555,6 +559,16 @@ impl SkyGame {
     #[must_use]
     pub fn with_ground(mut self, colour: Option<[f32; 3]>) -> Self {
         self.ground = colour;
+        self
+    }
+
+    /// Place world-space point lights, in metres and RGB candela, in the sky scene.
+    #[must_use]
+    pub fn with_local_lights(
+        mut self,
+        lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
+    ) -> Self {
+        self.local_lights = lights;
         self
     }
 
@@ -823,7 +837,7 @@ impl SkyGame {
                 temporal_sampling: self.temporal_sampling,
                 overlay: self.overlay,
             },
-            ground_scene(self.ground)?,
+            ground_scene(self.ground, &self.local_lights)?,
             FALLBACK_EXPOSURE,
         ))
         .map_err(|error| error.to_string())?;
@@ -928,9 +942,13 @@ impl Game for SkyGame {
 /// The scene's one instance row: the ground slab, or an inactive row (generation zero) that
 /// draws nothing, since the renderer needs at least one.
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-fn ground_scene(ground: Option<[f32; 3]>) -> Result<SyntheticScene, String> {
+fn ground_scene(
+    ground: Option<[f32; 3]>,
+    lights: &[thrum_render::synthetic::SyntheticPointLight],
+) -> Result<SyntheticScene, String> {
     let mut scene = SyntheticScene::grid(1).map_err(|error| format!("sky scene: {error:?}"))?;
     scene.sun_shadows = true;
+    scene.local_lights.extend_from_slice(lights);
     let Some(colour) = ground else {
         scene.instances[0].ids[3] = 0;
         return Ok(scene);

@@ -52,7 +52,8 @@ fn live(
         .filter(|seconds: &f64| seconds.is_finite() && *seconds > 0.0 && *seconds <= 3600.0)
         .ok_or_else(|| format!("{LIVE_VARIABLE} must be a number of seconds up to 3600"))?;
     let game = game()?;
-    let (device, queue, capabilities) = pollster::block_on(capture::headless_device())?;
+    let (device, queue, capabilities) =
+        pollster::block_on(capture::headless_device()).map_err(|error| error.to_string())?;
     let extent = config.window_size;
     let params = std::env::var_os("THRUM_PARAMS").map(PathBuf::from);
     let mut live = Live {

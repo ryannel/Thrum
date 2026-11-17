@@ -46,7 +46,8 @@ fn capture(
 ) -> Result<[u32; 2], String> {
     let mut game = game()?;
     apply_params(config.name, &mut game)?;
-    let (device, queue, capabilities) = pollster::block_on(headless_device())?;
+    let (device, queue, capabilities) =
+        pollster::block_on(headless_device()).map_err(|error| error.to_string())?;
     let extent = config.window_size;
     let mut host = game.build_host(
         &capabilities,
@@ -169,8 +170,12 @@ fn reload(
     }
 }
 
-pub(super) async fn headless_device()
--> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), String> {
+/// Open the native sky kit's headless Metal device with its content and timing features.
+///
+/// # Errors
+/// Returns the adapter or device initialization error.
+pub async fn headless_device()
+-> Result<(wgpu::Device, wgpu::Queue, DeviceCapabilities), HeadlessDeviceError> {
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::METAL;
     let instance = wgpu::Instance::new(descriptor);
@@ -180,7 +185,7 @@ pub(super) async fn headless_device()
             ..Default::default()
         })
         .await
-        .map_err(|error| format!("adapter: {error}"))?;
+        .map_err(HeadlessDeviceError::Adapter)?;
     let (device, queue) = adapter
         .request_device(&wgpu::DeviceDescriptor {
             required_features: DeviceCapabilities::requested_timing_features(&adapter)
@@ -188,9 +193,36 @@ pub(super) async fn headless_device()
             ..Default::default()
         })
         .await
-        .map_err(|error| format!("device: {error}"))?;
+        .map_err(HeadlessDeviceError::Device)?;
     let capabilities = DeviceCapabilities::capture(&adapter, &device, 1);
     Ok((device, queue, capabilities))
+}
+
+/// Failure opening the sky kit's headless Metal device.
+#[derive(Debug)]
+pub enum HeadlessDeviceError {
+    /// No suitable Metal adapter could be opened.
+    Adapter(wgpu::RequestAdapterError),
+    /// The adapter could not create a device with the requested features.
+    Device(wgpu::RequestDeviceError),
+}
+
+impl std::fmt::Display for HeadlessDeviceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Adapter(error) => write!(f, "Metal adapter request failed ({error})"),
+            Self::Device(error) => write!(f, "Metal device request failed ({error})"),
+        }
+    }
+}
+
+impl std::error::Error for HeadlessDeviceError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Adapter(error) => Some(error),
+            Self::Device(error) => Some(error),
+        }
+    }
 }
 
 /// Encode tightly packed RGBA8 display pixels as an RGB PNG with stored (uncompressed)

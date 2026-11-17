@@ -242,10 +242,42 @@ pub(crate) struct Target {
     pub(crate) epoch: u64,
     pub(crate) device: thrum_render::runtime::DeviceSite,
     pub(crate) scene_source: Arc<str>,
+    pub(crate) secondary_source: Option<Arc<str>>,
+    pub(crate) main: MeshSurface,
+    pub(crate) secondary: Vec<MeshSurface>,
+}
+
+#[derive(Clone)]
+pub(crate) struct MeshSurface {
     pub(crate) layout: wgpu::PipelineLayout,
     pub(crate) fragment_entry: &'static str,
-    pub(crate) color_formats: [wgpu::TextureFormat; 3],
+    pub(crate) color_formats: Vec<Option<wgpu::ColorTargetState>>,
     pub(crate) depth_format: wgpu::TextureFormat,
+}
+
+impl MeshSurface {
+    fn new(
+        layout: wgpu::PipelineLayout,
+        fragment_entry: &'static str,
+        colors: &[wgpu::TextureFormat],
+        depth_format: wgpu::TextureFormat,
+    ) -> Self {
+        Self {
+            layout,
+            fragment_entry,
+            color_formats: colors
+                .iter()
+                .map(|&format| {
+                    Some(wgpu::ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })
+                })
+                .collect(),
+            depth_format,
+        }
+    }
 }
 
 impl Target {
@@ -255,15 +287,79 @@ impl Target {
             epoch,
             device: surface.device.clone(),
             scene_source: surface.shader_source.into(),
-            layout: surface.pipeline_layout.clone(),
-            fragment_entry: surface.fragment_entry,
-            color_formats: surface.color_formats,
-            depth_format: surface.depth_format,
+            secondary_source: surface
+                .secondary_surfaces
+                .first()
+                .map(|view| view.shader_source.into()),
+            main: MeshSurface::new(
+                surface.pipeline_layout.clone(),
+                surface.fragment_entry,
+                &surface.color_formats,
+                surface.depth_format,
+            ),
+            secondary: surface
+                .secondary_surfaces
+                .iter()
+                .map(|view| {
+                    let layout =
+                        surface
+                            .device
+                            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                                label: Some("cooked secondary mesh"),
+                                bind_group_layouts: &[
+                                    Some(view.view_layout),
+                                    Some(view.light_layout),
+                                    Some(view.material_layout),
+                                ],
+                                immediate_size: 0,
+                            });
+                    MeshSurface::new(
+                        layout,
+                        view.fragment_entry,
+                        &[view.colour_format],
+                        view.depth_format,
+                    )
+                })
+                .collect(),
         }
     }
 
     fn identity(&self) -> (u64, u64) {
         (self.generation, self.epoch)
+    }
+}
+
+/// The main mesh pipeline and the matching pipeline for every prepared secondary surface.
+#[derive(Clone)]
+pub(crate) struct MeshPipelines {
+    pub(crate) main: wgpu::RenderPipeline,
+    pub(crate) secondary: Vec<wgpu::RenderPipeline>,
+}
+
+impl Target {
+    pub(crate) fn meshes(
+        &self,
+        main: &wgpu::ShaderModule,
+        secondary_source: Option<&str>,
+    ) -> MeshPipelines {
+        let secondary = secondary_source
+            .map(|source| {
+                let module = self
+                    .device
+                    .create_shader_module(wgpu::ShaderModuleDescriptor {
+                        label: Some("cooked secondary mesh"),
+                        source: wgpu::ShaderSource::Wgsl(source.into()),
+                    });
+                self.secondary
+                    .iter()
+                    .map(|view| mesh_pipeline(&self.device, view, &module))
+                    .collect()
+            })
+            .unwrap_or_default();
+        MeshPipelines {
+            main: mesh_pipeline(&self.device, &self.main, main),
+            secondary,
+        }
     }
 }
 
@@ -297,9 +393,13 @@ fn combine(
 
 /// The mesh pipeline of `target` with `module`'s entries: the one descriptor every cooked mesh
 /// pipeline uses, hooked or not.
-pub(crate) fn mesh_pipeline(target: &Target, module: &wgpu::ShaderModule) -> wgpu::RenderPipeline {
+pub(crate) fn mesh_pipeline(
+    device: &thrum_render::runtime::DeviceSite,
+    target: &MeshSurface,
+    module: &wgpu::ShaderModule,
+) -> wgpu::RenderPipeline {
     let model_attributes = wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4, 7 => Uint32];
-    target.device.render(&wgpu::RenderPipelineDescriptor {
+    device.render(&wgpu::RenderPipelineDescriptor {
         label: Some("cooked mesh"),
         layout: Some(&target.layout),
         vertex: wgpu::VertexState {
@@ -340,13 +440,7 @@ pub(crate) fn mesh_pipeline(target: &Target, module: &wgpu::ShaderModule) -> wgp
             module,
             entry_point: Some(target.fragment_entry),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            targets: &target.color_formats.map(|format| {
-                Some(wgpu::ColorTargetState {
-                    format,
-                    blend: None,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })
-            }),
+            targets: &target.color_formats,
         }),
         multiview_mask: None,
         cache: None,
@@ -393,7 +487,7 @@ struct Candidate {
     hook: MaterialHook,
     /// Byte offset of the hook in the combined source.
     hook_offset: usize,
-    pipeline: Option<wgpu::RenderPipeline>,
+    pipeline: Option<MeshPipelines>,
     requested: Instant,
     prepare: Duration,
     scope: Resolving<Option<wgpu::Error>>,
@@ -424,8 +518,16 @@ impl Candidate {
             refused: Vec::new(),
             restore: false,
         };
-        match combine(&target.scene_source, &candidate.hook.source) {
-            Ok(combined) => {
+        let sources = combine(&target.scene_source, &candidate.hook.source).and_then(|main| {
+            let secondary = target
+                .secondary_source
+                .as_ref()
+                .map(|source| combine(source, &candidate.hook.source))
+                .transpose()?;
+            Ok((main, secondary))
+        });
+        match sources {
+            Ok((combined, secondary)) => {
                 let scope = target
                     .device
                     .push_error_scope(wgpu::ErrorFilter::Validation);
@@ -435,7 +537,10 @@ impl Candidate {
                         label: Some("cooked material hook"),
                         source: wgpu::ShaderSource::Wgsl(combined.text.into()),
                     });
-                candidate.pipeline = Some(mesh_pipeline(target, &module));
+                candidate.pipeline = Some(target.meshes(
+                    &module,
+                    secondary.as_ref().map(|source| source.text.as_str()),
+                ));
                 candidate.info = Resolving::Pending(Box::pin(module.get_compilation_info()));
                 candidate.scope = Resolving::Pending(Box::pin(scope.pop()));
                 candidate.hook_offset = combined.hook_offset;
@@ -454,7 +559,7 @@ impl Candidate {
     }
 
     /// The validated candidate, ready to draw.
-    fn eligible(self, pipeline: wgpu::RenderPipeline, restore: bool) -> Eligible {
+    fn eligible(self, pipeline: MeshPipelines, restore: bool) -> Eligible {
         Eligible {
             serial: self.serial,
             pipeline,
@@ -561,7 +666,7 @@ fn summary(message: &str) -> String {
 /// A validated candidate waiting for the frame boundary that draws it.
 pub(crate) struct Eligible {
     serial: u64,
-    pub(crate) pipeline: wgpu::RenderPipeline,
+    pub(crate) pipeline: MeshPipelines,
     hook: MaterialHook,
     requested: Instant,
     prepare: Duration,

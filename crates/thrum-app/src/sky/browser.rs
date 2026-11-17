@@ -81,7 +81,7 @@ pub async fn create_scene(
         sky: game.sky,
         ground: game.ground.is_some(),
     };
-    let ground = ground_scene(game.ground).map_err(js)?;
+    let ground = ground_scene(game.ground, &game.local_lights).map_err(js)?;
     let contribution = game.contribution.take();
     let tick_duration = game.tick_duration;
     let shell = web::create(canvas, 1, |gpu| async move {

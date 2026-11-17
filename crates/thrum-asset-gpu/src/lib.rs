@@ -315,6 +315,9 @@ pub struct CookedStats {
     pub drawn_device_generation: Option<u64>,
     /// Path selected at the latest rebuild.
     pub draw_path: Option<CookedDrawPath>,
+    /// Slot index and resolved cooked draw path for each view with meshes in the
+    /// most recent submitted frame. A slot can use Direct while the main uses Indirect.
+    pub secondary_draw_paths: Vec<(usize, CookedDrawPath)>,
     /// Meshlets the GPU cull kept and the meshlets placed, from a recent frame. None on the direct path.
     pub visible_meshlets: Option<(u32, u32)>,
     /// Newest generation the loader has staged (drawn or still uploading).
@@ -381,6 +384,7 @@ struct Live {
     mailbox: Arc<load::Mailbox>,
     resident_tx: Sender<Arc<load::ResidentSet>>,
     pipelines: draw::Pipelines,
+    secondary_views: Vec<thrum_render::contribution::SecondaryViewFrame>,
     pending: Option<Pending>,
     current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
     readback: Option<Readback>,
@@ -514,7 +518,7 @@ impl Live {
     }
 
     /// The material replacement this frame draws instead of the accepted mesh pipeline.
-    fn mesh_override(&self) -> Option<&wgpu::RenderPipeline> {
+    fn mesh_override(&self) -> Option<&material::MeshPipelines> {
         self.tentative
             .filter(|tentative| tentative.material)
             .and(self.material.as_ref())
@@ -688,6 +692,7 @@ impl CookedAssets {
             mailbox,
             resident_tx,
             pipelines,
+            secondary_views: Vec::with_capacity(surface.secondary_surfaces.len()),
             pending: None,
             current: None,
             readback: (CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect)
@@ -702,6 +707,7 @@ impl CookedAssets {
         if let Ok(mut stats) = self.stats.lock() {
             stats.draw_path = Some(CookedDrawPath::select(surface.downlevel));
             stats.visible_meshlets = None;
+            stats.secondary_draw_paths.clear();
         }
         // A material candidate for the previous surface cannot publish. The new pipelines draw
         // the built-in material until the accepted hook validates against this surface.
@@ -726,6 +732,7 @@ impl CookedAssets {
                     == CookedDrawPath::Indirect)
                     .then(|| Readback::new(surface.device));
                 live.pipelines = pipelines;
+                live.secondary_views = Vec::with_capacity(surface.secondary_surfaces.len());
                 live.tentative = None;
                 if let Some((set, bound)) = live.current.as_mut() {
                     *bound =
@@ -761,6 +768,39 @@ impl CookedAssets {
 }
 
 impl SceneContribution for CookedAssets {
+    fn secondary_views_enabled(&self) -> bool {
+        !self.config.meshes.is_empty()
+    }
+
+    fn encode_secondary_upload(
+        &mut self,
+        _encoder: &mut wgpu::CommandEncoder,
+        frame: &ContributionFrame,
+        views: &[thrum_render::contribution::SecondaryViewFrame],
+    ) {
+        if let Some(live) = self.live_for(frame) {
+            live.secondary_views.extend_from_slice(views);
+            live.pipelines.stage_views(views);
+        }
+    }
+
+    fn draw_secondary(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(live) = &self.live
+            && let Some(bound) = live.drawn()
+        {
+            live.pipelines
+                .draw_view(bound, pass, index, live.mesh_override());
+        }
+    }
+
+    fn draw_secondary_shadow(&self, index: usize, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(live) = &self.live
+            && let Some(bound) = live.drawn()
+        {
+            live.pipelines.draw_view_shadow(bound, pass, index);
+        }
+    }
+
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
             upload: true,
@@ -797,6 +837,7 @@ impl SceneContribution for CookedAssets {
         // A recording that was never submitted must not be committed by a later submission.
         if let Some(live) = self.live.as_mut() {
             live.tentative = None;
+            live.secondary_views.clear();
         }
         let Some(live) = self
             .live
@@ -946,6 +987,8 @@ impl SceneContribution for CookedAssets {
             && let Some(bound) = live.drawn()
         {
             live.pipelines.cull(bound, pass, frame);
+            live.pipelines
+                .cull_views(bound, pass, &live.secondary_views);
         }
     }
 
@@ -994,6 +1037,13 @@ impl SceneContribution for CookedAssets {
         let Some(live) = self.live.as_mut() else {
             return;
         };
+        let view_path = if live.secondary_views.is_empty() {
+            None
+        } else {
+            live.drawn()
+                .filter(|bound| bound.has_meshes())
+                .map(draw::Bound::view_path)
+        };
         let Some(tentative) = live.tentative.take() else {
             return;
         };
@@ -1005,6 +1055,12 @@ impl SceneContribution for CookedAssets {
         if let Ok(mut stats) = self.stats.lock() {
             stats.submitted_frames += 1;
             stats.last_frame_history = tentative.history;
+            stats.secondary_draw_paths.clear();
+            if let Some(path) = view_path {
+                stats
+                    .secondary_draw_paths
+                    .extend(live.secondary_views.iter().map(|view| (view.index, path)));
+            }
         }
         let now = Instant::now();
         if let (Some(recorded), Some(pending)) = (tentative.recorded, live.pending.as_mut()) {

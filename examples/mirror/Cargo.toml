@@ -1,0 +1,24 @@
+[package]
+name = "mirror-scene"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "A flat mirror pool with scene-local lighting and aerial composition"
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-app = { path = "../../crates/thrum-app" }
+thrum-render = { path = "../../crates/thrum-render" }
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
+bytemuck = { version = "=1.25.2", features = ["derive"] }
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+pollster = "=1.0.1"
+
+[dev-dependencies]
+thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
+half = "=2.7.1"

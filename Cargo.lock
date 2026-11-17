@@ -1582,6 +1582,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirror-scene"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "glam",
+ "half",
+ "pollster",
+ "thrum-app",
+ "thrum-render",
+ "thrum-test-support",
+ "wgpu",
+]
+
+[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3106,8 +3120,11 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "glam",
+ "half",
+ "pollster",
  "serde_json",
  "thrum-asset",
+ "thrum-core",
  "thrum-render",
  "thrum-test-support",
  "web-time",
