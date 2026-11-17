@@ -646,8 +646,8 @@
       "current_target_evidence": {
         "mac-metal": {
           "implementation": "Sky kit, AppKit controls, cooked placements and ground, saved parameter/material/asset reload, exposure zones and shared completed-frame profiler implemented. Clipping/cascade overlays and cooked parameter products unbuilt.",
-          "functional_validation": "CREATOR M1 and M2 independently passed. M2 covers timing demand with frames in flight and replacement, report compatibility and current row reasons. CREATOR M3 replays the lead-commissioned 43-line ziggurat scene at two orbit settings and verifies the four native mistake classes, including unset and nonexistent stores. Earlier visible-window captures show the Sun drag and saved parameter and mesh updates in stable windows with zero key presses.",
-          "experienced_quality": "agent_reviewed M2 native profiler panels and repeated world/material changes, plus M3's two ziggurat offscreen stills. Earlier M3 real-window scene/panel pairs were inspected for the Sun drag and saved parameter/mesh changes on the built-in display. Historical render findings below remain outside this UI gate.",
+          "functional_validation": "CREATOR M1 and M2 independently passed. M2 covers timing demand with frames in flight and replacement, report compatibility and current row reasons. CREATOR M3 replays the lead-commissioned 43-line ziggurat scene at two orbit settings and verifies the four native mistake classes, including unset and nonexistent stores. The attended M3.4 window captures show the Sun drag and saved parameter and mesh updates in stable windows with zero key presses.",
+          "experienced_quality": "agent_reviewed M2 native profiler panels and repeated world/material changes, plus M3's two ziggurat offscreen stills. M3 real-window scene/panel pairs were inspected for the Sun drag and saved parameter/mesh changes on the built-in display. Historical render findings below remain outside this UI gate.",
           "device": "Apple M3 Max Metal function and offscreen paired cost observations only; no physical cadence or stable profiler overhead budget claimed.",
           "fresh_independent_exercise": "Lead-commissioned fresh Opus 5.5 on e5de7027e70b: own ziggurat mesh, lit ground, sky, camera and orbit slider in 43 game lines with zero engine game types. The builder inspected the Mac offscreen frames. The fresh session's window presented zero frames. CREATOR/m3/fresh-lead retains the ordered read log, source and friction from that session."
         },
@@ -661,7 +661,7 @@
         "other_targets": "No G6 runtime or physical-device qualification claimed for iOS, Android, Windows or Linux. Historical iOS-simulator compilation is compilation only."
       },
       "implementation": "Mac and Chrome sky-kit scenes, typed controls, live cooked assets, exposure zones and the completed-frame profiler implemented; Mac saved parameter/material reload implemented. Clipping/cascade overlays and cooked parameter products remain unbuilt. See current_target_evidence for target differences.",
-      "functional_validation": "CREATOR M1 and M2 passed independent review on Mac Metal and hardware Chrome 157. Historical G6 integration evidence retains control, placement, parameter, material, recovery and Mac-only fresh-scene checks. M3 builder evidence records four native mistake classes and the lead-commissioned fresh agent's two-target ziggurat scene. The visible native Sun drag and saved parameter and mesh updates have earlier attended evidence.",
+      "functional_validation": "CREATOR M1 and M2 passed independent review on Mac Metal and hardware Chrome 157. Historical G6 integration evidence retains control, placement, parameter, material, recovery and Mac-only fresh-scene checks. M3 builder evidence records four native mistake classes and the lead-commissioned fresh agent's two-target ziggurat scene. The visible native Sun drag and saved parameter and mesh updates have current attended Mac evidence.",
       "experienced_quality": "agent_reviewed Mac profiler panels and Chrome default/480px/off tables plus M1 journey states through independent reviews. M3 real-window slider and saved-file states were inspected on the built-in display. Historical lighthouse render findings (shadow edges, low-sun acne, horizon and absent bloom) belong to rendering owners; this creator UI evidence does not close them.",
       "platform_performance": {
         "mac": "material_reload_bench_contended_observation_compile_thread_0.7_to_2.2s_frames_continue_3_of_18_reloads_had_a_75_to_118ms_frame_unexplained",
@@ -670,7 +670,7 @@
         "ios": "not_run",
         "android": "not_run"
       },
-      "scope": "Mac and Chrome share the sky kit scene, typed controls, cooked placements and live assets. CREATOR M1 and M2 passed independent review. Mac saved parameter and material reload is witnessed offscreen. Earlier M3.4 evidence witnesses the visible-window event path with a real slider drag, saved parameters and saved mesh, stable window IDs and zero key presses. The kit page applies startup ?params copies. Browser material reload is available on the separate V1 development page. Material hooks change surface factors, with no controls, time or placement identity. Historical cold browser compile stalls remain observations. The profiler reads completed frame samples and callback records, with timing demand off only for opted-in shells without a requested report. M3 builder proof includes a replay of the lead-commissioned fresh agent's two-target ziggurat scene. Clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside this gate. The current_target_evidence rows specify the two qualified creator routes.",
+      "scope": "Mac and Chrome share the sky kit scene, typed controls, cooked placements and live assets. CREATOR M1 and M2 passed independent review. Mac saved parameter and material reload is witnessed offscreen. M3.4 evidence witnesses the visible-window event path with a real slider drag, saved parameters and saved mesh, stable window IDs and zero key presses. The kit page applies startup ?params copies. Browser material reload is available on the separate V1 development page. Material hooks change surface factors, with no controls, time or placement identity. Historical cold browser compile stalls remain observations. The profiler reads completed frame samples and callback records, with timing demand off only for opted-in shells without a requested report. M3 builder proof includes a replay of the lead-commissioned fresh agent's two-target ziggurat scene. Clipping and shadow-cascade overlays and parameter files as a cooked product remain unbuilt and outside this gate. The current_target_evidence rows specify the two qualified creator routes.",
       "evidence": [
         "../evidence/integration/G6-CREATOR-EXPERIENCE-2026-11-07.md",
         "decisions/G6-CREATOR-EXPERIENCE.md",
@@ -680,7 +680,8 @@
         "../evidence/CREATOR/M2.md",
         "../evidence/CREATOR/M2-review.md",
         "../evidence/CREATOR/M3.md",
-        "../evidence/CREATOR/m3/fresh-lead/README.md"
+        "../evidence/CREATOR/m3/fresh-lead/README.md",
+        "../evidence/CREATOR/m3/window-attended/README.md"
       ]
     },
     "G3t_apple_tile": {

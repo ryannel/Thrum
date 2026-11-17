@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-17 Ran M3.4 on the built-in Mac display. The real Sun drag changed
+  elevation from 25° to 9°. Saving parameters and the mesh then changed
+  lighting and geometry in the same windows with zero key presses.
+  [Attended target evidence](../../evidence/CREATOR/m3/window-attended/README.md).
+
 - 2026-11-17 Reclaimed M3.1, M3.2, M3.3 and M3.5 on `b8c8e71bd`.
   Replayed the lead's 43-line ziggurat at two settings on Mac Metal and
   hardware Chrome. Inspected all four native mistakes and passed ten saves.
