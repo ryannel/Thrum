@@ -63,6 +63,8 @@ def run(args, engine=ROOT):
         return 3
     if git(repository, "rev-parse", "--show-toplevel") != str(repository):
         raise ValueError("games path must be a repository root")
+    if engine.is_relative_to(repository):
+        raise ValueError("engine checkout must stay outside the games repository")
     if Path(args.game).name != args.game or args.game in {".", ".."}:
         raise ValueError("game must be a single folder name")
     dirty = git(repository, "status", "--porcelain=v1", "--untracked-files=all")

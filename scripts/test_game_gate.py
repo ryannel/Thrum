@@ -83,9 +83,10 @@ dependencies = ["engine"]
         self.git(root, "add", ".")
         self.git(root, "commit", "-qm", "fixture")
 
-    def snapshot(self):
-        return {str(p.relative_to(self.games)): hashlib.sha256(p.read_bytes()).hexdigest()
-                for p in self.games.rglob("*") if p.is_file()}
+    def snapshot(self, root=None):
+        root = root or self.games
+        return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in root.rglob("*") if p.is_file()}
 
     def gate(self, command="boundary", code=0, options=(), arguments=(), engine=None):
         result = subprocess.run([sys.executable, str((engine or self.worktree) / "scripts/game_gate.py"),
@@ -158,6 +159,11 @@ dependencies = ["engine"]
         before = self.snapshot()
         self.gate(code=2, options=("--record", str(self.games / "record.json")))
         self.assertEqual(before, self.snapshot())
+        before_engine = self.snapshot(self.worktree)
+        self.env["THRUM_GAMES"] = str(self.worktree)
+        self.gate(code=2)
+        self.assertEqual(before_engine, self.snapshot(self.worktree))
+        self.env.pop("THRUM_GAMES")
         target = self.root / "outside.txt"
         target.write_text("unchanged")
         (self.games / "sample/link").symlink_to(target)
