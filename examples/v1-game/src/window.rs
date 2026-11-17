@@ -100,6 +100,7 @@ pub fn run_window() {
                 world: None,
                 held_keys: 0,
                 capture_route: None,
+                cloud_capture: false,
             })
         },
     );
@@ -111,16 +112,22 @@ struct WindowGame {
     world: Option<WorldControls>,
     held_keys: u8,
     capture_route: Option<String>,
+    cloud_capture: bool,
 }
 
 /// Construct the ordinary game for the engine's headless presenter adapter.
 /// # Errors
 /// Returns a demo-control declaration failure.
 pub fn capture_game() -> Result<impl Game, String> {
+    capture_game_with_route_limit(false)
+}
+
+fn capture_game_with_route_limit(cloud_capture: bool) -> Result<impl Game, String> {
     Ok(WindowGame {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
+        cloud_capture,
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
@@ -176,7 +183,14 @@ impl Game for WindowGame {
         let content = crate::attach_cooked_scene(&mut host)?;
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
-            capture::prepare_route(&mut host, content, route, render_extent, &gpu)?
+            capture::prepare_route(
+                &mut host,
+                content,
+                route,
+                render_extent,
+                &gpu,
+                self.cloud_capture,
+            )?
         } else {
             std::time::Duration::ZERO
         };

@@ -197,12 +197,13 @@ impl Layer {
 
 pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
     format!(
-        "{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}",
         environment.shader_source,
         include_str!("params.wgsl"),
         include_str!("../layer.wgsl"),
         super::light::shader(),
         include_str!("transport.wgsl"),
+        include_str!("sun.wgsl"),
     )
 }
 

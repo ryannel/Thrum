@@ -47,6 +47,7 @@ pub(super) fn run(
             | "reconstruction-scrub"
             | "clouds-drift"
             | "clouds-still"
+            | "clouds-route"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -339,7 +340,9 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
-        if scenario == "clouds-drift" || recovery != super::NativeRecovery::Disabled {
+        if matches!(scenario, "clouds-drift" | "clouds-route")
+            || recovery != super::NativeRecovery::Disabled
+        {
             4096
         } else {
             1024
@@ -404,7 +407,7 @@ fn active_pacing() -> Result<bool, String> {
 }
 
 fn requested_route(scenario: &str) -> Result<Option<Value>, String> {
-    Ok(if scenario == "route" {
+    Ok(if is_route(scenario) {
         let path = std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .ok_or("route capture requires its route file")?;
         Some(
@@ -418,6 +421,18 @@ fn requested_route(scenario: &str) -> Result<Option<Value>, String> {
     })
 }
 
+fn is_route(scenario: &str) -> bool {
+    matches!(scenario, "route" | "clouds-route")
+}
+
+fn world_moves(scenario: &str) -> bool {
+    is_route(scenario)
+        || matches!(
+            scenario,
+            "running" | "writer-slow" | "reconstruction-pan" | "clouds-drift"
+        )
+}
+
 fn prepare_parameters<G: Game>(
     driver: &mut Offscreen<G>,
     scenario: &str,
@@ -427,7 +442,7 @@ fn prepare_parameters<G: Game>(
         .map(std::fs::read_to_string)
         .transpose()
         .map_err(|error| error.to_string())?;
-    if scenario == "route" {
+    if is_route(scenario) {
         driver.parameters(r#"{"world.paused":true}"#)?;
     } else {
         driver.parameters(
@@ -466,7 +481,7 @@ async fn record(
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) = metal_device(&instance, 1).await?;
     let mut driver = Offscreen::new(
-        super::capture_game()?,
+        super::capture_game_with_route_limit(scenario == "clouds-route")?,
         &device,
         &capabilities,
         &queue,
@@ -516,7 +531,7 @@ async fn record(
         if (mode == "fixed" && opportunity.index > 480)
             || (mode == "realtime"
                 && t >= soft_end
-                && if scenario == "route" {
+                && if is_route(scenario) {
                     trace.route_finished_at
                 } else {
                     final_hold
@@ -526,14 +541,11 @@ async fn record(
             break;
         }
         let work = WorkClock::start().map_err(|e| e.to_string())?;
-        let active_world = matches!(
-            scenario,
-            "running" | "writer-slow" | "route" | "reconstruction-pan" | "clouds-drift"
-        );
-        if active_world && t >= 1.0 && (scenario == "route" || t < world_end) && !running {
+        let active_world = world_moves(scenario);
+        if active_world && t >= 1.0 && (is_route(scenario) || t < world_end) && !running {
             trace.world_state(&mut driver, false, origin)?;
             running = true;
-        } else if active_world && scenario != "route" && t >= world_end && running {
+        } else if active_world && !is_route(scenario) && t >= world_end && running {
             trace.world_state(&mut driver, true, origin)?;
             running = false;
         }
@@ -612,7 +624,7 @@ async fn record(
         || scenario == "clouds-still"
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
-            && if scenario == "route" {
+            && if is_route(scenario) {
                 trace.route_finished_at
             } else {
                 final_hold
@@ -782,6 +794,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     }
     match scenario {
         "clouds-drift" => (22.5, 22.0, 21.0),
+        "clouds-route" => (34.5, 0.0, f64::INFINITY),
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
     }
@@ -812,7 +825,13 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
     if mode != "realtime"
         && matches!(
             scenario,
-            "running" | "writer-slow" | "render-stall" | "input-stall" | "route" | "clouds-drift"
+            "running"
+                | "writer-slow"
+                | "render-stall"
+                | "input-stall"
+                | "route"
+                | "clouds-route"
+                | "clouds-drift"
         )
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());
@@ -832,11 +851,17 @@ pub(super) fn prepare_route(
     text: &str,
     render_extent: [u32; 2],
     gpu: &thrum_app::Gpu<'_>,
+    cloud_capture: bool,
 ) -> Result<Duration, String> {
     let camera = host
         .scene_camera()
         .ok_or("routed capture needs the cooked valley camera")?;
-    let route = crate::CameraRoute::parse(
+    let parse = if cloud_capture {
+        crate::CameraRoute::parse_cloud_capture
+    } else {
+        crate::CameraRoute::parse
+    };
+    let route = parse(
         text,
         camera,
         thrum_core::ClockConfig::default().tick_hz.get(),

@@ -130,6 +130,26 @@ impl CameraRoute {
     /// the authored camera refuses, an unsettled or out-of-range checkpoint, or a run
     /// over the frame cap.
     pub fn parse(text: &str, camera: SceneCamera, tick_hz: u32) -> Result<Self, String> {
+        Self::parse_bounded(text, camera, tick_hz, ROUTE_FRAME_CAP)
+    }
+
+    /// Parse an elapsed-time native cloud inspection route of at most 1800 ticks.
+    /// This has no browser retained-frame consumer; the capture writer separately
+    /// bounds its submitted records. All pose, cut and checkpoint checks apply.
+    pub(crate) fn parse_cloud_capture(
+        text: &str,
+        camera: SceneCamera,
+        tick_hz: u32,
+    ) -> Result<Self, String> {
+        Self::parse_bounded(text, camera, tick_hz, 1800)
+    }
+
+    fn parse_bounded(
+        text: &str,
+        camera: SceneCamera,
+        tick_hz: u32,
+        frame_cap: u64,
+    ) -> Result<Self, String> {
         let file: RouteFile =
             serde_json::from_str(text).map_err(|error| format!("route file: {error}"))?;
         if file.format != ROUTE_FORMAT || file.version != ROUTE_VERSION {
@@ -169,9 +189,9 @@ impl CameraRoute {
             .origin_tick
             .saturating_add(last)
             .saturating_add(ROUTE_DRAIN_STEPS);
-        if frames > ROUTE_FRAME_CAP {
+        if frames > frame_cap {
             return Err(format!(
-                "route needs {frames} frames, over the {ROUTE_FRAME_CAP}-frame cap"
+                "route needs {frames} frames, over the {frame_cap}-frame cap"
             ));
         }
         let mut checkpoints: Vec<RouteCheckpoint> = file
@@ -253,7 +273,7 @@ impl CameraRoute {
     pub fn pose(&self, tick: u64, alpha: f32) -> RoutePose {
         #[expect(
             clippy::cast_precision_loss,
-            reason = "route ticks are bounded by the 560-frame cap"
+            reason = "route ticks are bounded by their admitted route/capture cap"
         )]
         let s = (tick as f64 - 1.0 - self.origin_tick as f64 + f64::from(alpha)).max(0.0);
         self.pose_at(s)
@@ -261,7 +281,7 @@ impl CameraRoute {
 
     #[expect(
         clippy::cast_precision_loss,
-        reason = "route ticks are bounded by the 560-frame cap"
+        reason = "route ticks are bounded by their admitted route/capture cap"
     )]
     fn pose_at(&self, s: f64) -> RoutePose {
         let epoch = 1 + self.cuts.iter().filter(|&&cut| s >= cut as f64).count() as u64;

@@ -1,4 +1,5 @@
 use super::*;
+mod sun;
 
 #[test]
 fn shader_record_matches_rust_offsets() {

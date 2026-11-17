@@ -288,7 +288,7 @@ def run(args):
         "shader_hashes": {str(p.relative_to(ROOT)): digest(p) for p in sorted([*(ROOT / "crates").rglob("*.wgsl"), *(ROOT / "crates").rglob("*.metal")])},
         "cooked_hashes": {str(p.relative_to(store)): digest(p) for p in sorted(store.rglob("*")) if p.is_file()} if store else {},
         "scenario": args.case,
-        "record_limit": 4096 if args.case == 'clouds-drift' or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        "record_limit": 4096 if args.case in ('clouds-drift','clouds-route') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
@@ -331,7 +331,7 @@ def run(args):
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
             environment[variable] = getattr(args,option)
-    if args.case == 'route':
+    if args.case in ('route','clouds-route'):
         if args.route is None:
             raise ValueError('--case route requires --route')
         route = json.loads(args.route.read_text())
@@ -450,7 +450,7 @@ if __name__ == "__main__":
     parser.add_argument('--reconstruction', choices=['off','taau'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
     parser.add_argument('--recipe', choices=['portable','apple-tile'])
-    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "reconstruction-stars", "reconstruction-scrub", "clouds-drift", "clouds-still"], default="pan")
+    parser.add_argument("--case", choices=["pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow", "reconstruction-pan", "reconstruction-stars", "reconstruction-scrub", "clouds-drift", "clouds-still", "clouds-route"], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")

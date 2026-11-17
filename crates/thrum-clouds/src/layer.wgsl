@@ -59,23 +59,21 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     return sigma*min(1.0,eroded/signal);
 }
 
-fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32)->f32 {
-    let count=textureNumLayers(field)*4u;
-    let q=clamp((cloud.heights.y-height)/(cloud.heights.y-cloud.heights.x),0.0,1.0)*f32(count-1u);
-    let lo=u32(floor(q));let hi=min(count-1u,lo+1u);
-    let pixel=uv*vec2<f32>(textureDimensions(field));
-    return mix(cloud_bilinear(field,pixel,i32(lo/4u))[lo%4u],cloud_bilinear(field,pixel,i32(hi/4u))[hi%4u],fract(q));
-}
 fn cloud_sun_tau(world:vec3<f32>)->f32 {
     if world.y>=cloud.heights.y {return 0.0;}
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
-    let region=vec4(mapping.region.xy,mapping.region.z-mapping.region.x,0.0);
-    var tau=cloud_path_sample(sun_far,clamp((point-region.xy)/region.z,vec2(0.0),vec2(1.0)),world.y);
-    let middle=(point-mapping.middle.xy)/mapping.middle.z;
-    let mw=cloud_smooth(min(min(middle.x,middle.y),min(1.0-middle.x,1.0-middle.y))/0.15);
-    if mw>0.0 {tau=mix(tau,cloud_path_sample(sun_middle,middle,world.y),mw);}
     let near=(point-mapping.near.xy)/mapping.near.z;
     let nw=cloud_smooth(min(min(near.x,near.y),min(1.0-near.x,1.0-near.y))/0.15);
+    if nw==1.0 {return cloud_path_sample(sun_near,near,world.y);}
+    let middle=(point-mapping.middle.xy)/mapping.middle.z;
+    let mw=cloud_smooth(min(min(middle.x,middle.y),min(1.0-middle.x,1.0-middle.y))/0.15);
+    var tau=0.0;
+    if mw==1.0 {tau=cloud_path_sample(sun_middle,middle,world.y);}
+    else {
+        let region=vec4(mapping.region.xy,mapping.region.z-mapping.region.x,0.0);
+        tau=cloud_path_sample(sun_far,clamp((point-region.xy)/region.z,vec2(0.0),vec2(1.0)),world.y);
+        if mw>0.0 {tau=mix(tau,cloud_path_sample(sun_middle,middle,world.y),mw);}
+    }
     if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,world.y),nw);}
     return tau;
 }
@@ -126,7 +124,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
             if sigma>0.0 {
                 let sun=atmosphere.sun_lux.xyz;
                 let world=camera+ray*at;
-                var tau=cloud_sun_tau(world);
+                var tau=0.0;
                 if cloud.settings.y>0u {
                     let reach=min(120.0,(cloud.heights.y-point.y)/max(0.1,sun.y));
                     var local=0.0;
@@ -134,7 +132,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                         local+=cloud_density(point+sun*((f32(j)+0.5)*reach/f32(cloud.settings.y)),at/f32(size.y))*reach/f32(cloud.settings.y);
                     }
                     tau=local+cloud_sun_tau(world+sun*reach);
-                }
+                }else {tau=cloud_sun_tau(world);}
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 let source=cloud_source(solar,phase,tau,column.yz);
                 let segment=cloud_beer(sigma,sigma*source,step);
