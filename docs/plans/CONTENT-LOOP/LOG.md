@@ -140,3 +140,10 @@
   scan missed none in 240 ([diagnosis](../../evidence/CONTENT-LOOP/M4-diagnosis.md)). No test-only fix was
   made: a longer deadline leaves the store wrong. M1's checklist left the plan for its review link. The design
   has not been reviewed since this change, and no builder starts M4 until a review returns Design Approved.
+- 2026-11-17 M2 joins bounded cooked-row writes to residency's submitted publication, including repeated
+  products, discarded switches and store epochs. Native fresh-scene equalities and hardware Chrome passed;
+  their target records and the measured 1 MiB row-write bound are in the [M2 evidence](../../evidence/CONTENT-LOOP/M2.md).
+  A rebuilt merged `ec02ebff3` supplied 382 complete realtime Metal images of both edits during a pan.
+  Inspected consecutive whole frames and native crops show each visible rock and its shadow switching
+  together, without missing or mixed meshes. Bulk preview/source recovery was hash-verified locally.
+  No display cadence or TAAU qualification is claimed; exact images use the shared main-branch check.
