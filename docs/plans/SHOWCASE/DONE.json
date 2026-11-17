@@ -48,10 +48,10 @@
           "lock": "gpu",
           "ask": "Does the CPU reference test each entity's bounds against the view by itself, without reading the GPU's lists? Would the test fail if the scene fell back to cubes or to Direct?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#cooked-draw-and-route-comparison",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.5",
@@ -60,10 +60,10 @@
           "lock": "gpu",
           "ask": "Was each threshold set by the fixed rule from the first run that passed all three controls, and left alone afterwards? Does the no-entities control fail at every stop that has entities in view?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5-parity.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.6",
@@ -71,8 +71,8 @@
           "check": "node scripts/check_v1_browser.mjs --case exit-scene",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": "docs/evidence/SHOWCASE/M5-chrome-function.json",
+          "builder_result": "pass"
         },
         {
           "id": "M5.7",
@@ -109,8 +109,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open"
+          "evidence": "main-branch check exact-images",
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
