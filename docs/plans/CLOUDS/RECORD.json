@@ -165,6 +165,32 @@
         "by": "plan",
         "task": "The design reviews of CLOUDS and EFFECT-GRAPH both asked for changes after the display-phase plan (EFFECT-GRAPH M4, whic",
         "at": "2026-11-16T12:56:12Z"
+      },
+      "ready_for_review": {
+        "commit": "48a0f7ece5e34aaa3ab6da8db96fe9f7a7d105c9",
+        "checked": "81c8a0049e3ca9d192d83af3420750d1f8dd87c4",
+        "at": "2026-11-17T13:34:03Z",
+        "host": "codex",
+        "model": "gpt-6.1-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.1-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.169.0-alpha.11.1",
+        "path": "headless",
+        "usage": {
+          "input": 1065732,
+          "cached": 203125248,
+          "output": 565867,
+          "turns": 6
+        },
+        "session_usage": {
+          "input": 1065732,
+          "cached": 203125248,
+          "output": 565867,
+          "turns": 6
+        }
       }
     },
     "M3": {
