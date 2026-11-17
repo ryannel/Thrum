@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-17 M1 repository-gate continuation: `d50691cd4` replaces the resident
+  resume test's tight attempt cap with a bounded elapsed-time wait and yields
+  after dropped opportunities. All 24-frame and timing assertions remain.
+  The targeted Metal check passes, including 22 dropped retries in the 20 ms arm;
+  the unchanged test also passed locally, so the earlier failure is intermittent.
+  [Evidence](../../evidence/SCENE-VIEWS/M1/resume-coverage.md) records the limits
+  and distinguishes pending historical image bisects from the merged tooling fix.
+
 - 2026-11-17 M1.10 tooling fix: the shared Chrome capture failed before launch
   because Git's full file list exceeded Node's default output buffer. Asking
   Git for the already-hashed paths reproduces the same 1,086 source paths in
