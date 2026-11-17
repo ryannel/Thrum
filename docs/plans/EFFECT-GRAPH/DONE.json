@@ -299,7 +299,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "not_started",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: while the world's clock runs, equal steps of display time from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Display time is the world's time and never shows the time its clock was stopped: after a pause or an overload it goes on from the committed tick and does not go back, and it steps only where the design's table of a span's edges says, by no more than it says. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
@@ -308,10 +308,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Are the expected phases written in the test from its scripted observations, tick rate and leads, and not computed with the clock's own phase function? Do they include a consumed target past the next tick's due time, one at the bound and one beyond it, a tick rate other than 60 Hz, and each state that gives exactly 1?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.7",
@@ -330,10 +330,10 @@
           "check": "cargo test --locked --offline -p thrum-core --test display_phase",
           "ask": "Does the test make every poll of its run a delayed one, by waiting until the world has committed a tick due after the observation it then polls with? Would that run fail on a lane that holds only the pair it shows?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.8",
@@ -355,8 +355,8 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.9",
@@ -377,10 +377,10 @@
           "ask": "Does the test take the platform target from the runner's schedule and the observation, lead and due time from each frame's record, and none of them from the phase? Does it pass on a busy machine, holding expired frames to the same identity, and counting frames at the bound, frames whose clock was stopped and a change of origin instead of failing on them?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.10",
@@ -398,20 +398,20 @@
           "statement": "C02 in `docs/design/CONTRACTS.md` states the timing model as the design's section does: host time and world time kept apart; spans, and what begins and ends one; the due time of a frame's tick, and that an interpolating frame's record carries it; the phase, its bound and that alpha is the phase held to 1; display time, and that it holds no stopped time; that sampling never advances authority; that an interpolating frame's tick was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair and holds the refused pair for a later poll; that a host measures the lead from the observation where one clock gives both; and that a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step. `docs/EFFECTS.md` says the same to an effect's author. Neither gives display time as a time on the host's clock. The maturity ledger's row for the effect seam claims the phase on the Mac only, with implementation and correctness apart, and does not claim that a window's consumed target is its platform target.",
           "ask": "Do C02's and `docs/EFFECTS.md`'s words say what the design's timing model says, with nothing added that it does not say? Does the ledger row claim only what the other M4 items proved?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/EFFECT-GRAPH/M4-proof.md",
-          "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "M4.5",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
-          "verdict": "pass",
-          "review": "docs/evidence/EFFECT-GRAPH/M4-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [
@@ -421,17 +421,7 @@
           "different": "Previous finding concerned delayed zero-lead pair selection; this concerns the time-coordinate offset after ordinary pause/resume on a synchronous clock.",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "A planner must reconcile the time-origin identity in M4.2, the design and C02 with M4.1\u2019s phase bound and pause semantics.",
-        "work": {
-          "commit": "2f3f2db7566c61f58722d709ecc42e736d869552",
-          "branch": "build/effect-graph",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/EFFECT-GRAPH/M4-handoff.md"
-      }
+      ]
     }
   ]
 }

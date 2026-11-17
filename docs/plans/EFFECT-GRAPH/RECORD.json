@@ -262,7 +262,7 @@
       }
     },
     "M4": {
-      "definitions": "4869af7651e19a1b3b38fa47445db6ec7958aef66dca60064aeb7d5c263edbb6",
+      "definitions": "04624b24ce4b312780fc9baa908401fa111453dd0bb8e1446f2ed959a3a8d023",
       "reviews": [
         {
           "verdict": "fail",
@@ -339,38 +339,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "EFFECT-GRAPH M4 is blocked on a contradiction in its done-when file. M4.2's consumed-target identity, with delayed obser",
-        "at": "2026-11-16T19:42:17Z"
-      },
-      "ready_for_review": {
-        "commit": "7cccad0e571a3f461d669b337e9acdb10c3d72d7",
-        "checked": "7cccad0e571a3f461d669b337e9acdb10c3d72d7",
-        "at": "2026-11-16T23:45:35Z",
-        "reused": [
-          "Test command",
-          "M4.6"
-        ],
-        "host": "codex",
-        "model": "gpt-6.1-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.1-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.169.0-alpha.11.1",
-        "path": "headless",
-        "usage": {
-          "input": 424577,
-          "cached": 45097600,
-          "output": 124061,
-          "turns": 3
-        },
-        "session_usage": {
-          "input": 679849,
-          "cached": 88911744,
-          "output": 343473,
-          "turns": 5
-        }
+        "task": "EFFECT-GRAPH M4 is blocked a second time on its time rules. The builder says M4.2's time-origin identity, the design and",
+        "at": "2026-11-17T02:20:50Z"
       }
     }
   },
@@ -402,11 +372,15 @@
     {
       "task": "EFFECT-GRAPH M4 is blocked on a contradiction in its done-when file. M4.2's consumed-target identity, with delayed observation and zero lead, needs either negative phase (M4.1 forbids it) or the causal endpoint selection the builder added, which changes a delayed zero-lead frame and so breaks the quality bar 'no frame without a lead changes'. The handoff, docs/evidence/EFFECT-GRAPH/M4-handoff.md, with M4-compatibility.md and M4-review.md, has the reproduction and the builder's proposal: keep the causal fix and scope compatibility to observations that can adopt the same endpoint. Decide the policy, update the design and done-when file so they agree, and name the affected consumers.",
       "at": "2026-11-16T19:42:17Z"
+    },
+    {
+      "task": "EFFECT-GRAPH M4 is blocked a second time on its time rules. The builder says M4.2's time-origin identity, the design and contract C02 can't be reconciled with M4.1's phase bound and pause semantics; read its handoff docs/evidence/EFFECT-GRAPH/M4-handoff.md and the reviews. Last time a fix to one rule exposed the next, so don't patch only this conflict: write the whole timing model for M4 (origin, phase, lead, delayed observation, pause) as one consistent set, check every M4 item and C02 against it, and resolve C02 changes with its producers and consumers.",
+      "at": "2026-11-17T02:20:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T19:42:17Z"
+    "at": "2026-11-17T02:20:50Z"
   },
   "design_history": [
     {
