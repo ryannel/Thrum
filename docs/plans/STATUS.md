@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-6 of 31 modules done · 17 in progress · 8 to come
+7 of 31 modules done · 16 in progress · 8 to come
 
 ### Needs you now
 
@@ -240,7 +240,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3): Ready for Review · [plan](T2-CAPTURE/PLAN.md)
 - Native providers survive replacement and expose truthful timing (APPLE-TILE M11): In Progress · [plan](APPLE-TILE/PLAN.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
@@ -257,6 +256,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A motion capture on a busy Mac keeps every frame it drew, and one that falls short is tried again, not blamed on a commit (T2-CAPTURE M3), 16 Nov · [review](../evidence/T2-CAPTURE/M3-review.md)
 - A stateful native segment composes inside one submission (APPLE-TILE M10), 16 Nov · [review](../evidence/APPLE-TILE/M10-review.md)
 - A peer that sends garbage, floods, stalls or freezes cannot stop the host or slow the other players, and a game without multiplayer contains no network code (TRANSPORT M2), 16 Nov · [review](../evidence/TRANSPORT/M2-review.md)
 - On the CPU alone, where the ground drops away the stream leaves it as a waterfall: its path, speed and thickness are worked out, and its water lands in the pool below and runs on (RIVERS M2), 16 Nov · [review](../evidence/RIVERS/M2-review.md)
@@ -305,7 +305,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 |---|---|---|---|---|
 | 1 | PLATFORM-RUNTIME-IOS | The game runs on the iPhone simulator, through touch, rotation, backgrounding and graphics loss |  | Done 9 Nov |
 | 2 | PLATFORM-RUNTIME-MAC | The game recovers from graphics loss on the Mac, and its motion is proved smooth on the built-in 120 Hz display | T2-CAPTURE M0, APPLE-TILE M3 | Done 14 Nov |
-| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M3 of 4 · Ready for Review |
+| 3 | T2-CAPTURE | Agents record exactly what the engine drew, as stills and motion, with nobody at the screen | PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | Done 16 Nov |
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS M7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE M0 and M1, PLATFORM-RUNTIME-MAC M1, COOKED-DRAW M1 | M11 of 7 · In Progress |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE M3 | M3 of 3 · In Progress |
