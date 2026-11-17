@@ -331,7 +331,7 @@
         {
           "verdict": "fail",
           "commit": "9364759b57ae4bb6e456747b2d380acec8997923",
-          "review": "docs/evidence/WATERS/M3-review.md",
+          "review": "docs/evidence/WATERS/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "fail",
@@ -362,6 +362,40 @@
             "turns": 1
           },
           "at": "2026-11-17T12:28:26Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "1cee07d3c0a7a42ab747dbe3f13cd68b40105bcd",
+          "review": "docs/evidence/WATERS/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "browser-frame-info-stops-at-600",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 242746,
+            "cached": 5680384,
+            "output": 14110,
+            "turns": 1
+          },
+          "at": "2026-11-17T23:07:25Z"
         }
       ],
       "authorised": {

@@ -425,8 +425,8 @@
     {
       "id": "M3",
       "name": "The same sea draws in Chrome from one command",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -438,8 +438,8 @@
           "check": "node scripts/check_water_browser.mjs --case first-frame",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M3-review.md"
         },
@@ -449,9 +449,9 @@
           "check": "node scripts/check_water_browser.mjs --case frames",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3-resume.md",
-          "verdict": "fail",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "pass",
           "review": "docs/evidence/WATERS/M3-review.md"
         },
         {
@@ -459,8 +459,8 @@
           "statement": "In Chrome at noon in a trade wind the sea passes M2.2's list, and any difference from the Mac's portable recipe at the same views is recorded.",
           "inspect": "`fixed` stills in Chrome at M2.2's views, judged by M2.2's list and against the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M3-review.md"
         },
@@ -469,8 +469,8 @@
           "statement": "In Chrome the surface moves smoothly between ticks, and the page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
           "inspect": "A `realtime` sequence in Chrome with the camera panning.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/WATERS/M3.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M3-review.md"
         },
@@ -479,16 +479,15 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "main-branch check exact-images",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M3-review.md"
         }
       ],
       "findings": [
         {
-          "name": "resume-clock-contract",
-          "item": "M3.2",
+          "name": "browser-frame-info-stops-at-600",
           "repeat": false
         }
       ]
