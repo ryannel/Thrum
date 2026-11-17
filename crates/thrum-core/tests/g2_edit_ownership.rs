@@ -82,7 +82,7 @@ impl Rules {
 }
 
 impl TickGame for Rules {
-    type Error = ();
+    type Error = std::convert::Infallible;
     type Candidate = Candidate;
     type ParallelOutput = Option<SystemId>;
 

@@ -3,7 +3,9 @@ use std::{num::NonZeroU32, time::Duration};
 
 use crate::{ClockConfig, ClockError, WorldEpoch, sim::SnapshotId};
 
-use super::{ClockedWorld, ClockedWorldError, WorldGame, WorldPublication, WorldStep};
+use super::{
+    ClockedWorld, ClockedWorldError, WorldAdvance, WorldGame, WorldPublication, WorldStep,
+};
 
 #[derive(Default)]
 enum Recovery {
@@ -116,6 +118,14 @@ fn world(game: Game, cap: u32) -> ClockedWorld<Game> {
 
 #[test]
 fn failed_tick_remains_queued_and_prior_commits_are_not_repeated() {
+    fn advance<G: WorldGame>(
+        world: &mut ClockedWorld<G>,
+    ) -> Result<WorldAdvance, Box<dyn std::error::Error>> {
+        world
+            .advance(Duration::from_millis(300))
+            .map_err(Into::into)
+    }
+
     let mut world = world(Game::default(), 2);
     let first = world
         .advance(Duration::from_millis(300))
@@ -125,11 +135,15 @@ fn failed_tick_remains_queued_and_prior_commits_are_not_repeated() {
         (2, 2, 1)
     );
     world.game_mut().fail_next = true;
-    let fault = world.advance(Duration::from_millis(300));
+    let fault = advance(&mut world).err().expect("tick refusal");
     assert!(matches!(
-        fault,
-        Err(ClockedWorldError::Game(TestError("retry tick")))
+        fault.downcast_ref::<ClockedWorldError<TestError>>(),
+        Some(ClockedWorldError::Game(TestError("retry tick")))
     ));
+    assert_eq!(
+        fault.source().and_then(|error| error.downcast_ref()),
+        Some(&TestError("retry tick"))
+    );
     assert_eq!(world.game().tick, 2);
     assert_eq!(world.game().attempts, 3);
     let recovered = world.advance(Duration::from_millis(300)).expect("retry");

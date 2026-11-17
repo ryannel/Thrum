@@ -48,6 +48,17 @@ enum GameError {
     InvalidChurn,
 }
 
+impl std::fmt::Display for GameError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Rejected => "game rejected the tick",
+            Self::InvalidChurn => "invalid entity churn",
+        })
+    }
+}
+
+impl std::error::Error for GameError {}
+
 struct Rules {
     write: WritePermit<Height>,
     height_read: ReadPermit<Height>,

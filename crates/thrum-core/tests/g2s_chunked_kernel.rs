@@ -4,6 +4,8 @@
 //! runtime whose commit unwound refuses reuse instead of re-applying a tick.
 
 use std::{
+    error::Error,
+    num::NonZeroUsize,
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     time::{Duration, Instant},
 };
@@ -12,8 +14,9 @@ use thrum_core::{
     Handle, StableId, WorldEpoch,
     sim::{
         Access, AccessKey, AccessMode, ComponentRegistry, ComponentSchemaId, EditWriter,
-        ExecutionMode, Executor, GameRuntime, PublicationMode, ReadPermit, RegisteredSystem, Stage,
-        SystemId, SystemSpec, TickError, TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
+        ExecutionMode, Executor, GameRuntime, HistoryError, HistoryGame, PublicationMode,
+        ReadPermit, RegisteredSystem, RuntimeHistory, Stage, SystemId, SystemSpec, TickError,
+        TickGame, WorldRead, WorldTxn, WritePermit, WriteRead2,
     },
 };
 
@@ -36,6 +39,14 @@ struct Candidate {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Refused;
+
+impl std::fmt::Display for Refused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("game refused to move the selected entity")
+    }
+}
+
+impl Error for Refused {}
 
 /// Measures how many chunk callbacks overlap. Leading rows of each chunk wait
 /// briefly for a second chunk to arrive, which only parallel dispatch can
@@ -163,6 +174,35 @@ impl TickGame for Rules {
     }
 }
 
+impl HistoryGame for Rules {
+    type HistoryState = ();
+    type HistoryRecord = ();
+    type TickRequest = ();
+
+    fn history_revision(&self) -> u64 {
+        0
+    }
+
+    fn history_state(&self) -> &() {
+        &()
+    }
+
+    fn restore_history_state(&mut self, (): &()) {}
+
+    fn new_history_record(&self) {}
+
+    fn record_history_tick(&self, (): &(), (): &mut ()) {}
+
+    fn prepare_history_tick(
+        &mut self,
+        _: &GameRuntime<Self>,
+        _: u64,
+        (): &(),
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
+
 struct Fixture {
     runtime: GameRuntime<Rules>,
     rules: Rules,
@@ -279,6 +319,53 @@ impl Fixture {
 }
 
 #[test]
+fn replay_refusal_reports_the_tick_and_game_sources() {
+    fn replay<G: HistoryGame + Sync>(
+        history: &mut RuntimeHistory<G::HistoryState, G::HistoryRecord>,
+        runtime: &mut GameRuntime<G>,
+        game: &mut G,
+        candidate: &mut G::Candidate,
+    ) -> Result<bool, Box<dyn Error>> {
+        history
+            .replay_next(runtime, game, candidate)
+            .map_err(Into::into)
+    }
+
+    let Fixture {
+        mut runtime,
+        mut rules,
+        mut candidate,
+        handles,
+        ..
+    } = fixture(ExecutionMode::Serial);
+    let mut history = RuntimeHistory::new(&runtime, &rules, NonZeroUsize::MIN);
+    assert_eq!(
+        history.step(&mut runtime, &mut rules, &mut candidate, &()),
+        Ok(1)
+    );
+    history.rewind(&mut runtime, &mut rules, 1).expect("rewind");
+
+    rules.refuse_slot = Some(handles[1].slot);
+    let failure = replay(&mut history, &mut runtime, &mut rules, &mut candidate)
+        .expect_err("game refuses replay");
+    assert_eq!(
+        failure.downcast_ref(),
+        Some(&HistoryError::Tick(TickError::Game(Refused)))
+    );
+    let tick = failure.source().expect("tick source");
+    assert_eq!(tick.downcast_ref(), Some(&TickError::Game(Refused)));
+    assert_eq!(
+        tick.source().and_then(|source| source.downcast_ref()),
+        Some(&Refused)
+    );
+    assert_eq!(runtime.tick(), 0);
+
+    rules.refuse_slot = None;
+    assert!(replay(&mut history, &mut runtime, &mut rules, &mut candidate).expect("retry replay"));
+    assert_eq!(runtime.tick(), 1);
+}
+
+#[test]
 fn forced_rayon_runs_independent_chunks_at_the_same_time() {
     let mut forced = fixture(ExecutionMode::RayonForced);
     forced.rules.probe.enabled.store(true, Ordering::SeqCst);
@@ -320,7 +407,14 @@ fn run(mode: ExecutionMode) -> (Vec<u64>, usize) {
         .find(|index| is_mover(*index))
         .expect("last mover");
     world.rules.refuse_slot = Some(world.handles[last as usize].slot);
-    assert_eq!(world.step(), Err(TickError::Game(Refused)));
+    let failure = world.step().expect_err("selected entity refuses to move");
+    assert_eq!(failure, TickError::Game(Refused));
+    assert!(
+        failure
+            .source()
+            .expect("game refusal source")
+            .is::<Refused>()
+    );
     assert_eq!(world.runtime.tick(), 3);
     assert_eq!(world.heights(), committed, "refusal restores every chunk");
 

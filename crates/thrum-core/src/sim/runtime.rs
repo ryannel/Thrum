@@ -3,6 +3,7 @@
 
 use std::{
     collections::HashMap,
+    error::Error,
     hash::{Hash, Hasher},
     marker::PhantomData,
     mem::size_of,
@@ -320,7 +321,7 @@ impl From<RegisteredWorldError> for RuntimeError {
 
 /// A due tick is retained on refusal; the caller may retry after correcting it.
 #[derive(Debug, Eq, PartialEq)]
-pub enum TickError<E> {
+pub enum TickError<E: Error + 'static> {
     /// The tick counter cannot advance without wrapping.
     TickExhausted,
     /// The committed endpoint revision cannot advance without wrapping.
@@ -333,7 +334,7 @@ pub enum TickError<E> {
     Edit(EditError),
 }
 
-impl<E: std::fmt::Display> std::fmt::Display for TickError<E> {
+impl<E: Error + 'static> std::fmt::Display for TickError<E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TickExhausted => f.write_str("The tick counter cannot advance without wrapping"),
@@ -355,8 +356,8 @@ impl<E: std::fmt::Display> std::fmt::Display for TickError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for TickError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl<E: Error + 'static> Error for TickError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Game(error) => Some(error),
             Self::Edit(error) => Some(error),
@@ -371,8 +372,9 @@ impl<E: std::error::Error + 'static> std::error::Error for TickError<E> {
 /// callbacks cannot replace or remove earlier queued operations. `apply`
 /// runs only after complete validation and must be infallible.
 pub trait TickGame {
-    /// Expected game-rule or input error.
-    type Error: Send;
+    /// Expected game-rule or input error, retained as the tick error's source.
+    /// Use `std::convert::Infallible` when game rules cannot refuse a tick.
+    type Error: Error + Send + 'static;
     /// Reusable game-owned candidate and query scratch, never committed state.
     type Candidate;
     /// Private reusable output for one conflict-free parallel system callback.
@@ -488,7 +490,7 @@ impl<G: TickGame> RegisteredSystem<G> {
     }
 }
 
-fn check_edit_system<C, E>(
+fn check_edit_system<C, E: Error + 'static>(
     edits: &[Edit<C>],
     before: usize,
     system: SystemId,

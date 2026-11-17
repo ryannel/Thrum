@@ -24,13 +24,26 @@ struct Game {
     recover: bool,
 }
 
+#[derive(Debug)]
+struct GameError(&'static str);
+
+impl std::fmt::Display for GameError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+impl std::error::Error for GameError {}
+
 impl WorldGame for Game {
     type Control = u32;
     type Page = SourceTick;
-    type Error = &'static str;
+    type Error = GameError;
 
     fn validate_control(control: u32) -> Result<(), Self::Error> {
-        (control <= 3).then_some(()).ok_or("invalid control")
+        (control <= 3)
+            .then_some(())
+            .ok_or(GameError("invalid control"))
     }
     fn same_control(left: u32, right: u32) -> bool {
         left == right
@@ -52,7 +65,7 @@ impl WorldGame for Game {
         self.attempts += 1;
         if self.fail_on == Some(self.tick + 1) {
             self.fail_on = None;
-            return Err("retained failed tick");
+            return Err(GameError("retained failed tick"));
         }
         self.tick += 1;
         self.position += u64::from(self.control);

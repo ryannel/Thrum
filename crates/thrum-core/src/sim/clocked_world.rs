@@ -2,7 +2,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
-use std::{fmt, time::Duration};
+use std::{error::Error, fmt, time::Duration};
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
@@ -90,8 +90,9 @@ pub trait WorldGame {
     type Control: Copy + Send + Sync;
     /// Immutable, cheaply cloned committed-page lease.
     type Page: Clone + Send + Sync;
-    /// Authority or optional-output failure.
-    type Error: fmt::Display + Send;
+    /// Authority or optional-output failure, retained as the clocked world's error source.
+    /// Use `std::convert::Infallible` when these operations cannot fail.
+    type Error: Error + Send + 'static;
 
     /// Validate controls before changing held game input.
     /// # Errors
@@ -130,14 +131,14 @@ pub trait WorldGame {
 
 /// Failure at the fixed-clock/game boundary.
 #[derive(Debug)]
-pub enum ClockedWorldError<E> {
+pub enum ClockedWorldError<E: Error + 'static> {
     /// The supplied clock configuration or time operation was refused.
     Clock(ClockError),
     /// The game's control, tick or publication operation failed.
     Game(E),
 }
 
-impl<E: fmt::Display> fmt::Display for ClockedWorldError<E> {
+impl<E: Error + 'static> fmt::Display for ClockedWorldError<E> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Clock(error) => write!(formatter, "world clock: {error:?}: {error}"),
@@ -146,8 +147,8 @@ impl<E: fmt::Display> fmt::Display for ClockedWorldError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for ClockedWorldError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl<E: Error + 'static> Error for ClockedWorldError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Clock(error) => Some(error),
             Self::Game(error) => Some(error),
@@ -306,7 +307,7 @@ where
     G: WorldGame + Send + 'static,
     G::Control: 'static,
     G::Page: 'static,
-    G::Error: std::error::Error + Send + Sync + 'static,
+    G::Error: Sync,
 {
     type Control = G::Control;
     type Page = G::Page;

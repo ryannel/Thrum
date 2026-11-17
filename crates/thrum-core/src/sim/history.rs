@@ -1,6 +1,6 @@
 //! Bounded rollback scheduling over opaque game resources and replay records.
 
-use std::{collections::VecDeque, mem::size_of, num::NonZeroUsize};
+use std::{collections::VecDeque, error::Error, mem::size_of, num::NonZeroUsize};
 
 use super::{
     GameRuntime, PublicationMode, RuntimeEndpoint, RuntimeError, RuntimeUndo, TickError, TickGame,
@@ -44,7 +44,7 @@ pub trait HistoryGame: TickGame + Sized {
 
 /// A rejected history operation leaves authority and retained ticks unchanged.
 #[derive(Debug, Eq, PartialEq)]
-pub enum HistoryError<E> {
+pub enum HistoryError<E: Error + 'static> {
     /// The runtime endpoint or game resource configuration changed externally.
     Diverged,
     /// The requested number of ticks exceeds the retained undo window.
@@ -55,7 +55,7 @@ pub enum HistoryError<E> {
     Tick(TickError<E>),
 }
 
-impl<E: std::fmt::Display> std::fmt::Display for HistoryError<E> {
+impl<E: Error + 'static> std::fmt::Display for HistoryError<E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Diverged => f.write_str(
@@ -76,8 +76,8 @@ impl<E: std::fmt::Display> std::fmt::Display for HistoryError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for HistoryError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl<E: Error + 'static> Error for HistoryError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Runtime(error) => Some(error),
             Self::Tick(error) => Some(error),

@@ -23,7 +23,7 @@ struct Game {
 }
 
 impl TickGame for Game {
-    type Error = ();
+    type Error = std::convert::Infallible;
     type Candidate = ();
     type ParallelOutput = ();
     fn reset_candidate(&self, (): &mut ()) {}
