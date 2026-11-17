@@ -449,8 +449,8 @@
           "check": "node scripts/check_water_browser.mjs --case frames",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M3-resume.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M3-review.md"
         },

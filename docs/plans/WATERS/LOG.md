@@ -420,3 +420,8 @@
   Captured four Chrome and six portable Metal fixed views, plus 62 contiguous Chrome pan frames with no omissions.
   Builder and fresh visual inspection pass the named cues; the clip's phase-sampling limit and page clock remain explicit.
   [Final proof](../../evidence/WATERS/M3.md) records pixel comparisons and verified archive recovery. Physical cadence is unqualified.
+- 2026-11-17 Corrected M3's reviewed resume clock: pause discards the partial tick, and resume holds the
+  committed endpoint until a new full tick commits. Rust regressions and ten hardware Chrome field checkpoints
+  pass, including independent hold/commit expectations, a hitch and device replacement, with no validation faults.
+  [Resume proof](../../evidence/WATERS/M3-resume.md) records exact source/Wasm identity and numerical bounds.
+  The passed visual judgments remain scoped to their retained captures; physical cadence remains unqualified.
