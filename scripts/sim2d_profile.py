@@ -50,10 +50,10 @@ def configuration_errors(directory, manifest, allowed):
 
 
 def clippy(manifest):
-    environment = dict(os.environ, RUSTC_WRAPPER="")
+    environment = dict(os.environ, RUSTC_WRAPPER="", CLIPPY_CONF_DIR=str(manifest.parent))
     result = subprocess.run(["rustup", "run", "1.99.1", "cargo", "clippy", "--offline",
                              "--manifest-path", str(manifest), "--all-targets", "--no-deps", "--",
-                             *[flag for lint in LINTS for flag in ["-D", f"clippy::{lint}"]]],
+                             *[flag for lint in LINTS for flag in ["-F", f"clippy::{lint}"]]],
                             cwd=ROOT, env=environment, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return result.returncode, result.stdout
 
