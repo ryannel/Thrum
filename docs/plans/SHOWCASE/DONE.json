@@ -89,20 +89,20 @@
           "statement": "On the Mac, in real time, the movers drift continuously: none pops in or out, jumps, stalls between ticks or passes through terrain, and their shadows move with them.",
           "inspect": "Capture the exit flythrough and a held view of the densest group of movers with T2 engine capture in `realtime` mode, at least twenty seconds each. Judge consecutive frames at 1x, whole and in native-size crops of single movers and their shadows.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#real-time-motion-inspection",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.9",
           "statement": "In Chrome the six stops and the flythrough show the same props and movers as the Mac, with none missing, and the movers drift without popping or stalling.",
           "inspect": "Capture the six stops in `fixed` mode and the exit flythrough in `realtime` mode with T2 engine capture in Chrome. Judge whole frames and native-size crops beside the Mac's at the same stop, and consecutive frames at 1x.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#real-time-motion-inspection",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.10",

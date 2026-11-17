@@ -5643,10 +5643,42 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-chrome-flythrough.mp4",
+      "size": 39483340,
+      "sha256": "ba2d004eff57c6d3f74f470bd4c9b6572b18ea52b6d2d4d7530673395152b976",
+      "date": "2026-11-17T23:33:00.609429+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/SHOWCASE/M5-fixed-submitted.tar.gz",
       "size": 21142649,
       "sha256": "7526e3b51f40d36f160f167e38a4829a58f714d3f37d10551b186f05b85aa3fa",
       "date": "2026-11-17T23:26:44.580073+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-motion-samples.tar.gz",
+      "size": 41879033,
+      "sha256": "b4f567d5f3afdc7e7968e88c93bf8a870d349fa94ce88c45f1c7ee2b38d153a1",
+      "date": "2026-11-17T23:33:00.727314+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-native-flythrough.mp4",
+      "size": 44028427,
+      "sha256": "4e54f5a89ef3bfce9396c939d8899e69a33d0f648b05842dc256ea1d601e6d56",
+      "date": "2026-11-17T23:33:00.398331+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-native-held.mp4",
+      "size": 5560877,
+      "sha256": "7eca156b69a845927188faa1863f4135045489d9edfbe40c46a90711c6548f6e",
+      "date": "2026-11-17T23:33:00.500220+00:00",
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {

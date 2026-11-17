@@ -31,3 +31,8 @@
   milestones are Done. The design is unchanged.
 - 2026-11-14 M7 now waits for `APPLE-PRESENTATION:M11`, which has a done-when entry from today, in place of the
   stand-in `APPLE-PRESENTATION:M3`. M7.1 is unchanged. The design is unchanged.
+- 2026-11-18 Built M5's exit scene with 10,000 entities, 1,500 closed-loop drifts and a content-pinned
+  flythrough. Verified layout regeneration, terrain contact and clearance, replay equality, an hour of
+  drift, Metal culling and the Chrome pause. Inspected both targets' submitted stills and real-time motion.
+  The 48-triangle tier was the lightest measured. No measured tier met both Mac recipes' interval.
+  The integrated exact-image run remains the lead's gate. [Evidence](../../evidence/SHOWCASE/M5.md)
