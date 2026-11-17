@@ -4403,6 +4403,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-motion-diagnostics/motion-diagnostics.tar",
+      "size": 2498344960,
+      "sha256": "902e652e8d441856cbd74c433970efa02e2a03aba58a8589840793c0d2e0cd3c",
+      "date": "2026-11-17T20:51:07.467934+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-resumed-looks/base-frames.zst",
       "size": 5188617,
       "sha256": "84bf575e7a8361f2481c67d6679cc1149bf3de7b1cc90b0c9b031069a13a304b",

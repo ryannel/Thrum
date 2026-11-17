@@ -481,3 +481,10 @@
   starts. M17.3 looks at the presets as they ship. The earlier attribution suggestion on the lit plane is taken. M3 and M4 are
   unchanged, and no mechanism or interface changed. [The record](../../evidence/CLOUDS/M17-plan.md) holds each finding and its
   answer. The design needs a review.
+- 2026-11-17 The corrected-source fresh look still fails M3.3's bright side.
+  [Independent photon transport](../../evidence/CLOUDS/M3-model-diagnosis/README.md)
+  reflects 84.456% at thick-slab V1 noon versus the planned formula's 5.489%.
+  Proposed for the planner: retain the droplet first order and Beer transport,
+  replacing higher orders with a conservative, physically validated source.
+  [Motion diagnostics](../../evidence/CLOUDS/M3-motion-diagnostics/README.md)
+  find stride-one edges cleaner; final integrated visual/cost proofs stay open.
