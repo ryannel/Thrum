@@ -286,7 +286,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
+      "status": "in_progress",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops, flickers or goes missing at a screen edge or at an occluder's silhouette, in any frame the game submits. The project bar's 'smooth at the display's full refresh' is not judged in this milestone: `SHOWCASE` judges it on the culled exit scene, as the design's 'Frame cadence' section says.",
       "findings": [
         {
@@ -299,17 +299,7 @@
           "item": "M3.8",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_access",
-        "what": "Wake and activate the built-in panel, then have the lead arrange the paused-builder cadence sitting required by ORCHESTRATE.md.",
-        "work": {
-          "commit": "83165972e4ef4474db477cc90530e959c9d5679b",
-          "branch": "build/culling",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/CULLING/M3-handoff.md"
-      }
+      ]
     }
   ]
 }
