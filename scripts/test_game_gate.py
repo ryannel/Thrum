@@ -139,8 +139,8 @@ dependencies = ["engine"]
                 result = self.gate(code=5, options=("--allow-dirty",))
                 self.assertIn("test-crate-edges" if "thrum-fixtures" in dependency or "support" in dependency else "package-reach", result.stderr)
         self.write(self.games / "sample/Cargo.toml", self.manifest)
-        for source in ('#[path="../../../thrum/crates/engine/src/lib.rs"] mod private;',
-                       'const X: &str = include_str!("../../../thrum/crates/engine/src/lib.rs");'):
+        for source in ('#[path="../../thrum/crates/engine/src/lib.rs"] mod private;',
+                       'const X: &str = include_str!("../../thrum/crates/engine/src/lib.rs");'):
             self.write(self.games / "sample/build.rs", source)
             self.assertIn("package-reach", self.gate(code=5, options=("--allow-dirty",)).stderr)
         (self.games / "sample/build.rs").unlink()
