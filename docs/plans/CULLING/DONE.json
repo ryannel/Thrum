@@ -286,7 +286,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
       "findings": [
         {
@@ -299,7 +299,17 @@
           "item": "M3.8",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "what": "Wake and activate the built-in panel, then have the lead arrange the paused-builder cadence sitting required by ORCHESTRATE.md.",
+        "work": {
+          "commit": "83165972e4ef4474db477cc90530e959c9d5679b",
+          "branch": "build/culling",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CULLING/M3-handoff.md"
+      }
     }
   ]
 }
