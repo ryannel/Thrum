@@ -219,7 +219,7 @@
       "failed_reviews": 4,
       "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "blocked",
       "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
       "findings": [
         {
@@ -232,7 +232,20 @@
           "item": "M3.4",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_access",
+        "items": [
+          "M3.4"
+        ],
+        "what": "Batch M3.4 with the Mac qualification session on the unlocked, awake built-in display, with Screen Recording and Accessibility already granted to the window driver\u2019s process.",
+        "work": {
+          "commit": "29427f7bff4eb68896b6c00c00a30a36e64597f5",
+          "branch": "build/creator-m1",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CREATOR/M3-handoff.md"
+      }
     }
   ]
 }
