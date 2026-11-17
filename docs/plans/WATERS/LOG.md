@@ -408,3 +408,7 @@
   queues without writer progress; its 94-frame pan has zero omissions and sampled motion passes.
   Surface sampling costs about 26% more in the concurrent-load paired run; the named tripwires and
   M11 follow-ups are in [cost](../../evidence/WATERS/M2-cost.md). No physical cadence is qualified.
+- 2026-11-17 Merged the reconstruction correction at `387d5a69d` after the full project gate passed.
+  Rebuilt and captured that merged source: all six fixed views are pixel-identical to the fresh-opinion
+  candidate; the final bounded pan has 101 frames and zero omissions. [Selected proof](../../evidence/WATERS/M2-r1.md)
+  records source comparisons, recovery and inspection. Independent review and physical cadence remain separate.
