@@ -15,14 +15,14 @@ Thrum's work follows the generic orchestrate skills (`/plan-module`, `/build-mil
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*
 - **Builders:** two Codex builders  *(owner, 11 Nov 2026: "Yes, run two builders now")*
-- **Codex model:** gpt-6.1-sol  *(loop)*
+- **Codex model:** gpt-6.2-sol  *(loop; owner, 17 Nov 2026: moved from gpt-6.1-sol to the cheaper, stronger 6.2 models)*
 - **Claude model:** claude-opus-5-5  *(loop)*
 - **Default host:** codex  *(loop: builders)*
 - **Review host:** codex  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium"; design reviews stay on Codex since Claude plans)*
 - **Planner host:** claude  *(loop)*
 - **Claude planner:** claude-fable-5-2 high  *(loop: owner, 10 Nov 2026)*
-- **Codex design reviewer:** gpt-6-astra high  *(loop: owner, 10 Nov 2026)*
-- **Codex reviewer:** gpt-6-astra medium  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium")*
+- **Codex design reviewer:** gpt-6.2-astra high  *(loop: owner, 10 Nov 2026; owner, 17 Nov 2026: moved from gpt-6-astra to 6.2)*
+- **Codex reviewer:** gpt-6.2-astra medium  *(loop: owner, 11 Nov 2026: "move milestone reviews to astra on medium"; owner, 17 Nov 2026: moved from gpt-6-astra to 6.2)*
 - **Claude reviewer:** high  *(loop: owner, 10 Nov 2026; Opus 5.5; used only when a review is sent to Claude by hand)*
 - **Codex sandbox:** danger-full-access  *(owner, 14 Nov 2026: agents get full access; the Mac stays unlocked)*
 - **Writable roots:** ~/.cargo  *(loop)*
