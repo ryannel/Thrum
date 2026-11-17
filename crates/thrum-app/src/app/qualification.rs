@@ -19,7 +19,6 @@ use thrum_render::runtime::{
 const RECORDS: usize = 2048;
 
 #[cfg(test)]
-#[path = "qualification_tests.rs"]
 mod tests;
 
 pub(super) struct Pan {
