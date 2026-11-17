@@ -60,6 +60,7 @@ pub(in crate::synthetic) struct LiveRows {
     indices: Space,
     limits: ArenaLimits,
     generation: Option<u64>,
+    serial: Option<u64>,
     rows: Vec<Replacement>,
     cursor: u64,
     recorded: u64,
@@ -100,6 +101,7 @@ impl LiveRows {
             },
             limits,
             generation: None,
+            serial: None,
             rows: Vec::new(),
             cursor: 0,
             recorded: 0,
@@ -170,8 +172,9 @@ impl LiveRows {
         if publication.status == MeshRowStatus::Committed {
             return Ok(false);
         }
-        if self.generation != Some(publication.generation) {
+        if self.serial != Some(publication.serial) {
             self.abandon();
+            self.serial = Some(publication.serial);
             self.generation = Some(publication.generation);
             for (index, geometry) in &publication.rows {
                 if self
@@ -255,14 +258,14 @@ impl LiveRows {
         if state
             .pending
             .as_ref()
-            .is_some_and(|p| Some(p.generation) == self.generation)
+            .is_some_and(|p| Some(p.serial) == self.serial)
         {
             state.report.submitted_bytes += self.recorded;
         }
         let Some(publication) = state
             .pending
             .as_mut()
-            .filter(|p| Some(p.generation) == self.generation)
+            .filter(|p| Some(p.serial) == self.serial)
         else {
             return;
         };

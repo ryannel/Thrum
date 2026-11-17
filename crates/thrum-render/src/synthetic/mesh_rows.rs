@@ -92,6 +92,7 @@ pub enum MeshRowStatus {
 
 #[derive(Debug)]
 pub(super) struct Publication {
+    pub(super) serial: u64,
     pub(super) generation: u64,
     pub(super) rows: Vec<(usize, MeshRowGeometry)>,
     pub(super) status: MeshRowStatus,
@@ -100,6 +101,7 @@ pub(super) struct Publication {
 
 #[derive(Debug)]
 pub(super) struct State {
+    pub(super) next_publication: u64,
     pub(super) report: MeshRowReport,
     pub(super) binding_limit: Option<u64>,
     pub(super) current: Vec<Arc<SyntheticMesh>>,
@@ -121,6 +123,7 @@ impl MeshRows {
     /// Retain the prepared geometry's identity across device reconstruction.
     pub fn from_geometry(meshes: &[MeshRowGeometry]) -> Self {
         Self(Arc::new(Mutex::new(State {
+            next_publication: 0,
             report: MeshRowReport::default(),
             binding_limit: None,
             current: meshes
@@ -134,6 +137,7 @@ impl MeshRows {
     /// Start with the same admitted geometry used by the scene's selection.
     pub fn new(meshes: Vec<SyntheticMesh>) -> Self {
         Self(Arc::new(Mutex::new(State {
+            next_publication: 0,
             report: MeshRowReport::default(),
             binding_limit: None,
             current: meshes.into_iter().map(Arc::new).collect(),
@@ -183,7 +187,13 @@ impl MeshRows {
         {
             return Err(MeshRowError::UnknownMesh);
         }
+        let serial = state
+            .next_publication
+            .checked_add(1)
+            .ok_or(MeshRowError::Capacity)?;
+        state.next_publication = serial;
         state.pending = Some(Publication {
+            serial,
             generation,
             rows,
             status: MeshRowStatus::Writing,

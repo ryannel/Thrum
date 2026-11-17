@@ -172,6 +172,79 @@ fn only_old_or_new(live: &mut FrameHost, stats: &Stats, generation: u64, old: &[
 }
 
 #[test]
+fn a_recreated_store_with_the_same_generation_replaces_its_rows() {
+    let Some(gpu) = thrum_test_support::gpu("row store epoch", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let (device, queue) = gpu.device(
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    );
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
+    pollster::block_on(async {
+        let root = Scratch::new("store-epoch");
+        let cook = config(root.path());
+        Cooker::open(cook.clone())
+            .expect("cooker")
+            .cook_all()
+            .expect("cook");
+        let first = AssetStore::new(&cook.store)
+            .read_head()
+            .expect("HEAD")
+            .expect("first");
+        let (mut live, stats) = host(
+            &cook,
+            &device,
+            &queue,
+            &caps,
+            CullMode::Occlusion,
+            true,
+            None,
+        )
+        .await;
+        let old = settle(&mut live, &stats, first.generation);
+        demo::write_grid_gltf(&cook.source.join("meshes"), "terrain", 64, 1.2).expect("edit");
+        // Resident GPU resources and immutable mappings survive unlinking the old store.
+        std::fs::remove_dir_all(&cook.store).expect("replace owned fixture store");
+        Cooker::open(cook.clone())
+            .expect("new cooker")
+            .cook_all()
+            .expect("new store");
+        let next = AssetStore::new(&cook.store)
+            .read_head()
+            .expect("HEAD")
+            .expect("new epoch");
+        assert_eq!(first.generation, next.generation);
+        assert_ne!(first.epoch, next.epoch);
+        let (mut fresh, fresh_stats) = host(
+            &cook,
+            &device,
+            &queue,
+            &caps,
+            CullMode::Occlusion,
+            true,
+            None,
+        )
+        .await;
+        let new = settle(&mut fresh, &fresh_stats, next.generation);
+        assert_ne!(old, new);
+        let deadline = Instant::now() + Duration::from_secs(90);
+        loop {
+            let image = live.capture_pixels().expect("epoch frame");
+            assert!(
+                image == old || image == new,
+                "store epoch produced a mixed frame"
+            );
+            if stats.lock().expect("stats").swaps.len() == 2 {
+                assert_eq!(image, new);
+                break;
+            }
+            assert!(Instant::now() < deadline, "new store epoch never switched");
+        }
+    });
+}
+
+#[test]
 fn supersession_discarded_protected_switch_and_retired_space_reuse() {
     let Some(gpu) =
         thrum_test_support::gpu("row supersession and reuse", Some(wgpu::Backend::Metal))
