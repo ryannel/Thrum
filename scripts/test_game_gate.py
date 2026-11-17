@@ -131,7 +131,7 @@ dependencies = ["engine"]
         self.gate("test", options=("--allow-dirty",), code=6)
 
     def test_boundary_uses_shared_reach_and_test_edge_rules(self):
-        for dependency in ('bad={path="../../thrum/examples/demo"}',
+        for dependency in ('demo={path="../../thrum/examples/demo"}',
                            'thrum-fixtures={path="../../thrum/crates/thrum-fixtures"}',
                            'renamed={package="thrum-test-support",path="../../thrum/crates/thrum-test-support"}'):
             with self.subTest(dependency=dependency):
