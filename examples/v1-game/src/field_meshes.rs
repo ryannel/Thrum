@@ -26,15 +26,6 @@ pub(crate) fn selection() -> Arc<SyntheticMeshes> {
     selection_for(field::ENTITY_COUNT, true)
 }
 
-pub(crate) fn exit_loading_meshes() -> SyntheticMeshes {
-    let mesh = rock();
-    SyntheticMeshes {
-        updates: None,
-        meshes: vec![mesh; crate::exit_scene::MESH_NAMES.len()],
-        slots: Vec::new(),
-    }
-}
-
 /// Reuse the bounded prop arena for the valley's entity count as well.
 pub(crate) fn selection_for(count: usize, keep_walls: bool) -> Arc<SyntheticMeshes> {
     let slots = (0..count)
@@ -113,7 +104,7 @@ fn normalize(a: [f32; 3]) -> [f32; 3] {
 
 /// A boulder: an icosahedron subdivided three times (1,280 triangles), its
 /// radius perturbed by a few fixed low-frequency lobes and flattened below.
-fn rock() -> SyntheticMesh {
+pub(crate) fn rock() -> SyntheticMesh {
     let t = f32::midpoint(1.0, 5.0_f32.sqrt());
     let mut points: Vec<[f32; 3]> = [
         [-1.0, t, 0.0],

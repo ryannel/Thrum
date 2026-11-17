@@ -5,7 +5,7 @@ use std::sync::{Arc, OnceLock};
 use serde::Deserialize;
 use thrum_render::{
     abi::MaterialRecord,
-    synthetic::{SyntheticMeshChoice, SyntheticScene},
+    synthetic::{SyntheticMeshChoice, SyntheticMeshes, SyntheticScene},
 };
 
 use crate::scene::{ENTITY_COUNT, MOVING_COUNT};
@@ -114,7 +114,6 @@ pub(crate) fn scene() -> Result<SyntheticScene, String> {
         })
         .collect();
     let props = &layout().entities;
-    let mut meshes = crate::field_meshes::exit_loading_meshes();
     for (instance, prop) in scene.instances.iter_mut().zip(props) {
         let (sin, cos) = prop.5.sin_cos();
         let basis = [[cos, 0.0, -sin], [0.0, 1.0, 0.0], [sin, 0.0, cos]];
@@ -131,11 +130,14 @@ pub(crate) fn scene() -> Result<SyntheticScene, String> {
         instance.previous = instance.current;
         instance.ids[1] = u32::try_from(prop.material()).expect("authored material");
     }
-    meshes.slots = props
-        .iter()
-        .map(|prop| SyntheticMeshChoice::Mesh(prop.0))
-        .collect();
-    scene.meshes = Some(Arc::new(meshes));
+    scene.meshes = Some(Arc::new(SyntheticMeshes {
+        updates: None,
+        meshes: vec![crate::field_meshes::rock(); MESH_NAMES.len()],
+        slots: props
+            .iter()
+            .map(|prop| SyntheticMeshChoice::Mesh(prop.0))
+            .collect(),
+    }));
     scene.sun_shadows = true;
     scene.local_lights.clear();
     Ok(scene)
