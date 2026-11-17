@@ -169,6 +169,39 @@ def guidance(rule):
     return f"{remedy}; read {PATTERNS}#{section}"
 
 
+def external_boundary(game, engine):
+    """Apply package reach and test-edge rules to a detached external consumer.
+
+    External path edges may target registered packages in engine/crates only.
+    Includes and module paths still stay within their own game package.
+    """
+    registry = tomllib.loads((engine / ".config/architecture.toml").read_text())
+    manifests = {p.parent: tomllib.loads(p.read_text()) for p in game.rglob("Cargo.toml")}
+    workspace = manifests.get(game, {}).get("workspace", {}).get("dependencies", {})
+    registered = {(engine / entry["manifest"]).resolve().parent
+                  for entry in registry.get("packages", {}).values()}
+    errors = []
+    for folder, manifest in manifests.items():
+        for alias, dependency in dependency_sites(manifest, folder):
+            base = folder
+            if isinstance(dependency, dict) and dependency.get("workspace"):
+                dependency, base = workspace.get(alias, {}), game
+            if isinstance(dependency, dict) and "path" in dependency:
+                destination = (base / dependency["path"]).resolve()
+                if destination not in registered or not destination.is_relative_to((engine / "crates").resolve()):
+                    errors.append(f"{folder.relative_to(game)}/Cargo.toml: package-reach: {alias} must name an engine crates package")
+        for alias in test_edge_sites(manifest, workspace, registry):
+            errors.append(f"{folder.relative_to(game)}/Cargo.toml: test-crate-edges: {alias}: {guidance('test-crate-edges')}")
+    packages = {folder.relative_to(game): manifest for folder, manifest in manifests.items() if "package" in manifest}
+    for path in game.rglob("*.rs"):
+        relative = path.relative_to(game)
+        package = package_for(relative, packages)
+        for rule, offset in rust_sites(game, relative.as_posix(), path.read_text(), package, packages.get(package), registry):
+            if rule == "package-reach":
+                errors.append(f"{relative}:{path.read_text().count(chr(10), 0, offset) + 1}: {rule}: {guidance(rule)}")
+    return errors
+
+
 def save_baseline(path, value):
     # One file entry per line, sorted by path, for independent builders' edits.
     lines = ['{', '  "schema": 1,', '  "rules": {']
