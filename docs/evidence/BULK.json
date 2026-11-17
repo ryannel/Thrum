@@ -4723,6 +4723,86 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/consecutive-100.png",
+      "size": 1280559,
+      "sha256": "75a8ef3fd0863b5f4881494e729f27b4e0f76f41a383c2d407cd30c1f193b46e",
+      "date": "2026-11-17T00:49:58.905500+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/consecutive-20.png",
+      "size": 1129627,
+      "sha256": "705d069d8d361d5572178fdcb26167bdf1203f2eb2b26fe27e4efbc7e9fab4f4",
+      "date": "2026-11-17T00:49:58.760573+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/low-sun.png",
+      "size": 4429062,
+      "sha256": "583841c9d27e1fcdb5291cefeb2245e59a2989f66b8f3ab53d3611b08b51af41",
+      "date": "2026-11-17T00:47:41.216011+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/motion.mp4",
+      "size": 17407493,
+      "sha256": "01307868526af2ecd607f10425fddec5ae2b72728691be5a2eba3155d9af7859",
+      "date": "2026-11-17T00:54:35.754128+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/motion.spool.zst",
+      "size": 1882389603,
+      "sha256": "3d634858e720b2d018ebc7424f952c7fd7ba1237d5cced85430a26a13c1a632a",
+      "date": "2026-11-17T00:49:53.452890+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/noon-2-across.png",
+      "size": 3476250,
+      "sha256": "0df77493e37de73c317880a6a838c1b8ad6f275e56ef463e67dc06695de3375e",
+      "date": "2026-11-17T00:47:41.298537+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/noon-2-along.png",
+      "size": 3640371,
+      "sha256": "20da0bee143effd22ff73d406988f958f5d8502b670475000d67a32df2cf1ce7",
+      "date": "2026-11-17T00:47:41.380161+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/noon-40-across.png",
+      "size": 4897515,
+      "sha256": "aa9c63fcca3a805a6540c03f05cd6782d842c4076b64279c319efc52c9c10e69",
+      "date": "2026-11-17T00:47:41.467277+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/noon-40-along.png",
+      "size": 5316382,
+      "sha256": "14ff37173ee58bb573e020e421c15597ac063f08e79019995a25e218bc9341b6",
+      "date": "2026-11-17T00:47:41.555975+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M2-merged/twilight.png",
+      "size": 4718454,
+      "sha256": "9d0478fdeaf18886b655193bc904085928c9c88a28aa6a5928380607e03bee98",
+      "date": "2026-11-17T00:47:41.648153+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/WATERS/M2-noon.png",
       "size": 3713713,
       "sha256": "e722f8a21d557a8f685ca05afb4912ca719e9abd58c67eff45243156be6b2da7",

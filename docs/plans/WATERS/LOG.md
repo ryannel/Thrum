@@ -395,3 +395,9 @@
   Full mip averages retain the residual carry; optional float16 arithmetic is unnecessary. The new
   frame-contract probe passes. Allocation is unchanged; [paired cost](../../evidence/WATERS/M2-cost.md)
   records the extra vertex read. The queued pre-correction merge was withdrawn before resubmission.
+- 2026-11-17 Integrated M2's three remaining precision commits on current main after confirming the
+  earlier checkpoint was already present under rewritten hashes. The full `./dev check` passed and
+  `fa59e2679` merged. Refreshed six fixed views and a 310-frame realtime pan on that merged source,
+  with zero omissions; [final evidence](../../evidence/WATERS/M2-merged.md) records recovery and inspection.
+  Rectangular foreground highlights and concurrent-load cost tripwires remain disclosed; physical
+  cadence stays unqualified. The script owns the milestone's next status and review.
