@@ -1,5 +1,14 @@
 # SIM-2D log
 
+- 2026-11-17 M2 Chrome queue repair: nine conformance requests share one browser and queue turn.
+  Full Chrome vectors and eight trace routes pass; unused returned timelines are omitted.
+  Debugger disconnects now fail instead of retaining the resource while waiting forever.
+  Eleven harness tests and JavaScript syntax pass; the full gate passed before rebase.
+  Integrated Mac costs at `119bd20ab` pass validation; warmed calls allocate zero.
+  The Chrome cost replacement runs as a durable background job; documentation checks pass.
+  [Proof, failed attempt and limits](../../evidence/SIM-2D/M2/chrome-queue-repair.md).
+  [Current measurements](../../evidence/SIM-2D/M2/performance.md) and [recovery note](../../evidence/SIM-2D/M2-handoff.md).
+
 - 2026-11-16 M2 review repair: fresh two-run Mac and Chrome costs at `d24658b33`.
   Both source/completeness validators pass with the integrated clock/presentation sources.
   Original records and profiles retain their historical provenance; no measurements were relabeled.
