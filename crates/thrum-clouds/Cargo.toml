@@ -11,6 +11,9 @@ autotests = false
 name = "transport_gpu"
 
 [[test]]
+name = "shadow_only_gpu"
+
+[[test]]
 name = "weather_map_gpu"
 
 [[test]]
@@ -33,5 +36,6 @@ bytemuck = { version = "=1.25.2", features = ["derive"] }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 
 [dev-dependencies]
+thrum-core = { path = "../thrum-core" }
 pollster = "=1.0.1"
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }

@@ -160,12 +160,13 @@ pub(super) fn storage_entry(binding: u32, read_only: bool) -> wgpu::BindGroupLay
 pub(super) fn shader() -> String {
     let vec4 = |v: [f64; 4]| format!("vec4<f32>({},{},{},{})", v[0], v[1], v[2], v[3]);
     format!(
-        "const CLOUD_WEIGHTS:vec4<f32>={};\nconst CLOUD_BRANCHES:vec4<f32>={};\nconst CLOUD_LATER_G:vec3<f32>=vec3<f32>({},{},{});\n{}",
+        "const CLOUD_WEIGHTS:vec4<f32>={};\nconst CLOUD_BRANCHES:vec4<f32>={};\nconst CLOUD_LATER_G:vec3<f32>=vec3<f32>({},{},{});\n{}\n{}",
         vec4(Orders::WEIGHTS),
         vec4(Orders::EXTINCTION),
         Orders::LATER_G[0],
         Orders::LATER_G[1],
         Orders::LATER_G[2],
-        include_str!("light.wgsl")
+        include_str!("light.wgsl"),
+        include_str!("scattering.wgsl")
     )
 }

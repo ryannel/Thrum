@@ -20,6 +20,13 @@ pub(super) struct CompiledScene {
     pub(super) ids: TargetResources,
 }
 
+struct FrameEnvironment {
+    directional: ResourceId,
+    view: ResourceId,
+    atmosphere_inputs: Option<(ResourceId, ResourceId)>,
+    late_uniforms: Vec<Access>,
+}
+
 impl SceneGraphs<CompiledGraph> {
     fn compile_night(
         graph: &mut FrameGraph,
@@ -299,14 +306,12 @@ impl PreparedSynthetic {
             &route,
         );
         let mut prepared_keys = BTreeSet::from([self.key, self.display_key(), self.exposure_key()]);
-        let (directional, view) = Self::append_frame_uniform_reads(&mut graph, &mut accesses)?;
-        let mut late_uniforms = accesses
-            .iter()
-            .filter(|access| access.kind == AccessKind::UniformRead)
-            .cloned()
-            .collect::<Vec<_>>();
-        let atmosphere_inputs =
-            self.append_environment(&mut graph, &mut prepared_keys, &mut accesses, &directional)?;
+        let FrameEnvironment {
+            directional,
+            view,
+            atmosphere_inputs,
+            mut late_uniforms,
+        } = self.append_frame_environment(&mut graph, &mut prepared_keys, &mut accesses)?;
         let contribution_start = accesses.len();
         let effect_resources =
             self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys)?;
@@ -345,6 +350,7 @@ impl PreparedSynthetic {
             0..exposure::SAMPLE_BYTES,
             AccessKind::UniformRead,
         ));
+        late_uniforms.extend(accesses.last().cloned());
         let secondary = self.append_secondary_consumers(
             &mut graph,
             &mut prepared_keys,
@@ -1000,6 +1006,30 @@ impl PreparedSynthetic {
             });
         }
         Ok(())
+    }
+
+    fn append_frame_environment(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        accesses: &mut Vec<Access>,
+    ) -> Result<FrameEnvironment, RenderError> {
+        let (directional, view) = Self::append_frame_uniform_reads(graph, accesses)?;
+        let mut late_uniforms = accesses
+            .iter()
+            .filter(|a| a.kind == AccessKind::UniformRead)
+            .cloned()
+            .collect::<Vec<_>>();
+        let start = accesses.len();
+        let atmosphere_inputs = self.append_environment(graph, keys, accesses, &directional)?;
+        // Late consumers borrow these same producers through EnvironmentProducts.
+        late_uniforms.extend(accesses[start..].iter().cloned());
+        Ok(FrameEnvironment {
+            directional,
+            view,
+            atmosphere_inputs,
+            late_uniforms,
+        })
     }
 
     fn append_environment(

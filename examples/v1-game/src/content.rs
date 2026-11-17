@@ -7,7 +7,7 @@ use thrum_asset_gpu::CookedStats;
 
 // This cold launch boundary owns environment interpretation; world construction
 // receives checked typed controls and never reads process settings.
-fn launch_value(name: &str) -> Result<String, std::env::VarError> {
+pub(crate) fn launch_value(name: &str) -> Result<String, std::env::VarError> {
     std::env::var(name)
 }
 
@@ -41,16 +41,77 @@ fn cloud_weather() -> Result<thrum_cloud_model::Parameters, String> {
     Ok(parameters)
 }
 
-/// Select the host for `THRUM_SCENE=valley|diagnostic|field` and
-/// `THRUM_CULLING=direct|frustum|occlusion`. The valley prepares its star field
-/// unless `THRUM_STARS=off`; `THRUM_ROUTE_OVERLAY=proof|unmirrored|light-off` adds the
-/// moving-route proof overlay or one of its controls.
-/// The field draws mixed meshes with `THRUM_FIELD_MESHES=on`; the valley uses
-/// `THRUM_VALLEY_MESHES=on` for the same prop arena on its entities.
-/// Without `THRUM_CULLING`, the mixed-mesh field uses measured Occlusion,
-/// the cube field and valley use Frustum, and the fully visible grid keeps Direct.
+/// Apply optional launch quality settings through the prepared cloud controls.
 /// # Errors
-/// Refuses an unknown culling mode or route overlay.
+/// Refuses unsupported values or a scene without the requested cloud capability.
+pub fn apply_cloud_quality(host: &mut FrameHost) -> Result<(), CloudQualityError> {
+    for (variable, suffix) in [
+        ("THRUM_CLOUD_REFRESH_STRIDE", "cloud refresh exponent"),
+        ("THRUM_CLOUD_LIGHT_SAMPLES", "cloud local light samples"),
+    ] {
+        let Ok(text) = launch_value(variable) else {
+            continue;
+        };
+        let invalid = || CloudQualityError::Value {
+            setting: variable,
+            value: text.clone(),
+        };
+        let mut value = text.parse::<u32>().map_err(|_| invalid())?;
+        if suffix == "cloud refresh exponent" {
+            if ![1, 2, 4].contains(&value) {
+                return Err(invalid());
+            }
+            value = value.trailing_zeros();
+        }
+        let name = host
+            .quality_knobs()
+            .into_iter()
+            .find(|q| q.name.ends_with(suffix))
+            .ok_or_else(|| {
+                CloudQualityError::Control(thrum_render::contribution::QualityError::UnknownKnob {
+                    name: suffix.into(),
+                })
+            })?
+            .name;
+        host.set_quality_knob(&name, value)
+            .map_err(CloudQualityError::Control)?;
+    }
+    Ok(())
+}
+
+/// A refused native cloud quality launch setting.
+#[derive(Debug)]
+pub enum CloudQualityError {
+    /// A setting is not an admitted unsigned quality value.
+    Value {
+        /// Launch setting name.
+        setting: &'static str,
+        /// Refused text.
+        value: String,
+    },
+    /// The prepared scene refused the requested control.
+    Control(thrum_render::contribution::QualityError),
+}
+impl std::fmt::Display for CloudQualityError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Value { setting, value } => write!(f, "invalid {setting}: {value:?}"),
+            Self::Control(error) => error.fmt(f),
+        }
+    }
+}
+impl std::error::Error for CloudQualityError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Control(error) => Some(error),
+            Self::Value { .. } => None,
+        }
+    }
+}
+
+/// Select the native game's authored scene and optional capabilities.
+/// # Errors
+/// Refuses unsupported launch settings.
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
     let content = if scene.as_deref() == Ok("field") {

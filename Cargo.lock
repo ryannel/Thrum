@@ -3126,6 +3126,7 @@ dependencies = [
  "glam",
  "pollster",
  "thrum-cloud-model",
+ "thrum-core",
  "thrum-render",
  "thrum-test-support",
  "wgpu",

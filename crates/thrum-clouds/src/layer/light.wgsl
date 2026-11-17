@@ -18,7 +18,5 @@ fn cloud_phases(ray:vec3<f32>,sun:vec3<f32>)->vec4<f32> {
     return vec4(first,cloud_hg_phase(s2,CLOUD_LATER_G.x),cloud_hg_phase(s2,CLOUD_LATER_G.y),cloud_hg_phase(s2,CLOUD_LATER_G.z));
 }
 fn cloud_source(solar:vec3<f32>,phases:vec4<f32>,sun_depth:f32,vertical_depths:vec2<f32>)->vec3<f32> {
-    let diffuse_depth=0.75*(1.0-cloud.erosion.z)*vertical_depths;
-    let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
-    return solar*dot(CLOUD_WEIGHTS*phases,exp(-CLOUD_BRANCHES*sun_depth))+ambient;
+    return cloud_order_source(solar,phases,sun_depth,vertical_depths,cloud.erosion.z,cloud_ambient[0].rgb,cloud_ambient[1].rgb);
 }

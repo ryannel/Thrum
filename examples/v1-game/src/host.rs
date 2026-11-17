@@ -472,7 +472,16 @@ impl FrameHost {
         name: &str,
         value: u32,
     ) -> Result<(), thrum_render::contribution::QualityError> {
-        self.inner.set_quality_knob(name, value)
+        self.inner.set_quality_knob(name, value)?;
+        if let Some(profile) = &mut self.cloud_sky {
+            if name.ends_with("cloud refresh exponent") {
+                profile.refresh_stride = 1 << value;
+            }
+            if name.ends_with("cloud local light samples") {
+                profile.light_samples = value;
+            }
+        }
+        Ok(())
     }
     /// Current Weather and Shade product, for optional GPU inspection.
     pub fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
@@ -611,7 +620,7 @@ impl FrameHost {
         let cloud_sky =
             (setup.clouds == crate::CloudSelection::Sky).then_some(thrum_clouds::SkyProfile {
                 extent: config.render_extent,
-                step: 30.0,
+                step: 15.0,
                 light_samples: 3,
                 refresh_stride: 2,
             });

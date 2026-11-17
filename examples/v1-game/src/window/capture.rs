@@ -460,7 +460,7 @@ async fn record(
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
     let mut admission = admission::Admission::new(wait, hold_full, &mode)?;
-    let source = capture_source()?;
+    let (source, extent) = (capture_source()?, capture_extent()?);
     let (qos, encoding, disk_limit) = capture_settings()?;
     let active_pacing = active_pacing()?;
     let instance = metal_instance();
@@ -470,7 +470,7 @@ async fn record(
         &device,
         &capabilities,
         &queue,
-        [1920, 1080],
+        extent,
     )?;
     let (preset_requested, preset_accepted) = prepare_parameters(&mut driver, scenario)?;
     reset_native_capture(&mut driver);
@@ -630,7 +630,7 @@ async fn record(
         "presentation_lead_policy":"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero",
         "surface_generation_scope":"engine presenter incarnation: prepare, resize, device publish; not OS surface lease",
         "recipe":format!("{:?}",capabilities.recipe()),"registry_digest":capabilities.registry_digest(),"unified_memory":capabilities.unified_memory(),"enabled_features":format!("{:?}",capabilities.features()),
-        "extent":[1920,1080],"requested_hz":120,"interval_end_ns":interval_end_ns,
+        "extent":extent,"requested_hz":120,"interval_end_ns":interval_end_ns,
         "last_scenario_ns":last_sample_time.as_nanos(),"duration_including_drain_ns":origin.elapsed().as_nanos(),
         "world_origin_before_run_ns":origin.saturating_duration_since(driver.origin()).as_nanos(),
         "route":route,
@@ -673,12 +673,23 @@ fn enable_stage_capture<G: Game>(
     session: u64,
     source: CaptureSource,
 ) -> Result<(), String> {
+    let bytes_per_pixel = if source == CaptureSource::Sdr {
+        4_u64
+    } else {
+        8
+    };
+    let image_bytes =
+        u64::from(driver.output().width()) * u64::from(driver.output().height()) * bytes_per_pixel;
+    let allowance = 1024 * 1024 * 1024;
+    let capacity = (allowance / image_bytes).saturating_sub(7);
+    let requested = if source == CaptureSource::Sdr { 96 } else { 32 };
+    let cpu_buffers = usize::try_from(capacity.min(requested)).map_err(|e| e.to_string())?;
     driver.enable_capture_from(
         session,
         thrum_render::runtime::CaptureLimits {
             staging_slots: 6,
-            cpu_buffers: if source == CaptureSource::Sdr { 96 } else { 32 },
-            byte_allowance: 1024 * 1024 * 1024,
+            cpu_buffers,
+            byte_allowance: allowance,
         },
         source,
     )
@@ -774,6 +785,23 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "route" => (8.4, 8.0, f64::INFINITY),
         _ => (6.0, 4.0, 3.0),
     }
+}
+
+pub(super) fn capture_extent() -> Result<[u32; 2], String> {
+    let Ok(value) = crate::content::launch_value("THRUM_CAPTURE_EXTENT") else {
+        return Ok([1920, 1080]);
+    };
+    let (width, height) = value
+        .split_once(',')
+        .ok_or("capture extent must be width,height")?;
+    let extent = [
+        width.parse::<u32>().map_err(|e| e.to_string())?,
+        height.parse::<u32>().map_err(|e| e.to_string())?,
+    ];
+    if extent.iter().any(|n| !(2..=4096).contains(n) || n % 2 != 0) {
+        return Err("capture extent must be even dimensions in 2..4096".into());
+    }
+    Ok(extent)
 }
 
 fn capture_mode(scenario: &str) -> Result<String, String> {

@@ -3,7 +3,9 @@
 fn environment_aerial(world_point: vec3<f32>, uv: vec2<f32>) -> EnvironmentAerial {
     let offset=world_point-atmosphere.camera_altitude.xyz;
     let distance=length(offset);
-    if distance<=32000.0 { return environment_aerial_volume(world_point,uv); }
+    // Endpoint construction and length rounding at this scale can differ by
+    // a few millimetres. Keep the finite branch through that boundary shell.
+    if distance<=32000.01 { return environment_aerial_volume(world_point,uv); }
     let direction=offset/distance;
     let origin=vec3(0.0,atmosphere.camera_altitude.w,0.0);
     let height=origin.y;

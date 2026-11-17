@@ -35,7 +35,7 @@ pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera}
 #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
 pub use content::attach_cooked_scene_with_probe;
 #[cfg(not(target_arch = "wasm32"))]
-pub use content::{attach_cooked_scene, selected_setup};
+pub use content::{CloudQualityError, apply_cloud_quality, attach_cooked_scene, selected_setup};
 #[doc(hidden)]
 pub use host::field_in_view_share;
 pub use host::{

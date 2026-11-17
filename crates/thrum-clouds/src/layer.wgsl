@@ -80,6 +80,12 @@ fn cloud_sun_tau(world:vec3<f32>)->f32 {
     return tau;
 }
 
+fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {
+    if mass<=0.0 {return part;}
+    let aerial=environment_aerial(camera+ray*(weighted/mass),uv);
+    return cloud_with_air(part,aerial.transmission,aerial.scatter);
+}
+
 @compute @workgroup_size(8,8)
 fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=textureDimensions(transport);if any(id.xy>=size) {return;}
@@ -90,7 +96,10 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
-    var radiance=vec3(0.0);var transmission=1.0;var optical_depth=0.0;var weighted=0.0;var opacity=0.0;
+    var total=CloudTransport(vec3(0.0),1.0,0.0);
+    var part=CloudTransport(vec3(0.0),1.0,0.0);
+    var part_weighted=0.0;var part_mass=0.0;var part_air=vec3(1.0);
+    var weighted=0.0;var opacity=0.0;
     var begin=0.0;var end=cloud.heights.w;
     if abs(ray.y)>1e-7 {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
@@ -107,7 +116,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     var distance=begin;var samples=0u;
-    for(var i=0u;i<768u && distance<end && transmission>0.001;i++) {
+    for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>0.001;i++) {
         samples+=1u;
         let step=min(end-distance,max(cloud.heights.z,distance*0.002));
         let at=distance+step*0.5;let point=air_camera+ray*at;
@@ -119,7 +128,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let world=camera+ray*at;
                 var tau=cloud_sun_tau(world);
                 if cloud.settings.y>0u {
-                    let reach=min(600.0,(cloud.heights.y-point.y)/max(0.1,sun.y));
+                    let reach=min(120.0,(cloud.heights.y-point.y)/max(0.1,sun.y));
                     var local=0.0;
                     for(var j=0u;j<cloud.settings.y;j++) {
                         local+=cloud_density(point+sun*((f32(j)+0.5)*reach/f32(cloud.settings.y)),at/f32(size.y))*reach/f32(cloud.settings.y);
@@ -129,20 +138,27 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                 let source=cloud_source(solar,phase,tau,column.yz);
                 let segment=cloud_beer(sigma,sigma*source,step);
-                let amount=transmission*cloud_removed(segment.optical_depth);
-                let combined=cloud_then(CloudTransport(radiance,transmission,optical_depth),segment);
-                radiance=combined.scattering;weighted+=amount*at;opacity+=amount;transmission=combined.transmittance;optical_depth=combined.optical_depth;
+                let air=environment_aerial(world,uv).transmission;
+                // A part spans at most 0.25 of the lent air's optical depth.
+                // Empty gaps require no composition; a distant occupied sample
+                // starts a new part before it can be mixed with the nearer one.
+                if part_mass>0.0 && any(-log(max(air,vec3(1e-20))/max(part_air,vec3(1e-20)))>=vec3(0.25)) {
+                    total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
+                    part=CloudTransport(vec3(0.0),1.0,0.0);part_weighted=0.0;part_mass=0.0;
+                }
+                if part_mass==0.0 {part_air=air;}
+                let local_amount=part.transmittance*cloud_removed(segment.optical_depth);
+                let amount=total.transmittance*local_amount;
+                weighted+=amount*at;opacity+=amount;
+                part_weighted+=local_amount*at;part_mass+=local_amount;
+                part=cloud_then(part,segment);
             }
         }
         distance+=step;
     }
     let front_distance=weighted/max(opacity,1e-10);
-    if opacity>0.0 {
-        let aerial=environment_aerial(camera+ray*front_distance,uv);
-        radiance=cloud_with_air(CloudTransport(radiance,transmission,optical_depth),aerial.transmission,aerial.scatter).scattering;
-    }
-    radiance*=environment_storage_scale();
-    textureStore(transport,vec2<i32>(id.xy),vec4(radiance,transmission));
+    total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
+    textureStore(transport,vec2<i32>(id.xy),vec4(total.scattering*environment_storage_scale(),total.transmittance));
     // Distances are kilometres to remain representable in fp16.
     textureStore(front,vec2<i32>(id.xy),vec4(front_distance*0.001,opacity,f32(samples),1.0));
 }

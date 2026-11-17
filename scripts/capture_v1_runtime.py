@@ -105,7 +105,7 @@ def finalize(output, manifest, runtime, verify_only=False):
     if runtime["scenario"] == "off":
         manifest.update(complete=True, packaging_pending=False, records=[])
         return
-    frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
+    frame_bytes = manifest['extent'][0] * manifest['extent'][1] * manifest.get('bytes_per_pixel', 4)
     verify_only = verify_only or manifest.get('capture_source', 'sdr') != 'sdr'
     encoding = runtime['spool_encoding']
     report = runtime['writer_result']['Ok']
@@ -124,7 +124,7 @@ def finalize(output, manifest, runtime, verify_only=False):
         identity = record['submission_id']
         record['rgba_sha256'] = hashlib.sha256(raw).hexdigest()
         if not verify_only:
-            assert package(raw, frame_dir / f'{identity:06}.png') == record['rgba_sha256']
+            assert package(raw, frame_dir / f'{identity:06}.png', *manifest['extent']) == record['rgba_sha256']
         record['submit_ns'] = by_id[identity]['submit_ns']
         if manifest['timebase'] == 'fixed':
             record['sample_ns'] = next(row['scenario_ns'] for row in runtime['opportunities'] if row['submission_id'] == identity)
@@ -224,7 +224,9 @@ def validate_source(output, manifest, runtime):
         raise ValueError('engine capture source differs from requested source')
     if runtime.get('admission_policy', 'omit') != manifest.get('admission_policy', 'omit'):
         raise ValueError('capture admission policy differs from request')
-    frame_bytes = FRAME_BYTES * manifest.get('bytes_per_pixel', 4) // 4
+    frame_bytes = manifest['extent'][0] * manifest['extent'][1] * manifest.get('bytes_per_pixel', 4)
+    if runtime.get('extent', [1920,1080]) != manifest['extent']:
+        raise ValueError('engine extent differs from requested extent')
     report = runtime['writer_result'].get('Ok', {})
     if 'Ok' in runtime['writer_result']:
         source = output / manifest['spool_file']
@@ -262,8 +264,11 @@ def run(args):
         raise ValueError("less than declared 16 GiB free space")
     output.mkdir()
     pixel_bytes = 4 if args.source == 'sdr' else 8
-    frame_bytes = FRAME_BYTES * pixel_bytes // 4
-    cpu_buffers = 96 if args.source == 'sdr' else 32
+    extent = getattr(args, 'extent', [1920, 1080])
+    if len(extent)!=2 or any(n<2 or n>4096 or n%2 for n in extent):
+        raise ValueError('capture extent must be two even dimensions in 2..4096')
+    frame_bytes = extent[0] * extent[1] * pixel_bytes
+    cpu_buffers = min(96 if args.source == 'sdr' else 32, (1024*1024*1024)//frame_bytes-7)
     binary = args.binary.resolve()
     store = args.store.resolve() if args.store else None
     source_names = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard",
@@ -299,7 +304,7 @@ def run(args):
         "codec_workers": 2,
         "codec_window_bytes_per_worker": 4 * 1024 * 1024,
         "memory_scope": "pixel leases plus finite encoded buffers and codec scratch; allocator/driver/codec overhead measured separately by process RSS",
-        "extent": [1920, 1080], "channel_order": "RGBA", "row_stride": 1920 * pixel_bytes,
+        "extent": extent, "channel_order": "RGBA", "row_stride": extent[0] * pixel_bytes,
         "encoding": "SDR sRGB encoded bytes in Rgba8Unorm" if args.source == 'sdr' else f"{args.source} Rgba16Float",
         "stage": {"sdr": "final engine output before identity present", "scene-linear": "pre-tone scene-linear composite", "native-output": "labelled native copy/select output", "native-history": "labelled native copy/select next submitted history"}[args.source],
         "excluded": ["native controls", "OS composition", "physical output"],
@@ -322,6 +327,7 @@ def run(args):
     manifest['screen_recording_preflight_error'] = manifest['permission_before']['error']
     environment = dict(os.environ, THRUM_CAPTURE_RUNTIME=str(output), THRUM_CAPTURE_CASE=args.case, THRUM_CAPTURE_MODE=args.mode, THRUM_CAPTURE_SOURCE=args.source, THRUM_CAPTURE_RUNTIME_PARAMS=str(args.params.resolve()))
     environment['THRUM_CAPTURE_ADMISSION'] = manifest['admission_policy']
+    environment['THRUM_CAPTURE_EXTENT'] = ','.join(map(str,extent))
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
             environment[variable] = getattr(args,option)
@@ -450,6 +456,7 @@ if __name__ == "__main__":
     parser.add_argument("--verify-only", action="store_true", help="verify every original RGBA hash without PNG/movie duplicates")
     parser.add_argument("--profile", action="store_true", help="separate CPU sample arm; includes preparation/warmup")
     parser.add_argument("--mode", choices=["realtime", "fixed", "still"], default="realtime")
+    parser.add_argument('--extent', type=int, nargs=2, default=[1920,1080], metavar=('WIDTH','HEIGHT'))
     parser.add_argument('--admission', choices=['omit', 'wait'], default='omit',
                         help='realtime readback admission; wait cannot prove runtime cadence or observer cost')
     parser.add_argument("--source", choices=["sdr", "scene-linear", "native-output", "native-history"], default="sdr",

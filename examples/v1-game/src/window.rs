@@ -161,7 +161,7 @@ impl Game for WindowGame {
         gpu: Gpu<'_>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<WorldPort, GameScene>, String> {
-        let render_extent = [1920, 1080];
+        let render_extent = capture::capture_extent()?;
         let mut host = pollster::block_on(FrameHost::new_with_setup(
             gpu.device,
             gpu.queue,
@@ -172,6 +172,7 @@ impl Game for WindowGame {
             },
             crate::selected_setup()?,
         ))?;
+        crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         let content = crate::attach_cooked_scene(&mut host)?;
         self.demo.observe_camera(host.camera_orientation());
         let offset = if let Some(route) = &self.capture_route {
