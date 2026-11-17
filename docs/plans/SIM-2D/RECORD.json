@@ -172,7 +172,7 @@
         {
           "verdict": "fail",
           "commit": "07fe891982906a064c141ab7419ab83b89376bb5",
-          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "review": "docs/evidence/SIM-2D/M2-review-1.md",
           "items": {
             "M2.1": "pass",
             "M2.2": "pass",
@@ -215,6 +215,53 @@
             "turns": 1
           },
           "at": "2026-11-16T16:54:56Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8176afb5083a87eaa032d98bf9c5d24ab4588373",
+          "review": "docs/evidence/SIM-2D/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "pass",
+            "M2.3": "pass",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "fail",
+            "M2.10": "fail",
+            "M2.11": "pass",
+            "M2.12": "pass"
+          },
+          "findings": [
+            {
+              "name": "mac_cost_identity_stale",
+              "item": "M2.9",
+              "repeat": true
+            },
+            {
+              "name": "chrome_cost_identity_stale",
+              "item": "M2.10",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 103308,
+            "cached": 1046400,
+            "output": 5324,
+            "turns": 1
+          },
+          "at": "2026-11-17T04:49:12Z"
         }
       ],
       "authorised": {
