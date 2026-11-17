@@ -48,7 +48,8 @@ for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text
   if (!bytes.equals(source)) throw new Error(`Stale capture driver ${name}`);
   files.set(`/${name}`, { bytes, type, sha256: sha(bytes) });
 }
-const sourceFiles = execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { encoding: 'utf8' }).trim().split('\n');
+// Ask Git only for the paths hashed below; retained evidence can exceed Node's output buffer.
+const sourceFiles = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '--', 'crates', 'examples', 'scripts', 'Cargo.lock', '.config/architecture.toml'], { encoding: 'utf8' }).trim().split('\n');
 const sourceHashes = {};
 for (const file of sourceFiles) {
   if (/^(crates|examples|scripts)\//.test(file) || ['Cargo.lock', '.config/architecture.toml'].includes(file)) sourceHashes[file] = sha(await fs.readFile(file));

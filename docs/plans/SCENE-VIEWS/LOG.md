@@ -1,5 +1,12 @@
 # SCENE-VIEWS log
 
+- 2026-11-17 M1.10 tooling fix: the shared Chrome capture failed before launch
+  because Git's full file list exceeded Node's default output buffer. Asking
+  Git for the already-hashed paths reproduces the same 1,086 source paths in
+  45,369 bytes; the original 1,076,709-byte command reproduces `ENOBUFS`.
+  Syntax validation passes. [Evidence](../../evidence/SCENE-VIEWS/M1/browser-source-list.md)
+  distinguishes this CPU diagnosis from the lead's shared target verification.
+
 - 2026-11-17 M1 integration: `262e0daed` rebases the caster fix onto the mesh-row
   host relocation. Its shared refresh helper now updates secondary caster mesh
   records after row switches and arena inheritance. Proofs remain in
