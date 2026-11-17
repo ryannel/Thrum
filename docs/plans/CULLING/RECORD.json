@@ -247,7 +247,7 @@
         {
           "verdict": "fail",
           "commit": "21aa3fb764d1931b88ba2d08f919cd290d7adc82",
-          "review": "docs/evidence/CULLING/M3-review.md",
+          "review": "docs/evidence/CULLING/M3-review-1.md",
           "items": {
             "M3.1": "pass",
             "M3.2": "pass",
@@ -287,6 +287,54 @@
             "turns": 1
           },
           "at": "2026-11-14T02:33:42Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "e7311c49fd8900309a61f2dcde9f55d936bbe8ad",
+          "review": "docs/evidence/CULLING/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "could_not_judge",
+            "M3.8": "could_not_judge",
+            "M3.9": "pass",
+            "M3.10": "pass",
+            "M3.11": "pass",
+            "M3.12": "pass",
+            "M3.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "Native full-refresh smoothness remains unjudged",
+              "item": "M3.7",
+              "repeat": false
+            },
+            {
+              "name": "Chrome full-refresh smoothness remains unjudged",
+              "item": "M3.8",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 376350,
+            "cached": 11268736,
+            "output": 33314,
+            "turns": 1
+          },
+          "at": "2026-11-17T01:40:08Z"
         }
       ],
       "authorised": {
