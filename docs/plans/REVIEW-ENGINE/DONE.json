@@ -215,8 +215,8 @@
     {
       "id": "M4",
       "name": "A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -240,8 +240,8 @@
           "check": "cargo test --locked --offline -p thrum-core -p thrum-network -p thrum-sea -p thrum-sea-model -p thrum-asset -p thrum-asset-gpu -p thrum-cook -p thrum-controls --test error_types",
           "ask": "Does each of the eight crates have the test, and does its list hold every error type the crate exports? Do variants name what the caller should do, or where the error happened?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": "docs/evidence/REVIEW-ENGINE/M4/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": "docs/evidence/REVIEW-ENGINE/M4-review.md"
         },
@@ -268,8 +268,9 @@
       ],
       "findings": [
         {
-          "name": "wrapped errors are still erased",
+          "name": "accepted game errors can disable Display and Error on simulation failures",
           "item": "M4.2",
+          "different": "The prior parser, importer and worker source erasure is resolved. Here the original game value survives, but the public game bounds admit errors for which the returned wrapper lacks the required traits.",
           "repeat": false
         }
       ]

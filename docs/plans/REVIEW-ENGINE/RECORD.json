@@ -274,7 +274,7 @@
         {
           "verdict": "fail",
           "commit": "21407fd749fa32880bfbe1792767a4445a33101c",
-          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review-1.md",
           "items": {
             "M4.1": "pass",
             "M4.2": "fail",
@@ -304,6 +304,41 @@
             "turns": 1
           },
           "at": "2026-11-17T13:29:00Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3f209ab6f472f3357c2b6133c82eac9a61cfbbb7",
+          "review": "docs/evidence/REVIEW-ENGINE/M4-review.md",
+          "items": {
+            "M4.1": "pass",
+            "M4.2": "fail",
+            "M4.3": "pass",
+            "M4.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "accepted game errors can disable Display and Error on simulation failures",
+              "item": "M4.2",
+              "different": "The prior parser, importer and worker source erasure is resolved. Here the original game value survives, but the public game bounds admit errors for which the returned wrapper lacks the required traits.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 87606,
+            "cached": 954240,
+            "output": 5046,
+            "turns": 1
+          },
+          "at": "2026-11-17T21:54:50Z"
         }
       ],
       "authorised": {
