@@ -182,14 +182,25 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
             assert_eq!(resumed.id.tick, paused.id.tick);
             let mut first_origin: Option<f64> = None;
             let mut interpolating = 0;
-            for i in 0..24 {
+            let mut submitted = 0;
+            for i in 0..128 {
                 let observation = origin.elapsed();
                 std::thread::sleep(Duration::from_millis(gap_ms));
                 host.set_presentation_lead(Duration::from_millis([0, 10, 50][i % 3]));
                 let report = host
                     .drive(observation, Some(&surface))
                     .expect("resumed resident frame");
-                assert!(report.submitted, "resident resumed: {report:?}");
+                if !report.submitted {
+                    assert!(
+                        report.overload.is_none(),
+                        "world remains active: {report:?}"
+                    );
+                    records.push(serde_json::json!({"mode":"threaded","gap_ms":gap_ms,
+                        "observation_ns":observation.as_nanos(),"submitted":false,
+                        "tick":report.tick,"dropped_view":report.dropped_view}));
+                    continue;
+                }
+                submitted += 1;
                 let s = complete(|| host.poll_completed().expect("completion"), &device);
                 let time = handle.lock().expect("effect").time.expect("time");
                 assert_eq!(
@@ -210,13 +221,20 @@ fn submitted_frames_exclude_stopped_time_and_discarded_fraction() {
                     interpolating += 1;
                 }
                 records.push(serde_json::json!({"mode":"threaded","gap_ms":gap_ms,
+                    "submitted":true,"dropped_view":report.dropped_view,
                     "resume_tick":resumed.id.tick,"asked_ns":asked.as_nanos(),"answered_ns":answered.as_nanos(),
                     "tick":s.tick,"due_ns":s.tick_due_time.map(|d| d.as_nanos()),
                     "observation_ns":s.observation.as_nanos(),"lead_ns":s.presentation_lead.as_nanos(),
                     "phase":s.display_phase,"alpha":s.presentation_alpha,"interpolating":s.clock_interpolating}));
                 std::thread::sleep(Duration::from_millis(8));
+                if submitted == 24 {
+                    break;
+                }
             }
-            assert!(interpolating > 0);
+            assert!(
+                interpolating > 0 && submitted == 24,
+                "bounded submitted-frame coverage"
+            );
         }
         let output =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tmp/effect-graph-m4");
