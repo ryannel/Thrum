@@ -194,7 +194,8 @@
         "../evidence/render/G3C-OCCLUSION-M3A-2026-11-07.md",
         "../evidence/CULLING/M1.md",
         "../evidence/CULLING/M2.md",
-        "../evidence/CULLING/M3.md"
+        "../evidence/CULLING/M3.md",
+        "../evidence/CULLING/M3/geometry/README.md"
       ]
     },
     "A1_simulation": {

@@ -399,4 +399,11 @@
   No cause for the review's native/Chrome gaps is established, and no new capture or trace is claimed.
   [Follow-up and setup request](../../evidence/CULLING/M3/motion-followup/README.md) retain the limits.
   Resume with an awake active panel and ORCHESTRATE's lead-arranged final cadence sitting.
+
+- 2026-11-17 Applied the reviewed geometry-only scope of M3.7/M3.8; cadence belongs to SHOWCASE.
+  Restored three selected-source archives and audited complete 963-frame native and 416-frame Chrome joins.
+  Re-inspected whole frames, consecutive 1× edge/ridge/cover/cut crops, five exact fixed checkpoints per target
+  and twelve paired field cover frames. No culling pop, missing geometry, delayed reveal or flicker was seen.
+  [Geometry judgement and reproducible identity audit](../../evidence/CULLING/M3/geometry/README.md).
+  Accepted correctness, baseline, campaign and cost evidence stands; no runtime or reference changed.
 >>>>>>> 83165972e (Record CULLING motion review gaps and attended setup blocker)
