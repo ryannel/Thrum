@@ -270,7 +270,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A pool in a small scene mirrors the tower, rocks, lamp and far hill around it, cooked meshes included, whether or not the camera can see them (SCENE-VIEWS M2): Not Started · [plan](SCENE-VIEWS/PLAN.md)
 - CLOUDS's design: Design Changes Requested · [design](CLOUDS/DESIGN.md) · [plan](CLOUDS/PLAN.md)
 - RIVERS's design: Design Changes Requested · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
-- PUDDLES's design: Design Ready for Review · [design](PUDDLES/DESIGN.md) · [plan](PUDDLES/PLAN.md)
+- PUDDLES's design: Design Changes Requested · [design](PUDDLES/DESIGN.md) · [plan](PUDDLES/PLAN.md)
 - A rule that would make devices disagree fails the project's check, and a game maker can write and prove rules from the guide (SIM-2D M3): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M3-review.md)
 - A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum (REVIEW-ENGINE M4): In Progress · [plan](REVIEW-ENGINE/PLAN.md) · [latest review](../evidence/REVIEW-ENGINE/M4-review.md)
 - RAY-TRACING's design: Design Changes Requested · [design](RAY-TRACING/DESIGN.md) · [plan](RAY-TRACING/PLAN.md)
@@ -356,7 +356,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING M1, ATMOSPHERE M5 and EFFECT-GRAPH M3 | M2 of 3 · Not Started |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH M2 and M4 and ATMOSPHERE M5 for its shade; EFFECT-GRAPH M3 for its first frame; CONTENT-LOOP M1 for placed volumes; APPLE-PRESENTATION M3 and CREATOR M1 for controls and motion; ATMOSPHERE M8 for mist and fog; WATERS M8 for the sea; APPLE-PRESENTATION's governor and MetalFX milestones to close | Design Changes Requested |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS M1 for its flow on the CPU; WATERS M9 for its first running stream; WATERS M10 and M16 to close | Design Changes Requested |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Design Ready for Review |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS M1 for its puddles and wet ground on the CPU; WATERS M8 for its first puddle; SHOWCASE M5 for the valley; WATERS M10, M14 and M16 to close | Design Changes Requested |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | M3 of 3 · In Progress |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 to start; SIM-2D M1 for its last milestone | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
