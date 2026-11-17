@@ -1,5 +1,12 @@
 # SIM-2D log
 
+- 2026-11-17 M3 review repair adds `TickGame::profile_resources`, defaulting to no profile.
+  This supplies the existing whole-candidate finite contract for game resources without changing non-profile games.
+  Crowd exposes its complete staged resource aggregate; its finite check visits fields without digest hashing.
+  Native tests reject nested NaN and both infinities after parallel merges with queued and tentative edits.
+  Refusal preserves the endpoint, digest, resources, publication and prior delta; finite retry succeeds.
+  [Repair evidence](../../evidence/SIM-2D/M3-resource-repair.md) records verification and target limits.
+
 - 2026-11-17 M2 second-review repair: fresh full two-run release campaigns at `768636def`.
   Both cost validators and the documentation gate pass; no applicability check was relaxed.
   Mac retains all 24 serial/parallel rows and Chrome all 12 rows, with original clean-build provenance.

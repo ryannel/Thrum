@@ -60,6 +60,12 @@ impl StateEncode for Resources {
         self.next_id.encode(digest);
         self.hits.encode(digest);
     }
+    fn is_finite(&self) -> bool {
+        self.controls.is_finite()
+            && self.sequences.is_finite()
+            && self.next_id.is_finite()
+            && self.hits.is_finite()
+    }
 }
 
 /// Reference rule set and registered capabilities.
@@ -399,6 +405,9 @@ impl TickGame for Crowd {
         candidate.swept_only_hits = 0;
     }
     fn reset_parallel_output(&self, _output: &mut ()) {}
+    fn profile_resources<'a>(&self, candidate: &'a Candidate) -> Option<&'a dyn StateEncode> {
+        Some(&candidate.resources)
+    }
     fn merge_parallel(
         &self,
         _system: SystemId,

@@ -381,6 +381,21 @@ pub trait TickGame {
     /// Reset reusable candidate work before the first registered callback.
     fn reset_candidate(&self, candidate: &mut Self::Candidate);
 
+    /// Staged authority resources for portable-profile validation. Profile games
+    /// must return the complete resource aggregate that `apply` will commit,
+    /// including unchanged resources; exclude derived scratch. The engine checks
+    /// its `StateEncode::is_finite` after all callbacks and parallel merges and
+    /// before committing components, resources, history or publication.
+    ///
+    /// The default opts out for games outside the portable profile. As with
+    /// component encodings, completeness is the game author's responsibility.
+    fn profile_resources<'a>(
+        &self,
+        _candidate: &'a Self::Candidate,
+    ) -> Option<&'a dyn crate::profile::StateEncode> {
+        None
+    }
+
     /// Clear one private parallel buffer before every callback, retaining capacity.
     fn reset_parallel_output(&self, output: &mut Self::ParallelOutput);
 
@@ -1518,6 +1533,14 @@ impl<G: TickGame> GameRuntime<G> {
             self.world
                 .validate_profile()
                 .map_err(|error| TickError::Edit(EditError::World(error)))?;
+            if game
+                .profile_resources(candidate)
+                .is_some_and(|resources| !resources.is_finite())
+            {
+                return Err(TickError::Edit(EditError::World(
+                    RegisteredWorldError::NonFiniteResource,
+                )));
+            }
             Ok(())
         }));
         match preparation {

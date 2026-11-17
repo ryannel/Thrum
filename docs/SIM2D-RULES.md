@@ -22,7 +22,12 @@ at one unit per metre.
 Implement `StateEncode` for every component and resource, encoding every field in fixed
 order. Fixed-width integers, booleans, profile numbers/vectors and fixed arrays have
 implementations; `usize`, pointers and raw floats do not. Register components with
-`register_profile`. Propagate nested finiteness: a non-finite candidate is refused before
+`register_profile`. Implement `TickGame::profile_resources` to return `Some` of the complete
+staged authority resource aggregate that `apply` will commit, including unchanged values.
+The default `None` is for games outside the portable profile. Exclude derived scratch;
+encode every nested resource field. The engine checks its `StateEncode::is_finite` after
+all callbacks and parallel merges, alongside component validation. Propagate nested
+finiteness: a non-finite candidate is refused before
 commit, leaving state unchanged. Use stable identities and explicit order, never addresses,
 type IDs or `std::hash`. The portable digest includes complete registered authority state;
 derived indexes are rebuilt and not encoded. See `Body` and `Resources` in the reference and

@@ -536,6 +536,8 @@ impl IdIndex {
 /// world state; callers validate a whole command batch before applying it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RegisteredWorldError {
+    /// A staged profile authority resource would store a non-finite number.
+    NonFiniteResource,
     /// A profile component would store a non-finite number.
     NonFinite {
         /// Durable component identity.
@@ -567,6 +569,9 @@ pub enum RegisteredWorldError {
 impl std::fmt::Display for RegisteredWorldError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::NonFiniteResource => {
+                f.write_str("authority resources would store a non-finite profile number")
+            }
             Self::NonFinite { schema, slot } => write!(
                 f,
                 "component {} at slot {slot} would store a non-finite profile number",
