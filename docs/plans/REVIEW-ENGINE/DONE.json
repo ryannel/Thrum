@@ -215,7 +215,7 @@
     {
       "id": "M4",
       "name": "A failure in the simulation, the sea, cooked assets, the cooker or the network codecs can be matched and printed: every public error there is a typed enum",
-      "status": "blocked",
+      "status": "in_progress",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -273,17 +273,7 @@
           "different": "The prior parser, importer and worker source erasure is resolved. Here the original game value survives, but the public game bounds admit errors for which the returned wrapper lacks the required traits.",
           "repeat": false
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "Land an Apple Presentation evidence repair so the repository evidence-size check passes on main and M4 can merge.",
-        "work": {
-          "commit": "c7802c5f216f9ef20511b76f5a3fc7055fc7e4e0",
-          "branch": "build/review-engine",
-          "pushed": false
-        },
-        "handoff": "docs/evidence/REVIEW-ENGINE/M4-handoff.md"
-      }
+      ]
     },
     {
       "id": "M5",
