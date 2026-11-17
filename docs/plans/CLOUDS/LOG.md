@@ -386,3 +386,12 @@
   unproved lighting, far-air accuracy, motion quality and cost. The plan's recorded
   three-look stop still needs the lead's direction; no fourth look was taken.
   [The rewritten handoff](../../evidence/CLOUDS/M3-handoff.md) names the remaining work.
+
+- 2026-11-17 The owner said “Carry on with M3”; source `b845ab8bb` adds retained
+  far-air/slab/shadow-only probes and bounded air parts. `e706eef48` records
+  M3.5, M3.6, M3.8, M3.10 and M3.11 builder proofs alongside M3.4.
+  [Three resumed looks](../../evidence/CLOUDS/M3-resumed-looks/README.md) still fail
+  bright sunlit sides; fine Sun grids and lower water do not recover them.
+  An unshadowed diagnostic suggests cache refinement alone is insufficient;
+  this is not a proven failure of the model. [Costs](../../evidence/CLOUDS/M3-cost.md)
+  retain the over-refresh investigations; the lead is asked for a lighting diagnosis.
