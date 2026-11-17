@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Author the exit layout and the stand-in meshes for the sizing sweep."""
+"""Author the exit layout, cooked prop sources and sizing stand-ins."""
 import argparse
 import bisect
 import json
@@ -17,6 +17,7 @@ ROUTE = GAME / 'routes/exit-flythrough.json'
 COUNTS = (10_000, 1_500)
 MESH_NAMES = ('exit-boulder', 'exit-scrub', 'exit-cactus', 'exit-standing-rock', 'exit-balloon')
 SWEEP = ((8, 4), (16, 8), (32, 12))
+TRIANGLE_CAP = 48
 
 
 class Terrain:
@@ -177,12 +178,92 @@ def write_stand_ins(output, tier):
     print(f'{len(triangles)} triangles per prop at tier {tier}')
 
 
+def lobe(segments, rings, deform, rock=False):
+    points, _, uv, faces = generate.round_mesh(segments, rings, rock)
+    return [deform(x, y, z) for x, y, z in points], uv, faces
+
+
+def assemble(parts):
+    """Keep the normals of touching shapes independent at their silhouettes."""
+    points, uv, faces = [], [], []
+    for part_points, part_uv, part_faces in parts:
+        faces.extend(tuple(i + len(points) for i in triangle) for triangle in part_faces)
+        points.extend(part_points)
+        uv.extend(part_uv)
+    return points, generate.normals_from_faces(points, faces), uv, faces
+
+
+def scrub():
+    stems = []
+    for index in range(6):
+        angle = index * 2.399963229728653
+        dx, dz = math.cos(angle), math.sin(angle)
+        height = (.88, .71, .54)[index % 3]
+        lean = (.58, .75, .9)[index % 3]
+
+        def stem(x, y, z):
+            t = (y + 1) * .5
+            return .23 * x + dx * (lean * t + .08), height * t - .022, .23 * z + dz * (lean * t + .08)
+
+        stems.append(lobe(4, 2, stem))
+    return stems
+
+
+def cactus():
+    return [
+        lobe(4, 3, lambda x, y, z: (.22*x, .93*y + .91, .23*z)),
+        lobe(4, 3, lambda x, y, z: (.15*x - .42*math.sqrt((y+1)*.5), .54*y + .93, .14*z)),
+        lobe(4, 3, lambda x, y, z: (.14*x + .40*math.sqrt((y+1)*.5), .45*y + 1.09, .15*z)),
+    ]
+
+
+def balloon():
+    def envelope(x, y, z):
+        radius = .77 + .36 * y
+        return radius*x, .91*y + .34, radius*z
+
+    basket = [
+        (-.13,-.87,-.11), (.13,-.87,-.11), (.13,-.87,.11), (-.13,-.87,.11),
+        (-.15,-.67,-.13), (.15,-.67,-.13), (.15,-.67,.13), (-.15,-.67,.13),
+    ]
+    sides = [(0,1,2),(0,2,3),(4,6,5),(4,7,6), (0,4,5),(0,5,1),
+             (1,5,6),(1,6,2),(2,6,7),(2,7,3),(3,7,4),(3,4,0)]
+    neck = [(-.044,-.72,-.026), (.044,-.72,-.026), (0,-.72,.05), (0,-.54,0)]
+    return [
+        lobe(8, 3, envelope),
+        (basket, [(0., 0.)] * len(basket), sides),
+        (neck, [(0., 0.)] * len(neck), [(0,1,2),(0,3,1),(1,3,2),(2,3,0)]),
+    ]
+
+
+def write_props(output):
+    generate.ROOT = output
+    output.mkdir(parents=True, exist_ok=True)
+    parts = (
+        [lobe(8, 4, lambda x, y, z: (.86*x + .13*y, (y+.82)*.63-.055, .77*z), rock=True)],
+        scrub(),
+        cactus(),
+        [lobe(8, 4, lambda x, y, z: (.43*x + .21*y, (y+.82)*1.03-.047, .5*z), rock=True)],
+        balloon(),
+    )
+    material = {'baseColorFactor': [1, 1, 1, 1], 'metallicFactor': 0, 'roughnessFactor': .9}
+    for name, components in zip(MESH_NAMES, parts, strict=True):
+        mesh = assemble(components)
+        assert len(mesh[-1]) <= TRIANGLE_CAP
+        result = generate.write_mesh(name, mesh, material)
+        print(f'{name}: {result["triangles"]} triangles')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--write-layout', action='store_true')
     parser.add_argument('--stand-ins', type=Path)
+    parser.add_argument('--write-props', type=Path)
     parser.add_argument('--tier', type=int, choices=range(len(SWEEP)))
     args = parser.parse_args()
+    if args.write_props is not None:
+        write_props(args.write_props)
+        return
     if args.stand_ins is not None:
         if args.tier is None:
             parser.error('--stand-ins requires --tier')

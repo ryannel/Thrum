@@ -14,10 +14,10 @@
           "statement": "The prop meshes were sized from a sweep recorded before they were made: whole-frame GPU time for the exit scene's 10,000 entities at 1920x1080 with Sun shadows, at the stop with the most entities in view, for at least three triangle counts per prop, on both Mac recipes and in Chrome, in two separate runs. The shipped set follows the design's sizing rule, and its rows are kept as this module's cost baseline.",
           "ask": "Do the two retained runs support the shipped mesh set by the design's sizing rule? Was the heaviest stop chosen from the scene's own in-view counts, and is every row labelled with its build, recipe and load?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#mesh-sizing",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.2",
