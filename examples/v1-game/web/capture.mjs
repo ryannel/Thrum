@@ -9,7 +9,7 @@ const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
 const witness = query.get('witness') ?? 'off';
-if (!['day', 'night', 'noon'].includes(scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
