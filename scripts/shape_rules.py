@@ -180,7 +180,12 @@ def external_boundary(game, engine):
     # even if the game's package has the same name as that in-tree package.
     registry = dict(registry, boundaries={})
     manifests = {p.parent: tomllib.loads(p.read_text()) for p in game.rglob("Cargo.toml")}
-    workspace = manifests.get(game, {}).get("workspace", {}).get("dependencies", {})
+    workspace_folder = game
+    workspace_manifest = manifests.get(game, {})
+    if "workspace" not in workspace_manifest and (game.parent / "Cargo.toml").is_file():
+        workspace_folder = game.parent
+        workspace_manifest = tomllib.loads((workspace_folder / "Cargo.toml").read_text())
+    workspace = workspace_manifest.get("workspace", {}).get("dependencies", {})
     registered = {(engine / entry["manifest"]).resolve().parent
                   for entry in registry.get("packages", {}).values()}
     errors = []
@@ -197,7 +202,10 @@ def external_boundary(game, engine):
         for alias, dependency in dependency_sites(manifest, folder):
             base = folder
             if isinstance(dependency, dict) and dependency.get("workspace"):
-                dependency, base = workspace.get(alias, {}), game
+                if alias not in workspace:
+                    errors.append(f"{folder.relative_to(game)}/Cargo.toml: package-reach: unresolved workspace dependency {alias}")
+                    continue
+                dependency, base = workspace[alias], workspace_folder
             if isinstance(dependency, dict) and "path" in dependency:
                 destination = (base / dependency["path"]).resolve()
                 if destination not in registered or not destination.is_relative_to((engine / "crates").resolve()):

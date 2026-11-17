@@ -150,6 +150,9 @@ dependencies = ["engine"]
             self.assertIn("package-reach", self.gate(code=5, options=("--allow-dirty",)).stderr)
         self.write(self.games / "sample/Cargo.toml", self.manifest + '[dev-dependencies]\nthrum-fixtures={path="../../thrum/crates/thrum-fixtures"}\n')
         self.gate(options=("--allow-dirty",))
+        self.write(self.games / "Cargo.toml", '[workspace]\nmembers=["sample"]\n[workspace.dependencies]\nrenamed={package="thrum-fixtures",path="../thrum/crates/thrum-fixtures"}\n')
+        self.write(self.games / "sample/Cargo.toml", self.manifest + 'renamed.workspace=true\n')
+        self.assertIn("test-crate-edges", self.gate(code=5, options=("--allow-dirty",)).stderr)
 
     def test_external_symlink_is_refused_without_touching_target(self):
         target = self.root / "outside.txt"
