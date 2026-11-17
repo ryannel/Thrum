@@ -110,3 +110,6 @@
   Verified: a lake moves the river above and, through its pool's level, the gauge, charts and falls of a solved river below it in the one
   map; that river's mix is within 2.2 mm and 4.6% of a fresh solve. Not shown: the two rivers joined in space, which needs the river
   above solved with the branch as a way out (a scene for M6). For M4: the GPU must read this gauge too.
+- 2026-11-17 M3 after its second review ([evidence](../../evidence/RIVERS/M3.md#after-the-second-review-a-refused-river-leaves-the-map-as-it-was)).
+  Fixed: a river refused for its banks left the map with support from the refused sample; `add_river` now rebuilds before that error.
+  Verified: the review's probe as a test, 3,721 answers unchanged after two kinds of refusal; it fails at 167 without the fix.
