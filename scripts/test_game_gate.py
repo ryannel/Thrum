@@ -31,6 +31,8 @@ test_role="fixtures"
 [packages.thrum-test-support]
 manifest="crates/thrum-test-support/Cargo.toml"
 test_role="support"
+[boundaries]
+proving_ground="scratch-game"
 ''')
         for script in ("game_gate.py", "shape_rules.py", "shape_matchers.py", "evidence_store.py"):
             self.write(self.engine / "scripts" / script, (ROOT / "scripts" / script).read_text())
@@ -39,6 +41,15 @@ test_role="support"
         self.write(self.games / "sample/Cargo.toml", self.manifest)
         self.write(self.games / "sample/src/lib.rs", '#[test] fn checkout() { assert_eq!(engine::identity(), 2); }\n')
         self.write(self.games / "sample/scripts/game.py", 'import sys\nassert sys.argv[1:] == ["echo", "--literal", "two words"]\n')
+        self.write(self.games / "sample/Cargo.lock", '''version = 4
+[[package]]
+name = "engine"
+version = "0.1.0"
+[[package]]
+name = "scratch-game"
+version = "0.1.0"
+dependencies = ["engine"]
+''')
         self.init(self.games)
         self.worktree = self.root / "builder"
         self.git(self.engine, "worktree", "add", "-qb", "builder", str(self.worktree))
@@ -84,10 +95,13 @@ test_role="support"
         self.assertEqual(record["game_revision"], self.git(self.games, "rev-parse", "HEAD"))
         self.assertFalse(record["taken_as_stands"])
         self.gate("echo", arguments=("--literal", "two words"))
-        self.assertEqual(before, self.snapshot())  # includes Git index and original absent lockfile
+        self.assertEqual(before, self.snapshot())  # includes Git index and source lockfile
         self.gate("test", engine=self.engine, code=7)
         self.assertEqual(json.loads(self.record.read_text())["build_exit_code"], 0)
         self.assertEqual(before, self.snapshot())
+        (self.games / "sample/Cargo.lock").unlink()
+        self.gate("test", options=("--allow-dirty",))
+        self.assertFalse((self.games / "sample/Cargo.lock").exists())
 
     def test_override_missing_dirty_and_failure_codes(self):
         self.env["THRUM_GAMES"] = str(self.root / "missing")
@@ -123,6 +137,10 @@ test_role="support"
             self.write(self.games / "sample/build.rs", source)
             self.assertIn("package-reach", self.gate(code=5, options=("--allow-dirty",)).stderr)
         (self.games / "sample/build.rs").unlink()
+        for target in ('[lib]\npath="../../thrum/crates/engine/src/lib.rs"\n',
+                       '[[bin]]\nname="outside"\npath="../../thrum/crates/engine/src/lib.rs"\n'):
+            self.write(self.games / "sample/Cargo.toml", self.manifest + target)
+            self.assertIn("package-reach", self.gate(code=5, options=("--allow-dirty",)).stderr)
         self.write(self.games / "sample/Cargo.toml", self.manifest + '[dev-dependencies]\nthrum-fixtures={path="../../thrum/crates/thrum-fixtures"}\n')
         self.gate(options=("--allow-dirty",))
 

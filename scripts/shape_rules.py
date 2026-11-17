@@ -176,12 +176,24 @@ def external_boundary(game, engine):
     Includes and module paths still stay within their own game package.
     """
     registry = tomllib.loads((engine / ".config/architecture.toml").read_text())
+    # An external consumer cannot be the engine's registered proving ground,
+    # even if the game's package has the same name as that in-tree package.
+    registry = dict(registry, boundaries={})
     manifests = {p.parent: tomllib.loads(p.read_text()) for p in game.rglob("Cargo.toml")}
     workspace = manifests.get(game, {}).get("workspace", {}).get("dependencies", {})
     registered = {(engine / entry["manifest"]).resolve().parent
                   for entry in registry.get("packages", {}).values()}
     errors = []
     for folder, manifest in manifests.items():
+        targets = [manifest.get("lib", {})]
+        for kind in ("bin", "test", "bench", "example"):
+            targets.extend(manifest.get(kind, []))
+        build = manifest.get("package", {}).get("build")
+        if isinstance(build, str):
+            targets.append({"path": build})
+        for target in targets:
+            if "path" in target and not (folder / target["path"]).resolve().is_relative_to(game):
+                errors.append(f"{folder.relative_to(game)}/Cargo.toml: package-reach: target source leaves game")
         for alias, dependency in dependency_sites(manifest, folder):
             base = folder
             if isinstance(dependency, dict) and dependency.get("workspace"):
