@@ -166,10 +166,8 @@ fn realtime_records_consumed_targets_including_expired_opportunity() {
                 assert_eq!(sample.tick_due_time, None);
                 counts[5] += 1;
                 assert_eq!(sample.display_phase, 1.0);
-                previous = None;
             } else if sample.display_phase >= 4.0 {
                 counts[4] += 1;
-                previous = None;
             } else {
                 let display = (sample.tick as f64 - 1.0 + f64::from(sample.display_phase)) / 60.0;
                 let consumed_seconds = consumed.as_secs_f64();
