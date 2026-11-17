@@ -7,8 +7,10 @@
 milestone gives effects [the display phase](#the-display-phase-m4). Revised again that day after
 that revision's review (finding MF5; `git show 8ed45fc5b:docs/evidence/EFFECT-GRAPH/design-review.md`): the
 phase describes the target the clock consumes, and a prediction is carried a tick at a time. Revised a third
-time that day, after M4's first review ([review](../../evidence/EFFECT-GRAPH/M4-review.md)): which
-[pair a frame shows](#the-frames-pair) on a world on its own thread.
+time that day, after M4's first review ([review](../../evidence/EFFECT-GRAPH/M4-review-1.md)): which
+[pair a frame shows](#the-frames-pair) on a world on its own thread. Revised 17 November, after M4's second
+review ([review](../../evidence/EFFECT-GRAPH/M4-review.md)): [the timing model](#the-timing-model), which
+states every rule about a frame's time as one set, with display time on the world's time.
 
 ## The request
 
@@ -79,7 +81,7 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | **N5 Feed reconstruction's inputs** | Motion, reactive coverage and reset on cuts, replacement and effect reset | Zero motion on a moving effect. Rejected by reading motion from submitted frames against the known displacement |
 | **N6 Survive resize and device replacement** | Mid-run, with state in flight | Reusing an old generation's texture. Rejected by generation checks and exact state after re-seed |
 | **N7 Cost nothing when absent** | Every existing scene and variant | A seam that adds an empty pass or a copy. Rejected by identical compiled pass lists and the exact baselines |
-| **N8 Show motion that is a function of time at the display's time** (M4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; pause, overload and capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing |
+| **N8 Show motion that is a function of time at the display's time** (M4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; a clock that starts at any host time on any tick; pause, overload, the hold after a resume, queued ticks and a rewind, each of which leaves stopped time out of display time; capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing. Or display time written as a host's time, which holds until the clock first stops. Rejected by frames after a pause partway through a tick, held to due times a script gives |
 
 This is internal work: its outcomes are properties measured through the diagnostic effect, with inspected items
 where a picture is the evidence.
@@ -206,7 +208,10 @@ commits ticks (C02). The tick a frame shows was due at `t_C`, at or before the f
 [the frame's pair](#the-frames-pair) keeps true on a world on its own thread, and the frame shows the world one
 tick behind its target. In ticks of duration `d` that display time is
 
-`C − 1 + p`, with `p = (T − t_C) / d`.
+`C − 1 + p`, with `p = (T − t_C) / d`,
+
+where `t_C` and `T` are times on the host's clock and the result is a time of the world's
+([the timing model](#the-timing-model)).
 
 Alpha is `p` held to [0, 1]. Whenever the lead carries the target past the next tick's due time, `p` is above 1,
 alpha stops at 1, and the display time it stands for stops with it; the first frame of the next tick then makes
@@ -215,47 +220,124 @@ up the difference. With 60 Hz ticks and a 120 Hz display that can be every secon
 due ([the planner's reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md) of the builder's record). Every
 quantity shown by alpha under a lead steps this way, not only clouds.
 
-**Four times in a frame.** "The display target" has meant two different times, and the review of this section
-showed that they differ in ordinary frames. From here on each has one name:
+<a id="the-timing-model"></a>
+**The timing model.** M4's rules about time are stated here once, as one set. Its first two builds each met a
+frame the rules did not cover, a delayed frame and then a resumed one, and both came from writing a frame's
+display time as a time on the host's clock. The parts after this one give the lead's meanings, the hosts, the
+pair rule and the reasons, and add no rule.
 
-| Name | What it is | Who has it |
+*Two times.* **Host time** is the monotonic clock a host reads and hands the world's clock, which C02 calls
+callback time. **World time** is ticks times the tick duration `d`, C02's world seconds: tick `n` is world time
+`n · d`. A world's clock stops and resumes, so no fixed offset joins the two, and the time a clock was stopped
+exists in host time only. "The display target" had also meant two different host times. Each time has one name:
+
+| Name | What it is | Which time | Who has it |
+|---|---|---|---|
+| **Observation** `o` | The time the host hands the world for this frame (`FrameHost::advance`'s `now`). It alone admits ticks | Host | The host and the world |
+| **Platform target** | When the platform, or the offscreen runner's opportunity clock, expects to show the frame | Host | The host alone |
+| **Lead** `L` | What `display_target_lead` makes of the platform target at one read of a clock: the time remaining, with the status `future`; zero for a target that has expired (`late`) or is not a time (`invalid`); 50 ms for one farther off (`clamped`) | A length of host time | The host, which gives it to the frame host |
+| **Consumed target** `T = o + L` | The time the clock is sampled at. Alpha is taken here today | Host | The clock |
+| **Due time** `t_C` | When the frame's tick `C` fell due, on the clock that admitted it | Host | The clock sample of the frame's pair |
+| **Origin** `O = t_C − C · d` | Where world time zero lies on the host's clock, in the span the frame's pair belongs to | Host | Anyone, from the two above |
+| **Display time** `W = (C − 1 + p) · d` | The world time at which the frame shows a quantity | World | Every effect, from its tick and phase |
+
+*The rules.*
+
+1. **A clock runs in spans.** A span begins when the clock starts or resumes, at host time `R`, with the world
+   on tick `C_R`. In it tick `C_R + k` falls due at `R + k · d`: ticks are due one tick apart, and the origin
+   is one number, `R − C_R · d`. A span ends when the clock stops, at a pause or an overload. The part of a
+   tick that had elapsed is discarded with the stopped time, so the tick a resume finds is due at the resume,
+   and a resume is refused until every admitted tick has committed. When something other than the clock sets
+   the world's tick, as a rewind or a replay branch does, the clock is untouched: the tick the world lands on
+   takes the due time of the tick it left, which begins a span with another origin. Ticks waiting in the
+   queue, a tick that commits late and a hold end no span and move no due time.
+2. **A frame consumes a target only while its clock interpolates.** That is while the clock is running, every
+   admitted tick has committed, and a tick has committed since the clock last resumed. From a resume until
+   that tick the clock **holds**. A clock's first span has no hold: its frames interpolate at once, from one
+   tick before the tick it started on, as alpha always has. A frame whose clock is paused, overloaded, holding
+   or has ticks queued, and a capture frame, consumes no target: its phase and alpha are exactly 1, its display
+   time is the committed tick's, `C · d`, and its record says the clock was not interpolating, so this 1 is
+   never read as a target one tick past `t_C`.
+3. **The frame's tick was due by its observation:** `t_C ≤ o` in every interpolating frame. An inline world's
+   own observation admits its ticks. A world on its own thread reads the host clock its frames are observed
+   on, and [the frame's pair](#the-frames-pair) keeps the rule there.
+4. **The phase** is `p = (T − t_C) / d`: the host time from the frame's tick falling due to its consumed
+   target, in ticks, with no stop at 1. It is held to at most 50 ms of ticks above 1, the same 50 ms that caps
+   a lead: 4 at 60 Hz. A target farther past the committed tick holds there. Rule 3 and a lead that is never
+   negative keep it from going below 0.
+5. **Alpha is the same function.** For one clock sample and one consumed target, alpha is what it was before
+   M4, bit for bit, and equals `min(p, 1)`. A frame with no lead consumes its observation, as before, so a
+   `still`, a browser frame and a capture frame are unchanged. M4 changes two things a frame is given, and no
+   exact image rests on either: one host's lead, [below](#one-read-of-the-clock), and the tick a delayed
+   frame shows on a world on its own thread, [below](#the-frames-pair).
+6. **Display time** is `(C − 1 + p) · d`. In an interpolating frame under the phase's bound that is
+   `(C − 1) · d + (T − t_C)`: the world time of the tick before the frame's, plus the host time from the
+   frame's tick falling due to its consumed target. With the origin it reads `T − O − d`, the consumed target
+   on the world's time, less one tick. It holds whichever tick the frame shows, on an inline world or a world
+   on its own thread, however late that tick's commit landed, however long after its observation the frame
+   polled the world, and whatever the lead's status.
+7. **In one span, equal intervals between consumed targets are equal steps of display time.** Two
+   interpolating frames under the bound whose pairs have one origin differ in display time by the difference
+   of their consumed targets, across a tick's commit as within a tick.
+8. **Display time holds no stopped time.** Between frames of two spans it advances by the difference of their
+   consumed targets less the difference of their origins. A stop moves the origin later by the time the clock
+   was stopped and by the part-tick it discarded, and a rewind by the ticks rewound.
+9. **At the edge of a span display time may step once, by a bounded amount,** and nowhere else:
+
+   | Frame | Its display time | The step |
+   |---|---|---|
+   | The first that shows a stop, or ticks queued | The committed tick's, `C · d` | From an interpolating frame on that tick: forward by at most a tick where its phase was under 1, as alpha does today, and back by at most 50 ms where it was past 1. Each tick that commits meanwhile adds a tick |
+   | Each later frame of the stop, the queue or the hold | `C · d` | None, but one tick for each queued tick that commits |
+   | The first to interpolate once a queue has drained | `T − O − d`, in the span it never left | Forward, to where that span's frames would have been |
+   | The first to interpolate after a resume | `T − O − d` in the new span: `C_R · d`, plus the host time from the resume's first tick falling due to the frame's consumed target | Forward from `C_R · d`, never back. Showing that first tick, by less than a tick plus 50 ms: the time the tick's commit and the frame took to arrive, plus the lead. With a 30 ms lead the planner's run steps 38.3 ms |
+   | A frame whose target is past the bound | `C · d + 50 ms` | Held there until the world commits or stops |
+   | The first after a rewind, or on another timeline | That of the tick it now shows | The change of tick. Rule 1 of [state and time](#state-time-and-the-tentative-frame-m2) resets the effect's state in the same frame |
+
+10. **Sampling is read-only.** Reading the phase or the due time admits no tick and changes no clock. Rule 1
+    of [state and time](#state-time-and-the-tentative-frame-m2) reads the frame's tick only, so what an
+    effect's state does in a frame is the same with any phase.
+11. **Every source of world time states its phase and its tick's due time from its own clock.** None forms a
+    phase from an alpha already held at 1, and there is no default for either.
+
+    | Source | Its clock | What it states |
+    |---|---|---|
+    | The clocked world and the lane in `thrum-core`; the frame host's world observer in `thrum-render` | `TickClock` | The phase and the due time of the clock sample in the pair the frame shows |
+    | The V1 game's inline and threaded worlds, which the iPhone app also runs | A clocked world started at host time zero on tick 0 | The same. An inline world resumes at the host time its host names. A world on its own thread resumes at its worker's own read of the clock, between the request and the reply |
+    | `thrum-app`'s sky world with a tick duration (`SkyGame::with_tick_duration`, which `examples/water` runs) | Tick `⌊o / d⌋`: one span from host time zero that never stops | A clock that interpolates in every frame; the phase `(o + L) / d − C`, held at the bound; the alpha it gave before M4; the due time `C · d`. As first built it reported a phase of 1 and a clock not interpolating beside an alpha that moved, which is the stand-in this rule forbids |
+    | The sky world with no tick duration; a `still` | None | A clock not interpolating; exactly 1 |
+    | A test fixture that scripts its alpha | None | It is not a source of world time. It reports a clock not interpolating, and nothing reads a phase from it |
+    | `SESSION` M7's [driven world](../SESSION/DESIGN.md#12-a-driven-world) | Its driver's position, with a rate, at a time | A phase and a due time from that position, as a clocked world gives them from its clock |
+
+12. **It is on the record, and an effect is given no host time.** The frame's completed sample and a submitted
+    capture's stamp carry the observation, the lead, the phase, alpha, whether the clock was interpolating
+    and, when it was, the due time of the frame's tick. The V1 game's capture time record writes them with the
+    lead's status and the platform target the runner asked for. Display time can then be worked out from the
+    record without the phase, as `(C − 1) · d + o + L − t_C`; two frames are in one span when their origins
+    agree; and how far a consumed target lies from its platform target can be read frame by frame. Effect time
+    stays as built: the tick, the tick duration, alpha and the phase. An effect that counted time on the
+    host's clock would put the stopped time back.
+
+The V1 game starts its world's clock at host time zero on tick 0, on every host. Until that world first stops,
+its origin is zero and a frame's display time is its consumed target less one tick as plain numbers, which is
+how M4's first tests passed on a statement that was wrong. A capture that warms up paused and resumes when it
+begins, as `examples/v1-game/src/bin/window/capture.rs` does at 1 s, and a window that has recovered from an
+overload, run at another origin.
+
+**The consumed target, by the lead's status.** It follows from the lead, so each status has one meaning:
+
+| The platform target, at the host's read | Lead | Consumed target |
 |---|---|---|
-| **Observation** `o` | The time on the world's clock that the host hands the world for this frame (`FrameHost::advance`'s `now`). It alone admits ticks | The host and the world |
-| **Platform target** | When the platform, or the offscreen runner's opportunity clock, expects to show the frame | The host alone |
-| **Lead** `L` | What `display_target_lead` makes of the platform target at one read of a clock: the time remaining, with the status `future`; zero for a target that has expired (`late`) or is not a time (`invalid`); 50 ms for one farther off (`clamped`) | The host, which gives it to the frame host |
-| **Consumed target** `T = o + L` | The time the clock is sampled at. Alpha is taken here today | The clock |
+| Ahead by 50 ms or less: `future` | The time remaining | The platform target, when the lead was measured from the observation. Otherwise the platform target plus the time from the lead's read to the observation |
+| Expired or not a time: `late`, `invalid` | 0 | The observation |
+| Farther ahead: `clamped` | 50 ms | The observation plus 50 ms |
+| None given: the browser shell, a `still`, a warm-up step | 0 | The observation |
 
-**Decision.** Each frame gives every effect its **display phase** `p` beside alpha, in the frame's effect time
-(`EffectTime` in `contribution/state.rs`), and the phase describes the **consumed target**.
+An expired frame is not an exception to rule 6. Its consumed target is its observation, and its display time
+is that, on the world's time, less one tick.
 
-- **What it is.** `p = (T − t_C) / d` for the consumed target: the fraction of the next tick that had elapsed
-  at the observation, plus the lead in ticks, with no stop at 1. It is never below 0.
-- **Its bound.** It is never more than 50 ms of ticks above 1, the same 50 ms that caps a lead: 3 ticks at
-  60 Hz. A target farther past the committed tick holds there.
-- **Alpha is the same function.** For one clock sample and one consumed target, alpha is what it is today, bit
-  for bit, and equals `min(p, 1)`. A frame with no lead consumes its observation, as today, so a `still`, a
-  browser frame and a capture frame are unchanged. M4 changes two things a frame is given, and no exact image
-  rests on either: one host's lead, [below](#one-read-of-the-clock), and the tick a delayed frame shows on a
-  world on its own thread, [below](#the-frames-pair).
-- **When it is exactly 1.** While the world's clock does not interpolate (paused, overloaded, holding, or with
-  ticks queued), and in a capture frame, no target is consumed: the frame shows the committed tick, alpha is 1
-  today and `p` is 1 with it. The frame's record says the clock was not interpolating, so this 1 is never read
-  as a target one tick past `t_C`.
-- **What an effect can rely on.** While the clock interpolates and `p` is under its bound, `(C − 1 + p) · d` is
-  the consumed target less one tick, on the world's clock, for every frame: whichever tick the frame shows, on
-  an inline world or a world on its own thread, however late that tick's commit landed, however long after
-  its observation the frame polled the world, and whatever the lead's status. Equal intervals between consumed targets are therefore equal steps of display time.
-- **What the consumed target is.** It follows from the lead, so each status has one meaning, fixed here:
+**What an effect does with the phase.** Each frame gives every effect its display phase beside alpha, in the
+frame's effect time (`EffectTime` in `contribution/state.rs`).
 
-  | The platform target, at the host's read | Lead | Consumed target |
-  |---|---|---|
-  | Ahead by 50 ms or less: `future` | The time remaining | The platform target, when the lead was measured from the observation. Otherwise the platform target plus the time from the lead's read to the observation |
-  | Expired or not a time: `late`, `invalid` | 0 | The observation |
-  | Farther ahead: `clamped` | 50 ms | The observation plus 50 ms |
-  | None given: the browser shell, a `still`, a warm-up step | 0 | The observation |
-
-  An expired frame is not an exception to the guarantee above. Its consumed target is its observation, and
-  its display time is that less one tick.
 - **What an effect may do with it.** Evaluate presentation-only motion at `C − 1 + p`. At or below 1 this is
   what alpha gave. Above 1 the effect takes its quantity up to `p − 1` ticks past the committed endpoint, from
   committed state alone. A function of time is evaluated there. A quantity that a step integrates is carried
@@ -270,17 +352,6 @@ showed that they differ in ordinary frames. From here on each has one name:
   at a commit, as when a game sets a new target, the frames after it correct by the difference between the
   quantity as predicted before and as predicted after, at that display time. The consumer states how large that
   can be for its quantity; [`CLOUDS` does for travel](../CLOUDS/DESIGN.md#time-drift-at-the-displays-time-evolution-on-the-tick).
-- **Authority is untouched.** Sampling the phase admits no tick and changes no clock. Rule 1's table reads the
-  frame's tick only, so what an effect's state does in a frame is the same with any phase.
-- **No silent stand-in.** Every source of world time states its phase from its clock: the lane and the clocked
-  world in `thrum-core`, the frame host's world observer in `thrum-render`, `thrum-app`'s sky world, and the
-  V1 game's inline and threaded worlds, which the iPhone app also runs. None forms it from an alpha already
-  held at 1, and there is no default that does.
-- **It is on the record.** The frame's completed sample and a submitted capture's stamp carry the observation,
-  the lead, the phase, alpha and whether the clock was interpolating. The V1 game's capture time record writes
-  them with the lead's status and the platform target the runner asked for. So the consumed target is on the
-  record from two values that are not the phase, and how far it lies from the platform target can be read frame
-  by frame.
 
 <a id="one-read-of-the-clock"></a>
 **One read of the clock.** A host measures the lead from the observation it hands the world, wherever one clock
@@ -301,9 +372,10 @@ read costs nothing: the lead is shorter by the delay, and once the read passes t
   Nobody has measured that time, and no M4 item captures through a window.
 
 <a id="the-frames-pair"></a>
-**The frame's pair.** A frame shows one **pair**: a clock sample and the page committed with it. The guarantee
-above needs the pair's tick to have been due at or before the frame's observation, `t_C ≤ o`. A phase from 0 up
-cannot describe a target that lies before the tick it is counted from.
+**The frame's pair.** A frame shows one **pair**: a clock sample and the page committed with it. Rule 3 needs
+the pair's tick to have been due at or before the frame's observation, `t_C ≤ o`. A phase from 0 up cannot
+describe a target that lies before the tick it is counted from. Pairs are ordered by publication, which on one
+timeline is the order of their ticks, and "newest" below means that order.
 
 On an inline world the frame's own observation admits the ticks, so the newest pair always qualifies. A world on
 its own thread admits ticks from its own reads of the clock. The render owner reads its observation, the frame
@@ -318,7 +390,8 @@ for a phase of −1.94 ([reproduction](../../evidence/EFFECT-GRAPH/M4-review/zer
 the pair the world has just published, the refused pair and the pair it shows, whose clock is not interpolating
 or whose tick was due at or before the poll's observation. That is the pair the frame shows. If the published
 pair is newer than it, the published pair becomes the refused pair. A frame never shows an earlier pair than
-one already shown. The world's thread, its clock and what it commits are untouched.
+one already shown. The world's thread, its clock and what it commits are untouched. The phase, alpha and due
+time a frame is given are those of the pair it shows.
 
 - **It cannot stall.** A pair seen at one poll was due before that poll. Every host that reads a running clock
   reads each observation after its previous poll, so the refused pair qualifies at the next one: a frame shows
@@ -329,6 +402,18 @@ one already shown. The world's thread, its clock and what it commits are untouch
   600 frames stay on one tick and 596 of them sit at the bound. A 60.01 Hz display drifts through that place
   in the tick and holds up to 73 frames, 1.2 s, as it passes. With the refused pair the same frames follow the
   world tick for tick, and their phase does not pass 1.
+- **A stop is shown at once.** A pair whose clock is not interpolating always qualifies, so a poll shows a
+  pause, an overload or a hold the first time it sees one, whatever its observation. Until it does, the frame
+  takes its target in the span its pair belongs to, and the bound keeps its display time within 50 ms of that
+  pair's tick. After a resume the first pair that interpolates is due one tick after the worker's resume, and
+  it waits as a refused pair for an observation that reaches it. In
+  [the planner's run of the lane](../../evidence/EFFECT-GRAPH/M4-timing/README.md#the-lane-paused-and-resumed)
+  every frame of a resumed span has one origin, to 7 ns, and the resume's tick is due between the request
+  and its reply.
+- **Under the bound.** A delayed frame is under the phase's bound while the time from its previous poll to
+  its consumed target, with any lateness of the world's own, is at most 50 ms. A test that scripts its
+  observations may hand one from before its previous poll, and the refused pair then waits for an observation
+  that reaches it.
 - **What changes.** Before M4 every poll took the newest pair.
 
   | Frame | The pair it shows | Against before M4 |
@@ -340,7 +425,7 @@ one already shown. The world's thread, its clock and what it commits are untouch
 
   A delayed frame used to take the newest pair at a target before its tick. Its alpha stopped at 0, the frame
   showed the world ahead of its own time by up to the gap, 32.3 ms in the review's frame, and the next frame
-  stepped short by as much. It now shows its consumed target less one tick like every other frame. When one
+  stepped short by as much. It now shows the display time rule 6 gives, like every other frame. When one
   tick was committed in the gap and there is no lead, a quantity read by alpha is drawn nearly where it was:
   the earlier pair near alpha 1 instead of the newer pair at alpha 0. Where a lead carried the old frame's
   target past the newer tick, that frame was already right. It now shows the same display time from the
@@ -353,7 +438,7 @@ one already shown. The world's thread, its clock and what it commits are untouch
   | Readers of alpha and the page: the game's camera and entities, `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites | A pair and an alpha that describe the frame's own consumed target | Nothing |
   | Readers of the phase: `CLOUDS` from its M2 | The same identity as in any frame. With no lead the phase can pass 1 in a delayed frame, when the pair it shows is more than a tick behind its observation | Nothing: a phase past 1 is already theirs to predict from |
   | Effect state (rule 1) | A frame on the tick the state already holds, then an advance of several ticks. Never an earlier tick | Nothing: both are rows of rule 1's table |
-  | Records: the completed sample, the capture time record, `thrum-app`'s profile recording | Completed ticks land in a later frame's row than before. The tick, observation, lead and phase are on the record | Nothing |
+  | Records: the completed sample, the capture time record, `thrum-app`'s profile recording | Completed ticks land in a later frame's row than before. The tick, observation, lead, phase and due time are on the record | Nothing |
   | Later owners of these files: `HOST` M2 to M5, `SESSION` M7's driven world, `GAME-SPLIT` | The rule and its tests | Keep the tests passing. A driven world on its own thread shows pairs by the same rule |
   | The browser, `still`s and inline tests | No delayed frame | Nothing |
   | Every exact baseline | Held by M4.5: none has moved | Nothing |
@@ -400,13 +485,23 @@ And for which target the phase describes:
 | The platform target, with every host made to consume it exactly | Right where one clock gives both, and done there. The window hosts read two clocks, so exactness needs the clocks paired once for a session. That is a change to both platforms' frame loops with no item here to prove it |
 | **The consumed target, with one read where one clock serves** | Selected. It is what the clock evaluates in every frame, so one identity covers `future`, `late` and `clamped` frames. The runner the Mac's captures use then consumes the platform target exactly |
 
-**Limits.** On the frame a pause, an overload or a hold begins, display time moves to the committed tick:
-forward, as alpha does today, or back by at most the bound when the phase was past 1. A hold lasts until the
-first tick after it completes, so display time is continuous when the world resumes. After a stall longer than
-the bound the phase stays at the bound until the world commits or stops. A delayed frame is under the bound
-while the time from its previous poll to its consumed target, with any lateness of the world's own, is at most
-50 ms. A test that scripts its observations may hand one from before its previous poll, and the refused pair
-then waits for an observation that reaches it.
+And for what display time is counted in, after M4's second review
+([its frames](../../evidence/EFFECT-GRAPH/M4-review/resume-identity.txt)):
+
+| Choice | Verdict |
+|---|---|
+| Keep "display time is the consumed target less one tick", both on the host's clock | True only on a clock that started at host time zero on tick 0 and has never stopped. After the review's 1 s pause it asks for a phase of 60.5, against a bound of 4 and an alpha of 0.5 |
+| Let the world advance through the stopped time, or count that time into the phase | Breaks C02: a pause keeps elapsed time out of authority, and hidden wall-clock time is never applied |
+| Give the resumed frame another tick number | The tick is the identity of the page and of the effect's state |
+| Report frames after a resume as not interpolating | The world is running. Motion by the phase would stop for good at the first pause |
+| Record the observation on the world's time | The observation, the lead and the platform target are compared on the host's clock, as a `future` frame's are. One field cannot be both |
+| Carry the origin with each pair | It is negative for a world that starts on a high tick. The due time says the same and is never before the clock's start |
+| **Two times, joined by the due time of the frame's tick** | Selected. The clock sample already holds it, and the clock's and the lane's arithmetic do not change ([the check](../../evidence/EFFECT-GRAPH/M4-timing/README.md)) |
+
+The one step a resume leaves, in rule 9, is the hold's: alpha has waited for the first tick after a resume
+since before M4, and every reader of alpha resumes that way. Interpolating through the hold would move when
+alpha starts after a pause for all of them, which is theirs and `HOST`'s to plan, with the readers of alpha
+under a lead.
 
 **Not built here.** `CLOUDS` M2 is the first reader. `SEA`'s and `WATERS`' wave time, `RENDER-2D`'s sprites and
 a game's camera and entities stay on alpha: under a lead they step unevenly by the same arithmetic, which has
@@ -428,6 +523,18 @@ this milestone touches and keep its tests passing.
   one tick and alpha is the phase held to 1; one consumed target seen from ticks 60 and 61 is one display time;
   and over 2,000 platform targets 1/120 s apart, one read gives steps of 8.33 ms in every frame, where two
   reads up to 2 ms apart give 6.39 to 10.27 ms.
+- **The timing model.** [`spans.rs`](../../evidence/EFFECT-GRAPH/M4-timing/spans.rs) drives the repository's
+  clock from a start at host time 7.3 s on tick 100 through queued ticks, a pause partway through a tick, a
+  resume, the hold, two overloads and a ten-tick rewind, at 60 and 100 Hz with leads of 0 to 50 ms, and holds
+  every frame to rules 1 to 9 from the script's own times
+  ([output](../../evidence/EFFECT-GRAPH/M4-timing/spans.txt)). Across 272 frames at each rate the worst distance
+  from the model is 4.2 ns, the phase's `f32`. The review's resumed frames, 1.000 s and 1.008 s from the
+  literal identity, are exact with origins of 1000 and 1008 ms.
+  [`lane_lifecycle.rs`](../../evidence/EFFECT-GRAPH/M4-timing/lane_lifecycle.rs) pauses and resumes the
+  repository's lane on its own thread, with 0, 3 and 20 ms between each observation and its poll
+  ([output](../../evidence/EFFECT-GRAPH/M4-timing/lane-lifecycle.txt)): origin zero before the pause, one
+  origin after the resume, and the hold shown as the committed tick. So the clock and the lane already keep
+  the model, and M4 has to state the due time, carry it and test it.
 - **The frame's pair.** [`kept_pair.rs`](../../evidence/EFFECT-GRAPH/M4-replan/kept_pair.rs) runs the
   repository's clock against four lanes: the newest pair, one held pair, the world's newest two pairs, and a
   held pair with a refused pair ([output](../../evidence/EFFECT-GRAPH/M4-replan/kept-pair.txt)). In the review's frame the newest pair is
@@ -558,6 +665,7 @@ queue on Metal or WebGPU. The flag exists so a later recipe can use it without c
 | Descriptor kinds, validation, allocation, pass order, load and store | `thrum-render::graph` (`APPLE-TILE` owns the split and the storage derivation; this module extends the descriptor) |
 | The contribution list, stages, the tentative-commit protocol, the anchor, knobs | This module (`contribution.rs`, `synthetic/{contributed,scene_graph}.rs`, the frame host's list) |
 | The frame's effect time: tick, timeline, tick duration, alpha and the display phase | This module states it; the world's clock in `thrum-core` and the frame host produce it |
+| The due time of a frame's tick, and so its span and origin | The world's clock; the pair's clock sample carries it and the frame host records it |
 | The observation and the lead a frame consumes | The host that drives the frame; the frame host records them |
 | An effect's resources, epoch, state tick and shaders | The effect's module (`SEA`, `CLOUDS`) |
 | The view record, motion and reactive targets, history acceptance | `APPLE-PRESENTATION` |
@@ -648,12 +756,16 @@ on the valley route with no effect attached.
   `APPLE-TILE:M3` moves to pass names. M3 here needs that milestone and reports a skipped pass through its
   schema.
 - **M4.** `mac-metal` only: Chrome gives no lead and runs its world inline, so nothing there can differ, and
-  the exact baselines cover it. Its tests script the observations and the leads, so they do not depend on how
-  busy the machine is. A delayed frame's test reads its observation from the running clock and waits, within a
-  time limit, for the world to commit past it before it polls. The
-  one `realtime` run holds every interpolating frame under the bound to the same identity, expired targets
-  included, and counts the frames at the bound and the frames whose clock was stopped instead of failing on
-  them. No M4 item drives a window, so none needs an attended display.
+  the exact baselines cover it. Its tests script the observations, the leads, the start and each resume, so
+  they do not depend on how busy the machine is, and every expected due time and display time comes from that
+  script and never from a phase or a due time the engine returned. A delayed frame's test reads its
+  observation from the running clock and waits, within a time limit, for the world to commit past it before
+  it polls. A test that resumes a world on its own thread cannot script the worker's read of the clock: it
+  reads the host clock before its request and after the reply, and holds the resume's tick to that bracket
+  and the span to one origin. The one `realtime` run holds every interpolating frame under the bound to rule
+  6, expired targets included, and counts the frames at the bound, the frames whose clock was stopped and
+  each change of origin instead of failing on them. No M4 item drives a window, so none needs an attended
+  display.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<milestone>/`; selected evidence
   in `docs/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at M3, with implementation, correctness and device results kept

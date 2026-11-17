@@ -64,21 +64,36 @@ This is an engineering cadence, not a measured cost. Local play, server, replica
 roles and epochs; replicas publish admitted server state, while prediction runs only its declared capture/replay closure.
 
 Presentation reads immutable committed state, optionally interpolating adjacent snapshots with alpha in [0,1].
-The display phase describes the consumed target: the frame's world-clock observation plus its bounded lead.
-An interpolating frame's committed endpoint is no later than its observation. If render-owner preemption
+Presentation timing keeps two times apart. Host time is the monotonic clock a host reads and hands the world's
+clock: an observation, a platform target, a lead, a consumed target and the due time of a tick are host times.
+World time is ticks times the tick duration, and display time is world time. A clock runs in spans. A span begins
+at the clock's start or a resume, at a host time with the world on a tick, and in it consecutive ticks fall due
+one tick duration apart. A pause or an overload ends it and discards the elapsed part of a tick with the stopped
+time, so the tick a resume finds is due at the resume. A tick set other than by the clock, as by a rewind, takes
+the due time of the tick it replaced. Queued ticks, a late commit and the hold after a resume move no due time.
+The display phase describes the consumed target: the frame's observation plus its bounded lead.
+An interpolating frame's committed endpoint was due no later than its observation. If render-owner preemption
 lets a resident world publish a newer endpoint, the lane shows the newest eligible clock/page pair among
 the published pair, the pair already shown and the refused pair retained from an earlier poll. A published
 pair newer than the one shown becomes the refused pair. No poll goes backwards; with observations read
 from the running clock after the previous poll, each poll after the first shows at least the newest pair
 the previous poll saw. Completed ticks are counted once as shown progress; the world continues independently.
-While the clock interpolates, it is the fraction of the next tick elapsed at that target, without stopping at
-one, bounded to [0, 1 + 50 ms / tick duration]. Alpha is that phase held to one, with its existing arithmetic.
+While the clock interpolates, the phase is the host time from the frame's tick falling due to that target, in
+ticks, without stopping at one, bounded to [0, 1 + 50 ms / tick duration]. Alpha is that phase held to one, with
+its existing arithmetic. Display time is the tick less one plus the phase, in tick durations: the world time of
+the preceding tick plus the host time from the frame's tick falling due to its consumed target. Within a span,
+equal intervals between consumed targets are equal steps of display time. Across spans display time omits the
+stopped time and the discarded part-tick, and at a span's edge it may step once by the bounded amount its owning
+design states.
 Paused, overloaded, holding or queued clocks, and capture frames, show exactly one and report no interpolation.
-Sampling changes no clock and admits no authoritative tick. Where one clock supplies both times, a host measures
-the lead from the same observation it hands the world. The window hosts' two clock reads do not establish that
-their consumed target equals the platform target. Past the committed endpoint, a quantity is a presentation-only
-prediction from committed state, carried a tick at a time by its own step with the inputs that state holds, then
-read between predicted endpoints. Quantities known only at their endpoints keep alpha.
+Sampling changes no clock and admits no authoritative tick. Every source of world time states its phase and its
+tick's due time from its own clock. An interpolating frame's record carries that due time with its observation
+and lead; an effect receives the tick, the tick duration, alpha and the phase, and no host time. Where one clock
+supplies both times, a host measures the lead from the same observation it hands the world. The window hosts' two
+clock reads do not establish that their consumed target equals the platform target. Past the committed endpoint,
+a quantity is a presentation-only prediction from committed state, carried a tick at a time by its own step with
+the inputs that state holds, then read between predicted endpoints. Quantities known only at their endpoints keep
+alpha.
 Interpolation is defined per quantity: positions/rotations may interpolate; events, destruction and inventory changes
 do not blend. Render interpolation adds latency that must be accounted for in control/camera policy. Replay records
 inputs, ordering and required nondeterministic results; fixed dt alone does not promise cross-platform bit identity.

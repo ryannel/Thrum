@@ -346,3 +346,7 @@
   while the targets stand; a changed target corrects by the change. The phase describes the consumed target.
   M2.11 rewritten, M2.13 added for the model, M2.7 reads lead status.
   [Check](../../evidence/CLOUDS/M2-plan/display-travel.txt). S1 to S3 taken; S4 left, since M1 is Done.
+- 2026-11-17 Planner, with `EFFECT-GRAPH` M4's re-plan: the design said display time is the consumed target less
+  one tick, which is true only until the world's clock first stops. Three places now say it is the world's time
+  ([the timing model](../EFFECT-GRAPH/DESIGN.md#the-timing-model)). No item and no mechanism changed: this module
+  reads the tick and the phase as before.

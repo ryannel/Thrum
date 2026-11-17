@@ -402,9 +402,13 @@ the Sun path's [far value](#the-suns-path-one-optical-depth-product) is a mean t
 The weather state steps on the committed tick, and the display shows each 60 Hz tick twice or more. Travel is a
 function of time, so every presented frame takes it **at the display's time** `t = C − 1 + p` in ticks, where `C`
 is the frame's committed tick and `p` its [display phase](../EFFECT-GRAPH/DESIGN.md#the-display-phase-m4), which
-`EFFECT-GRAPH` M4 gives every effect. That time is the frame's **consumed target** less one tick: the time the
-frame's host observed, plus its lead of at most 50 ms toward the moment the platform expects to show the frame.
-Formed on the CPU in f64 from the state:
+`EFFECT-GRAPH` M4 gives every effect. That time is the frame's **consumed target**, on the world's time, less
+one tick. The consumed target is the time the frame's host observed, plus its lead of at most 50 ms toward the
+moment the platform expects to show the frame, and it is a time on the host's clock. Display time is the
+world's: by [the timing model](../EFFECT-GRAPH/DESIGN.md#the-timing-model) it holds none of the time the world's
+clock was paused or overloaded, and it is the consumed target less one tick as plain numbers only on a world
+that started at host time zero on tick 0 and has not stopped, as the V1 game's does. This module reads the tick
+and the phase and no host time. Formed on the CPU in f64 from the state:
 
 - at `p ≤ 1`, between the two committed ticks: `travel(t) = travel(C) − (1 − p) · (travel(C) − travel(C − 1))`;
 - at `p > 1`, past the committed tick, `thrum-cloud-model` carries the travel forward a tick at a time. From the
@@ -423,9 +427,11 @@ ticks it is 43 m from both ([the check](../../evidence/CLOUDS/M2-plan/display-tr
 
 The interpolation alpha is not that time. It stops at the committed tick, and a consumed target usually lies
 past it for part of every tick: at 60× in a 40 m/s wind M2's first capture drifted 3.2 m and 36.8 m on alternate
-frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, equal
-intervals between consumed targets are equal steps of travel, across a tick's commit as within a tick. A frame
-whose platform target had expired consumes the time it was observed at, and takes its travel there.
+frames where 20 m was due ([the reading](../../evidence/EFFECT-GRAPH/M4-plan/README.md)). With the phase, while
+the world's clock runs, equal intervals between consumed targets are equal steps of travel, across a tick's
+commit as within a tick. A frame whose platform target had expired consumes the time it was observed at, and
+takes its travel there. While the clock is stopped, and until the first tick after a resume, the phase is 1 and
+the travel is the committed tick's.
 
 **What the prediction guarantees.** Past the committed tick the travel is a prediction of at most 50 ms of the
 world's time, which at 60× in a 40 m/s wind is 120 m.
@@ -1183,8 +1189,8 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its M7 and M8, and this mo
 8. **The air's haze is an input** (`ATMOSPHERE` M7): the aerosol's amount, which the weather state supplies.
 
 9. **The display phase** (`EFFECT-GRAPH` M4): where a frame's consumed target lies between the last two committed
-   ticks or past the newest, bounded at 50 ms, with the frame's observation, lead and lead status on the capture
-   record. This module reads it in M2 and builds none of it.
+   ticks or past the newest, bounded at 50 ms, with the frame's observation, lead, lead status and tick's due
+   time on the capture record. This module reads it in M2 and builds none of it.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace
 treats as geometry; the temporal contribution; leases of volumes; typed controls.

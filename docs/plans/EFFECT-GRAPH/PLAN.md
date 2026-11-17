@@ -19,6 +19,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: M4 gives effects the display phase and leaves the sea's waves, 2D sprites and a game's camera and entities on the interpolation alpha. Under a display lead those step unevenly by the same arithmetic, which nobody has captured yet. Each is its owner's to plan, the camera and entities with the game contract in `HOST` M4.
 - Assumption: a frame on a world with its own thread shows a tick that was due by the frame's observation. So a delayed frame in the Mac window, a Mac capture or the iPhone app shows an earlier tick than it did before M4, with a lead or without, where M4's first plan said no frame without a lead would change. The other choice keeps every frame's tick and leaves those frames' display time wrong by up to the delay.
 - Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. M4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no M4 item able to prove it.
+- Assumption: after a pause or an overload, the first moving frame steps display time forward once, by the time its tick took to arrive plus the lead: 38 ms in the planner's run with a 30 ms lead. Alpha has always waited for the first tick after a resume, and M4 leaves that. The other choice interpolates through that wait, which changes when every reader of alpha starts moving after a pause.
 
 ## M1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
 [review](../../evidence/EFFECT-GRAPH/M1-review.md)
@@ -31,28 +32,34 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 
 ## M4 A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one
 
-[The display phase](DESIGN.md#the-display-phase-m4) is the design, and
-[the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4) says whose files it is built in.
+[The display phase](DESIGN.md#the-display-phase-m4) is the design. [The timing model](DESIGN.md#the-timing-model)
+in it holds every rule about a frame's time, and [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4)
+says whose files it is built in.
 
-M4's first build is on main: the phase in `crates/thrum-core/src/clock.rs`, the world lane and the clocked
-world; `FrameWorld`, `EffectTime`, the frame sample and the capture stamp in `thrum-render`; one clock read in
-`Offscreen::step_for`; the capture time record; C02's paragraph and the ledger row.
-[Its review](../../evidence/EFFECT-GRAPH/M4-review.md) passed all of it except the frame a delayed poll
-changes, and [the frame's pair](DESIGN.md#the-frames-pair) now settles that frame. The items changed, so every
-one is proved again.
+M4's first two builds are on main: the phase in `crates/thrum-core/src/clock.rs`, the world lane with its
+refused pair and the clocked world; `FrameWorld`, `EffectTime`, the frame sample and the capture stamp in
+`thrum-render`; one clock read in `Offscreen::step_for`; the capture time record; the ledger row.
+[Its second review](../../evidence/EFFECT-GRAPH/M4-review.md) passed five items and failed M4.2 on a frame after
+a resume. The fault was the plan's: it wrote display time as a time on the host's clock. The items changed, so
+every one is proved again.
 
-What is missing is the refused pair. `WorldLane::poll` in `crates/thrum-core/src/sim/world_lane.rs` holds one
-pair: when `ClockSample::accepts_observation` refuses the newest it keeps the pair it has and forgets the one
-it refused, so a run of delayed polls stays on one tick
-([the planner's probe](../../evidence/EFFECT-GRAPH/M4-replan/README.md)).
-`delayed_observation_retains_a_causal_pair_and_later_poll_reports_all_progress` in
-`crates/thrum-core/tests/display_phase/world.rs` and `delayed_observation_still_describes_the_consumed_target`
-in `examples/v1-game/tests/effect_display_phase_gpu.rs` each cover one delayed poll. C02 says a fresh
-observation consumes the accumulated progress, which is not true of a run.
+The clock and the lane already keep the model
+([the planner's check](../../evidence/EFFECT-GRAPH/M4-timing/README.md)), so no phase, alpha or pair that a
+frame is given today should change. What is missing is the due time of a tick, which `ClockSample` holds as
+`last_time` and `fractional_tick` and does not state; its way to the frame's sample and the capture record,
+through every implementer of `FrameWorld`; and tests through a stop. `spans.rs` and `lane_lifecycle.rs`
+beside that check are those tests in outline, and so are your six frames in
+`docs/evidence/EFFECT-GRAPH/M4-resume/probe.rs` at `2f3f2db75` on `build/effect-graph`. C02 carries the
+model's words already, written with this plan: change them only where M4.4 would otherwise fail.
+
+`StillWorld` in `crates/thrum-app/src/sky.rs` reports a phase of 1 and a clock that is not interpolating even
+when it has a tick duration and its alpha moves, as it does in `examples/water`. That is M4.10. Its alpha
+feeds the sea's exact images and must not move by a bit.
 
 `crates/thrum-app/src/app/render_actor.rs` and `examples/v1-game-ios/src/ios/render.rs` are not yours to
-change. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha. The snapshot ring in
-`crates/thrum-core/src/sim/snapshot_ring.rs` has four pages, and the design's cost account says when a second
-held pair costs a publication: if your runs skip publications at 60 or 120 frames a second, write what you
-found in the log. If your change fails an exact test or baseline another module owns, write what you found in
-the log and end `BLOCKED`; do not edit the other module's test.
+change. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha, and effect time gains no field.
+A test fixture in another module's crate that implements `FrameWorld` takes what the trait now asks and
+nothing more. The snapshot ring in `crates/thrum-core/src/sim/snapshot_ring.rs` has four pages: if your runs
+skip publications at 60 or 120 frames a second, write what you found in the log. If your change fails an exact
+test or baseline another module owns, write what you found in the log and end `BLOCKED`; do not edit the
+other module's test.

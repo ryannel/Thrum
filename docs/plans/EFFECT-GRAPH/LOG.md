@@ -210,3 +210,11 @@
   144 effect frames and 32 realtime frames with no dropped opportunity. The capture includes an expired
   target and a 45 ms render-owner delay. [Proof](../../evidence/EFFECT-GRAPH/M4-proof.md) retains the results.
   Cost is at most one additional leased page; physical cadence and consumer prediction remain unqualified.
+- 2026-11-17 Planner: M4 re-planned on the lead's task after its second review failed M4.2 on a resumed frame
+  and the builder ended `BLOCKED needs_context` ("write the whole timing model for M4 (origin, phase, lead,
+  delayed observation, pause) as one consistent set"). The plan had written display time as host time; it is
+  world time. [The timing model](DESIGN.md#the-timing-model) states spans, the hold, the pair, the phase,
+  display time and each bounded step at a span's edge together, and a frame's record gains its tick's due time.
+  C02 rewritten with it; `CLOUDS`' design corrected in three places, its items unchanged. M4.2 to M4.4
+  rewritten; M4.7 to M4.10 added: spans, the lane through a resume, resumed frames, the sky world's stand-in.
+  [Check on the repository's clock and lane](../../evidence/EFFECT-GRAPH/M4-timing/README.md).
