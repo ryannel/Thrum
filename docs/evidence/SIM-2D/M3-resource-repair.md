@@ -22,3 +22,19 @@ commits an infinite resource, preserving the behavior of non-profile games.
 The existing component refusal test remains unchanged. Native focused tests passed during
 development. Final source identity, check receipts and retained-target results follow below.
 No performance, visual or simulator-speed claim is made by these tests.
+
+Clean source checkpoint: `f64eade89b3547715f4bb5d7176c89c709f27d06`.
+The [Mac receipt](M3-resource/mac-metal.json) passes all 10 rows and profile vectors;
+the [Chrome receipt](M3-resource/chrome-webgpu.json) passes all eight rows and vectors.
+Both have source SHA-256 `25cac590226ebf80706e46fc21adc3483e17d06a57284affbbc2ed3a8a38e62e`.
+[Profile controls](M3-resource/profile-controls.stdout) and the
+[registered package check](M3-resource/profile-check.stdout) pass.
+The [platform-sine control](M3-resource/control.json) diverges at tick 1.
+The [guide candidate](M3-resource/guide-crowd.txt) matches all 603 non-comment
+rows in retained Crowd exactly. Both retained files remain unchanged.
+
+The [first simulator attempt](M3-resource/simulator-first-attempt.stderr) was
+stopped at the 30-minute resource hold limit on the 10,000-body Crowd run.
+It is not a passing simulator proof. An unchanged retry with idle system sleep
+prevented is running; the repository gate is also still running. See the
+[handoff](M3-handoff.md) for job identities and remaining work.
