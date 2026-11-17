@@ -25,10 +25,10 @@
           "check": "python3 scripts/run_v1_showcase.py layout",
           "ask": "Does the command take heights from the terrain mesh as shipped, not from heights stored in the layout, and does it sample each mover's whole loop?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#layout-and-terrain-clearance",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.3",
@@ -36,10 +36,10 @@
           "check": "cargo test --locked --offline -p v1-game --test exit_scene",
           "ask": "Read the test. Is the equality over complete authority state, as gate G2S requires, and not a partial hash? Is the hour stepped tick by tick through the game's own rules?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": "docs/evidence/SHOWCASE/M5.md#authoritative-replay-and-drift",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "M5.4",
@@ -116,7 +116,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "A populated open landscape as in Red Dead Redemption 2's New Austin or Horizon Forbidden West's desert: props sit in the ground and thin out with distance with no pattern and no edge. Balloons adrift as over Forza Horizon 5's Mexico: slow, continuous, never popping. This milestone judges content; the finished image is judged in M8."
     },
     {
