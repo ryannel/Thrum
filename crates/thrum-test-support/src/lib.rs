@@ -85,6 +85,7 @@ impl Gpu {
     /// Backend device identities are only comparable within that instance.
     /// # Panics
     /// Fails if the already admitted instance cannot provide another adapter.
+    #[must_use]
     pub fn fresh_adapter(&self) -> Self {
         let adapter = pollster::block_on(
             self.instance
