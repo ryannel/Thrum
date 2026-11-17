@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-17 Confirmed this worktree includes main's `f560ef86e` reading-order fix.
+  Review 2 names only the review-procedure failure. Restored M3.1's builder result
+  from its retained fresh-author Mac/Chrome proof, preserving the independent verdict.
+  [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-17 Refreshed the unchanged fresh author's scene on merged main `0f1dc1556`
   on Mac and hardware Chrome, and inspected native mistake and real-window states.
   The Sun drag and both saves pass in stable windows with zero keys. Both missing-store
