@@ -35,7 +35,8 @@ clock flag or the chronological quarter-slower flag. Every current forced-parall
 row is faster than its matching serial row. Mixed at 2,000 is 0.360–0.372 ms
 parallel versus 0.717–0.743 ms serial. The previous `d24658b33` refresh recorded
 1.121 ms parallel versus 0.797 ms serial for this row in repeat one, and 0.594 ms
-versus 0.731 ms in repeat two. Those source-tagged measurements remain in Git;
+versus 0.731 ms in repeat two. Those source-tagged measurements remain in Git at
+`a00d6c1e3` in this record's path;
 the current improvement does not establish a quiet-host crossover.
 
 At 10,000 bodies, serial tick medians span 9.640–9.878 ms and forced-parallel

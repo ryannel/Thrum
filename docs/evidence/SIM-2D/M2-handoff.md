@@ -10,8 +10,8 @@ The branch is `build/sim-2d`. Source checkpoint `119bd20ab` includes upstream
 key. The three repair commits are above main. They keep compilation outside the
 Chrome lock, run all nine conformance requests in one browser session, omit unused
 returned timelines, and reject debugger disconnects. No engine or retained trace
-changed. Every M2 builder result is already `pass`; the current cost records must
-be refreshed before finishing because the harness and upstream core source changed.
+changed. Every M2 builder result is already `pass`. The Mac cost record now matches
+the integrated source; the Chrome replacement below must finish before merging.
 
 The final real Chrome conformance passed at `69395002b`; its receipt is committed
 at `docs/evidence/SIM-2D/M2/chrome-webgpu.json`. It covers the profile vectors and
@@ -40,8 +40,9 @@ When the remaining Chrome job passes, retain its complete record at the matching
 validator must pass for both, with receipts retained at the existing validation
 paths. The Mac validator already passes. Refresh the Chrome measurements in
 `M2/performance.md` and `M2.md`, keeping
-the historical investigation and every tripwire. Add at most eight lines to the
-module log. Commit the evidence and merge through the script. The milestone stays
+the historical investigation and every tripwire. The module log already has an
+eight-line repair entry; update its pending Chrome line when the campaign passes.
+Commit the evidence and merge through the script. The milestone stays
 `in_progress`; end with `DONE` only after `MERGED`.
 
 The first large browser batch at `7ee85d580` used about nineteen minutes of
