@@ -1,0 +1,70 @@
+{
+  "module": "RAY-TRACING",
+  "design": null,
+  "milestones": {
+    "M1": {
+      "definitions": "523693ffff4c1a82316f4e79cfaa33b252d8b83a1918fe405e2cfa75f384b83a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    },
+    "M2": {
+      "definitions": "600488df306f2b78808d0110a43d7961908c469f3ad1c2cdbaad1d00babe429d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    },
+    "M3": {
+      "definitions": "c709f5e7f1ce05c1aadd3e3da22cdc3441350a38bf40b7de928c6699c5463423",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    },
+    "M4": {
+      "definitions": "0a069f589e73761064d80a8a948a8509084214e525bca43af1628c3c6c7bc530",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    },
+    "M5": {
+      "definitions": "4e88896c2b6fbf85336d5c251a6d11d8352eff9307ccf2145026f221b185bc3b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    },
+    "M6": {
+      "definitions": "43410d5f8cac86189850eb544665ba242a96855781bbe0d1dbe44086baa3b71b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
+        "at": "2026-11-17T22:30:25Z"
+      }
+    }
+  },
+  "briefs": [
+    {
+      "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Metal ray queries / intersection) and mesh shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the hardware-native decision (docs/design/decisions/HARDWARE-NATIVE-ENGINE.md): registry-selected accelerated paths, the portable path stays as fallback and reference, and each path is promoted only by a measured win. Decide from first principles and current state of the art which rendering problems in Thrum they should serve (for example GPU-driven geometry and culling, shadows, reflections, occlusion or GI) and whether this is a new module or milestones added to an existing one, following the module-decomposition rules. It must not delay V1 (SHOWCASE M8): schedule it off the critical path unless a piece clearly earns a place on it, and say which. Desktop high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing. Done when the module list, a design and milestones with done-when files exist and are ready for design review.",
+      "at": "2026-11-17T22:30:25Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-17T22:30:25Z"
+  }
+}
