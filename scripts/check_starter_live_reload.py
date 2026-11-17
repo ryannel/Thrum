@@ -138,6 +138,31 @@ def diagnostic_checks(capture, stderr):
     }
 
 
+def missing_store_checks(out, binary):
+    """Startup must refuse absent stores before drawing, with actionable diagnostics."""
+    env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
+    capture = out / "missing-store-unexpected.png"
+    env["THRUM_CAPTURE_PNG"] = str(capture)
+    absent = out / "absent-store"
+    results = []
+    for name, store, expected in (
+        ("unset", None, ("THRUM_ASSET_STORE is not set", "no cooked meshes to draw")),
+        ("absent", absent, (str(absent), "has no HEAD", "nothing has been cooked there")),
+    ):
+        current = dict(env)
+        if store is not None:
+            current["THRUM_ASSET_STORE"] = str(store)
+        run = subprocess.run([str(binary)], cwd=REPO, env=current, capture_output=True,
+                             text=True, timeout=60)
+        diagnostic = run.stdout + run.stderr
+        (out / f"missing-store-{name}.log").write_text(diagnostic)
+        ok = (run.returncode != 0 and not capture.exists() and "./dev scene" in diagnostic
+              and all(part in diagnostic for part in expected))
+        results.append({"case": name, "returncode": run.returncode,
+                        "diagnostic": diagnostic, "ok": ok})
+    return results
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -231,11 +256,17 @@ def main():
     diagnostics = diagnostic_checks(scene.capture_log.read_text(), (out / "starter.log").read_text())
     failures.extend(f"{name}: missing object, cause or next step" for name, ok in diagnostics.items() if not ok)
     target = Path(os.environ.get("CARGO_TARGET_DIR", REPO / "target"))
+    binary = (target / "release/thrum-starter").resolve()
+    missing_store = missing_store_checks(out, binary)
+    diagnostics["missing asset store"] = all(result["ok"] for result in missing_store)
+    failures.extend(f"missing store {result['case']}: missing refusal or unexpected frame"
+                    for result in missing_store if not result["ok"])
     report = {
         "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
-        "binary_sha256": hashlib.sha256((target / "release/thrum-starter").read_bytes()).hexdigest(),
+        "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
         "target": "mac-metal",
         "diagnostics": diagnostics,
+        "missing_store": missing_store,
         "results": results,
         "failures": failures,
     }

@@ -1,5 +1,10 @@
 # CREATOR log
 
+- 2026-11-17 Restored M3.1's fresh builder proof after the reviewer's reading-order
+  error; its independent review verdict stays unchanged. Added unset/nonexistent-store
+  refusals to M3.3's automated command, including exact causes, recovery advice and
+  refusal-before-draw checks. [Evidence](../../evidence/CREATOR/M3.md).
+
 - 2026-11-16 Refreshed the fresh scene, native mistake states and visible starter journey
   on merged main `353f0a43e` after incoming shader changes. All target runs pass and
   selected images were inspected. Fresh Mac/Chrome pixels match the original exercise.
