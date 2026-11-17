@@ -205,3 +205,10 @@ One passing fixture, eleven refusals and fifteen conformance adapter tests pass 
 Crowd and Mixed reproduce retained digests and profile vectors on Mac, Chrome and iPhone simulator.
 The guide's straight recording matches Crowd; the registered sine control diverges at tick 1 in Chrome.
 [Evidence and limits](../../evidence/SIM-2D/M3.md) record unchanged references and simulator function only.
+
+## M3 target-specific rule guard, 18 November 2026
+
+Every registered rule package is linted in development and release on native, Wasm and ARM64 simulator builds.
+The two target-specific controls are refused where compiled, including a release-only simulator call.
+Crowd and Mixed match all retained folds, checkpoints and profile vectors on Mac, Chrome and iPhone simulator.
+[Evidence](../../evidence/SIM-2D/M3-target-guard.md) includes the six build configurations and all 26 trace rows.

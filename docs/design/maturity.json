@@ -1906,7 +1906,7 @@
       "id": "W1",
       "sim2d": {
         "implementation": "Portable profile number, fixed-width state encoding, digest, counter-based random and rule-package guard implemented; registered runtime preflight validates opted-in staged profile resources as well as components before commit. Existing runtime and history remain authoritative.",
-        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim; negative profile fixtures reject each prohibited class. Native public-API tests refuse nested non-finite authority resources atomically and recover with finite input. Evidence: docs/evidence/SIM-2D/M3-resource-repair.md.",
+        "correctness": "Crowd and Mixed retained timelines, profile vectors, local/wire input and corrected replay exercised on mac-metal, Chrome Wasm and ios-sim. Mac-hosted profile checks cover development and release builds for native, Wasm and ARM64 iPhone simulator. Negative fixtures reject prohibited classes, including target-specific and release-only calls. Native public-API tests refuse nested non-finite authority resources atomically and recover with finite input. Evidence: docs/evidence/SIM-2D/M3-target-guard.md and docs/evidence/SIM-2D/M3-resource-repair.md.",
         "visual": "Not claimed; this module draws nothing.",
         "device": "ARM64 M3 Max native, Chrome Wasm and iPhone 18 Pro simulator function. Physical iPhone, x86 processor, Android and browsers other than Chrome not run. Simulator speed is not claimed.",
         "performance": "M1 and M2 retain shared-host cost baselines, not qualified hardware budgets; no M3 speed claim."
@@ -2105,7 +2105,7 @@
       "id": "P3",
       "sim2d": {
         "implementation": "Reusable circle index, oversize bodies, circle/box/capsule overlaps and nearest-k implemented; rigid-body physics, navigation and non-circle bodies are not built.",
-        "correctness": "M2 brute-force oracle, hand-worked predicates and domain refusal tests; M3 preserves Crowd and Mixed retained timelines on all three named targets. Evidence: docs/evidence/SIM-2D/M3.md.",
+        "correctness": "M2 brute-force oracle, hand-worked predicates and domain refusal tests; M3 preserves Crowd and Mixed retained timelines on all three named targets. Evidence: docs/evidence/SIM-2D/M3-target-guard.md.",
         "visual": "Not claimed; no rendering in the query module.",
         "device": "ARM64 M3 Max native, Chrome Wasm and iPhone 18 Pro simulator function. Physical iPhone, x86 processor, Android and browsers other than Chrome not run. Simulator speed is not claimed.",
         "performance": "M2 retains measured warmed allocations and two shared-host release cost runs per Mac/Chrome target; baseline figures only, no M3 speed claim."
