@@ -435,3 +435,8 @@
   `8c6dc8847`; a CPU check confirms its scoped list preserves every hashed path at both historical commits.
   [Follow-up](../../evidence/WATERS/M3-exact-check-followup.md) separates that verified cause and fix from
   the shared runner's still-pending coverage proof. No baseline, comparison or WATERS runtime changed.
+- 2026-11-17 Diagnosed the clean-checkout M3 gate's unstable rustc incremental fingerprints.
+  Both verification launchers now disable the incremental query cache; other commands retain their setting.
+  Chrome first-frame and lifecycle checks pass, and `clock_spans` executes without the compiler panic.
+  The builder's full gate reached later GPU tests before its 600-second limit; the merge gate proves integration.
+  [Compiler-cache evidence](../../evidence/WATERS/M3-compiler-cache.md) separates these results and limits.
