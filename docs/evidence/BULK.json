@@ -4323,6 +4323,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/M3-lighting-diagnosis/snapshots.tar.gz",
+      "size": 7141860,
+      "sha256": "106e53492b7cf0a4187b571bf50dc6f2e248daa7e3ce4c73cc4742b0e89a08e8",
+      "date": "2026-11-17T19:25:55.139545+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/M3-resumed-looks/base-frames.zst",
       "size": 5188617,
       "sha256": "84bf575e7a8361f2481c67d6679cc1149bf3de7b1cc90b0c9b031069a13a304b",

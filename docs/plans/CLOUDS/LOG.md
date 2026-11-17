@@ -395,3 +395,11 @@
   An unshadowed diagnostic suggests cache refinement alone is insufficient;
   this is not a proven failure of the model. [Costs](../../evidence/CLOUDS/M3-cost.md)
   retain the over-refresh investigations; the lead is asked for a lighting diagnosis.
+
+- 2026-11-17 M3's focused diagnosis at `843203a07` retains six Metal rays and
+  an independent f64 source/transport reference, with [point and pixel tables](../../evidence/CLOUDS/M3-lighting-diagnosis/README.md).
+  Density, phase, ambient and local-source arithmetic agree closely; the Sun
+  cache retains up to 0.2882 absolute T error against its own split model.
+  Noon RGB pixels differ by at most 1.1%; no production lighting fix or fresh
+  visual look is claimed. A planner ruling on lighting/exposure and that cache
+  approximation is requested; [handoff](../../evidence/CLOUDS/M3-handoff.md) records checks and limits.

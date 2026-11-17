@@ -2716,7 +2716,7 @@
       },
       "sky_evidence": {
         "implementation": "Partial opt-in Sky: half-extent trace, display-time motion, ping-pong resolve, model-generated disc phase tables, lent sky hemisphere integration and bounded air parts. Procedural noise remains direct; preparation-time noise volumes/mips are not built.",
-        "correctness": "Metal submitted-frame motion/cut/profile/absence probes, passive constant and Sun-lit slab kernels, provider finite-air parity and measured far-air reference bounds, shadow-only ground-byte equality on portable and Apple tile; far-air bounds are broad and do not establish visual quality.",
+        "correctness": "Metal submitted-frame motion/cut/profile/absence probes, passive constant and Sun-lit slab kernels, provider finite-air parity and measured far-air reference bounds, shadow-only ground-byte equality on portable and Apple tile; far-air bounds are broad and do not establish visual quality. Six Metal lighting rays have an independent f64 stage reference; density, phase, ambient and source arithmetic agree closely while Sun-cache approximation error remains unresolved (M3-lighting-diagnosis).",
         "visuals": "Development stills fail the bright sunlit-side cue and distant haze quality; no accepted M3 visual matrix, pan, walk or cut sequence.",
         "device": "Apple M3 Max Metal and WebGPU-default-limit admission only. Development capture-off cost tripwires exceed 120 Hz refresh; no Chrome, iOS or physical cadence qualification.",
         "record": "../evidence/CLOUDS/M3-numerical.md"
