@@ -25,30 +25,30 @@
   },
   "milestones": {
     "M1": {
-      "definitions": "983011508c707b758b79ed050351c25819d64fcfc87f656e5af86ca370f068c4",
+      "definitions": "2f3cf3e05bc2f1cef16e798ac761fd13a32cb5a6c155cb1b6d6281839c5ba7c3",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
+        "at": "2026-11-17T23:28:16Z"
       }
     },
     "M2": {
-      "definitions": "4ae7c49a0fa6e5a696ee0a8f337c9ae817a0adf7798c47d8e6d1ef66a73febb4",
+      "definitions": "c293259c9a2a7a494938dd1e2ecd2347645409e405444297cdb635f70cd69db7",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
+        "at": "2026-11-17T23:28:16Z"
       }
     },
     "M3": {
-      "definitions": "150dbbe793a6cc99e697fb4efccd4fc806a32717f1ceb408094967e035746071",
+      "definitions": "ecde442a63269939b1727fd80c2acf1ad57e56ff3ab6ad264aa1fecbdea7910b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Me",
-        "at": "2026-11-17T22:30:25Z"
+        "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must F",
+        "at": "2026-11-17T23:28:16Z"
       }
     }
   },
@@ -56,10 +56,14 @@
     {
       "task": "Owner, 17 Nov 2026: 'Just do ray tracing and mesh shaders on mac, let's leave PC for now.' Plan hardware ray tracing (Metal ray queries / intersection) and mesh shaders (Metal object and mesh stages) on the Apple tile recipe, verified on this M3 Max, under the hardware-native decision (docs/design/decisions/HARDWARE-NATIVE-ENGINE.md): registry-selected accelerated paths, the portable path stays as fallback and reference, and each path is promoted only by a measured win. Decide from first principles and current state of the art which rendering problems in Thrum they should serve (for example GPU-driven geometry and culling, shadows, reflections, occlusion or GI) and whether this is a new module or milestones added to an existing one, following the module-decomposition rules. It must not delay V1 (SHOWCASE M8): schedule it off the critical path unless a piece clearly earns a place on it, and say which. Desktop high / PC stays out of scope; keep designs reusable for a later Vulkan/D3D12 recipe where that costs nothing. Done when the module list, a design and milestones with done-when files exist and are ready for design review.",
       "at": "2026-11-17T22:30:25Z"
+    },
+    {
+      "task": "The design review of MESH-SHADING at docs/evidence/MESH-SHADING/design-review.md asked for changes. Resolve its 5 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.\n\nAlso apply the owner's 17 Nov bar (see ORCHESTRATE.md if the bar change has landed): visual work passes on shipped-game look and speed with performance tripwires; references diagnose, never gate; proof proportional to risk.",
+      "at": "2026-11-17T23:28:16Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-17T22:30:25Z"
+    "at": "2026-11-17T23:28:16Z"
   }
 }
