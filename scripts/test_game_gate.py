@@ -155,6 +155,9 @@ dependencies = ["engine"]
         self.assertIn("test-crate-edges", self.gate(code=5, options=("--allow-dirty",)).stderr)
 
     def test_external_symlink_is_refused_without_touching_target(self):
+        before = self.snapshot()
+        self.gate(code=2, options=("--record", str(self.games / "record.json")))
+        self.assertEqual(before, self.snapshot())
         target = self.root / "outside.txt"
         target.write_text("unchanged")
         (self.games / "sample/link").symlink_to(target)

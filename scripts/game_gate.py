@@ -73,6 +73,8 @@ def run(args, engine=ROOT):
     scratch.mkdir(parents=True, exist_ok=True)
     record_dir = Path(tempfile.mkdtemp(prefix="run-", dir=scratch))
     record_path = Path(args.record).resolve() if args.record else record_dir / "record.json"
+    if record_path.is_relative_to(repository):
+        raise ValueError("record output must stay outside the games repository")
     record = {"engine_revision": git(engine, "rev-parse", "HEAD"),
               "engine_dirty": bool(git(engine, "status", "--porcelain")),
               "game_revision": git(repository, "rev-parse", "HEAD"),
