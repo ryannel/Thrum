@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use super::SyntheticMesh;
 use super::mesh_arena::{ArenaLimits, check};
+mod host;
 mod live;
 pub use super::mesh_arena::ArenaError as MeshRowError;
 pub(super) use live::LiveRows;
