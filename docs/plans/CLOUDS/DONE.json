@@ -459,7 +459,7 @@
     {
       "id": "M3",
       "name": "Fair-weather cumulus stands over the valley under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -599,7 +599,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The lead must arrange a focused lighting diagnosis before another M3 visual attempt.",
+        "work": {
+          "commit": "23b4a6e159a54e047dd6233677e0d372ecfe7b31",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/CLOUDS/M3-handoff.md"
+      }
     },
     {
       "id": "M4",
