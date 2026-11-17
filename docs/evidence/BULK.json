@@ -1762,6 +1762,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/APPLE-TILE/M12/window-530e5546b/sources.tar.gz",
+      "size": 1633618175,
+      "sha256": "745bf2d7edf32c2b1fdb14314d800cfcdfc78e84bf1f7f001f5b0b4d15ccecb4",
+      "date": "2026-11-17T09:03:28.759136+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/APPLE-TILE/M3-resume/apple-tile-render-stall/png/000255.png",
       "size": 2606027,

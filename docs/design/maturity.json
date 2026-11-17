@@ -747,8 +747,8 @@
       },
       "M12": {
         "implementation": "integrated recipe cost bench and optional read-only light-list/omission and simulator-video diagnostics; existing renderer mechanisms remain unchanged",
-        "functional_validation": "merged aedbe55ede8d: 60 ordinary/20 native/20 twin cost arms, 38 ordinary and 16 diagnostic native exact comparisons, four 481-record Chrome exact sets, six actual light-list oracle cases, three rejecting omission controls, cooked simulator direct lifecycle/rotation and repository gate pass; D12.3 attended OS-window protocol remains open",
-        "experienced_quality": "builder inspected Chrome day/night contacts and native-size omission crops plus simulator cooked pan, lifecycle and rotation stills; attended Mac game-window function and independent milestone review remain owed",
+        "functional_validation": "Retained aedbe55ede8d cost, native exact, Chrome exact/light-list/omission and cooked simulator lifecycle proofs pass. The full merged repository gate passes. Fresh 530e5546b actual-window Sun/night/noon matches, E/Q controls, resize/restoration and lease-generation-2/3 recovery pass under both recipes.",
+        "experienced_quality": "Builder inspected Chrome and simulator proof plus full-size OS/T2 window pairs and host-time control/recovery sequences under both native recipes. Independent milestone review remains owed.",
         "platform_performance": {
           "mac": "both ten-minute capture-OFF thermal/load windows retained, full scene/present and inclusive CPU costs; descriptive shared-load only; native factory/twin timing limitations explicit; no speed promotion, MetalFX, physical replay traffic or panel cadence qualification",
           "browser": "exact output, realtime sources, supported GPU light path and CPU overflow/tie readbacks; no speed or enlarged GPU capacity claim",

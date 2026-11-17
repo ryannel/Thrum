@@ -435,3 +435,11 @@
   D12.1, D12.2, D12.4, D12.5 and D12.6 pass builder inspection; no path is promoted.
   D12.3's final attended Mac window proof needs owner-supplied access;
   [handoff](../../evidence/APPLE-TILE/M12-handoff.md) preserves the remaining work.
+
+- 2026-11-17 M12's final Mac window proof runs on merged `530e5546b` with the
+  existing observer grant and an awake, unlocked display. Both recipes preserve
+  matched Sun/night/noon content, E/Q panning, resize/restoration and generation
+  replacement recovery. [Window proof](../../evidence/APPLE-TILE/M12/window-530e5546b/README.md).
+  A supplementary Apple tile movie covers the restore cycle beyond the first
+  movie's interval. The full source archive and all clocks are retained.
+  All six builder items pass. Mac M3 owns the separate cadence qualification.

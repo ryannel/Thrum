@@ -396,7 +396,7 @@
           "id": "D12.3",
           "statement": "The integrated native game retains exact same-target scene-linear and submitted SDR bytes under the comparison contract and coherent realtime motion on both recipes, while recording cadence/physical-device qualifications still owed without claiming Mac M3 closure.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/APPLE-TILE/M12/README.md",
+          "evidence": "docs/evidence/APPLE-TILE/M12/window-530e5546b/README.md",
           "inspect": "Use T2 still/fixed exact ordinary scene-linear/submitted SDR checkpoints and realtime 1x sequences on both recipes: cut, night, lights, mirror, skipped views and fallback/recovery. Label the exact native copy/select diagnostic separately. Review all source changes against contracts and brief. D2.5/D3.5 must have passed and repeat their OS-window-capture versus T2 still/fixed matched-state reference and functional control/resize/recovery protocol on the final assembly under both recipes with the same attended grants. Window function cannot remain owed; cadence and physical-device rows can. Mac M3 owns full post-G3t-M3 motion/capture-OFF panel requalification; earlier Mac M2 evidence cannot qualify this build.",
           "verdict": "",
           "review": "",
@@ -404,7 +404,7 @@
             "type": "access",
             "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
           },
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D12.4",
