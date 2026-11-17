@@ -416,3 +416,7 @@
   Hardware Chrome passes the first-frame and seven-checkpoint CPU-oracle trace, including real tab visibility
   and destruction/replacement of its device, with no validation faults. [Numerical proof](../../evidence/WATERS/M3.md)
   keeps these target results separate from the fixed/motion inspections recorded after integration.
+- 2026-11-17 M3 merged at `07cecc854` after the full project gate passed for its integration batch.
+  Captured four Chrome and six portable Metal fixed views, plus 62 contiguous Chrome pan frames with no omissions.
+  Builder and fresh visual inspection pass the named cues; the clip's phase-sampling limit and page clock remain explicit.
+  [Final proof](../../evidence/WATERS/M3.md) records pixel comparisons and verified archive recovery. Physical cadence is unqualified.

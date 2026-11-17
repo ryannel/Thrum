@@ -5778,6 +5778,14 @@
       "store": "/Users/ryannel/Workspace/thrum-evidence-store"
     },
     {
+      "kind": "local",
+      "path": "docs/evidence/WATERS/M3-captures.tar.zst",
+      "size": 271489695,
+      "sha256": "a828d9870df02fa16156e737cd3890f602b7d0a0352af8f40ef143c099be0c68",
+      "date": "2026-11-17T10:03:12.334753+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
       "kind": "history",
       "path": "docs/evidence/render/apple-tile-m0/motion/route-motion/000241.png",
       "size": 2982474,

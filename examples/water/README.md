@@ -39,7 +39,8 @@ reserve and a 6 GiB raw-spool allowance; these are observer resources, absent fr
 Neither route
 captures the desktop or proves physical display cadence.
 
-For a portable Metal comparison, set `THRUM_WATER_RECIPE=portable` on the fixed capture.
+For a portable Metal comparison, set `THRUM_RECIPE=portable THRUM_WATER_RECIPE=portable`
+on the fixed capture.
 
 `python3 scripts/water_cost.py record --scene first-frame`, also under the GPU lock, records the
 paired capture-off run. `check` takes a fresh measurement and validates the committed record;

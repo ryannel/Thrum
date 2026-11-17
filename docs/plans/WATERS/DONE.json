@@ -455,8 +455,8 @@
           "statement": "In Chrome at noon in a trade wind the sea passes M2.2's list, and any difference from the Mac's portable recipe at the same views is recorded.",
           "inspect": "`fixed` stills in Chrome at M2.2's views, judged by M2.2's list and against the Mac's portable-recipe stills.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M3.md",
           "verdict": "",
           "review": ""
         },
@@ -465,8 +465,8 @@
           "statement": "In Chrome the surface moves smoothly between ticks, and the page's frame-callback intervals over the run are recorded as the page's own clock, not as presented time.",
           "inspect": "A `realtime` sequence in Chrome with the camera panning.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M3.md",
           "verdict": "",
           "review": ""
         },
