@@ -90,7 +90,8 @@ browser entry point is involved.
 | **C3 The mode is right for the device and the scene** | Mac both recipes, Chrome, the iOS simulator | Adapters with and without indirect execution; cheap cubes to meshes of a few thousand triangles | A culled mode that silently runs Direct, making every equality test vacuous. Rejected by asserting the resolved mode and a nonzero hidden count |
 
 The bar is a shipped GPU-driven renderer, where culling is invisible: the player never sees it work. Here that is
-held to something stricter and checkable, byte equality with drawing everything.
+held to something stricter and checkable, byte equality with drawing everything. The bar is about which geometry
+each frame holds. How fast or how evenly frames arrive is [not judged in this module](#frame-cadence).
 
 ## The oracle
 
@@ -439,8 +440,9 @@ what in the output causes it. The finding is recorded with a disposition, one of
 M3, or the cost is carried, with the reason and what the performance phase should try, as a proposal in the log
 for a planner. Building continues either way. A cheaper form of the output moves the references again, so it
 lands [as above](#how-it-lands), and the campaign is taken again on main after it. Correctness and the
-milestone's quality bar remain requirements: the realtime captures of M3.7 and M3.8 are judged against
-"smooth at the display's full refresh", whatever the rows say.
+milestone's quality bar remain requirements whatever the rows say: M3.7 and M3.8 judge the captures for popping,
+flicker and missing geometry. They do not judge how fast or how evenly the frames arrive, and no item of this
+module does ([Frame cadence](#frame-cadence)).
 
 **Chrome.** The campaign runs on the Mac only. Chrome's image varies too, by
 [the module list's reading](../ARCHITECTURE.md#a-frame-that-varies-under-load) of two Chrome records, which is
@@ -456,6 +458,7 @@ main-branch check over the four Chrome sets stand as the proof, and M3.10 record
 | Per-slot visible lists, indirect records, the prepass depth and pyramid | The frame slot's target, declared in the graph |
 | Graph semantics, the split graph, attachment storage | `APPLE-TILE` |
 | The view record, jitter, motion and reactive targets | `APPLE-PRESENTATION` |
+| Frame cadence of a culled scene: the frame records, the presented intervals and the verdict on smoothness | `SHOWCASE`, on the Mac present path `PLATFORM-RUNTIME-MAC` qualified, with `APPLE-PRESENTATION`'s governor ([Frame cadence](#frame-cadence)) |
 | Cooked placements and meshlet culling | `CONTENT-LOOP` (`thrum-asset-gpu`) |
 | Scene content, routes and the controls | The game |
 
@@ -530,13 +533,46 @@ pass mark, and no item fails on the figure. No quiet-GPU figure exists, and none
 The coverage output's cost is recorded the same way on the valley's moving route: the claimed shader paired with
 a control that leaves the output out, per pass and for the whole frame, on both native recipes.
 
+## Frame cadence
+
+This module is not judged on frame cadence. No item of it is about how fast or how evenly frames arrive, and none
+needs an awake panel, a capture-off run or a sitting with the other builders paused. Settled on 17 November 2026,
+with [the module list](../ARCHITECTURE.md#who-judges-frame-cadence).
+
+- **What M3.7 and M3.8 judge.** Which geometry each submitted frame holds: nothing visible pops in or out,
+  flickers or is missing at a frame edge or at an occluder's silhouette. They use a `realtime` capture because the
+  game then draws at uneven intervals, with larger camera steps between frames and the occasional dropped
+  submission, which the fixed-tick routes of M3.1 to M3.5 never do. The capture is read as a sequence of images.
+  Its submission intervals are not a measurement of cadence: it is taken while other builders work, with the
+  capture observer on, and Chrome's recorder runs headless on a 60 Hz timer. A long interval between two frames
+  is a larger camera step, a harder case for the item and no failure of it.
+- **Who judges cadence.** `SHOWCASE`, on the exit scene, which is this valley populated and drawn in the default
+  mode this module's rule sets. Its cue S5 and its items for the capture-off whole-frame record with each late
+  frame's cause, the OS-reported presented intervals on the built-in panel, and the frame callbacks of a visible
+  Chrome window (M7.9, M8.6 and M8.7 when this was written) carry "smooth at the display's full refresh".
+  `PLATFORM-RUNTIME-MAC` qualified the Mac's present path on the cooked valley, and `APPLE-PRESENTATION`'s
+  governor is what holds the rate when a frame costs too much.
+- **Why not here.** Gate G3c asks for visibility, image equivalence and costs "as tripwires", and says nothing of
+  pacing. Cadence belongs to the whole frame, on a display, with capture off and every module's passes in it. A
+  figure for culling alone would need the attended panel and the paused builders this plan declines, and
+  `SHOWCASE` would take it again on the scene that ships. What culling adds to a frame is in M3.3's and M3.13's
+  paired rows, per pass, at p50 and p95.
+- **What a reviewer does with an uneven capture.** Nothing against M3.7 or M3.8, and the target's full-refresh
+  edge condition is not run for them. A stall the reviewer traces to this module's own code, such as a culling
+  pass's time in the frame's rows or a resource it creates mid-run, is a defect to report like any other. An
+  interval in a loaded capture with no traced cause is an observation.
+- **How a cadence problem comes back.** When `SHOWCASE`'s record names a culling pass as the cause of a late
+  frame, it writes a proposal in this module's log and a planner settles it, as its design already says of entity
+  level of detail.
+
 ## Proof and builder handoff
 
 - **Targets.** `mac-metal` for every milestone, on both recipes where a recipe is named. `chrome-webgpu` through
   `scripts/check_v1_browser.mjs`, as the existing field cases run. `ios-sim` for function only: the simulator has
   no indirect execution, so it proves the fallback, never a culled mode.
-- **Capture.** Equality is proved in-process by reading back each mode's target in one run. The one inspected item
-  (M3) uses T2 engine capture and names its mode: `fixed` for stills, `realtime` for the pan.
+- **Capture.** Equality is proved in-process by reading back each mode's target in one run. M3.7 and M3.8 use
+  T2 engine capture and name its modes: `fixed` for stills, `realtime` for the pan, which is read as a sequence of
+  submitted frames and [never as a timing](#frame-cadence).
 - **GPU.** Each GPU check holds one lock: `gpu` on the Mac, `chrome` for a run that starts Chrome. Scratch goes in `tmp/culling-<milestone>/`; selected evidence in
   `docs/evidence/CULLING/`.
 - **Once, then `merge`.** Each proof is one run on the branch; the script's run on the merged tip is the proof

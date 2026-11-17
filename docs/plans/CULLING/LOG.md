@@ -383,3 +383,11 @@
   [Report, complete raw sources and identities](../../evidence/CULLING/M3/replan/main-campaign/README.md).
   All thirteen items now have target evidence.
   The G3c clause audit and ledger separate implementation, correctness, content and contended costs.
+
+- 2026-11-17 Re-plan on the lead's task, after [the second review](../../evidence/CULLING/M3-review.md) left
+  M3.7 and M3.8 unjudged for "full-refresh smoothness" and the builder asked for a paused-builder sitting.
+  Cadence is not this module's: `SHOWCASE` judges it on the culled exit scene
+  ([ruling](../ARCHITECTURE.md#who-judges-frame-cadence), [design](DESIGN.md#frame-cadence)). The design's
+  Cost paragraph and M3's quality bar had said "smooth at the display's full refresh", which the review followed;
+  both, and M3.7 and M3.8, now say they judge which geometry each submitted frame holds. No check changed. The
+  script clears M3's claims; [what each item had](../../evidence/CULLING/M3-replan/claims-before-2026-11-17.md).

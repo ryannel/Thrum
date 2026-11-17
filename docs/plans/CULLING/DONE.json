@@ -213,8 +213,8 @@
         },
         {
           "id": "M3.7",
-          "statement": "In real time on the Mac, with the default mode, nothing pops, flickers or goes missing at the frame edges during a fast yaw or at occluder silhouettes when stepping out of cover.",
-          "inspect": "Capture the valley with T2 engine capture: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback, not elapsed-time motion. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive frames at 1x.",
+          "statement": "On the Mac, with the valley's default culling mode, no frame the game submits while it runs in real time shows a culling artifact: nothing pops in or out, flickers or is missing at a frame edge during a fast yaw, or at an occluder's silhouette when the camera steps out of cover. The item is about what each submitted frame holds. How fast or how evenly the frames arrive is not part of it.",
+          "inspect": "Capture the valley with T2 engine capture, with the game reporting its default mode: `fixed` stills at the moving route's checkpoints and a `realtime` pan with fast yaw. Add the mixed-mesh field's retained per-tick frames through cover and back out, which are fixed-time readback. Judge whole frames and native-size crops at the frame edges, the ridge line and around walls and props, as consecutive submitted frames at 1x. Use a realtime capture that holds every submitted frame, because an omitted frame cannot show what it held. Read that capture as a sequence of images only. It is taken under load with the capture observer on, so its submission intervals, gaps and frame rate count neither for nor against this item, and the target's full-refresh edge condition is not run for it. The design's 'Frame cadence' section says who judges smoothness.",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "could_not_judge",
@@ -223,8 +223,8 @@
         },
         {
           "id": "M3.8",
-          "statement": "In real time in Chrome, with the default mode, nothing pops, flickers or goes missing at the frame edges or at occluder silhouettes on the valley route.",
-          "inspect": "Capture the valley in Chrome with T2 engine capture: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive frames at 1x.",
+          "statement": "In Chrome, with the valley's default culling mode, no frame the page submits while it runs in real time shows a culling artifact: nothing pops in or out, flickers or is missing at a frame edge or at an occluder's silhouette on the valley route. The item is about what each submitted frame holds. How fast or how evenly the frames arrive is not part of it.",
+          "inspect": "Capture the valley in Chrome with T2 engine capture, with the page reporting its default mode: `fixed` at the moving route's checkpoints and a `realtime` pan. Judge whole frames and native-size crops at the frame edges and the ridge line, as consecutive submitted frames at 1x. Use a realtime capture that holds every submitted frame, because an omitted frame cannot show what it held. Read that capture as a sequence of images only. Its recorder runs headless on a 60 Hz timer, under load, so its submission intervals, gaps and frame rate count neither for nor against this item, and the target's full-refresh edge condition is not run for it. The design's 'Frame cadence' section says who judges smoothness.",
           "target": "chrome-webgpu",
           "evidence": "",
           "verdict": "could_not_judge",
@@ -287,7 +287,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "blocked",
-      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops at a screen edge or at an occluder's silhouette, smooth at the display's full refresh.",
+      "quality_bar": "Culling as in a shipped open-world game such as Horizon Forbidden West: the player never sees it work. Flying the valley and the field, nothing pops, flickers or goes missing at a screen edge or at an occluder's silhouette, in any frame the game submits. The project bar's 'smooth at the display's full refresh' is not judged in this milestone: `SHOWCASE` judges it on the culled exit scene, as the design's 'Frame cadence' section says.",
       "findings": [
         {
           "name": "Native full-refresh smoothness remains unjudged",

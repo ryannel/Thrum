@@ -145,6 +145,27 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 | A fresh agent builds a small scene from public docs alone | `CREATOR` M3 |
 | Outstanding physical-device runs reported | `SHOWCASE` M8 |
 
+<a id="who-judges-frame-cadence"></a>
+
+**Who judges frame cadence on the culled valley (with `CULLING` and `SHOWCASE`), 17 November 2026.** `CULLING`
+M3's review left M3.7 and M3.8 unjudged for "full-refresh smoothness", from submission intervals in a loaded
+capture, and its builder asked for a paused-builder sitting
+([review](../evidence/CULLING/M3-review.md)). The brief's bar, "smooth at the display's full refresh", has one
+judge for the showcase, and it is not `CULLING`.
+
+- **`SHOWCASE` judges it**, on the exit scene, which is the valley populated and drawn in `CULLING`'s default
+  mode: [cue S5](SHOWCASE/DESIGN.md#cues), with the capture-off whole-frame record that names each late frame's
+  cause (M7.9), the OS-reported presented intervals on the built-in panel (M8.6) and a visible Chrome window's
+  frame callbacks (M8.7). No item of `SHOWCASE` changes.
+- **`PLATFORM-RUNTIME-MAC`** owns the Mac's surface, present and cadence path, qualified on the cooked valley in
+  its M2 and M3. **`APPLE-PRESENTATION`** owns the governor, which holds the rate when a frame costs too much.
+- **`CULLING`** owns what culling adds to a frame, recorded as paired rows and tripwires, as gate G3c words it.
+  Its items judge which geometry each submitted frame holds, and none judges cadence or takes a sitting
+  ([its design](CULLING/DESIGN.md#frame-cadence)). When `SHOWCASE`'s record names a culling pass as the cause of
+  a late frame, that is a proposal in `CULLING`'s log.
+- **Between the two.** Until `SHOWCASE` M7, no cadence figure exists for the valley with culling on, and none is
+  claimed. The intervals of an engine capture taken under load, with its observer on, are not one.
+
 ## Build order
 
 Riskiest and most depended-on first. A milestone's `needs` in its done-when file is the authority; this is the
