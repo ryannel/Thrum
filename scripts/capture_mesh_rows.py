@@ -50,7 +50,7 @@ def run(args):
                     raise RuntimeError("capture did not reach its measurement interval")
                 time.sleep(0.01)
             origin = time.monotonic_ns()
-            for at, scale in [(0.8, 2.0), (2.4, 0.4)]:
+            for at, scale in [(1.2, 2.0), (2.0, 0.4)]:
                 while (time.monotonic_ns() - origin) / 1e9 < at:
                     time.sleep(0.005)
                 gltf = json.loads(json.dumps(original))
