@@ -213,11 +213,10 @@
         }
       ],
       "ready_for_review": {
-        "commit": "07cecc8549112f90346c0fb13fa66ef43dc71c62",
-        "checked": "29c1971d79afeeee99d84a12cef55f73b22294f4",
-        "at": "2026-11-17T10:15:10Z",
+        "commit": "a5ed91f50dee2803149fd422b53201ce6f35bf44",
+        "checked": "46396be0ab6914fc3098133fc5bf11299640206d",
+        "at": "2026-11-17T14:43:38Z",
         "reused": [
-          "Test command",
           "M2.2",
           "M2.3",
           "M2.4",
@@ -234,16 +233,16 @@
         "cli": "codex-cli 0.169.0-alpha.11.1",
         "path": "headless",
         "usage": {
-          "input": 887185,
-          "cached": 91374336,
-          "output": 238783,
-          "turns": 2
+          "input": 164634,
+          "cached": 31976448,
+          "output": 136707,
+          "turns": 1
         },
         "session_usage": {
-          "input": 887185,
-          "cached": 91374336,
-          "output": 238783,
-          "turns": 2
+          "input": 1051819,
+          "cached": 123350784,
+          "output": 375490,
+          "turns": 3
         }
       }
     },
