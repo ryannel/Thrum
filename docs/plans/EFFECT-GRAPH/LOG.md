@@ -218,3 +218,10 @@
   C02 rewritten with it; `CLOUDS`' design corrected in three places, its items unchanged. M4.2 to M4.4
   rewritten; M4.7 to M4.10 added: spans, the lane through a resume, resumed frames, the sky world's stand-in.
   [Check on the repository's clock and lane](../../evidence/EFFECT-GRAPH/M4-timing/README.md).
+- 2026-11-17 Confirmed the second review's M4.2 origin failure on six submitted Mac Metal frames at
+  `8ea0cd27d`, through the public V1 pause/resume path and the actual effect time. Leads 0, 10 and 50 ms
+  give a 1.000 s identity error; a partial-tick pause adds 8 ms discarded by pause. Alpha, phase and
+  authority preserve their existing semantics. No implementation or planner/reviewer field changed.
+  Proposal: the planner must define a clock-origin mapping, preserve raw target records, and revise the
+  identity and its record semantics together. [Evidence](../../evidence/EFFECT-GRAPH/M4-resume/README.md)
+  and [handoff](../../evidence/EFFECT-GRAPH/M4-handoff.md) retain the contradiction and affected producers.
