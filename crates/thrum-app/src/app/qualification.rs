@@ -12,9 +12,15 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use thrum_controls::{Controls, Value, macos::MacPanel};
-use thrum_render::runtime::{CaptureLimits, FrameHost, FrameWorld, SceneSource, SubmittedImage};
+use thrum_render::runtime::{
+    CaptureLimits, FrameError, FrameHost, FrameWorld, SceneSource, SubmittedImage,
+};
 
 const RECORDS: usize = 2048;
+
+#[cfg(test)]
+#[path = "qualification_tests.rs"]
+mod tests;
 
 pub(super) struct Pan {
     output: PathBuf,
@@ -201,9 +207,9 @@ impl Observer {
             stale_recycle: None,
         }))
     }
-    pub(super) fn frame<G: Game>(
+    pub(super) fn frame<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &FrameHost<G::World, G::Scene>,
+        host: &FrameHost<W, V>,
         sequence: u64,
         surface_generation: u64,
         presented: bool,
@@ -229,14 +235,36 @@ impl Observer {
         }
         false
     }
-    pub(super) fn replace<G: Game>(
+    pub(super) fn replace<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut FrameHost<G::World, G::Scene>,
-    ) -> Result<(), String> {
+        host: &mut FrameHost<W, V>,
+    ) -> Result<(), FrameError> {
         if self.writer.is_none() {
             return Ok(());
         }
-        let (pending, leases) = host.submitted_capture_usage().ok_or("missing old tap")?;
+        self.retire_tap(host)?;
+        self.stale_image = host.try_submitted_image()?;
+        self.restart_tap(host)
+    }
+    /// A published device abandons old tap mailboxes without polling the old queue.
+    pub(super) fn replace_device<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &mut FrameHost<W, V>,
+    ) -> Result<(), FrameError> {
+        if self.writer.is_none() {
+            return Ok(());
+        }
+        self.retire_tap(host)?;
+        self.stale_image = None;
+        self.restart_tap(host)
+    }
+    fn retire_tap<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &FrameHost<W, V>,
+    ) -> Result<(), FrameError> {
+        let (pending, leases) = host
+            .submitted_capture_usage()
+            .ok_or(FrameError::InvalidState("missing old tap"))?;
         self.retirements.push((
             self.session,
             pending,
@@ -244,7 +272,12 @@ impl Observer {
             self.origin.elapsed().as_nanos(),
         ));
         self.retired = self.frames.len() - self.images.len();
-        self.stale_image = host.try_submitted_image().map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    fn restart_tap<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &mut FrameHost<W, V>,
+    ) -> Result<(), FrameError> {
         host.disable_submitted_capture();
         self.session += 1;
         host.enable_submitted_capture_with_limits(
@@ -254,15 +287,14 @@ impl Observer {
                 cpu_buffers: 96,
                 byte_allowance: 1024 * 1024 * 1024,
             },
-        )
-        .map_err(|e| e.to_string())?;
+        )?;
         self.replacement_pending = false;
         Ok(())
     }
-    pub(super) fn collect<G: Game>(
+    pub(super) fn collect<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut FrameHost<G::World, G::Scene>,
-    ) -> Result<(), String> {
+        host: &mut FrameHost<W, V>,
+    ) -> Result<(), FrameError> {
         if self.replacement_pending {
             return Ok(());
         }
@@ -272,17 +304,25 @@ impl Observer {
         while let Some(image) = writer.recycled() {
             host.recycle_submitted_image(image);
         }
-        while let Some(image) = host.try_submitted_image().map_err(|e| e.to_string())? {
+        while let Some(image) = host.try_submitted_image()? {
             if self.images.len() == RECORDS {
-                return Err("image marker capacity exhausted".to_owned());
+                return Err(FrameError::InvalidState("image marker capacity exhausted"));
             }
             if let Some(stale) = self.stale_image.take() {
-                let before = host.submitted_capture_usage().ok_or("fresh tap missing")?.1;
+                let before = host
+                    .submitted_capture_usage()
+                    .ok_or(FrameError::InvalidState("fresh tap missing"))?
+                    .1;
                 host.recycle_submitted_image(stale);
-                let after = host.submitted_capture_usage().ok_or("fresh tap missing")?.1;
+                let after = host
+                    .submitted_capture_usage()
+                    .ok_or(FrameError::InvalidState("fresh tap missing"))?
+                    .1;
                 self.stale_recycle = Some((before, after));
                 if before == 0 || before != after {
-                    return Err("stale CPU image entered the replacement tap".to_owned());
+                    return Err(FrameError::InvalidState(
+                        "stale CPU image entered the replacement tap",
+                    ));
                 }
             }
             self.images.push((
@@ -315,7 +355,7 @@ impl Observer {
             && Instant::now() < deadline
         {
             host.poll_completed().map_err(|e| e.to_string())?;
-            self.collect::<G>(host)?;
+            self.collect(host).map_err(|e| e.to_string())?;
             std::thread::sleep(Duration::from_millis(1));
         }
         let mut file = BufWriter::new(

@@ -87,7 +87,7 @@ manifest = "crates/thrum-app/Cargo.toml"
 # step. Generic over a game's runtime; it names no game types and no content package. Its sky kit draws cooked meshes through
 # thrum-asset-gpu and the verified G5 browser client (the engine's shipping residency path), so a creator's scene needs no
 # status or store plumbing of its own.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render", "thrum-test-support"]
 
 [packages.thrum-asset]
 manifest = "crates/thrum-asset/Cargo.toml"

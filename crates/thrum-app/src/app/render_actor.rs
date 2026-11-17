@@ -117,6 +117,26 @@ pub(super) struct RenderReply<R> {
     /// The game's readback after this job, for its controls to show.
     pub(super) readback: R,
 }
+impl<R> RenderReply<R> {
+    pub(super) fn collect_observer<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        watch: &DeviceWatch,
+        host: &mut FrameHost<W, V>,
+        observer: Option<&mut super::qualification::Observer>,
+    ) {
+        // A native completion can report loss independently of the wgpu callback.
+        // Never collect from a reply already handed to recovery (or shutdown).
+        if !matches!(self.outcome, RenderOutcome::Frame(Ok(_))) || watch.is_lost() {
+            return;
+        }
+        if let Some(observer) = observer
+            && let Err(error) = observer.collect(host)
+        {
+            // Collection can be the first observer of a native completion error.
+            self.outcome = frame_failure(error, watch.is_lost());
+        }
+    }
+}
 struct Actor<G: Game> {
     host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
@@ -235,12 +255,7 @@ impl<G: Game> Actor<G> {
             },
             RenderJob::Finish => RenderOutcome::Finish(self.finish()),
         };
-        if !self.gpu.watch.is_lost()
-            && let Some(observer) = &mut self.observer
-            && let Err(error) = observer.collect::<G>(&mut self.host)
-        {
-            reply.outcome = RenderOutcome::Frame(Err(error));
-        }
+        reply.collect_observer(&self.gpu.watch, &mut self.host, self.observer.as_mut());
         reply.device_generation = self.gpu.watch.generation;
         reply.profile_minimum = self.profile_minimum;
         reply.profile_revision = self.profile_revision;
@@ -293,9 +308,7 @@ impl<G: Game> Actor<G> {
                 ready = false;
             } else {
                 if let Some(observer) = &mut self.observer {
-                    observer
-                        .replace::<G>(&mut self.host)
-                        .map_err(FrameError::Scene)?;
+                    observer.replace(&mut self.host)?;
                 }
                 self.host.resize_surface(request.extent)?;
                 self.gpu.config = config;
@@ -379,7 +392,7 @@ impl<G: Game> Actor<G> {
             && let Some(observer) = &mut self.observer
         {
             observer
-                .frame::<G>(
+                .frame(
                     &self.host,
                     request.sequence,
                     request.surface_generation,
@@ -449,6 +462,11 @@ impl<G: Game> Actor<G> {
             .publish_device(&mut prepared)
             .map_err(RecoveryFailure::frame)?;
         self.gpu = replacement;
+        if let Some(observer) = &mut self.observer {
+            observer
+                .replace_device(&mut self.host)
+                .map_err(RecoveryFailure::frame)?;
+        }
         self.refused_surface_generation = None;
         self.needs_reconfigure = needs_reconfigure
             || self.surface_generation.load(Ordering::Acquire) != surface_generation;

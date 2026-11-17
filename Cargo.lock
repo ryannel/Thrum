@@ -3078,6 +3078,7 @@ dependencies = [
  "thrum-controls",
  "thrum-core",
  "thrum-render",
+ "thrum-test-support",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
