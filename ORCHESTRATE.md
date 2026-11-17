@@ -93,3 +93,8 @@ reviewing. The architecture brief is [docs/design/ARCHITECTURE-BRIEF.md](docs/de
 shared contracts are [docs/design/CONTRACTS.md](docs/design/CONTRACTS.md), and capability status is
 [docs/design/maturity.json](docs/design/maturity.json) (implementation, correctness, visuals and device kept apart).
 Scratch goes in `tmp/<task>/`, under [the storage rules](docs/ASSET-LIFECYCLE.md).
+
+Some items need a fresh reader, for example CREATOR's M3.1, which may only be judged by a reviewer who has not yet
+opened the module's design, `crates/` or other design documents. A reviewer of such a milestone does that item first,
+reading only what the item allows, and opens the rest of this guidance afterwards. Two reviews of CREATOR M3 read the
+design first and could not judge the item.
