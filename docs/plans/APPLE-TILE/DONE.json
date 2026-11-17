@@ -378,8 +378,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M12/README.md",
           "ask": "Use capture OFF for performance baselines and matched capture ON arms for observer cost, never substitute captured timings. Review build/shader/route/cooked hashes, warmup/load, p50/p95 and outstanding work. The sustained window is at least ten minutes per recipe after warmup, with actual duration, power/load, thermal samples and throttling (method, not a performance gate). Unavailable/confounded thermal data cannot qualify promotion. Reconcile every unique prepared/twin allocation and old/new generation overlap; retain CPU light overflow/admission cost. Record current upload/192-byte row footprints; claim no M4-M9 saving, live G4 scale change or panel cadence.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "builder_result": "pass"
         },
         {
@@ -388,8 +388,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M12/README.md",
           "ask": "Review retained M1 storage, M2 graph, M3 input seam and M10/M11 native-boundary costs/ablations. Check all current readers, selected paths, full-stage costs and fallback/twin allocations; no removed M4-M9 mechanism is required or claimed. The SDR intermediate remains and its traffic is counted. Physical replay bytes remain unmeasured without a new qualified replay. Stand-in proof cannot qualify MetalFX. Missing comparable sustained thermal evidence precludes promotion; no numeric budget is invented.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "builder_result": "pass"
         },
         {
@@ -398,8 +398,8 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M12/window-530e5546b/README.md",
           "inspect": "Use T2 still/fixed exact ordinary scene-linear/submitted SDR checkpoints and realtime 1x sequences on both recipes: cut, night, lights, mirror, skipped views and fallback/recovery. Label the exact native copy/select diagnostic separately. Review all source changes against contracts and brief. D2.5/D3.5 must have passed and repeat their OS-window-capture versus T2 still/fixed matched-state reference and functional control/resize/recovery protocol on the final assembly under both recipes with the same attended grants. Window function cannot remain owed; cadence and physical-device rows can. Mac M3 owns full post-G3t-M3 motion/capture-OFF panel requalification; earlier Mac M2 evidence cannot qualify this build.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "needs": {
             "type": "access",
             "what": "Unlocked active Mac session and Screen Recording permission already granted to the OS-window-capture process; owner supplies setup, agent runs and reviews. No automation changes grants."
@@ -415,8 +415,8 @@
           "lock": "chrome",
           "ask": "Use T2 M1 fixed exact comparisons against the retained pre-change Chrome baseline and realtime for host-time motion, accounting for every sample. Read back existing 32/64 all-overlap overflow/tie lists against the existing CPU oracle; record actual CPU versus supported GPU execution counts and complete fallback/admission cost. CPU overflow is the retained intended outcome, not qualification of a larger GPU builder. Trace unchanged 192-byte bindings, supported membership/order, graph timing and present consumers. Coarse-grid parity alone cannot pass.",
           "inspect": "Inspect full-resolution Chrome noon/night fixed checkpoints and realtime 1x cut/mirror/light sequences. Show the one-light, one-mirrored-cube and night-star omission controls each fail exact comparison against the pre-change baseline; record native-size diff crops.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "builder_result": "pass"
         },
         {
@@ -425,8 +425,8 @@
           "target": "ios-sim",
           "evidence": "docs/evidence/APPLE-TILE/M12/README.md",
           "inspect": "Use simctl endpoint screenshots and coverage-labelled video for cooked foreground/background, rotation and surface/device replacement. Pin COOKED-DRAW source, selected direct/indirect capability path, cook and recipe. Keep G5 direct/indirect history and cost semantics intact, and preserve its draw.rs edits. Interim OS evidence proves function/UI/lifecycle within recorded timing limits only; no exact submitted temporal or elapsed-time engine-motion claim before T2 M2. Label any proxy separately. No physical iPhone requirement.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "ask": "M12 needs COOKED-DRAW M1 for this cooked route; it never builds that capability in G3t. Confirm Mac M3 and G4 M11 native handoff do not transitively need this final item or T2 M2.",
           "builder_result": "pass"
         },
@@ -437,8 +437,8 @@
           "evidence": "docs/evidence/APPLE-TILE/M12/README.md",
           "check": "./dev check",
           "ask": "Confirm the final diff/evidence is the checked revision, optional creation diagnostics and browser/simulator paths were exercised where affected, and no speed claim or maturity promotion is inferred from repository checks alone. Re-run affected COOKED-DRAW parity/history consumers after sequential integration of shared registry or mechanical draw.rs changes. No unrelated changes may be reverted. Target-specific visual commands must actually run on their target; ./dev check alone cannot close visual rows.",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/APPLE-TILE/M12-review.md",
           "lock": "gpu",
           "builder_result": "pass"
         }
@@ -449,7 +449,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work."
     }
   ]
