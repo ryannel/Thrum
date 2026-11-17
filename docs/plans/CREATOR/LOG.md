@@ -1,5 +1,12 @@
 # CREATOR log
 
+- 2026-11-17 Retained the lead's independent fresh Opus 5.5 ziggurat exercise on
+  `e5de7027e70b`: 43 game lines, own mesh, Mac offscreen and live hardware Chrome.
+  Assessed workspace and zero-frame friction; clarified public setup, registration,
+  Config and failure semantics without changing runtime behavior. M3.1's builder
+  pass now cites the retained read log/source/captures; the review verdict stays
+  unchanged. [Evidence and limits](../../evidence/CREATOR/m3/fresh-lead/README.md).
+
 - 2026-11-17 Confirmed this worktree includes main's `f560ef86e` reading-order fix.
   Review 2 names only the review-procedure failure. Restored M3.1's builder result
   from its retained fresh-author Mac/Chrome proof, preserving the independent verdict.

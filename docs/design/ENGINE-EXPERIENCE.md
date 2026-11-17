@@ -3,7 +3,12 @@
 For authoritative 2D games, [portable rules](../SIM2D-RULES.md) documents the working
 number profile, spatial queries, package guard and three-target trace runner.
 
-Creator guide, updated 14 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
+For your first working scene, start with the [starter's copy-and-register steps](../../examples/starter/README.md#make-your-own-scene).
+Today a scene is a package in the engine workspace. Those steps show both root configuration edits, followed by
+one run command per target; they require no engine source. The starter README also covers assets, controls,
+parameter files, material hooks and the profiler. The wider SDK discussion below is optional.
+
+Creator guide, updated 17 November 2026. [G6](../plans/BRIEF.md#active-gate-order-and-budgets) built and tested its
 first slice; [What G6 built](#what-g6-built) says what runs today. Everything else here is design intent, not a
 working SDK or settled syntax. The
 [scenario](SCENARIO-WALKTHROUGHS.md), [first-use](FIRST-USE-WALKTHROUGHS.md) and [from-scratch](FROM-SCRATCH-WALKTHROUGHS.md)

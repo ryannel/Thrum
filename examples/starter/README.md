@@ -59,18 +59,27 @@ missing for longer than half a second is reported, and the scene keeps its last 
 once.
 
 The window needs an awake, unlocked screen. On a locked or sleeping screen the display never asks for a frame, so
-the window draws nothing and a `THRUM_FRAMES` run ends with `presented=0` and a note saying so. Review frames with
+the window draws nothing and a `THRUM_FRAMES` run ends with `presented=0` and a note saying so. The command exits
+nonzero even when build and cook succeeded: no presented frame means the window run did not succeed. Review frames with
 the [offscreen capture](#review-a-frame-without-a-window) instead.
 
 ## Make your own scene
+
+Run these steps from the engine repository root. The current scene command builds workspace packages, so keep
+your scene in this checkout; a standalone project outside the workspace is not supported yet. The two root
+configuration edits below register your package, without requiring any engine source. For a disposable exercise,
+use a scratch clone of the repository if your working checkout must stay unchanged.
 
 1. **Copy** this folder: `cp -R examples/starter examples/<name>`.
 2. **Name** the package in `examples/<name>/Cargo.toml`: `name = "thrum-<name>"` (the binary has the same name).
    Rename `starter.params.json` to `<name>.params.json`; `./dev scene` passes the file named after the folder.
    Rewrite the copied `README.md`, the `description` in `Cargo.toml` and the doc comment at the top of
    `src/main.rs` for your scene.
-3. **Join the workspace:** add `"examples/<name>"` to `members` in the root `Cargo.toml`.
-4. **Register it** in `.config/architecture.toml`, next to `[packages.thrum-starter]`:
+3. **Join the workspace:** in the root `Cargo.toml`, find `[workspace]` and its `members = [...]` list.
+   Insert `, "examples/<name>"` just before that list's closing `]`; keep every existing member. The list may
+   occupy one long line. For example, a list ending in `"examples/water"]` becomes
+   `"examples/water", "examples/<name>"]`.
+4. **Register it** by appending this complete section to `.config/architecture.toml`:
 
    ```toml
    [packages.thrum-<name>]
@@ -93,13 +102,17 @@ rustup run 1.99.1 cargo clippy --locked -p thrum-<name> --all-targets -- -D warn
 
 Count your lines after formatting, since rustfmt can add some.
 
+When replacing the rock with your own mesh, delete the copied `assets/meshes/rock.gltf` and `rock.bin` once
+your placements name the replacement. Update the copied `material.wgsl` comments to describe your mesh too.
+
 Keep the shape of [src/main.rs](src/main.rs): one ordinary `main` calling `thrum_app::sky::run`
 and a `scene` module containing `build`. The kit selects the Mac window or the Chrome runner;
 do not guard your scene with `#[cfg(target_os = "macos")]`, since that removes it from the Wasm build.
 
 ## Write your scene
 
-`thrum_app::sky::run(Config::new(name, title), build)` opens the window. `build` returns
+`thrum_app::sky::run(thrum_app::Config::new(name, title), build)` opens the window. `Config` lives at
+`thrum_app::Config`; the scene types below live under `thrum_app::sky`. `build` returns
 `Result<SkyGame, Box<dyn Error>>`, so `?` works on control declarations and the kit's own errors alike. A
 `SkyGame` is built from:
 
