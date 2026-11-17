@@ -8,6 +8,9 @@ description = "Frame-time ambient wave fields on the scene effect graph"
 autotests = false
 
 [[test]]
+name = "error_types"
+
+[[test]]
 name = "ambient_gpu"
 
 [[test]]
