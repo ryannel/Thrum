@@ -12,6 +12,11 @@ opt-level = 2
 [profile.test.package.thrum-rain-model]
 opt-level = 2
 
+# Sea conformance directly sums dense f64 spectra for thousands of GPU samples.
+# Optimize this oracle's test artifacts, keeping debug assertions and test bounds.
+[profile.test.package.thrum-sea-model]
+opt-level = 2
+
 # The river solve marches millions of cell updates; its tests run it optimised.
 [profile.dev.package.thrum-river-model]
 opt-level = 3

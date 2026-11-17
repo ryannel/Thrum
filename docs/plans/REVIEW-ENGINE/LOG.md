@@ -5,7 +5,8 @@
   buffer before Chrome launched; its bisect still concerns the older failing tip.
   The same clean-checkout sea binary from `38fff039fe25` passes its unchanged ambient
   test in 168.80 seconds under the GPU lock. A CPU sample confirms oracle progress;
-  it does not explain the previous full-gate timeout. No test or compiler policy changes.
+  it does not explain the previous full-gate timeout. A matched oracle probe gives
+  a ninefold improvement at opt-level 2; the sea model joins the test-only overrides.
   [M4 evidence](../../evidence/REVIEW-ENGINE/M4/README.md) retains the retry and limits.
 
 - 2026-11-17 M4 continuation fixes the review's lost causes in control JSON, glTF/image
