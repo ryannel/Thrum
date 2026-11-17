@@ -1,14 +1,14 @@
 {
   "action": "run",
   "target": "chrome-webgpu",
-  "commit": "9d06e07c731bfbc7253a9ea04b6de2cd2ca9b189",
+  "commit": "69395002bbc28862be34dba33020a56b6e523c34",
   "dirty": false,
-  "utc": "2026-11-16T11:05:57.763199+00:00",
+  "utc": "2026-11-16T23:31:28.767880+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    15.57275390625,
-    15.86669921875,
-    16.525390625
+    9.45556640625,
+    10.96484375,
+    14.02880859375
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "rows": [
@@ -3309,8 +3309,8 @@
       "wire": true
     }
   ],
-  "source_sha256": "b2ae5a08c3585081315bcbecb8368247cf69afacd37868c310f0f8660cf9f613",
-  "artifact_sha256": "2d1a651755e989cdbd0d5fc07a3bf9fb7ec369a6c6fa75e04b76f441e93fa501",
+  "source_sha256": "8156a7f3c37fb2e57f8bcfd667146c5d35a9069a6b75a6a537880ebb883e1903",
+  "artifact_sha256": "0a84f5f2ed10fe65fe2c4043c9c49a427f2c6a768657587e8ea728300d2678bd",
   "simulator": null,
   "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
   "profile_vectors": "pass"
