@@ -401,3 +401,10 @@
   with zero omissions; [final evidence](../../evidence/WATERS/M2-merged.md) records recovery and inspection.
   Rectangular foreground highlights and concurrent-load cost tripwires remain disclosed; physical
   cadence stays unqualified. The script owns the milestone's next status and review.
+- 2026-11-17 Corrected the first review's near-water lattice by reconstructing magnified LEAN moments
+  with positive cubic weights. A Metal probe matches independent convolution, retains covariance and
+  leaves minified reads unchanged; [proof and fresh opinion](../../evidence/WATERS/M2-reconstruction.md).
+  The first new look passes the six spatial/light views. A one-second observer now fits its existing
+  queues without writer progress; its 94-frame pan has zero omissions and sampled motion passes.
+  Surface sampling costs about 26% more in the concurrent-load paired run; the named tripwires and
+  M11 follow-ups are in [cost](../../evidence/WATERS/M2-cost.md). No physical cadence is qualified.

@@ -326,8 +326,8 @@
           "statement": "At noon in a trade wind, from 2 m and from 40 m above the water, the sea reads as open water from the waterline to the horizon: wind waves ride a longer swell, crests are sharper than troughs, the horizon is one clean line with no gap or band under it, and no patch of waves repeats.",
           "inspect": "`fixed` stills from 2 m and 40 m above the water, along and across the wind: the near crests against the troughs, the middle distance, and the rows from about 600 m out to the horizon. A band is a strip whose texture stops at an edge or whose tone steps from the water below it or the sky above. The last few rows, where a wave is under a pixel tall and only the slopes' statistics remain, are not one.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/WATERS/M2-reconstruction.md",
           "verdict": "fail",
           "review": "docs/evidence/WATERS/M2-review.md"
         },

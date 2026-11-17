@@ -2814,8 +2814,8 @@
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_with_limitations_review_owed",
         "scope": "WATERS M2: one open-sea contribution, shared sky lighting, displaced scene depth, temporal inputs and a ticking example. Shorelines, other bodies, wakes, foam and full optics remain in later milestones.",
-        "correctness": "Mac Metal forward cache and full LEAN texture-mip readbacks on native and portable profiles; submitted-depth, CPU-oracle motion with jittered TAAU, rebuild, multi-tick and stage probes. No Chrome or simulator claim.",
-        "visuals": "Forward-field Metal stills pass fresh builder opinions on crest/trough contrast, layered wind and swell, clean horizon and shared light. Rectangular near-field highlights remain visible. The independent milestone review and later full-optics/temporal polish are owed; no Chrome or simulator visual claim.",
+        "correctness": "Mac Metal forward cache and full LEAN texture-mip readbacks on native and portable profiles; submitted-depth, CPU-oracle motion with jittered TAAU, rebuild, multi-tick and stage probes. Portable Metal moment reconstruction matches an independent 16-node convolution and leaves minified samples unchanged. No Chrome or simulator claim.",
+        "visuals": "The first review rejected rectangular near-field highlights. Magnified LEAN moment reconstruction now passes a fresh builder opinion on the six Metal spatial/light views, with continuous wave-shaped foreground shading and retained crest, swell and horizon cues. Sampled elapsed motion also passes its fresh opinion. Independent review of the correction is owed; no Chrome or simulator visual claim.",
         "device": "Apple M3 Max Metal only. Capture-off paired cost is a concurrent-load tripwire, not physical display cadence or quiet-machine qualification.",
         "evidence": "../evidence/WATERS/M2.md"
       },
