@@ -50,6 +50,15 @@ pub(super) fn create(
     device: &wgpu::Device,
     directional: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
+) -> EnvironmentProducts {
+    create_with_far(atmosphere, device, directional, exposure, false)
+}
+
+pub(super) fn create_with_far(
+    atmosphere: &AtmospherePrepared,
+    device: &wgpu::Device,
+    directional: &wgpu::Buffer,
+    exposure: &[wgpu::Buffer; 2],
     far_aerial: bool,
 ) -> EnvironmentProducts {
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;

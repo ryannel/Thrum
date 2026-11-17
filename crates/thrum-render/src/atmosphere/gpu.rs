@@ -89,7 +89,11 @@ impl AtmospherePrepared {
         exposure: &[wgpu::Buffer; 2],
         far_aerial: bool,
     ) -> super::EnvironmentProducts {
-        super::products::create(self, device, directional, exposure, far_aerial)
+        if far_aerial {
+            super::products::create_with_far(self, device, directional, exposure, true)
+        } else {
+            super::products::create(self, device, directional, exposure)
+        }
     }
 
     pub(crate) fn observer_uniform(&self) -> &wgpu::Buffer {

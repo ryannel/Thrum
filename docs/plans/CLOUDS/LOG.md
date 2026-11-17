@@ -370,3 +370,11 @@
   beside the clear air's visual range, default 0, and the cloud selection hands both to `ATMOSPHERE`'s haze
   input ([ATMOSPHERE's check](../../evidence/ATMOSPHERE/haze-kind-check.md)). M16.4 gains the exponent's
   control and M16 gains M16.11. The visual range, the query and every built item are unchanged.
+
+- 2026-11-17 M3 adds a development Sky trace/compose and far-aerial candidate at
+  checkpoint `22181a666`, then retains a taller, more eroded third look. Three Metal
+  diagnostic fixed stills and fresh opinions still fail M3.3's broad sunlit-side cue,
+  reaching the plan's three-look stop. These are early, incomplete implementations:
+  the phase, ambient integration and temporal pipeline remain provisional or absent.
+  [Attempts](../../evidence/CLOUDS/M3-attempts/README.md) and
+  [handoff](../../evidence/CLOUDS/M3-handoff.md) distinguish confirmed runs from open work.

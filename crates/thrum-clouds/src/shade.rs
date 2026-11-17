@@ -61,12 +61,13 @@ impl WeatherInput {
     }
 }
 
-/// A shadow-only cloud effect. It draws no geometry or layer and owns no clock.
+/// Weather and cloud shade, optionally extended with [`Self::with_sky`].
+/// The default owns no visible layer; neither capability owns a clock.
 pub struct Shade {
     sky: Option<crate::SkyProfile>,
     config: ShadeConfig,
     input: WeatherInput,
-    gpu: Option<Prepared>,
+    gpu: Option<Box<Prepared>>,
     generation: u64,
     dropped: u64,
     valid_recording: bool,
@@ -214,12 +215,12 @@ impl SceneContribution for Shade {
             .map(|profile| crate::layer::Layer::new(surface, &weather, &sun, profile))
             .transpose()
             .map_err(|e| e.to_string())?;
-        self.gpu = Some(Prepared {
+        self.gpu = Some(Box::new(Prepared {
             sky,
             weather,
             sun,
             queue: surface.queue.clone(),
-        });
+        }));
         Ok(())
     }
     fn effect_graph(&self) -> EffectGraph {
