@@ -407,3 +407,11 @@
   Sources, 1× movies, reset tiles, event order and explicit missing timing are retained.
   The implementation merge gate passed; final evidence integration follows. Capture-only
   admission/overlay/record-bound fixes change no renderer bytes. No speed or device promotion.
+
+- 2026-11-17 M11 preserves native device loss through the Mac submitted-image observer,
+  including tap-first completion and surface replacement. Rebuild abandons the old tap
+  without polling its queue and resumes capture on the published generation.
+  [Actual Metal observer/reply proof](../../evidence/APPLE-TILE/M11/observer-fix/proof.json)
+  exercises both completion orders, fresh-device capture/history reset and prepared-twin rejection.
+  Existing exact/realtime renderer evidence keeps its original build identities;
+  renderer/provider/capture source trees are unchanged. No new speed or physical-device claim.
