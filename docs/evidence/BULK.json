@@ -5643,6 +5643,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/SHOWCASE/M5-fixed-submitted.tar.gz",
+      "size": 21142649,
+      "sha256": "7526e3b51f40d36f160f167e38a4829a58f714d3f37d10551b186f05b85aa3fa",
+      "date": "2026-11-17T23:26:44.580073+00:00",
+      "store": "/Users/ryannel/Workspace/thrum-evidence-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/WATERS/M2-across.png",
       "size": 3495177,
       "sha256": "e447d9a9fda8905b9258180337cd569e0ad1f2c5f57b739e9627719055f26235",
