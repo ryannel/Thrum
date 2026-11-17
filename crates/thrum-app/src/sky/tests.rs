@@ -25,12 +25,13 @@ fn a_ticking_sky_world_states_its_clock() {
         ..super::StillWorld::default()
     };
     // 50 Hz, at tick 2 + half an interval. Literal phases include the bound.
-    for (observation_ms, tick, phases) in [
-        (50, 2, [0.5_f32, 1.0, 2.0, 3.0]),
-        (60, 3, [0.0, 0.5, 1.5, 2.5]),
-        (79, 3, [0.95, 1.45, 2.45, 3.5]),
+    for (observation_ns, tick, phases) in [
+        (50_000_000, 2, [0.5_f32, 1.0, 2.0, 3.0]),
+        (60_000_000, 3, [0.0, 0.5, 1.5, 2.5]),
+        // One nanosecond below a tick, the 50 ms lead rounds to the f32 bound.
+        (79_999_999, 3, [0.999_999_94, 1.5, 2.5, 3.5]),
     ] {
-        let observation = Duration::from_millis(observation_ms);
+        let observation = Duration::from_nanos(observation_ns);
         world.advance(observation).expect("scripted observation");
         assert!(world.is_interpolating());
         assert_eq!(world.source().tick, tick);

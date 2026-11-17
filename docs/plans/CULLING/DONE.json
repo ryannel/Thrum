@@ -152,10 +152,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/native-cubes/run.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -163,20 +163,20 @@
           "check": "python3 scripts/run_v1_showcase.py culling --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CULLING/M3/replan/chrome-cubes/run.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
           "statement": "The valley's default mode is set by the design's rule from paired rows on the moving route, recorded with their load and the reason.",
           "ask": "Do the retained rows support the valley's default mode by the design's rule, and does the game report that mode on the Mac and in Chrome?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3.md; docs/evidence/CULLING/M3/replan/mode-cost/run.json; docs/evidence/CULLING/M3/replan/default-selection.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
@@ -184,10 +184,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/native-meshes/run.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -195,10 +195,10 @@
           "check": "python3 scripts/run_v1_showcase.py culling --meshes --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/CULLING/M3/replan/chrome-meshes/run.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.6",
@@ -206,10 +206,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test culling_temporal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/temporal.log",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.7",
@@ -236,10 +236,10 @@
           "statement": "Gate G3c holds as the brief words it, and the maturity ledger says what was and was not proved.",
           "ask": "Does each clause of gate G3c in the brief hold on main, with evidence linked from docs/evidence/CULLING/: compute frustum and Hi-Z culling; GPU-written indirect instance counts; one indexed indirect draw per mesh and pipeline bucket; stable mesh offsets; a material table that compute can read; visibility and image equivalence; full- and partial-visibility costs recorded as tripwires? Is the ledger's G3c row current, with implementation, correctness, visuals and device results kept apart?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/G3c-audit.md; docs/evidence/CULLING/M3.md; docs/design/maturity.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.10",
@@ -247,40 +247,40 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "ask": "Read the diff that merge made to `.config/exact-baselines.json` yourself with `git diff`: does it change only the `pin` and the `refresh` of the baselines whose references moved, with each refresh naming `ruling-on-culling-m3`, `CULLING` and `M3`? Did the coverage output, the moved references and those pins reach main in that one merge, with the comparison scripts and their sampling as they were, and has no other merge of this module changed a registered reference? Does the evidence hold a passing verifier record, the builder's or the main-branch check's, at the commit of main the references were regenerated on top of? Do both logs list each moved reference's old and new SHA-256 and say which of the five sets moved? The order in which the builder made its proofs before the merge is not part of this item.",
           "target": "mac-metal",
-          "evidence": "main-branch check exact-images; docs/evidence/CULLING/M3/replan/landing/merge.json; docs/evidence/CULLING/M3/replan/landing/registry-audit.json; docs/evidence/CULLING/M3/replan/reference-refresh.json; docs/evidence/CULLING/M3/replan/starting-main-pass/record.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.11",
           "statement": "Under GPU load the merged build draws one image on the pipelines M3.1 and M3.4 compare. In one interleaved campaign on a build of main, as the design's 'Proof that it is one image' describes it, a control that differs only by leaving out the coverage output differs between hosts in at least five routes, and the build with the output differs in none over at least as many routes, with every combination of the two recipes, the two sources and the two entity routes run by both. The commit the campaign's binaries were built from is on main and holds the landing and every change this milestone merged to what the game is built from.",
           "ask": "Does the retained campaign record meet the design's rule under 'Proof that it is one image': complete routes taken in turn with the control, four hosts, two counted render workers, the full exact comparison at every tick, every combination of the two recipes, the two sources and the two entity routes (cubes and selected meshes) run by both builds, the control differing in at least five routes and the build with the output in none over at least as many? Does the control's source differ from the campaigned commit's only by the coverage output? Check with git yourself: is the commit the record names an ancestor of main's tip, does it contain the merge that landed the coverage output, and does `git log` from it to the claimed commit, over `crates/`, `examples/v1-game/`, `.cargo/`, `Cargo.toml`, `Cargo.lock` and `rust-toolchain.toml`, show no commit of this milestone's? A campaign made on the branch before the merge does not answer this item. Commits other modules merged after the campaigned commit are not part of it.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/main-campaign/report.json; docs/evidence/CULLING/M3/replan/main-campaign/summary.json; docs/evidence/CULLING/M3/replan/main-campaign/sources.tar.gz; docs/evidence/CULLING/M3/replan/main-builds.json",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.12",
           "statement": "Only shared triangle edges moved the references. Where a refreshed Mac reference differs from the one it replaces, the pixel lies along an edge between triangles of opaque geometry. The sky, the stars and the letterbox bars hold their old bytes, and no difference fills a triangle's interior. In Chrome, where only digests are retained, the same is shown between captures of the starting commit and captures whose digests are the refreshed ones, for each set that moved.",
           "inspect": "From the retained Mac references at the starting commit and at the claimed commit, make an image of where the bytes differ, amplified, for the route's five checkpoints and the Sun and night stills, in SDR and in scene-linear. Judge each beside its frame, whole and in native-size crops: thin lines that follow the terrain's and the props' triangle edges, none in the sky, among the stars or in the bars, and no filled patch. Read the builder's Chrome difference images the same way for each Chrome set that moved, and the count of differing pixels and the largest difference for each reference.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.13",
           "statement": "The coverage output's cost on the valley's moving route is recorded: paired, interleaved rows of the claimed shader and the control without the output, per pass and for the whole frame, p50 and p95, from two runs with their load and workload identities, on both native recipes. Where the rows cross a tripwire in the design's Performance section, the evidence holds an investigation of the cause and its disposition. No figure is a pass mark.",
           "ask": "Do the retained rows pair the claimed shader with a control that differs only by the coverage output, on the moving route on both native recipes, from two runs with the load and workload identities recorded, and does the maturity ledger carry them as a recorded cost, not a budget? If the whole frame's paired p50 crossed the tripwire in the design's Performance section, does the evidence say which passes carry the cost and why, and record one of the design's two dispositions? A crossed tripwire with that record passes this item.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CULLING/M3/replan/coverage-cost/README.md",
+          "evidence": "",
           "verdict": "",
           "review": "",
-          "builder_result": "pass"
+          "builder_result": "open"
         }
       ],
       "failed_reviews": 2,
