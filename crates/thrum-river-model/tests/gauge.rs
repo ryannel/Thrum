@@ -726,3 +726,79 @@ fn a_river_whose_source_is_another_river_s_chart_follows_that_chart_s_level() {
 
 /// The level of the lowest sample over the second valley's sill, before it is lowered.
 const SILL_OVER: f64 = 3.1;
+
+#[test]
+fn a_refused_river_leaves_the_map_answering_as_before() {
+    // A chart in a trough three cells square with a low bank on one side, as the second
+    // review's probe made it: the upper sample dries most of it and overtops one bank.
+    let n = 49;
+    let mut heights = vec![2.0; n];
+    let mut footprint = vec![false; n];
+    for z in 2..=4 {
+        for x in 2..=4 {
+            heights[z * 7 + x] = if x == 4 { 1.1 } else { 0.0 };
+            footprint[z * 7 + x] = true;
+        }
+    }
+    let bed = thrum_water_model::Bed::new([0.0; 2], 1.0, [7, 7], heights).unwrap();
+    let chart = thrum_water_model::Chart {
+        levels: vec![1.0; n],
+        currents: vec![[0.0; 2]; n],
+        footprint,
+        ends: vec![],
+    };
+    let mut map = Map::prepare(bed, vec![chart_body("reach", chart)], WATER).unwrap();
+    let points: Vec<[f64; 2]> = (0..=60)
+        .flat_map(|z| (0..=60).map(move |x| [f64::from(x) / 10.0, f64::from(z) / 10.0]))
+        .collect();
+    let answers = |map: &Map| -> Vec<_> {
+        points
+            .iter()
+            .map(|&p| (map.sample(p), map.row(0, p), map.flow(0, p)))
+            .collect()
+    };
+    let before = answers(&map);
+    let sample = |level: f64| thrum_water_model::FlowSample {
+        levels: vec![level; n],
+        currents: vec![[0.0; 2]; n],
+        loss: vec![0.0; n],
+        gains: vec![[0.0; 2]; n],
+    };
+    let river = |upper: thrum_water_model::FlowSample, name: &str| thrum_water_model::River {
+        name: name.into(),
+        gauges: vec![1.0, 3.0],
+        gauge: Gauge::Stage(Stage {
+            min: 1.0,
+            max: 3.0,
+            value: 1.0,
+        }),
+        charts: vec![thrum_water_model::ChartSamples {
+            body: 0,
+            samples: vec![sample(1.0), upper],
+            wetting: vec![vec![None; n]],
+        }],
+    };
+    let mut overtopping = sample(-1.0);
+    overtopping.levels[2 * 7 + 2] = 3.0;
+    let mut nonfinite = sample(1.0);
+    nonfinite.loss[0] = f64::NAN;
+    let mut refused = 0;
+    for (upper, reason) in [(overtopping, "bank"), (nonfinite, "invalid sample grid")] {
+        let error = map.add_river(river(upper, "refused")).unwrap_err();
+        assert!(format!("{error:?}").contains(reason), "{error:?}");
+        assert!(map.river(0).is_none());
+        assert_eq!(map.river_of(0), None);
+        let after = answers(&map);
+        let changed = before.iter().zip(&after).filter(|(a, b)| a != b).count();
+        assert_eq!(changed, 0, "{reason}");
+        refused += 1;
+    }
+    // The map still takes a river its banks hold, and then answers at its gauge.
+    let id = map.add_river(river(sample(1.05), "held")).unwrap();
+    map.set_gauge(id, 3.0).unwrap();
+    assert_eq!(map.row(0, [3.0, 3.0]).level, 1.05);
+    println!(
+        "{refused} refused rivers: {} samples, rows and flow rows each the same as before",
+        before.len()
+    );
+}

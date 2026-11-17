@@ -181,6 +181,7 @@ impl Map {
     /// already in a river, the gauge of an earlier river, staged, or whose declared grids are not
     /// its first sample's, grids of the wrong size or with nonfinite or negative values, wetting
     /// gauges outside their samples, and any sample whose banks do not hold its water.
+    /// A refused river leaves the map and every answer it gives unchanged.
     pub fn add_river(&mut self, river: River) -> Result<usize, WaterError> {
         let fail = |reason| Err(WaterError::new(&river.name, reason));
         let g = &river.gauges;
@@ -305,7 +306,12 @@ impl Map {
             self.put_sample(&river, k);
             let held = self.check_banks();
             self.put_sample(&river, 0);
-            held.map_err(|e| WaterError::new(&river.name, e.reason))?;
+            if let Err(e) = held {
+                // The check left support built from the refused sample: a refused river
+                // leaves the map answering exactly as before.
+                self.rebuild();
+                return Err(WaterError::new(&river.name, e.reason));
+            }
         }
         let id = self.rivers.len();
         for (k, c) in river.charts.iter().enumerate() {
