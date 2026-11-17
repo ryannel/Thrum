@@ -350,7 +350,46 @@
     },
     "M3": {
       "definitions": "5d457f5bff277a10cab5683dd0b659b6d49724fc240bbf06056da3bd6858cfb5",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "647b38f2079026e1836e3f515fe80b97c541993d",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "items": {
+            "M3.1": "pass",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "pass",
+            "M3.5": "pass",
+            "M3.6": "pass",
+            "M3.7": "pass",
+            "M3.8": "pass",
+            "M3.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "profile-resource-nonfinite-commit",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 138743,
+            "cached": 3350656,
+            "output": 10004,
+            "turns": 1
+          },
+          "at": "2026-11-17T14:45:26Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Plan module SIM-2D. It needs: SHOWCASE",

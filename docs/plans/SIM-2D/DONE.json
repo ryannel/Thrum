@@ -287,10 +287,10 @@
           "check": "python3 scripts/sim2d_profile.py controls",
           "ask": "Does each fixture differ from a passing rule package by its one violation only, and does the command fail if any fixture passes the guard?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3/profile-controls.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -298,79 +298,93 @@
           "check": "python3 scripts/sim2d_profile.py check",
           "ask": "Is the guard run by `./dev check`? Does it find rule packages from `.config/architecture.toml`, and compare each one's Clippy configuration with the profile's single source?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3/profile-check.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.3",
           "statement": "The engine crates name nothing of the reference crowd, and the conformance command runs any registered rule package's trace.",
           "ask": "Does `thrum-core` or `thrum-sim2d` name a type, constant or rule of the reference crowd? Does the conformance command take the rule package as an argument, with the control as its second user, so that SWARM can run its own rules without editing the script?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.4",
           "statement": "A guide linked from the creator guide tells a game maker how to write rules under the profile: every operation of the profile number, each refused class with its reason, the random function, the queries with their order, and how to record a trace and run it on the three targets.",
           "ask": "Do the commands the guide gives run as written at the claimed commit? Does it list every operation mechanism 1 names and every class mechanism 6 names, and say that the cell size is part of the rule set?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
           "statement": "On the Mac both retained traces reproduce their retained digests at the closing commit, unchanged since M2.",
           "check": "python3 scripts/sim2d_conformance.py run --target mac-metal",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3/mac-metal.json",
-          "builder_result": "pass"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md"
         },
         {
           "id": "M3.6",
           "statement": "As Wasm in Chrome both retained traces reproduce the same digests at the closing commit.",
           "check": "python3 scripts/sim2d_conformance.py run --target chrome-webgpu",
           "target": "chrome-webgpu",
-          "evidence": "docs/evidence/SIM-2D/M3/chrome-webgpu.json",
-          "builder_result": "pass"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md"
         },
         {
           "id": "M3.7",
           "statement": "In the iPhone simulator both retained traces reproduce the same digests at the closing commit.",
           "check": "python3 scripts/sim2d_conformance.py run --target ios-sim",
           "target": "ios-sim",
-          "evidence": "docs/evidence/SIM-2D/M3/ios-sim.json",
-          "builder_result": "pass"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md"
         },
         {
           "id": "M3.8",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's W1 and P3 rows keep implementation, correctness and device results apart? Do they name as not run a physical iPhone, an x86 processor, Android and any browser other than Chrome, and claim no speed for the simulator?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/SIM-2D/M3.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M3.9",
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "evidence": "main-branch check exact-images",
-          "builder_result": "pass"
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "pass",
+          "review": "docs/evidence/SIM-2D/M3-review.md"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "As hard to get wrong as Rapier's `enhanced-determinism` build or Photon Quantum's fixed-point API, where the operations that differ between machines are simply not on offer. A rule that breaks the profile fails `./dev check` with a message that names the class, and the guide is enough to write a rule package without reading engine source."
+      "status": "in_progress",
+      "quality_bar": "As hard to get wrong as Rapier's `enhanced-determinism` build or Photon Quantum's fixed-point API, where the operations that differ between machines are simply not on offer. A rule that breaks the profile fails `./dev check` with a message that names the class, and the guide is enough to write a rule package without reading engine source.",
+      "findings": [
+        {
+          "name": "profile-resource-nonfinite-commit",
+          "repeat": false
+        }
+      ]
     }
   ]
 }
