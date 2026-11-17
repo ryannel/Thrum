@@ -4,7 +4,7 @@
     {
       "id": "M1",
       "name": "From any engine checkout, one command builds and tests a game in a games repository against that checkout",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -20,8 +20,8 @@
           "check": "python3 scripts/test_game_gate.py",
           "ask": "Read the test. Does it make a scratch games repository and two engine trees that differ, and show the game built against the tree the gate ran in and not the sibling one? Does it pass with no `thrum-games` on the machine?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -30,8 +30,8 @@
           "statement": "The gate never writes into the games repository, refuses a games tree with uncommitted changes unless told to take it as it stands, and its record names both revisions, the engine's and the game's.",
           "ask": "After a gate run, is the games repository's working tree, lockfile and index exactly as before? What does the record hold when the games tree was taken as it stands?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -40,8 +40,8 @@
           "statement": "With no games repository the gate says so and exits with a code of its own. `./dev check` needs no games repository and never calls the gate. The in-tree game is still built by `./dev check` until M4.",
           "ask": "Is the exit code for a missing repository distinct from a failed build and from a failed game check? With `THRUM_GAMES` set to a path that does not exist, does the gate report a missing repository even when one sits beside the main checkout? Does anything in `./dev check` call the gate?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -50,8 +50,8 @@
           "statement": "`boundary` runs the shape rules on a game: its only path dependencies are packages under the engine's `crates/`, no source file or build script reaches outside the game except through them, and it has neither engine test package as a normal dependency.",
           "ask": "Does the test's scratch game fail `boundary` when it depends on a package under the engine's `examples/`, when it includes a file from the engine's source by path, and when it takes `thrum-fixtures` as a normal dependency?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "docs/evidence/GAME-SPLIT/M1.md",
           "verdict": "",
           "review": ""
         },
@@ -60,8 +60,8 @@
           "statement": "Every registered exact baseline, on the Mac and in Chrome, passes the verifier at the claimed commit: this milestone moved no retained image.",
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": "main-branch check exact-images",
           "verdict": "",
           "review": ""
         }

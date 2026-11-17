@@ -1,5 +1,12 @@
 # GAME-SPLIT log
 
+- 2026-11-17 M1 builder: added the detached game gate and a shared external-consumer boundary adapter.
+  Confirmed four scratch-repository integration tests on this Mac, including builds against two engine
+  revisions, unchanged source/index/lockfile, dirty and missing repositories, and rejected boundary edges.
+  Existing shape-rule tests passed. Evidence and the command convention are in
+  [M1 evidence](../../evidence/GAME-SPLIT/M1.md). Exact-image proof remains the shared main-branch check;
+  no runtime source or retained image changed.
+
 - 2026-11-14 Owner: "it sounds like we're blurring the lines between the engine and the game a ton. Please let's
   separate out the game as much as we can, it shouldn't even sit in the same code base ideally." The lead's task
   set the repository decision: a local repository at `/Users/ryannel/Workspace/thrum-games`, no remote, path
