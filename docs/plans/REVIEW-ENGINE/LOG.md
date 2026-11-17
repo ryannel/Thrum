@@ -1,5 +1,12 @@
 # REVIEW-ENGINE log
 
+- 2026-11-17 M4 follow-up incorporates ATMOSPHERE's `5facc6d4b` link repair.
+  Its plan assumption was copied into STATUS with a relative link rooted one folder
+  too high. On `0eba66a4d`, `./dev check-docs` passes all 9,872 local links.
+  M4's error code and four builder passes are unchanged. The shared exact-image
+  check remains pending while the runner retries an older bisect commit; this
+  follow-up claims no new image pass. M4 stays in_progress for the lead's checks.
+
 - 2026-11-17 M4 continuation incorporates main's browser source-list fix `8c6dc8847`.
   The shared exact run had passed 42 native comparisons, then overflowed Git's output
   buffer before Chrome launched; its bisect still concerns the older failing tip.
