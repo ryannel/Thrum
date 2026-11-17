@@ -299,7 +299,7 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "blocked",
       "quality_bar": "Motion that is a function of time, shown as evenly as cloud shadows in Red Dead Redemption 2 or waves in Sea of Thieves on a 120 Hz display over a 60 Hz simulation: equal steps from frame to frame for equal intervals between consumed targets, no short step followed by a long one, no step when a tick commits, and no frame held on a tick while the world moves on. Alpha stays the same function of the clock sample and the consumed target. A frame shows the tick it showed before M4 wherever that tick was due by the frame's observation, which is every frame of an inline world. Only a delayed frame on a world on its own thread shows an earlier one.",
       "items": [
         {
@@ -376,7 +376,17 @@
           "different": "Previous finding concerned delayed zero-lead pair selection; this concerns the time-coordinate offset after ordinary pause/resume on a synchronous clock.",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "A planner must reconcile the time-origin identity in M4.2, the design and C02 with M4.1\u2019s phase bound and pause semantics.",
+        "work": {
+          "commit": "2f3f2db7566c61f58722d709ecc42e736d869552",
+          "branch": "build/effect-graph",
+          "pushed": false
+        },
+        "handoff": "docs/evidence/EFFECT-GRAPH/M4-handoff.md"
+      }
     }
   ]
 }
