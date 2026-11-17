@@ -26,7 +26,51 @@
   "milestones": {
     "M1": {
       "definitions": "b930cc53458fe592312ad986c8cabcee3a14747e4ca6f957946ddb65b188c1bd",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "3a6690e5d4bc76b190eb13b38b957e8b49d5f68d",
+          "review": "docs/evidence/SCENE-VIEWS/M1-review.md",
+          "items": {
+            "M1.1": "pass",
+            "M1.13": "pass",
+            "M1.14": "pass",
+            "M1.2": "pass",
+            "M1.3": "pass",
+            "M1.4": "pass",
+            "M1.5": "pass",
+            "M1.12": "pass",
+            "M1.6": "pass",
+            "M1.7": "pass",
+            "M1.8": "pass",
+            "M1.9": "pass",
+            "M1.11": "pass",
+            "M1.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "secondary-cascades-submit-unculled-casters",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 231468,
+            "cached": 6818048,
+            "output": 11808,
+            "turns": 1
+          },
+          "at": "2026-11-17T11:53:57Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The SCENE-VIEWS design review's Must Fix shared-height-map-camera-support came back after your last fix (docs/evidence/S",
