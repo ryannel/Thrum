@@ -296,7 +296,7 @@
     {
       "id": "M2",
       "name": "An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -328,7 +328,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": "docs/evidence/WATERS/M2-reconstruction.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/WATERS/M2-review.md"
         },
         {
@@ -419,13 +419,6 @@
           "evidence": "docs/evidence/WATERS/M2-forward.md",
           "verdict": "pass",
           "review": "docs/evidence/WATERS/M2-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "rectangular_near_water_highlights",
-          "item": "M2.2",
-          "repeat": false
         }
       ]
     },
