@@ -157,17 +157,7 @@ impl Layer {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(TRACE),
-            source: wgpu::ShaderSource::Wgsl(
-                format!(
-                    "{}\n{}\n{}\n{}\n{}",
-                    environment.shader_source,
-                    include_str!("params.wgsl"),
-                    include_str!("../layer.wgsl"),
-                    super::light::shader(),
-                    include_str!("transport.wgsl"),
-                )
-                .into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(trace_shader(&environment).into()),
         });
         let trace = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some(TRACE),
@@ -187,6 +177,8 @@ impl Layer {
         );
         let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
         Ok(Self {
+            #[cfg(test)]
+            diagnostic: None,
             profile,
             environment,
             lighting,
@@ -203,6 +195,17 @@ impl Layer {
             compose_group,
         })
     }
+}
+
+pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
+    format!(
+        "{}\n{}\n{}\n{}\n{}",
+        environment.shader_source,
+        include_str!("params.wgsl"),
+        include_str!("../layer.wgsl"),
+        super::light::shader(),
+        include_str!("transport.wgsl"),
+    )
 }
 
 fn compose(

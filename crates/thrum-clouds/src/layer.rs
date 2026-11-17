@@ -10,6 +10,8 @@ use thrum_render::{
     graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
 };
 
+#[cfg(test)]
+pub(crate) mod diagnostic;
 mod light;
 mod prepare;
 mod temporal;
@@ -80,6 +82,8 @@ struct LayerSample {
 }
 
 pub(crate) struct Layer {
+    #[cfg(test)]
+    pub(crate) diagnostic: Option<diagnostic::Probe>,
     profile: SkyProfile,
     environment: EnvironmentProducts,
     lighting: light::Lighting,
@@ -394,6 +398,10 @@ impl Layer {
             self.textures[0].height().div_ceil(8),
             1,
         );
+        #[cfg(test)]
+        if let Some(probe) = &self.diagnostic {
+            probe.encode(pass);
+        }
     }
 
     pub(crate) fn draw(&self, pass: &mut wgpu::RenderPass<'_>, frame: &ContributionFrame) {

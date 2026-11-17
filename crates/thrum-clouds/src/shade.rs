@@ -10,6 +10,8 @@ use thrum_render::{
 };
 
 mod graph;
+#[cfg(test)]
+mod tests;
 
 /// Immutable configuration for the Weather and Shade capabilities alone.
 #[derive(Clone, Debug)]
