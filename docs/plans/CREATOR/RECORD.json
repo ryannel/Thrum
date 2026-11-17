@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": "docs/evidence/CREATOR/design-review.md",
-    "commit": "ab46bb6ce89eaa694ab675879afb6eb359da6af4",
-    "hash": "74469080f95a8573a1529efe47b2d58a96f7c2962e0a9ded57ad4f57c77d1972",
+    "commit": "b52373119823ce353153b591529119bb0679127a",
+    "hash": "861d26e5fb8338b7447be643bb735270c5ec1db279709ef5e606378d5d4cd0d4",
     "by": "review",
     "host": "codex",
     "model": "gpt-6-astra",
@@ -13,15 +13,15 @@
       "model": "gpt-6-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "cli": "codex-cli 0.169.0-alpha.11.1",
     "path": "headless",
     "usage": {
-      "input": 92818,
-      "cached": 1056256,
-      "output": 6111,
+      "input": 85122,
+      "cached": 872320,
+      "output": 5630,
       "turns": 1
     },
-    "at": "2026-11-11T04:47:42Z"
+    "at": "2026-11-17T19:31:05Z"
   },
   "milestones": {
     "M1": {
@@ -422,6 +422,29 @@
         "incomplete_turns": 1
       },
       "at": "2026-11-10T23:34:32Z"
+    },
+    {
+      "verdict": "ok",
+      "review": "docs/evidence/CREATOR/design-review-4.md",
+      "commit": "ab46bb6ce89eaa694ab675879afb6eb359da6af4",
+      "hash": "74469080f95a8573a1529efe47b2d58a96f7c2962e0a9ded57ad4f57c77d1972",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "headless",
+      "usage": {
+        "input": 92818,
+        "cached": 1056256,
+        "output": 6111,
+        "turns": 1
+      },
+      "at": "2026-11-11T04:47:42Z"
     }
   ]
 }
