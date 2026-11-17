@@ -317,10 +317,10 @@
           "statement": "In real time on the Mac the edited mesh replaces the old one on every entity in one frame: no entity goes missing, no frame mixes old and new, and its shadow changes with it.",
           "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with cooked mesh rows and a moving camera: one edit that grows a prop mesh and one that shrinks it. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
-      "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/realtime/manifest.json; docs/evidence/CONTENT-LOOP/M2/realtime/runtime.json; docs/evidence/CONTENT-LOOP/M2/realtime/preview-1x.mp4",
+          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/realtime/manifest.json; docs/evidence/CONTENT-LOOP/M2/realtime/runtime.json; docs/evidence/CONTENT-LOOP/M2/realtime/preview-1x.mp4",
           "verdict": "",
           "review": "",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "M2.8",
@@ -348,7 +348,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Hot reload as in Unreal Engine's static-mesh reimport or Bevy's asset hot reloading, without their hitch: the edited mesh replaces the old one on every entity in one frame, and that frame is exactly the one a fresh launch would draw."
     },
     {
