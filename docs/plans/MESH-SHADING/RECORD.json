@@ -1,6 +1,28 @@
 {
   "module": "MESH-SHADING",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/MESH-SHADING/design-review.md",
+    "commit": "d4968d34d66380aaf2b51db6ea618c31bb928646",
+    "hash": "667aceebf3f088438c747e174f011e268514c97510292c3cdef09d6286a1a194",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 131763,
+      "cached": 2718208,
+      "output": 8126,
+      "turns": 1
+    },
+    "at": "2026-11-17T22:38:34Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "983011508c707b758b79ed050351c25819d64fcfc87f656e5af86ca370f068c4",
