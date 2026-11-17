@@ -1,6 +1,28 @@
 {
   "module": "RAY-TRACING",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": "docs/evidence/RAY-TRACING/design-review.md",
+    "commit": "d4968d34d66380aaf2b51db6ea618c31bb928646",
+    "hash": "c57197c9632a522c775e3dcddf38037093df4e42686852309eb5e1a1b7f84eec",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.169.0-alpha.11.1",
+    "path": "headless",
+    "usage": {
+      "input": 126134,
+      "cached": 2244608,
+      "output": 8154,
+      "turns": 1
+    },
+    "at": "2026-11-17T22:38:43Z"
+  },
   "milestones": {
     "M1": {
       "definitions": "523693ffff4c1a82316f4e79cfaa33b252d8b83a1918fe405e2cfa75f384b83a",
