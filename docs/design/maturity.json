@@ -4814,7 +4814,7 @@
     "scope": "Capability registry, four frame recipes, one frame contract for reconstruction/interpolation/denoising providers, closed-loop quality governor, and CPU/IO/display/network hardware use.",
     "promotion_rule": "A dedicated recipe or path keeps a portable fallback and is promoted only by a measured win on its own hardware with image difference within tolerance.",
     "implementation": "not_started",
-    "sequencing": "G3 registry, portable and Apple tile recipes, frame contract, derived attachments, pipeline caches, GPU culling; G3b display link; G3s physical atmosphere; G4 EDR, reconstruction, governor, latency; G5 meshlets, KTX2, BLAKE3, mapped products; after V1 QUIC offload, Android tile, desktop high, vendor providers, ray tracing and ML on rented hardware.",
+    "sequencing": "G3 registry, portable and Apple tile recipes, frame contract, derived attachments, pipeline caches, GPU culling; G3b display link; G3s physical atmosphere; G4 EDR, reconstruction, governor, latency; G5 meshlets, KTX2, BLAKE3, mapped products; after V1 QUIC offload, Android tile, desktop high, vendor providers, ray tracing and ML on rented hardware; beside V1 and off its exit from 2026-11-17, ray query and object and mesh stages on the Apple tile recipe on this Mac (planned, not built).",
     "device_evidence": []
   },
   "sea_ambient_field": {

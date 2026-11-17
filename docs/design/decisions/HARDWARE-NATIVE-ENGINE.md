@@ -20,7 +20,7 @@ A recipe is a graph configuration chosen per GPU family: pass organisation, atta
 
 | Recipe | Hardware | Shape |
 |---|---|---|
-| Apple tile | Metal on iPhone, iPad, Apple Silicon Mac | Memoryless depth and intermediates, merged passes, programmable blending through the escape hatch where measured, MetalFX reconstruction, EDR output |
+| Apple tile | Metal on iPhone, iPad, Apple Silicon Mac | Memoryless depth and intermediates, merged passes, programmable blending through the escape hatch where measured, MetalFX reconstruction, EDR output; on Apple Silicon Macs, ray query and the object and mesh stages where measured (see the [17 November amendment](#17-november-2026-ray-query-and-mesh-stages-on-apple-tile)) |
 | Android tile | Vulkan on Adreno and Mali | Subpass-shaped load/store discipline, transient attachments, ASTC, ADPF thermal feedback |
 | Desktop high | Vulkan/D3D12 on NVIDIA, AMD, Intel | GPU-driven visibility buffer, mesh shaders where available, async compute, ray query, vendor reconstruction and latency APIs |
 | Portable | WebGPU and every native device | Forward+ with GPU culling and indirect draws within WebGPU limits; own temporal reconstruction |
@@ -108,4 +108,23 @@ Later performance qualification records same-device frame time, image difference
 | G3b–G3c | Display-link pacing, QoS-classed simulation and render threads, input-to-photon measurement (G3b); the registry, the portable and Apple tile recipes, the frame contract fields, executor-derived attachments, mapped rings, pipeline caches and timestamps (G3t); indirect GPU culling (G3c). The ray-tracing readiness constraints. The shading-library decision. |
 | G4 | EDR/HDR output, dynamic resolution with MetalFX and own TAAU, and the governor. |
 | G5 | Meshlets, KTX2 ASTC/BC7, BLAKE3, memory-mapped products and dev-server cache sharing. |
+| Beside V1, off its exit | Ray query (shadows from the Sun and lamps, ambient occlusion) and the object and mesh stages (cooked meshes) on the Apple tile recipe on this M3 Max, as [track 5](../../plans/ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac). |
 | After V1 | Android tile, desktop high and physical iPhone on rented hardware; Quinn GSO/GRO and residual coding with the network track; vendor providers, ray tracing, GI, frame generation and ML inference, with separate later performance qualification. |
+
+## 17 November 2026: ray query and mesh stages on Apple tile
+
+The owner, 17 November 2026: "Just do ray tracing and mesh shaders on mac, let's leave PC for now." This record
+first placed ray query and mesh shaders on desktop high, after V1. They now also belong to the Apple tile recipe
+on Apple Silicon Macs, planned as [track 5](../../plans/ARCHITECTURE.md#track-5-ray-tracing-and-mesh-shaders-on-the-mac)
+in two modules, [RAY-TRACING](../../plans/RAY-TRACING/DESIGN.md) and [MESH-SHADING](../../plans/MESH-SHADING/DESIGN.md).
+
+* Nothing else here changes. The registry selects each path, the portable path stays as fallback and reference,
+  and a path becomes the recipe's default only by a measured win on this Mac.
+* Ray tracing stays outside V1's scope and off its exit. The work runs beside V1 and its closing milestones
+  wait for the V1 exit.
+* Ray query serves shadows and ambient occlusion. Reflections by ray, GI and the rest of "GPU, after V1" stay
+  after V1 and unplanned.
+* Desktop high is unchanged and still after V1. The two designs keep their requests and shader code free of
+  Metal-only assumptions where that costs nothing, so a Vulkan or D3D12 recipe can select the same paths.
+* The readiness constraints above were written for hit shaders and a bindless material table. Ray queries that
+  ask only whether something is in the way need neither, so the constraints stay for the work that shades hits.
