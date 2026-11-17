@@ -470,7 +470,7 @@
         {
           "verdict": "fail",
           "commit": "ce4b9786d61bd164cbba1ff45ef6b063dd1bea02",
-          "review": "docs/evidence/APPLE-TILE/M11-review.md",
+          "review": "docs/evidence/APPLE-TILE/M11-review-1.md",
           "items": {
             "D11.1": "pass",
             "D11.2": "fail",
@@ -499,6 +499,32 @@
             "turns": 1
           },
           "at": "2026-11-17T01:33:15Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
+          "review": "docs/evidence/APPLE-TILE/M11-review.md",
+          "items": {
+            "D11.1": "pass",
+            "D11.2": "pass",
+            "D11.3": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 203648,
+            "cached": 14708096,
+            "output": 28410,
+            "turns": 1
+          },
+          "at": "2026-11-17T03:56:17Z"
         }
       ],
       "authorised": {
@@ -534,6 +560,13 @@
           "output": 382780,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e98423cea50356861380455ae7d23f6dbaf290ef",
+        "review": "docs/evidence/APPLE-TILE/M11-review.md",
+        "checked": "979f3c42a64a9becd186e0201c181b2e433ece86",
+        "at": "2026-11-17T03:56:17Z"
       }
     },
     "M12": {

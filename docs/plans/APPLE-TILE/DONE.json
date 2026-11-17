@@ -347,7 +347,7 @@
           "target": "mac-metal",
           "evidence": "docs/evidence/APPLE-TILE/M11/README.md",
           "inspect": "Use T2 still/fixed exact checkpoints and separate realtime host-time failure/recovery sequences against uninterrupted same-build controls. Ordinary inputs/output remain exact under the comparison contract; labelled copy/select output/history matches its own exact twin after reset. Verify event order: device-loss errors reach the platform generation owner; provider rejection alone is not loss.",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": "docs/evidence/APPLE-TILE/M11-review.md",
           "builder_result": "pass"
         },
@@ -365,15 +365,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "ready_for_review",
-      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
-      "findings": [
-        {
-          "name": "native-loss-overwritten-by-observer",
-          "item": "D11.2",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model."
     },
     {
       "id": "M12",
