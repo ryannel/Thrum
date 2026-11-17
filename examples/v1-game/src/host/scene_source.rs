@@ -306,7 +306,7 @@ pub(crate) struct GameScene {
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
-    omit_exit_props: bool,
+    exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
     pub(super) camera_pitch: f32,
@@ -397,8 +397,7 @@ impl GameScene {
         Self {
             cloud_input: None,
             content: setup.content,
-            omit_exit_props: setup.content == GameContent::Exit
-                && setup.exit_entities == crate::ExitEntities::Omit,
+            exit_entities: setup.exit_entities,
             valley_stars: setup.content != GameContent::Field && setup.valley_stars,
             day_phase_offset: 0.0,
             camera_pitch: 0.0,
@@ -606,7 +605,7 @@ impl SceneSource<PublishedPage> for GameScene {
         {
             debug_assert!(false, "cloud publication: {error}");
         }
-        if self.omit_exit_props {
+        if self.content == GameContent::Exit && self.exit_entities == crate::ExitEntities::Omit {
             return into.extract(
                 SourceTick {
                     epoch: page.id().epoch.0,
@@ -907,7 +906,7 @@ mod tests {
             cloud_input: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,
-            omit_exit_props: false,
+            exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
             camera_pitch,

@@ -274,6 +274,13 @@ def balloon():
     ]
 
 
+def standing_rock(x, y, z):
+    # Widen the section just below grade so the standing face continues
+    # through the terrain instead of resting on a narrow point.
+    height = .53*y + .21 if y < 0 else 1.51*y + .21
+    return .55*x + .19*max(y, 0), height, .56*z
+
+
 def write_props(output):
     generate.ROOT = output
     output.mkdir(parents=True, exist_ok=True)
@@ -281,7 +288,7 @@ def write_props(output):
         [lobe(8, 4, lambda x, y, z: (.86*x + .13*y, (y+.82)*.63-.055, .77*z), rock=True)],
         scrub(),
         cactus(),
-        [lobe(8, 4, lambda x, y, z: (.43*x + .21*(y+.82), (y+.82)*1.03-.047, .5*z), rock=True)],
+        [lobe(8, 4, standing_rock, rock=True)],
         balloon(),
     )
     material = {'baseColorFactor': [1, 1, 1, 1], 'metallicFactor': 0, 'roughnessFactor': .9}
