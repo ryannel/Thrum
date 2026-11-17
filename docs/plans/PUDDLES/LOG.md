@@ -119,3 +119,29 @@
   both on a new test file, `tests/marks.rs`; M2.1's last sentence names the pores under the marks. Tests that
   change: the three M2.11 cases in `tests/receivers.rs` and the four coupled account cases in `tests/stores.rs`
   are replaced; `tests/state.rs` and `tests/margins.rs` follow the state's fields. M1 shrinks to its review link.
+- 2026-11-17 Design review of the re-plan asked for changes:
+  [one Must Fix](../../evidence/PUDDLES/design-review.md). Rain on held ground was given to the puddle because
+  the hollow keeps that ground's account, and held ground stands above the water, so C09's first hit is the
+  ground. Its probe: on part 11d's dish at 1 mm/h the puddle was given 5.1e-8 m³ a tick where 2.8e-9 falls on
+  water. The conserving transfers, the mark and the hold stand as approved.
+- 2026-11-17 Decided: a mark says only whose account keeps a stretch of ground's water. Rain is assigned from
+  the bed, the shelters and the level at the tick's start: to the puddle on water, by the exposure at the
+  water's surface; to held ground by the exposure at the ground, where its share of the pores under the mark
+  takes it at the class's soak rate, then down at the percolation rate, and the rest is runoff to the puddle;
+  to open ground elsewhere. Held ground stands no film, a declared approximation. Not chosen: a film store for
+  each hollow's held ground, a third store with its own drying and handover for ground held in 90 of 3,528 cases.
+- 2026-11-17 Items: M2.11 rewritten as the three receivers, each summed from the bed and the level and never
+  from a mark, with the review's dish at 1 and 100 mm/h and a floor held with room in its pores. The bed's take
+  moved from M2.11 to a new M2.13. M2.12 no longer says held ground's rain is the puddle's, and its held case
+  has rain on it. All three stay on `tests/marks.rs`. No dependency, lock or other milestone changed.
+- 2026-11-17 Suggestions taken, all three. M2.1 names both rates for ground that takes no film, with the
+  review's case of a class that percolates faster than it soaks. M2.3 says a rise takes its own height from
+  the band and gives the steady fall's range; the recurrence stays the authority. Part 11's sketch takes the
+  percolation rate over full pores (11g), M2.13 holds both orders of the two rates, and the sweep has a class
+  that soaks 1 mm/h and percolates 15.
+- 2026-11-17 [Part 11](../../evidence/PUDDLES/design-proof/README.md) run again with the rule: 3,528 cases close
+  to 4e-13 with nothing below none; ground held in 90, with rain on the held ground in 6. 11f sums each
+  receiver from the bed, the exposure and the level and matches the step. The review's probe still reproduces
+  its witness state on the sketch; its last assertion, that the sketch takes the soak rate over full pores,
+  now fails, as intended. Not run: the Rust model, hollows that share a puddle, and M2's item checks other
+  than `--test marks`, which fails for want of the file, as it should.

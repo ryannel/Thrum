@@ -1,6 +1,7 @@
 # Puddles: rain, puddles and wet ground in the one water
 
-14 November 2026; the rule for ground a puddle rises over and leaves, 16 November 2026.
+14 November 2026; the rule for ground a puddle rises over and leaves, 16 November 2026; rain on held ground,
+17 November 2026.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the water system, `WATERS`](../WATERS/DESIGN.md) · [rivers, `RIVERS`](../RIVERS/DESIGN.md). C02, C04, C07, C08,
 C09 and C12 in [CONTRACTS](../../design/CONTRACTS.md) govern, as they do for all water; C09 gives rain its units
@@ -149,6 +150,9 @@ What each source was read for, and how far.
 | P1, P6 | A puddle fills the pores of ground it rises over at once, and owes what it cannot pay | Fails. The first runoff onto a floor with 3 mm of dry pores holds under a hundredth of their room, so no puddle forms on ground whose own soak rate, 1 mm/h, says one must (the M2 handoff: the puddle never held more than 2.7 ml of a 208 ml shower). A debt is water the account does not hold |
 | P1, P6 | Ground is not covered until the puddle can fill its pores | Fails the same soak rate, and keeps water for a hollow that stands nowhere |
 | P1, P6 | **The pores under a puddle take its water at the class's soak rate; ground changes hands only in its class's state, and is held while the puddle cannot pay** | **Selected** |
+| P1, P6 | Rain on held ground is its puddle's, because the hollow keeps that ground's account | Fails C09. Held ground stands above the water, so rain hits it first. On part 11d's dish at 1 mm/h the puddle was given 5.1e-8 m³ a tick where 2.8e-9 falls on water, and the ground's 5 mm/h percolation never met the rest (the design review of 17 November) |
+| P1, P6 | Held ground keeps a film of its own, a third store for each hollow | Right, and not selected: a store with its own drying and handover for ground that is held in 90 of part 11's 3,528 cases |
+| P1, P6 | **Rain on held ground meets the pores the hollow keeps for it, at the class's two rates, and the rest is runoff to the puddle** | **Selected** |
 | P3 | A tiled texture of ring normals | Fails the calm disc, the crests and the film |
 | P3 | Impulses into a simulated level | Fails the count, and a level that steps on the tick cannot show waves of 73 rad/s between ticks |
 | P3 | **Two rain bands: a function of time and of the last second's rain, summing each scheduled drop's own wave train** | **Selected** |
@@ -173,8 +177,10 @@ A **hollow** is a pit in the ground and the cells that drain to it. A **puddle**
 level in one hollow or in several that have joined. **Exposure** is the share of the rain that reaches a point,
 from none under a roof to all under open sky. A **ground class** is a row of a game's table: what a kind of
 ground absorbs, holds and looks like wet. **Open ground** is ground the class's stores describe. A hollow's
-**mark** is a level at or above its puddle's: ground below it is the hollow's and not open ground. **Held
-ground** is ground under a mark that the water has left and the puddle cannot yet hand back.
+**mark** is a level at or above its puddle's: the hollow, and not the class's stores, keeps the account of
+the ground below it. **Held ground** is ground under a mark and above the water, which the water has left
+and the puddle cannot yet hand back. A mark says who keeps a stretch of ground's water. It never says what
+the rain hits.
 
 ### Rain, and what it reaches
 
@@ -197,20 +203,25 @@ lowest canopy alone gave 0.50 and 1.00), and the function is the same on the CPU
 camera. A column that three or more shelters cross is refused at preparation, by name and place. Things that
 move shelter nothing.
 
-**One partition, by what the rain hits first.** Each tick's rain on a cell goes to exactly one receiver (C09):
+**One partition, by what the rain hits first.** Each tick's rain on a cell goes to exactly one receiver
+(C09), found from the shelters, the bed and the water as it stands at the tick's start:
 
 1. the canopy's named sink, by the share exposure withholds;
-2. of the rest, where the cell lies under its hollow's mark, that hollow's puddle: it is the puddle's water
-   at once and the ground's stores see none of it;
-3. elsewhere, the cell's open ground: its class's stores take what they take
+2. of the rest, where water stands on the cell, its hollow's level at the tick's start being above its
+   bed, that hollow's puddle, by the exposure at the water's surface: it is the puddle's water at once and
+   no ground sees it;
+3. where the cell is held ground, the ground: the pores its hollow keeps for it take what they take, by
+   the exposure at the ground, and what they do not is runoff to its hollow's puddle
+   ([below](#the-mark-and-ground-that-changes-hands));
+4. elsewhere, the cell's open ground: its class's stores take what they take
    ([below](#wet-ground)), and what they do not is runoff, to the hollow the cell drains to or over the
    body's edge, another named sink.
 
-The ground's stores describe open ground only. Ground changes receiver when a hollow's mark moves over it,
-by transfers the account holds
-([below](#the-mark-and-ground-that-changes-hands)). The receivers are proved apart from the total: a total that
-closes does not show where a cell's rain went, so M1 and M2 hold each receiver's gain alone as well as the
-account ([proof](#proof-and-builder-handoff)).
+Water and ground are told apart by the level, never by a mark: a mark only says which of two accounts,
+the hollow's or the class's, keeps a stretch of ground's water. Ground passes between those accounts when
+a hollow's mark moves over it, by transfers the account holds. The receivers are proved apart from the
+total: a total that closes does not show where a cell's rain went, so M1 and M2 hold each receiver's gain
+alone as well as the account ([proof](#proof-and-builder-handoff)).
 
 ### Hollows: the tree and the point test
 
@@ -265,16 +276,17 @@ over a tick, in this order:
 
 - **The marks.** Each of its hollows' marks moves to the puddle's level, if the ground between can change
   hands ([below](#the-mark-and-ground-that-changes-hands)).
-- **In.** The rain on the ground under its hollows' marks, by the exposure at the mark's height, which is the
-  water's surface wherever water stands; and the runoff of the open ground that drains to its hollows: the
-  rain exposure lets through, less what the ground's stores took up that tick ([below](#wet-ground)). Runoff
-  arrives at once.
+- **In.** The rain on its water, where the level at the tick's start stands above the bed, by the exposure
+  at the water's surface; the runoff of its hollows' held ground; and the runoff of the open ground that
+  drains to its hollows. Each runoff is the rain exposure lets through at the ground, less what that
+  ground took up that tick ([below](#wet-ground)). Runoff arrives at once.
 - **Out.** Drying takes the drying rate over the puddle's water surface. The bed takes water as open
-  ground's pores take rain: in each hollow, at most the class's soak rate over the water's surface there, of
-  which the pores under the mark keep what they have room for and pass the rest down, up to the percolation
-  rate, a named sink. So over full pores, and on ground with none, the bed takes the percolation rate. Both
-  read the water's surface after the tick's rain and runoff. A puddle that holds less than the tick's drying
-  and take gives each its share of what it holds and is empty.
+  ground's pores take rain: in each hollow, while the pores under the mark have room, the class's soak rate
+  over the water's surface there, of which the pores keep what they have room for and pass the rest down,
+  at no more than the percolation rate; and over full pores, and on ground with none, the percolation rate,
+  also where that is above the soak rate. What goes down is a named sink. Both read the water's surface
+  after the tick's rain and runoff. A puddle that holds less than the tick's drying and take gives each its
+  share of what it holds and is empty.
 - **Spill.** A puddle past its sill sends the excess to the hollow across it. If that neighbour is itself full
   to the same sill, the two are one puddle, holding both volumes: a **merge**. A root's excess leaves.
 - **Part.** A puddle whose volume falls under what its two halves hold at the sill between them becomes two,
@@ -302,7 +314,7 @@ the drying rate is a control a demo turns up.
 
 A class's stores are one state shared by all its open ground, so ground can join or leave them only in that
 state, with exactly the water that state holds. A puddle does not always hold that water. So each hollow
-keeps a mark. Ground below the mark is the hollow's: its rain is the puddle's, the stores do not count it,
+keeps a mark. The ground below the mark is in the hollow's account: the class's stores do not count it,
 and its pores' water is one volume the hollow keeps, the **pores under the mark**, spread evenly over that
 ground. At the start of a tick each mark is compared with its puddle's level then:
 
@@ -316,12 +328,25 @@ ground. At the start of a tick each mark is compared with its puddle's level the
   and the mark becomes the level. If it does not, nothing moves and the mark stays where it is: the ground
   is held.
 
-Held ground is still the hollow's. Its rain goes to the puddle, it reads as held
-([below](#wet-ground)), and all of it is handed over on the first tick the puddle can pay: when rain has
-refilled the puddle, or when the class's own surface water has dried, soaked in or gone down, so that less
-is due. Until then a level that moves below the mark moves no ground. Hollows that share a puddle draw on
-it in the hollows' order. No transfer is more than its donor holds when it is made, so nothing is made and
-nothing is owed.
+Held ground is still in the hollow's account. It reads as held ([below](#wet-ground)), and all of it is
+handed over on the first tick the puddle can pay: when rain has refilled the puddle, or when the class's
+own surface water has dried, soaked in or gone down, so that less is due. Until then a level that moves
+below the mark moves no ground. Hollows that share a puddle draw on it in the hollows' order. No transfer
+is more than its donor holds when it is made, so nothing is made and nothing is owed.
+
+**Rain on held ground** is the ground's, because the ground is what it hits. A held cell's rain, by the
+exposure at the ground, meets its share, by area, of the pores under the mark by the step a class's store
+takes ([below](#wet-ground)), with no relief: the pores take it at the class's soak rate while that share
+has room, and from then only at the percolation rate, which goes down, a named sink. Held ground stands no
+film, so what its pores do not take is runoff to its hollow's puddle, at once, and is the puddle's from
+then. The share's room is read after the marks have moved, and held ground's rain is taken before the
+bed's. [Part 11f](../../evidence/PUDDLES/design-proof/README.md) runs it on the design review's case, part
+11d's dish holding 72 cells over full pores round 4 cells of water. When rain starts again at 1 mm/h,
+under the class's 5 mm/h percolation rate, the puddle gains 2.8e-9 m³ a tick, the rain on its own water,
+and all 4.8e-8 m³ that falls on the held ground goes down; the rule of 16 November gave the puddle all
+5.1e-8. At 100 mm/h the held ground passes 2.5e-7 m³ down and 4.6e-6 runs to the puddle. On a floor held
+with room in its pores they take all its rain. Each figure is summed there from the bed, the exposure and
+the level, and then compared with the step's.
 
 The pores under a puddle fill at the soak rate because that is what the class says of its ground: a puddle
 that filled them at once would put 3 mm into ground that takes 1 mm/h.
@@ -329,20 +354,21 @@ that filled them at once would put 3 mm into ground that takes 1 mm/h.
 review's floor, 3 mm of dry pores that soak 1 mm/h under 60 mm/h for 50 s, with every cell draining to the
 floor, the puddle holds 196 ml of the 208 ml that fell when the rain stops, where the first rule left it
 2.7 ml; the pores under it take 11 ml; and it dries away with nothing held and the account closed to 6e-15
-of the rain. Over 3,024 cases of floor, shelter, class, shower and drying the account closes to 4e-13 and
-no puddle, pore store or ground goes below nothing. Ground is held in 75 of them, of two kinds. A level
-floor half under a crown holds for up to five minutes in the rain, while its shaded half's pores drink the
-runoff. A dish as shallow as its class's 3 mm of relief holds its floor for up to 28 minutes after the
-rain, until the film on the open ground has gone, since water that thin was the film's to begin with. A
-level floor under open sky is held in none of its 1,296 cases: its puddle and the open film gain and lose
+of the rain. Over 3,528 cases of floor, shelter, class, shower and drying, one class percolating faster
+than it soaks, the account closes to 4e-13 and no puddle, pore store or ground goes below nothing. Ground
+is held in 90 of them, of two kinds. A level floor half under a crown holds for up to five minutes in the
+rain, and its pores take the rain that falls on it meanwhile. A dish as shallow as its class's 3 mm of
+relief holds its floor for up to 28 minutes after the rain, until the film on the open ground has gone, since water that thin was the film's to begin with. A
+level floor under open sky is held in none of its 1,512 cases: its puddle and the open film gain and lose
 at the same rates, and the puddle started with the film.
 
 Declared approximations: runoff has no travel time and makes no visible flow; a cell is all one hollow's;
 the ground's stores are kept for a class and not for a cell, so ground a puddle has just left takes its
 class's state at once, and only its margin shows that it was under water; the pores under a mark are one
-fill for a hollow and not for a cell; held ground shows no film though open ground beside it may, for as
-long as it is held, which with no drying and no percolation is until it next rains; and pore water beyond
-the class's fill is lost downward when ground is handed back. A store for each cell would need neither the
+fill for a hollow and not for a cell; held ground stands and shows no film though open ground beside it
+may, for as long as it is held, which with no drying and no percolation is until it next rains harder
+than its pores take, so its relief holds back none of its runoff; the pores under held ground do not dry
+while it is held; and pore water beyond the class's fill is lost downward when ground is handed back. A store for each cell would need neither the
 hold nor that loss, at the field of state [wet ground](#wet-ground) chose not to keep.
 
 ### Wet ground
@@ -361,8 +387,9 @@ the pores dry in proportion to their fill.
 So paving shows a sheen two minutes into a shower. Packed earth whose pores take 15 mm/h shows none while
 they fill, 18 minutes at 10 mm/h, and a film from then, well before its puddles form
 ([part 8](../../evidence/PUDDLES/design-proof/README.md): pores full at 1,080 s, a film at 1,081 s, the
-relief full at 1,440 s). Ground never takes a sheen only where it passes water down faster than the rain
-falls, as sand does at 60 mm/h. After the rain the sheen is gone long before the darkness (part 5). The first
+relief full at 1,440 s). Ground never takes a sheen only where it both soaks and passes water down at
+least as fast as the rain falls, as sand does at 60 mm/h: a class that percolates faster than it soaks
+still films while its pores fill. After the rain the sheen is gone long before the darkness (part 5). The first
 design said earth that drinks faster than the rain never shows a sheen; its own stores do not do that once
 the pores are full, and the design review ran them to show it.
 
@@ -392,7 +419,7 @@ the pores are full, and the design review ran them to show it.
 It gives two numbers: the **pores' fill** and the **surface water** with its cover. Under a puddle it gives
 full pores and no surface water: ground under water is wet at its surface whatever its pores hold. On held
 ground it gives the fill of the pores under the hollow's mark, with the margin's band as open ground takes
-it, and no surface water, which is what the account holds there. A margin, a shore's band and the full
+it, and no surface water, which is what the account holds there, in rain too. A margin, a shore's band and the full
 pores read under a puddle are appearance: they hold no water in the account (C09's authored approximation).
 
 **The wet look** ([ruling 5](../ARCHITECTURE.md#seam-rulings-for-puddles)). A forward surface reads the pores'
@@ -565,8 +592,9 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
   the planes and cuts above, ray by ray. `WATERS`' optics on water 5 mm deep, the bands' ranking as a camera
   moves and the look are unrun; M7 is the first.
 - **P6, P7.** Parts 4 and 5 are arithmetic, part 8 the stores through a shower long enough to fill the
-  pores, and part 10 exposure under two shelters. Part 11 is the mark, the pores under it and held ground on
-  one hollow; hollows that share a puddle through a merge and a parting are unrun, and M2.12 is the first.
+  pores, and part 10 exposure under two shelters. Part 11 is the mark, the pores under it, held ground and the rain
+  on it, on one hollow; hollows that share a puddle through a merge and a parting are unrun, and M2.12 is
+  the first.
   The look of the wet ground and of the film is unrun; M5 is the first.
 - **P8.** The wave support is `WATERS`'. Unrun.
 - **Cost.** Unrun. Each milestone records its own.
@@ -699,7 +727,7 @@ dependencies. In addition:
   `docs/evidence/PUDDLES/PROVENANCE.md`; none is expected, and Barnes's code is not copied.
 - **Other modules' files.** A change inside a file another module wrote is one a ruling names, behind a
   declaration no existing scene makes. Anything else it needs is a proposal in this module's log.
-- **Bounds.** Parts 1 to 10 are the source of the bounds in M1, M2 and M8. A bound on the GPU is measured
+- **Bounds.** Parts 1 to 11 are the source of the bounds in M1, M2 and M8. A bound on the GPU is measured
   first, on this Mac, and then asserted, with its date and commit in the record, and it is accepted only if
   it is no more than a tenth of the difference a named wrong evaluator makes on the same case, which the
   test also measures: for M4.1, bands evaluated half a tick late and bands that ignore the rate history; for
@@ -708,6 +736,8 @@ dependencies. In addition:
   bound.
 - **Receivers.** The account's total and the receivers are separate proofs. A test of a receiver sets a
   case where the total would close under the wrong assignment too, and checks that receiver's gain alone.
+  It finds each receiver's cells from the bed, the shelters and the water's level at the tick's start. It
+  reads a mark only to tell held ground from open ground, and never as the edge of the water.
 - **Time in the views.** An inspected item that shows filling or drying may turn the rain and the drying rate
   up so the change fits the sequence; it says the rates it used.
 - **Maturity.** A ledger row for `E1.rain` is added in M3 and kept current.
