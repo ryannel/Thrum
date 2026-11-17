@@ -449,21 +449,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
-      "status": "blocked",
-      "quality_bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work.",
-      "blocked": {
-        "reason": "needs_access",
-        "items": [
-          "D12.3"
-        ],
-        "what": "D12.3 requires an unlocked active Mac session and Screen Recording permission already granted to the OS-window observer.",
-        "work": {
-          "commit": "b91639919b09ada3363d5a8e4ddba7fb0a24570d",
-          "branch": "build/apple-tile-m10",
-          "pushed": true
-        },
-        "handoff": "docs/evidence/APPLE-TILE/M12-handoff.md"
-      }
+      "status": "in_progress",
+      "quality_bar": "The same complete cooked valley as portable, with stable lighting, silhouettes, shadows and motion expected of a shipped high-end game; matched full-resolution stills and normal-speed sequences must expose omitted work."
     }
   ]
 }
