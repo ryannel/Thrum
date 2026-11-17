@@ -149,7 +149,57 @@
     },
     "M2": {
       "definitions": "eef7f5ba9cfa0a11f21585242f09d65cdf0192ab4ea76c897e736aca5fe1eace",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "337bf550844e075f1c1a239ee32dec0dea1224f6",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "items": {
+            "M2.1": "pass",
+            "M2.2": "fail",
+            "M2.3": "fail",
+            "M2.4": "pass",
+            "M2.5": "pass",
+            "M2.6": "pass",
+            "M2.7": "pass",
+            "M2.8": "pass",
+            "M2.9": "fail"
+          },
+          "findings": [
+            {
+              "name": "rebuild_breaks_fresh_row_equality",
+              "item": "M2.2",
+              "repeat": false
+            },
+            {
+              "name": "rebuild_switches_unwritten_rows",
+              "item": "M2.3",
+              "repeat": false
+            },
+            {
+              "name": "rebuild_splits_placement_and_row_publication",
+              "item": "M2.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "headless",
+          "usage": {
+            "input": 158320,
+            "cached": 6218368,
+            "output": 19388,
+            "turns": 1
+          },
+          "at": "2026-11-17T11:09:32Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CONTENT-LOOP at docs/evidence/CONTENT-LOOP/design-review.md asked for changes again: MF3, cross-rea",

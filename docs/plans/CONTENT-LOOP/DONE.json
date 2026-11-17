@@ -251,8 +251,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -262,10 +262,10 @@
           "lock": "gpu",
           "ask": "Is the fresh scene prepared in a separate host from the edited store, and compared at the same tick and view? Does one edit grow the mesh past its old bounds and another shrink it, each changing the vertex and index counts, so that a stale range or bound would show?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M2.3",
@@ -274,10 +274,10 @@
           "lock": "gpu",
           "ask": "Does the test compare every submitted frame across the write and the switch with the all-old or the all-new reference, including the frame after a discarded switch frame, the frames after a newer edit arrives behind a discarded switch frame, and the frames after a newer edit supersedes a replacement still being written? Do the arena write, the row switch and the retirement of old space all go through the frame host, so that its exclusive encoded-frame token is what keeps a switch from overtaking an unsubmitted frame, and does the test drive that protocol without reaching around the token?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "builder_result": "open"
         },
         {
           "id": "M2.4",
@@ -286,8 +286,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -297,8 +297,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -308,8 +308,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/mesh-rows.json; docs/evidence/CONTENT-LOOP/M2/browser-gpu.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -318,8 +318,8 @@
           "inspect": "Capture with T2 engine capture in `realtime` mode on the valley with cooked mesh rows and a moving camera: one edit that grows a prop mesh and one that shrinks it. Judge the frames around each switch whole and in native-size crops, as consecutive frames at 1x.",
           "target": "mac-metal",
           "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/realtime/manifest.json; docs/evidence/CONTENT-LOOP/M2/realtime/runtime.json; docs/evidence/CONTENT-LOOP/M2/realtime/preview-1x.mp4",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -328,8 +328,8 @@
           "check": "python3 scripts/exact_baselines.py verify",
           "target": "mac-metal",
           "evidence": "main-branch check exact-images",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
           "builder_result": "pass"
         },
         {
@@ -339,17 +339,34 @@
           "lock": "gpu",
           "ask": "Is the replacement large enough that the row's write is still going for several frames after residency's last copy was submitted, and does the test compare every submitted frame in that interval, whole, with all-old and all-new references? Does it discard the switch frame once? In the refusal case, does the publication also change a texture, and does the test show that texture unchanged?",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CONTENT-LOOP/M2.md; docs/evidence/CONTENT-LOOP/M2/native-trial.log.gz",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": "docs/evidence/CONTENT-LOOP/M2-review.md",
+          "builder_result": "open"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Hot reload as in Unreal Engine's static-mesh reimport or Bevy's asset hot reloading, without their hitch: the edited mesh replaces the old one on every entity in one frame, and that frame is exactly the one a fresh launch would draw."
+      "status": "in_progress",
+      "quality_bar": "Hot reload as in Unreal Engine's static-mesh reimport or Bevy's asset hot reloading, without their hitch: the edited mesh replaces the old one on every entity in one frame, and that frame is exactly the one a fresh launch would draw.",
+      "findings": [
+        {
+          "name": "rebuild_breaks_fresh_row_equality",
+          "item": "M2.2",
+          "repeat": false
+        },
+        {
+          "name": "rebuild_switches_unwritten_rows",
+          "item": "M2.3",
+          "repeat": false
+        },
+        {
+          "name": "rebuild_splits_placement_and_row_publication",
+          "item": "M2.9",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "M3",
