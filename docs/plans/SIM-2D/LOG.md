@@ -1,5 +1,12 @@
 # SIM-2D log
 
+- 2026-11-17 M2 second-review repair: fresh full two-run release campaigns at `768636def`.
+  Both cost validators and the documentation gate pass; no applicability check was relaxed.
+  Mac retains all 24 serial/parallel rows and Chrome all 12 rows, with original clean-build provenance.
+  M1 regressions and scaling flags remain explained; warmed Mac calls measure zero allocations.
+  Timing and replay variation remain shared-host observations, with no isolated causal claim.
+  [Current records, source identities and limits](../../evidence/SIM-2D/M2.md).
+
 - 2026-11-17 M2 Chrome queue repair: nine conformance requests share one browser and queue turn.
   Full Chrome vectors and eight trace routes pass; unused returned timelines are omitted.
   Debugger disconnects now fail instead of retaining the resource while waiting forever.

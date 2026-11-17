@@ -5,12 +5,81 @@ and `load_before` are sampled before acquiring the lock; `load_after` is sampled
 when the invocation returns. Those brackets can span a queue wait and are coarse
 shared-host context, not an isolated measure of contention during each timed call.
 
-## Refreshed Mac CPU measurements
+## Second-review integrated Mac measurements
 
-The [current Mac record](costs-mac-metal.json) contains two complete release runs at
+The [current Mac record](costs-mac-metal.json) has two complete release runs at
+`768636def207df168be1bfb0feb90c25c12f860a`, source key
+`0f6f30f9d3b2c2b2199641758aabbdead4065825cebce6a9818ff3b71217d8de`.
+Its [source/completeness validator passes](cost-validation-mac-metal.json).
+The earlier campaign is preserved with its original provenance in Git at
+`768636def:docs/evidence/SIM-2D/M2/costs-mac-metal.json`.
+No source check was relaxed and no old measurement was relabeled.
+
+| Crowd bodies | M1 tick / index, ms | Repeat 1 tick / index, ms | Repeat 2 tick / index, ms |
+|---|---:|---:|---:|
+| 2,000 | 0.523417 / 0.026042 | 0.715708 / 0.090292 | 0.731709 / 0.089833 |
+| 5,000 | 1.232208 / 0.075708 | 1.671208 / 0.240041 | 1.645791 / 0.237500 |
+| 10,000 | 8.068417 / 0.165792 | 9.800459 / 0.482333 | 9.753500 / 0.476833 |
+
+Four M1 regression flags remain: serial Crowd at 2,000 and 5,000 in both repeats,
+33.6–39.8% slower at identical neighbour counts. Index time adds 64–65 and
+162–164 microseconds at those sizes. The query, predicate, ordering and steering
+code is unchanged from the earlier investigation below; its eight stable radix
+passes, conservative bounds and shared predicates explain additional work without
+assigning causal percentages. The historical CPU samples are not profiles of this
+fresh executable. The clock additions that invalidated the old source key are
+included in this campaign; no isolated timing effect is attributed to them.
+
+Every forced-parallel row is faster than its matching serial row. At 10,000 bodies,
+serial tick medians span 9.754–10.054 ms and parallel medians 1.981–2.254 ms.
+Eight-tick replay spans 79.333–82.300 ms serial and 15.280–38.792 ms parallel.
+The 38.792 ms Mixed replay in repeat two remains recorded; these one-shot replay
+measurements do not establish a stable crossover or isolate contention.
+One-minute load brackets span 7.18–16.45. No row trips the clock or chronological
+quarter-regression flag. The four scaling flags remain serial 5,000-body rows at
+the table-capacity step discussed below. Warmed build and every query measure zero
+allocations. All times and counts remain observations, never pass thresholds.
+
+## Second-review integrated Chrome measurements
+
+The [current Chrome record](costs-chrome-webgpu.json) has two complete release runs
+at `768636def`, with the same source key as the current Mac campaign.
+Its [source/completeness validator passes](cost-validation-chrome-webgpu.json).
+These are real isolated HeadlessChrome 157 runs of the freshly built Wasm, not
+native substitutes. Both original clean-build identities and load brackets remain
+in the records. The previous Chrome campaign remains in Git at
+`768636def:docs/evidence/SIM-2D/M2/costs-chrome-webgpu.json`.
+
+| Crowd bodies | M1 tick / index, ms | Repeat 1 tick / index, ms | Repeat 2 tick / index, ms |
+|---|---:|---:|---:|
+| 2,000 | 0.570 / 0.035 | 1.005 / 0.100 | 1.035 / 0.105 |
+| 5,000 | 1.355 / 0.100 | 2.260 / 0.265 | 2.280 / 0.265 |
+| 10,000 | 8.580 / 0.205 | 14.400 / 0.535 | 13.905 / 0.520 |
+
+All six Crowd rows trip the M1 quarter-regression flag at identical neighbour
+counts: 62.1–81.6% slower. The separate index increases are 65–330 microseconds.
+As on the Mac, query, steering, predicate and ordering code is unchanged from the
+historical investigation below. Eight-pass canonical ordering, conservative bounds
+and shared predicates add work; the retained historical profiles locate those paths
+without assigning causal shares or claiming to profile this fresh executable.
+Both repeats agree within 3.6% for Crowd. Mixed tick medians span 1.005–1.055,
+2.300–2.445 and 14.255–14.765 ms; it has no same-neighbour-count M1 comparator.
+
+No row trips the clock or chronological quarter-regression flag. The three scaling
+flags are 5,000-body Crowd in repeat one and Mixed in both repeats, at the same
+table-capacity step explained below. At 10,000 bodies, tick medians span
+13.905–14.765 ms and eight-tick replay spans 114.260–120.025 ms.
+One-minute load brackets span 4.36–36.33, including long resource-queue waits.
+Engine timers exclude those waits; the load samples cannot isolate contention
+during a particular call. These remain shared-host baselines, not quiet-machine
+qualifications or timing budgets. Neither campaign changed a trace or its length.
+
+## Previous Mac refresh (historical)
+
+The previous Mac record (retained in Git at the path above) contains two complete release runs at
 `119bd20ab17438e0bab5a5c5bfb52b695e835b74`, source key
 `a8df10ea68a72e0b109e9f934951d7cd1dcf2809395fbba59c195c0b44d8b8c3`.
-The [source/completeness validator passes](cost-validation-mac-metal.json). All 24 rows
+Its source/completeness validator passed before later clock changes. All 24 rows
 retain their load brackets, M1 comparators and second-repeat comparators. Warmed build
 and all five query calls again observe zero allocations. No count or time gates success.
 
@@ -50,11 +119,12 @@ medians 1.952–2.107 ms. Eight-tick replay spans 80.279–83.075 ms serial and
 measurements remain in the record. This refresh binds the Chrome queue repair
 and upstream core world-lane source; it does not isolate a timing effect from them.
 
-## Refreshed Chrome Wasm measurements
+## Previous Chrome refresh (historical)
 
-The [current Chrome record](costs-chrome-webgpu.json) contains two complete release
+The previous Chrome record, preserved in Git at
+`768636def:docs/evidence/SIM-2D/M2/costs-chrome-webgpu.json`, contains two complete release
 runs at `119bd20ab`, with the same source key as the refreshed Mac record.
-Its [source/completeness validator passes](cost-validation-chrome-webgpu.json).
+Its source/completeness validator passed before the later clock additions.
 The isolated browser identifies itself as HeadlessChrome 157. The Wasm artifact
 is byte-identical to the previous refresh; no measurements were relabeled.
 
