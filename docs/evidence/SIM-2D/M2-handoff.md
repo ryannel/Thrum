@@ -1,54 +1,38 @@
-# M2 recovery note, 17 November 2026
+# M2 pre-merge recovery snapshot, 17 November 2026
 
-Finish SIM-2D M2 with every builder result passing, merge through `agent_loop.py
-merge --worktree .`, and leave the milestone `in_progress`. The lead runs the
-merged checks and starts review. This note protects an active run from another
-session restart; work is continuing.
+All target evidence for the Chrome queue repair is complete. The remaining action
+is the canonical merge. Check the build script's `jobs` and `origin/main` before
+starting one: a merge may already be queued or completed after this snapshot.
+Leave M2 `in_progress`, and end with `DONE` only after the script prints `MERGED`.
+The lead runs the merged item checks and starts review.
 
-The branch is `build/sim-2d`. Source checkpoint `119bd20ab` includes upstream
-`c5737c700`, the core world-lane change that otherwise invalidates the cost source
-key. The three repair commits are above main. They keep compilation outside the
-Chrome lock, run all nine conformance requests in one browser session, omit unused
-returned timelines, and reject debugger disconnects. No engine or retained trace
-changed. Every M2 builder result is already `pass`. The Mac cost record now matches
-the integrated source; the Chrome replacement below must finish before merging.
+The repair batches all nine Chrome conformance requests into one browser and one
+resource queue turn, after compilation. It omits unused returned timelines and
+rejects outstanding debugger requests on disconnect. No engine or retained trace
+changed. The successful real Chrome receipt is
+[chrome-webgpu.json](M2/chrome-webgpu.json), measured at `69395002b`.
+All eight routes and the full vector table pass. Its native/Wasm artifacts remain
+byte-identical after integrating upstream core world-lane changes at `119bd20ab`.
 
-The final real Chrome conformance passed at `69395002b`; its receipt is committed
-at `docs/evidence/SIM-2D/M2/chrome-webgpu.json`. It covers the profile vectors and
-all eight Crowd/Mixed size and wire routes. After rebasing, the native and Wasm
-artifacts still have exactly the hashes in
-[the repair notes](M2/chrome-queue-repair.md). Eleven focused Python tests and the
-JavaScript syntax check pass. `./dev check` passed before the rebase. The final
-merge runs the gate on integrated work. The lead reported the other item checks
-passing; do not repeat them merely because of the rebase.
+Both complete cost campaigns at `119bd20ab` are retained and pass their source and
+completeness validators. Their shared source key is
+`a8df10ea68a72e0b109e9f934951d7cd1dcf2809395fbba59c195c0b44d8b8c3`.
+The background jobs `20261117-010823-22751` (Mac) and `20261117-010823-22761`
+(Chrome) exited zero. The [performance notes](M2/performance.md) retain every
+tripwire, both repeats and the historical investigation. Warmed calls allocate
+zero. Earlier interrupted measurements were not accepted or relabeled.
 
-The background jobs measure the integrated source at `119bd20ab`:
+Eleven focused Python tests, JavaScript syntax and the documentation gate pass.
+The full repository gate passed before rebase; canonical merge runs it on the
+integrated work. The lead reported the other M2 checks passing. Their accepted
+proofs and the [repair notes](M2/chrome-queue-repair.md) are linked from
+[the milestone evidence](M2.md). Every builder result is `pass`, and M2 remains
+`in_progress`. The module log has an eight-line entry for this repair.
 
-- `20261117-010823-22751` passed. Its complete Mac record and passing validation
-  receipt are retained at the standard M2 paths. The two repeats contain 24 rows,
-  warmed calls allocate zero, and the performance notes contain the new measurements.
-- `20261117-010823-22761` writes `tmp/sim2d/M2-costs-chrome-webgpu.json`.
-
-Use the build script's `wait <job> --timeout 50 --lines 5` or `jobs` to collect
-them. The script is
+The build script is
 `/Users/ryannel/.claude/plugins/cache/ryannel-skills/orchestrate/2.3.6/skills/orchestration/build/scripts/agent_loop.py`.
-The jobs take their own device locks. Earlier direct-tool measurements were
-stopped after a harness change or the core rebase; none is accepted evidence.
-
-When the remaining Chrome job passes, retain its complete record at the matching
-`docs/evidence/SIM-2D/M2/costs-<target>.json` paths. The `costs --target <target>`
-validator must pass for both, with receipts retained at the existing validation
-paths. The Mac validator already passes. Refresh the Chrome measurements in
-`M2/performance.md` and `M2.md`, keeping
-the historical investigation and every tripwire. The module log already has an
-eight-line repair entry; update its pending Chrome line when the campaign passes.
-Commit the evidence and merge through the script. The milestone stays
-`in_progress`; end with `DONE` only after `MERGED`.
-
-The first large browser batch at `7ee85d580` used about nineteen minutes of
-renderer CPU, then its connection was absent while the harness waited. A large
-reply causing that disconnect is only an inference. Reply reduction plus explicit
-disconnect failure passed the complete subsequent target run. Details and limits
-are in the repair notes. The abandoned profile `tmp/sim2d/chrome-lDXcy3` was removed
-after confirming that no process used it. Preserve other scratch and other
-builders' worktrees.
+Use its `merge --worktree .` without a resource lock. A background merge can be
+collected with `wait <job> --timeout 55 --lines 10`. The abandoned Chrome profile
+from the first batch attempt has been removed; preserve other scratch and other
+builders' worktrees. The repair notes distinguish the observed first-attempt
+disconnect from the unproven payload-size explanation.

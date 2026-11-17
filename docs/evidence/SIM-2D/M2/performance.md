@@ -50,33 +50,35 @@ medians 1.952–2.107 ms. Eight-tick replay spans 80.279–83.075 ms serial and
 measurements remain in the record. This refresh binds the Chrome queue repair
 and upstream core world-lane source; it does not isolate a timing effect from them.
 
-## Earlier Chrome Wasm measurements
+## Refreshed Chrome Wasm measurements
 
-The [Chrome record](costs-chrome-webgpu.json) below contains two complete release
-runs at `d24658b33`, source key
-`bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44`.
-Its [source/completeness validation](cost-validation-chrome-webgpu.json) passed at
-that source checkpoint. The recovery note records the ongoing replacement campaign.
+The [current Chrome record](costs-chrome-webgpu.json) contains two complete release
+runs at `119bd20ab`, with the same source key as the refreshed Mac record.
+Its [source/completeness validator passes](cost-validation-chrome-webgpu.json).
+The isolated browser identifies itself as HeadlessChrome 157. The Wasm artifact
+is byte-identical to the previous refresh; no measurements were relabeled.
 
 | Crowd bodies | M1 tick / index, ms | Refresh repeat 1 tick / index, ms | Refresh repeat 2 tick / index, ms |
 |---|---:|---:|---:|
-| 2,000 | 0.570 / 0.035 | 1.010 / 0.105 | 1.010 / 0.100 |
-| 5,000 | 1.355 / 0.100 | 2.310 / 0.270 | 2.225 / 0.265 |
-| 10,000 | 8.580 / 0.205 | 14.810 / 0.540 | 14.005 / 0.530 |
+| 2,000 | 0.570 / 0.035 | 0.995 / 0.100 | 0.990 / 0.100 |
+| 5,000 | 1.355 / 0.100 | 2.235 / 0.265 | 2.155 / 0.260 |
+| 10,000 | 8.580 / 0.205 | 13.875 / 0.525 | 13.855 / 0.515 |
 
 All six Crowd rows trip the M1 quarter-regression flag at identical neighbour counts:
-63.2–77.2% increases. The separate index increases are 65–335 microseconds. The
+59.0–74.6% increases. The separate index increases are 65–320 microseconds. The
 query/rule code and its canonical-ordering, shared-predicate and conservative-bound
 paths are unchanged from the initial investigation below. Its historical samples
 locate those paths; they are not samples of the refreshed executable and do not
 assign causal shares to the increase. The two refreshed Crowd repeats agree within
-5.5%. One-minute load brackets span 10.64–40.16; these remain shared-host baselines.
+3.8%. One-minute load brackets span 5.42–11.73, with the queue-sampling limits
+noted above. These remain shared-host baselines.
 
-Mixed tick medians span 1.025–1.035, 2.355–2.360 and 14.285–14.430 ms at the three
+Mixed tick medians span 1.005–1.045, 2.270–2.280 and 14.015–14.190 ms at the three
 sizes. Mixed has no same-neighbour-count M1 comparator. No row trips the clock or
-chronological quarter-slower flag. Scaling flags remain at 5,000 bodies in both
-Mixed repeats and the first Crowd repeat, at the table-capacity step described below.
-At 10,000, ticks span 14.005–14.810 ms and eight-tick replay spans 117.090–119.520 ms.
+chronological quarter-slower flag. Scaling flags occur at 5,000 bodies in both
+traces' first repeat, at the table-capacity step described below. The second-repeat
+timings fall below that flag while neighbour counts remain unchanged.
+At 10,000, ticks span 13.855–14.190 ms and eight-tick replay spans 114.130–119.155 ms.
 
 ## Historical investigation
 

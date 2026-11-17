@@ -4,8 +4,8 @@
   Full Chrome vectors and eight trace routes pass; unused returned timelines are omitted.
   Debugger disconnects now fail instead of retaining the resource while waiting forever.
   Eleven harness tests and JavaScript syntax pass; the full gate passed before rebase.
-  Integrated Mac costs at `119bd20ab` pass validation; warmed calls allocate zero.
-  The Chrome cost replacement runs as a durable background job; documentation checks pass.
+  Integrated two-run Mac and Chrome costs at `119bd20ab` pass both source validators.
+  Warmed calls allocate zero; all tripwires remain explained. Documentation checks pass.
   [Proof, failed attempt and limits](../../evidence/SIM-2D/M2/chrome-queue-repair.md).
   [Current measurements](../../evidence/SIM-2D/M2/performance.md) and [recovery note](../../evidence/SIM-2D/M2-handoff.md).
 

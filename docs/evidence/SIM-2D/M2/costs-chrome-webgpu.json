@@ -1,53 +1,53 @@
 {
   "action": "measure",
   "target": "chrome-webgpu",
-  "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+  "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
   "dirty": false,
-  "utc": "2026-11-16T17:29:00.697755+00:00",
+  "utc": "2026-11-17T00:08:23.454683+00:00",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": [
-    35.74609375,
-    37.10888671875,
-    26.05712890625
+    11.734375,
+    14.55419921875,
+    13.77587890625
   ],
   "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
   "runs": [
     {
       "repeat": 1,
       "load": [
-        20.66748046875,
-        22.9111328125,
-        24.6005859375
+        6.07421875,
+        6.54150390625,
+        7.92626953125
       ],
       "build": "release",
       "rows": [
         {
           "bodies": 2000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.25999999999999995,
-          "index_median_ms": 0.10500000000000001,
+          "digest_median_ms": 0.23,
+          "index_median_ms": 0.1,
           "neighbours_per_tick": 29596.382183908045,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 11.2,
-          "rewind_eight_ms": 0.525,
+          "replay_eight_ms": 10.44,
+          "rewind_eight_ms": 0.495,
           "samples": 3480,
-          "tick_median_ms": 1.01,
-          "tick_ms_per_neighbour": 3.4125792596000153e-05,
+          "tick_median_ms": 0.995,
+          "tick_ms_per_neighbour": 3.361897389407936e-05,
           "ticks": 3600,
           "trace": "crowd",
           "warmup_ticks": 120,
           "load_before": [
-            35.74609375,
-            37.10888671875,
-            26.05712890625
+            11.734375,
+            14.55419921875,
+            13.77587890625
           ],
           "load_after": [
-            38.5263671875,
-            37.16845703125,
-            26.73828125
+            6.4833984375,
+            9.47412109375,
+            11.4501953125
           ],
-          "utc": "2026-11-16T17:29:05.347200+00:00",
+          "utc": "2026-11-17T00:08:26.273028+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
@@ -59,7 +59,7 @@
               "bodies": 2000,
               "neighbours_per_tick": 29596.382183908045,
               "tick_median_ms": 0.57,
-              "ratio": 1.7719298245614037,
+              "ratio": 1.7456140350877194,
               "tripped": true
             }
           ],
@@ -69,284 +69,30 @@
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.65,
-          "index_median_ms": 0.27,
-          "neighbours_per_tick": 65406.63103448276,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 31.58,
-          "rewind_eight_ms": 0.955,
-          "samples": 3480,
-          "tick_median_ms": 2.31,
-          "tick_ms_per_neighbour": 3.531752000469424e-05,
-          "ticks": 3600,
-          "trace": "crowd",
-          "warmup_ticks": 120,
-          "load_before": [
-            38.5263671875,
-            37.16845703125,
-            26.73828125
-          ],
-          "load_after": [
-            40.16162109375,
-            37.55859375,
-            26.998046875
-          ],
-          "utc": "2026-11-16T17:29:56.139230+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [
-            {
-              "origin": "previous_record",
-              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
-              "repeat": 2,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 5000,
-              "neighbours_per_tick": 65406.63103448276,
-              "tick_median_ms": 1.355,
-              "ratio": 1.7047970479704797,
-              "tripped": true
-            }
-          ],
-          "quarter_slower_tripwire": true,
-          "super_neighbour_scaling_tripwire": true
-        },
-        {
-          "bodies": 10000,
-          "clock_tripwire": false,
-          "digest_median_ms": 1.38,
-          "index_median_ms": 0.54,
-          "neighbours_per_tick": 469267.6465440357,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 118.765,
-          "rewind_eight_ms": 3.7750000000000004,
-          "samples": 35880,
-          "tick_median_ms": 14.81,
-          "tick_ms_per_neighbour": 3.1559814764707505e-05,
-          "ticks": 36000,
-          "trace": "crowd",
-          "warmup_ticks": 120,
-          "load_before": [
-            40.16162109375,
-            37.55859375,
-            26.998046875
-          ],
-          "load_after": [
-            24.4326171875,
-            29.40771484375,
-            27.955078125
-          ],
-          "utc": "2026-11-16T17:30:10.335730+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [
-            {
-              "origin": "previous_record",
-              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
-              "repeat": 2,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 10000,
-              "neighbours_per_tick": 469267.6465440357,
-              "tick_median_ms": 8.58,
-              "ratio": 1.7261072261072261,
-              "tripped": true
-            }
-          ],
-          "quarter_slower_tripwire": true,
-          "super_neighbour_scaling_tripwire": false
-        },
-        {
-          "bodies": 2000,
-          "clock_tripwire": false,
-          "digest_median_ms": 0.25,
-          "index_median_ms": 0.1,
-          "neighbours_per_tick": 29946.799425287358,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 11.07,
-          "rewind_eight_ms": 0.51,
-          "samples": 3480,
-          "tick_median_ms": 1.0250000000000001,
-          "tick_ms_per_neighbour": 3.422736384758635e-05,
-          "ticks": 3600,
-          "trace": "mixed",
-          "warmup_ticks": 120,
-          "load_before": [
-            24.4326171875,
-            29.40771484375,
-            27.955078125
-          ],
-          "load_after": [
-            24.63818359375,
-            29.36767578125,
-            27.94921875
-          ],
-          "utc": "2026-11-16T17:39:37.383539+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [],
-          "quarter_slower_tripwire": false,
-          "super_neighbour_scaling_tripwire": false
-        },
-        {
-          "bodies": 5000,
-          "clock_tripwire": false,
-          "digest_median_ms": 0.615,
-          "index_median_ms": 0.27,
-          "neighbours_per_tick": 66071.39511494253,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 31.775,
-          "rewind_eight_ms": 0.955,
-          "samples": 3480,
-          "tick_median_ms": 2.355,
-          "tick_ms_per_neighbour": 3.5643261291865766e-05,
-          "ticks": 3600,
-          "trace": "mixed",
-          "warmup_ticks": 120,
-          "load_before": [
-            24.63818359375,
-            29.36767578125,
-            27.94921875
-          ],
-          "load_after": [
-            24.5146484375,
-            29.10498046875,
-            27.8798828125
-          ],
-          "utc": "2026-11-16T17:39:43.263940+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [],
-          "quarter_slower_tripwire": false,
-          "super_neighbour_scaling_tripwire": true
-        },
-        {
-          "bodies": 10000,
-          "clock_tripwire": false,
-          "digest_median_ms": 1.2899999999999998,
-          "index_median_ms": 0.53,
-          "neighbours_per_tick": 474751.88263656636,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 117.505,
-          "rewind_eight_ms": 1.6199999999999999,
-          "samples": 35880,
-          "tick_median_ms": 14.285,
-          "tick_ms_per_neighbour": 3.008940147992104e-05,
-          "ticks": 36000,
-          "trace": "mixed",
-          "warmup_ticks": 120,
-          "load_before": [
-            24.5146484375,
-            29.10498046875,
-            27.8798828125
-          ],
-          "load_after": [
-            20.66748046875,
-            22.9111328125,
-            24.6005859375
-          ],
-          "utc": "2026-11-16T17:39:56.173394+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [],
-          "quarter_slower_tripwire": false,
-          "super_neighbour_scaling_tripwire": false
-        }
-      ]
-    },
-    {
-      "repeat": 2,
-      "load": [
-        10.640625,
-        14.099609375,
-        19.84619140625
-      ],
-      "build": "release",
-      "rows": [
-        {
-          "bodies": 2000,
-          "clock_tripwire": false,
-          "digest_median_ms": 0.24000000000000002,
-          "index_median_ms": 0.1,
-          "neighbours_per_tick": 29596.382183908045,
-          "parallel": false,
-          "parallel_chunks": 0,
-          "replay_eight_ms": 11.03,
-          "rewind_eight_ms": 0.51,
-          "samples": 3480,
-          "tick_median_ms": 1.01,
-          "tick_ms_per_neighbour": 3.4125792596000153e-05,
-          "ticks": 3600,
-          "trace": "crowd",
-          "warmup_ticks": 120,
-          "load_before": [
-            20.66748046875,
-            22.9111328125,
-            24.6005859375
-          ],
-          "load_after": [
-            37.1796875,
-            31.44873046875,
-            24.87939453125
-          ],
-          "utc": "2026-11-16T17:48:51.221494+00:00",
-          "build": "release",
-          "quarter_slower_comparisons": [
-            {
-              "origin": "previous_record",
-              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
-              "repeat": 2,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 2000,
-              "neighbours_per_tick": 29596.382183908045,
-              "tick_median_ms": 0.57,
-              "ratio": 1.7719298245614037,
-              "tripped": true
-            },
-            {
-              "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
-              "repeat": 1,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 2000,
-              "neighbours_per_tick": 29596.382183908045,
-              "tick_median_ms": 1.01,
-              "ratio": 1.0,
-              "tripped": false
-            }
-          ],
-          "quarter_slower_tripwire": true,
-          "super_neighbour_scaling_tripwire": false
-        },
-        {
-          "bodies": 5000,
-          "clock_tripwire": false,
-          "digest_median_ms": 0.615,
+          "digest_median_ms": 0.605,
           "index_median_ms": 0.265,
           "neighbours_per_tick": 65406.63103448276,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 31.244999999999997,
-          "rewind_eight_ms": 0.86,
+          "replay_eight_ms": 31.695,
+          "rewind_eight_ms": 0.98,
           "samples": 3480,
-          "tick_median_ms": 2.225,
-          "tick_ms_per_neighbour": 3.4017957580279085e-05,
+          "tick_median_ms": 2.235,
+          "tick_ms_per_neighbour": 3.41708472772691e-05,
           "ticks": 3600,
           "trace": "crowd",
           "warmup_ticks": 120,
           "load_before": [
-            37.1796875,
-            31.44873046875,
-            24.87939453125
+            6.4833984375,
+            9.47412109375,
+            11.4501953125
           ],
           "load_after": [
-            31.87744140625,
-            30.546875,
-            24.67138671875
+            6.0283203125,
+            8.59033203125,
+            10.92138671875
           ],
-          "utc": "2026-11-16T18:03:46.586676+00:00",
+          "utc": "2026-11-17T00:31:31.776536+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
@@ -358,52 +104,40 @@
               "bodies": 5000,
               "neighbours_per_tick": 65406.63103448276,
               "tick_median_ms": 1.355,
-              "ratio": 1.6420664206642068,
+              "ratio": 1.6494464944649445,
               "tripped": true
-            },
-            {
-              "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
-              "repeat": 1,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 5000,
-              "neighbours_per_tick": 65406.63103448276,
-              "tick_median_ms": 2.31,
-              "ratio": 0.9632034632034632,
-              "tripped": false
             }
           ],
           "quarter_slower_tripwire": true,
-          "super_neighbour_scaling_tripwire": false
+          "super_neighbour_scaling_tripwire": true
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.3,
-          "index_median_ms": 0.53,
+          "digest_median_ms": 1.25,
+          "index_median_ms": 0.525,
           "neighbours_per_tick": 469267.6465440357,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 119.52,
-          "rewind_eight_ms": 1.55,
+          "replay_eight_ms": 114.13,
+          "rewind_eight_ms": 1.415,
           "samples": 35880,
-          "tick_median_ms": 14.005,
-          "tick_ms_per_neighbour": 2.9844375812270668e-05,
+          "tick_median_ms": 13.875,
+          "tick_ms_per_neighbour": 2.9567348403802607e-05,
           "ticks": 36000,
           "trace": "crowd",
           "warmup_ticks": 120,
           "load_before": [
-            31.87744140625,
-            30.546875,
-            24.67138671875
+            6.0283203125,
+            8.59033203125,
+            10.92138671875
           ],
           "load_after": [
-            27.2822265625,
-            33.44189453125,
-            28.7666015625
+            8.57177734375,
+            7.68359375,
+            9.29248046875
           ],
-          "utc": "2026-11-16T18:03:59.163855+00:00",
+          "utc": "2026-11-17T00:32:56.873017+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
@@ -415,20 +149,8 @@
               "bodies": 10000,
               "neighbours_per_tick": 469267.6465440357,
               "tick_median_ms": 8.58,
-              "ratio": 1.6322843822843824,
+              "ratio": 1.617132867132867,
               "tripped": true
-            },
-            {
-              "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
-              "repeat": 1,
-              "trace": "crowd",
-              "parallel": false,
-              "bodies": 10000,
-              "neighbours_per_tick": 469267.6465440357,
-              "tick_median_ms": 14.81,
-              "ratio": 0.9456448345712357,
-              "tripped": false
             }
           ],
           "quarter_slower_tripwire": true,
@@ -442,37 +164,315 @@
           "neighbours_per_tick": 29946.799425287358,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 11.105,
-          "rewind_eight_ms": 0.5,
+          "replay_eight_ms": 10.87,
+          "rewind_eight_ms": 0.48000000000000004,
           "samples": 3480,
-          "tick_median_ms": 1.035,
-          "tick_ms_per_neighbour": 3.4561289348538405e-05,
+          "tick_median_ms": 1.0050000000000001,
+          "tick_ms_per_neighbour": 3.3559512845682223e-05,
           "ticks": 3600,
           "trace": "mixed",
           "warmup_ticks": 120,
           "load_before": [
-            27.2822265625,
-            33.44189453125,
-            28.7666015625
+            8.57177734375,
+            7.68359375,
+            9.29248046875
           ],
           "load_after": [
-            25.73779296875,
-            33.01904296875,
-            28.64453125
+            6.4716796875,
+            9.171875,
+            9.763671875
           ],
-          "utc": "2026-11-16T18:12:42.750207+00:00",
+          "utc": "2026-11-17T00:41:37.015954+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [],
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 5000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.6,
+          "index_median_ms": 0.25999999999999995,
+          "neighbours_per_tick": 66071.39511494253,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 31.130000000000003,
+          "rewind_eight_ms": 0.9349999999999999,
+          "samples": 3480,
+          "tick_median_ms": 2.27,
+          "tick_ms_per_neighbour": 3.43567741539428e-05,
+          "ticks": 3600,
+          "trace": "mixed",
+          "warmup_ticks": 120,
+          "load_before": [
+            6.4716796875,
+            9.171875,
+            9.763671875
+          ],
+          "load_after": [
+            7.5791015625,
+            9.3046875,
+            9.80078125
+          ],
+          "utc": "2026-11-17T00:57:46.025453+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [],
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": true
+        },
+        {
+          "bodies": 10000,
+          "clock_tripwire": false,
+          "digest_median_ms": 1.2249999999999999,
+          "index_median_ms": 0.515,
+          "neighbours_per_tick": 474751.88263656636,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 116.54,
+          "rewind_eight_ms": 1.52,
+          "samples": 35880,
+          "tick_median_ms": 14.015,
+          "tick_ms_per_neighbour": 2.952068335604434e-05,
+          "ticks": 36000,
+          "trace": "mixed",
+          "warmup_ticks": 120,
+          "load_before": [
+            7.5791015625,
+            9.3046875,
+            9.80078125
+          ],
+          "load_after": [
+            6.07421875,
+            6.54150390625,
+            7.92626953125
+          ],
+          "utc": "2026-11-17T00:57:58.342086+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [],
+          "quarter_slower_tripwire": false,
+          "super_neighbour_scaling_tripwire": false
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "load": [
+        5.42138671875,
+        8.1630859375,
+        10.68505859375
+      ],
+      "build": "release",
+      "rows": [
+        {
+          "bodies": 2000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.24000000000000002,
+          "index_median_ms": 0.1,
+          "neighbours_per_tick": 29596.382183908045,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 11,
+          "rewind_eight_ms": 0.5950000000000001,
+          "samples": 3480,
+          "tick_median_ms": 0.99,
+          "tick_ms_per_neighbour": 3.345003432677243e-05,
+          "ticks": 3600,
+          "trace": "crowd",
+          "warmup_ticks": 120,
+          "load_before": [
+            6.07421875,
+            6.54150390625,
+            7.92626953125
+          ],
+          "load_after": [
+            5.90771484375,
+            6.4990234375,
+            7.90283203125
+          ],
+          "utc": "2026-11-17T01:06:39.876153+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
+              "repeat": 2,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.57,
+              "ratio": 1.736842105263158,
+              "tripped": true
+            },
+            {
+              "origin": "current_record",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
+              "repeat": 1,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 2000,
+              "neighbours_per_tick": 29596.382183908045,
+              "tick_median_ms": 0.995,
+              "ratio": 0.9949748743718593,
+              "tripped": false
+            }
+          ],
+          "quarter_slower_tripwire": true,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 5000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.575,
+          "index_median_ms": 0.25999999999999995,
+          "neighbours_per_tick": 65406.63103448276,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 30.335,
+          "rewind_eight_ms": 0.955,
+          "samples": 3480,
+          "tick_median_ms": 2.155,
+          "tick_ms_per_neighbour": 3.2947729701348954e-05,
+          "ticks": 3600,
+          "trace": "crowd",
+          "warmup_ticks": 120,
+          "load_before": [
+            5.90771484375,
+            6.4990234375,
+            7.90283203125
+          ],
+          "load_after": [
+            5.4228515625,
+            6.3603515625,
+            7.828125
+          ],
+          "utc": "2026-11-17T01:06:45.506034+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
+              "repeat": 2,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 1.355,
+              "ratio": 1.5904059040590404,
+              "tripped": true
+            },
+            {
+              "origin": "current_record",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
+              "repeat": 1,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 5000,
+              "neighbours_per_tick": 65406.63103448276,
+              "tick_median_ms": 2.235,
+              "ratio": 0.9642058165548099,
+              "tripped": false
+            }
+          ],
+          "quarter_slower_tripwire": true,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 10000,
+          "clock_tripwire": false,
+          "digest_median_ms": 1.22,
+          "index_median_ms": 0.515,
+          "neighbours_per_tick": 469267.6465440357,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 119.155,
+          "rewind_eight_ms": 2.065,
+          "samples": 35880,
+          "tick_median_ms": 13.854999999999999,
+          "tick_ms_per_neighbour": 2.9524728802499826e-05,
+          "ticks": 36000,
+          "trace": "crowd",
+          "warmup_ticks": 120,
+          "load_before": [
+            5.4228515625,
+            6.3603515625,
+            7.828125
+          ],
+          "load_after": [
+            10.92333984375,
+            7.5703125,
+            7.4326171875
+          ],
+          "utc": "2026-11-17T01:06:57.523439+00:00",
+          "build": "release",
+          "quarter_slower_comparisons": [
+            {
+              "origin": "previous_record",
+              "commit": "8d59950fc97e1791033c1512b88a9b83d4420a47",
+              "repeat": 2,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 8.58,
+              "ratio": 1.6148018648018647,
+              "tripped": true
+            },
+            {
+              "origin": "current_record",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
+              "repeat": 1,
+              "trace": "crowd",
+              "parallel": false,
+              "bodies": 10000,
+              "neighbours_per_tick": 469267.6465440357,
+              "tick_median_ms": 13.875,
+              "ratio": 0.9985585585585585,
+              "tripped": false
+            }
+          ],
+          "quarter_slower_tripwire": true,
+          "super_neighbour_scaling_tripwire": false
+        },
+        {
+          "bodies": 2000,
+          "clock_tripwire": false,
+          "digest_median_ms": 0.245,
+          "index_median_ms": 0.1,
+          "neighbours_per_tick": 29946.799425287358,
+          "parallel": false,
+          "parallel_chunks": 0,
+          "replay_eight_ms": 11.24,
+          "rewind_eight_ms": 0.515,
+          "samples": 3480,
+          "tick_median_ms": 1.045,
+          "tick_ms_per_neighbour": 3.4895214849490463e-05,
+          "ticks": 3600,
+          "trace": "mixed",
+          "warmup_ticks": 120,
+          "load_before": [
+            10.92333984375,
+            7.5703125,
+            7.4326171875
+          ],
+          "load_after": [
+            11.27197265625,
+            13.78271484375,
+            12.86962890625
+          ],
+          "utc": "2026-11-17T01:15:34.032822+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
               "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
               "repeat": 1,
               "trace": "mixed",
               "parallel": false,
               "bodies": 2000,
               "neighbours_per_tick": 29946.799425287358,
-              "tick_median_ms": 1.0250000000000001,
-              "ratio": 1.0097560975609754,
+              "tick_median_ms": 1.0050000000000001,
+              "ratio": 1.0398009950248754,
               "tripped": false
             }
           ],
@@ -482,87 +482,87 @@
         {
           "bodies": 5000,
           "clock_tripwire": false,
-          "digest_median_ms": 0.5900000000000001,
-          "index_median_ms": 0.27,
+          "digest_median_ms": 0.5950000000000001,
+          "index_median_ms": 0.265,
           "neighbours_per_tick": 66071.39511494253,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 32.525,
-          "rewind_eight_ms": 1.065,
+          "replay_eight_ms": 30.87,
+          "rewind_eight_ms": 0.9650000000000001,
           "samples": 3480,
-          "tick_median_ms": 2.3600000000000003,
-          "tick_ms_per_neighbour": 3.571893700586124e-05,
+          "tick_median_ms": 2.28,
+          "tick_ms_per_neighbour": 3.4508125581933736e-05,
           "ticks": 3600,
           "trace": "mixed",
           "warmup_ticks": 120,
           "load_before": [
-            25.73779296875,
-            33.01904296875,
-            28.64453125
+            11.27197265625,
+            13.78271484375,
+            12.86962890625
           ],
           "load_after": [
-            23.17041015625,
-            32.22802734375,
-            28.41455078125
+            9.17431640625,
+            12.81396484375,
+            12.56640625
           ],
-          "utc": "2026-11-16T18:12:48.565833+00:00",
+          "utc": "2026-11-17T01:33:51.744560+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
               "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
               "repeat": 1,
               "trace": "mixed",
               "parallel": false,
               "bodies": 5000,
               "neighbours_per_tick": 66071.39511494253,
-              "tick_median_ms": 2.355,
-              "ratio": 1.002123142250531,
+              "tick_median_ms": 2.27,
+              "ratio": 1.0044052863436121,
               "tripped": false
             }
           ],
           "quarter_slower_tripwire": false,
-          "super_neighbour_scaling_tripwire": true
+          "super_neighbour_scaling_tripwire": false
         },
         {
           "bodies": 10000,
           "clock_tripwire": false,
-          "digest_median_ms": 1.315,
-          "index_median_ms": 0.53,
+          "digest_median_ms": 1.26,
+          "index_median_ms": 0.525,
           "neighbours_per_tick": 474751.88263656636,
           "parallel": false,
           "parallel_chunks": 0,
-          "replay_eight_ms": 117.09,
-          "rewind_eight_ms": 1.435,
+          "replay_eight_ms": 114.9,
+          "rewind_eight_ms": 1.485,
           "samples": 35880,
-          "tick_median_ms": 14.43,
-          "tick_ms_per_neighbour": 3.0394824176077046e-05,
+          "tick_median_ms": 14.19,
+          "tick_ms_per_neighbour": 2.988929695485331e-05,
           "ticks": 36000,
           "trace": "mixed",
           "warmup_ticks": 120,
           "load_before": [
-            23.17041015625,
-            32.22802734375,
-            28.41455078125
+            9.17431640625,
+            12.81396484375,
+            12.56640625
           ],
           "load_after": [
-            10.640625,
-            14.099609375,
-            19.84619140625
+            5.42138671875,
+            8.1630859375,
+            10.68505859375
           ],
-          "utc": "2026-11-16T18:13:01.278087+00:00",
+          "utc": "2026-11-17T01:34:46.258018+00:00",
           "build": "release",
           "quarter_slower_comparisons": [
             {
               "origin": "current_record",
-              "commit": "d24658b33cd994512dbe0c36a3daa5b44eeb356c",
+              "commit": "119bd20ab17438e0bab5a5c5bfb52b695e835b74",
               "repeat": 1,
               "trace": "mixed",
               "parallel": false,
               "bodies": 10000,
               "neighbours_per_tick": 474751.88263656636,
-              "tick_median_ms": 14.285,
-              "ratio": 1.0101505075253763,
+              "tick_median_ms": 14.015,
+              "ratio": 1.0124866214769888,
               "tripped": false
             }
           ],
@@ -1165,11 +1165,11 @@
       "crates/thrum-core/src/sim/undo.rs": "af1a5c8c81b7198328db1659d6bc99aa1467d7416fb8ee4dccde1bbac8a9322b",
       "crates/thrum-core/src/sim/world_lane/tests/lifecycle.rs": "c629c498ad0d3e2a47220b3d743fc7bc0c00bfda4c4ad9c0b403296e99ab3728",
       "crates/thrum-core/src/sim/world_lane/tests.rs": "bcfb75ccec217c9c41fdb54298e3b3fd57911533f352ae33ca5c4890475e1beb",
-      "crates/thrum-core/src/sim/world_lane.rs": "683e253f5bf93c44d53070e42d8efa0a92c4187fdc2e6cd0a3c6f875ee6354a1",
+      "crates/thrum-core/src/sim/world_lane.rs": "36c032c27806e7f1d786429d9fd67bf6234c022e511a1df009fcf8e536ed17ca",
       "crates/thrum-core/src/sim.rs": "7da6d1adf507643ad88b78ee294813faf50ef70a6c907ffab221f9e11a4a9101",
       "crates/thrum-core/tests/a1_schedule.rs": "211980c90ec54a1e1ea7d3d0f5234f5d907dbf29a5045dc376bba2b0937c2a1a",
       "crates/thrum-core/tests/clock.rs": "2d6691c8d5d46132eac2a690179281adb3ae5fd956d727758c53ae506137dee0",
-      "crates/thrum-core/tests/display_phase/world.rs": "daa899517f7ac2be3db54b689d36eaa50e798d6b08193c089e10b879bcaeb7df",
+      "crates/thrum-core/tests/display_phase/world.rs": "d2e7bc9781ce2fe13d586db34fd117029ff3bfd6d06622b425922fd481970d57",
       "crates/thrum-core/tests/display_phase.rs": "5b85119a2e14d5e9ef70b12e6c0c1b541982c0d2c07f09d162b6fb4be5b7deea",
       "crates/thrum-core/tests/g2_edit_ownership.rs": "bc8e830e79bf194083117c8d94afa44ccdab03ceb576560780a2a3eff4abc422",
       "crates/thrum-core/tests/g2_runtime.rs": "3570a6c827c87055db4d62379e332e078c881f50874e9d03ce6ab515b8ea62e3",
@@ -1216,10 +1216,10 @@
       "examples/crowd-2d-run/src/main.rs": "80a477e7cc16347d4d20b025029271fa1c0a2361483eebf7405d12aa1f8a9f5f",
       "examples/crowd-2d-run/tests/input_route.rs": "3df75636a05020a43a46d6e6d4709277eb7821c0e9ae6f2836a287511da7bfab",
       "rust-toolchain.toml": "f715f440167e20fd8ea9afa0498c3d1ab80174cfcb8cbc895f106a34d907a1e1",
-      "scripts/sim2d_browser.mjs": "1bc841d40ac39f98cda4a969b05a3387262e819a5d2ce8c5c49fec874bbb7070",
-      "scripts/sim2d_conformance.py": "7e11b6ac1c485c9007dad6a52e24ad52799862c40112379926e1dca91fc73f7a"
+      "scripts/sim2d_browser.mjs": "549154f77f6c40babf667f98b842ec2d7971ef66ce73aa10c26c3e53d9fd04e7",
+      "scripts/sim2d_conformance.py": "f69ffc3a3f632e56a39595022ab33d2cc962f68384a087077509d2d996510be1"
     }
   },
-  "source_sha256": "bdcda83e5678dc917bd65c8ff9d7fa5a665867de5186d38c7f7ca0e1825c0e44",
+  "source_sha256": "a8df10ea68a72e0b109e9f934951d7cd1dcf2809395fbba59c195c0b44d8b8c3",
   "timings_are_baselines": true
 }
