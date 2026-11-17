@@ -104,13 +104,13 @@ fn output(device: &wgpu::Device, surface: SurfaceProfile) -> wgpu::TextureView {
 }
 
 async fn recover_observer(
+    original_gpu: &thrum_test_support::Gpu,
     host: &mut FrameHost<StillWorld, NativeScene>,
     observer: &mut Observer,
     surface: SurfaceProfile,
 ) {
     let inputs = host.device_prepare_inputs().unwrap();
-    let gpu =
-        thrum_test_support::gpu("Mac observer replacement", Some(wgpu::Backend::Metal)).unwrap();
+    let gpu = original_gpu.fresh_adapter();
     let (device, queue) = gpu.device(Profile::Portable, &Restriction::default());
     let capabilities = DeviceCapabilities::capture(&gpu.adapter, &device, 8);
     let watch = DeviceWatch::register(&device, 8, |_| {});
@@ -259,7 +259,7 @@ fn metal_observer_preserves_and_discovers_native_loss_in_platform_reply() {
                     observer.replace(&mut host),
                     Err(FrameError::NativeCommandBuffer { generation: 7 })
                 ));
-                recover_observer(&mut host, &mut observer, surface).await;
+                recover_observer(&gpu, &mut host, &mut observer, surface).await;
             }
             observer
                 .writer

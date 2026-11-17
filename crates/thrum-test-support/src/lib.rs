@@ -81,6 +81,22 @@ impl Restriction {
 
 #[cfg(feature = "render")]
 impl Gpu {
+    /// Fresh adapter for device-replacement tests, retaining the same instance.
+    /// Backend device identities are only comparable within that instance.
+    /// # Panics
+    /// Fails if the already admitted instance cannot provide another adapter.
+    pub fn fresh_adapter(&self) -> Self {
+        let adapter = pollster::block_on(
+            self.instance
+                .request_adapter(&wgpu::RequestAdapterOptions::default()),
+        )
+        .expect("replacement adapter on admitted GPU instance");
+        Self {
+            instance: self.instance.clone(),
+            adapter,
+        }
+    }
+
     /// M1 stand-in for HOST's device recipe. Restrictions never add capabilities.
     /// # Panics
     /// Fails if the admitted adapter cannot create the requested device.
