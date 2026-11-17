@@ -1,5 +1,13 @@
 # SCENE-VIEWS log
 
+- 2026-11-17 M1 review fix: `34b9e3f1a` supplies each secondary cascade's own
+  prepared caster compaction on the culled bucket route, using the main kernel.
+  Metal regression runs on both recipes preserve off-camera casters, remove
+  outside casters, match Direct's images and preserve slot/main independence.
+  The Apple-tile public suite passes all 17 tests, the thirteen functional item
+  commands pass, and `./dev check` passes. [Evidence](../../evidence/SCENE-VIEWS/M1/caster-culling/README.md)
+  records idle timings/object counts too; no performance figure or bound changed.
+
 - 2026-11-17 M1 resumed closeout: fetched origin and rebased; the branch was current.
   The shared full exact-images verifier passed on `40de2f151` on its retry.
   The script reports `COVERED` for merged implementation `d24658b33`, resolving
