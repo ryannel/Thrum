@@ -164,10 +164,10 @@
           "statement": "Using only README.md, the creator guide and the starter's README, an agent that has not opened crates/ or any other design document builds a new small scene (not the starter, stones, the sunset or the lighthouse) with lit ground, sky, one cooked mesh of its own, a camera and one slider; it runs on the Mac and in Chrome in about 100 game lines with zero engine game types.",
           "inspect": "Do this first. Until your scene runs on both targets, read only the review skill, ORCHESTRATE.md, the graded examples, these items, the three documents and what they tell a creator to run or copy, and log every file you open. Build the scene under tmp/, run it offscreen on the Mac and in Chrome, and record the game-line count, every engine item it names, each point of friction and one capture per target. A step that needed crates/ fails the item. If you read this module's design, crates/ or another design document first, say so and give cant_tell.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CREATOR/m3/fresh-lead/README.md; docs/evidence/CREATOR/m3/fresh-lead/REPORT.md",
+          "evidence": "",
           "verdict": "could_not_judge",
           "review": "docs/evidence/CREATOR/M3-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.2",
@@ -196,14 +196,14 @@
           "statement": "In the visible starter window on the built-in display, a Sun slider dragged in the panel moves the light, and saving the parameter file and an asset updates the window without a key press.",
           "inspect": "If the session is unlocked, launch the starter, drag the slider and save the parameter file and one asset yourself, capturing the real window and panel by window id around each. If it is locked, judge the attended run's window captures and report lines, and say so. Did each change the visible scene, in order, with no key press? An offscreen frame does not count.",
           "target": "mac-metal",
-          "evidence": "docs/evidence/CREATOR/M3.md; docs/evidence/CREATOR/m3/r1-refresh/README.md; docs/evidence/CREATOR/m3/r1-refresh/window/run.json; docs/evidence/CREATOR/m3/r1-refresh/window/starter.log",
-          "verdict": "pass",
+          "evidence": "",
+          "verdict": "could_not_judge",
           "review": "docs/evidence/CREATOR/M3-review.md",
           "needs": {
             "type": "access",
             "what": "Setup only: the built-in display unlocked and awake, with Screen Recording and Accessibility permission already granted to the agent's process. The agent drags, saves and captures; without the Accessibility grant a person does the drag only. Batch with the Mac qualification session."
           },
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "M3.5",
@@ -216,16 +216,21 @@
           "builder_result": "pass"
         }
       ],
-      "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
+      "failed_reviews": 4,
+      "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A first scene as quickly as a new user gets one from Bevy's or three.js's quick start: one command per target, about 100 game lines, no engine internals, and every mistake explained by object, cause and next step.",
       "findings": [
         {
           "name": "fresh-review reading order was violated",
           "item": "M3.1",
           "repeat": true
+        },
+        {
+          "name": "native panel drag was not reachable through the review UI tool",
+          "item": "M3.4",
+          "repeat": false
         }
       ]
     }

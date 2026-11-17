@@ -264,7 +264,7 @@
         {
           "verdict": "fail",
           "commit": "6c55ca585b07c821d4d0e210206e42c2b125eb99",
-          "review": "docs/evidence/CREATOR/M3-review.md",
+          "review": "docs/evidence/CREATOR/M3-review-3.md",
           "items": {
             "M3.1": "could_not_judge",
             "M3.2": "pass",
@@ -295,6 +295,46 @@
             "turns": 1
           },
           "at": "2026-11-17T15:26:52Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "059e7f1a168c371371221413052428fcecb199a5",
+          "review": "docs/evidence/CREATOR/M3-review.md",
+          "items": {
+            "M3.1": "could_not_judge",
+            "M3.2": "pass",
+            "M3.3": "pass",
+            "M3.4": "could_not_judge",
+            "M3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "fresh-review reading order was violated",
+              "item": "M3.1",
+              "repeat": true
+            },
+            {
+              "name": "native panel drag was not reachable through the review UI tool",
+              "item": "M3.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.169.0-alpha.11.1",
+          "path": "visible",
+          "usage": {
+            "input": 166526,
+            "cached": 6033280,
+            "output": 11909,
+            "turns": 1
+          },
+          "at": "2026-11-17T19:19:52Z"
         }
       ],
       "authorised": {
