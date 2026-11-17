@@ -87,6 +87,10 @@ harness = false
 name = "valley_culling"
 harness = false
 
+[[bench]]
+name = "recipe_cost"
+harness = false
+
 [[bin]]
 name = "cooked_draw_probe"
 path = "src/bin/cooked_draw_probe.rs"

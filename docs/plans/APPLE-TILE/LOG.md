@@ -1,5 +1,11 @@
 # APPLE-TILE log
 
+- 2026-11-17 M12 adds a paired integrated recipe cost bench using the existing GPU gate and game facade.
+  The 10,000-entity smoke produces 1,500 movers and unchanged 288,000-byte updates with zero pending frames.
+  Both extents, A/A/alternating order, visibility, tap OFF/ON and sustained thermal/load arms are scripted.
+  Validation is included in upload/encode, not independently timed; no promotion or observer-writer claim.
+  Final target evidence and remaining attended access are tracked in the [M12 record](../../evidence/APPLE-TILE/M12/README.md).
+
 - 2026-11-16 M10 attended window proof completed on clean merged source `3d823c638`.
   Both recipes retain matched Sun/night/noon OS/T2 stills, ordinary E/Q response,
   window zoom/restoration and OS-video generation replacement recovery.
