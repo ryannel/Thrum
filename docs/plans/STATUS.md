@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-8 of 31 modules done · 15 in progress · 8 to come
+9 of 31 modules done · 15 in progress · 7 to come
 
 ### Needs you now
 
@@ -244,17 +244,17 @@ A planner or the lead chose each of these where your words left it open. Each st
 - An integrated record states qualified wins and remaining targets (APPLE-TILE M12): In Progress · [plan](APPLE-TILE/PLAN.md)
 - A fresh agent builds a new scene for Mac and Chrome from the public docs alone, and G6 closes (CREATOR M3): In Progress · [plan](CREATOR/PLAN.md) · [latest review](../evidence/CREATOR/M3-review.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION M3): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
-- A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one (EFFECT-GRAPH M4): Ready for Review · [plan](EFFECT-GRAPH/PLAN.md) · [latest review](../evidence/EFFECT-GRAPH/M4-review.md)
-- An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome (CONTENT-LOOP M2): Not Started · [plan](CONTENT-LOOP/PLAN.md)
+- An edited mesh changes on every entity that uses it while the game runs, with no pixel different from a fresh start, on Mac and in Chrome (CONTENT-LOOP M2): In Progress · [plan](CONTENT-LOOP/PLAN.md)
 - An open sea in a trade wind draws from the waterline to the horizon under the engine's own sky, and what it costs is on record against the display's refresh (WATERS M2): Ready for Review · [plan](WATERS/PLAN.md) · [latest review](../evidence/WATERS/M2-review.md)
 - SCENE-VIEWS M1 A scene draws its entities a second time from another camera into a texture, lit and shadowed as the main view shows them, and a scene that asks for no view is unchanged: Blocked: Needs Dependency: APPLE-TILE’s exact-images owner must resolve the shared failures and obtain a covering pass before M1.10 can clear. A planner adds it to the module that owns it
 - CLOUDS M2 Cloud shade crosses the valley in step with the weather, with no cloud drawn: Blocked: Needs Dependency: The planner must settle and assign the shared display-time interface change before M2.7’s uneven 60× shade motion can be completed. A planner adds it to the module that owns it
 - A game finds overlaps, neighbours and the nearest body among 10,000, and every answer matches a brute-force search (SIM-2D M2): In Progress · [plan](SIM-2D/PLAN.md) · [latest review](../evidence/SIM-2D/M2-review.md)
 - REVIEW-ENGINE M3 A cooked mesh reaches the GPU straight from its mapped file, and the cooker's edit-to-visible test measures the engine's own loader: Blocked: Needs Dependency: The lead must obtain a complete shared exact-images run covering the final merged M3 commit. A planner adds it to the module that owns it
-- From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1): Not Started · [plan](GAME-SPLIT/PLAN.md)
+- From any engine checkout, one command builds and tests a game in a games repository against that checkout (GAME-SPLIT M1): In Progress · [plan](GAME-SPLIT/PLAN.md)
 
 ### Recently done
 
+- A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one (EFFECT-GRAPH M4), 17 Nov · [review](../evidence/EFFECT-GRAPH/M4-review.md)
 - On the CPU alone, the river answers its source: it runs deeper, wider and faster as its lake rises, rough in its riffles and smooth in its pools, in a calm as in a gale (RIVERS M3), 17 Nov · [review](../evidence/RIVERS/M3-review.md)
 - The valley's 10,000 entities are culled by default and match the unculled image pixel for pixel, on Mac and in Chrome (CULLING M3), 17 Nov · [review](../evidence/CULLING/M3-review.md)
 - Native providers survive replacement and expose truthful timing (APPLE-TILE M11), 17 Nov · [review](../evidence/APPLE-TILE/M11-review.md)
@@ -315,8 +315,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP M4 for its M9 to pass the full check; APPLE-PRESENTATION M3 for its M6 | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE M2, BASELINE-GUARD M1 | Done 17 Nov |
-| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | M4 of 4 · Ready for Review |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M2 of 4 · Not Started |
+| 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE M2 and M3, APPLE-PRESENTATION M2, BASELINE-GUARD M1 | Done 17 Nov |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its M4; APPLE-PRESENTATION M2 and M3, EFFECT-GRAPH M2, CULLING M3 | M2 of 4 · In Progress |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP M2 and CULLING M3 to start; APPLE-TILE M12, APPLE-PRESENTATION's last milestone, ATMOSPHERE M6 (which closes G3s) and CONTENT-LOOP M3 for the three rows from one command; PLATFORM-RUNTIME-MAC M3 and CREATOR M3 as well to close | Waiting: On Dependency, CONTENT-LOOP:M2 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH M2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA M1 to start; SEA M2, EFFECT-GRAPH M3, ATMOSPHERE M5 and M9 and CREATOR M1 for its first frame; CONTENT-LOOP M1 for foam; APPLE-PRESENTATION M3 for the whole range in motion; SCENE-VIEWS M3 for mirrored scenery; APPLE-PRESENTATION's governor and MetalFX milestones to close | M2 of 16 · Ready for Review |
@@ -335,4 +335,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES M1 to start; HOST M1, GAME-SPLIT M2, ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 for the renderer's tests | Waiting: On Dependency, HOST:M1, GAME-SPLIT:M2, APPLE-PRESENTATION:M3 |
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE M9, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3 and CULLING M3 to start; REPO-RULES M1 for its errors | Waiting: On Dependency, APPLE-PRESENTATION:M3 |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR M3, APPLE-TILE M10, APPLE-PRESENTATION M3, EFFECT-GRAPH M3, CULLING M3, REVIEW-ENGINE M1 and REPO-RULES M1 | Waiting: On Dependency, CREATOR:M3, APPLE-PRESENTATION:M3 |
-| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | M1 of 5 · Not Started |
+| 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES M1 and TEST-SUPPORT M1 to start; REVIEW-ENGINE M3, CULLING M3, EFFECT-GRAPH M3 and APPLE-PRESENTATION M3 for the boundary; HOST M4 to cut the game free; SHOWCASE M8 for the move; CLOUDS M12, GAME-UI M6, PUDDLES M6, RENDER-2D M5, ATMOSPHERE M8, CONTENT-LOOP M2, SESSION M6 and TRANSPORT M2 for the rename | M1 of 5 · In Progress |
